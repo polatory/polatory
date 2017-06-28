@@ -118,13 +118,13 @@ Contributions are welcome! You can contribute to this project in several ways:
 
 You can just click the ★Star button to show your interest.
 
-### Open an Issue
+### <a href="https://github.com/polatory/polatory/issues">Open an Issue</a>
 
 Feel free to open an issue, if you have/found any questions, requests or issues.
 
-### Send a Pull Request
+### <a href="https://github.com/polatory/polatory/pulls">Send a Pull Request</a>
 
-You can fork and propose improvements in the source code. When sending a PR for the first time, please <a href="https://www.clahub.com/agreements/polatory/draft">review and sign the Contributor License Agreement</a>.
+You can fork and propose improvements in the source code. When sending a PR for the first time, please <a href="https://cla-assistant.io/polatory/polatory">review and sign the Contributor License Agreement</a>.
 
 ### Visit ScalFMM
 
