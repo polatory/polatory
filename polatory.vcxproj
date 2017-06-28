@@ -1,0 +1,243 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{446A0B12-5227-44A3-ACEA-65FE191078D0}</ProjectGuid>
+    <RootNamespace>polatory</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>Intel C++ Compiler 17.0</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Sequential</UseIntelMKL>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>Intel C++ Compiler 17.0</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseIntelMKL>Sequential</UseIntelMKL>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>include;include\third_party;include\third_party\ScalFMM;gtest\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>EIGEN_DONT_PARALLELIZE;EIGEN_MPL2_ONLY;EIGEN_USE_MKL_ALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMP>GenerateParallelCode</OpenMP>
+      <Cpp0xSupport>true</Cpp0xSupport>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>lib_win64</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>include;include\third_party;include\third_party\ScalFMM;gtest\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>EIGEN_DONT_PARALLELIZE;EIGEN_MPL2_ONLY;EIGEN_USE_MKL_ALL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <OpenMP>GenerateParallelCode</OpenMP>
+      <Cpp0xSupport>true</Cpp0xSupport>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/fp:except- /QaxAVX %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <FloatingPointModel>Strict</FloatingPointModel>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>lib_win64</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="examples\kriging_prediction.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="examples\kriging_variogram.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="examples\point_cloud.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\krylov\gmres_base.cpp" />
+    <ClCompile Include="src\lib_win64.cpp" />
+    <ClCompile Include="src\point_cloud\kdtree.cpp" />
+    <ClCompile Include="src\stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\third_party\ScalFMM\Utils\FAlgorithmTimers.cpp" />
+    <ClCompile Include="test\common\test_bsearch.cpp" />
+    <ClCompile Include="test\common\test_likely.cpp" />
+    <ClCompile Include="test\common\test_uncertain.cpp" />
+    <ClCompile Include="test\common\test_zip_sort.cpp" />
+    <ClCompile Include="test\interpolation\test_rbf_incremental_fitter.cpp" />
+    <ClCompile Include="test\interpolation\test_rbf_operator.cpp" />
+    <ClCompile Include="test\isosurface\test_rmt.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="test\numeric\test_sum_accumulator.cpp" />
+    <ClCompile Include="test\point_cloud\test_kdtree.cpp" />
+    <ClCompile Include="test\kriging\test_empirical_semivariogram.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="test\point_cloud\test_plane_estimator.cpp" />
+    <ClCompile Include="test\polynomial\test_basis_base.cpp" />
+    <ClCompile Include="test\polynomial\test_lagrange_basis.cpp" />
+    <ClCompile Include="test\polynomial\test_orthonormal_basis.cpp" />
+    <ClCompile Include="test\preconditioner\test_coarse_grid.cpp" />
+    <ClCompile Include="test\preconditioner\test_domain_divider.cpp" />
+    <ClCompile Include="test\preconditioner\test_fine_grid.cpp" />
+    <ClCompile Include="test\interpolation\test_rbf_direct_solver.cpp" />
+    <ClCompile Include="test\interpolation\test_rbf_evaluator.cpp" />
+    <ClCompile Include="test\interpolation\test_rbf_fitter.cpp" />
+    <ClCompile Include="test\interpolation\test_rbf_symmetric_evaluator.cpp" />
+    <ClCompile Include="test\rbf\test_rbf.cpp" />
+    <ClInclude Include="examples\read_table.hpp" />
+    <ClInclude Include="include\common\array.hpp" />
+    <ClInclude Include="include\common\exception.hpp" />
+    <ClInclude Include="include\common\utility.hpp" />
+    <ClInclude Include="include\common\vector_range_view.hpp" />
+    <ClInclude Include="include\common\vector_view.hpp" />
+    <ClInclude Include="include\common\zip_sort.hpp" />
+    <ClInclude Include="include\fmm\tree_height.hpp" />
+    <ClInclude Include="include\geometry\bbox3.hpp" />
+    <ClInclude Include="include\interpolation\rbf_fitter.hpp" />
+    <ClInclude Include="include\interpolation\rbf_incremental_fitter.hpp" />
+    <ClInclude Include="include\krylov\fgmres.hpp" />
+    <ClInclude Include="include\krylov\identity_operator.hpp" />
+    <ClInclude Include="include\isosurface\rmt_primitive_lattice.hpp" />
+    <ClInclude Include="include\isosurface\rmt_node.hpp" />
+    <ClInclude Include="include\isosurface\rmt_node_list.hpp" />
+    <ClInclude Include="include\numeric\sum_accumulator.hpp" />
+    <ClInclude Include="include\point_cloud\scattered_data_generator.hpp" />
+    <ClInclude Include="include\point_cloud\distance_filter.hpp" />
+    <ClInclude Include="include\point_cloud\plane_estimator.hpp" />
+    <ClInclude Include="include\preconditioner\coarse_grid.hpp" />
+    <ClInclude Include="include\preconditioner\domain_divider.hpp" />
+    <ClInclude Include="include\preconditioner\ras_preconditioner.hpp" />
+    <ClInclude Include="include\preconditioner\fine_grid.hpp" />
+    <ClInclude Include="include\distribution_generator\spherical_distribution.hpp" />
+    <ClInclude Include="include\distribution_generator\uniform_distribution.hpp" />
+    <ClInclude Include="include\fmm.hpp" />
+    <ClInclude Include="include\fmm\fmm_evaluator.hpp" />
+    <ClInclude Include="include\fmm\fmm_operator.hpp" />
+    <ClInclude Include="include\isosurface\bit.hpp" />
+    <ClInclude Include="include\common\bsearch.hpp" />
+    <ClInclude Include="include\isosurface\export_obj.hpp" />
+    <ClInclude Include="include\isosurface\field_function.hpp" />
+    <ClInclude Include="include\isosurface\isosurface.hpp" />
+    <ClInclude Include="include\isosurface\mesh_defects_finder.hpp" />
+    <ClInclude Include="include\isosurface\rbf_field_function.hpp" />
+    <ClInclude Include="include\isosurface\rmt_lattice.hpp" />
+    <ClInclude Include="include\isosurface\rmt_surface.hpp" />
+    <ClInclude Include="include\isosurface\types.hpp" />
+    <ClInclude Include="include\common\uncertain.hpp" />
+    <ClInclude Include="include\point_cloud\kdtree.hpp" />
+    <ClInclude Include="include\rbf\exponential_variogram.hpp" />
+    <ClInclude Include="include\rbf\gaussian.hpp" />
+    <ClInclude Include="include\rbf\spherical_variogram.hpp" />
+    <ClInclude Include="include\kriging\cross_validation.hpp" />
+    <ClInclude Include="include\kriging\variogram_fitting.hpp" />
+    <ClInclude Include="include\polynomial\orthonormal_basis.hpp" />
+    <ClInclude Include="include\interpolation\rbf_direct_evaluator.hpp" />
+    <ClInclude Include="include\interpolation\rbf_direct_symmetric_evaluator.hpp" />
+    <ClInclude Include="include\interpolation\rbf_direct_solver.hpp" />
+    <ClInclude Include="include\polynomial\lagrange_basis.hpp" />
+    <ClInclude Include="include\common\likely.hpp" />
+    <ClInclude Include="include\polynomial\monomial_basis.hpp" />
+    <ClInclude Include="include\polynomial\basis_base.hpp" />
+    <ClInclude Include="include\polynomial\polynomial_evaluator.hpp" />
+    <ClInclude Include="include\interpolation\polynomial_matrix.hpp" />
+    <ClInclude Include="include\krylov.hpp" />
+    <ClInclude Include="include\krylov\gmres.hpp" />
+    <ClInclude Include="include\krylov\gmres_base.hpp" />
+    <ClInclude Include="include\krylov\minres.hpp" />
+    <ClInclude Include="include\krylov\linear_operator.hpp" />
+    <ClInclude Include="include\rbf\linear_variogram.hpp" />
+    <ClInclude Include="include\rbf\rbf_base.hpp" />
+    <ClInclude Include="include\interpolation.hpp" />
+    <ClInclude Include="include\interpolation\rbf_evaluator.hpp" />
+    <ClInclude Include="include\interpolation\rbf_operator.hpp" />
+    <ClInclude Include="include\interpolation\rbf_residual_evaluator.hpp" />
+    <ClInclude Include="include\interpolation\rbf_solver.hpp" />
+    <ClInclude Include="include\kriging\empirical_variogram.hpp" />
+    <ClInclude Include="include\polynomial.hpp" />
+    <ClInclude Include="include\interpolation\rbf_symmetric_evaluator.hpp" />
+    <ClInclude Include="include\rbf\variogram.hpp" />
+    <ClInclude Include="include\stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="test\krylov\test_krylov.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\third_party\ScalFMM\Utils\FLog.cpp" />
+    <ClCompile Include="src\third_party\ScalFMM\Utils\FMemStats.cpp" />
+    <ClCompile Include="src\third_party\ScalFMM\Utils\FSignalHandler.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\boost.1.62.0.0\build\native\boost.targets" Condition="Exists('packages\boost.1.62.0.0\build\native\boost.targets')" />
+    <Import Project="packages\Eigen.3.3.3\build\native\Eigen.targets" Condition="Exists('packages\Eigen.3.3.3\build\native\Eigen.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\boost.1.62.0.0\build\native\boost.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\boost.1.62.0.0\build\native\boost.targets'))" />
+    <Error Condition="!Exists('packages\Eigen.3.3.3\build\native\Eigen.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Eigen.3.3.3\build\native\Eigen.targets'))" />
+  </Target>
+</Project>
