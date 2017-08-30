@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cassert>
+#include <memory>
 #include <vector>
 
 #include <boost/operators.hpp>
@@ -14,17 +16,12 @@ class vector_view_iterator;
 
 template<typename T>
 class vector_view {
-   friend class vector_view_iterator<T>;
-
-   const std::vector<T>& v;
-   const std::vector<size_t>& idcs;
-
 public:
-   typedef vector_view_iterator<T> iterator;
+   using iterator = vector_view_iterator<T>;
 
    vector_view(const std::vector<T>& vector, const std::vector<size_t>& indices)
-      : v(vector)
-      , idcs(indices)
+      : v_(vector)
+      , idcs_(indices)
    {
    }
 
@@ -33,59 +30,92 @@ public:
       return vector_view_iterator<T>(*this, 0);
    }
 
+   bool empty() const
+   {
+      return idcs_.empty();
+   }
+
    iterator end() const
    {
-      return vector_view_iterator<T>(*this, idcs.size());
+      return vector_view_iterator<T>(*this, idcs_.size());
    }
 
    const T& operator[](size_t index) const
    {
-      return v[idcs[index]];
+      return v_[idcs_[index]];
    }
 
    size_t size() const
    {
-      return idcs.size();
+      return idcs_.size();
    }
+
+private:
+   friend class vector_view_iterator<T>;
+
+   const std::vector<T>& v_;
+   const std::vector<size_t>& idcs_;
 };
 
 template<typename T>
-class vector_view_iterator
-   : public boost::bidirectional_iterator_helper<vector_view_iterator<T>, T> {
-
-   const vector_view<T>& view;
-   size_t idx;
-
+class vector_view_iterator : public boost::random_access_iterator_helper<vector_view_iterator<T>, T> {
 public:
    vector_view_iterator(const vector_view<T>& view, size_t index)
-      : view(view)
-      , idx(index)
+      : view_(view)
+      , idx_(index)
    {
    }
 
    bool operator==(const vector_view_iterator& other) const
    {
-      return idx == other.idx;
+      return idx_ == other.idx_;
    }
 
    vector_view_iterator& operator++()
    {
-      assert(idx < view.idcs.size());
-      idx++;
+      assert(idx_ < view_.idcs_.size());
+      idx_++;
       return *this;
    }
 
    vector_view_iterator& operator--()
    {
-      assert(idx > 0);
-      idx--;
+      assert(idx_ > 0);
+      idx_--;
       return *this;
    }
 
    const T& operator*() const
    {
-      return view.v[view.idcs[idx]];
+      return view_.v_[view_.idcs_[idx_]];
    }
+
+   bool operator<(const vector_view_iterator& other) const
+   {
+      return idx_ < other.idx_;
+   }
+
+   vector_view_iterator& operator+=(typename vector_view_iterator::difference_type n)
+   {
+      idx_ += n;
+      return *this;
+   }
+
+   vector_view_iterator& operator-=(typename vector_view_iterator::difference_type n)
+   {
+      idx_ -= n;
+      return *this;
+   }
+
+   friend typename vector_view_iterator::difference_type operator-(const vector_view_iterator& lhs, const vector_view_iterator& rhs)
+   {
+      assert(std::addressof(lhs.view_) == std::addressof(rhs.view_));
+      return lhs.idx_ - rhs.idx_;
+   }
+
+private:
+   const vector_view<T>& view_;
+   size_t idx_;
 };
 
 template<typename T>

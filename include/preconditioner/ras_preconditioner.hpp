@@ -31,7 +31,7 @@ private:
 
    static constexpr int Order = 6;
    const double coarse_ratio = 0.125;
-   const int n_coarsest_points = 1024;
+   const size_t n_coarsest_points = 1024;
    const int poly_degree;
    const std::vector<Eigen::Vector3d> points;
    const size_t n_points;
@@ -62,7 +62,9 @@ public:
       , finest_evaluator(rbf, poly_degree, points)
 #endif
    {
-      n_fine_levels = std::max(1, int(std::ceil(std::log(double(n_points) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
+      n_fine_levels = std::max(0, int(std::ceil(std::log(double(n_points) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
+      if (n_fine_levels == 0)
+         return;
 
       auto divider = std::make_unique<domain_divider>(points);
 
@@ -136,6 +138,9 @@ public:
    Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override
    {
       assert(v.size() == size());
+
+      if (n_fine_levels == 0)
+         return v;
 
       Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
       Eigen::VectorXd residuals = v.head(n_points);

@@ -37,12 +37,7 @@ public:
    {
       auto bounds = geometry::bbox3d::from_points(source_points);
 
-      Eigen::Vector3d bounds_size = bounds.max - bounds.min;
-      bounds.min -= (1.0 + 1.0 / 64.0) * bounds_size;
-      bounds.max += (1.0 + 1.0 / 64.0) * bounds_size;
-      
       a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bounds);
-      a->set_source_points(source_points);
 
       if (poly_degree >= 0) {
          p = std::make_unique<poly_eval>(poly_degree);
@@ -58,7 +53,6 @@ public:
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
    {
       a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bounds);
-      a->set_source_points(source_points);
 
       if (poly_degree >= 0) {
          p = std::make_unique<poly_eval>(poly_degree);

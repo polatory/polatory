@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include "../geometry/bbox3.hpp"
 #include "mesh_defects_finder.hpp"
 #include "rmt_lattice.hpp"
 #include "rmt_surface.hpp"
@@ -48,10 +49,20 @@ class isosurface {
    }
 
 public:
-   isosurface(const Eigen::Vector3d& min, const Eigen::Vector3d& max, double resolution)
-      : lattice(min, max, resolution)
+   isosurface(const geometry::bbox3d& bounds, double resolution)
+      : lattice(bounds, resolution)
       , surface(lattice)
    {
+   }
+
+   geometry::bbox3d evaluation_bounds() const
+   {
+      return lattice.node_bounds();
+   }
+
+   const std::vector<face>& faces() const
+   {
+      return surface.get_faces();
    }
 
    void generate(const field_function& field_func, double isovalue = 0.0)
@@ -79,11 +90,6 @@ public:
    const std::vector<Eigen::Vector3d>& vertices() const
    {
       return lattice.get_vertices();
-   }
-
-   const std::vector<face>& faces() const
-   {
-      return surface.get_faces();
    }
 };
 

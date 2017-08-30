@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "../geometry/bbox3.hpp"
 #include "types.hpp"
 
 namespace polatory {
@@ -49,12 +50,10 @@ std::array<Eigen::Vector3d, 3> ReciprocalPrimitiveVectors
 class rmt_primitive_lattice {
 protected:
    // Axis-aligned rectangular bounds
-   Eigen::Vector3d min;
-   Eigen::Vector3d max;
+   geometry::bbox3d bounds;
 
    // Extended bounds
-   Eigen::Vector3d ext_min;
-   Eigen::Vector3d ext_max;
+   geometry::bbox3d ext_bounds;
 
    // Lattice constant
    double lc;
@@ -97,24 +96,24 @@ private:
       // Extend each side of bounds by a primitive cell
       // to ensure all required nodes are inside the extended bounds.
       auto ext = cell_hull * (1.0 + std::pow(2.0, -5.0));
-      ext_min = min - ext;
-      ext_max = max + ext;
+      ext_bounds.min = bounds.min - ext;
+      ext_bounds.max = bounds.max + ext;
 
-      std::vector<Eigen::Vector3d> vecs;
-
-      vecs.push_back({ ext_min[0], ext_min[1], ext_min[2] });
-      vecs.push_back({ ext_max[0], ext_min[1], ext_min[2] });
-      vecs.push_back({ ext_min[0], ext_max[1], ext_min[2] });
-      vecs.push_back({ ext_min[0], ext_min[1], ext_max[2] });
-      vecs.push_back({ ext_min[0], ext_max[1], ext_max[2] });
-      vecs.push_back({ ext_max[0], ext_min[1], ext_max[2] });
-      vecs.push_back({ ext_max[0], ext_max[1], ext_min[2] });
-      vecs.push_back({ ext_max[0], ext_max[1], ext_max[2] });
+      std::vector<Eigen::Vector3d> ext_bbox_vertices {
+         { ext_bounds.min[0], ext_bounds.min[1], ext_bounds.min[2] },
+         { ext_bounds.max[0], ext_bounds.min[1], ext_bounds.min[2] },
+         { ext_bounds.min[0], ext_bounds.max[1], ext_bounds.min[2] },
+         { ext_bounds.min[0], ext_bounds.min[1], ext_bounds.max[2] },
+         { ext_bounds.min[0], ext_bounds.max[1], ext_bounds.max[2] },
+         { ext_bounds.max[0], ext_bounds.min[1], ext_bounds.max[2] },
+         { ext_bounds.max[0], ext_bounds.max[1], ext_bounds.min[2] },
+         { ext_bounds.max[0], ext_bounds.max[1], ext_bounds.max[2] }
+      };
 
       std::vector<Eigen::Vector3d> cell_vecsd;
       cell_vecsd.reserve(8);
 
-      for (const auto& v : vecs) {
+      for (const auto& v : ext_bbox_vertices) {
          cell_vecsd.push_back({
             v.dot(b0),
             v.dot(b1),
@@ -123,9 +122,9 @@ private:
       }
 
       cell_vecsd.push_back({
-         ext_min.adjoint() * b0,
-         ext_min.adjoint() * b1,
-         ext_min.adjoint() * b2
+         ext_bounds.min.adjoint() * b0,
+         ext_bounds.min.adjoint() * b1,
+         ext_bounds.min.adjoint() * b2
       });
 
       auto cell_mind = cell_vecsd[0];
@@ -157,9 +156,8 @@ private:
    }
 
 public:
-   rmt_primitive_lattice(const Eigen::Vector3d& min, const Eigen::Vector3d& max, double resolution)
-      : min(min)
-      , max(max)
+   rmt_primitive_lattice(const geometry::bbox3d& bounds, double resolution)
+      : bounds(bounds)
       , lc(resolution / std::sqrt(2.0))
       , rlc(std::sqrt(2.0) / resolution)
    {
@@ -189,9 +187,14 @@ public:
    bool is_inside_bounds(const Eigen::Vector3d& point) const
    {
       return
-         point[0] >= ext_min[0] && point[0] <= ext_max[0] &&
-         point[1] >= ext_min[1] && point[1] <= ext_max[1] &&
-         point[2] >= ext_min[2] && point[2] <= ext_max[2];
+         point[0] >= ext_bounds.min[0] && point[0] <= ext_bounds.max[0] &&
+         point[1] >= ext_bounds.min[1] && point[1] <= ext_bounds.max[1] &&
+         point[2] >= ext_bounds.min[2] && point[2] <= ext_bounds.max[2];
+   }
+
+   geometry::bbox3d node_bounds() const
+   {
+      return ext_bounds;
    }
 
    Eigen::Vector3d point_from_cell_vector(const cell_vector& cv) const

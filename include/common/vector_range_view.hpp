@@ -9,39 +9,45 @@ namespace common {
 
 template<typename T>
 class vector_range_view {
-   const std::vector<T>& v;
-   const size_t begin_idx;
-   const size_t end_idx;
-
 public:
-   typedef typename std::vector<T>::const_iterator iterator;
+   using iterator = typename std::vector<T>::const_iterator;
 
    vector_range_view(const std::vector<T>& vector, size_t begin_index, size_t end_index)
-      : v(vector)
-      , begin_idx(begin_index)
-      , end_idx(end_index)
+      : v_(vector)
+      , begin_idx_(begin_index)
+      , end_idx_(end_index)
    {
    }
 
    iterator begin() const
    {
-      return v.begin() + begin_idx;
+      return v_.begin() + begin_idx_;
+   }
+
+   bool empty() const
+   {
+      return begin_idx_ == end_idx_;
    }
 
    iterator end() const
    {
-      return v.begin() + end_idx;
+      return v_.begin() + end_idx_;
    }
 
    const T& operator[](size_t index) const
    {
-      return v[begin_idx + index];
+      return v_[begin_idx_ + index];
    }
 
    size_t size() const
    {
-      return end_idx - begin_idx;
+      return end_idx_ - begin_idx_;
    }
+
+private:
+   const std::vector<T>& v_;
+   const size_t begin_idx_;
+   const size_t end_idx_;
 };
 
 template<typename T>

@@ -105,9 +105,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\krylov\fgmres.cpp" />
+    <ClCompile Include="src\krylov\gmres.cpp" />
     <ClCompile Include="src\krylov\gmres_base.cpp" />
+    <ClCompile Include="src\krylov\minres.cpp" />
     <ClCompile Include="src\lib_win64.cpp" />
     <ClCompile Include="src\point_cloud\kdtree.cpp" />
+    <ClCompile Include="src\point_cloud\scattered_data_generator.cpp" />
     <ClCompile Include="src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

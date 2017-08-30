@@ -103,7 +103,7 @@ public:
    fmm_operator(const rbf::rbf_base& rbf, int tree_height, const geometry::bbox3d& bounds)
       : n_points(0)
    {
-      auto bounds_width = (bounds.max - bounds.min).maxCoeff();
+      auto bounds_width = (1.0 + 1.0 / 64.0) * (bounds.max - bounds.min).maxCoeff();
       Eigen::Vector3d bounds_center = (bounds.min + bounds.max) / 2.0;
 
       interpolated_kernel = std::make_unique<InterpolatedKernel>(

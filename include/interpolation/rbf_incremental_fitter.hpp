@@ -25,6 +25,7 @@ namespace polatory {
 namespace interpolation {
 
 class rbf_incremental_fitter {
+   const size_t min_n_points_for_incremental_fitting = 10000;
    const double initial_points_ratio = 0.01;
    const double incremental_points_ratio = 0.1;
 
@@ -35,21 +36,31 @@ class rbf_incremental_fitter {
    const size_t n_points;
    const size_t n_polynomials;
 
-   geometry::bbox3d bounds;
+   const geometry::bbox3d bounds;
 
    std::pair<std::vector<size_t>, Eigen::VectorXd> initial_point_indices_and_weights() const
    {
-      std::random_device rd;
-      std::mt19937 gen(rd());
+      std::vector<size_t> indices;
+      Eigen::VectorXd weights;
 
-      std::vector<size_t> shuffled(n_points);
-      std::iota(shuffled.begin(), shuffled.end(), 0);
-      std::shuffle(shuffled.begin(), shuffled.end(), gen);
+      if (n_points < min_n_points_for_incremental_fitting) {
+         indices = std::vector<size_t>(n_points);
+         std::iota(indices.begin(), indices.end(), 0);
 
-      size_t n_initial_points = initial_points_ratio * n_points;
+         weights = Eigen::VectorXd::Zero(n_points + n_polynomials);
+      } else {
+         size_t n_initial_points = initial_points_ratio * n_points;
 
-      std::vector<size_t> indices(shuffled.begin(), shuffled.begin() + n_initial_points);
-      Eigen::VectorXd weights = Eigen::VectorXd::Zero(indices.size() + n_polynomials);
+         std::random_device rd;
+         std::mt19937 gen(rd());
+
+         indices = std::vector<size_t>(n_points);
+         std::iota(indices.begin(), indices.end(), 0);
+         std::shuffle(indices.begin(), indices.end(), gen);
+
+         indices.resize(n_initial_points);
+         weights = Eigen::VectorXd::Zero(n_initial_points + n_polynomials);
+      }
 
       return std::make_pair(std::move(indices), std::move(weights));
    }
@@ -89,12 +100,8 @@ public:
       , points(points)
       , n_points(points.size())
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+      , bounds(geometry::bbox3d::from_points(points))
    {
-      bounds = geometry::bbox3d::from_points(points);
-
-      Eigen::Vector3d bounds_size = bounds.max - bounds.min;
-      bounds.min -= (1.0 + 1.0 / 64.0) * bounds_size;
-      bounds.max += (1.0 + 1.0 / 64.0) * bounds_size;
    }
 
    template<typename Derived>
@@ -122,13 +129,15 @@ public:
          solver->set_points(reduced_points);
          weights = solver->solve(reduced_values(values, indices), absolute_tolerance, weights);
 
+         auto indices_c = point_indices_complement(indices);
+         auto reduced_points_c = common::make_view(points, indices_c);
+
+         if (indices_c.size() == 0) break;
+
          // Evaluate residuals at the rest of the points.
 
          res_eval->set_source_points(reduced_points);
          res_eval->set_weights(weights);
-
-         auto indices_c = point_indices_complement(indices);
-         auto reduced_points_c = common::make_view(points, indices_c);
 
          std::vector<double> residuals_c;
          auto fit_c = res_eval->evaluate_points(reduced_points_c);
