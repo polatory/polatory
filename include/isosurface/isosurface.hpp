@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include "../geometry/bbox3.hpp"
 #include "mesh_defects_finder.hpp"
 #include "rmt_lattice.hpp"
 #include "rmt_surface.hpp"
@@ -48,8 +49,8 @@ class isosurface {
    }
 
 public:
-   isosurface(const Eigen::Vector3d& min, const Eigen::Vector3d& max, double resolution)
-      : lattice(min, max, resolution)
+   isosurface(const geometry::bbox3d& bbox, double resolution)
+      : lattice(bbox, resolution)
       , surface(lattice)
    {
    }

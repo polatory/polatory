@@ -6,9 +6,11 @@
 #include <Eigen/Geometry>
 
 #include "distribution_generator/uniform_distribution.hpp"
+#include "geometry/bbox3.hpp"
 #include "isosurface/rmt_lattice.hpp"
 
 using namespace polatory::isosurface;
+using polatory::geometry::bbox3d;
 using polatory::distribution_generator::uniform_distribution;
 
 // Relative positions of neighbor nodes connected by each edge.
@@ -51,11 +53,10 @@ TEST(rmt, lattice)
    Eigen::Vector3d center = Eigen::Vector3d::Zero();
    double radius = 1.0;
 
-   Eigen::Vector3d min = center.array() - radius;
-   Eigen::Vector3d max = center.array() + radius;
+   bbox3d bbox(center.array() - radius, center.array() + radius);
    double resolution = 0.01;
 
-   rmt_primitive_lattice lat(min, max, resolution);
+   rmt_primitive_lattice lat(bbox, resolution);
 
    auto points = uniform_distribution(100, center, radius);
 

@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "../geometry/bbox3.hpp"
 #include "types.hpp"
 
 namespace polatory {
@@ -157,9 +158,9 @@ private:
    }
 
 public:
-   rmt_primitive_lattice(const Eigen::Vector3d& min, const Eigen::Vector3d& max, double resolution)
-      : min(min)
-      , max(max)
+   rmt_primitive_lattice(const geometry::bbox3d& bbox, double resolution)
+      : min(bbox.min)
+      , max(bbox.max)
       , lc(resolution / std::sqrt(2.0))
       , rlc(std::sqrt(2.0) / resolution)
    {
