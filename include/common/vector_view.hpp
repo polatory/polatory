@@ -73,7 +73,7 @@ public:
 
    vector_view_iterator& operator++()
    {
-      assert(idx_ < view_.idcs.size());
+      assert(idx_ < view_.idcs_.size());
       idx_++;
       return *this;
    }
@@ -95,19 +95,19 @@ public:
       return idx_ < other.idx_;
    }
 
-   vector_view_iterator& operator+=(difference_type n)
+   vector_view_iterator& operator+=(typename vector_view_iterator::difference_type n)
    {
       idx_ += n;
       return *this;
    }
 
-   vector_view_iterator& operator-=(difference_type n)
+   vector_view_iterator& operator-=(typename vector_view_iterator::difference_type n)
    {
       idx_ -= n;
       return *this;
    }
 
-   friend difference_type operator-(const vector_view_iterator& lhs, const vector_view_iterator& rhs)
+   friend typename vector_view_iterator::difference_type operator-(const vector_view_iterator& lhs, const vector_view_iterator& rhs)
    {
       assert(std::addressof(lhs.view_) == std::addressof(rhs.view_));
       return lhs.idx_ - rhs.idx_;
