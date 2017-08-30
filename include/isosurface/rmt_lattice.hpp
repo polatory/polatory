@@ -36,7 +36,7 @@ constexpr std::array<edge_index, 14> OppositeEdge
 } // namespace
 
 
-class rmt_lattice : rmt_primitive_lattice {
+class rmt_lattice : public rmt_primitive_lattice {
    friend class rmt_surface;
 
    typedef rmt_primitive_lattice base;
@@ -287,8 +287,8 @@ class rmt_lattice : rmt_primitive_lattice {
    }
 
 public:
-   rmt_lattice(const geometry::bbox3d& bbox, double resolution)
-      : base(bbox, resolution)
+   rmt_lattice(const geometry::bbox3d& bounds, double resolution)
+      : base(bounds, resolution)
       , clustered_vertices_begin(0)
    {
       node_list.init_strides(cell_index{ 1 } << shift1, cell_index{ 1 } << shift2);

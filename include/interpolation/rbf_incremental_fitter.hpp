@@ -36,7 +36,7 @@ class rbf_incremental_fitter {
    const size_t n_points;
    const size_t n_polynomials;
 
-   geometry::bbox3d bounds;
+   const geometry::bbox3d bounds;
 
    std::pair<std::vector<size_t>, Eigen::VectorXd> initial_point_indices_and_weights() const
    {
@@ -100,12 +100,8 @@ public:
       , points(points)
       , n_points(points.size())
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+      , bounds(geometry::bbox3d::from_points(points))
    {
-      bounds = geometry::bbox3d::from_points(points);
-
-      Eigen::Vector3d bounds_size = bounds.max - bounds.min;
-      bounds.min -= (1.0 + 1.0 / 64.0) * bounds_size;
-      bounds.max += (1.0 + 1.0 / 64.0) * bounds_size;
    }
 
    template<typename Derived>
