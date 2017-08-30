@@ -42,15 +42,10 @@ int main(int argc, char *argv[])
    auto weights = fitter.fit(values, 0.00001);
 
    // Generate isosurface of some values.
-   Eigen::Vector3d box_min(0.0, 0.0, 0.0);
-   Eigen::Vector3d box_max(1.0, 1.0, 1.0);
-
-   Eigen::Vector3d eval_box_min(-0.1, -0.1, -0.1);
-   Eigen::Vector3d eval_box_max(1.1, 1.1, 1.1);
-
-   rbf_evaluator<> eval(rbf, poly_degree, points, bbox3d(eval_box_min, eval_box_max));
-   eval.set_weights(weights);
-   rbf_field_function field_f(eval);
+   bbox3d mesh_bbox(
+      Eigen::Vector3d(0.0, 0.0, 0.0),
+      Eigen::Vector3d(1.0, 1.0, 1.0)
+   );
 
    std::vector<std::pair<double, std::string>> isovalue_names{
       { 0.2, "0.2.obj" },
@@ -60,7 +55,11 @@ int main(int argc, char *argv[])
    };
    
    auto resolution = 1e-2;
-   polatory::isosurface::isosurface isosurf(box_min, box_max, resolution);
+   polatory::isosurface::isosurface isosurf(mesh_bbox, resolution);
+
+   rbf_evaluator<> eval(rbf, poly_degree, points, isosurf.evaluation_bounds());
+   eval.set_weights(weights);
+   rbf_field_function field_f(eval);
 
    for (auto isovalue_name : isovalue_names) {
       isosurf.generate(field_f, isovalue_name.first);
