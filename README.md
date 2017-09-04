@@ -1,6 +1,6 @@
 # Polatory
 
-Polatory is a framework for fast 3D spline interpolation and kriging, developed by GSI Co. Ltd.
+Polatory is a framework for fast 3D spline interpolation and kriging, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
 ## License
 
@@ -112,20 +112,20 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
 
 ## Contribution
 
-Contributions are welcome! You can contribute to this project in several ways:
+We welcome your contributions! You can contribute to this project in several ways:
 
 ### Star this Project
 
 You can just click the ★Star button to show your interest.
 
-### <a href="https://github.com/polatory/polatory/issues">Open an Issue</a>
+### <a href="https://github.com/polatory/polatory/issues">Create an Issue</a>
 
-Feel free to open an issue, if you have/found any questions, requests or issues.
+Feel free to create an issue, if you have any questions, requests, or if you have found any issues (please include a minimal reproducible example).
 
-### <a href="https://github.com/polatory/polatory/pulls">Send a Pull Request</a>
+### <a href="https://github.com/polatory/polatory/pulls">Create a Pull Request</a>
 
-You can fork and propose improvements in the source code. When sending a PR for the first time, please <a href="https://cla-assistant.io/polatory/polatory">review and sign the Contributor License Agreement</a>.
+You can fork the source tree and make some improvements to it. Then feel free to create a PR. When sending a PR for the first time, please <a href="https://cla-assistant.io/polatory/polatory">review and sign the Individual Contributor License Agreement</a>.
 
 ### Visit ScalFMM
 
-The fast RBF evaluation exploits ScalFMM, a C++ library implements FMM algorithms, developed by Inria. If you find this project useful, you can also check the development of ScalFMM at https://gitlab.inria.fr/solverstack/ScalFMM/.
+The fast RBF evaluation algorithm is implemented on top of ScalFMM, a C++ library provides FMM (Fast Multipole Method) algorithms, developed by [Inria](https://www.inria.fr/en/). If you find this project useful, you may also interested in the development of ScalFMM at https://gitlab.inria.fr/solverstack/ScalFMM/.
