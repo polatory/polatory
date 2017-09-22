@@ -34,6 +34,9 @@ public:
       std::set<size_t> indices_to_remove;
 
       for (size_t i = 0; i < n_points; i++) {
+         if (indices_to_remove.find(i) != indices_to_remove.end())
+            continue;
+
          auto found = tree.radius_search(points[i], distance, nn_indices, nn_distances);
 
          for (int k = 0; k < found; k++) {
