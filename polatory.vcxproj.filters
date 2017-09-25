@@ -357,5 +357,11 @@
     <ClInclude Include="examples\read_table.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\geometry\transform_matrices.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\driver\interpolant.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

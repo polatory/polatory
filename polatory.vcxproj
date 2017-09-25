@@ -153,8 +153,10 @@
     <ClInclude Include="include\common\vector_range_view.hpp" />
     <ClInclude Include="include\common\vector_view.hpp" />
     <ClInclude Include="include\common\zip_sort.hpp" />
+    <ClInclude Include="include\driver\interpolant.hpp" />
     <ClInclude Include="include\fmm\tree_height.hpp" />
     <ClInclude Include="include\geometry\bbox3.hpp" />
+    <ClInclude Include="include\geometry\transform_matrices.hpp" />
     <ClInclude Include="include\interpolation\rbf_fitter.hpp" />
     <ClInclude Include="include\interpolation\rbf_incremental_fitter.hpp" />
     <ClInclude Include="include\krylov\fgmres.hpp" />
