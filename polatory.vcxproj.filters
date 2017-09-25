@@ -133,6 +133,9 @@
     <ClCompile Include="src\point_cloud\scattered_data_generator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test\point_cloud\test_distance_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\fmm\fmm_evaluator.hpp">

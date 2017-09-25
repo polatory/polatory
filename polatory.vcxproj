@@ -128,6 +128,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="test\numeric\test_sum_accumulator.cpp" />
+    <ClCompile Include="test\point_cloud\test_distance_filter.cpp" />
     <ClCompile Include="test\point_cloud\test_kdtree.cpp" />
     <ClCompile Include="test\kriging\test_empirical_semivariogram.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
