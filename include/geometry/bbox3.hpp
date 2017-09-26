@@ -7,28 +7,64 @@
 
 #include <Eigen/Core>
 
+#include "affine_transform.hpp"
 #include "../common/array.hpp"
 #include "../common/likely.hpp"
 
 namespace polatory {
 namespace geometry {
 
-template<class Point>
-class bbox3_base {
+class bbox3d {
 public:
-   Point min;
-   Point max;
+   Eigen::Vector3d min;
+   Eigen::Vector3d max;
 
-   bbox3_base()
+   bbox3d()
       : min()
       , max()
    {
    }
 
-   bbox3_base(const Point& min, const Point& max)
+   bbox3d(const Eigen::Vector3d& min, const Eigen::Vector3d& max)
       : min(min)
       , max(max)
    {
+   }
+
+   bbox3d affine_transform(const Eigen::Matrix4d& m) const
+   {
+      Eigen::Vector3d center = (min + max) / 2.0;
+      Eigen::Vector3d v1 = Eigen::Vector3d(min[0], max[1], max[2]) - center;
+      Eigen::Vector3d v2 = Eigen::Vector3d(max[0], min[1], max[2]) - center;
+      Eigen::Vector3d v3 = Eigen::Vector3d(max[0], max[1], min[2]) - center;
+
+      center = affine_transform_point(center, m);
+      v1 = affine_transform_vector(v1, m);
+      v2 = affine_transform_vector(v2, m);
+      v3 = affine_transform_vector(v3, m);
+
+      Eigen::MatrixXd vertices(3, 8);
+      vertices.col(0) = -v1 - v2 - v3;    // min, min, min
+      vertices.col(1) = -v1;              // max, min, min
+      vertices.col(2) = v3;               // max, max, min
+      vertices.col(3) = -v2;              // min, max, min
+      vertices.col(4) = v1;               // min, max, max
+      vertices.col(5) = -v3;              // min, min, max
+      vertices.col(6) = v2;               // max, min, max
+      vertices.col(7) = v1 + v2 + v3;     // max, max, max
+
+      Eigen::Vector3d min = center + Eigen::Vector3d(
+         vertices.row(0).minCoeff(),
+         vertices.row(1).minCoeff(),
+         vertices.row(2).minCoeff()
+      );
+      Eigen::Vector3d max = center + Eigen::Vector3d(
+         vertices.row(0).maxCoeff(),
+         vertices.row(1).maxCoeff(),
+         vertices.row(2).maxCoeff()
+      );
+
+      return bbox3d(min, max);
    }
 
    int longest_axis() const
@@ -38,7 +74,7 @@ public:
    }
 
    template<typename Container>
-   static bbox3_base from_points(const Container& points)
+   static bbox3d from_points(const Container& points)
    {
       using std::begin;
       using std::end;
@@ -47,9 +83,9 @@ public:
    }
 
    template<typename InputIterator>
-   static bbox3_base from_points(InputIterator points_begin, InputIterator points_end)
+   static bbox3d from_points(InputIterator points_begin, InputIterator points_end)
    {
-      bbox3_base ret;
+      bbox3d ret;
 
       if (points_begin == points_end)
          return ret;
@@ -74,8 +110,6 @@ public:
       return ret;
    }
 };
-
-using bbox3d = bbox3_base<Eigen::Vector3d>;
 
 } // namespace geometry
 } // namespace polatory

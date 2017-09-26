@@ -100,17 +100,17 @@ class fmm_operator {
    }
 
 public:
-   fmm_operator(const rbf::rbf_base& rbf, int tree_height, const geometry::bbox3d& bounds)
+   fmm_operator(const rbf::rbf_base& rbf, int tree_height, const geometry::bbox3d& bbox)
       : n_points(0)
    {
-      auto bounds_width = (1.0 + 1.0 / 64.0) * (bounds.max - bounds.min).maxCoeff();
-      Eigen::Vector3d bounds_center = (bounds.min + bounds.max) / 2.0;
+      auto bbox_width = (1.0 + 1.0 / 64.0) * (bbox.max - bbox.min).maxCoeff();
+      Eigen::Vector3d bbox_center = (bbox.min + bbox.max) / 2.0;
 
       interpolated_kernel = std::make_unique<InterpolatedKernel>(
-         tree_height, bounds_width, FPoint<FReal>(bounds_center.data()), &rbf);
+         tree_height, bbox_width, FPoint<FReal>(bbox_center.data()), &rbf);
 
       tree = std::make_unique<Octree>(
-         tree_height, std::max(1, tree_height - 4), bounds_width, FPoint<FReal>(bounds_center.data()));
+         tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<FReal>(bbox_center.data()));
 
       fmm = std::make_unique<Fmm>(tree.get(), interpolated_kernel.get(), int(FmmAlgorithmScheduleChunkSize));
    }

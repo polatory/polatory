@@ -75,14 +75,14 @@ public:
    }
 
    rbf_solver(const rbf::rbf_base& rbf, int poly_degree,
-      int tree_height, const geometry::bbox3d& bounds)
+      int tree_height, const geometry::bbox3d& bbox)
       : rbf(rbf)
       , poly_degree(poly_degree)
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
       , n_points(0)
    {
-      op = std::make_unique<rbf_operator<>>(rbf, poly_degree, tree_height, bounds);
-      res_eval = std::make_unique<rbf_residual_evaluator>(rbf, poly_degree, tree_height, bounds);
+      op = std::make_unique<rbf_operator<>>(rbf, poly_degree, tree_height, bbox);
+      res_eval = std::make_unique<rbf_residual_evaluator>(rbf, poly_degree, tree_height, bbox);
    }
 
    template<typename Container>

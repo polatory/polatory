@@ -121,6 +121,7 @@
     <ClCompile Include="test\common\test_likely.cpp" />
     <ClCompile Include="test\common\test_uncertain.cpp" />
     <ClCompile Include="test\common\test_zip_sort.cpp" />
+    <ClCompile Include="test\geometry\test_affine_transform.cpp" />
     <ClCompile Include="test\interpolation\test_rbf_incremental_fitter.cpp" />
     <ClCompile Include="test\interpolation\test_rbf_operator.cpp" />
     <ClCompile Include="test\isosurface\test_rmt.cpp">
@@ -153,8 +154,10 @@
     <ClInclude Include="include\common\vector_range_view.hpp" />
     <ClInclude Include="include\common\vector_view.hpp" />
     <ClInclude Include="include\common\zip_sort.hpp" />
+    <ClInclude Include="include\driver\interpolant.hpp" />
     <ClInclude Include="include\fmm\tree_height.hpp" />
     <ClInclude Include="include\geometry\bbox3.hpp" />
+    <ClInclude Include="include\geometry\affine_transform.hpp" />
     <ClInclude Include="include\interpolation\rbf_fitter.hpp" />
     <ClInclude Include="include\interpolation\rbf_incremental_fitter.hpp" />
     <ClInclude Include="include\krylov\fgmres.hpp" />
@@ -163,6 +166,7 @@
     <ClInclude Include="include\isosurface\rmt_node.hpp" />
     <ClInclude Include="include\isosurface\rmt_node_list.hpp" />
     <ClInclude Include="include\numeric\sum_accumulator.hpp" />
+    <ClInclude Include="include\pi.hpp" />
     <ClInclude Include="include\point_cloud\scattered_data_generator.hpp" />
     <ClInclude Include="include\point_cloud\distance_filter.hpp" />
     <ClInclude Include="include\point_cloud\plane_estimator.hpp" />

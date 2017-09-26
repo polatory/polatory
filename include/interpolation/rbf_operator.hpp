@@ -38,9 +38,9 @@ public:
       , poly_degree(poly_degree)
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
    {
-      auto bounds = geometry::bbox3d::from_points(points);
+      auto bbox = geometry::bbox3d::from_points(points);
 
-      a = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bounds);
+      a = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bbox);
 
       if (poly_degree >= 0) {
          p = std::make_unique<poly_mat>(poly_degree);
@@ -50,13 +50,13 @@ public:
    }
 
    rbf_operator(const rbf::rbf_base& rbf, int poly_degree,
-      int tree_height, const geometry::bbox3d& bounds)
+      int tree_height, const geometry::bbox3d& bbox)
       : rbf(rbf)
       , poly_degree(poly_degree)
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
       , n_points(0)
    {
-      a = std::make_unique<fmm::fmm_operator<Order>>(rbf, tree_height, bounds);
+      a = std::make_unique<fmm::fmm_operator<Order>>(rbf, tree_height, bbox);
 
       if (poly_degree >= 0) {
          p = std::make_unique<poly_mat>(poly_degree);

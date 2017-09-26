@@ -4,25 +4,25 @@
 
 #include <Eigen/Core>
 
+#include "../driver/interpolant.hpp"
 #include "field_function.hpp"
-#include "../interpolation/rbf_evaluator.hpp"
 
 namespace polatory {
 namespace isosurface {
 
 struct rbf_field_function : field_function {
-   rbf_field_function(const interpolation::rbf_evaluator<>& rbf_eval)
-      : rbf_eval(rbf_eval)
+   rbf_field_function(const driver::interpolant& interpolant)
+      : interpolant_(interpolant)
    {
    }
 
    Eigen::VectorXd operator()(const std::vector<Eigen::Vector3d>& points) const override
    {
-      return rbf_eval.evaluate_points(points);
+      return interpolant_.evaluate_points(points);
    }
 
 private:
-   const interpolation::rbf_evaluator<>& rbf_eval;
+   const driver::interpolant& interpolant_;
 };
 
 } // namespace isosurface

@@ -24,7 +24,7 @@ TEST(distance_filter, trivial)
       Eigen::Vector3d(2, 0, 0)
    };
 
-   Eigen::VectorXd values(6);
+   Eigen::VectorXd values(9);
    values << 0, 1, 2, 3, 4, 5, 6, 7, 8;
 
    std::vector<Eigen::Vector3d> filtered_points_expected{

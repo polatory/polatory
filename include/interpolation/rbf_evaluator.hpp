@@ -35,9 +35,9 @@ public:
       : poly_degree(poly_degree)
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
    {
-      auto bounds = geometry::bbox3d::from_points(source_points);
+      auto bbox = geometry::bbox3d::from_points(source_points);
 
-      a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bounds);
+      a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bbox);
 
       if (poly_degree >= 0) {
          p = std::make_unique<poly_eval>(poly_degree);
@@ -48,11 +48,11 @@ public:
 
    template<typename Container>
    rbf_evaluator(const rbf::rbf_base& rbf, int poly_degree,
-      const Container& source_points, const geometry::bbox3d& bounds)
+      const Container& source_points, const geometry::bbox3d& bbox)
       : poly_degree(poly_degree)
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
    {
-      a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bounds);
+      a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bbox);
 
       if (poly_degree >= 0) {
          p = std::make_unique<poly_eval>(poly_degree);
@@ -62,12 +62,12 @@ public:
    }
 
    rbf_evaluator(const rbf::rbf_base& rbf, int poly_degree,
-      int tree_height, const geometry::bbox3d& bounds)
+      int tree_height, const geometry::bbox3d& bbox)
       : poly_degree(poly_degree)
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
       , n_src_points(0)
    {
-      a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, tree_height, bounds);
+      a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, tree_height, bbox);
 
       if (poly_degree >= 0) {
          p = std::make_unique<poly_eval>(poly_degree);
