@@ -136,6 +136,9 @@
     <ClCompile Include="test\point_cloud\test_distance_filter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test\geometry\test_affine_transform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\fmm\fmm_evaluator.hpp">
@@ -357,10 +360,13 @@
     <ClInclude Include="examples\read_table.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\geometry\transform_matrices.hpp">
+    <ClInclude Include="include\driver\interpolant.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\driver\interpolant.hpp">
+    <ClInclude Include="include\geometry\affine_transform.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

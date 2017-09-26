@@ -119,6 +119,9 @@ class rmt_lattice : public rmt_primitive_lattice {
    // Evaluates field values for each node in nodes_to_evaluate.
    void evaluate_field(const field_function& field_func, double isovalue = 0.0)
    {
+      if (nodes_to_evaluate.empty())
+         return;
+
       std::random_device rd;
       std::minstd_rand gen(rd());
       std::uniform_real_distribution<double> dis(-1e-10, 1e-10);
@@ -132,9 +135,9 @@ class rmt_lattice : public rmt_primitive_lattice {
       auto values = field_func(points);
       values.array() -= isovalue;
 
-      int i = 0;
+      auto i = 0;
       for (auto idx : nodes_to_evaluate) {
-         double value = values(i);
+         auto value = values(i);
          while (value == 0.0) {
             // TODO: Take the variance of the field value into account?
             value = dis(gen);
@@ -287,8 +290,8 @@ class rmt_lattice : public rmt_primitive_lattice {
    }
 
 public:
-   rmt_lattice(const geometry::bbox3d& bounds, double resolution)
-      : base(bounds, resolution)
+   rmt_lattice(const geometry::bbox3d& bbox, double resolution)
+      : base(bbox, resolution)
       , clustered_vertices_begin(0)
    {
       node_list.init_strides(cell_index{ 1 } << shift1, cell_index{ 1 } << shift2);
@@ -382,7 +385,8 @@ public:
          size_t thread_num = omp_get_thread_num();
          auto map_size = nodes.size();
          auto map_it = nodes.begin();
-         std::advance(map_it, thread_num);
+         if (thread_num < map_size)
+            std::advance(map_it, thread_num);
 
          for (auto i = thread_num; i < map_size; i += thread_count) {
             auto cell_idx = *map_it;

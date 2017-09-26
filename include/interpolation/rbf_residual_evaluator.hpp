@@ -43,12 +43,12 @@ public:
    }
 
    rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_degree,
-      int tree_height, const geometry::bbox3d& bounds)
+      int tree_height, const geometry::bbox3d& bbox)
       : nugget(rbf.nugget())
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
       , n_points(0) 
    {
-      evaluator = std::make_unique<rbf_evaluator<>>(rbf, poly_degree, tree_height, bounds);
+      evaluator = std::make_unique<rbf_evaluator<>>(rbf, poly_degree, tree_height, bbox);
    }
 
    template<typename Derived, typename Derived2>

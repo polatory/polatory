@@ -38,9 +38,9 @@ public:
       , n_points(points.size())
       , n_polynomials(polynomial::basis_base::dimension(poly_degree))
    {
-      auto bounds = geometry::bbox3d::from_points(points);
+      auto bbox = geometry::bbox3d::from_points(points);
 
-      a = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bounds);
+      a = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bbox);
       a->set_points(points);
 
       if (poly_degree >= 0) {

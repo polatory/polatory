@@ -49,13 +49,13 @@ class isosurface {
    }
 
 public:
-   isosurface(const geometry::bbox3d& bounds, double resolution)
-      : lattice(bounds, resolution)
+   isosurface(const geometry::bbox3d& bbox, double resolution)
+      : lattice(bbox, resolution)
       , surface(lattice)
    {
    }
 
-   geometry::bbox3d evaluation_bounds() const
+   geometry::bbox3d evaluation_bbox() const
    {
       return lattice.node_bounds();
    }
