@@ -7,9 +7,41 @@
 #include "common/pi.hpp"
 #include "geometry/affine_transform.hpp"
 
+using polatory::geometry::affine_transform_point;
+using polatory::geometry::affine_transform_vector;
 using polatory::geometry::roll_pitch_yaw_matrix;
 using polatory::geometry::scaling_matrix;
 using polatory::common::pi;
+
+TEST(affine_transform_point, trivial) {
+  Eigen::Matrix4d m;
+  m <<
+    1, 2, 3, 4,
+    5, 6, 7, 8,
+    9, 10, 11, 12,
+    13, 14, 15, 16;
+
+  Eigen::Vector3d p(1, 2, 3);
+  Eigen::Vector3d p2_expected(18, 46, 74);
+
+  auto p2 = affine_transform_point(p, m);
+  ASSERT_NEAR(0.0, (p2_expected - p2).lpNorm<Eigen::Infinity>(), 1e-15);
+}
+
+TEST(affine_transform_vector, trivial) {
+  Eigen::Matrix4d m;
+  m <<
+    1, 2, 3, 4,
+    5, 6, 7, 8,
+    9, 10, 11, 12,
+    13, 14, 15, 16;
+
+  Eigen::Vector3d v(1, 2, 3);
+  Eigen::Vector3d v2_expected(14, 38, 62);
+
+  auto v2 = affine_transform_vector(v, m);
+  ASSERT_NEAR(0.0, (v2_expected - v2).lpNorm<Eigen::Infinity>(), 1e-15);
+}
 
 TEST(roll_pitch_yaw_matrix, trivial) {
   auto m = roll_pitch_yaw_matrix(Eigen::Vector3d(pi / 3.0, pi / 5.0, pi / 7.0));
