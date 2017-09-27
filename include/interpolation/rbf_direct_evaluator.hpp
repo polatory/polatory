@@ -6,7 +6,9 @@
 #include <vector>
 
 #include "../numeric/sum_accumulator.hpp"
-#include "../polynomial.hpp"
+#include "../polynomial/basis_base.hpp"
+#include "../polynomial/monomial_basis.hpp"
+#include "../polynomial/polynomial_evaluator.hpp"
 #include "../rbf/rbf_base.hpp"
 
 namespace polatory {

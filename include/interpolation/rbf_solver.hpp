@@ -7,8 +7,9 @@
 #include <Eigen/Core>
 
 #include "../geometry/bbox3.hpp"
-#include "../krylov.hpp"
-#include "../polynomial.hpp"
+#include "../krylov/fgmres.hpp"
+#include "../polynomial/basis_base.hpp"
+#include "../polynomial/orthonormal_basis.hpp"
 #include "../preconditioner/ras_preconditioner.hpp"
 #include "../rbf/rbf_base.hpp"
 #include "rbf_residual_evaluator.hpp"

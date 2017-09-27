@@ -12,7 +12,9 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
-#include "../polynomial.hpp"
+#include "../polynomial/basis_base.hpp"
+#include "../polynomial/lagrange_basis.hpp"
+#include "../polynomial/monomial_basis.hpp"
 #include "../rbf/rbf_base.hpp"
 
 namespace polatory {

@@ -8,7 +8,7 @@
 
 #include "distribution_generator/spherical_distribution.hpp"
 #include "interpolation/rbf_operator.hpp"
-#include "polynomial.hpp"
+#include "polynomial/basis_base.hpp"
 #include "rbf/linear_variogram.hpp"
 #include "interpolation/rbf_direct_symmetric_evaluator.hpp"
 

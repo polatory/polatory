@@ -8,7 +8,8 @@
 #include <Eigen/Core>
 
 #include "../rbf/rbf_base.hpp"
-#include "../interpolation.hpp"
+#include "../interpolation/rbf_evaluator.hpp"
+#include "../interpolation/rbf_fitter.hpp"
 
 namespace polatory {
 namespace kriging {

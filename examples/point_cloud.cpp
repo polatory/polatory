@@ -1,16 +1,14 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <random>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <Eigen/Core>
 
-#include "common/vector_view.hpp"
-#include "interpolation.hpp"
+#include "driver/interpolant.hpp"
 #include "isosurface/export_obj.hpp"
 #include "isosurface/isosurface.hpp"
 #include "isosurface/rbf_field_function.hpp"
@@ -20,10 +18,8 @@
 
 #include "read_table.hpp"
 
-using polatory::common::make_view;
+using polatory::driver::interpolant;
 using polatory::geometry::bbox3d;
-using polatory::interpolation::rbf_evaluator;
-using polatory::interpolation::rbf_incremental_fitter;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
@@ -77,31 +73,21 @@ int main(int argc, char *argv[])
 
    // Define model.
    linear_variogram rbf({ 1.0, 0.0 });
-   int poly_degree = 0;
+   interpolant interpolant(rbf, 0);
 
    // Fit.
-   std::vector<size_t> point_indices;
-   Eigen::VectorXd weights;
-
-   rbf_incremental_fitter fitter(rbf, poly_degree, points);
-   std::tie(point_indices, weights) = fitter.fit(values, fitting_accuracy);
-
-   std::cout << "Number of RBF centers: " << weights.size() << std::endl;
+   interpolant.fit_incrementally(points, values, fitting_accuracy);
+   std::cout << "Number of RBF centers: " << interpolant.centers().size() << std::endl;
 
    // Generate isosurface.
    polatory::isosurface::isosurface isosurf(mesh_bbox, mesh_resolution);
 
-   rbf_evaluator<> eval(rbf, poly_degree, make_view(points, point_indices), isosurf.evaluation_bounds());
-   eval.set_weights(weights);
-   rbf_field_function field_f(eval);
+   interpolant.set_evaluation_bbox(isosurf.evaluation_bbox());
+   rbf_field_function field_f(interpolant);
 
-   std::random_device rd;
-   std::mt19937 gen(rd());
-   std::shuffle(point_indices.begin(), point_indices.end(), gen);
-   auto seed_point_candidates = make_view(points, point_indices);
-   auto n_seed_points = point_indices.size();
+   auto n_seed_points = interpolant.centers().size() / 10;
 
-   std::vector<Eigen::Vector3d> seed_points(seed_point_candidates.begin(), seed_point_candidates.begin() + n_seed_points);
+   std::vector<Eigen::Vector3d> seed_points(interpolant.centers().begin(), interpolant.centers().begin() + n_seed_points);
    isosurf.generate_from_seed_points(seed_points, field_f);
 
    export_obj(out_obj_file, isosurf);

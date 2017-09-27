@@ -17,7 +17,8 @@
 #include "../interpolation/rbf_evaluator.hpp"
 #include "../interpolation/rbf_symmetric_evaluator.hpp"
 #include "../krylov/linear_operator.hpp"
-#include "../polynomial.hpp"
+#include "../polynomial/basis_base.hpp"
+#include "../polynomial/orthonormal_basis.hpp"
 #include "../rbf/rbf_base.hpp"
 
 namespace polatory {

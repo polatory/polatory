@@ -8,11 +8,13 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
-#include "krylov.hpp"
+#include "krylov/fgmres.hpp"
+#include "krylov/gmres.hpp"
+#include "krylov/linear_operator.hpp"
+#include "krylov/minres.hpp"
 
 using polatory::krylov::fgmres;
 using polatory::krylov::gmres;
-using polatory::krylov::identity_operator;
 using polatory::krylov::linear_operator;
 using polatory::krylov::minres;
 

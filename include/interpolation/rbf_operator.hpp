@@ -7,10 +7,12 @@
 
 #include <Eigen/Core>
 
-#include "../fmm.hpp"
+#include "../fmm/fmm_operator.hpp"
+#include "../fmm/tree_height.hpp"
 #include "../geometry/bbox3.hpp"
 #include "../krylov/linear_operator.hpp"
-#include "../polynomial.hpp"
+#include "../polynomial/basis_base.hpp"
+#include "../polynomial/monomial_basis.hpp"
 #include "polynomial_matrix.hpp"
 #include "../rbf/rbf_base.hpp"
 

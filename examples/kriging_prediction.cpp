@@ -7,7 +7,7 @@
 #include <Eigen/Core>
 
 #include "geometry/bbox3.hpp"
-#include "interpolation.hpp"
+#include "driver/interpolant.hpp"
 #include "isosurface/export_obj.hpp"
 #include "isosurface/isosurface.hpp"
 #include "isosurface/rbf_field_function.hpp"
@@ -16,8 +16,7 @@
 #include "read_table.hpp"
 
 using polatory::geometry::bbox3d;
-using polatory::interpolation::rbf_evaluator;
-using polatory::interpolation::rbf_fitter;
+using polatory::driver::interpolant;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
@@ -35,11 +34,10 @@ int main(int argc, char *argv[])
 
    // Define model.
    spherical_variogram rbf({ 0.0181493, 0.678264, 0.00383142 });
-   int poly_degree = 0;
+   interpolant interpolant(rbf, 0);
 
    // Fit.
-   rbf_fitter fitter(rbf, poly_degree, points);
-   auto weights = fitter.fit(values, 0.00001);
+   interpolant.fit(points, values, 0.00001);
 
    // Generate isosurface of some values.
    bbox3d mesh_bbox(
@@ -55,11 +53,10 @@ int main(int argc, char *argv[])
    };
    
    auto resolution = 1e-2;
-   polatory::isosurface::isosurface isosurf(mesh_bbox, resolution);
+   isosurface isosurf(mesh_bbox, resolution);
 
-   rbf_evaluator<> eval(rbf, poly_degree, points, isosurf.evaluation_bounds());
-   eval.set_weights(weights);
-   rbf_field_function field_f(eval);
+   interpolant.set_evaluation_bbox(isosurf.evaluation_bbox());
+   rbf_field_function field_f(interpolant);
 
    for (auto isovalue_name : isovalue_names) {
       isosurf.generate(field_f, isovalue_name.first);

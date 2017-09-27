@@ -9,7 +9,7 @@
 #include "distribution_generator/spherical_distribution.hpp"
 #include "interpolation/rbf_direct_evaluator.hpp"
 #include "interpolation/rbf_evaluator.hpp"
-#include "polynomial.hpp"
+#include "polynomial/basis_base.hpp"
 #include "rbf/linear_variogram.hpp"
 
 using namespace polatory::interpolation;
