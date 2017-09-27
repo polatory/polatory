@@ -11,18 +11,16 @@ namespace polatory {
 namespace isosurface {
 
 struct rbf_field_function : field_function {
-   rbf_field_function(const driver::interpolant& interpolant)
-      : interpolant_(interpolant)
-   {
-   }
+  rbf_field_function(const driver::interpolant& interpolant)
+    : interpolant_(interpolant) {
+  }
 
-   Eigen::VectorXd operator()(const std::vector<Eigen::Vector3d>& points) const override
-   {
-      return interpolant_.evaluate_points(points);
-   }
+  Eigen::VectorXd operator()(const std::vector<Eigen::Vector3d>& points) const override {
+    return interpolant_.evaluate_points(points);
+  }
 
 private:
-   const driver::interpolant& interpolant_;
+  const driver::interpolant& interpolant_;
 };
 
 } // namespace isosurface

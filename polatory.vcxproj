@@ -150,6 +150,7 @@
     <ClInclude Include="examples\read_table.hpp" />
     <ClInclude Include="include\common\array.hpp" />
     <ClInclude Include="include\common\exception.hpp" />
+    <ClInclude Include="include\common\pi.hpp" />
     <ClInclude Include="include\common\utility.hpp" />
     <ClInclude Include="include\common\vector_range_view.hpp" />
     <ClInclude Include="include\common\vector_view.hpp" />
@@ -166,7 +167,6 @@
     <ClInclude Include="include\isosurface\rmt_node.hpp" />
     <ClInclude Include="include\isosurface\rmt_node_list.hpp" />
     <ClInclude Include="include\numeric\sum_accumulator.hpp" />
-    <ClInclude Include="include\pi.hpp" />
     <ClInclude Include="include\point_cloud\scattered_data_generator.hpp" />
     <ClInclude Include="include\point_cloud\distance_filter.hpp" />
     <ClInclude Include="include\point_cloud\plane_estimator.hpp" />

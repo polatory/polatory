@@ -9,27 +9,25 @@ namespace polatory {
 namespace rbf {
 
 struct variogram : rbf_base {
-   using rbf_base::rbf_base;
+  using rbf_base::rbf_base;
 
-   int definiteness() const override
-   {
-      return -1;
-   }
+  int definiteness() const override {
+    return -1;
+  }
 
-   int order_of_definiteness() const override
-   {
-      return 1;
-   }
+  int order_of_definiteness() const override {
+    return 1;
+  }
 
-   virtual const double *parameter_lower_bounds() const = 0;
+  virtual const double *parameter_lower_bounds() const = 0;
 
-   virtual const double *parameter_upper_bounds() const = 0;
+  virtual const double *parameter_upper_bounds() const = 0;
 
-   virtual int num_parameters() const = 0;
+  virtual int num_parameters() const = 0;
 
-   virtual ceres::CostFunction *cost_function(double h, double gamma, double weight) const = 0;
+  virtual ceres::CostFunction *cost_function(double h, double gamma, double weight) const = 0;
 
-   virtual ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight) const = 0;
+  virtual ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight) const = 0;
 };
 
 #define DECLARE_COST_FUNCTIONS(RBF)                                         \

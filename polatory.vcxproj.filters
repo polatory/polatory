@@ -366,7 +366,7 @@
     <ClInclude Include="include\geometry\affine_transform.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\pi.hpp">
+    <ClInclude Include="include\common\pi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

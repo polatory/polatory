@@ -13,33 +13,31 @@ using namespace polatory::polynomial;
 
 namespace {
 
-void test_degree(int degree)
-{
-   size_t n_points = lagrange_basis<>::dimension(degree);
+void test_degree(int degree) {
+  size_t n_points = lagrange_basis<>::dimension(degree);
 
-   std::vector<Eigen::Vector3d> points;
-   points.reserve(n_points);
+  std::vector<Eigen::Vector3d> points;
+  points.reserve(n_points);
 
-   for (size_t i = 0; i < n_points; i++) {
-      points.push_back(Eigen::Vector3d::Random());
-   }
+  for (size_t i = 0; i < n_points; i++) {
+    points.push_back(Eigen::Vector3d::Random());
+  }
 
-   lagrange_basis<> basis(degree, points);
-   auto pt = basis.evaluate_points(points);
+  lagrange_basis<> basis(degree, points);
+  auto pt = basis.evaluate_points(points);
 
-   ASSERT_EQ(basis.dimension(), pt.rows());
-   ASSERT_EQ(n_points, pt.cols());
+  ASSERT_EQ(basis.dimension(), pt.rows());
+  ASSERT_EQ(n_points, pt.cols());
 
-   Eigen::MatrixXd diff = Eigen::MatrixXd::Identity(n_points, n_points) - pt;
+  Eigen::MatrixXd diff = Eigen::MatrixXd::Identity(n_points, n_points) - pt;
 
-   EXPECT_LT(diff.lpNorm<Eigen::Infinity>(), 1e-12);
+  EXPECT_LT(diff.lpNorm<Eigen::Infinity>(), 1e-12);
 }
 
 } // namespace
 
-TEST(lagrange_basis, trivial)
-{
-   test_degree(0);
-   test_degree(1);
-   test_degree(2);
+TEST(lagrange_basis, trivial) {
+  test_degree(0);
+  test_degree(1);
+  test_degree(2);
 }

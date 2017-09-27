@@ -11,9 +11,9 @@ namespace krylov {
 
 class gmres : public gmres_base {
 public:
-   gmres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter);
+  gmres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter);
 
-   void iterate_process() override;
+  void iterate_process() override;
 };
 
 } // namespace krylov

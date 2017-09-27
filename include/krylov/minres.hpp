@@ -11,12 +11,12 @@ namespace krylov {
 
 class minres : public gmres_base {
 public:
-   minres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter);
+  minres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter);
 
-   void iterate_process() override;
+  void iterate_process() override;
 
 private:
-   double beta_;
+  double beta_;
 };
 
 } // namespace krylov

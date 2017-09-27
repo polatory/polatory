@@ -21,47 +21,44 @@ namespace interpolation {
 //     0      1
 //     1      1, x, y, z
 //     2      1, x, y, z, x^2, xy, xz, y^2, yz, z^2
-template<class Basis>
+template <class Basis>
 class polynomial_matrix {
-   Basis basis;
+  Basis basis;
 
-   // Transposed polynomial matrix P^T.
-   Eigen::MatrixXd pt;
+  // Transposed polynomial matrix P^T.
+  Eigen::MatrixXd pt;
 
 public:
-   polynomial_matrix(int degree)
-      : basis(degree)
-   {
-   }
+  polynomial_matrix(int degree)
+    : basis(degree) {
+  }
 
-   // Returns a vector consists of two parts:
-   //   0...m-1   : P c
-   //   m...m+l-1 : P^T lambda
-   // where m is the number of points and l is the size of the basis.
-   template<typename Derived>
-   Eigen::VectorXd evaluate(const Eigen::MatrixBase<Derived>& lambda_c) const
-   {
-      auto l = pt.rows();
-      auto m = pt.cols();
+  // Returns a vector consists of two parts:
+  //   0...m-1   : P c
+  //   m...m+l-1 : P^T lambda
+  // where m is the number of points and l is the size of the basis.
+  template <typename Derived>
+  Eigen::VectorXd evaluate(const Eigen::MatrixBase<Derived>& lambda_c) const {
+    auto l = pt.rows();
+    auto m = pt.cols();
 
-      assert(lambda_c.size() == m + l);
+    assert(lambda_c.size() == m + l);
 
-      Eigen::VectorXd output(m + l);
+    Eigen::VectorXd output(m + l);
 
-      auto lambda = lambda_c.head(m);
-      auto c = lambda_c.tail(l);
+    auto lambda = lambda_c.head(m);
+    auto c = lambda_c.tail(l);
 
-      output.head(m) = pt.transpose() * c;
-      output.tail(l) = pt * lambda;
+    output.head(m) = pt.transpose() * c;
+    output.tail(l) = pt * lambda;
 
-      return output;
-   }
+    return output;
+  }
 
-   template<typename Container>
-   void set_points(const Container& points)
-   {
-      pt = basis.evaluate_points(points);
-   }
+  template <typename Container>
+  void set_points(const Container& points) {
+    pt = basis.evaluate_points(points);
+  }
 };
 
 } // namespace interpolation

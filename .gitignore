@@ -109,6 +109,7 @@ UpgradeLog*.XML
 UpgradeLog*.htm
 
 # Mizuno added
-.idea/
+.idea/*
+!.idea/codeStyleSettings.xml
 cmake-build-*/
 lib_win64/

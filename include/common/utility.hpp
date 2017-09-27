@@ -7,12 +7,11 @@
 namespace polatory {
 namespace common {
 
-template<typename T, class Compare = std::less<T>>
-auto make_sorted_pair(const T& first, const T& second, Compare comp = Compare())
-{
-   return comp(first, second)
-      ? std::make_pair(first, second)
-      : std::make_pair(second, first);
+template <class T, class Compare = std::less<T>>
+auto make_sorted_pair(const T& first, const T& second, Compare comp = Compare()) {
+  return comp(first, second)
+         ? std::make_pair(first, second)
+         : std::make_pair(second, first);
 }
 
 } // namespace common

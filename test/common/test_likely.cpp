@@ -4,11 +4,10 @@
 
 #include "common/likely.hpp"
 
-TEST(likely, trivial)
-{
-   ASSERT_FALSE(LIKELY(false));
-   ASSERT_TRUE(LIKELY(true));
+TEST(likely, trivial) {
+  ASSERT_FALSE(LIKELY(false));
+  ASSERT_TRUE(LIKELY(true));
 
-   ASSERT_FALSE(UNLIKELY(false));
-   ASSERT_TRUE(UNLIKELY(true));
+  ASSERT_FALSE(UNLIKELY(false));
+  ASSERT_TRUE(UNLIKELY(true));
 }

@@ -27,61 +27,58 @@ using polatory::rbf::linear_variogram;
 
 namespace {
 
-auto test_points()
-{
-   std::random_device rd;
-   std::mt19937 gen(rd());
-   std::uniform_real_distribution<> dist(1.0 - 1e-4, 1.0 + 1e-4);
+auto test_points() {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dist(1.0 - 1e-4, 1.0 + 1e-4);
 
-   size_t n_points = 10000;
-   Eigen::Vector3d center = Eigen::Vector3d::Zero();
-   double radius = 1.0;
+  size_t n_points = 10000;
+  Eigen::Vector3d center = Eigen::Vector3d::Zero();
+  double radius = 1.0;
 
-   auto points = spherical_distribution(n_points, center, radius);
-   auto normals = points;
+  auto points = spherical_distribution(n_points, center, radius);
+  auto normals = points;
 
-   for (auto& p : points) {
-      p *= dist(gen);
-   }
+  for (auto& p : points) {
+    p *= dist(gen);
+  }
 
-   scattered_data_generator scatter_gen(points, normals, 2e-4, 1e-3);
+  scattered_data_generator scatter_gen(points, normals, 2e-4, 1e-3);
 
-   return std::make_pair(std::move(scatter_gen.scattered_points()), std::move(scatter_gen.scattered_values()));
+  return std::make_pair(std::move(scatter_gen.scattered_points()), std::move(scatter_gen.scattered_values()));
 }
 
-void test_poly_degree(int poly_degree)
-{
-   std::vector<Eigen::Vector3d> points;
-   Eigen::VectorXd values;
-   std::tie(points, values) = test_points();
+void test_poly_degree(int poly_degree) {
+  std::vector<Eigen::Vector3d> points;
+  Eigen::VectorXd values;
+  std::tie(points, values) = test_points();
 
-   size_t n_polynomials = basis_base::dimension(poly_degree);
-   double absolute_tolerance = 1e-4;
+  size_t n_polynomials = basis_base::dimension(poly_degree);
+  double absolute_tolerance = 1e-4;
 
-   linear_variogram rbf({ 1.0, 0.0 });
+  linear_variogram rbf({ 1.0, 0.0 });
 
-   auto fitter = std::make_unique<rbf_incremental_fitter>(rbf, poly_degree, points);
-   std::vector<size_t> point_indices;
-   Eigen::VectorXd weights;
+  auto fitter = std::make_unique<rbf_incremental_fitter>(rbf, poly_degree, points);
+  std::vector<size_t> point_indices;
+  Eigen::VectorXd weights;
 
-   std::tie(point_indices, weights) = fitter->fit(values, absolute_tolerance);
-   EXPECT_EQ(weights.size(), point_indices.size() + n_polynomials);
-   fitter.reset();
+  std::tie(point_indices, weights) = fitter->fit(values, absolute_tolerance);
+  EXPECT_EQ(weights.size(), point_indices.size() + n_polynomials);
+  fitter.reset();
 
-   rbf_evaluator<> eval(rbf, poly_degree, make_view(points, point_indices));
-   eval.set_weights(weights);
-   Eigen::VectorXd values_fit = eval.evaluate_points(points);
+  rbf_evaluator<> eval(rbf, poly_degree, make_view(points, point_indices));
+  eval.set_weights(weights);
+  Eigen::VectorXd values_fit = eval.evaluate_points(points);
 
-   auto max_residual = (values - values_fit).lpNorm<Eigen::Infinity>();
-   std::cout << "Maximum residual:" << std::endl
-      << "  " << max_residual << std::endl;
+  auto max_residual = (values - values_fit).lpNorm<Eigen::Infinity>();
+  std::cout << "Maximum residual:" << std::endl
+            << "  " << max_residual << std::endl;
 
-   EXPECT_LT(max_residual, absolute_tolerance);
+  EXPECT_LT(max_residual, absolute_tolerance);
 }
 
 } // namespace
 
-TEST(rbf_incremental_fitter, trivial)
-{
-   test_poly_degree(0);
+TEST(rbf_incremental_fitter, trivial) {
+  test_poly_degree(0);
 }
