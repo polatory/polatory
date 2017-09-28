@@ -3,11 +3,10 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cmath>
 
 #include <Eigen/Core>
-
-#include "../common/exception.hpp"
 
 namespace polatory {
 namespace geometry {
@@ -15,6 +14,8 @@ namespace geometry {
 namespace detail {
 
 static Eigen::Matrix4d rotation_matrix(double angle, int axis) {
+  assert(axis >= 0 && axis <= 2);
+  
   auto c = std::cos(angle);
   auto s = std::sin(angle);
 
@@ -42,7 +43,7 @@ static Eigen::Matrix4d rotation_matrix(double angle, int axis) {
       0, 0, 0, 1;
     break;
   default:
-    throw common::invalid_parameter("0 <= axis <= 2");
+    assert(false);
   }
 
   return m;

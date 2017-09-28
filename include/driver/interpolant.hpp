@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include "../common/exception.hpp"
 #include "../common/vector_view.hpp"
 #include "../geometry/affine_transform.hpp"
 #include "../geometry/bbox3.hpp"
@@ -26,6 +27,8 @@ public:
     : rbf_(rbf)
     , poly_degree_(poly_degree)
     , point_transform_(Eigen::Matrix4d::Identity()) {
+    if (poly_degree < rbf.order_of_definiteness() - 1 || poly_degree > 2)
+      throw common::invalid_parameter("rbf.order_of_definiteness() - 1 <= poly_degree <= 2");
   }
 
   const points_type& centers() const {
