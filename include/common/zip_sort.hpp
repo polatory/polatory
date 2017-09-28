@@ -16,7 +16,7 @@ namespace detail {
 
 template <class RandomAccessIterator,
           class D = typename std::iterator_traits<RandomAccessIterator>::difference_type>
-static void inplace_permute(RandomAccessIterator begin, RandomAccessIterator end, const std::vector<D>& p) {
+static void inverse_permute(RandomAccessIterator begin, RandomAccessIterator end, const std::vector<D>& p) {
   auto size = std::distance(begin, end);
 
   std::vector<bool> done(size);
@@ -55,12 +55,12 @@ void zip_sort(RandomAccessIterator1 begin1, RandomAccessIterator1 end1,
   std::vector<D1> permutation(size);
   std::iota(permutation.begin(), permutation.end(), 0);
   std::sort(permutation.begin(), permutation.end(),
-            [=](auto i, auto j) {
+            [&](auto i, auto j) {
               return compare(std::make_pair(begin1[i], begin2[i]), std::make_pair(begin1[j], begin2[j]));
             });
 
-  detail::inplace_permute(begin1, end1, permutation);
-  detail::inplace_permute(begin2, end2, permutation);
+  detail::inverse_permute(begin1, end1, permutation);
+  detail::inverse_permute(begin2, end2, permutation);
 }
 
 } // namespace common
