@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -13,6 +14,7 @@
 #include "../interpolation/rbf_evaluator.hpp"
 #include "../interpolation/rbf_fitter.hpp"
 #include "../interpolation/rbf_incremental_fitter.hpp"
+#include "../polynomial/basis_base.hpp"
 #include "../rbf/rbf_base.hpp"
 
 namespace polatory {
@@ -42,6 +44,10 @@ public:
   }
 
   void fit(const points_type& points, const values_type& values, double absolute_tolerance) {
+    auto min_n_points = polynomial::basis_base::dimension(poly_degree_) + 1;
+    if (points.size() < min_n_points)
+      throw common::invalid_parameter("points.size() >= " + std::to_string(min_n_points));
+
     auto transformed = affine_transform_points(points);
 
     interpolation::rbf_fitter fitter(rbf_, poly_degree_, transformed);
@@ -51,6 +57,10 @@ public:
   }
 
   void fit_incrementally(const points_type& points, const values_type& values, double absolute_tolerance) {
+    auto min_n_points = polynomial::basis_base::dimension(poly_degree_) + 1;
+    if (points.size() < min_n_points)
+      throw common::invalid_parameter("points.size() >= " + std::to_string(min_n_points));
+
     auto transformed = affine_transform_points(points);
 
     interpolation::rbf_incremental_fitter fitter(rbf_, poly_degree_, transformed);
