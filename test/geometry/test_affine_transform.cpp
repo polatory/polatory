@@ -4,8 +4,8 @@
 
 #include <Eigen/Core>
 
-#include "common/pi.hpp"
-#include "geometry/affine_transform.hpp"
+#include "polatory/common/pi.hpp"
+#include "polatory/geometry/affine_transform.hpp"
 
 using polatory::geometry::affine_transform_point;
 using polatory::geometry::affine_transform_vector;

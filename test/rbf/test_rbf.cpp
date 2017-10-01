@@ -5,10 +5,10 @@
 
 #include <gtest/gtest.h>
 
-#include "rbf/exponential_variogram.hpp"
-#include "rbf/linear_variogram.hpp"
-#include "rbf/rbf_base.hpp"
-#include "rbf/spherical_variogram.hpp"
+#include "polatory/rbf/exponential_variogram.hpp"
+#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/rbf_base.hpp"
+#include "polatory/rbf/spherical_variogram.hpp"
 
 using namespace polatory::rbf;
 

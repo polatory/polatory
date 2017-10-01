@@ -8,14 +8,14 @@
 
 #include <Eigen/Core>
 
-#include "geometry/bbox3.hpp"
-#include "interpolant.hpp"
-#include "isosurface/export_obj.hpp"
-#include "isosurface/isosurface.hpp"
-#include "isosurface/rbf_field_function.hpp"
-#include "point_cloud/scattered_data_generator.hpp"
-#include "point_cloud/distance_filter.hpp"
-#include "rbf/linear_variogram.hpp"
+#include "polatory/geometry/bbox3.hpp"
+#include "polatory/interpolant.hpp"
+#include "polatory/isosurface/export_obj.hpp"
+#include "polatory/isosurface/isosurface.hpp"
+#include "polatory/isosurface/rbf_field_function.hpp"
+#include "polatory/point_cloud/scattered_data_generator.hpp"
+#include "polatory/point_cloud/distance_filter.hpp"
+#include "polatory/rbf/linear_variogram.hpp"
 
 #include "read_table.hpp"
 

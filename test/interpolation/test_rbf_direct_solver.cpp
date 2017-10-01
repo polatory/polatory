@@ -6,10 +6,10 @@
 
 #include <Eigen/Core>
 
-#include "interpolation/rbf_direct_symmetric_evaluator.hpp"
-#include "interpolation/rbf_direct_solver.hpp"
-#include "random_points/box_points.hpp"
-#include "rbf/linear_variogram.hpp"
+#include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
+#include "polatory/interpolation/rbf_direct_solver.hpp"
+#include "polatory/random_points/box_points.hpp"
+#include "polatory/rbf/linear_variogram.hpp"
 
 using namespace polatory::interpolation;
 using polatory::random_points::box_points;

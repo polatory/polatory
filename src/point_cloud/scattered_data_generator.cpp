@@ -1,12 +1,12 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "point_cloud/scattered_data_generator.hpp"
+#include "polatory/point_cloud/scattered_data_generator.hpp"
 
 #include <cassert>
 
 #include <boost/range/combine.hpp>
 
-#include "point_cloud/kdtree.hpp"
+#include "polatory/point_cloud/kdtree.hpp"
 
 namespace polatory {
 namespace point_cloud {

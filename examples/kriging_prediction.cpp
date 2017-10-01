@@ -6,12 +6,12 @@
 
 #include <Eigen/Core>
 
-#include "geometry/bbox3.hpp"
-#include "interpolant.hpp"
-#include "isosurface/export_obj.hpp"
-#include "isosurface/isosurface.hpp"
-#include "isosurface/rbf_field_function.hpp"
-#include "rbf/spherical_variogram.hpp"
+#include "polatory/geometry/bbox3.hpp"
+#include "polatory/interpolant.hpp"
+#include "polatory/isosurface/export_obj.hpp"
+#include "polatory/isosurface/isosurface.hpp"
+#include "polatory/isosurface/rbf_field_function.hpp"
+#include "polatory/rbf/spherical_variogram.hpp"
 
 #include "read_table.hpp"
 

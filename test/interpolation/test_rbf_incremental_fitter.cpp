@@ -10,11 +10,11 @@
 
 #include <Eigen/Core>
 
-#include "common/vector_view.hpp"
-#include "interpolation/rbf_evaluator.hpp"
-#include "interpolation/rbf_incremental_fitter.hpp"
-#include "polynomial/basis_base.hpp"
-#include "rbf/linear_variogram.hpp"
+#include "polatory/common/vector_view.hpp"
+#include "polatory/interpolation/rbf_evaluator.hpp"
+#include "polatory/interpolation/rbf_incremental_fitter.hpp"
+#include "polatory/polynomial/basis_base.hpp"
+#include "polatory/rbf/linear_variogram.hpp"
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;

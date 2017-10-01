@@ -8,7 +8,7 @@
 
 #include <Eigen/Core>
 
-#include "kriging/empirical_variogram.hpp"
+#include "polatory/kriging/empirical_variogram.hpp"
 
 using namespace polatory::kriging;
 

@@ -6,11 +6,11 @@
 
 #include <Eigen/Core>
 
-#include "interpolation/rbf_direct_evaluator.hpp"
-#include "interpolation/rbf_evaluator.hpp"
-#include "polynomial/basis_base.hpp"
-#include "random_points/sphere_points.hpp"
-#include "rbf/linear_variogram.hpp"
+#include "polatory/interpolation/rbf_direct_evaluator.hpp"
+#include "polatory/interpolation/rbf_evaluator.hpp"
+#include "polatory/polynomial/basis_base.hpp"
+#include "polatory/random_points/sphere_points.hpp"
+#include "polatory/rbf/linear_variogram.hpp"
 
 using namespace polatory::interpolation;
 using polatory::polynomial::basis_base;

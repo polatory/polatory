@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "krylov/fgmres.hpp"
+#include "polatory/krylov/fgmres.hpp"
 
 namespace polatory {
 namespace krylov {

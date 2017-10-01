@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "common/likely.hpp"
+#include "polatory/common/likely.hpp"
 
 TEST(likely, trivial) {
   ASSERT_FALSE(LIKELY(false));

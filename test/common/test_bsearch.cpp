@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "common/bsearch.hpp"
+#include "polatory/common/bsearch.hpp"
 
 using namespace polatory::common;
 

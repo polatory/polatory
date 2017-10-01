@@ -7,9 +7,9 @@
 
 #include <Eigen/Core>
 
-#include "kriging/empirical_variogram.hpp"
-#include "kriging/variogram_fitting.hpp"
-#include "rbf/spherical_variogram.hpp"
+#include "polatory/kriging/empirical_variogram.hpp"
+#include "polatory/kriging/variogram_fitting.hpp"
+#include "polatory/rbf/spherical_variogram.hpp"
 
 #include "read_table.hpp"
 

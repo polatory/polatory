@@ -9,10 +9,10 @@
 
 #include <Eigen/Core>
 
-#include "interpolation/rbf_fitter.hpp"
-#include "interpolation/rbf_symmetric_evaluator.hpp"
-#include "polynomial/basis_base.hpp"
-#include "rbf/linear_variogram.hpp"
+#include "polatory/interpolation/rbf_fitter.hpp"
+#include "polatory/interpolation/rbf_symmetric_evaluator.hpp"
+#include "polatory/polynomial/basis_base.hpp"
+#include "polatory/rbf/linear_variogram.hpp"
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;

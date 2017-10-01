@@ -1,8 +1,8 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "numeric/sum_accumulator.hpp"
-
 #include <gtest/gtest.h>
+
+#include "polatory/numeric/sum_accumulator.hpp"
 
 using namespace polatory::numeric;
 

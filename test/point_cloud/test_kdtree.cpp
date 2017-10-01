@@ -7,8 +7,8 @@
 
 #include <Eigen/Core>
 
-#include "point_cloud/kdtree.hpp"
-#include "random_points/sphere_points.hpp"
+#include "polatory/point_cloud/kdtree.hpp"
+#include "polatory/random_points/sphere_points.hpp"
 
 using namespace polatory::point_cloud;
 using polatory::random_points::sphere_points;

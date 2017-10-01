@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "krylov/minres.hpp"
+#include "polatory/krylov/minres.hpp"
 
 #include <cmath>
 

@@ -1,13 +1,13 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "point_cloud/kdtree.hpp"
+#include "polatory/point_cloud/kdtree.hpp"
 
 #include <memory>
 #include <vector>
 
 #include <Eigen/Core>
 
-#include "third_party/flann/flann.hpp"
+#include "polatory/third_party/flann/flann.hpp"
 
 namespace polatory {
 namespace point_cloud {

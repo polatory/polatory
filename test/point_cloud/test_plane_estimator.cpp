@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "point_cloud/plane_estimator.hpp"
+#include "polatory/point_cloud/plane_estimator.hpp"
 
 using namespace polatory::point_cloud;
 

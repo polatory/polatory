@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-#include "polynomial/lagrange_basis.hpp"
+#include "polatory/polynomial/lagrange_basis.hpp"
 
 using namespace polatory::polynomial;
 

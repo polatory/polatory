@@ -7,8 +7,8 @@
 
 #include <Eigen/Core>
 
-#include "preconditioner/domain_divider.hpp"
-#include "random_points/sphere_points.hpp"
+#include "polatory/preconditioner/domain_divider.hpp"
+#include "polatory/random_points/sphere_points.hpp"
 
 using namespace polatory::preconditioner;
 using polatory::random_points::sphere_points;

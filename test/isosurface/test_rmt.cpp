@@ -5,9 +5,9 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "geometry/bbox3.hpp"
-#include "isosurface/rmt_lattice.hpp"
-#include "random_points/box_points.hpp"
+#include "polatory/geometry/bbox3.hpp"
+#include "polatory/isosurface/rmt_lattice.hpp"
+#include "polatory/random_points/box_points.hpp"
 
 using namespace polatory::isosurface;
 using polatory::geometry::bbox3d;

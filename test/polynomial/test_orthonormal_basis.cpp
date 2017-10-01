@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-#include "polynomial/orthonormal_basis.hpp"
+#include "polatory/polynomial/orthonormal_basis.hpp"
 
 using namespace polatory::polynomial;
 

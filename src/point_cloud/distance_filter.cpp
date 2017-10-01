@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "point_cloud/distance_filter.hpp"
+#include "polatory/point_cloud/distance_filter.hpp"
 
 #include <cassert>
 #include <set>
@@ -8,8 +8,8 @@
 
 #include <Eigen/Core>
 
-#include "common/vector_view.hpp"
-#include "point_cloud/kdtree.hpp"
+#include "polatory/common/vector_view.hpp"
+#include "polatory/point_cloud/kdtree.hpp"
 
 namespace polatory {
 namespace point_cloud {

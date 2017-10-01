@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "krylov/gmres_base.hpp"
+#include "polatory/krylov/gmres_base.hpp"
 
 #include <cassert>
 #include <cmath>

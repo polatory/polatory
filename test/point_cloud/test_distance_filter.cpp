@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "point_cloud/distance_filter.hpp"
+#include "polatory/point_cloud/distance_filter.hpp"
 
 using namespace polatory::point_cloud;
 

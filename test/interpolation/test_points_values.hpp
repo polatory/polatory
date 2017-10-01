@@ -9,9 +9,9 @@
 
 #include <Eigen/Core>
 
-#include "point_cloud/distance_filter.hpp"
-#include "point_cloud/scattered_data_generator.hpp"
-#include "random_points/sphere_points.hpp"
+#include "polatory/point_cloud/distance_filter.hpp"
+#include "polatory/point_cloud/scattered_data_generator.hpp"
+#include "polatory/random_points/sphere_points.hpp"
 
 namespace {
 

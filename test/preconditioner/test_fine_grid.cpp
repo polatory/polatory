@@ -8,9 +8,9 @@
 
 #include <Eigen/Core>
 
-#include "interpolation/rbf_direct_symmetric_evaluator.hpp"
-#include "preconditioner/fine_grid.hpp"
-#include "rbf/linear_variogram.hpp"
+#include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
+#include "polatory/preconditioner/fine_grid.hpp"
+#include "polatory/rbf/linear_variogram.hpp"
 
 using namespace polatory::preconditioner;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;

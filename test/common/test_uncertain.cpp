@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "common/uncertain.hpp"
+#include "polatory/common/uncertain.hpp"
 
 using namespace polatory::common;
 
