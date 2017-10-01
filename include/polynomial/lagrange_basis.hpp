@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cassert>
+
 #include <Eigen/Core>
 #include <Eigen/LU>
 
@@ -25,9 +27,11 @@ public:
   lagrange_basis(int degree, const Container& points)
     : basis_base(degree)
     , mono_basis(degree) {
+    auto dim = dimension();
+    assert(points.size() == dim);
+
     auto pt = mono_basis.evaluate_points(points);
 
-    auto dim = dimension();
     MatrixXF rhs = MatrixXF::Identity(dim, dim);
 
     coeffs = pt.transpose().fullPivLu().solve(rhs);

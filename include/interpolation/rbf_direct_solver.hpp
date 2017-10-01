@@ -183,7 +183,7 @@ public:
       polynomial::monomial_basis<Floating> mono_basis(poly_degree);
       auto pt = mono_basis.evaluate_points(poly_points);
       VectorXF res_at_poly_points = d_at_poly_points - phi_at_poly_points;
-      lambda_c.tail(l) = pt.transpose().partialPivLu().solve(res_at_poly_points).template cast<double>();
+      lambda_c.tail(l) = pt.transpose().fullPivLu().solve(res_at_poly_points).template cast<double>();
     } else {
       lambda_c = lu_of_a.solve(qtd).template cast<double>();
     }
