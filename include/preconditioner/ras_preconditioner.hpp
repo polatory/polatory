@@ -14,6 +14,7 @@
 #include "../common/vector_view.hpp"
 #include "domain_divider.hpp"
 #include "fine_grid.hpp"
+#include "../interpolation/rbf_direct_solver.hpp"
 #include "../interpolation/rbf_evaluator.hpp"
 #include "../interpolation/rbf_symmetric_evaluator.hpp"
 #include "../krylov/linear_operator.hpp"
@@ -29,6 +30,7 @@ private:
   using Float = float;
   using FineGrid = fine_grid<Float>;
   using CoarseGrid = coarse_grid<Float>;
+  using DirectSolver = interpolation::rbf_direct_solver<Float>;
 
   static constexpr int Order = 6;
   const double coarse_ratio = 0.125;
@@ -40,7 +42,7 @@ private:
   int n_fine_levels;
 
 #if REPORT_RESIDUAL
-  interpolation::rbf_symmetric_evaluator<Order> finest_evaluator;
+  mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator;
 #endif
 
   mutable std::vector<std::vector<FineGrid>> fine_grids;
@@ -48,6 +50,7 @@ private:
   std::unique_ptr<CoarseGrid> coarse;
   std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator;
   std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator;
+  std::unique_ptr<DirectSolver> direct_solver;
   Eigen::MatrixXd p;
   Eigen::MatrixXd ap;
 
@@ -60,13 +63,15 @@ public:
     , n_points(in_points.size())
     , n_polynomials(polynomial::basis_base::dimension(poly_degree))
 #if REPORT_RESIDUAL
-  , finest_evaluator(rbf, poly_degree, points)
+    , finest_evaluator(rbf, poly_degree, points)
 #endif
   {
     n_fine_levels = std::max(0, int(
       std::ceil(std::log(double(n_points) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
-    if (n_fine_levels == 0)
+    if (n_fine_levels == 0) {
+      direct_solver = std::make_unique<DirectSolver>(rbf, poly_degree, points);
       return;
+    }
 
     auto divider = std::make_unique<domain_divider>(points);
 
@@ -142,15 +147,16 @@ public:
   Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
     assert(v.size() == size());
 
-    if (n_fine_levels == 0)
-      return v;
-
-    Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
     Eigen::VectorXd residuals = v.head(n_points);
+    if (n_fine_levels == 0) {
+      return direct_solver->solve(residuals);
+    }
+
 #if REPORT_RESIDUAL
     std::cout << "Initial residual: " << residuals.norm() << std::endl;
 #endif
 
+    Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
     for (int level = 0; level < n_fine_levels; level++) {
       {
         std::cout << "Start of level " << level << std::endl;
