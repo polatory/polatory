@@ -174,8 +174,8 @@
     <ClInclude Include="include\preconditioner\domain_divider.hpp" />
     <ClInclude Include="include\preconditioner\ras_preconditioner.hpp" />
     <ClInclude Include="include\preconditioner\fine_grid.hpp" />
-    <ClInclude Include="include\distribution_generator\spherical_distribution.hpp" />
-    <ClInclude Include="include\distribution_generator\uniform_distribution.hpp" />
+    <ClInclude Include="include\random_points\sphere_points.hpp" />
+    <ClInclude Include="include\random_points\box_points.hpp" />
     <ClInclude Include="include\fmm.hpp" />
     <ClInclude Include="include\fmm\fmm_evaluator.hpp" />
     <ClInclude Include="include\fmm\fmm_operator.hpp" />

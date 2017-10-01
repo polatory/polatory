@@ -1,5 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#include <algorithm>
 #include <numeric>
 #include <random>
 #include <vector>
@@ -8,27 +9,25 @@
 
 #include <Eigen/Core>
 
-#include "distribution_generator/spherical_distribution.hpp"
 #include "interpolation/rbf_direct_symmetric_evaluator.hpp"
 #include "preconditioner/coarse_grid.hpp"
 #include "polynomial/basis_base.hpp"
+#include "random_points/sphere_points.hpp"
 #include "rbf/linear_variogram.hpp"
 
 using namespace polatory::preconditioner;
-using polatory::distribution_generator::spherical_distribution;
+using polatory::random_points::sphere_points;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::polynomial::basis_base;
 using polatory::rbf::linear_variogram;
 
 void test_coarse_grid(double nugget) {
   size_t n_points = 1024;
-  Eigen::Vector3d center = Eigen::Vector3d::Zero();
-  double radius = 1e5;
   int poly_degree = 1;
   size_t n_polynomials = basis_base::dimension(poly_degree);
   double absolute_tolerance = 1e-10;
 
-  auto points = spherical_distribution(n_points, center, radius);
+  auto points = sphere_points(n_points);
 
   std::random_device rd;
   std::mt19937 gen(rd());

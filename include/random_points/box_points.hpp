@@ -8,9 +8,9 @@
 #include <Eigen/Core>
 
 namespace polatory {
-namespace distribution_generator {
+namespace random_points {
 
-inline std::vector<Eigen::Vector3d> uniform_distribution(size_t n, const Eigen::Vector3d& center, double radius) {
+inline std::vector<Eigen::Vector3d> box_points(size_t n, const Eigen::Vector3d& center, double radius) {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<> dist(-radius, radius);
@@ -28,5 +28,5 @@ inline std::vector<Eigen::Vector3d> uniform_distribution(size_t n, const Eigen::
   return points;
 }
 
-} // namespace distribution_generator
+} // namespace random_points
 } // namespace polatory

@@ -150,10 +150,10 @@
     <ClInclude Include="include\fmm.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\distribution_generator\uniform_distribution.hpp">
+    <ClInclude Include="include\random_points\box_points.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\distribution_generator\spherical_distribution.hpp">
+    <ClInclude Include="include\random_points\sphere_points.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\isosurface\bit.hpp">

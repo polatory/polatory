@@ -7,18 +7,16 @@
 
 #include <Eigen/Core>
 
-#include "distribution_generator/spherical_distribution.hpp"
 #include "preconditioner/domain_divider.hpp"
+#include "random_points/sphere_points.hpp"
 
 using namespace polatory::preconditioner;
-using polatory::distribution_generator::spherical_distribution;
+using polatory::random_points::sphere_points;
 
 TEST(domain_divider, trivial) {
   size_t n_points = 10000;
-  Eigen::Vector3d center = Eigen::Vector3d::Zero();
-  double radius = 1.0;
 
-  auto points = spherical_distribution(n_points, center, radius);
+  auto points = sphere_points(n_points);
 
   domain_divider divider(points);
 

@@ -6,13 +6,13 @@
 
 #include <Eigen/Core>
 
-#include "distribution_generator/uniform_distribution.hpp"
 #include "interpolation/rbf_direct_symmetric_evaluator.hpp"
 #include "interpolation/rbf_direct_solver.hpp"
+#include "random_points/box_points.hpp"
 #include "rbf/linear_variogram.hpp"
 
 using namespace polatory::interpolation;
-using polatory::distribution_generator::uniform_distribution;
+using polatory::random_points::box_points;
 using polatory::rbf::linear_variogram;
 
 namespace {
@@ -25,7 +25,7 @@ void test_rbf_direct_solver(double nugget, int poly_degree) {
 
   linear_variogram rbf({ 1.0, nugget });
 
-  auto points = uniform_distribution(n_points, center, radius);
+  auto points = box_points(n_points, center, radius);
   Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);
 
   rbf_direct_solver<double> solver(rbf, poly_degree, points);

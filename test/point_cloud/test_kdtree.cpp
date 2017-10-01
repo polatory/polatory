@@ -7,11 +7,11 @@
 
 #include <Eigen/Core>
 
-#include "distribution_generator/spherical_distribution.hpp"
 #include "point_cloud/kdtree.hpp"
+#include "random_points/sphere_points.hpp"
 
 using namespace polatory::point_cloud;
-using polatory::distribution_generator::spherical_distribution;
+using polatory::random_points::sphere_points;
 
 TEST(kdtree, trivial) {
   size_t n_points = 1024;
@@ -24,7 +24,7 @@ TEST(kdtree, trivial) {
   std::vector<size_t> indices;
   std::vector<double> distances;
 
-  auto points = spherical_distribution(n_points, center, radius);
+  auto points = sphere_points(n_points, center, radius);
 
   kdtree tree(points);
 

@@ -5,13 +5,13 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "distribution_generator/uniform_distribution.hpp"
 #include "geometry/bbox3.hpp"
 #include "isosurface/rmt_lattice.hpp"
+#include "random_points/box_points.hpp"
 
 using namespace polatory::isosurface;
 using polatory::geometry::bbox3d;
-using polatory::distribution_generator::uniform_distribution;
+using polatory::random_points::box_points;
 
 // Relative positions of neighbor nodes connected by each edge.
 std::array<Eigen::Vector3d, 14> NeighborVectors
@@ -56,7 +56,7 @@ TEST(rmt, lattice) {
 
   rmt_primitive_lattice lat(bbox, resolution);
 
-  auto points = uniform_distribution(100, center, radius);
+  auto points = box_points(100, center, radius);
 
   for (const auto& p : points) {
     auto ci = lat.cell_contains_point(p);

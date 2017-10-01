@@ -6,14 +6,14 @@
 
 #include <Eigen/Core>
 
-#include "distribution_generator/spherical_distribution.hpp"
 #include "interpolation/rbf_operator.hpp"
 #include "polynomial/basis_base.hpp"
+#include "random_points/sphere_points.hpp"
 #include "rbf/linear_variogram.hpp"
 #include "interpolation/rbf_direct_symmetric_evaluator.hpp"
 
 using namespace polatory::interpolation;
-using polatory::distribution_generator::spherical_distribution;
+using polatory::random_points::sphere_points;
 using polatory::polynomial::basis_base;
 using polatory::rbf::linear_variogram;
 
@@ -21,13 +21,11 @@ namespace {
 
 void test_poly_degree(int poly_degree, size_t n_points) {
   size_t n_polynomials = basis_base::dimension(poly_degree);
-  Eigen::Vector3d center = Eigen::Vector3d::Zero();
-  double radius = 1.0;
   double absolute_tolerance = 5e-7;
 
   linear_variogram rbf({ 1.0, 0.2 });
 
-  auto points = spherical_distribution(n_points, center, radius);
+  auto points = sphere_points(n_points);
 
   Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_polynomials);
 

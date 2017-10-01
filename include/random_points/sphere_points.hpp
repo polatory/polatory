@@ -9,11 +9,11 @@
 #include <Eigen/Core>
 
 namespace polatory {
-namespace distribution_generator {
+namespace random_points {
 
 // See Marsaglia (1972) at:
 // http://mathworld.wolfram.com/SpherePointPicking.html
-inline std::vector<Eigen::Vector3d> spherical_distribution(size_t n, const Eigen::Vector3d& center, double radius) {
+inline std::vector<Eigen::Vector3d> sphere_points(size_t n, const Eigen::Vector3d& center = Eigen::Vector3d::Zero(), double radius = 1.0) {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<> dist(-1.0, 1.0);
@@ -40,5 +40,5 @@ inline std::vector<Eigen::Vector3d> spherical_distribution(size_t n, const Eigen
   return points;
 }
 
-} // namespace distribution_generator
+} // namespace random_points
 } // namespace polatory

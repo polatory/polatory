@@ -11,47 +11,23 @@
 #include <Eigen/Core>
 
 #include "common/vector_view.hpp"
-#include "distribution_generator/spherical_distribution.hpp"
 #include "interpolation/rbf_evaluator.hpp"
 #include "interpolation/rbf_incremental_fitter.hpp"
-#include "point_cloud/scattered_data_generator.hpp"
 #include "polynomial/basis_base.hpp"
 #include "rbf/linear_variogram.hpp"
+#include "test_points_values.hpp"
 
 using namespace polatory::interpolation;
 using polatory::common::make_view;
-using polatory::distribution_generator::spherical_distribution;
-using polatory::point_cloud::scattered_data_generator;
 using polatory::polynomial::basis_base;
 using polatory::rbf::linear_variogram;
 
 namespace {
 
-auto test_points() {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dist(1.0 - 1e-4, 1.0 + 1e-4);
-
-  size_t n_points = 10000;
-  Eigen::Vector3d center = Eigen::Vector3d::Zero();
-  double radius = 1.0;
-
-  auto points = spherical_distribution(n_points, center, radius);
-  auto normals = points;
-
-  for (auto& p : points) {
-    p *= dist(gen);
-  }
-
-  scattered_data_generator scatter_gen(points, normals, 2e-4, 1e-3);
-
-  return std::make_pair(std::move(scatter_gen.scattered_points()), std::move(scatter_gen.scattered_values()));
-}
-
 void test_poly_degree(int poly_degree) {
   std::vector<Eigen::Vector3d> points;
   Eigen::VectorXd values;
-  std::tie(points, values) = test_points();
+  std::tie(points, values) = test_points_values(10000);
 
   size_t n_polynomials = basis_base::dimension(poly_degree);
   double absolute_tolerance = 1e-4;
