@@ -7,18 +7,17 @@
 
 #include <Eigen/Core>
 
-#include "../common/exception.hpp"
-#include "../common/vector_view.hpp"
-#include "../geometry/affine_transform.hpp"
-#include "../geometry/bbox3.hpp"
-#include "../interpolation/rbf_evaluator.hpp"
-#include "../interpolation/rbf_fitter.hpp"
-#include "../interpolation/rbf_incremental_fitter.hpp"
-#include "../polynomial/basis_base.hpp"
-#include "../rbf/rbf_base.hpp"
+#include "common/exception.hpp"
+#include "common/vector_view.hpp"
+#include "geometry/affine_transform.hpp"
+#include "geometry/bbox3.hpp"
+#include "interpolation/rbf_evaluator.hpp"
+#include "interpolation/rbf_fitter.hpp"
+#include "interpolation/rbf_incremental_fitter.hpp"
+#include "polynomial/basis_base.hpp"
+#include "rbf/rbf_base.hpp"
 
 namespace polatory {
-namespace driver {
 
 class interpolant {
 public:
@@ -110,5 +109,4 @@ private:
   std::unique_ptr<interpolation::rbf_evaluator<>> evaluator_;
 };
 
-} // namespace driver
 } // namespace polatory

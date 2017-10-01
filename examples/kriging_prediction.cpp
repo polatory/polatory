@@ -7,7 +7,7 @@
 #include <Eigen/Core>
 
 #include "geometry/bbox3.hpp"
-#include "driver/interpolant.hpp"
+#include "interpolant.hpp"
 #include "isosurface/export_obj.hpp"
 #include "isosurface/isosurface.hpp"
 #include "isosurface/rbf_field_function.hpp"
@@ -16,7 +16,7 @@
 #include "read_table.hpp"
 
 using polatory::geometry::bbox3d;
-using polatory::driver::interpolant;
+using polatory::interpolant;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;

@@ -4,14 +4,14 @@
 
 #include <Eigen/Core>
 
-#include "../driver/interpolant.hpp"
 #include "field_function.hpp"
+#include "interpolant.hpp"
 
 namespace polatory {
 namespace isosurface {
 
 struct rbf_field_function : field_function {
-  rbf_field_function(const driver::interpolant& interpolant)
+  rbf_field_function(const interpolant& interpolant)
     : interpolant_(interpolant) {
   }
 
@@ -20,7 +20,7 @@ struct rbf_field_function : field_function {
   }
 
 private:
-  const driver::interpolant& interpolant_;
+  const interpolant& interpolant_;
 };
 
 } // namespace isosurface
