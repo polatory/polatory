@@ -1,12 +1,21 @@
 # Polatory
 
-Polatory is a framework for fast 3D spline interpolation and kriging, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
+Polatory is a framework for fast 3D spline surface reconstruction and interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
+
+## What Can It Do
+
+* Fast spline surface reconstruction of 2.5D/3D point cloud
+* Fast interpolation (kriging prediction) of 3D scattered data
+* Meshing isosurfaces
+* Supports large number (~1M) of input points
+* Supports globally supported RBFs
+* Supports non-oscillatory arbitrary RBFs/variograms.
 
 ## License
 
 Polatory is available under two different licenses:
 
-* GNU General Public License v3.0 (GPLv3)
+* GNU General Public License v3.0 (GPLv3) for non-commercial use
 * Commercial license (please contact at mizuno(at)gsinet.co.jp)
 
 ## Platforms
@@ -91,25 +100,6 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    make -j8
    ```
 
-## Module index
-
-| Module                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| common                 | Common utility functions and classes.            |
-| distribution_generator | Random points generation for test cases.         |
-| fmm                    | Fast multipole methods (wrapper of ScalFMM).     |
-| geometry               | Geometric classes.                               |
-| interpolation          | RBF fitting and evaluation.                      |
-| isosurface             | Isosurface generation.                           |
-| kriging                | Variogram estimation and validation.             |
-| krylov                 | Krylov subspace methods.                         |
-| numeric                | Robust algorithms.                               |
-| point_cloud            | Scattered data generation from point clouds.     |
-| polynomial             | Polynomial part of RBF interpolant.              |
-| preconditioner         | The preconditioner used with Krylov subspace methods. |
-| rbf                    | Definition of RBFs.                              |
-| third_party            | Third party libraries.                           |
-
 ## Contribution
 
 We welcome your contributions! You can contribute to this project in several ways:
@@ -126,6 +116,79 @@ Feel free to create an issue, if you have any questions, requests, or if you hav
 
 You can fork the source tree and make some improvements to it. Then feel free to create a PR. When sending a PR for the first time, please <a href="https://cla-assistant.io/polatory/polatory">review and sign the Individual Contributor License Agreement</a>.
 
-### Visit ScalFMM
+## Module index
 
-The fast RBF evaluation algorithm is implemented on top of ScalFMM, a C++ library provides FMM (Fast Multipole Method) algorithms, developed by [Inria](https://www.inria.fr/en/). If you find this project useful, you may also interested in the development of ScalFMM at https://gitlab.inria.fr/solverstack/ScalFMM/.
+| Module                 | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| common                 | Common utility functions and classes.            |
+| fmm                    | Fast multipole methods (wrapper of ScalFMM).     |
+| geometry               | Geometric utilities.                             |
+| interpolation          | RBF fitting and evaluation.                      |
+| isosurface             | Isosurface generation.                           |
+| kriging                | Variogram estimation and validation.             |
+| krylov                 | Krylov subspace methods.                         |
+| numeric                | Numerically robust algorithms.                   |
+| point_cloud            | Scattered data generation from point clouds.     |
+| polynomial             | Polynomial part of RBF interpolant.              |
+| preconditioner         | The preconditioner used with Krylov subspace methods. |
+| random_points          | Random points generation for unit testing.       |
+| rbf                    | Definition of RBFs/variograms.                              |
+| third_party            | Third party libraries.                           |
+
+## Acknowledgements
+
+Polatory utilizes the following libraries:
+
+* [Boost](http://www.boost.org/)
+  
+  <dl>
+    <dt>License</dt>
+    <dd>Boost Software License</dd>
+    <dt>Used in</dt>
+    <dd>Several modules</dd>
+  </dl>
+
+* [Ceres Solver](http://ceres-solver.org/)
+  
+  <dl>
+    <dt>License</dt>
+    <dd>The 3-clause BSD license</dd>
+    <dt>Used in</dt>
+    <dd>kriging module</dd>
+  </dl>
+
+* [Eigen](http://eigen.tuxfamily.org/)
+  
+  <dl>
+    <dt>License</dt>
+    <dd>MPL2</dd>
+    <dt>Used in</dt>
+    <dd>Almost everywhere</dd>
+  </dl>
+
+* [FLANN](http://www.cs.ubc.ca/research/flann/)
+  
+  <dl>
+    <dt>License</dt>
+    <dd>The 2-clause BSD license</dd>
+    <dt>Used in</dt>
+    <dd>point_cloud module</dd>
+  </dl>
+
+* [Google Test](https://github.com/google/googletest)
+  
+  <dl>
+    <dt>License</dt>
+    <dd>The 3-clause BSD license</dd>
+    <dt>Used in</dt>
+    <dd>Unit testing</dd>
+  </dl>
+
+* [ScalFMM](https://gitlab.inria.fr/solverstack/ScalFMM)
+  
+  <dl>
+    <dt>License</dt>
+    <dd>The CeCILL-C license</dd>
+    <dt>Used in</dt>
+    <dd>fmm module</dd>
+  </dl>
