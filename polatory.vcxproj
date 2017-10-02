@@ -110,6 +110,7 @@
     <ClCompile Include="src\krylov\gmres_base.cpp" />
     <ClCompile Include="src\krylov\minres.cpp" />
     <ClCompile Include="src\lib_win64.cpp" />
+    <ClCompile Include="src\point_cloud\distance_filter.cpp" />
     <ClCompile Include="src\point_cloud\kdtree.cpp" />
     <ClCompile Include="src\point_cloud\scattered_data_generator.cpp" />
     <ClCompile Include="src\stdafx.cpp">

@@ -139,6 +139,9 @@
     <ClCompile Include="test\geometry\test_affine_transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\point_cloud\distance_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\polatory\fmm\fmm_evaluator.hpp">
@@ -367,9 +370,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\polatory\common\pi.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="test\interpolation\test_points_values.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
