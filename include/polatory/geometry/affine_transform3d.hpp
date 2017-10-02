@@ -32,7 +32,7 @@ public:
 private:
   static Eigen::Matrix4d rotation_matrix(double angle, int axis);
 
-  const Eigen::Matrix4d m_;
+  Eigen::Matrix4d m_;
 };
 
 } // namespace geometry

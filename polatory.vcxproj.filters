@@ -145,6 +145,9 @@
     <ClCompile Include="src\geometry\affine_transform3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\geometry\bbox3d.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\polatory\fmm\fmm_evaluator.hpp">

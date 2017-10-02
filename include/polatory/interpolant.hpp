@@ -71,7 +71,7 @@ public:
   }
 
   void set_evaluation_bbox(const geometry::bbox3d& bbox) {
-    auto transformed_bbox = bbox.affine_transform(point_transform_);
+    auto transformed_bbox = bbox.transform(point_transform_);
 
     evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, poly_degree_, centers_, transformed_bbox);
     evaluator_->set_weights(weights_);

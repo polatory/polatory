@@ -98,8 +98,8 @@ class fmm_operator {
 public:
   fmm_operator(const rbf::rbf_base& rbf, int tree_height, const geometry::bbox3d& bbox)
     : n_points(0) {
-    auto bbox_width = (1.0 + 1.0 / 64.0) * (bbox.max - bbox.min).maxCoeff();
-    Eigen::Vector3d bbox_center = (bbox.min + bbox.max) / 2.0;
+    auto bbox_width = (1.0 + 1.0 / 64.0) * bbox.size().maxCoeff();
+    auto bbox_center = bbox.center();
 
     interpolated_kernel = std::make_unique<InterpolatedKernel>(
       tree_height, bbox_width, FPoint<FReal>(bbox_center.data()), &rbf);

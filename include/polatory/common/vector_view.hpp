@@ -17,7 +17,13 @@ class vector_view_iterator;
 template <class T>
 class vector_view {
 public:
-  using iterator = vector_view_iterator<T>;
+  using value_type = T;
+  using const_reference = const T&;
+  using const_iterator = vector_view_iterator<T>;
+  using reference = const_reference;
+  using iterator = const_iterator;
+  using difference_type = ptrdiff_t;
+  using size_type = size_t;
 
   vector_view(const std::vector<T>& vector, const std::vector<size_t>& indices)
     : v_(vector)

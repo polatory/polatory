@@ -143,6 +143,7 @@
     <ClCompile Include="test\interpolation\test_rbf_symmetric_evaluator.cpp" />
     <ClCompile Include="test\rbf\test_rbf.cpp" />
     <ClCompile Include="src\geometry\affine_transform3d.cpp" />
+    <ClCompile Include="src\geometry\bbox3d.cpp" />
     <ClCompile Include="test\krylov\test_krylov.cpp" />
     <ClCompile Include="src\third_party\ScalFMM\Utils\FLog.cpp" />
     <ClCompile Include="src\third_party\ScalFMM\Utils\FMemStats.cpp" />

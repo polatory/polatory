@@ -28,7 +28,7 @@ const Eigen::Matrix4d& affine_transform3d::matrix() const {
 
 Eigen::Vector3d affine_transform3d::transform_point(const Eigen::Vector3d& p) const {
   Eigen::Vector4d p_homo;
-  p_homo << p[0], p[1], p[2], 1.0;
+  p_homo << p(0), p(1), p(2), 1.0;
   return m_.topLeftCorner(3, 4) * p_homo;
 }
 
@@ -42,15 +42,15 @@ affine_transform3d affine_transform3d::operator*(const affine_transform3d& rhs) 
 
 affine_transform3d affine_transform3d::roll_pitch_yaw(const Eigen::Vector3d& angles, const std::array<int, 3>& axes) {
   return affine_transform3d(
-    rotation_matrix(angles[2], axes[2]) *
-    rotation_matrix(angles[1], axes[1]) *
-    rotation_matrix(angles[0], axes[0]));
+    rotation_matrix(angles(2), axes[2]) *
+    rotation_matrix(angles(1), axes[1]) *
+    rotation_matrix(angles(0), axes[0]));
 }
 
 affine_transform3d affine_transform3d::scaling(const Eigen::Vector3d& scales) {
   Eigen::Matrix4d m = Eigen::Matrix4d::Zero();
 
-  m.diagonal() << scales[0], scales[1], scales[2], 1.0;
+  m.diagonal() << scales(0), scales(1), scales(2), 1.0;
 
   return affine_transform3d(m);
 }

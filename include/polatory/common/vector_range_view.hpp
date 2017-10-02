@@ -10,7 +10,13 @@ namespace common {
 template <class T>
 class vector_range_view {
 public:
-  using iterator = typename std::vector<T>::const_iterator;
+  using value_type = T;
+  using const_reference = const T&;
+  using const_iterator = typename std::vector<T>::const_iterator;
+  using reference = const_reference;
+  using iterator = const_iterator;
+  using difference_type = ptrdiff_t;
+  using size_type = size_t;
 
   vector_range_view(const std::vector<T>& vector, size_t begin_index, size_t end_index)
     : v_(vector)

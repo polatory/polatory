@@ -64,7 +64,7 @@ public:
     for (edge_index ei = 0; ei < 14; ei++) {
       auto delta_m = NeighborCellVectors[ei];
       NeighborCellIndexDeltas[ei] =
-        delta_m[2] * stride2 + delta_m[1] * stride1 + delta_m[0];
+        delta_m(2) * stride2 + delta_m(1) * stride1 + delta_m(0);
     }
   }
 

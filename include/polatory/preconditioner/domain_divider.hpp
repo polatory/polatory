@@ -47,7 +47,8 @@ class domain_divider {
         continue;
       }
 
-      auto split_axis = d.bbox.longest_axis();
+      size_t split_axis;
+      d.bbox.size().maxCoeff(&split_axis);
 
       common::zip_sort(
         d.point_indices.begin(), d.point_indices.end(),
@@ -56,7 +57,7 @@ class domain_divider {
           return points[a.first](split_axis) < points[b.first](split_axis);
         });
 
-      auto longest_side_length = d.bbox.max[split_axis] - d.bbox.min[split_axis];
+      auto longest_side_length = d.bbox.size()(split_axis);
       auto q =
         longest_side_length_of_root / longest_side_length * std::sqrt(double(max_leaf_size) / double(size_of_root)) *
         overlap_quota;
@@ -122,8 +123,7 @@ public:
     root.inner_point = std::vector<bool>(points.size(), true);
 
     root.bbox = domain_bbox(root);
-    int longest_axis = root.bbox.longest_axis();
-    longest_side_length_of_root = root.bbox.max[longest_axis] - root.bbox.min[longest_axis];
+    longest_side_length_of_root = root.bbox.size().maxCoeff();
 
     domains_.push_back(root);
 
@@ -140,8 +140,7 @@ public:
     root.inner_point = std::vector<bool>(point_indices.size(), true);
 
     root.bbox = domain_bbox(root);
-    int longest_axis = root.bbox.longest_axis();
-    longest_side_length_of_root = root.bbox.max[longest_axis] - root.bbox.min[longest_axis];
+    longest_side_length_of_root = root.bbox.size().maxCoeff();
 
     domains_.push_back(root);
 

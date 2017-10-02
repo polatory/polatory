@@ -293,21 +293,21 @@ public:
     std::vector<cell_index> new_nodes;
     std::vector<cell_index> prev_nodes;
 
-    for (int m2 = cell_min[2]; m2 <= cell_max[2]; m2++) {
-      cell_index offset2 = static_cast<cell_index>(m2 - cell_min[2]) << shift2;
+    for (int m2 = cell_min(2); m2 <= cell_max(2); m2++) {
+      cell_index offset2 = static_cast<cell_index>(m2 - cell_min(2)) << shift2;
 
-      for (int m1 = cell_min[1]; m1 <= cell_max[1]; m1++) {
-        cell_index offset21 = offset2 | (static_cast<cell_index>(m1 - cell_min[1]) << shift1);
+      for (int m1 = cell_min(1); m1 <= cell_max(1); m1++) {
+        cell_index offset21 = offset2 | (static_cast<cell_index>(m1 - cell_min(1)) << shift1);
 
-        for (int m0 = cell_min[0]; m0 <= cell_max[0]; m0++) {
-          cell_index cell_idx = offset21 | static_cast<cell_index>(m0 - cell_min[0]);
+        for (int m0 = cell_min(0); m0 <= cell_max(0); m0++) {
+          cell_index cell_idx = offset21 | static_cast<cell_index>(m0 - cell_min(0));
 
           if (add_node(cell_idx, cell_vector(m0, m1, m2)))
             new_nodes.push_back(cell_idx);
         }
       }
 
-      if (m2 > cell_min[2]) {
+      if (m2 > cell_min(2)) {
         evaluate_field(field_func, isovalue);
         generate_vertices(prev_nodes);
         remove_free_nodes(prev_nodes);
