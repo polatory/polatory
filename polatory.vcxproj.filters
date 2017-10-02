@@ -88,9 +88,6 @@
     <ClCompile Include="test\common\test_likely.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\point_cloud\kdtree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -331,9 +328,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\polatory\common\exception.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\polatory\point_cloud\distance_filter.hpp">

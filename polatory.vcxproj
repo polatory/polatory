@@ -113,10 +113,6 @@
     <ClCompile Include="src\point_cloud\distance_filter.cpp" />
     <ClCompile Include="src\point_cloud\kdtree.cpp" />
     <ClCompile Include="src\point_cloud\scattered_data_generator.cpp" />
-    <ClCompile Include="src\stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="src\third_party\ScalFMM\Utils\FAlgorithmTimers.cpp" />
     <ClCompile Include="test\common\test_bsearch.cpp" />
     <ClCompile Include="test\common\test_likely.cpp" />
@@ -223,7 +219,6 @@
     <ClInclude Include="include\polatory\polynomial.hpp" />
     <ClInclude Include="include\polatory\interpolation\rbf_symmetric_evaluator.hpp" />
     <ClInclude Include="include\polatory\rbf\variogram.hpp" />
-    <ClInclude Include="include\stdafx.h" />
     <ClInclude Include="test\interpolation\test_points_values.hpp" />
   </ItemGroup>
   <ItemGroup>
