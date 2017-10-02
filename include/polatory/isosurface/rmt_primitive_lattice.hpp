@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "types.hpp"
 
 namespace polatory {

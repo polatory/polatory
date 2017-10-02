@@ -9,7 +9,7 @@
 
 #include "polatory/fmm/fmm_operator.hpp"
 #include "polatory/fmm/tree_height.hpp"
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/krylov/linear_operator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/monomial_basis.hpp"

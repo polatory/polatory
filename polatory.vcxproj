@@ -122,20 +122,14 @@
     <ClCompile Include="test\common\test_likely.cpp" />
     <ClCompile Include="test\common\test_uncertain.cpp" />
     <ClCompile Include="test\common\test_zip_sort.cpp" />
-    <ClCompile Include="test\geometry\test_affine_transform.cpp" />
+    <ClCompile Include="test\geometry\test_affine_transform3d.cpp" />
     <ClCompile Include="test\interpolation\test_rbf_incremental_fitter.cpp" />
     <ClCompile Include="test\interpolation\test_rbf_operator.cpp" />
-    <ClCompile Include="test\isosurface\test_rmt.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="test\isosurface\test_rmt.cpp" />
     <ClCompile Include="test\numeric\test_sum_accumulator.cpp" />
     <ClCompile Include="test\point_cloud\test_distance_filter.cpp" />
     <ClCompile Include="test\point_cloud\test_kdtree.cpp" />
-    <ClCompile Include="test\kriging\test_empirical_semivariogram.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="test\kriging\test_empirical_semivariogram.cpp" />
     <ClCompile Include="test\point_cloud\test_plane_estimator.cpp" />
     <ClCompile Include="test\polynomial\test_basis_base.cpp" />
     <ClCompile Include="test\polynomial\test_lagrange_basis.cpp" />
@@ -148,6 +142,11 @@
     <ClCompile Include="test\interpolation\test_rbf_fitter.cpp" />
     <ClCompile Include="test\interpolation\test_rbf_symmetric_evaluator.cpp" />
     <ClCompile Include="test\rbf\test_rbf.cpp" />
+    <ClCompile Include="src\geometry\affine_transform3d.cpp" />
+    <ClCompile Include="test\krylov\test_krylov.cpp" />
+    <ClCompile Include="src\third_party\ScalFMM\Utils\FLog.cpp" />
+    <ClCompile Include="src\third_party\ScalFMM\Utils\FMemStats.cpp" />
+    <ClCompile Include="src\third_party\ScalFMM\Utils\FSignalHandler.cpp" />
     <ClInclude Include="examples\read_table.hpp" />
     <ClInclude Include="include\polatory\common\array.hpp" />
     <ClInclude Include="include\polatory\common\exception.hpp" />
@@ -157,8 +156,8 @@
     <ClInclude Include="include\polatory\common\vector_view.hpp" />
     <ClInclude Include="include\polatory\common\zip_sort.hpp" />
     <ClInclude Include="include\polatory\fmm\tree_height.hpp" />
-    <ClInclude Include="include\polatory\geometry\bbox3.hpp" />
-    <ClInclude Include="include\polatory\geometry\affine_transform.hpp" />
+    <ClInclude Include="include\polatory\geometry\bbox3d.hpp" />
+    <ClInclude Include="include\polatory\geometry\affine_transform3d.hpp" />
     <ClInclude Include="include\polatory\interpolant.hpp" />
     <ClInclude Include="include\polatory\interpolation\rbf_fitter.hpp" />
     <ClInclude Include="include\polatory\interpolation\rbf_incremental_fitter.hpp" />
@@ -224,19 +223,11 @@
     <ClInclude Include="include\polatory\interpolation\rbf_symmetric_evaluator.hpp" />
     <ClInclude Include="include\polatory\rbf\variogram.hpp" />
     <ClInclude Include="include\stdafx.h" />
+    <ClInclude Include="test\interpolation\test_points_values.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="README.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="test\krylov\test_krylov.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="src\third_party\ScalFMM\Utils\FLog.cpp" />
-    <ClCompile Include="src\third_party\ScalFMM\Utils\FMemStats.cpp" />
-    <ClCompile Include="src\third_party\ScalFMM\Utils\FSignalHandler.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

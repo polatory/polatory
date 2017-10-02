@@ -7,7 +7,7 @@
 #include <Eigen/Core>
 
 #include "mesh_defects_finder.hpp"
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "rmt_lattice.hpp"
 #include "rmt_surface.hpp"
 

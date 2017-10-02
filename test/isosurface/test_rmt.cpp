@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/isosurface/rmt_lattice.hpp"
 #include "polatory/random_points/box_points.hpp"
 

@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/interpolant.hpp"
 #include "polatory/isosurface/export_obj.hpp"
 #include "polatory/isosurface/isosurface.hpp"

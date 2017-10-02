@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-#include "affine_transform.hpp"
+#include "affine_transform3d.hpp"
 #include "polatory/common/array.hpp"
 #include "polatory/common/likely.hpp"
 
@@ -29,16 +29,16 @@ public:
     , max(max) {
   }
 
-  bbox3d affine_transform(const Eigen::Matrix4d& m) const {
+  bbox3d affine_transform(const affine_transform3d& affine) const {
     Eigen::Vector3d center = (min + max) / 2.0;
     Eigen::Vector3d v1 = Eigen::Vector3d(min[0], max[1], max[2]) - center;
     Eigen::Vector3d v2 = Eigen::Vector3d(max[0], min[1], max[2]) - center;
     Eigen::Vector3d v3 = Eigen::Vector3d(max[0], max[1], min[2]) - center;
 
-    center = affine_transform_point(center, m);
-    v1 = affine_transform_vector(v1, m);
-    v2 = affine_transform_vector(v2, m);
-    v3 = affine_transform_vector(v3, m);
+    center = affine.transform_point(center);
+    v1 = affine.transform_vector(v1);
+    v2 = affine.transform_vector(v2);
+    v3 = affine.transform_vector(v3);
 
     Eigen::MatrixXd vertices(3, 8);
     vertices.col(0) = -v1 - v2 - v3;    // min, min, min

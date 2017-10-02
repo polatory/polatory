@@ -136,10 +136,13 @@
     <ClCompile Include="test\point_cloud\test_distance_filter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="test\geometry\test_affine_transform.cpp">
+    <ClCompile Include="test\geometry\test_affine_transform3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\point_cloud\distance_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\geometry\affine_transform3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -210,7 +213,7 @@
     <ClInclude Include="include\polatory\common\uncertain.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\polatory\geometry\bbox3.hpp">
+    <ClInclude Include="include\polatory\geometry\bbox3d.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\polatory\polynomial\orthonormal_basis.hpp">
@@ -366,10 +369,13 @@
     <ClInclude Include="include\polatory\interpolant.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\polatory\geometry\affine_transform.hpp">
+    <ClInclude Include="include\polatory\geometry\affine_transform3d.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\polatory\common\pi.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test\interpolation\test_points_values.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

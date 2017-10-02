@@ -12,7 +12,7 @@
 
 #include "polatory/common/vector_view.hpp"
 #include "polatory/common/zip_sort.hpp"
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 
 namespace polatory {
 namespace preconditioner {

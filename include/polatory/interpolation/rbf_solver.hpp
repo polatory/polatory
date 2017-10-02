@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/krylov/fgmres.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/orthonormal_basis.hpp"

@@ -11,7 +11,7 @@
 #include <Eigen/Core>
 
 #include "polatory/common/vector_range_view.hpp"
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/rbf/rbf_base.hpp"
 #include "rbf_evaluator.hpp"

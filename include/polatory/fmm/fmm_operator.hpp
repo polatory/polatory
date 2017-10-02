@@ -8,7 +8,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/rbf/rbf_base.hpp"
 #include "polatory/third_party/ScalFMM/Components/FSimpleLeaf.hpp"
 #include "polatory/third_party/ScalFMM/Containers/FOctree.hpp"

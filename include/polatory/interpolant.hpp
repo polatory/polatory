@@ -9,8 +9,8 @@
 
 #include "polatory/common/exception.hpp"
 #include "polatory/common/vector_view.hpp"
-#include "polatory/geometry/affine_transform.hpp"
-#include "polatory/geometry/bbox3.hpp"
+#include "polatory/geometry/affine_transform3d.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/interpolation/rbf_evaluator.hpp"
 #include "polatory/interpolation/rbf_fitter.hpp"
 #include "polatory/interpolation/rbf_incremental_fitter.hpp"
@@ -26,8 +26,7 @@ public:
 
   interpolant(const rbf::rbf_base& rbf, int poly_degree)
     : rbf_(rbf)
-    , poly_degree_(poly_degree)
-    , point_transform_(Eigen::Matrix4d::Identity()) {
+    , poly_degree_(poly_degree) {
     if (poly_degree < rbf.order_of_definiteness() - 1 || poly_degree > 2)
       throw common::invalid_parameter("rbf.order_of_definiteness() - 1 <= poly_degree <= 2");
   }
@@ -78,8 +77,8 @@ public:
     evaluator_->set_weights(weights_);
   }
 
-  void set_point_transform(const Eigen::Matrix4d& affine_transform) {
-    point_transform_ = affine_transform;
+  void set_point_transform(const geometry::affine_transform3d& affine) {
+    point_transform_ = affine;
   }
 
   const values_type& weights() const {
@@ -92,7 +91,7 @@ private:
     transformed.reserve(points.size());
 
     for (const auto& p : points) {
-      transformed.push_back(geometry::affine_transform_point(p, point_transform_));
+      transformed.push_back(point_transform_.transform_point(p));
     }
 
     return transformed;
@@ -101,7 +100,7 @@ private:
   const rbf::rbf_base& rbf_;
   const int poly_degree_;
 
-  Eigen::Matrix4d point_transform_;
+  geometry::affine_transform3d point_transform_;
 
   std::vector<Eigen::Vector3d> centers_;
   Eigen::VectorXd weights_;
