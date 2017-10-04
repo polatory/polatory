@@ -9,7 +9,17 @@ Polatory is a framework for fast 3D spline surface reconstruction and interpolat
 * Meshing isosurfaces
 * Supports large number (~1M) of input points
 * Supports globally supported RBFs
-* Supports non-oscillatory arbitrary RBFs/variograms.
+* Supports user-defined smooth, non-oscillatory RBFs.
+
+### Correspondence between kriging and RBF interpolation
+
+| Kriging             | RBF interpolation                          |
+| ------------------- | ------------------------------------------ |
+| Covariance function | RBF                                        |
+| Nugget effect       | Spline smoothing                           |
+| Simple kriging      | Interpolant with no polynomial             |
+| Ordinary kriging    | Interpolant with polynomial of degree 0    |
+| Universal kriging   | Interpolant with polynomial of degree >= 1 |
 
 ## License
 
@@ -125,14 +135,14 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | geometry               | Geometric utilities.                             |
 | interpolation          | RBF fitting and evaluation.                      |
 | isosurface             | Isosurface generation.                           |
-| kriging                | Variogram estimation and validation.             |
+| kriging                | Parameter estimation and validation for kriging. |
 | krylov                 | Krylov subspace methods.                         |
 | numeric                | Numerically robust algorithms.                   |
 | point_cloud            | Scattered data generation from point clouds.     |
 | polynomial             | Polynomial part of RBF interpolant.              |
 | preconditioner         | The preconditioner used with Krylov subspace methods. |
 | random_points          | Random points generation for unit testing.       |
-| rbf                    | Definition of RBFs/variograms.                              |
+| rbf                    | Definition of RBFs/covariance functions.         |
 | third_party            | Third party libraries.                           |
 
 ## Acknowledgements

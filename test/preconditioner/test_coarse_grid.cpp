@@ -51,10 +51,10 @@ void test_coarse_grid(double nugget) {
   Eigen::VectorXd values_fit = eval.evaluate();
 
   Eigen::VectorXd residuals = (values - values_fit).cwiseAbs();
-  Eigen::VectorXd nuggets = rbf.nugget() * sol.head(n_points).cwiseAbs();
+  Eigen::VectorXd smoothing_error_bounds = rbf.nugget() * sol.head(n_points).cwiseAbs();
 
   for (size_t i = 0; i < n_points; i++) {
-    EXPECT_LT(residuals(i), absolute_tolerance + nuggets(i));
+    EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));
   }
 }
 

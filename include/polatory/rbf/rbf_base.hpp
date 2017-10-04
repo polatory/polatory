@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cmath>
+#include <vector>
 
 #include <Eigen/Core>
 
@@ -13,13 +14,6 @@ namespace rbf {
 
 class rbf_base : FInterpAbstractMatrixKernel<double> {
 public:
-  static const KERNEL_FUNCTION_TYPE Type = NON_HOMOGENEOUS;
-  static const unsigned int NCMP = 1;    // Number of components.
-  static const unsigned int NPV = 1;     // Dimension of physical values.
-  static const unsigned int NPOT = 1;    // Dimension of potentials.
-  static const unsigned int NRHS = 1;    // Dimension of multipole expansions.
-  static const unsigned int NLHS = 1;    // Dimension of local expansions.
-
   explicit rbf_base(const std::vector<double>& params)
     : params_(params) {
   }
@@ -33,6 +27,27 @@ public:
   virtual void evaluate_gradient(
     double& gradx, double& grady, double& gradz,
     double x, double y, double z, double r) const = 0;
+
+  // The effect of nugget parameter is also known as spline smoothing.
+  virtual double nugget() const {
+    return 0.0;
+  }
+
+  // The order of conditional positive definiteness.
+  virtual int order_of_cpd() const = 0;
+
+  const std::vector<double>& parameters() const {
+    return params_;
+  }
+
+  // The following definitions are used in ScalFMM.
+
+  static const KERNEL_FUNCTION_TYPE Type = NON_HOMOGENEOUS;
+  static const unsigned int NCMP = 1;    // Number of components.
+  static const unsigned int NPV = 1;     // Dimension of physical values.
+  static const unsigned int NPOT = 1;    // Dimension of potentials.
+  static const unsigned int NRHS = 1;    // Dimension of multipole expansions.
+  static const unsigned int NLHS = 1;    // Dimension of local expansions.
 
   // returns position in reduced storage
   int getPosition(const unsigned int) const {
@@ -82,18 +97,6 @@ public:
 
   double evaluate(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) const {
     return evaluate(p1.data(), p2.data());
-  }
-
-  virtual double nugget() const {
-    return 0.0;
-  }
-
-  // The rbf is strictly conditionally positive definite of order k,
-  // where k = order_of_definiteness().
-  virtual int order_of_definiteness() const = 0;
-
-  const std::vector<double>& parameters() const {
-    return params_;
   }
 
 private:

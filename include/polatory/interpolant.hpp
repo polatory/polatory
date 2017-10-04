@@ -27,8 +27,8 @@ public:
   interpolant(const rbf::rbf_base& rbf, int poly_degree)
     : rbf_(rbf)
     , poly_degree_(poly_degree) {
-    if (poly_degree < rbf.order_of_definiteness() - 1 || poly_degree > 2)
-      throw common::invalid_parameter("rbf.order_of_definiteness() - 1 <= poly_degree <= 2");
+    if (poly_degree < rbf.order_of_cpd() - 1 || poly_degree > 2)
+      throw common::invalid_parameter("rbf.order_of_cpd() - 1 <= poly_degree <= 2");
   }
 
   const points_type& centers() const {

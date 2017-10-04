@@ -36,7 +36,7 @@ public:
     return parameters()[1];
   }
 
-  int order_of_definiteness() const override {
+  int order_of_cpd() const override {
     return 1;
   }
 };
