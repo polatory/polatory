@@ -13,17 +13,17 @@
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/preconditioner/coarse_grid.hpp"
 #include "polatory/random_points/sphere_points.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::preconditioner;
 using polatory::random_points::sphere_points;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::polynomial::basis_base;
-using polatory::rbf::linear_variogram;
+using polatory::rbf::biharmonic;
 
 void test_coarse_grid(double nugget) {
   size_t n_points = 1024;
-  int poly_degree = 1;
+  int poly_degree = 0;
   size_t n_polynomials = basis_base::dimension(poly_degree);
   double absolute_tolerance = 1e-10;
 
@@ -36,7 +36,7 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  linear_variogram rbf({ 1.0, nugget });
+  biharmonic rbf({ 1.0, nugget });
 
   coarse_grid<double> coarse(rbf, poly_degree, points, point_indices);
 

@@ -11,12 +11,12 @@
 #include "polatory/interpolation/rbf_symmetric_evaluator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/random_points/sphere_points.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::interpolation;
 using polatory::polynomial::basis_base;
 using polatory::random_points::sphere_points;
-using polatory::rbf::linear_variogram;
+using polatory::rbf::biharmonic;
 
 namespace {
 
@@ -25,7 +25,7 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   size_t n_polynomials = basis_base::dimension(poly_degree);
   double absolute_tolerance = 5e-7;
 
-  linear_variogram rbf({ 1.0, 0.0 });
+  biharmonic rbf({ 1.0, 0.0 });
 
   auto points = sphere_points(n_points);
 

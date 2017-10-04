@@ -12,12 +12,12 @@
 #include "polatory/interpolation/rbf_fitter.hpp"
 #include "polatory/interpolation/rbf_symmetric_evaluator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/biharmonic.hpp"
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;
 using polatory::polynomial::basis_base;
-using polatory::rbf::linear_variogram;
+using polatory::rbf::biharmonic;
 
 namespace {
 
@@ -30,7 +30,7 @@ void test_poly_degree(int poly_degree, bool with_initial_solution) {
   size_t n_polynomials = basis_base::dimension(poly_degree);
   double absolute_tolerance = 1e-4;
 
-  linear_variogram rbf({ 1.0, 0.0 });
+  biharmonic rbf({ 1.0, 0.0 });
 
   auto fitter = std::make_unique<rbf_fitter>(rbf, poly_degree, points);
   Eigen::VectorXd weights;

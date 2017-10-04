@@ -2,43 +2,42 @@
 
 #pragma once
 
-#include <cmath>
-
 #include "rbf_base.hpp"
 
 namespace polatory {
 namespace rbf {
 
-struct gaussian : rbf_base {
+class biharmonic : public rbf_base {
+public:
   using rbf_base::rbf_base;
 
   static double evaluate(double r, const double *params) {
-    auto c = params[0];
+    auto slope = params[0];
 
-    return std::exp(-r * r / (c * c));
+    return -slope * r;
   }
 
   double evaluate(double r) const override {
-    return evaluate(r, parameters());
+    return evaluate(r, parameters().data());
   }
 
   void evaluate_gradient(
     double& gradx, double& grady, double& gradz,
     double x, double y, double z, double r) const override {
-    auto c = parameters()[0];
-    auto d = -2.0 * std::exp(-r * r / (c * c)) / (c * c);
+    auto slope = parameters()[0];
 
-    gradx = d * x;
-    grady = d * y;
-    gradz = d * z;
+    auto c = -slope / r;
+    gradx = c * x;
+    grady = c * y;
+    gradz = c * z;
   }
 
-  int definiteness() const override {
-    return 1;
+  double nugget() const override {
+    return parameters()[1];
   }
 
   int order_of_definiteness() const override {
-    return 0;
+    return 1;
   }
 };
 

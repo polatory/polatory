@@ -189,7 +189,7 @@
     <ClInclude Include="include\polatory\common\uncertain.hpp" />
     <ClInclude Include="include\polatory\point_cloud\kdtree.hpp" />
     <ClInclude Include="include\polatory\rbf\exponential_variogram.hpp" />
-    <ClInclude Include="include\polatory\rbf\gaussian.hpp" />
+    <ClInclude Include="include\polatory\rbf\gaussian_variogram.hpp" />
     <ClInclude Include="include\polatory\rbf\spherical_variogram.hpp" />
     <ClInclude Include="include\polatory\kriging\cross_validation.hpp" />
     <ClInclude Include="include\polatory\kriging\variogram_fitting.hpp" />
@@ -208,7 +208,7 @@
     <ClInclude Include="include\polatory\krylov\gmres_base.hpp" />
     <ClInclude Include="include\polatory\krylov\minres.hpp" />
     <ClInclude Include="include\polatory\krylov\linear_operator.hpp" />
-    <ClInclude Include="include\polatory\rbf\linear_variogram.hpp" />
+    <ClInclude Include="include\polatory\rbf\biharmonic.hpp" />
     <ClInclude Include="include\polatory\rbf\rbf_base.hpp" />
     <ClInclude Include="include\polatory\interpolation.hpp" />
     <ClInclude Include="include\polatory\interpolation\rbf_evaluator.hpp" />
@@ -218,7 +218,7 @@
     <ClInclude Include="include\polatory\kriging\empirical_variogram.hpp" />
     <ClInclude Include="include\polatory\polynomial.hpp" />
     <ClInclude Include="include\polatory\interpolation\rbf_symmetric_evaluator.hpp" />
-    <ClInclude Include="include\polatory\rbf\variogram.hpp" />
+    <ClInclude Include="include\polatory\rbf\covariance_function.hpp" />
     <ClInclude Include="test\interpolation\test_points_values.hpp" />
   </ItemGroup>
   <ItemGroup>

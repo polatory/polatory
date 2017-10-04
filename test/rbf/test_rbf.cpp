@@ -5,8 +5,9 @@
 
 #include <gtest/gtest.h>
 
+#include "polatory/rbf/biharmonic.hpp"
 #include "polatory/rbf/exponential_variogram.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/gaussian_variogram.hpp"
 #include "polatory/rbf/rbf_base.hpp"
 #include "polatory/rbf/spherical_variogram.hpp"
 
@@ -53,7 +54,8 @@ void test_gradient(const rbf_base& kernel) {
 } // namespace
 
 TEST(rbf, gradient) {
-  test_gradient(exponential_variogram({ 1.0, 1.0, 0.5 }));
-  test_gradient(linear_variogram({ 1.0, 0.5 }));
-  test_gradient(spherical_variogram({ 1.0, 1.0, 0.5 }));
+  test_gradient(biharmonic({ 1.0, 0.0 }));
+  test_gradient(exponential_variogram({ 1.0, 1.0, 0.0 }));
+  test_gradient(gaussian_variogram({ 1.0, 1.0, 0.0 }));
+  test_gradient(spherical_variogram({ 1.0, 1.0, 0.0 }));
 }

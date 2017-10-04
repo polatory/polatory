@@ -9,11 +9,11 @@
 #include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
 #include "polatory/interpolation/rbf_direct_solver.hpp"
 #include "polatory/random_points/box_points.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::interpolation;
 using polatory::random_points::box_points;
-using polatory::rbf::linear_variogram;
+using polatory::rbf::biharmonic;
 
 namespace {
 
@@ -23,7 +23,7 @@ void test_rbf_direct_solver(double nugget, int poly_degree) {
   double radius = 1e5;
   double absolute_tolerance = 1e-10;
 
-  linear_variogram rbf({ 1.0, nugget });
+  biharmonic rbf({ 1.0, nugget });
 
   auto points = box_points(n_points, center, radius);
   Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);

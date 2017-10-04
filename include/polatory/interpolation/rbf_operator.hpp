@@ -68,7 +68,7 @@ public:
 
     Eigen::VectorXd y = Eigen::VectorXd::Zero(size());
 
-    auto diagonal = rbf.evaluate(0.0) - rbf.nugget();
+    auto diagonal = rbf.evaluate(0.0) + rbf.nugget();
     y.head(n_points) = diagonal * weights.head(n_points);
 
     a->set_weights(weights.head(n_points));

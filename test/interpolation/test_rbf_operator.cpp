@@ -10,12 +10,12 @@
 #include "polatory/interpolation/rbf_operator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/random_points/sphere_points.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::interpolation;
 using polatory::random_points::sphere_points;
 using polatory::polynomial::basis_base;
-using polatory::rbf::linear_variogram;
+using polatory::rbf::biharmonic;
 
 namespace {
 
@@ -23,7 +23,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
   size_t n_polynomials = basis_base::dimension(poly_degree);
   double absolute_tolerance = 5e-7;
 
-  linear_variogram rbf({ 1.0, 0.2 });
+  biharmonic rbf({ 1.0, 0.2 });
 
   auto points = sphere_points(n_points);
 
@@ -34,7 +34,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
 
   rbf_operator<> op(rbf, poly_degree, points);
 
-  Eigen::VectorXd direct_op_weights = direct_eval.evaluate() - rbf.nugget() * weights.head(n_points);
+  Eigen::VectorXd direct_op_weights = direct_eval.evaluate() + rbf.nugget() * weights.head(n_points);
   Eigen::VectorXd op_weights = op(weights);
 
   ASSERT_EQ(n_points + n_polynomials, op_weights.size());

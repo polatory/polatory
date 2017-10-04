@@ -318,7 +318,7 @@
     <ClInclude Include="include\polatory\rbf\exponential_variogram.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\polatory\rbf\linear_variogram.hpp">
+    <ClInclude Include="include\polatory\rbf\biharmonic.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\polatory\rbf\rbf_base.hpp">
@@ -342,10 +342,10 @@
     <ClInclude Include="include\polatory\numeric\sum_accumulator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\polatory\rbf\gaussian.hpp">
+    <ClInclude Include="include\polatory\rbf\gaussian_variogram.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\polatory\rbf\variogram.hpp">
+    <ClInclude Include="include\polatory\rbf\covariance_function.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\polatory\point_cloud\scattered_data_generator.hpp">

@@ -11,7 +11,8 @@
 namespace polatory {
 namespace rbf {
 
-struct rbf_base : FInterpAbstractMatrixKernel<double> {
+class rbf_base : FInterpAbstractMatrixKernel<double> {
+public:
   static const KERNEL_FUNCTION_TYPE Type = NON_HOMOGENEOUS;
   static const unsigned int NCMP = 1;    // Number of components.
   static const unsigned int NPV = 1;     // Dimension of physical values.
@@ -20,11 +21,11 @@ struct rbf_base : FInterpAbstractMatrixKernel<double> {
   static const unsigned int NLHS = 1;    // Dimension of local expansions.
 
   explicit rbf_base(const std::vector<double>& params)
-    : params(params) {
+    : params_(params) {
   }
 
   rbf_base(const rbf_base& other)
-    : params(other.params) {
+    : params_(other.params_) {
   }
 
   virtual double evaluate(double r) const = 0;
@@ -83,24 +84,20 @@ struct rbf_base : FInterpAbstractMatrixKernel<double> {
     return evaluate(p1.data(), p2.data());
   }
 
-  // Returns
-  //    1 if the rbf is strictly conditionally positive definite of order k
-  //    -1 if the rbf is strictly conditionally negative definite of order k
-  // where k is given by order_of_definiteness().
-  virtual int definiteness() const = 0;
-
   virtual double nugget() const {
     return 0.0;
   }
 
+  // The rbf is strictly conditionally positive definite of order k,
+  // where k = order_of_definiteness().
   virtual int order_of_definiteness() const = 0;
 
-  const double *parameters() const {
-    return params.data();
+  const std::vector<double>& parameters() const {
+    return params_;
   }
 
 private:
-  const std::vector<double> params;
+  const std::vector<double> params_;
 };
 
 } // namespace rbf

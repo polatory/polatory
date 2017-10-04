@@ -45,7 +45,7 @@ class rbf_direct_solver {
   Eigen::LDLT<MatrixXF> ldlt_of_qtaq;
 
   // Decomposition of martix A.
-  // This version is used when the systen is indefinite.
+  // This version is used when the system is indefinite.
   Eigen::PartialPivLU<MatrixXF> lu_of_a;
 
   // Matrix -E.
@@ -110,7 +110,7 @@ public:
 
     // Compute A.
     MatrixXF a(m, m);
-    auto diagonal = rbf.evaluate(0.0) - rbf.nugget();
+    auto diagonal = rbf.evaluate(0.0) + rbf.nugget();
     for (size_t i = 0; i < m; i++) {
       a(i, i) = diagonal;
     }

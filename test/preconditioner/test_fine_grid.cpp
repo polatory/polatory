@@ -10,11 +10,11 @@
 
 #include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
 #include "polatory/preconditioner/fine_grid.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::preconditioner;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
-using polatory::rbf::linear_variogram;
+using polatory::rbf::biharmonic;
 
 void test_fine_grid(double nugget) {
   size_t n_points = 256;
@@ -36,7 +36,7 @@ void test_fine_grid(double nugget) {
 
   std::vector<bool> inner_point(n_points, true);
 
-  linear_variogram rbf({ 1.0, nugget });
+  biharmonic rbf({ 1.0, nugget });
 
   Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);
 
