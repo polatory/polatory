@@ -110,6 +110,27 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    make -j8
    ```
 
+### On Windows
+
+1. Install Boost and Eigen
+   ```
+   cd /d C:
+   git clone https://github.com/Microsoft/vcpkg.git
+   cd vcpkg
+   ./vcpkg install eigen3:x64-windows
+   ./vcpkg install boost:x64-windows
+   ```
+
+1. Build polatory
+   ```
+   cd /d %userprofile%
+   git clone https://github.com/polatory/polatory.git
+   cd polatory
+   mkdir build
+   cd build
+   cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+   ```
+
 ## Contribution
 
 We welcome your contributions! You can contribute to this project in several ways:
