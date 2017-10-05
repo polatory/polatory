@@ -1,6 +1,6 @@
 # Polatory
 
-Polatory is a framework for fast 3D spline surface reconstruction and interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
+Polatory is a fast and memory-efficient framework for spline surface reconstruction and spatial interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
 ## What Can It Do
 
@@ -108,6 +108,27 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    mkdir build; cd build
    cmake .. -DBOOST_ROOT=~/boost_1_64_0 -DCMAKE_BUILD_TYPE=Release
    make -j8
+   ```
+
+### On Windows
+
+1. Install Boost and Eigen
+   ```
+   cd /d C:
+   git clone https://github.com/Microsoft/vcpkg.git
+   cd vcpkg
+   ./vcpkg install eigen3:x64-windows
+   ./vcpkg install boost:x64-windows
+   ```
+
+1. Build polatory
+   ```
+   cd /d %userprofile%
+   git clone https://github.com/polatory/polatory.git
+   cd polatory
+   mkdir build
+   cd build
+   cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
    ```
 
 ## Contribution
