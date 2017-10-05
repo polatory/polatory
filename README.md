@@ -112,13 +112,12 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
 
 ### On Windows
 
-1. Install Boost and Eigen
+1. Install libraries
    ```
    cd /d C:
    git clone https://github.com/Microsoft/vcpkg.git
    cd vcpkg
-   ./vcpkg install eigen3:x64-windows
-   ./vcpkg install boost:x64-windows
+   ./vcpkg install boost:x64-windows ceres:x64-windows eigen3:x64-windows gtest:x64-windows
    ```
 
 1. Build polatory
