@@ -1,6 +1,6 @@
 # Polatory
 
-Polatory is a framework for fast 3D spline surface reconstruction and interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
+Polatory is a fast and memory-efficient framework for spline surface reconstruction and spatial interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
 ## What Can It Do
 
