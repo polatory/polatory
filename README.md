@@ -1,6 +1,6 @@
 # Polatory
 
-Polatory is a framework for fast 3D spline surface reconstruction and interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
+Polatory is a fast and memory-efficient framework for spline surface reconstruction and spatial interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
 ## What Can It Do
 
@@ -82,18 +82,19 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
 
 1. Install [Ceres Solver](http://ceres-solver.org/)
    ```bash
+   sudo apt-get install libgoogle-glog-dev
    cd
    git clone https://ceres-solver.googlesource.com/ceres-solver
    cd ceres-solver
    mkdir build; cd build/
-   cmake .. -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON -DMINIGLOG=ON
+   cmake .. -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
    make -j8
    sudo make install
    ```
 
 1. Download and extract [Boost](http://www.boost.org/)
 
-   Polatory currently uses header-only libraries from boost, so you don't have to build it.
+   Polatory currently uses header-only libraries of boost, so you don't have to build it.
    ```bash
    cd
    wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
@@ -108,6 +109,27 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    mkdir build; cd build
    cmake .. -DBOOST_ROOT=~/boost_1_64_0 -DCMAKE_BUILD_TYPE=Release
    make -j8
+   ```
+
+### On Windows
+
+1. Install libraries
+   ```
+   cd /d C:
+   git clone https://github.com/Microsoft/vcpkg.git
+   cd vcpkg
+   ./vcpkg install boost:x64-windows ceres:x64-windows eigen3:x64-windows gtest:x64-windows
+   ```
+
+1. Build polatory
+   ```
+   cd /d %userprofile%
+   git clone https://github.com/polatory/polatory.git
+   cd polatory
+   mkdir build
+   cd build
+   cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
+   msbuild polatory.sln
    ```
 
 ## Contribution

@@ -1,25 +1,6 @@
-# Visual Studio user-specific files
-*.user
-
-# Visual Studio cache/options directory
-.vs/
-
-# NuGet packages
-packages/
-
-# Build results
-bin/
+# Build output
 build/
 cmake-build-*/
-obj/
-x64/
-
-lib_win64/
-
-# Temporary files generated during build.
-errfile-child-of-*
-outfile-child-of-*
-temp_*
 
 # CLion settings
 .idea/*

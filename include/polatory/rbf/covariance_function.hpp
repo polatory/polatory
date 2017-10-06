@@ -4,7 +4,8 @@
 
 #include <limits>
 
-#include "polatory/third_party/ceres/ceres.h"
+#include <ceres/ceres.h>
+
 #include "rbf_base.hpp"
 
 namespace polatory {
