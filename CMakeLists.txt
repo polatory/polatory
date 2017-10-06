@@ -51,6 +51,7 @@ include_directories(
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_ROOT}/include
+    ${VCPKG_ROOT}/include
 )
 
 add_definitions(
