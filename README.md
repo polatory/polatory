@@ -82,6 +82,7 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
 
 1. Install [Ceres Solver](http://ceres-solver.org/)
    ```bash
+   sudo apt-get install libgoogle-glog-dev
    cd
    git clone https://ceres-solver.googlesource.com/ceres-solver
    cd ceres-solver

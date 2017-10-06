@@ -64,7 +64,7 @@ if(UNIX)
     link_libraries(
         "-Wl,--start-group"
         ${MKL_ROOT}/lib/intel64/libmkl_intel_lp64.a ${MKL_ROOT}/lib/intel64/libmkl_sequential.a ${MKL_ROOT}/lib/intel64/libmkl_core.a pthread m dl
-        ceres
+        ceres glog
         "-Wl,--end-group"
     )
 elseif(MSVC)
