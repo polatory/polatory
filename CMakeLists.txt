@@ -25,6 +25,7 @@ elseif(MSVC)
         set(DLLS
             ${DLLS}
             ${VCPKG_ROOT}/debug/bin/ceres-debug.dll
+            ${VCPKG_ROOT}/debug/bin/flann_cpp-gd.dll
             ${VCPKG_ROOT}/debug/bin/glog.dll
             ${VCPKG_ROOT}/debug/bin/lapack.dll
             ${VCPKG_ROOT}/debug/bin/metis.dll
@@ -34,6 +35,7 @@ elseif(MSVC)
         set(DLLS
             ${DLLS}
             ${VCPKG_ROOT}/bin/ceres.dll
+            ${VCPKG_ROOT}/bin/flann_cpp.dll
             ${VCPKG_ROOT}/bin/glog.dll
             ${VCPKG_ROOT}/bin/lapack.dll
             ${VCPKG_ROOT}/bin/metis.dll
@@ -64,7 +66,7 @@ if(UNIX)
     link_libraries(
         "-Wl,--start-group"
         ${MKL_ROOT}/lib/intel64/libmkl_intel_lp64.a ${MKL_ROOT}/lib/intel64/libmkl_sequential.a ${MKL_ROOT}/lib/intel64/libmkl_core.a pthread m dl
-        ceres glog
+        ceres flann_cpp glog
         "-Wl,--end-group"
     )
 elseif(MSVC)
@@ -77,11 +79,13 @@ elseif(MSVC)
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         link_libraries(
             ${VCPKG_ROOT}/debug/lib/ceres-debug.lib
+            ${VCPKG_ROOT}/debug/lib/flann_cpp-gd.lib
             ${VCPKG_ROOT}/debug/lib/glog.lib
         )
     else()
         link_libraries(
             ${VCPKG_ROOT}/lib/ceres.lib
+            ${VCPKG_ROOT}/lib/flann_cpp.lib
             ${VCPKG_ROOT}/lib/glog.lib
         )
     endif()

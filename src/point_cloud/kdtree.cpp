@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/third_party/flann/flann.hpp"
+#include <flann/flann.hpp>
 
 namespace polatory {
 namespace point_cloud {

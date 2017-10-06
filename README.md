@@ -92,6 +92,11 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    sudo make install
    ```
 
+1. Install [FLANN](http://www.cs.ubc.ca/research/flann/)
+   ```bash
+   sudo apt-get install libflann-dev
+   ```
+
 1. Download and extract [Boost](http://www.boost.org/)
 
    Polatory currently uses header-only libraries of boost, so you don't have to build it.
@@ -118,7 +123,7 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    cd /d C:
    git clone https://github.com/Microsoft/vcpkg.git
    cd vcpkg
-   ./vcpkg install boost:x64-windows ceres:x64-windows eigen3:x64-windows gtest:x64-windows
+   ./vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
    ```
 
 1. Build polatory
