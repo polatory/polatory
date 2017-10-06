@@ -21,7 +21,7 @@ void test_rbf_direct_solver(double nugget, int poly_degree) {
   size_t n_points = 1024;
   Eigen::Vector3d center = Eigen::Vector3d::Zero();
   double radius = 1e5;
-  double absolute_tolerance = 1e-10;
+  double absolute_tolerance = 1e-8;
 
   biharmonic rbf({ 1.0, nugget });
 
