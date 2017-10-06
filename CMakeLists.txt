@@ -14,7 +14,9 @@ elseif(MSVC)
     set(MKL_ROOT "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/mkl")
     set(MKL_DLL_DIR "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/redist/intel64/mkl")
     set(MKL_DLLS ${MKL_DLL_DIR}/mkl_avx2.dll ${MKL_DLL_DIR}/mkl_core.dll ${MKL_DLL_DIR}/mkl_def.dll ${MKL_DLL_DIR}/mkl_sequential.dll)
-
+    
+    set(VCPKG_ROOT "" CACHE STRING "Path to vcpkg/installed/x64-windows")
+    
     set(CMAKE_CXX_FLAGS "/MP /fp:strict /fp:except- /Qstd=c++14 /Qopenmp /Qip /QaxAVX")
 endif()
 

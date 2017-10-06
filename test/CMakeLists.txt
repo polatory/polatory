@@ -12,18 +12,19 @@ elseif(MSVC)
             )
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         target_link_libraries(${UNITTEST}
-                ${CMAKE_SOURCE_DIR}/lib_win64/gtestd.lib
-                ${CMAKE_SOURCE_DIR}/lib_win64/gtest_maind.lib
+                ${VCPKG_ROOT}/debug/lib/manual-link/gtest.lib
+                ${VCPKG_ROOT}/debug/lib/manual-link/gtest_main.lib
                 )
     else()
         target_link_libraries(${UNITTEST}
-                ${CMAKE_SOURCE_DIR}/lib_win64/gtest.lib
-                ${CMAKE_SOURCE_DIR}/lib_win64/gtest_main.lib
+                ${VCPKG_ROOT}/lib/manual-link/gtest.lib
+                ${VCPKG_ROOT}/lib/manual-link/gtest_main.lib
                 )
     endif()
 
     foreach(dll ${MKL_DLLS})
-        add_custom_command(TARGET ${UNITTEST} POST_BUILD
+        add_custom_command(TARGET ${UNITTEST}
+                POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${dll}
                 $<TARGET_FILE_DIR:${UNITTEST}>

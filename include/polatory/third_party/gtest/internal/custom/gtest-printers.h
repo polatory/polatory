@@ -1,4 +1,4 @@
-// Copyright 2006, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,32 +27,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Author: wan@google.com (Zhanyong Wan)
+// This file provides an injection point for custom printers in a local
+// installation of gTest.
+// It will be included from gtest-printers.h and the overrides in this file
+// will be visible to everyone.
+// See documentation at gtest/gtest-printers.h for details on how to define a
+// custom printer.
 //
-// Google C++ Testing Framework definitions useful in production code.
+// ** Custom implementation starts here **
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_PROD_H_
-#define GTEST_INCLUDE_GTEST_GTEST_PROD_H_
+#ifndef GTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_PRINTERS_H_
+#define GTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_PRINTERS_H_
 
-// When you need to test the private or protected members of a class,
-// use the FRIEND_TEST macro to declare your tests as friends of the
-// class.  For example:
-//
-// class MyClass {
-//  private:
-//   void MyMethod();
-//   FRIEND_TEST(MyClassTest, MyMethod);
-// };
-//
-// class MyClassTest : public testing::Test {
-//   // ...
-// };
-//
-// TEST_F(MyClassTest, MyMethod) {
-//   // Can call MyClass::MyMethod() here.
-// }
-
-#define FRIEND_TEST(test_case_name, test_name)\
-friend class test_case_name##_##test_name##_Test
-
-#endif  // GTEST_INCLUDE_GTEST_GTEST_PROD_H_
+#endif  // GTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_PRINTERS_H_

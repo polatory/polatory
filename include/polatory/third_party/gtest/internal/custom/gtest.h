@@ -1,4 +1,4 @@
-// Copyright 2006, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,32 +27,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Author: wan@google.com (Zhanyong Wan)
+// Injection point for custom user configurations.
+// The following macros can be defined:
 //
-// Google C++ Testing Framework definitions useful in production code.
-
-#ifndef GTEST_INCLUDE_GTEST_GTEST_PROD_H_
-#define GTEST_INCLUDE_GTEST_GTEST_PROD_H_
-
-// When you need to test the private or protected members of a class,
-// use the FRIEND_TEST macro to declare your tests as friends of the
-// class.  For example:
+// GTEST_OS_STACK_TRACE_GETTER_  - The name of an implementation of
+//                                 OsStackTraceGetterInterface.
 //
-// class MyClass {
-//  private:
-//   void MyMethod();
-//   FRIEND_TEST(MyClassTest, MyMethod);
-// };
-//
-// class MyClassTest : public testing::Test {
-//   // ...
-// };
-//
-// TEST_F(MyClassTest, MyMethod) {
-//   // Can call MyClass::MyMethod() here.
-// }
+// ** Custom implementation starts here **
 
-#define FRIEND_TEST(test_case_name, test_name)\
-friend class test_case_name##_##test_name##_Test
+#ifndef GTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_H_
+#define GTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_H_
 
-#endif  // GTEST_INCLUDE_GTEST_GTEST_PROD_H_
+#endif  // GTEST_INCLUDE_GTEST_INTERNAL_CUSTOM_GTEST_H_
