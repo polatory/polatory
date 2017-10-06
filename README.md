@@ -164,7 +164,7 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | isosurface             | Isosurface generation.                           |
 | kriging                | Parameter estimation and validation for kriging. |
 | krylov                 | Krylov subspace methods.                         |
-| numeric                | Numerically robust algorithms.                   |
+| numeric                | Numerically stable algorithms.                   |
 | point_cloud            | Scattered data generation from point clouds.     |
 | polynomial             | Polynomial part of RBF interpolant.              |
 | preconditioner         | The preconditioner used with Krylov subspace methods. |

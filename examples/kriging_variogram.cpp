@@ -31,10 +31,10 @@ int main(int argc, char *argv[]) {
   double bin_range = 0.1;
 
   empirical_variogram emp_variog(points, values, bin_range, n_bins);
-  const auto bin_variog = emp_variog.bin_variogram();
-  const auto bin_pairs = emp_variog.bin_num_pairs();
+  const auto bin_variances = emp_variog.bin_variances();
+  const auto bin_num_pairs = emp_variog.bin_num_pairs();
   for (int bin = 0; bin < n_bins; bin++) {
-    std::cout << bin_variog[bin] << " " << bin_pairs[bin] << std::endl;
+    std::cout << bin_variances[bin] << " " << bin_num_pairs[bin] << std::endl;
   }
 
   spherical_variogram variog({ 0.02, 0.6, 0.0 });

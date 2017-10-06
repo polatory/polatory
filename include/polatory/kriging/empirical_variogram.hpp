@@ -8,6 +8,8 @@
 
 #include <Eigen/Core>
 
+#include "polatory/numeric/sum_accumulator.hpp"
+
 namespace polatory {
 namespace kriging {
 
@@ -19,7 +21,7 @@ class empirical_variogram {
   double bin_range;
   int n_bins;
 
-  std::vector<double> variogram;
+  std::vector<double> variances;
   std::vector<int> num_pairs;
 
 public:
@@ -33,9 +35,11 @@ public:
     , values(values)
     , bin_range(bin_range)
     , n_bins(n_bins)
-    , variogram(n_bins)
+    , variances(n_bins)
     , num_pairs(n_bins) {
     assert(values.size() == n_points);
+
+    std::vector<numeric::kahan_sum_accumulator<double>> sums(n_bins);
 
     for (size_t i = 0; i < n_points - 1; i++) {
       for (size_t j = i + 1; j < n_points; j++) {
@@ -44,34 +48,33 @@ public:
         int bin = std::floor(distance / bin_range);
         if (bin >= n_bins) continue;
 
-        variogram[bin] += diff_sq;
+        sums[bin] += diff_sq;
         num_pairs[bin]++;
       }
     }
 
-    // Normalize.
     for (int i = 0; i < n_bins; i++) {
       if (num_pairs[i] == 0) continue;
-      variogram[i] /= 2.0 * num_pairs[i];
+      variances[i] = sums[i].get() / (2.0 * num_pairs[i]);
     }
   }
 
-  std::vector<double> bin_lags() const {
-    std::vector<double> lags(n_bins);
+  std::vector<double> bin_centers() const {
+    std::vector<double> centers(n_bins);
 
     for (int i = 0; i < n_bins; i++) {
-      lags[i] = (i + 0.5) * bin_range;
+      centers[i] = (i + 0.5) * bin_range;
     }
 
-    return lags;
+    return centers;
   }
 
   const std::vector<int>& bin_num_pairs() const {
     return num_pairs;
   }
 
-  const std::vector<double>& bin_variogram() const {
-    return variogram;
+  const std::vector<double>& bin_variances() const {
+    return variances;
   }
 
   int num_bins() const {

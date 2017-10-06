@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include <ceres/ceres.h>
 
@@ -29,9 +30,9 @@ public:
     params = std::vector<double>(cov->parameters());
 
     auto n_bins = emp_variog.num_bins();
-    auto bin_lags = emp_variog.bin_lags();
-    const auto& bin_pairs = emp_variog.bin_num_pairs();
-    const auto& bin_variog = emp_variog.bin_variogram();
+    auto bin_centers = emp_variog.bin_centers();
+    const auto& bin_num_pairs = emp_variog.bin_num_pairs();
+    const auto& bin_variances = emp_variog.bin_variances();
 
     ceres::Problem problem;
     for (int i = 0; i < n_bins; i++) {
@@ -40,18 +41,18 @@ public:
 
       switch (weights) {
       case variogram_fitting_weights::cressie:
-        weight = std::sqrt(bin_pairs[i]);
-        cost_function = cov->cost_function_over_gamma(bin_lags[i], bin_variog[i], weight);
+        weight = std::sqrt(bin_num_pairs[i]);
+        cost_function = cov->cost_function_over_gamma(bin_centers[i], bin_variances[i], weight);
         break;
 
       case variogram_fitting_weights::npairs:
-        weight = std::sqrt(bin_pairs[i]);
-        cost_function = cov->cost_function(bin_lags[i], bin_variog[i], weight);
+        weight = std::sqrt(bin_num_pairs[i]);
+        cost_function = cov->cost_function(bin_centers[i], bin_variances[i], weight);
         break;
 
       default:
         weight = 1.0;
-        cost_function = cov->cost_function(bin_lags[i], bin_variog[i], weight);
+        cost_function = cov->cost_function(bin_centers[i], bin_variances[i], weight);
         break;
       }
 
