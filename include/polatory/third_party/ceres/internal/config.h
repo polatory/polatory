@@ -42,16 +42,16 @@
 #define CERES_PUBLIC_INTERNAL_CONFIG_H_
 
 // If defined, use the LGPL code in Eigen.
-// #define CERES_USE_EIGEN_SPARSE
+#define CERES_USE_EIGEN_SPARSE
 
 // If defined, Ceres was compiled without LAPACK.
 // #define CERES_NO_LAPACK
 
 // If defined, Ceres was compiled without SuiteSparse.
-#define CERES_NO_SUITESPARSE
+// #define CERES_NO_SUITESPARSE
 
 // If defined, Ceres was compiled without CXSparse.
-#define CERES_NO_CXSPARSE
+// #define CERES_NO_CXSPARSE
 
 // If defined, Ceres was compiled without Schur specializations.
 // #define CERES_RESTRICT_SCHUR_SPECIALIZATION
@@ -86,6 +86,11 @@
 // #define CERES_TR1_SHARED_PTR
 
 // If defined, Ceres was built as a shared library.
-// #define CERES_USING_SHARED_LIBRARY
+#define CERES_USING_SHARED_LIBRARY
+
+// If defined, Ceres was compiled with a version MSVC >= 2005 which
+// deprecated the standard POSIX names for bessel functions, replacing them
+// with underscore prefixed versions (e.g. j0() -> _j0()).
+#define CERES_MSVC_USE_UNDERSCORE_PREFIXED_BESSEL_FUNCTIONS
 
 #endif  // CERES_PUBLIC_INTERNAL_CONFIG_H_

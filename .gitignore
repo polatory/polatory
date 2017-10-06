@@ -1,5 +1,3 @@
-lib_win64/
-
 # Build output
 build/
 cmake-build-*/
