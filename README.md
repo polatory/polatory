@@ -2,14 +2,13 @@
 
 Polatory is a fast and memory-efficient framework for spline surface reconstruction and spatial interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
-## What Can It Do
+## Features
 
 * Fast spline surface reconstruction of 2.5D/3D point cloud
 * Fast interpolation (kriging prediction) of 3D scattered data
 * Meshing isosurfaces
 * Supports large number (~1M) of input points
 * Supports globally supported RBFs
-* Supports user-defined smooth, non-oscillatory RBFs.
 
 ### Correspondence between kriging and RBF interpolation
 
@@ -20,6 +19,8 @@ Polatory is a fast and memory-efficient framework for spline surface reconstruct
 | Simple kriging      | Interpolant with no polynomial             |
 | Ordinary kriging    | Interpolant with polynomial of degree 0    |
 | Universal kriging   | Interpolant with polynomial of degree >= 1 |
+
+**Rapidly decaying covariance functions are not supported in the current release, such as the spherical model and the Gaussian model.** These RBFs are included for reference purposes. The spherical model can be substituted by `cov_quasi_spherical9`, which is quite similar to the original one.
 
 ## License
 
