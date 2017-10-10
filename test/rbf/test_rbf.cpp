@@ -6,10 +6,14 @@
 #include <gtest/gtest.h>
 
 #include "polatory/rbf/biharmonic.hpp"
-#include "polatory/rbf/exponential_variogram.hpp"
-#include "polatory/rbf/gaussian_variogram.hpp"
+#include "polatory/rbf/cov_exponential.hpp"
+#include "polatory/rbf/cov_gaussian.hpp"
+#include "polatory/rbf/cov_quasi_spherical3.hpp"
+#include "polatory/rbf/cov_quasi_spherical5.hpp"
+#include "polatory/rbf/cov_quasi_spherical7.hpp"
+#include "polatory/rbf/cov_quasi_spherical9.hpp"
+#include "polatory/rbf/cov_spherical.hpp"
 #include "polatory/rbf/rbf_base.hpp"
-#include "polatory/rbf/spherical_variogram.hpp"
 
 using namespace polatory::rbf;
 
@@ -55,7 +59,11 @@ void test_gradient(const rbf_base& kernel) {
 
 TEST(rbf, gradient) {
   test_gradient(biharmonic({ 1.0, 0.0 }));
-  test_gradient(exponential_variogram({ 1.0, 1.0, 0.0 }));
-  test_gradient(gaussian_variogram({ 1.0, 1.0, 0.0 }));
-  test_gradient(spherical_variogram({ 1.0, 1.0, 0.0 }));
+  test_gradient(cov_exponential({ 1.0, 1.0, 0.0 }));
+  test_gradient(cov_gaussian({ 1.0, 1.0, 0.0 }));
+  test_gradient(cov_quasi_spherical3({ 1.0, 1.0, 0.0 }));
+  test_gradient(cov_quasi_spherical5({ 1.0, 1.0, 0.0 }));
+  test_gradient(cov_quasi_spherical7({ 1.0, 1.0, 0.0 }));
+  test_gradient(cov_quasi_spherical9({ 1.0, 1.0, 0.0 }));
+  test_gradient(cov_spherical({ 1.0, 1.0, 0.0 }));
 }

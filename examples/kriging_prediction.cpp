@@ -11,7 +11,7 @@
 #include "polatory/isosurface/export_obj.hpp"
 #include "polatory/isosurface/isosurface.hpp"
 #include "polatory/isosurface/rbf_field_function.hpp"
-#include "polatory/rbf/spherical_variogram.hpp"
+#include "polatory/rbf/cov_spherical.hpp"
 
 #include "read_table.hpp"
 
@@ -20,7 +20,7 @@ using polatory::interpolant;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
-using polatory::rbf::spherical_variogram;
+using polatory::rbf::cov_spherical;
 
 int main(int argc, char *argv[]) {
   if (argc < 3) return 1;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   std::tie(points, values) = read_points_and_values(in_file);
 
   // Define model.
-  spherical_variogram rbf({ 0.0181493, 0.678264, 0.00383142 });
+  cov_spherical rbf({ 0.0181493, 0.678264, 0.00383142 });
   interpolant interpolant(rbf, 0);
 
   // Fit.

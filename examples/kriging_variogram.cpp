@@ -9,7 +9,7 @@
 
 #include "polatory/kriging/empirical_variogram.hpp"
 #include "polatory/kriging/variogram_fitting.hpp"
-#include "polatory/rbf/spherical_variogram.hpp"
+#include "polatory/rbf/cov_spherical.hpp"
 
 #include "read_table.hpp"
 
@@ -17,7 +17,7 @@ using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
 using polatory::kriging::variogram_fitting_weights;
 using polatory::rbf::rbf_base;
-using polatory::rbf::spherical_variogram;
+using polatory::rbf::cov_spherical;
 
 int main(int argc, char *argv[]) {
   if (argc < 2) return 1;
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     std::cout << bin_variances[bin] << " " << bin_num_pairs[bin] << std::endl;
   }
 
-  spherical_variogram variog({ 0.02, 0.6, 0.0 });
+  cov_spherical variog({ 0.02, 0.6, 0.0 });
   variogram_fitting fit(emp_variog, &variog, variogram_fitting_weights::cressie);
 
   auto params = fit.parameters();
