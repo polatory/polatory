@@ -32,6 +32,7 @@ class rbf_direct_solver {
 
   const rbf::rbf_base& rbf;
 
+  const int poly_dimension;
   const int poly_degree;
 
   std::vector<size_t> point_idcs;
@@ -55,20 +56,22 @@ class rbf_direct_solver {
   const size_t m;
 
 public:
-  rbf_direct_solver(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_direct_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                     size_t n_points)
     : rbf(rbf)
+    , poly_dimension(poly_dimension)
     , poly_degree(poly_degree)
-    , l(polynomial::basis_base::dimension(poly_degree))
+    , l(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , m(n_points) {
     assert(m > l);
   }
 
-  rbf_direct_solver(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_direct_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                     const std::vector<Eigen::Vector3d>& points)
     : rbf(rbf)
+    , poly_dimension(poly_dimension)
     , poly_degree(poly_degree)
-    , l(polynomial::basis_base::dimension(poly_degree))
+    , l(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , m(points.size()) {
     assert(m > l);
 
@@ -104,7 +107,7 @@ public:
         other_points.push_back(points[point_idcs[i]].template cast<Floating>());
       }
 
-      polynomial::lagrange_basis<Floating> lagr_basis(poly_degree, poly_points);
+      polynomial::lagrange_basis<Floating> lagr_basis(poly_dimension, poly_degree, poly_points);
       me = -lagr_basis.evaluate_points(other_points);
     }
 
@@ -180,7 +183,7 @@ public:
         }
       }
 
-      polynomial::monomial_basis<Floating> mono_basis(poly_degree);
+      polynomial::monomial_basis<Floating> mono_basis(poly_dimension, poly_degree);
       auto pt = mono_basis.evaluate_points(poly_points);
       VectorXF res_at_poly_points = d_at_poly_points - phi_at_poly_points;
       lambda_c.tail(l) = pt.transpose().fullPivLu().solve(res_at_poly_points).template cast<double>();

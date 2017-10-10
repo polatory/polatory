@@ -8,34 +8,53 @@ namespace polatory {
 namespace polynomial {
 
 class basis_base {
-  const int deg;
-  const size_t dim;
-
 public:
-  explicit basis_base(int degree)
-    : deg(degree)
-    , dim(dimension(degree)) {
+  explicit basis_base(int dimension, int degree)
+    : dimension_(dimension)
+    , degree_(degree)
+    , basis_size_(basis_size(dimension, degree)) {
+    assert(dimension >= 1 && dimension <= 3);
     assert(degree >= 0);
   }
 
   virtual ~basis_base() {}
 
-  // Degree of a polynomial.
+  size_t basis_size() const {
+    return basis_size(dimension_, degree_);
+  }
+
   int degree() const {
-    return deg;
+    return degree_;
   }
 
-  // Size of the basis (degree of freedom).
-  size_t dimension() const {
-    return dimension(deg);
+  int dimension() const {
+    return dimension_;
   }
 
-  static size_t dimension(int degree) {
+  static size_t basis_size(int dimension, int degree) {
     if (degree < 0) return 0;
+    assert(dimension >= 1 && dimension <= 3);
 
     size_t k = degree + 1;
-    return k * (k + 1) * (k + 2) / 6;
+    switch (dimension) {
+    case 1:
+      return k;
+    case 2:
+      return k * (k + 1) / 2;
+    case 3:
+      return k * (k + 1) * (k + 2) / 6;
+    default:
+      assert(false);
+      break;
+    }
+
+    return 0;
   }
+
+private:
+  const int dimension_;
+  const int degree_;
+  const size_t basis_size_;
 };
 
 } // namespace polynomial

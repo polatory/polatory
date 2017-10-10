@@ -13,8 +13,8 @@ using namespace polatory::polynomial;
 
 namespace {
 
-void test_degree(int degree) {
-  size_t n_points = lagrange_basis<>::dimension(degree);
+void test_degree(int dimension, int degree) {
+  size_t n_points = lagrange_basis<>::basis_size(dimension, degree);
 
   std::vector<Eigen::Vector3d> points;
   points.reserve(n_points);
@@ -23,10 +23,10 @@ void test_degree(int degree) {
     points.push_back(Eigen::Vector3d::Random());
   }
 
-  lagrange_basis<> basis(degree, points);
+  lagrange_basis<> basis(dimension, degree, points);
   auto pt = basis.evaluate_points(points);
 
-  ASSERT_EQ(basis.dimension(), pt.rows());
+  ASSERT_EQ(basis.basis_size(), pt.rows());
   ASSERT_EQ(n_points, pt.cols());
 
   Eigen::MatrixXd diff = Eigen::MatrixXd::Identity(n_points, n_points) - pt;
@@ -37,7 +37,9 @@ void test_degree(int degree) {
 } // namespace
 
 TEST(lagrange_basis, trivial) {
-  test_degree(0);
-  test_degree(1);
-  test_degree(2);
+  for (int dim = 1; dim <= 3; dim++) {
+    for (int deg = 0; deg <= 2; deg++) {
+      test_degree(dim, deg);
+    }
+  }
 }

@@ -16,7 +16,7 @@ namespace kriging {
 
 class cross_validation {
 public:
-  static double leave_one_out(const rbf::rbf_base& rbf, int poly_degree,
+  static double leave_one_out(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                               const std::vector<Eigen::Vector3d>& points, const Eigen::VectorXd& values) {
     size_t n_points = points.size();
 
@@ -34,12 +34,12 @@ public:
       values_one_out.head(i) = values.head(i);
       values_one_out.tail(n_points - i - 1) = values.tail(n_points - i - 1);
 
-      interpolation::rbf_fitter fitter(rbf, poly_degree, points_one_out);
+      interpolation::rbf_fitter fitter(rbf, poly_dimension, poly_degree, points_one_out);
       auto weights = fitter.fit(values_one_out, 1e-5 * values.norm());
 
       points_to_test[0] = points[i];
 
-      interpolation::rbf_evaluator<> eval(rbf, poly_degree, points_one_out);
+      interpolation::rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, points_one_out);
       eval.set_weights(weights);
       auto f_values = eval.evaluate_points(points_to_test);
 

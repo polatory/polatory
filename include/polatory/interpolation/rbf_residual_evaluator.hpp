@@ -32,21 +32,21 @@ class rbf_residual_evaluator {
 
 public:
   template <typename Container>
-  rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                          const Container& in_points)
     : nugget(rbf.nugget())
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , points(in_points.begin(), in_points.end())
     , n_points(in_points.size()) {
-    evaluator = std::make_unique<rbf_evaluator<>>(rbf, poly_degree, points);
+    evaluator = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, points);
   }
 
-  rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                          int tree_height, const geometry::bbox3d& bbox)
     : nugget(rbf.nugget())
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , n_points(0) {
-    evaluator = std::make_unique<rbf_evaluator<>>(rbf, poly_degree, tree_height, bbox);
+    evaluator = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, tree_height, bbox);
   }
 
   template <typename Derived, typename Derived2>

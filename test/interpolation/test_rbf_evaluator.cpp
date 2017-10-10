@@ -21,7 +21,7 @@ namespace {
 
 template <class Evaluator>
 void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
-  size_t n_polynomials = basis_base::dimension(poly_degree);
+  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 5e-7;
 
   biharmonic rbf({ 1.0, 0.0 });
@@ -30,11 +30,11 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
 
   Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_polynomials);
 
-  rbf_direct_evaluator direct_eval(rbf, poly_degree, points);
+  rbf_direct_evaluator direct_eval(rbf, 3, poly_degree, points);
   direct_eval.set_weights(weights);
   direct_eval.set_field_points(std::vector<Eigen::Vector3d>(points.begin(), points.begin() + n_eval_points));
 
-  Evaluator eval(rbf, poly_degree, points);
+  Evaluator eval(rbf, 3, poly_degree, points);
   eval.set_weights(weights);
   eval.set_field_points(points);
 

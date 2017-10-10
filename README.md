@@ -5,7 +5,7 @@ Polatory is a fast and memory-efficient framework for spline surface reconstruct
 ## Features
 
 * Fast spline surface reconstruction of 2.5D/3D point cloud
-* Fast interpolation (kriging prediction) of 3D scattered data
+* Fast interpolation (kriging prediction) of 1D/2D/3D scattered data
 * Meshing isosurfaces
 * Supports large number (~1M) of input points
 * Supports globally supported RBFs

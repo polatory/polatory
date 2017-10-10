@@ -20,7 +20,7 @@ using polatory::rbf::biharmonic;
 namespace {
 
 void test_poly_degree(int poly_degree, size_t n_points) {
-  size_t n_polynomials = basis_base::dimension(poly_degree);
+  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 5e-7;
 
   biharmonic rbf({ 1.0, 0.2 });
@@ -29,10 +29,10 @@ void test_poly_degree(int poly_degree, size_t n_points) {
 
   Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_polynomials);
 
-  rbf_direct_symmetric_evaluator direct_eval(rbf, poly_degree, points);
+  rbf_direct_symmetric_evaluator direct_eval(rbf, 3, poly_degree, points);
   direct_eval.set_weights(weights);
 
-  rbf_operator<> op(rbf, poly_degree, points);
+  rbf_operator<> op(rbf, 3, poly_degree, points);
 
   Eigen::VectorXd direct_op_weights = direct_eval.evaluate() + rbf.nugget() * weights.head(n_points);
   Eigen::VectorXd op_weights = op(weights);

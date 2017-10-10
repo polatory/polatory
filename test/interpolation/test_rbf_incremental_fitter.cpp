@@ -29,12 +29,12 @@ void test_poly_degree(int poly_degree) {
   Eigen::VectorXd values;
   std::tie(points, values) = test_points_values(10000);
 
-  size_t n_polynomials = basis_base::dimension(poly_degree);
+  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 1e-4;
 
   biharmonic rbf({ 1.0, 0.0 });
 
-  auto fitter = std::make_unique<rbf_incremental_fitter>(rbf, poly_degree, points);
+  auto fitter = std::make_unique<rbf_incremental_fitter>(rbf, 3, poly_degree, points);
   std::vector<size_t> point_indices;
   Eigen::VectorXd weights;
 
@@ -42,7 +42,7 @@ void test_poly_degree(int poly_degree) {
   EXPECT_EQ(weights.size(), point_indices.size() + n_polynomials);
   fitter.reset();
 
-  rbf_evaluator<> eval(rbf, poly_degree, make_view(points, point_indices));
+  rbf_evaluator<> eval(rbf, 3, poly_degree, make_view(points, point_indices));
   eval.set_weights(weights);
   Eigen::VectorXd values_fit = eval.evaluate_points(points);
 

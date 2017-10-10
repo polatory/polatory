@@ -28,10 +28,10 @@ void test_rbf_direct_solver(double nugget, int poly_degree) {
   auto points = box_points(n_points, center, radius);
   Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);
 
-  rbf_direct_solver<double> solver(rbf, poly_degree, points);
+  rbf_direct_solver<double> solver(rbf, 3, poly_degree, points);
   auto weights = solver.solve(values);
 
-  rbf_direct_symmetric_evaluator eval(rbf, poly_degree, points);
+  rbf_direct_symmetric_evaluator eval(rbf, 3, poly_degree, points);
   eval.set_weights(weights);
   Eigen::VectorXd values_fit = eval.evaluate();
 

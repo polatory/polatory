@@ -28,14 +28,14 @@ class rbf_direct_evaluator {
   Eigen::VectorXd weights;
 
 public:
-  rbf_direct_evaluator(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_direct_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                        const std::vector<Eigen::Vector3d>& source_points)
     : rbf(rbf)
     , poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , src_points(source_points) {
     if (poly_degree >= 0) {
-      p = std::make_unique<poly_eval>(poly_degree);
+      p = std::make_unique<poly_eval>(poly_dimension, poly_degree);
     }
   }
 

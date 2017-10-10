@@ -24,15 +24,15 @@ class lagrange_basis : public basis_base {
 
 public:
   template <typename Container>
-  lagrange_basis(int degree, const Container& points)
-    : basis_base(degree)
-    , mono_basis(degree) {
-    auto dim = dimension();
-    assert(points.size() == dim);
+  lagrange_basis(int dimension, int degree, const Container& points)
+    : basis_base(dimension, degree)
+    , mono_basis(dimension, degree) {
+    auto size = basis_size();
+    assert(points.size() == size);
 
     auto pt = mono_basis.evaluate_points(points);
 
-    MatrixXF rhs = MatrixXF::Identity(dim, dim);
+    MatrixXF rhs = MatrixXF::Identity(size, size);
 
     coeffs = pt.transpose().fullPivLu().solve(rhs);
   }

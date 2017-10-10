@@ -31,7 +31,7 @@ class coarse_grid {
   Eigen::VectorXd solution;
 
 public:
-  coarse_grid(const rbf::rbf_base& rbf, int poly_degree,
+  coarse_grid(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
               const std::vector<Eigen::Vector3d>& points_full,
               const std::vector<size_t>& point_indices)
     : rbf(rbf)
@@ -39,12 +39,12 @@ public:
     , point_indices(point_indices)
     , n_points(point_indices.size())
     , n_points_full(points_full.size())
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree)) {
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     for (auto idx : point_indices) {
       points.push_back(points_full[idx]);
     }
 
-    solver = std::make_unique<interpolation::rbf_direct_solver<Floating>>(rbf, poly_degree, points);
+    solver = std::make_unique<interpolation::rbf_direct_solver<Floating>>(rbf, poly_dimension, poly_degree, points);
   }
 
   template <typename Derived>

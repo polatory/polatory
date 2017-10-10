@@ -22,22 +22,22 @@ class orthonormal_basis : public basis_base {
 
 public:
   template <typename Container>
-  orthonormal_basis(int degree, const Container& points)
-    : basis_base(degree)
-    , mono_basis(degree) {
+  orthonormal_basis(int dimension, int degree, const Container& points)
+    : basis_base(dimension, degree)
+    , mono_basis(dimension, degree) {
     auto pt = mono_basis.evaluate_points(points);
     auto u_hat = MatrixXF(pt.rows(), pt.cols());
 
-    auto dim = dimension();
+    auto size = basis_size();
 
-    c_hat = MatrixXF::Identity(dim, dim);
+    c_hat = MatrixXF::Identity(size, size);
 
     VectorXF u = pt.row(0);
     auto u_norm = u.norm();
     c_hat(0, 0) /= u_norm;
     u_hat.row(0) = u / u_norm;
 
-    for (size_t i = 1; i < dim; i++) {
+    for (size_t i = 1; i < size; i++) {
       u = pt.row(i);
       for (size_t j = 0; j < i; j++) {
         for (size_t k = j; k < i; k++) {

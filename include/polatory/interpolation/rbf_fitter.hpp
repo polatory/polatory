@@ -15,9 +15,9 @@ public:
   using rbf_solver::set_points;
 
   template <typename Container>
-  rbf_fitter(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_fitter(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
              const Container& points)
-    : rbf_solver(rbf, poly_degree, points) {
+    : rbf_solver(rbf, poly_dimension, poly_degree, points) {
   }
 
   template <typename Derived>

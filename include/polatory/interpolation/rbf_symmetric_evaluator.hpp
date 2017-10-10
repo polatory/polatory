@@ -34,19 +34,19 @@ class rbf_symmetric_evaluator {
   Eigen::VectorXd weights;
 
 public:
-  rbf_symmetric_evaluator(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_symmetric_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                           const std::vector<Eigen::Vector3d>& points)
     : rbf(rbf)
     , poly_degree(poly_degree)
     , n_points(points.size())
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree)) {
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(points);
 
     a = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bbox);
     a->set_points(points);
 
     if (poly_degree >= 0) {
-      p = std::make_unique<poly_eval>(poly_degree);
+      p = std::make_unique<poly_eval>(poly_dimension, poly_degree);
       p->set_field_points(points);
     }
   }

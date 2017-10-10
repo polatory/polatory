@@ -46,7 +46,7 @@ void test_fine_grid(double nugget) {
   Eigen::VectorXd sol = Eigen::VectorXd::Zero(n_points);
   fine.set_solution_to(sol);
 
-  auto eval = rbf_direct_symmetric_evaluator(rbf, -1, points);
+  auto eval = rbf_direct_symmetric_evaluator(rbf, -1, -1, points);
   eval.set_weights(sol);
   Eigen::VectorXd values_fit = eval.evaluate();
 

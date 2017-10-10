@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
   // Define model.
   cov_spherical rbf({ 0.0181493, 0.678264, 0.00383142 });
-  interpolant interpolant(rbf, 0);
+  interpolant interpolant(rbf, 3, 0);
 
   // Fit.
   interpolant.fit(points, values, 0.00001);

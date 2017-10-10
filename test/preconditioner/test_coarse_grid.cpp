@@ -24,7 +24,7 @@ using polatory::rbf::biharmonic;
 void test_coarse_grid(double nugget) {
   size_t n_points = 1024;
   int poly_degree = 0;
-  size_t n_polynomials = basis_base::dimension(poly_degree);
+  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 1e-10;
 
   auto points = sphere_points(n_points);
@@ -38,7 +38,7 @@ void test_coarse_grid(double nugget) {
 
   biharmonic rbf({ 1.0, nugget });
 
-  coarse_grid<double> coarse(rbf, poly_degree, points, point_indices);
+  coarse_grid<double> coarse(rbf, 3, poly_degree, points, point_indices);
 
   Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);
   coarse.solve(values);
@@ -46,7 +46,7 @@ void test_coarse_grid(double nugget) {
   Eigen::VectorXd sol = Eigen::VectorXd::Zero(n_points + n_polynomials);
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_symmetric_evaluator(rbf, poly_degree, points);
+  auto eval = rbf_direct_symmetric_evaluator(rbf, 3, poly_degree, points);
   eval.set_weights(sol);
   Eigen::VectorXd values_fit = eval.evaluate();
 

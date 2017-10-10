@@ -33,7 +33,7 @@ public:
     , inner_point(inner_point)
     , n_points(point_indices.size())
     , n_points_full(0) {
-    solver = std::make_unique<interpolation::rbf_direct_solver<Floating>>(rbf, -1, point_indices.size());
+    solver = std::make_unique<interpolation::rbf_direct_solver<Floating>>(rbf, -1, -1, point_indices.size());
   }
 
   fine_grid(const rbf::rbf_base& rbf,
@@ -49,7 +49,7 @@ public:
       points.push_back(points_full[idx]);
     }
 
-    solver = std::make_unique<interpolation::rbf_direct_solver<Floating>>(rbf, -1, points);
+    solver = std::make_unique<interpolation::rbf_direct_solver<Floating>>(rbf, -1, -1, points);
   }
 
   void clear() const {

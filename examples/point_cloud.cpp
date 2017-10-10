@@ -15,7 +15,7 @@
 #include "polatory/isosurface/rbf_field_function.hpp"
 #include "polatory/point_cloud/scattered_data_generator.hpp"
 #include "polatory/point_cloud/distance_filter.hpp"
-#include "polatory/rbf/linear_variogram.hpp"
+#include "polatory/rbf/biharmonic.hpp"
 
 #include "read_table.hpp"
 
@@ -26,7 +26,7 @@ using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
 using polatory::point_cloud::scattered_data_generator;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::linear_variogram;
+using polatory::rbf::biharmonic;
 
 int main(int argc, char *argv[]) {
   if (argc < 15) return 1;
@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   ofs.close();
 
   // Define model.
-  linear_variogram rbf({ 1.0, 0.0 });
-  interpolant interpolant(rbf, 0);
+  biharmonic rbf({ 1.0, 0.0 });
+  interpolant interpolant(rbf, 3, 0);
 
   // Fit.
   interpolant.fit_incrementally(points, values, fitting_accuracy);

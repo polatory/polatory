@@ -15,12 +15,7 @@ namespace interpolation {
 //    |       |
 //    | P^T O |
 //     -     -
-// where P_ij = p_j(x_i) and {p_j} are the monomial basis:
-//  degree                    basis
-// -------------------------------------------------
-//     0      1
-//     1      1, x, y, z
-//     2      1, x, y, z, x^2, xy, xz, y^2, yz, z^2
+// where P_ij = p_j(x_i) and {p_j} are the monomial basis.
 template <class Basis>
 class polynomial_matrix {
   Basis basis;
@@ -29,8 +24,8 @@ class polynomial_matrix {
   Eigen::MatrixXd pt;
 
 public:
-  polynomial_matrix(int degree)
-    : basis(degree) {
+  polynomial_matrix(int dimension, int degree)
+    : basis(dimension, degree) {
   }
 
   // Returns a vector consists of two parts:

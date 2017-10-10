@@ -20,6 +20,7 @@ namespace interpolation {
 
 class rbf_solver {
   const rbf::rbf_base& rbf;
+  const int poly_dimension;
   const int poly_degree;
   const size_t n_polynomials;
 
@@ -58,30 +59,32 @@ class rbf_solver {
 
 public:
   template <typename Container>
-  rbf_solver(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
              const Container& points)
     : rbf(rbf)
+    , poly_dimension(poly_dimension)
     , poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , n_points(points.size()) {
-    op = std::make_unique<rbf_operator<>>(rbf, poly_degree, points);
-    pc = std::make_unique<preconditioner::ras_preconditioner>(rbf, poly_degree, points);
-    res_eval = std::make_unique<rbf_residual_evaluator>(rbf, poly_degree, points);
+    op = std::make_unique<rbf_operator<>>(rbf, poly_dimension, poly_degree, points);
+    pc = std::make_unique<preconditioner::ras_preconditioner>(rbf, poly_dimension, poly_degree, points);
+    res_eval = std::make_unique<rbf_residual_evaluator>(rbf, poly_dimension, poly_degree, points);
 
     if (poly_degree >= 0) {
-      polynomial::orthonormal_basis<> poly(poly_degree, points);
+      polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points);
       p = poly.evaluate_points(points).transpose();
     }
   }
 
-  rbf_solver(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
              int tree_height, const geometry::bbox3d& bbox)
     : rbf(rbf)
+    , poly_dimension(poly_dimension)
     , poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , n_points(0) {
-    op = std::make_unique<rbf_operator<>>(rbf, poly_degree, tree_height, bbox);
-    res_eval = std::make_unique<rbf_residual_evaluator>(rbf, poly_degree, tree_height, bbox);
+    op = std::make_unique<rbf_operator<>>(rbf, poly_dimension, poly_degree, tree_height, bbox);
+    res_eval = std::make_unique<rbf_residual_evaluator>(rbf, poly_dimension, poly_degree, tree_height, bbox);
   }
 
   template <typename Container>
@@ -91,10 +94,10 @@ public:
     op->set_points(points);
     res_eval->set_points(points);
 
-    pc = std::make_unique<preconditioner::ras_preconditioner>(rbf, poly_degree, points);
+    pc = std::make_unique<preconditioner::ras_preconditioner>(rbf, poly_dimension, poly_degree, points);
 
     if (poly_degree >= 0) {
-      polynomial::orthonormal_basis<> poly(poly_degree, points);
+      polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points);
       p = poly.evaluate_points(points).transpose();
     }
   }

@@ -20,9 +20,9 @@ class polynomial_evaluator {
   Eigen::VectorXd weights;
 
 public:
-  explicit polynomial_evaluator(int degree)
-    : basis(degree)
-    , weights(Eigen::VectorXd::Zero(basis.dimension())) {
+  explicit polynomial_evaluator(int dimension, int degree)
+    : basis(dimension, degree)
+    , weights(Eigen::VectorXd::Zero(basis.basis_size())) {
   }
 
   Eigen::VectorXd evaluate() const {
@@ -39,13 +39,13 @@ public:
   }
 
   void set_weights(const Eigen::VectorXd& weights) {
-    assert(weights.size() == basis.dimension());
+    assert(weights.size() == basis.basis_size());
 
     this->weights = weights;
   }
 
   size_t size() const {
-    return basis.dimension();
+    return basis.basis_size();
   }
 };
 

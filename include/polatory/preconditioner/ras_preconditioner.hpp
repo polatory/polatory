@@ -56,20 +56,20 @@ private:
 
 public:
   template <typename Container>
-  ras_preconditioner(const rbf::rbf_base& rbf, int poly_degree,
+  ras_preconditioner(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                      const Container& in_points)
     : poly_degree(poly_degree)
     , points(in_points.begin(), in_points.end())
     , n_points(in_points.size())
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
 #if REPORT_RESIDUAL
-    , finest_evaluator(rbf, poly_degree, points)
+    , finest_evaluator(rbf, poly_dimension, poly_degree, points)
 #endif
   {
     n_fine_levels = std::max(0, int(
       std::ceil(std::log(double(n_points) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
     if (n_fine_levels == 0) {
-      direct_solver = std::make_unique<DirectSolver>(rbf, poly_degree, points);
+      direct_solver = std::make_unique<DirectSolver>(rbf, poly_dimension, poly_degree, points);
       return;
     }
 
@@ -92,7 +92,7 @@ public:
     auto ratio = 0 == n_fine_levels - 1
                  ? double(n_coarsest_points) / double(points.size())
                  : coarse_ratio;
-    upward_evaluator.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, points));
+    upward_evaluator.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points));
     point_indices.push_back(divider->choose_coarse_points(ratio));
     upward_evaluator.back().set_field_points(common::make_view(points, point_indices.back()));
 
@@ -117,26 +117,26 @@ public:
               ? double(n_coarsest_points) / double(point_indices.back().size())
               : coarse_ratio;
       upward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, -1, common::make_view(points, point_indices.back())));
+        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::make_view(points, point_indices.back())));
       point_indices.push_back(divider->choose_coarse_points(ratio));
       upward_evaluator.back().set_field_points(common::make_view(points, point_indices.back()));
     }
 
     std::cout << "Number of points in coarse: " << point_indices.back().size() << std::endl;
-    coarse = std::make_unique<CoarseGrid>(rbf, poly_degree, points, point_indices.back());
+    coarse = std::make_unique<CoarseGrid>(rbf, poly_dimension, poly_degree, points, point_indices.back());
 
     for (int level = 1; level < n_fine_levels; level++) {
       downward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, poly_degree, common::make_view(points, point_indices.back())));
+        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::make_view(points, point_indices.back())));
       downward_evaluator.back().set_field_points(common::make_view(points, point_indices[level - 1]));
     }
 
     if (poly_degree >= 0) {
-      polynomial::orthonormal_basis<> poly(poly_degree, points);
+      polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points);
       p = poly.evaluate_points(points).transpose();
       ap = Eigen::MatrixXd(p.rows(), p.cols());
 
-      auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(rbf, -1, points);
+      auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(rbf, -1, -1, points);
       for (size_t i = 0; i < p.cols(); i++) {
         finest_evaluator.set_weights(p.col(i));
         ap.col(i) = finest_evaluator.evaluate();

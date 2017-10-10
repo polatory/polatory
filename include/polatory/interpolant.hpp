@@ -24,8 +24,9 @@ public:
   using points_type = std::vector<Eigen::Vector3d>;
   using values_type = Eigen::VectorXd;
 
-  interpolant(const rbf::rbf_base& rbf, int poly_degree)
+  interpolant(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)
     : rbf_(rbf)
+    , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree) {
     if (poly_degree < rbf.order_of_cpd() - 1 || poly_degree > 2)
       throw common::invalid_parameter("rbf.order_of_cpd() - 1 <= poly_degree <= 2");
@@ -42,26 +43,26 @@ public:
   }
 
   void fit(const points_type& points, const values_type& values, double absolute_tolerance) {
-    auto min_n_points = polynomial::basis_base::dimension(poly_degree_) + 1;
+    auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
     if (points.size() < min_n_points)
       throw common::invalid_parameter("points.size() >= " + std::to_string(min_n_points));
 
     auto transformed = affine_transform_points(points);
 
-    interpolation::rbf_fitter fitter(rbf_, poly_degree_, transformed);
+    interpolation::rbf_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
 
     centers_ = transformed;
     weights_ = fitter.fit(values, absolute_tolerance);
   }
 
   void fit_incrementally(const points_type& points, const values_type& values, double absolute_tolerance) {
-    auto min_n_points = polynomial::basis_base::dimension(poly_degree_) + 1;
+    auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
     if (points.size() < min_n_points)
       throw common::invalid_parameter("points.size() >= " + std::to_string(min_n_points));
 
     auto transformed = affine_transform_points(points);
 
-    interpolation::rbf_incremental_fitter fitter(rbf_, poly_degree_, transformed);
+    interpolation::rbf_incremental_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
 
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
@@ -73,7 +74,7 @@ public:
   void set_evaluation_bbox(const geometry::bbox3d& bbox) {
     auto transformed_bbox = bbox.transform(point_transform_);
 
-    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, poly_degree_, centers_, transformed_bbox);
+    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, centers_, transformed_bbox);
     evaluator_->set_weights(weights_);
   }
 
@@ -98,6 +99,7 @@ private:
   }
 
   const rbf::rbf_base& rbf_;
+  const int poly_dimension_;
   const int poly_degree_;
 
   geometry::affine_transform3d point_transform_;

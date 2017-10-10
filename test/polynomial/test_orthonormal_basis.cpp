@@ -13,7 +13,7 @@ using namespace polatory::polynomial;
 
 namespace {
 
-void test_degree(int degree) {
+void test_degree(int dimension, int degree) {
   int n_points = 100;
 
   std::vector<Eigen::Vector3d> points;
@@ -23,15 +23,15 @@ void test_degree(int degree) {
     points.push_back(Eigen::Vector3d::Random());
   }
 
-  orthonormal_basis<> basis(degree, points);
+  orthonormal_basis<> basis(dimension, degree, points);
   auto pt = basis.evaluate_points(points);
-  auto dim = basis.dimension();
+  auto size = basis.basis_size();
 
-  ASSERT_EQ(basis.dimension(), pt.rows());
+  ASSERT_EQ(basis.basis_size(), pt.rows());
   ASSERT_EQ(n_points, pt.cols());
 
-  for (size_t i = 0; i < dim; i++) {
-    for (size_t j = 0; j < dim; j++) {
+  for (size_t i = 0; i < size; i++) {
+    for (size_t j = 0; j < size; j++) {
       auto dot = std::abs(pt.row(i).dot(pt.row(j)));
 
       if (i == j) {
@@ -46,7 +46,9 @@ void test_degree(int degree) {
 } // namespace
 
 TEST(orthonormal_basis, trivial) {
-  test_degree(0);
-  test_degree(1);
-  test_degree(2);
+  for (int dim = 1; dim <= 3; dim++) {
+    for (int deg = 0; deg <= 2; deg++) {
+      test_degree(dim, deg);
+    }
+  }
 }

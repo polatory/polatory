@@ -30,6 +30,7 @@ class rbf_incremental_fitter {
   const double incremental_points_ratio = 0.1;
 
   const rbf::rbf_base& rbf;
+  const int poly_dimension;
   const int poly_degree;
   const std::vector<Eigen::Vector3d>& points;
 
@@ -91,13 +92,14 @@ class rbf_incremental_fitter {
 
 public:
   template <typename Container>
-  rbf_incremental_fitter(const rbf::rbf_base& rbf, int poly_degree,
+  rbf_incremental_fitter(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                          const Container& points)
     : rbf(rbf)
+    , poly_dimension(poly_dimension)
     , poly_degree(poly_degree)
     , points(points)
     , n_points(points.size())
-    , n_polynomials(polynomial::basis_base::dimension(poly_degree))
+    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , bbox(geometry::bbox3d::from_points(points)) {
   }
 
@@ -118,8 +120,8 @@ public:
       auto tree_height = fmm::tree_height(indices.size());
 
       if (tree_height != last_tree_height) {
-        solver = std::make_unique<rbf_solver>(rbf, poly_degree, tree_height, bbox);
-        res_eval = std::make_unique<rbf_evaluator<>>(rbf, poly_degree, tree_height, bbox);
+        solver = std::make_unique<rbf_solver>(rbf, poly_dimension, poly_degree, tree_height, bbox);
+        res_eval = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, tree_height, bbox);
         last_tree_height = tree_height;
       }
 
