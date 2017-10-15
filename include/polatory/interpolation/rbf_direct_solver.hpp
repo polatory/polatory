@@ -176,17 +176,16 @@ public:
         d_at_poly_points(i) = values_permuted(i);
       }
 
-      VectorXF phi_at_poly_points = VectorXF::Zero(l);
+      VectorXF a_lambda_at_poly_points = VectorXF::Zero(l);
       for (size_t i = 0; i < l; i++) {
         for (size_t j = 0; j < m; j++) {
-          phi_at_poly_points(i) += lambda_c(j) * a_top(i, j);
+          a_lambda_at_poly_points(i) += lambda_c(j) * a_top(i, j);
         }
       }
 
       polynomial::monomial_basis<Floating> mono_basis(poly_dimension, poly_degree);
       auto pt = mono_basis.evaluate_points(poly_points);
-      VectorXF res_at_poly_points = d_at_poly_points - phi_at_poly_points;
-      lambda_c.tail(l) = pt.transpose().fullPivLu().solve(res_at_poly_points).template cast<double>();
+      lambda_c.tail(l) = pt.transpose().fullPivLu().solve(d_at_poly_points - a_lambda_at_poly_points).template cast<double>();
     } else {
       lambda_c = lu_of_a.solve(qtd).template cast<double>();
     }
