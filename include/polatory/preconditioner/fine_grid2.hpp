@@ -23,7 +23,7 @@ class fine_grid2 {
   using LagrangeBasis = polynomial::lagrange_basis<Floating>;
 
   const rbf::rbf_base& rbf_;
-  const std::unique_ptr<LagrangeBasis>& lagrange_basis_;
+  const std::shared_ptr<LagrangeBasis> lagrange_basis_;
   const std::vector<size_t> point_idcs_;
   const std::vector<bool> inner_point_;
 
@@ -41,7 +41,7 @@ class fine_grid2 {
 
 public:
   fine_grid2(const rbf::rbf_base& rbf,
-             const std::unique_ptr<LagrangeBasis>& lagrange_basis,
+             std::shared_ptr<LagrangeBasis> lagrange_basis,
              const std::vector<size_t>& point_indices,
              const std::vector<bool>& inner_point)
     : rbf_(rbf)
@@ -96,7 +96,7 @@ public:
   void set_solution_to(Eigen::MatrixBase<Derived>& weights_full) const {
     for (size_t i = 0; i < m_; i++) {
       if (inner_point_[i])
-        weights_full[point_idcs_[i]] = lambda_[i];
+        weights_full(point_idcs_[i]) = lambda_(i);
     }
   }
 
@@ -109,8 +109,8 @@ public:
 
     if (l_ > 0) {
       // Compute Q^T d.
-      auto qtd = me_.transpose() * values.head(l_);
-      qtd += values.tail(m_ - l_);
+      VectorXF qtd = me_.transpose() * values.head(l_)
+                     + values.tail(m_ - l_);
 
       // Solve Q^T A Q gamma = Q^T d for gamma.
       VectorXF gamma = ldlt_of_qtaq_.solve(qtd);

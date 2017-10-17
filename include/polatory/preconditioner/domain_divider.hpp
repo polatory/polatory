@@ -46,7 +46,7 @@ private:
 
     for (size_t i = 0; i < poly_point_idcs.size(); i++) {
       auto it = common::bsearch_eq(point_indices.begin(), point_indices.end(), poly_point_idcs[i]);
-      if (it != point_indices.end())
+      if (it == point_indices.end())
         continue;
 
       auto it_inner = inner_point.begin() + std::distance(point_indices.begin(), it);

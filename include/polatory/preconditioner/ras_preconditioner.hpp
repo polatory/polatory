@@ -48,7 +48,7 @@ private:
 #endif
 
   mutable std::vector<std::vector<FineGrid>> fine_grids;
-  std::vector<std::unique_ptr<LagrangeBasis>> lagrange_bases;
+  std::vector<std::shared_ptr<LagrangeBasis>> lagrange_bases;
   std::vector<std::vector<size_t>> point_indices;
   std::unique_ptr<CoarseGrid> coarse;
   std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator;
@@ -80,9 +80,9 @@ public:
 
     fine_grids.push_back(std::vector<FineGrid>());
     if (n_polynomials > 0) {
-      lagrange_bases.push_back(std::make_unique<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
+      lagrange_bases.push_back(std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
     } else {
-      lagrange_bases.push_back(std::unique_ptr<LagrangeBasis>());
+      lagrange_bases.push_back(std::shared_ptr<LagrangeBasis>());
     }
     for (const auto& d : divider->domains()) {
       fine_grids.back().push_back(FineGrid(rbf, lagrange_bases.back(), d.point_indices, d.inner_point));
@@ -109,9 +109,9 @@ public:
 
       fine_grids.push_back(std::vector<FineGrid>());
       if (n_polynomials > 0) {
-        lagrange_bases.push_back(std::make_unique<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
+        lagrange_bases.push_back(std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
       } else {
-        lagrange_bases.push_back(std::unique_ptr<LagrangeBasis>());
+        lagrange_bases.push_back(std::shared_ptr<LagrangeBasis>());
       }
       for (const auto& d : divider->domains()) {
         fine_grids.back().push_back(FineGrid(rbf, lagrange_bases.back(), d.point_indices, d.inner_point));
