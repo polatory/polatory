@@ -10,7 +10,6 @@
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
-#include <Eigen/LU>
 
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/lagrange_basis.hpp"
@@ -48,10 +47,6 @@ class rbf_direct_solver {
   // This version is used when the system is positive definite.
   Eigen::LDLT<MatrixXF> ldlt_of_qtaq;
 
-  // Decomposition of martix A.
-  // This version is used when the system is indefinite.
-  Eigen::PartialPivLU<MatrixXF> lu_of_a;
-
   const size_t l;
   const size_t m;
 
@@ -82,8 +77,6 @@ public:
     a_top = MatrixXF();
 
     ldlt_of_qtaq = Eigen::LDLT<MatrixXF>();
-
-    lu_of_a = Eigen::PartialPivLU<MatrixXF>();
 
     me = MatrixXF();
   }
@@ -134,7 +127,7 @@ public:
                       + a.bottomLeftCorner(m - l, l) * me
                       + a.bottomRightCorner(m - l, m - l)).ldlt();
     } else {
-      lu_of_a = a.partialPivLu();
+      ldlt_of_qtaq = a.ldlt();
     }
   }
 
@@ -179,7 +172,7 @@ public:
       auto pt = mono_basis.evaluate_points(poly_points);
       lambda_c.tail(l) = pt.transpose().fullPivLu().solve(d_at_poly_points - a_lambda_at_poly_points).template cast<double>();
     } else {
-      lambda_c = lu_of_a.solve(values_permuted).template cast<double>();
+      lambda_c = ldlt_of_qtaq.solve(values_permuted).template cast<double>();
     }
 
     Eigen::VectorXd lambda_permuted = lambda_c.head(m);
