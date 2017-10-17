@@ -125,15 +125,11 @@ public:
     }
 
     if (poly_degree >= 0) {
-      // Compute A Q: m-by-(m - l) matrix.
-      MatrixXF aq = a.leftCols(l) * me;
-      aq += a.rightCols(m - l);
-
-      // Compute Q^T (A Q): (m - l)-by-(m - l) matrix.
-      MatrixXF qtaq = me.transpose() * aq.topRows(l);
-      qtaq += aq.bottomRows(m - l);
-
-      ldlt_of_qtaq = qtaq.ldlt();
+      // Compute decomposition of Q^T A Q.
+      ldlt_of_qtaq = (me.transpose() * a.topLeftCorner(l, l) * me
+                      + me.transpose() * a.topRightCorner(l, m - l)
+                      + a.bottomLeftCorner(m - l, l) * me
+                      + a.bottomRightCorner(m - l, m - l)).ldlt();
 
       a_top = a.topRows(l);
     } else {
