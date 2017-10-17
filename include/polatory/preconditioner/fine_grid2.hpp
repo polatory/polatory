@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include <Eigen/Cholesky>
@@ -19,9 +20,10 @@ class fine_grid2 {
   using Vector3F = Eigen::Matrix<Floating, 3, 1>;
   using VectorXF = Eigen::Matrix<Floating, Eigen::Dynamic, 1>;
   using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
+  using LagrangeBasis = polynomial::lagrange_basis<Floating>;
 
   const rbf::rbf_base& rbf_;
-  const polynomial::lagrange_basis& lagrange_basis_;
+  const std::unique_ptr<LagrangeBasis>& lagrange_basis_;
   const std::vector<size_t> point_idcs_;
   const std::vector<bool> inner_point_;
 
@@ -39,14 +41,14 @@ class fine_grid2 {
 
 public:
   fine_grid2(const rbf::rbf_base& rbf,
-             const polynomial::lagrange_basis& lagrange_basis,
+             const std::unique_ptr<LagrangeBasis>& lagrange_basis,
              const std::vector<size_t>& point_indices,
              const std::vector<bool>& inner_point)
     : rbf_(rbf)
     , lagrange_basis_(lagrange_basis)
     , point_idcs_(point_indices)
     , inner_point_(inner_point)
-    , l_(lagrange_basis.basis_size())
+    , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
     , m_(point_indices.size()) {
   }
 
@@ -78,7 +80,7 @@ public:
         tail_points.push_back(points_full[point_idcs_[i]].template cast<Floating>());
       }
 
-      me_ = -lagrange_basis_.evaluate_points(tail_points);
+      me_ = -lagrange_basis_->evaluate_points(tail_points);
 
       // Compute decomposition of Q^T A Q.
       ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_
@@ -105,25 +107,20 @@ public:
       values(i) = values_full(point_idcs_[i]);
     }
 
-    VectorXF qtd;
     if (l_ > 0) {
       // Compute Q^T d.
-      qtd = me_.transpose() * values.head(l_);
+      auto qtd = me_.transpose() * values.head(l_);
       qtd += values.tail(m_ - l_);
-    } else {
-      qtd = values;
-    }
 
-    if (l_ > 0) {
       // Solve Q^T A Q gamma = Q^T d for gamma.
       VectorXF gamma = ldlt_of_qtaq_.solve(qtd);
 
       // Compute lambda = Q gamma.
-      lambda_ = Eigen::VectorXd(m_);
-      lambda_.head(l_) = (me_ * gamma).template cast<double>();
-      lambda_.tail(m_ - l_) = gamma.template cast<double>();
+      lambda_ = VectorXF(m_);
+      lambda_.head(l_) = me_ * gamma;
+      lambda_.tail(m_ - l_) = gamma;
     } else {
-      lambda_ = ldlt_of_qtaq_.solve(qtd).template cast<double>();
+      lambda_ = ldlt_of_qtaq_.solve(values);
     }
   }
 };

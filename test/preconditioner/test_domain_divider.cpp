@@ -18,7 +18,7 @@ TEST(domain_divider, trivial) {
 
   auto points = sphere_points(n_points);
 
-  domain_divider divider(points);
+  domain_divider divider(points, 0);
 
   std::vector<size_t> inner_points;
   inner_points.reserve(n_points);

@@ -12,13 +12,14 @@
 
 #include "coarse_grid.hpp"
 #include "domain_divider.hpp"
-#include "fine_grid.hpp"
+#include "fine_grid2.hpp"
 #include "polatory/common/vector_view.hpp"
 #include "polatory/interpolation/rbf_direct_solver.hpp"
 #include "polatory/interpolation/rbf_evaluator.hpp"
 #include "polatory/interpolation/rbf_symmetric_evaluator.hpp"
 #include "polatory/krylov/linear_operator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
+#include "polatory/polynomial/lagrange_basis.hpp"
 #include "polatory/polynomial/orthonormal_basis.hpp"
 #include "polatory/rbf/rbf_base.hpp"
 
@@ -28,7 +29,8 @@ namespace preconditioner {
 struct ras_preconditioner : krylov::linear_operator {
 private:
   using Float = float;
-  using FineGrid = fine_grid<Float>;
+  using LagrangeBasis = polynomial::lagrange_basis<Float>;
+  using FineGrid = fine_grid2<Float>;
   using CoarseGrid = coarse_grid<Float>;
   using DirectSolver = interpolation::rbf_direct_solver<Float>;
 
@@ -46,6 +48,7 @@ private:
 #endif
 
   mutable std::vector<std::vector<FineGrid>> fine_grids;
+  std::vector<std::unique_ptr<LagrangeBasis>> lagrange_bases;
   std::vector<std::vector<size_t>> point_indices;
   std::unique_ptr<CoarseGrid> coarse;
   std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator;
@@ -73,11 +76,16 @@ public:
       return;
     }
 
-    auto divider = std::make_unique<domain_divider>(points);
+    auto divider = std::make_unique<domain_divider>(points, n_polynomials);
 
     fine_grids.push_back(std::vector<FineGrid>());
+    if (n_polynomials > 0) {
+      lagrange_bases.push_back(std::make_unique<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
+    } else {
+      lagrange_bases.push_back(std::unique_ptr<LagrangeBasis>());
+    }
     for (const auto& d : divider->domains()) {
-      fine_grids.back().push_back(FineGrid(rbf, d.point_indices, d.inner_point));
+      fine_grids.back().push_back(FineGrid(rbf, lagrange_bases.back(), d.point_indices, d.inner_point));
     }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
@@ -97,11 +105,16 @@ public:
     upward_evaluator.back().set_field_points(common::make_view(points, point_indices.back()));
 
     for (int level = 1; level < n_fine_levels; level++) {
-      divider = std::make_unique<domain_divider>(points, point_indices.back());
+      divider = std::make_unique<domain_divider>(points, point_indices.back(), n_polynomials);
 
       fine_grids.push_back(std::vector<FineGrid>());
+      if (n_polynomials > 0) {
+        lagrange_bases.push_back(std::make_unique<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
+      } else {
+        lagrange_bases.push_back(std::unique_ptr<LagrangeBasis>());
+      }
       for (const auto& d : divider->domains()) {
-        fine_grids.back().push_back(FineGrid(rbf, d.point_indices, d.inner_point));
+        fine_grids.back().push_back(FineGrid(rbf, lagrange_bases.back(), d.point_indices, d.inner_point));
       }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
