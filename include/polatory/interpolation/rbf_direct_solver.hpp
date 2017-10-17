@@ -38,6 +38,9 @@ class rbf_direct_solver {
   std::vector<size_t> point_idcs;
   std::vector<Vector3F> poly_points;
 
+  // Matrix -E.
+  MatrixXF me;
+
   // First l rows of matrix A.
   MatrixXF a_top;
 
@@ -48,9 +51,6 @@ class rbf_direct_solver {
   // Decomposition of martix A.
   // This version is used when the system is indefinite.
   Eigen::PartialPivLU<MatrixXF> lu_of_a;
-
-  // Matrix -E.
-  MatrixXF me;
 
   const size_t l;
   const size_t m;
@@ -89,26 +89,14 @@ public:
   }
 
   void setup(const std::vector<Eigen::Vector3d>& points) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
     point_idcs.resize(m);
     std::iota(point_idcs.begin(), point_idcs.end(), 0);
 
     if (poly_degree >= 0) {
+      std::random_device rd;
+      std::mt19937 gen(rd());
+
       std::shuffle(point_idcs.begin(), point_idcs.end(), gen);
-
-      for (size_t i = 0; i < l; i++) {
-        poly_points.push_back(points[point_idcs[i]].template cast<Floating>());
-      }
-
-      std::vector<Vector3F> other_points;
-      for (size_t i = l; i < m; i++) {
-        other_points.push_back(points[point_idcs[i]].template cast<Floating>());
-      }
-
-      polynomial::lagrange_basis<Floating> lagr_basis(poly_dimension, poly_degree, poly_points);
-      me = -lagr_basis.evaluate_points(other_points);
     }
 
     // Compute A.
@@ -125,13 +113,26 @@ public:
     }
 
     if (poly_degree >= 0) {
+      a_top = a.topRows(l);
+
+      // Compute -E.
+      for (size_t i = 0; i < l; i++) {
+        poly_points.push_back(points[point_idcs[i]].template cast<Floating>());
+      }
+
+      std::vector<Vector3F> other_points;
+      for (size_t i = l; i < m; i++) {
+        other_points.push_back(points[point_idcs[i]].template cast<Floating>());
+      }
+
+      polynomial::lagrange_basis<Floating> lagr_basis(poly_dimension, poly_degree, poly_points);
+      me = -lagr_basis.evaluate_points(other_points);
+
       // Compute decomposition of Q^T A Q.
       ldlt_of_qtaq = (me.transpose() * a.topLeftCorner(l, l) * me
                       + me.transpose() * a.topRightCorner(l, m - l)
                       + a.bottomLeftCorner(m - l, l) * me
                       + a.bottomRightCorner(m - l, m - l)).ldlt();
-
-      a_top = a.topRows(l);
     } else {
       lu_of_a = a.partialPivLu();
     }
