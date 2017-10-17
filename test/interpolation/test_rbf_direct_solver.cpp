@@ -46,8 +46,6 @@ void test_rbf_direct_solver(double nugget, int poly_degree) {
 } // namespace
 
 TEST(rbf_direct_solver, trivial) {
-  test_rbf_direct_solver(0.0, -1);
-  test_rbf_direct_solver(0.2, -1);
   test_rbf_direct_solver(0.0, 0);
   test_rbf_direct_solver(0.2, 0);
   test_rbf_direct_solver(0.0, 1);
