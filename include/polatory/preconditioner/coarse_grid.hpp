@@ -8,6 +8,7 @@
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
+#include <Eigen/LU>
 
 #include "polatory/polynomial/lagrange_basis.hpp"
 #include "polatory/polynomial/monomial_basis.hpp"
@@ -31,16 +32,17 @@ class coarse_grid {
   const size_t l_;
   const size_t m_;
 
-  // First l rows of matrix A.
-  MatrixXF a_top_;
-
   // Matrix -E.
   MatrixXF me_;
 
   // Cholesky decomposition of matrix Q^T A Q.
   Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
 
-  MatrixXF pt_;
+  // First l rows of matrix A.
+  MatrixXF a_top_;
+
+  // LU decomposition of first l rows of matrix P.
+  Eigen::FullPivLU<MatrixXF> lu_of_p_top_;
 
   // Current solution.
   VectorXF lambda_c_;
@@ -66,10 +68,11 @@ public:
   }
 
   void clear() {
-    a_top_ = MatrixXF();
     me_ = MatrixXF();
     ldlt_of_qtaq_ = Eigen::LDLT<MatrixXF>();
-    pt_ = MatrixXF();
+
+    a_top_ = MatrixXF();
+    lu_of_p_top_ = Eigen::FullPivLU<MatrixXF>();
   }
 
   void setup(const std::vector<Eigen::Vector3d>& points_full) {
@@ -87,8 +90,6 @@ public:
     }
 
     if (l_ > 0) {
-      a_top_ = a.topRows(l_);
-
       // Compute -E.
       std::vector<Vector3F> tail_points;
       tail_points.reserve(m_ - l_);
@@ -104,7 +105,9 @@ public:
                        + a.bottomLeftCorner(m_ - l_, l_) * me_
                        + a.bottomRightCorner(m_ - l_, m_ - l_)).ldlt();
 
-      // Compute P^T.
+      // Compute matrices used for solving polynomial part.
+      a_top_ = a.topRows(l_);
+
       std::vector<Vector3F> head_points;
       head_points.reserve(l_);
       for (size_t i = 0; i < l_; i++) {
@@ -112,7 +115,8 @@ public:
       }
 
       MonomialBasis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
-      pt_ = mono_basis.evaluate_points(head_points);
+      MatrixXF p_top = mono_basis.evaluate_points(head_points).transpose();
+      lu_of_p_top_ = p_top.fullPivLu();
     } else {
       ldlt_of_qtaq_ = a.ldlt();
     }
@@ -148,8 +152,8 @@ public:
       lambda_c_.segment(l_, m_ - l_) = gamma;
 
       // Solve P c = d - A lambda for c at poly_points.
-      VectorXF a_lambda_head = a_top_ * lambda_c_.head(m_);
-      lambda_c_.tail(l_) = pt_.transpose().fullPivLu().solve(values.head(l_) - a_lambda_head);
+      VectorXF a_top_lambda = a_top_ * lambda_c_.head(m_);
+      lambda_c_.tail(l_) = lu_of_p_top_.solve(values.head(l_) - a_top_lambda);
     } else {
       lambda_c_ = ldlt_of_qtaq_.solve(values);
     }
