@@ -19,7 +19,7 @@ namespace polatory {
 namespace interpolation {
 
 class rbf_solver {
-  using Preconditioner = preconditioner::ras_preconditioner<float>;
+  using Preconditioner = preconditioner::ras_preconditioner<double>;
 
   const rbf::rbf_base& rbf;
   const int poly_dimension;
