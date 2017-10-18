@@ -147,17 +147,12 @@ public:
       values_permuted(i) = values(point_idcs[i]);
     }
 
-    VectorXF qtd;
-    if (poly_degree >= 0) {
-      // Compute Q^T d.
-      qtd = me.transpose() * values_permuted.head(l);
-      qtd += values_permuted.tail(m - l);
-    } else {
-      qtd = values_permuted;
-    }
-
     Eigen::VectorXd lambda_c;
     if (poly_degree >= 0) {
+      // Compute Q^T d.
+      VectorXF qtd = me.transpose() * values_permuted.head(l)
+                     + values_permuted.tail(m - l);
+
       // Solve (Q^T A Q) gamma = Q^T d for gamma.
       VectorXF gamma = ldlt_of_qtaq.solve(qtd);
 
@@ -184,7 +179,7 @@ public:
       auto pt = mono_basis.evaluate_points(poly_points);
       lambda_c.tail(l) = pt.transpose().fullPivLu().solve(d_at_poly_points - a_lambda_at_poly_points).template cast<double>();
     } else {
-      lambda_c = lu_of_a.solve(qtd).template cast<double>();
+      lambda_c = lu_of_a.solve(values_permuted).template cast<double>();
     }
 
     Eigen::VectorXd lambda_permuted = lambda_c.head(m);
