@@ -37,8 +37,7 @@ class coarse_grid {
   // Matrix -E.
   MatrixXF me_;
 
-  // Decomposition of martix Q^T A Q, where Q^T = ( -E^T  I ).
-  // This version is used when the system is positive definite.
+  // Cholesky decomposition of matrix Q^T A Q.
   Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
 
   MatrixXF pt_;
@@ -140,7 +139,7 @@ public:
       VectorXF qtd = me_.transpose() * values.head(l_)
                      + values.tail(m_ - l_);
 
-      // Solve (Q^T A Q) gamma = Q^T d for gamma.
+      // Solve Q^T A Q gamma = Q^T d for gamma.
       VectorXF gamma = ldlt_of_qtaq_.solve(qtd);
 
       // Compute lambda = Q gamma.
@@ -149,8 +148,8 @@ public:
       lambda_c_.segment(l_, m_ - l_) = gamma;
 
       // Solve P c = d - A lambda for c at poly_points.
-      VectorXF a_lambda_top = a_top_ * lambda_c_.head(m_);
-      lambda_c_.tail(l_) = pt_.transpose().fullPivLu().solve(values.head(l_) - a_lambda_top);
+      VectorXF a_lambda_head = a_top_ * lambda_c_.head(m_);
+      lambda_c_.tail(l_) = pt_.transpose().fullPivLu().solve(values.head(l_) - a_lambda_head);
     } else {
       lambda_c_ = ldlt_of_qtaq_.solve(values);
     }

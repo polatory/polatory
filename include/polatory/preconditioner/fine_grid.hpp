@@ -33,7 +33,7 @@ class fine_grid {
   // Matrix -E.
   MatrixXF me_;
 
-  // Factorization of matrix Q^T A Q.
+  // Cholesky decomposition of matrix Q^T A Q.
   Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
 
   // Current solution.
