@@ -11,21 +11,23 @@
 namespace polatory {
 namespace krylov {
 
-struct identity_operator : linear_operator {
-  const size_t n;
-
+class identity_operator : public linear_operator {
+public:
   identity_operator(size_t n)
-    : n(n) {
+    : n_(n) {
   }
 
   Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
-    assert(v.size() == n);
+    assert(v.size() == n_);
     return v;
   }
 
   size_t size() const override {
-    return n;
+    return n_;
   }
+
+private:
+  const size_t n_;
 };
 
 } // namespace krylov
