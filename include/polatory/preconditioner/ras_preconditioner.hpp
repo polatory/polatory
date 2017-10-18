@@ -7,7 +7,6 @@
 
 #include <memory>
 #include <numeric>
-#include <random>
 #include <vector>
 
 #include <Eigen/Core>
@@ -20,6 +19,7 @@
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/lagrange_basis.hpp"
 #include "polatory/polynomial/orthonormal_basis.hpp"
+#include "polatory/polynomial/unisolvent_point_set.hpp"
 #include "polatory/preconditioner/coarse_grid.hpp"
 #include "polatory/preconditioner/domain_divider.hpp"
 #include "polatory/preconditioner/fine_grid.hpp"
@@ -48,7 +48,6 @@ class ras_preconditioner : public krylov::linear_operator {
 #endif
 
   std::vector<std::vector<size_t>> point_idcs_;
-  std::vector<size_t> poly_point_idcs_;
   mutable std::vector<std::vector<FineGrid>> fine_grids;
   std::shared_ptr<LagrangeBasis> lagrange_basis_;
   std::unique_ptr<CoarseGrid> coarse;
@@ -72,24 +71,12 @@ public:
     point_idcs_.push_back(std::vector<size_t>(n_points));
     std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
 
+    std::vector<size_t> poly_point_idcs;
     if (poly_degree >= 0) {
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<int> dist(0, n_points - 1);
-      std::set<size_t> poly_point_idcs;
-
-      while (poly_point_idcs.size() < n_polynomials) {
-        size_t idx = dist(gen);
-        if (!poly_point_idcs.insert(idx).second)
-          continue;
-
-        auto it = common::bsearch_eq(point_idcs_.back().begin(), point_idcs_.back().end(), idx);
-        point_idcs_.back().erase(it);
-      }
-
-      poly_point_idcs_ = std::vector<size_t>(poly_point_idcs.begin(), poly_point_idcs.end());
-      point_idcs_.back().insert(point_idcs_.back().begin(), poly_point_idcs_.begin(), poly_point_idcs_.end());
-      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::make_view(points, poly_point_idcs_));
+      polynomial::unisolvent_point_set ups(points, point_idcs_.back(), poly_dimension, poly_degree);
+      point_idcs_.back() = ups.point_indices();
+      poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_polynomials);
+      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::make_view(points, poly_point_idcs));
     }
 
     n_fine_levels = std::max(0, int(
@@ -99,7 +86,7 @@ public:
       return;
     }
 
-    auto divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs_);
+    auto divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs);
 
     fine_grids.push_back(std::vector<FineGrid>());
     for (const auto& d : divider->domains()) {
@@ -123,7 +110,7 @@ public:
     upward_evaluator.back().set_field_points(common::make_view(points, point_idcs_.back()));
 
     for (int level = 1; level < n_fine_levels; level++) {
-      divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs_);
+      divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs);
 
       fine_grids.push_back(std::vector<FineGrid>());
       for (const auto& d : divider->domains()) {
