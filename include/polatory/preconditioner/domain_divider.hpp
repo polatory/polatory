@@ -231,14 +231,14 @@ public:
   }
 
   std::vector<size_t> choose_coarse_points(double ratio) const {
-    std::vector<size_t> coarse_idcs;
+    std::vector<size_t> coarse_idcs(poly_point_idcs_.begin(), poly_point_idcs_.end());
 
     std::random_device rd;
     std::mt19937 gen(rd());
 
     for (const auto& d : domains_) {
-      std::vector<size_t> shuffled(d.size());
-      std::iota(shuffled.begin(), shuffled.end(), 0);
+      std::vector<size_t> shuffled(d.size() - poly_point_idcs_.size());
+      std::iota(shuffled.begin(), shuffled.end(), poly_point_idcs_.size());
       std::shuffle(shuffled.begin(), shuffled.end(), gen);
 
       auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true);
