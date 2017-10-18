@@ -7,18 +7,20 @@
 #include <Eigen/Core>
 
 #include "polatory/geometry/bbox3d.hpp"
+#include "polatory/interpolation/rbf_operator.hpp"
+#include "polatory/interpolation/rbf_residual_evaluator.hpp"
 #include "polatory/krylov/fgmres.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/orthonormal_basis.hpp"
 #include "polatory/preconditioner/ras_preconditioner.hpp"
 #include "polatory/rbf/rbf_base.hpp"
-#include "rbf_operator.hpp"
-#include "rbf_residual_evaluator.hpp"
 
 namespace polatory {
 namespace interpolation {
 
 class rbf_solver {
+  using Preconditioner = preconditioner::ras_preconditioner<float>;
+
   const rbf::rbf_base& rbf;
   const int poly_dimension;
   const int poly_degree;
@@ -26,7 +28,7 @@ class rbf_solver {
 
   size_t n_points;
   std::unique_ptr<rbf_operator<>> op;
-  std::unique_ptr<preconditioner::ras_preconditioner> pc;
+  std::unique_ptr<Preconditioner> pc;
   std::unique_ptr<rbf_residual_evaluator> res_eval;
   Eigen::MatrixXd p;
 
@@ -67,13 +69,9 @@ public:
     , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , n_points(points.size()) {
     op = std::make_unique<rbf_operator<>>(rbf, poly_dimension, poly_degree, points);
-    pc = std::make_unique<preconditioner::ras_preconditioner>(rbf, poly_dimension, poly_degree, points);
     res_eval = std::make_unique<rbf_residual_evaluator>(rbf, poly_dimension, poly_degree, points);
 
-    if (poly_degree >= 0) {
-      polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points);
-      p = poly.evaluate_points(points).transpose();
-    }
+    set_points(points);
   }
 
   rbf_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
@@ -94,7 +92,7 @@ public:
     op->set_points(points);
     res_eval->set_points(points);
 
-    pc = std::make_unique<preconditioner::ras_preconditioner>(rbf, poly_dimension, poly_degree, points);
+    pc = std::make_unique<Preconditioner>(rbf, poly_dimension, poly_degree, points);
 
     if (poly_degree >= 0) {
       polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points);

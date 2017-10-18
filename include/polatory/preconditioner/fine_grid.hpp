@@ -2,13 +2,13 @@
 
 #pragma once
 
+#include <cassert>
 #include <memory>
 #include <vector>
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
 
-#include "polatory/common/vector_range_view.hpp"
 #include "polatory/polynomial/lagrange_basis.hpp"
 #include "polatory/rbf/rbf_base.hpp"
 
@@ -50,11 +50,20 @@ public:
     , inner_point_(inner_point)
     , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
     , m_(point_indices.size()) {
+    assert(m_ > l_);
+  }
+
+  fine_grid(const rbf::rbf_base& rbf,
+            std::shared_ptr<LagrangeBasis> lagrange_basis,
+            const std::vector<size_t>& point_indices,
+            const std::vector<bool>& inner_point,
+            const std::vector<Eigen::Vector3d>& points_full)
+    : fine_grid(rbf, lagrange_basis, point_indices, inner_point) {
+    setup(points_full);
   }
 
   void clear() {
     me_ = MatrixXF();
-
     ldlt_of_qtaq_ = Eigen::LDLT<MatrixXF>();
   }
 

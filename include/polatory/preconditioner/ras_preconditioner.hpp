@@ -26,12 +26,11 @@
 namespace polatory {
 namespace preconditioner {
 
-struct ras_preconditioner : krylov::linear_operator {
-private:
-  using Float = float;
-  using LagrangeBasis = polynomial::lagrange_basis<Float>;
-  using FineGrid = fine_grid<Float>;
-  using CoarseGrid = coarse_grid<Float>;
+template <class Floating>
+class ras_preconditioner : public krylov::linear_operator {
+  using LagrangeBasis = polynomial::lagrange_basis<Floating>;
+  using FineGrid = fine_grid<Floating>;
+  using CoarseGrid = coarse_grid<Floating>;
 
   static constexpr int Order = 6;
   const double coarse_ratio = 0.125;

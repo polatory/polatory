@@ -2,17 +2,13 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cassert>
 #include <memory>
-#include <numeric>
-#include <random>
 #include <vector>
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
 
-#include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/lagrange_basis.hpp"
 #include "polatory/polynomial/monomial_basis.hpp"
 #include "polatory/rbf/rbf_base.hpp"
@@ -35,11 +31,11 @@ class coarse_grid {
   const size_t l_;
   const size_t m_;
 
-  // Matrix -E.
-  MatrixXF me_;
-
   // First l rows of matrix A.
   MatrixXF a_top_;
+
+  // Matrix -E.
+  MatrixXF me_;
 
   // Decomposition of martix Q^T A Q, where Q^T = ( -E^T  I ).
   // This version is used when the system is positive definite.
@@ -66,22 +62,15 @@ public:
               std::shared_ptr<LagrangeBasis> lagrange_basis,
               const std::vector<size_t>& point_indices,
               const std::vector<Eigen::Vector3d>& points_full)
-    : rbf_(rbf)
-    , lagrange_basis_(lagrange_basis)
-    , point_idcs_(point_indices)
-    , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
-    , m_(point_indices.size()) {
-    assert(m_ > l_);
-
+    : coarse_grid(rbf, lagrange_basis, point_indices) {
     setup(points_full);
   }
 
   void clear() {
     a_top_ = MatrixXF();
-
-    ldlt_of_qtaq_ = Eigen::LDLT<MatrixXF>();
-
     me_ = MatrixXF();
+    ldlt_of_qtaq_ = Eigen::LDLT<MatrixXF>();
+    pt_ = MatrixXF();
   }
 
   void setup(const std::vector<Eigen::Vector3d>& points_full) {

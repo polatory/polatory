@@ -7,7 +7,8 @@
 namespace polatory {
 namespace krylov {
 
-struct linear_operator {
+class linear_operator {
+public:
   virtual ~linear_operator() {}
 
   virtual Eigen::VectorXd operator()(const Eigen::VectorXd& v) const = 0;
