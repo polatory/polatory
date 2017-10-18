@@ -163,22 +163,10 @@ class domain_divider {
 
 public:
   explicit domain_divider(const std::vector<Eigen::Vector3d>& points,
-                          size_t poly_basis_size)
+                          const std::vector<size_t>& poly_point_indices)
     : points(points)
+    , poly_point_idcs_(poly_point_indices)
     , size_of_root(points.size()) {
-    {
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<int> dist(0, points.size() - 1);
-      std::set<size_t> poly_point_idcs;
-
-      while (poly_point_idcs.size() < poly_basis_size) {
-        poly_point_idcs.insert(dist(gen));
-      }
-
-      poly_point_idcs_.insert(poly_point_idcs_.end(), poly_point_idcs.begin(), poly_point_idcs.end());
-    }
-
     auto root = domain();
 
     root.point_indices.resize(points.size());
@@ -194,23 +182,12 @@ public:
     divide_domains();
   }
 
-  domain_divider(const std::vector<Eigen::Vector3d>& points, const std::vector<size_t>& point_indices,
-                 size_t poly_basis_size)
+  domain_divider(const std::vector<Eigen::Vector3d>& points,
+                 const std::vector<size_t>& point_indices,
+                 const std::vector<size_t>& poly_point_indices)
     : points(points)
+    , poly_point_idcs_(poly_point_indices)
     , size_of_root(point_indices.size()) {
-    {
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<int> dist(0, point_indices.size() - 1);
-      std::set<size_t> poly_point_idcs;
-
-      while (poly_point_idcs.size() < poly_basis_size) {
-        poly_point_idcs.insert(point_indices[dist(gen)]);
-      }
-
-      poly_point_idcs_.insert(poly_point_idcs_.end(), poly_point_idcs.begin(), poly_point_idcs.end());
-    }
-
     auto root = domain();
 
     root.point_indices = point_indices;
@@ -223,11 +200,6 @@ public:
     domains_.push_back(root);
 
     divide_domains();
-  }
-
-  std::vector<Eigen::Vector3d> poly_points() const {
-    auto view = common::make_view(points, poly_point_idcs_);
-    return std::vector<Eigen::Vector3d>(view.begin(), view.end());
   }
 
   std::vector<size_t> choose_coarse_points(double ratio) const {

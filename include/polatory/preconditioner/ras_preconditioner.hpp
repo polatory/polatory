@@ -10,17 +10,17 @@
 
 #include <Eigen/Core>
 
-#include "coarse_grid.hpp"
-#include "domain_divider.hpp"
-#include "fine_grid2.hpp"
+#include "polatory/common/bsearch.hpp"
 #include "polatory/common/vector_view.hpp"
-#include "polatory/interpolation/rbf_direct_solver.hpp"
 #include "polatory/interpolation/rbf_evaluator.hpp"
 #include "polatory/interpolation/rbf_symmetric_evaluator.hpp"
 #include "polatory/krylov/linear_operator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/lagrange_basis.hpp"
 #include "polatory/polynomial/orthonormal_basis.hpp"
+#include "polatory/preconditioner/coarse_grid.hpp"
+#include "polatory/preconditioner/domain_divider.hpp"
+#include "polatory/preconditioner/fine_grid.hpp"
 #include "polatory/rbf/rbf_base.hpp"
 
 namespace polatory {
@@ -30,9 +30,8 @@ struct ras_preconditioner : krylov::linear_operator {
 private:
   using Float = float;
   using LagrangeBasis = polynomial::lagrange_basis<Float>;
-  using FineGrid = fine_grid2<Float>;
+  using FineGrid = fine_grid<Float>;
   using CoarseGrid = coarse_grid<Float>;
-  using DirectSolver = interpolation::rbf_direct_solver<Float>;
 
   static constexpr int Order = 6;
   const double coarse_ratio = 0.125;
@@ -47,13 +46,14 @@ private:
   mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator;
 #endif
 
+  std::vector<size_t> poly_point_idcs_;
+  std::vector<size_t> all_point_idcs_;
   mutable std::vector<std::vector<FineGrid>> fine_grids;
-  std::vector<std::shared_ptr<LagrangeBasis>> lagrange_bases;
+  std::shared_ptr<LagrangeBasis> lagrange_basis_;
   std::vector<std::vector<size_t>> point_indices;
   std::unique_ptr<CoarseGrid> coarse;
   std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator;
   std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator;
-  std::unique_ptr<DirectSolver> direct_solver;
   Eigen::MatrixXd p;
   Eigen::MatrixXd ap;
 
@@ -69,23 +69,40 @@ public:
     , finest_evaluator(rbf, poly_dimension, poly_degree, points)
 #endif
   {
+    all_point_idcs_.resize(in_points.size());
+    std::iota(all_point_idcs_.begin(), all_point_idcs_.end(), 0);
+
+    if (poly_degree >= 0) {
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_int_distribution<int> dist(0, points.size() - 1);
+      std::set<size_t> poly_point_idcs;
+
+      while (poly_point_idcs.size() < n_polynomials) {
+        size_t idx = dist(gen);
+        poly_point_idcs.insert(idx);
+
+        auto it = common::bsearch_eq(all_point_idcs_.begin(), all_point_idcs_.end(), idx);
+        all_point_idcs_.erase(it);
+      }
+
+      poly_point_idcs_.insert(poly_point_idcs_.end(), poly_point_idcs.begin(), poly_point_idcs.end());
+      all_point_idcs_.insert(all_point_idcs_.begin(), poly_point_idcs_.begin(), poly_point_idcs_.end());
+      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::make_view(points, poly_point_idcs_));
+    }
+
     n_fine_levels = std::max(0, int(
       std::ceil(std::log(double(n_points) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
     if (n_fine_levels == 0) {
-      direct_solver = std::make_unique<DirectSolver>(rbf, poly_dimension, poly_degree, points);
+      coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, all_point_idcs_, points);
       return;
     }
 
-    auto divider = std::make_unique<domain_divider>(points, n_polynomials);
+    auto divider = std::make_unique<domain_divider>(points, poly_point_idcs_);
 
     fine_grids.push_back(std::vector<FineGrid>());
-    if (n_polynomials > 0) {
-      lagrange_bases.push_back(std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
-    } else {
-      lagrange_bases.push_back(std::shared_ptr<LagrangeBasis>());
-    }
     for (const auto& d : divider->domains()) {
-      fine_grids.back().push_back(FineGrid(rbf, lagrange_bases.back(), d.point_indices, d.inner_point));
+      fine_grids.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
     }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
@@ -105,16 +122,11 @@ public:
     upward_evaluator.back().set_field_points(common::make_view(points, point_indices.back()));
 
     for (int level = 1; level < n_fine_levels; level++) {
-      divider = std::make_unique<domain_divider>(points, point_indices.back(), n_polynomials);
+      divider = std::make_unique<domain_divider>(points, point_indices.back(), poly_point_idcs_);
 
       fine_grids.push_back(std::vector<FineGrid>());
-      if (n_polynomials > 0) {
-        lagrange_bases.push_back(std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, divider->poly_points()));
-      } else {
-        lagrange_bases.push_back(std::shared_ptr<LagrangeBasis>());
-      }
       for (const auto& d : divider->domains()) {
-        fine_grids.back().push_back(FineGrid(rbf, lagrange_bases.back(), d.point_indices, d.inner_point));
+        fine_grids.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
       }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
@@ -136,7 +148,7 @@ public:
     }
 
     std::cout << "Number of points in coarse: " << point_indices.back().size() << std::endl;
-    coarse = std::make_unique<CoarseGrid>(rbf, poly_dimension, poly_degree, points, point_indices.back());
+    coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_indices.back(), points);
 
     for (int level = 1; level < n_fine_levels; level++) {
       downward_evaluator.push_back(
@@ -161,15 +173,17 @@ public:
     assert(v.size() == size());
 
     Eigen::VectorXd residuals = v.head(n_points);
+    Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
     if (n_fine_levels == 0) {
-      return direct_solver->solve(residuals);
+      coarse->solve(residuals);
+      coarse->set_solution_to(weights_total);
+      return weights_total;
     }
 
 #if REPORT_RESIDUAL
     std::cout << "Initial residual: " << residuals.norm() << std::endl;
 #endif
 
-    Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
     for (int level = 0; level < n_fine_levels; level++) {
       {
         std::cout << "Start of level " << level << std::endl;

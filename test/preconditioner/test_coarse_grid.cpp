@@ -9,6 +9,7 @@
 
 #include <Eigen/Core>
 
+#include "polatory/common/vector_range_view.hpp"
 #include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/preconditioner/coarse_grid.hpp"
@@ -16,9 +17,11 @@
 #include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::preconditioner;
+using polatory::common::make_range_view;
 using polatory::random_points::sphere_points;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::polynomial::basis_base;
+using polatory::polynomial::lagrange_basis;
 using polatory::rbf::biharmonic;
 
 void test_coarse_grid(double nugget) {
@@ -36,9 +39,11 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
+  auto lagr_basis = std::make_shared<lagrange_basis<double>>(3, poly_degree, make_range_view(points, 0, n_polynomials));
+
   biharmonic rbf({ 1.0, nugget });
 
-  coarse_grid<double> coarse(rbf, 3, poly_degree, points, point_indices);
+  coarse_grid<double> coarse(rbf, lagr_basis, point_indices, points);
 
   Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);
   coarse.solve(values);
