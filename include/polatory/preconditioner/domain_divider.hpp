@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <list>
+#include <iterator>
 #include <numeric>
 #include <random>
 #include <vector>
@@ -162,26 +163,6 @@ class domain_divider {
   }
 
 public:
-  explicit domain_divider(const std::vector<Eigen::Vector3d>& points,
-                          const std::vector<size_t>& poly_point_indices)
-    : points(points)
-    , poly_point_idcs_(poly_point_indices)
-    , size_of_root(points.size()) {
-    auto root = domain();
-
-    root.point_indices.resize(points.size());
-    std::iota(root.point_indices.begin(), root.point_indices.end(), 0);
-
-    root.inner_point = std::vector<bool>(points.size(), true);
-
-    root.bbox_ = domain_bbox(root);
-    longest_side_length_of_root = root.bbox_.size().maxCoeff();
-
-    domains_.push_back(root);
-
-    divide_domains();
-  }
-
   domain_divider(const std::vector<Eigen::Vector3d>& points,
                  const std::vector<size_t>& point_indices,
                  const std::vector<size_t>& poly_point_indices)

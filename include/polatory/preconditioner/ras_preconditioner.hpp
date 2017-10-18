@@ -6,6 +6,8 @@
 #define CLEAR_AND_RECOMPUTE 1
 
 #include <memory>
+#include <numeric>
+#include <random>
 #include <vector>
 
 #include <Eigen/Core>
@@ -45,11 +47,10 @@ class ras_preconditioner : public krylov::linear_operator {
   mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator;
 #endif
 
+  std::vector<std::vector<size_t>> point_idcs_;
   std::vector<size_t> poly_point_idcs_;
-  std::vector<size_t> all_point_idcs_;
   mutable std::vector<std::vector<FineGrid>> fine_grids;
   std::shared_ptr<LagrangeBasis> lagrange_basis_;
-  std::vector<std::vector<size_t>> point_indices;
   std::unique_ptr<CoarseGrid> coarse;
   std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator;
   std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator;
@@ -68,36 +69,37 @@ public:
     , finest_evaluator(rbf, poly_dimension, poly_degree, points)
 #endif
   {
-    all_point_idcs_.resize(in_points.size());
-    std::iota(all_point_idcs_.begin(), all_point_idcs_.end(), 0);
+    point_idcs_.push_back(std::vector<size_t>(n_points));
+    std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
 
     if (poly_degree >= 0) {
       std::random_device rd;
       std::mt19937 gen(rd());
-      std::uniform_int_distribution<int> dist(0, points.size() - 1);
+      std::uniform_int_distribution<int> dist(0, n_points - 1);
       std::set<size_t> poly_point_idcs;
 
       while (poly_point_idcs.size() < n_polynomials) {
         size_t idx = dist(gen);
-        poly_point_idcs.insert(idx);
+        if (!poly_point_idcs.insert(idx).second)
+          continue;
 
-        auto it = common::bsearch_eq(all_point_idcs_.begin(), all_point_idcs_.end(), idx);
-        all_point_idcs_.erase(it);
+        auto it = common::bsearch_eq(point_idcs_.back().begin(), point_idcs_.back().end(), idx);
+        point_idcs_.back().erase(it);
       }
 
-      poly_point_idcs_.insert(poly_point_idcs_.end(), poly_point_idcs.begin(), poly_point_idcs.end());
-      all_point_idcs_.insert(all_point_idcs_.begin(), poly_point_idcs_.begin(), poly_point_idcs_.end());
+      poly_point_idcs_ = std::vector<size_t>(poly_point_idcs.begin(), poly_point_idcs.end());
+      point_idcs_.back().insert(point_idcs_.back().begin(), poly_point_idcs_.begin(), poly_point_idcs_.end());
       lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::make_view(points, poly_point_idcs_));
     }
 
     n_fine_levels = std::max(0, int(
       std::ceil(std::log(double(n_points) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
     if (n_fine_levels == 0) {
-      coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, all_point_idcs_, points);
+      coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points);
       return;
     }
 
-    auto divider = std::make_unique<domain_divider>(points, poly_point_idcs_);
+    auto divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs_);
 
     fine_grids.push_back(std::vector<FineGrid>());
     for (const auto& d : divider->domains()) {
@@ -117,11 +119,11 @@ public:
                  ? double(n_coarsest_points) / double(points.size())
                  : coarse_ratio;
     upward_evaluator.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points));
-    point_indices.push_back(divider->choose_coarse_points(ratio));
-    upward_evaluator.back().set_field_points(common::make_view(points, point_indices.back()));
+    point_idcs_.push_back(divider->choose_coarse_points(ratio));
+    upward_evaluator.back().set_field_points(common::make_view(points, point_idcs_.back()));
 
     for (int level = 1; level < n_fine_levels; level++) {
-      divider = std::make_unique<domain_divider>(points, point_indices.back(), poly_point_idcs_);
+      divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs_);
 
       fine_grids.push_back(std::vector<FineGrid>());
       for (const auto& d : divider->domains()) {
@@ -134,25 +136,25 @@ public:
          fine.setup(points);
       }
 #endif
-      std::cout << "Number of points in level " << level << ": " << point_indices.back().size() << std::endl;
+      std::cout << "Number of points in level " << level << ": " << point_idcs_.back().size() << std::endl;
       std::cout << "Number of domains in level " << level << ": " << fine_grids.back().size() << std::endl;
 
       ratio = level == n_fine_levels - 1
-              ? double(n_coarsest_points) / double(point_indices.back().size())
+              ? double(n_coarsest_points) / double(point_idcs_.back().size())
               : coarse_ratio;
       upward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::make_view(points, point_indices.back())));
-      point_indices.push_back(divider->choose_coarse_points(ratio));
-      upward_evaluator.back().set_field_points(common::make_view(points, point_indices.back()));
+        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::make_view(points, point_idcs_.back())));
+      point_idcs_.push_back(divider->choose_coarse_points(ratio));
+      upward_evaluator.back().set_field_points(common::make_view(points, point_idcs_.back()));
     }
 
-    std::cout << "Number of points in coarse: " << point_indices.back().size() << std::endl;
-    coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_indices.back(), points);
+    std::cout << "Number of points in coarse: " << point_idcs_.back().size() << std::endl;
+    coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points);
 
     for (int level = 1; level < n_fine_levels; level++) {
       downward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::make_view(points, point_indices.back())));
-      downward_evaluator.back().set_field_points(common::make_view(points, point_indices[level - 1]));
+        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::make_view(points, point_idcs_.back())));
+      downward_evaluator.back().set_field_points(common::make_view(points, point_idcs_[level]));
     }
 
     if (poly_degree >= 0) {
@@ -205,7 +207,7 @@ public:
 
         // Evaluate residuals at coarse points.
         if (level > 0) {
-          const auto& finer_indices = point_indices[level - 1];
+          const auto& finer_indices = point_idcs_[level];
           Eigen::VectorXd finer_weights(finer_indices.size());
           for (size_t i = 0; i < finer_indices.size(); i++) {
             finer_weights(i) = weights(finer_indices[i]);
@@ -216,7 +218,7 @@ public:
         }
         auto fit = upward_evaluator[level].evaluate();
 
-        const auto& indices = point_indices[level];
+        const auto& indices = point_idcs_[level + 1];
         for (size_t i = 0; i < indices.size(); i++) {
           residuals(indices[i]) -= fit(i);
         }
@@ -254,7 +256,7 @@ public:
         coarse->set_solution_to(weights);
 
         if (level < n_fine_levels - 1) {
-          const auto& coarse_indices = point_indices.back();
+          const auto& coarse_indices = point_idcs_.back();
           Eigen::VectorXd coarse_weights(coarse_indices.size() + n_polynomials);
           for (size_t i = 0; i < coarse_indices.size(); i++) {
             coarse_weights(i) = weights(coarse_indices[i]);
@@ -264,7 +266,7 @@ public:
 
           auto fit = downward_evaluator[level].evaluate();
 
-          const auto& indices = point_indices[level];
+          const auto& indices = point_idcs_[level + 1];
           for (size_t i = 0; i < indices.size(); i++) {
             residuals(indices[i]) -= fit(i);
           }
