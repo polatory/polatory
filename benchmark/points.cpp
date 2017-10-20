@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     random_points(sphere3d(), n_points, seed),
     1e-8).filtered_points();
 
-  write_points(argv[1], points);
+  write_points(argv[3], points);
 
   return 0;
 }

@@ -5,13 +5,11 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/interpolant.hpp"
 #include "polatory/io/read_table.hpp"
 #include "polatory/io/write_table.hpp"
 #include "polatory/rbf/cov_exponential.hpp"
 
-using polatory::geometry::bbox3d;
 using polatory::interpolant;
 using polatory::io::read_points;
 using polatory::io::read_values;
@@ -33,7 +31,6 @@ int main(int argc, char *argv[]) {
   interpolant ip(cov, poly_dimension, poly_degree);
 
   ip.fit(points, values, absolute_tolerance);
-  ip.set_evaluation_bbox(bbox3d(Eigen::Vector3d(-1.0, -1.0, -1.0), Eigen::Vector3d(1.0, 1.0, 1.0)));
   auto prediction_values = ip.evaluate_points(prediction_points);
 
   write_values(argv[4], prediction_values);

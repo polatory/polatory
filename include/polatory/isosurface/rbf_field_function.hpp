@@ -16,7 +16,7 @@ struct rbf_field_function : field_function {
   }
 
   Eigen::VectorXd operator()(const std::vector<Eigen::Vector3d>& points) const override {
-    return interpolant_.evaluate_points(points);
+    return interpolant_.evaluate_points_impl(points);
   }
 
 private:

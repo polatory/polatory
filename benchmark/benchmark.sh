@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ev
+
 ./points 1000 0 1k.txt
 ./points 10000 0 10k.txt
 ./points 100000 0 100k.txt
