@@ -1,3 +1,5 @@
+NOTE: This is a pre-release version. APIs subject to change without notice.
+
 # Polatory
 
 Polatory is a fast and memory-efficient framework for spline surface reconstruction and spatial interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
