@@ -14,9 +14,9 @@ foreach(dll ${DLLS})
 endforeach(dll)
 
 set(FILES
-    benchmark.sh
-    predict.R
-    simulate.R
+    ${CMAKE_CURRENT_SOURCE_DIR}/benchmark.sh
+    ${CMAKE_CURRENT_SOURCE_DIR}/predict.R
+    ${CMAKE_CURRENT_SOURCE_DIR}/simulate.R
 )
 
 foreach(file ${FILES})
