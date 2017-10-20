@@ -162,14 +162,14 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | fmm                    | Fast multipole methods (wrapper of ScalFMM).     |
 | geometry               | Geometric utilities.                             |
 | interpolation          | RBF fitting and evaluation.                      |
+| io                     | Reader and writer for table data.                |
 | isosurface             | Isosurface generation.                           |
 | kriging                | Parameter estimation and validation for kriging. |
 | krylov                 | Krylov subspace methods.                         |
-| numeric                | Numerically stable algorithms.                   |
+| numeric                | Numerical utilities.                             |
 | point_cloud            | Scattered data generation from point clouds.     |
 | polynomial             | Polynomial part of RBF interpolant.              |
 | preconditioner         | The preconditioner used with Krylov subspace methods. |
-| random_points          | Random points generation for unit testing.       |
 | rbf                    | Definition of RBFs/covariance functions.         |
 | third_party            | Third party libraries.                           |
 

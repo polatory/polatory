@@ -4,6 +4,21 @@ target_link_libraries(points ${PROJECT_NAME})
 add_executable(predict "predict.cpp")
 target_link_libraries(predict ${PROJECT_NAME})
 
-configure_file("benchmark.sh" "benchmark.sh" COPYONLY)
-configure_file("predict.R" "predict.R" COPYONLY)
-configure_file("simulate.R" "simulate.R" COPYONLY)
+foreach(dll ${DLLS})
+    add_custom_command(TARGET predict
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${dll}
+        $<TARGET_FILE_DIR:${UNITTEST}>
+    )
+endforeach(dll)
+
+set(FILES
+    benchmark.sh
+    predict.R
+    simulate.R
+)
+
+foreach(file ${FILES})
+    configure_file(${file} ${file} COPYONLY)
+endforeach(file)

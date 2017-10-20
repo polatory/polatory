@@ -46,7 +46,7 @@ inline std::vector<Eigen::Vector3d> read_points(const std::string& filename) {
 
   std::vector<Eigen::Vector3d> points(n_rows);
 
-  for (int i = 0; i < n_rows; i++) {
+  for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
     points[i] = Eigen::Vector3d(row[0], row[1], row[2]);
   }
@@ -62,7 +62,7 @@ inline std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3d>> rea
   std::vector<Eigen::Vector3d> normals(n_rows);
   Eigen::VectorXd values = Eigen::VectorXd(n_rows);
 
-  for (int i = 0; i < n_rows; i++) {
+  for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
     points[i] = Eigen::Vector3d(row[0], row[1], row[2]);
     normals[i] = Eigen::Vector3d(row[3], row[4], row[5]);
@@ -78,7 +78,7 @@ inline std::pair<std::vector<Eigen::Vector3d>, Eigen::VectorXd> read_points_and_
   std::vector<Eigen::Vector3d> points(n_rows);
   Eigen::VectorXd values = Eigen::VectorXd(n_rows);
 
-  for (int i = 0; i < n_rows; i++) {
+  for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
     points[i] = Eigen::Vector3d(row[0], row[1], row[2]);
     values(i) = row[3];
@@ -93,7 +93,7 @@ inline Eigen::VectorXd read_values(const std::string& filename) {
 
   Eigen::VectorXd values = Eigen::VectorXd(n_rows);
 
-  for (int i = 0; i < n_rows; i++) {
+  for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
     values(i) = row[0];
   }
