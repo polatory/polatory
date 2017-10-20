@@ -15,6 +15,8 @@ public:
 
   explicit affine_transform3d(const Eigen::Matrix4d& m);
 
+  bool is_identity() const;
+
   const Eigen::Matrix4d& matrix() const;
 
   Eigen::Vector3d transform_point(const Eigen::Vector3d& p) const;

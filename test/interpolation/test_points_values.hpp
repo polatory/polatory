@@ -11,14 +11,14 @@
 
 #include "polatory/point_cloud/distance_filter.hpp"
 #include "polatory/point_cloud/scattered_data_generator.hpp"
-#include "polatory/random_points/sphere_points.hpp"
+#include "polatory/point_cloud/random_points.hpp"
 
 namespace {
 
 std::pair<std::vector<Eigen::Vector3d>, Eigen::VectorXd> test_points_values(size_t n_surface_points) {
   using namespace polatory;
 
-  auto surface_points = random_points::sphere_points(n_surface_points);
+  auto surface_points = point_cloud::random_points(geometry::sphere3d(), n_surface_points);
   point_cloud::distance_filter filter(surface_points, 1e-6);
   surface_points = filter.filtered_points();
 

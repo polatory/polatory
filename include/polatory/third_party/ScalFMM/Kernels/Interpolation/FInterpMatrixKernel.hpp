@@ -20,6 +20,7 @@
 #ifndef FINTERPMATRIXKERNEL_HPP
 #define FINTERPMATRIXKERNEL_HPP
 
+#include <iostream>
 #include <stdexcept>
 
 #include "Utils/FPoint.hpp"

@@ -26,6 +26,10 @@ const Eigen::Matrix4d& affine_transform3d::matrix() const {
   return m_;
 }
 
+bool affine_transform3d::is_identity() const {
+  return m_ == Eigen::Matrix4d::Identity();
+}
+
 Eigen::Vector3d affine_transform3d::transform_point(const Eigen::Vector3d& p) const {
   Eigen::Vector4d p_homo;
   p_homo << p(0), p(1), p(2), 1.0;

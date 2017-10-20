@@ -8,10 +8,11 @@
 #include <Eigen/Core>
 
 #include "polatory/point_cloud/kdtree.hpp"
-#include "polatory/random_points/sphere_points.hpp"
+#include "polatory/point_cloud/random_points.hpp"
 
 using namespace polatory::point_cloud;
-using polatory::random_points::sphere_points;
+using polatory::geometry::sphere3d;
+using polatory::point_cloud::random_points;
 
 TEST(kdtree, trivial) {
   size_t n_points = 1024;
@@ -24,7 +25,7 @@ TEST(kdtree, trivial) {
   std::vector<size_t> indices;
   std::vector<double> distances;
 
-  auto points = sphere_points(n_points, center, radius);
+  auto points = random_points(sphere3d(center, radius), n_points);
 
   kdtree tree(points);
 

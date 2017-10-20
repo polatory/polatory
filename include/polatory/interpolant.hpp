@@ -88,6 +88,9 @@ public:
 
 private:
   points_type affine_transform_points(const points_type& points) const {
+    if (point_transform_.is_identity())
+      return points;
+
     points_type transformed;
     transformed.reserve(points.size());
 
