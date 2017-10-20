@@ -135,7 +135,7 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    mkdir build
    cd build
    cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
-   msbuild polatory.sln
+   msbuild polatory.sln /p:Configuration=Release
    ```
 
 ## Contribution

@@ -43,7 +43,7 @@ elseif(MSVC)
         )
     endif()
     
-    set(CMAKE_CXX_FLAGS "/MP /fp:strict /fp:except- /Qstd=c++14 /Qopenmp /Qip /QaxAVX")
+    set(CMAKE_CXX_FLAGS "/MP /EHsc /fp:strict /fp:except- /Qstd=c++14 /Qopenmp /Qip /QaxAVX")
 endif()
 
 include_directories(

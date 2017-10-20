@@ -9,7 +9,7 @@ foreach(dll ${DLLS})
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${dll}
-        $<TARGET_FILE_DIR:${UNITTEST}>
+        $<TARGET_FILE_DIR:predict>
     )
 endforeach(dll)
 
@@ -20,5 +20,10 @@ set(FILES
 )
 
 foreach(file ${FILES})
-    configure_file(${file} ${file} COPYONLY)
+    add_custom_command(TARGET predict
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${file}
+        $<TARGET_FILE_DIR:predict>
+    )
 endforeach(file)
