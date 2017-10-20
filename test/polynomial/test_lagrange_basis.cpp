@@ -1,27 +1,22 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <iostream>
-#include <vector>
-
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
 
+#include "polatory/point_cloud/random_points.hpp"
 #include "polatory/polynomial/lagrange_basis.hpp"
 
 using namespace polatory::polynomial;
+using polatory::geometry::cuboid3d;
+using polatory::point_cloud::random_points;
 
 namespace {
 
 void test_degree(int dimension, int degree) {
   size_t n_points = lagrange_basis<>::basis_size(dimension, degree);
 
-  std::vector<Eigen::Vector3d> points;
-  points.reserve(n_points);
-
-  for (size_t i = 0; i < n_points; i++) {
-    points.push_back(Eigen::Vector3d::Random());
-  }
+  auto points = random_points(cuboid3d(), n_points);
 
   lagrange_basis<> basis(dimension, degree, points);
   auto pt = basis.evaluate_points(points);

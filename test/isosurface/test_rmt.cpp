@@ -7,11 +7,12 @@
 
 #include "polatory/geometry/bbox3d.hpp"
 #include "polatory/isosurface/rmt_lattice.hpp"
-#include "polatory/random_points/box_points.hpp"
+#include "polatory/point_cloud/random_points.hpp"
 
 using namespace polatory::isosurface;
 using polatory::geometry::bbox3d;
-using polatory::random_points::box_points;
+using polatory::geometry::cuboid3d;
+using polatory::point_cloud::random_points;
 
 // Relative positions of neighbor nodes connected by each edge.
 std::array<Eigen::Vector3d, 14> NeighborVectors
@@ -48,15 +49,15 @@ TEST(rmt, face_edges) {
 }
 
 TEST(rmt, lattice) {
-  Eigen::Vector3d center = Eigen::Vector3d::Zero();
-  double radius = 1.0;
+  Eigen::Vector3d min(-1.0, -1.0, -1.0);
+  Eigen::Vector3d max(1.0, 1.0, 1.0);
 
-  bbox3d bbox(center.array() - radius, center.array() + radius);
+  bbox3d bbox(min, max);
   double resolution = 0.01;
 
   rmt_primitive_lattice lat(bbox, resolution);
 
-  auto points = box_points(100, center, radius);
+  auto points = random_points(cuboid3d(min, max), 100);
 
   for (const auto& p : points) {
     auto ci = lat.cell_contains_point(p);

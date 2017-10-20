@@ -8,17 +8,18 @@
 
 #include <Eigen/Core>
 
+#include "polatory/point_cloud/random_points.hpp"
 #include "polatory/preconditioner/domain_divider.hpp"
-#include "polatory/random_points/sphere_points.hpp"
 
 using namespace polatory::preconditioner;
-using polatory::random_points::sphere_points;
+using polatory::geometry::sphere3d;
+using polatory::point_cloud::random_points;
 
 TEST(domain_divider, trivial) {
   size_t n_points = 10000;
   size_t n_poly_points = 10;
 
-  auto points = sphere_points(n_points);
+  auto points = random_points(sphere3d(), n_points);
   std::vector<size_t> point_idcs(n_points);
   std::iota(point_idcs.begin(), point_idcs.end(), 0);
 

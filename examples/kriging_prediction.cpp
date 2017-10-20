@@ -8,15 +8,15 @@
 
 #include "polatory/geometry/bbox3d.hpp"
 #include "polatory/interpolant.hpp"
+#include "polatory/io/read_table.hpp"
 #include "polatory/isosurface/export_obj.hpp"
 #include "polatory/isosurface/isosurface.hpp"
 #include "polatory/isosurface/rbf_field_function.hpp"
 #include "polatory/rbf/cov_spherical.hpp"
 
-#include "read_table.hpp"
-
 using polatory::geometry::bbox3d;
 using polatory::interpolant;
+using polatory::io::read_points_and_values;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;

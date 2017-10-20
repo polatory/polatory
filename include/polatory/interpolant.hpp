@@ -36,7 +36,13 @@ public:
     return centers_;
   }
 
-  values_type evaluate_points(const points_type& points) const {
+  values_type evaluate_points(const points_type& points) {
+    set_evaluation_bbox(geometry::bbox3d::from_points(points));
+
+    return evaluate_points_impl(points);
+  }
+
+  values_type evaluate_points_impl(const points_type& points) const {
     auto transformed = affine_transform_points(points);
 
     return evaluator_->evaluate_points(transformed);
@@ -88,6 +94,9 @@ public:
 
 private:
   points_type affine_transform_points(const points_type& points) const {
+    if (point_transform_.is_identity())
+      return points;
+
     points_type transformed;
     transformed.reserve(points.size());
 

@@ -8,12 +8,13 @@
 
 #include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
 #include "polatory/interpolation/rbf_operator.hpp"
+#include "polatory/point_cloud/random_points.hpp"
 #include "polatory/polynomial/basis_base.hpp"
-#include "polatory/random_points/sphere_points.hpp"
 #include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::interpolation;
-using polatory::random_points::sphere_points;
+using polatory::geometry::sphere3d;
+using polatory::point_cloud::random_points;
 using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
 
@@ -25,7 +26,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
 
   biharmonic rbf({ 1.0, 0.2 });
 
-  auto points = sphere_points(n_points);
+  auto points = random_points(sphere3d(), n_points);
 
   Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_polynomials);
 

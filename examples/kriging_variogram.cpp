@@ -7,12 +7,12 @@
 
 #include <Eigen/Core>
 
+#include "polatory/io/read_table.hpp"
 #include "polatory/kriging/empirical_variogram.hpp"
 #include "polatory/kriging/variogram_fitting.hpp"
 #include "polatory/rbf/cov_spherical.hpp"
 
-#include "read_table.hpp"
-
+using polatory::io::read_points_and_values;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
 using polatory::kriging::variogram_fitting_weights;

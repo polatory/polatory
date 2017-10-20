@@ -1,19 +1,24 @@
+NOTE: This is a pre-release version. APIs subject to change without notice.
+
 # Polatory
 
 Polatory is a fast and memory-efficient framework for spline surface reconstruction and spatial interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
+## [Benchmark](https://github.com/polatory/polatory/wiki/Benchmark)
+
 ## Features
 
 * Fast spline surface reconstruction of 2.5D/3D point cloud
-* Fast interpolation (kriging prediction) of 1D/2D/3D scattered data
+* Fast interpolation (global kriging prediction) of 1D/2D/3D scattered data
 * Meshing isosurfaces
-* Supports large number (~1M) of input points
+* Supports large number (millions) of input points
 * Supports globally supported RBFs
 
 ### Correspondence between kriging and RBF interpolation
 
 | Kriging             | RBF interpolation                          |
 | ------------------- | ------------------------------------------ |
+| Prediction          | Interpolation (fitting + evaluation)       |
 | Covariance function | RBF                                        |
 | Nugget effect       | Spline smoothing                           |
 | Simple kriging      | Interpolant with no polynomial             |
@@ -63,7 +68,7 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
    sudo sh -c 'echo deb http://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
    sudo apt-get update
-   sudo apt-get install intel-mkl-64bit-2017.3-056
+   sudo apt-get install intel-mkl-64bit-2017.4-061
    ```
 
 1. Install [Eigen](http://eigen.tuxfamily.org/)
@@ -135,7 +140,7 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    mkdir build
    cd build
    cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
-   msbuild polatory.sln
+   msbuild polatory.sln /p:Configuration=Release
    ```
 
 ## Contribution
@@ -162,14 +167,14 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | fmm                    | Fast multipole methods (wrapper of ScalFMM).     |
 | geometry               | Geometric utilities.                             |
 | interpolation          | RBF fitting and evaluation.                      |
+| io                     | Reader and writer for table data.                |
 | isosurface             | Isosurface generation.                           |
 | kriging                | Parameter estimation and validation for kriging. |
 | krylov                 | Krylov subspace methods.                         |
-| numeric                | Numerically stable algorithms.                   |
+| numeric                | Numerical utilities.                             |
 | point_cloud            | Scattered data generation from point clouds.     |
 | polynomial             | Polynomial part of RBF interpolant.              |
 | preconditioner         | The preconditioner used with Krylov subspace methods. |
-| random_points          | Random points generation for unit testing.       |
 | rbf                    | Definition of RBFs/covariance functions.         |
 | third_party            | Third party libraries.                           |
 

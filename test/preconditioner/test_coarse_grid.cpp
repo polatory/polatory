@@ -11,15 +11,16 @@
 
 #include "polatory/common/vector_range_view.hpp"
 #include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
+#include "polatory/point_cloud/random_points.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/preconditioner/coarse_grid.hpp"
-#include "polatory/random_points/sphere_points.hpp"
 #include "polatory/rbf/biharmonic.hpp"
 
 using namespace polatory::preconditioner;
 using polatory::common::make_range_view;
-using polatory::random_points::sphere_points;
+using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
+using polatory::point_cloud::random_points;
 using polatory::polynomial::basis_base;
 using polatory::polynomial::lagrange_basis;
 using polatory::rbf::biharmonic;
@@ -30,7 +31,7 @@ void test_coarse_grid(double nugget) {
   size_t n_polynomials = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 1e-10;
 
-  auto points = sphere_points(n_points);
+  auto points = random_points(sphere3d(), n_points);
 
   std::random_device rd;
   std::mt19937 gen(rd());

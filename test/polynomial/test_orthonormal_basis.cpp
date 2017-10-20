@@ -1,27 +1,24 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
 #include <cmath>
-#include <vector>
 
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
 
+#include "polatory/point_cloud/random_points.hpp"
 #include "polatory/polynomial/orthonormal_basis.hpp"
 
 using namespace polatory::polynomial;
+using polatory::geometry::cuboid3d;
+using polatory::point_cloud::random_points;
 
 namespace {
 
 void test_degree(int dimension, int degree) {
   int n_points = 100;
 
-  std::vector<Eigen::Vector3d> points;
-  points.reserve(n_points);
-
-  for (int i = 0; i < n_points; i++) {
-    points.push_back(Eigen::Vector3d::Random());
-  }
+  auto points = random_points(cuboid3d(), n_points);
 
   orthonormal_basis<> basis(dimension, degree, points);
   auto pt = basis.evaluate_points(points);
