@@ -118,7 +118,7 @@ public:
     return potentials();
   }
 
-  template <typename Container>
+  template <class Container>
   void set_points(const Container& points) {
     n_points = points.size();
 
@@ -137,7 +137,7 @@ public:
     update_potential_ptrs();
   }
 
-  template <typename Derived>
+  template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
     assert(weights.size() == size());
 

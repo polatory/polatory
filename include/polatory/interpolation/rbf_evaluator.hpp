@@ -20,43 +20,32 @@ namespace interpolation {
 
 template <int Order = 10>
 class rbf_evaluator {
-  typedef polynomial::polynomial_evaluator<polynomial::monomial_basis<>> poly_eval;
-
-  const int poly_degree;
-  const size_t n_polynomials;
-
-  size_t n_src_points;
-  std::unique_ptr<fmm::fmm_evaluator<Order>> a;
-  std::unique_ptr<poly_eval> p;
-
-  Eigen::VectorXd weights;
+  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis<>>;
 
 public:
-  template <typename Container>
+  template <class Container>
   rbf_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                 const Container& source_points)
-    : poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
+    : n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(source_points);
 
-    a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bbox);
+    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bbox);
 
-    if (poly_degree >= 0) {
-      p = std::make_unique<poly_eval>(poly_dimension, poly_degree);
+    if (n_polynomials_ > 0) {
+      p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     }
 
     set_source_points(source_points);
   }
 
-  template <typename Container>
+  template <class Container>
   rbf_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                 const Container& source_points, const geometry::bbox3d& bbox)
-    : poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
-    a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bbox);
+    : n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
+    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.size()), bbox);
 
-    if (poly_degree >= 0) {
-      p = std::make_unique<poly_eval>(poly_dimension, poly_degree);
+    if (n_polynomials_ > 0) {
+      p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     }
 
     set_source_points(source_points);
@@ -64,59 +53,65 @@ public:
 
   rbf_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                 int tree_height, const geometry::bbox3d& bbox)
-    : poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
-    , n_src_points(0) {
-    a = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, tree_height, bbox);
+    : n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_src_points_(0) {
+    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, tree_height, bbox);
 
-    if (poly_degree >= 0) {
-      p = std::make_unique<poly_eval>(poly_dimension, poly_degree);
+    if (n_polynomials_ > 0) {
+      p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     }
   }
 
   Eigen::VectorXd evaluate() const {
-    auto y = a->evaluate();
+    auto y = a_->evaluate();
 
-    if (poly_degree >= 0) {
+    if (n_polynomials_ > 0) {
       // Add polynomial terms.
-      y += p->evaluate();
+      y += p_->evaluate();
     }
 
     return y;
   }
 
-  template <typename Container>
+  template <class Container>
   Eigen::VectorXd evaluate_points(const Container& field_points) const {
     set_field_points(field_points);
     return evaluate();
   }
 
-  template <typename Container>
+  template <class Container>
   void set_field_points(const Container& points) const {
-    a->set_field_points(points);
+    a_->set_field_points(points);
 
-    if (poly_degree >= 0) {
-      p->set_field_points(points);
+    if (n_polynomials_ > 0) {
+      p_->set_field_points(points);
     }
   }
 
-  template <typename Container>
+  template <class Container>
   void set_source_points(const Container& points) {
-    n_src_points = points.size();
+    n_src_points_ = points.size();
 
-    a->set_source_points(points);
+    a_->set_source_points(points);
   }
 
-  template <typename Derived>
+  template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) const {
-    assert(weights.size() == n_src_points + n_polynomials);
+    assert(weights.size() == n_src_points_ + n_polynomials_);
 
-    a->set_weights(weights.head(n_src_points));
+    a_->set_weights(weights.head(n_src_points_));
 
-    if (poly_degree >= 0) {
-      p->set_weights(weights.tail(n_polynomials));
+    if (n_polynomials_ > 0) {
+      p_->set_weights(weights.tail(n_polynomials_));
     }
   }
+
+private:
+  const size_t n_polynomials_;
+
+  size_t n_src_points_;
+  std::unique_ptr<fmm::fmm_evaluator<Order>> a_;
+  std::unique_ptr<PolynomialEvaluator> p_;
 };
 
 } // namespace interpolation

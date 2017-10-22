@@ -31,7 +31,7 @@ public:
     return pt.transpose() * weights;
   }
 
-  template <typename Container>
+  template <class Container>
   void set_field_points(const Container& points) {
     this->points.clear();
     this->points.reserve(points.size());

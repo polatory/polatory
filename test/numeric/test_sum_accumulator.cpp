@@ -8,7 +8,7 @@ using namespace polatory::numeric;
 
 namespace {
 
-template <typename Accumulator>
+template <class Accumulator>
 void test_sum_accumulator() {
   auto accum = Accumulator();
   for (int i = 0; i < 1000000; i++) {

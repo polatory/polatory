@@ -29,81 +29,20 @@ class rbf_incremental_fitter {
   const double initial_points_ratio = 0.01;
   const double incremental_points_ratio = 0.1;
 
-  const rbf::rbf_base& rbf;
-  const int poly_dimension;
-  const int poly_degree;
-  const std::vector<Eigen::Vector3d>& points;
-
-  const size_t n_points;
-  const size_t n_polynomials;
-
-  const geometry::bbox3d bbox;
-
-  std::pair<std::vector<size_t>, Eigen::VectorXd> initial_point_indices_and_weights() const {
-    std::vector<size_t> indices;
-    Eigen::VectorXd weights;
-
-    if (n_points < min_n_points_for_incremental_fitting) {
-      indices = std::vector<size_t>(n_points);
-      std::iota(indices.begin(), indices.end(), 0);
-
-      weights = Eigen::VectorXd::Zero(n_points + n_polynomials);
-    } else {
-      size_t n_initial_points = initial_points_ratio * n_points;
-
-      std::random_device rd;
-      std::mt19937 gen(rd());
-
-      indices = std::vector<size_t>(n_points);
-      std::iota(indices.begin(), indices.end(), 0);
-      std::shuffle(indices.begin(), indices.end(), gen);
-
-      indices.resize(n_initial_points);
-      weights = Eigen::VectorXd::Zero(n_initial_points + n_polynomials);
-    }
-
-    return std::make_pair(std::move(indices), std::move(weights));
-  }
-
-  std::vector<size_t> point_indices_complement(const std::vector<size_t>& point_indices) const {
-    auto indices = point_indices;
-    std::sort(indices.begin(), indices.end());
-
-    auto universe = boost::irange<size_t>(0, n_points);
-
-    std::vector<size_t> indices_c;
-    indices_c.reserve(n_points - indices.size());
-
-    std::set_difference(universe.begin(), universe.end(),
-                        indices.begin(), indices.end(), std::back_inserter(indices_c));
-
-    return indices_c;
-  }
-
-  Eigen::VectorXd reduced_values(const Eigen::VectorXd& values, const std::vector<size_t>& indices) const {
-    Eigen::VectorXd reduced(indices.size());
-
-    for (size_t i = 0; i < indices.size(); i++) {
-      reduced(i) = values(indices[i]);
-    }
-
-    return reduced;
-  }
-
 public:
-  template <typename Container>
+  template <class Container>
   rbf_incremental_fitter(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                          const Container& points)
-    : rbf(rbf)
-    , poly_dimension(poly_dimension)
-    , poly_degree(poly_degree)
-    , points(points)
-    , n_points(points.size())
-    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
-    , bbox(geometry::bbox3d::from_points(points)) {
+    : rbf_(rbf)
+    , poly_dimension_(poly_dimension)
+    , poly_degree_(poly_degree)
+    , points_(points)
+    , n_points_(points.size())
+    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , bbox_(geometry::bbox3d::from_points(points)) {
   }
 
-  template <typename Derived>
+  template <class Derived>
   std::pair<std::vector<size_t>, Eigen::VectorXd>
   fit(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
     std::vector<size_t> indices;
@@ -116,12 +55,12 @@ public:
     auto last_tree_height = 0;
 
     while (true) {
-      auto reduced_points = common::make_view(points, indices);
+      auto reduced_points = common::make_view(points_, indices);
       auto tree_height = fmm::tree_height(indices.size());
 
       if (tree_height != last_tree_height) {
-        solver = std::make_unique<rbf_solver>(rbf, poly_dimension, poly_degree, tree_height, bbox);
-        res_eval = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, tree_height, bbox);
+        solver = std::make_unique<rbf_solver>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
+        res_eval = std::make_unique<rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
         last_tree_height = tree_height;
       }
 
@@ -129,7 +68,7 @@ public:
       weights = solver->solve(reduced_values(values, indices), absolute_tolerance, weights);
 
       auto indices_c = point_indices_complement(indices);
-      auto reduced_points_c = common::make_view(points, indices_c);
+      auto reduced_points_c = common::make_view(points_, indices_c);
 
       if (indices_c.size() == 0) break;
 
@@ -172,13 +111,75 @@ public:
       indices.insert(indices.end(), indices_c.end() - n_points_to_add, indices_c.end());
 
       auto weights_prev = weights;
-      weights = Eigen::VectorXd::Zero(indices.size() + n_polynomials);
+      weights = Eigen::VectorXd::Zero(indices.size() + n_polynomials_);
       weights.head(n_points_prev) = weights_prev.head(n_points_prev);
-      weights.tail(n_polynomials) = weights_prev.tail(n_polynomials);
+      weights.tail(n_polynomials_) = weights_prev.tail(n_polynomials_);
     }
 
     return std::make_pair(indices, weights);
   }
+
+private:
+  std::pair<std::vector<size_t>, Eigen::VectorXd> initial_point_indices_and_weights() const {
+    std::vector<size_t> indices;
+    Eigen::VectorXd weights;
+
+    if (n_points_ < min_n_points_for_incremental_fitting) {
+      indices = std::vector<size_t>(n_points_);
+      std::iota(indices.begin(), indices.end(), 0);
+
+      weights = Eigen::VectorXd::Zero(n_points_ + n_polynomials_);
+    } else {
+      size_t n_initial_points = initial_points_ratio * n_points_;
+
+      std::random_device rd;
+      std::mt19937 gen(rd());
+
+      indices = std::vector<size_t>(n_points_);
+      std::iota(indices.begin(), indices.end(), 0);
+      std::shuffle(indices.begin(), indices.end(), gen);
+
+      indices.resize(n_initial_points);
+      weights = Eigen::VectorXd::Zero(n_initial_points + n_polynomials_);
+    }
+
+    return std::make_pair(std::move(indices), std::move(weights));
+  }
+
+  std::vector<size_t> point_indices_complement(const std::vector<size_t>& point_indices) const {
+    auto indices = point_indices;
+    std::sort(indices.begin(), indices.end());
+
+    auto universe = boost::irange<size_t>(0, n_points_);
+
+    std::vector<size_t> indices_c;
+    indices_c.reserve(n_points_ - indices.size());
+
+    std::set_difference(universe.begin(), universe.end(),
+                        indices.begin(), indices.end(), std::back_inserter(indices_c));
+
+    return indices_c;
+  }
+
+  Eigen::VectorXd reduced_values(const Eigen::VectorXd& values, const std::vector<size_t>& indices) const {
+    Eigen::VectorXd reduced(indices.size());
+
+    for (size_t i = 0; i < indices.size(); i++) {
+      reduced(i) = values(indices[i]);
+    }
+
+    return reduced;
+  }
+
+  const rbf::rbf_base& rbf_;
+  const int poly_dimension_;
+  const int poly_degree_;
+  const std::vector<Eigen::Vector3d>& points_;
+
+  const size_t n_points_;
+  const size_t n_polynomials_;
+
+  const geometry::bbox3d bbox_;
 };
 
 } // namespace interpolation

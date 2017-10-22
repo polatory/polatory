@@ -18,24 +18,19 @@ namespace interpolation {
 // where P_ij = p_j(x_i) and {p_j} are the monomial basis.
 template <class Basis>
 class polynomial_matrix {
-  Basis basis;
-
-  // Transposed polynomial matrix P^T.
-  Eigen::MatrixXd pt;
-
 public:
   polynomial_matrix(int dimension, int degree)
-    : basis(dimension, degree) {
+    : basis_(dimension, degree) {
   }
 
   // Returns a vector consists of two parts:
   //   0...m-1   : P c
   //   m...m+l-1 : P^T lambda
   // where m is the number of points and l is the size of the basis.
-  template <typename Derived>
+  template <class Derived>
   Eigen::VectorXd evaluate(const Eigen::MatrixBase<Derived>& lambda_c) const {
-    auto l = pt.rows();
-    auto m = pt.cols();
+    auto l = pt_.rows();
+    auto m = pt_.cols();
 
     assert(lambda_c.size() == m + l);
 
@@ -44,16 +39,22 @@ public:
     auto lambda = lambda_c.head(m);
     auto c = lambda_c.tail(l);
 
-    output.head(m) = pt.transpose() * c;
-    output.tail(l) = pt * lambda;
+    output.head(m) = pt_.transpose() * c;
+    output.tail(l) = pt_ * lambda;
 
     return output;
   }
 
-  template <typename Container>
+  template <class Container>
   void set_points(const Container& points) {
-    pt = basis.evaluate_points(points);
+    pt_ = basis_.evaluate_points(points);
   }
+
+private:
+  Basis basis_;
+
+  // Transposed polynomial matrix P^T.
+  Eigen::MatrixXd pt_;
 };
 
 } // namespace interpolation

@@ -3,8 +3,10 @@
 #pragma once
 
 #include <cmath>
+#include <cstddef>
 #include <cstdio>
 #include <string>
+#include <type_traits>
 
 namespace polatory {
 namespace numeric {

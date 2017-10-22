@@ -2,60 +2,62 @@
 
 #pragma once
 
-#include <utility>
+#include <cstddef>
+#include <type_traits>
 
 namespace polatory {
 namespace numeric {
 
-template <typename T>
+template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>
 class kahan_sum_accumulator {
-  T sum;
-  T correction;
-
 public:
   kahan_sum_accumulator()
-    : sum()
-    , correction() {
+    : sum_()
+    , correction_() {
   }
 
-  T get() const {
-    return sum;
+  Floating get() const {
+    return sum_;
   }
 
-  kahan_sum_accumulator& operator+=(T d) {
-    auto summand = d + correction;
-    auto next_sum = sum + summand;
-    correction = summand - (next_sum - sum);
-    sum = std::move(next_sum);
+  kahan_sum_accumulator& operator+=(Floating f) {
+    auto summand = f + correction_;
+    auto next_sum = sum_ + summand;
+    correction_ = summand - (next_sum - sum_);
+    sum_ = next_sum;
     return *this;
   }
+
+private:
+  Floating sum_;
+  Floating correction_;
 };
 
-template <typename T>
+template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>
 class knuth_sum_accumulator {
-  T sum;
-  T correction;
-
 public:
   knuth_sum_accumulator()
-    : sum()
-    , correction() {
+    : sum_()
+    , correction_() {
   }
 
-  T get() const {
-    return sum;
+  Floating get() const {
+    return sum_;
   }
 
-  knuth_sum_accumulator& operator+=(T d) {
-    auto u = std::move(sum);
-    auto v = d + correction;
-    auto uv = u + v;
-    auto up = uv - v;
-    auto vpp = uv - up;
-    correction = (u - up) + (v - vpp);
-    sum = std::move(uv);
+  knuth_sum_accumulator& operator+=(Floating f) {
+    auto summand = f + correction_;
+    auto next_sum = sum_ + summand;
+    auto up = next_sum - summand;
+    auto vpp = next_sum - up;
+    correction_ = (sum_ - up) + (summand - vpp);
+    sum_ = next_sum;
     return *this;
   }
+
+private:
+  Floating sum_;
+  Floating correction_;
 };
 
 } // namespace numeric

@@ -69,7 +69,7 @@ public:
     generate_common();
   }
 
-  template <typename Container>
+  template <class Container>
   void
   generate_from_seed_points(const Container& seed_points, const field_function& field_func, double isovalue = 0.0) {
     lattice.clear();

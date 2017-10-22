@@ -10,11 +10,11 @@
 #include "polatory/fmm/fmm_operator.hpp"
 #include "polatory/fmm/tree_height.hpp"
 #include "polatory/geometry/bbox3d.hpp"
+#include "polatory/interpolation/polynomial_matrix.hpp"
 #include "polatory/krylov/linear_operator.hpp"
 #include "polatory/polynomial/basis_base.hpp"
 #include "polatory/polynomial/monomial_basis.hpp"
 #include "polatory/rbf/rbf_base.hpp"
-#include "polynomial_matrix.hpp"
 
 namespace polatory {
 namespace interpolation {
@@ -22,29 +22,20 @@ namespace interpolation {
 template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
 private:
-  typedef polynomial_matrix<polynomial::monomial_basis<>> poly_mat;
-
-  const rbf::rbf_base& rbf;
-  const int poly_degree;
-  const size_t n_polynomials;
-
-  size_t n_points;
-  std::unique_ptr<fmm::fmm_operator<Order>> a;
-  std::unique_ptr<poly_mat> p;
+  using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis<>>;
 
 public:
-  template <typename Container>
+  template <class Container>
   rbf_operator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                const Container& points)
-    : rbf(rbf)
-    , poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
+    : rbf_(rbf)
+    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(points);
 
-    a = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bbox);
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bbox);
 
-    if (poly_degree >= 0) {
-      p = std::make_unique<poly_mat>(poly_dimension, poly_degree);
+    if (n_polynomials_ > 0) {
+      p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     }
 
     set_points(points);
@@ -52,14 +43,13 @@ public:
 
   rbf_operator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                int tree_height, const geometry::bbox3d& bbox)
-    : rbf(rbf)
-    , poly_degree(poly_degree)
-    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
-    , n_points(0) {
-    a = std::make_unique<fmm::fmm_operator<Order>>(rbf, tree_height, bbox);
+    : rbf_(rbf)
+    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_points_(0) {
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, tree_height, bbox);
 
-    if (poly_degree >= 0) {
-      p = std::make_unique<poly_mat>(poly_dimension, poly_degree);
+    if (n_polynomials_ > 0) {
+      p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     }
   }
 
@@ -68,34 +58,42 @@ public:
 
     Eigen::VectorXd y = Eigen::VectorXd::Zero(size());
 
-    auto diagonal = rbf.evaluate(0.0) + rbf.nugget();
-    y.head(n_points) = diagonal * weights.head(n_points);
+    auto diagonal = rbf_.evaluate(0.0) + rbf_.nugget();
+    y.head(n_points_) = diagonal * weights.head(n_points_);
 
-    a->set_weights(weights.head(n_points));
-    y.head(n_points) += a->evaluate();
+    a_->set_weights(weights.head(n_points_));
+    y.head(n_points_) += a_->evaluate();
 
-    if (poly_degree >= 0) {
+    if (n_polynomials_ > 0) {
       // Add polynomial terms.
-      y += p->evaluate(weights);
+      y += p_->evaluate(weights);
     }
 
     return y;
   }
 
-  template <typename Container>
+  template <class Container>
   void set_points(const Container& points) {
-    n_points = points.size();
+    n_points_ = points.size();
 
-    a->set_points(points);
+    a_->set_points(points);
 
-    if (poly_degree >= 0) {
-      p->set_points(points);
+    if (n_polynomials_ > 0) {
+      p_->set_points(points);
     }
   }
 
   size_t size() const override {
-    return n_points + n_polynomials;
+    return n_points_ + n_polynomials_;
   }
+
+private:
+  const rbf::rbf_base& rbf_;
+  const size_t n_polynomials_;
+
+  size_t n_points_;
+  std::unique_ptr<fmm::fmm_operator<Order>> a_;
+  std::unique_ptr<PolynomialEvaluator> p_;
 };
 
 } // namespace interpolation

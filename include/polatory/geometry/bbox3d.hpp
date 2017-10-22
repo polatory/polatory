@@ -28,7 +28,7 @@ public:
 
   bbox3d transform(const affine_transform3d& affine) const;
 
-  template <typename Container>
+  template <class Container>
   static bbox3d from_points(const Container& points) {
     using std::begin;
     using std::end;
@@ -36,7 +36,7 @@ public:
     return from_points(begin(points), end(points));
   }
 
-  template <typename InputIterator>
+  template <class InputIterator>
   static bbox3d from_points(InputIterator points_begin, InputIterator points_end) {
     bbox3d ret;
 

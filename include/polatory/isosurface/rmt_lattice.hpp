@@ -460,7 +460,7 @@ public:
     unclustered_vis.clear();
   }
 
-  template <typename InputIterator>
+  template <class InputIterator>
   void uncluster_vertices(InputIterator vis_begin, InputIterator vis_end) {
     unclustered_vis.clear();
     for (auto it = vis_begin; it != vis_end; ++it) {

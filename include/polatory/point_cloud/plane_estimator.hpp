@@ -24,14 +24,14 @@ class plane_estimator {
 
   double plane_factor_;
 
-  template <typename Container>
+  template <class Container>
   Eigen::Vector3d barycenter(const Container& points) const {
     return std::accumulate(
       points.begin(), points.end(), Eigen::Vector3d(Eigen::Vector3d::Zero())
     ) / points.size();
   }
 
-  template <typename Container>
+  template <class Container>
   Eigen::JacobiSVD<Eigen::MatrixXd> pca_svd(const Container& points) const {
     Eigen::MatrixXd mat(points.size(), 3);
     for (size_t i = 0; i < points.size(); i++) {
@@ -42,7 +42,7 @@ class plane_estimator {
   }
 
 public:
-  template <typename Container>
+  template <class Container>
   explicit plane_estimator(const Container& points)
     : center_(barycenter(points)) {
     assert(points.size() >= 3);

@@ -11,7 +11,7 @@
 namespace polatory {
 namespace polynomial {
 
-template <typename Floating = double>
+template <class Floating = double>
 class monomial_basis : public basis_base {
   using Vector3F = Eigen::Matrix<Floating, 3, 1>;
   using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
@@ -22,7 +22,7 @@ public:
     assert(degree >= 0 && degree <= 2);
   }
 
-  template <typename Container>
+  template <class Container>
   MatrixXF evaluate_points(const Container& points) const {
     size_t n_points = points.size();
 

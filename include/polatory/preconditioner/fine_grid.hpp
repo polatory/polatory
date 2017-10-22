@@ -101,7 +101,7 @@ public:
     }
   }
 
-  template <typename Derived>
+  template <class Derived>
   void set_solution_to(Eigen::MatrixBase<Derived>& weights_full) const {
     for (size_t i = 0; i < m_; i++) {
       if (inner_point_[i])
@@ -109,7 +109,7 @@ public:
     }
   }
 
-  template <typename Derived>
+  template <class Derived>
   void solve(const Eigen::MatrixBase<Derived>& values_full) {
     VectorXF values = VectorXF(m_);
     for (size_t i = 0; i < m_; i++) {

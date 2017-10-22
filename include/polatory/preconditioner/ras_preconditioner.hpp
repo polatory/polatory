@@ -37,7 +37,6 @@ class ras_preconditioner : public krylov::linear_operator {
   static constexpr int Order = 6;
   const double coarse_ratio = 0.125;
   const size_t n_coarsest_points = 1024;
-  const int poly_degree;
   const std::vector<Eigen::Vector3d> points;
   const size_t n_points;
   const size_t n_polynomials;
@@ -57,11 +56,10 @@ class ras_preconditioner : public krylov::linear_operator {
   Eigen::MatrixXd ap;
 
 public:
-  template <typename Container>
+  template <class Container>
   ras_preconditioner(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                      const Container& in_points)
-    : poly_degree(poly_degree)
-    , points(in_points.begin(), in_points.end())
+    : points(in_points.begin(), in_points.end())
     , n_points(in_points.size())
     , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
 #if REPORT_RESIDUAL
@@ -72,7 +70,7 @@ public:
     std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
 
     std::vector<size_t> poly_point_idcs;
-    if (poly_degree >= 0) {
+    if (n_polynomials > 0) {
       polynomial::unisolvent_point_set ups(points, point_idcs_.back(), poly_dimension, poly_degree);
       point_idcs_.back() = ups.point_indices();
       poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_polynomials);
@@ -144,7 +142,7 @@ public:
       downward_evaluator.back().set_field_points(common::make_view(points, point_idcs_[level]));
     }
 
-    if (poly_degree >= 0) {
+    if (n_polynomials > 0) {
       polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points);
       p = poly.evaluate_points(points).transpose();
       ap = Eigen::MatrixXd(p.rows(), p.cols());
@@ -210,7 +208,7 @@ public:
           residuals(indices[i]) -= fit(i);
         }
 
-        if (poly_degree >= 0) {
+        if (n_polynomials > 0) {
           // Orthogonalize weights against P.
           for (size_t i = 0; i < p.cols(); i++) {
             auto dot = p.col(i).dot(weights);

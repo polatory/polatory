@@ -17,7 +17,7 @@
 namespace polatory {
 namespace preconditioner {
 
-template <typename Floating>
+template <class Floating>
 class coarse_grid {
   using Vector3F = Eigen::Matrix<Floating, 3, 1>;
   using VectorXF = Eigen::Matrix<Floating, Eigen::Dynamic, 1>;
@@ -122,7 +122,7 @@ public:
     }
   }
 
-  template <typename Derived>
+  template <class Derived>
   void set_solution_to(Eigen::MatrixBase<Derived>& weights_full) const {
     for (size_t i = 0; i < m_; i++) {
       weights_full(point_idcs_[i]) = lambda_c_(i);
@@ -131,7 +131,7 @@ public:
     weights_full.tail(l_) = lambda_c_.tail(l_).template cast<double>();
   }
 
-  template <typename Derived>
+  template <class Derived>
   void solve(const Eigen::MatrixBase<Derived>& values_full) {
     VectorXF values = VectorXF(m_);
     for (size_t i = 0; i < m_; i++) {

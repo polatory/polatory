@@ -21,7 +21,7 @@ class unisolvent_point_set {
   std::vector<size_t> point_idcs_;
 
 public:
-  template <typename Container>
+  template <class Container>
   unisolvent_point_set(const Container& points,
                        const std::vector<size_t>& point_indices,
                        int dimension,

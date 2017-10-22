@@ -112,7 +112,7 @@ public:
     return potentials();
   }
 
-  template <typename Container>
+  template <class Container>
   void set_source_points(const Container& points) {
     n_src_points = points.size();
 
@@ -130,7 +130,7 @@ public:
     update_weight_ptrs();
   }
 
-  template <typename Container, typename Derived>
+  template <class Container, class Derived>
   void set_source_points_and_weights(const Container& points, const Eigen::MatrixBase<Derived>& weights) {
     assert(weights.size() == points.size());
 
@@ -156,7 +156,7 @@ public:
     weight_ptrs.clear();
   }
 
-  template <typename Container>
+  template <class Container>
   void set_field_points(const Container& points) {
     n_fld_points = points.size();
 
@@ -176,7 +176,7 @@ public:
     update_potential_ptrs();
   }
 
-  template <typename Derived>
+  template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
     assert(weights.size() == source_size());
 
