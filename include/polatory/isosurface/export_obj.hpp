@@ -6,6 +6,7 @@
 #include <string>
 
 #include "isosurface.hpp"
+#include "polatory/numeric/to_string.hpp"
 
 namespace polatory {
 namespace isosurface {
@@ -16,11 +17,9 @@ inline bool export_obj(std::string filename, const isosurface& isosurf) {
 
   for (auto& v : isosurf.vertices()) {
     ofs << "v "
-        << v[0] << ' '
-        << v[1] << ' '
-        << v[2];
-
-    ofs << '\n';
+        << numeric::to_string(v[0]) << ' '
+        << numeric::to_string(v[1]) << ' '
+        << numeric::to_string(v[2]) << '\n';
   }
 
   for (auto& f : isosurf.faces()) {
