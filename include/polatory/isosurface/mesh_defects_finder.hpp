@@ -8,6 +8,9 @@
 #include <utility>
 #include <vector>
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include "polatory/common/utility.hpp"
 #include "types.hpp"
 

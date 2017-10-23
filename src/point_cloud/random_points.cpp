@@ -1,7 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
 #include <cmath>
-#include <random>
 
 #include "polatory/point_cloud/random_points.hpp"
 
