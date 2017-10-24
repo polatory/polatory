@@ -2,9 +2,7 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 
 # Polatory
 
-Polatory is a fast and memory-efficient framework for spline surface reconstruction and spatial interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
-
-## [Benchmark](https://github.com/polatory/polatory/wiki/Benchmark)
+Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
 ## Features
 
@@ -14,9 +12,13 @@ Polatory is a fast and memory-efficient framework for spline surface reconstruct
 * Supports large number (millions) of input points
 * Supports globally supported RBFs
 
-### Correspondence between kriging and RBF interpolation
+### [Benchmark](https://github.com/polatory/polatory/wiki/Benchmark)
 
-| Kriging             | RBF interpolation                          |
+### Kriging via RBF interpolation
+
+Polatory can perform global kriging prediction via RBF interpolation. Here is the correspondence between kriging prediction and RBF interpolation:
+
+| Kriging prediction  | RBF interpolation                          |
 | ------------------- | ------------------------------------------ |
 | Prediction          | Interpolation (fitting + evaluation)       |
 | Covariance function | RBF                                        |
@@ -24,6 +26,8 @@ Polatory is a fast and memory-efficient framework for spline surface reconstruct
 | Simple kriging      | Interpolant with no polynomial             |
 | Ordinary kriging    | Interpolant with polynomial of degree 0    |
 | Universal kriging   | Interpolant with polynomial of degree >= 1 |
+| Weights             | (Not computed)                             |
+| Standard errors     | (Not computed)                             |
 
 **Rapidly decaying covariance functions are not supported in the current release, such as the spherical model and the Gaussian model.** These RBFs are included for reference purposes. The spherical model can be substituted by `cov_quasi_spherical9`, which is quite similar to the original one.
 
