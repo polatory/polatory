@@ -17,7 +17,7 @@ public:
   fgmres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter);
 
   void set_left_preconditioner(const linear_operator& left_preconditioner) override {
-    throw common::unsupported_method("set_left_preconditioner");
+    throw common::not_supported("set_left_preconditioner");
   }
 
   Eigen::VectorXd solution_vector() const override;

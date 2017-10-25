@@ -53,15 +53,13 @@ public:
     , surface(lattice) {
   }
 
-  geometry::bbox3d evaluation_bbox() const {
-    return lattice.node_bounds();
-  }
-
   const std::vector<face>& faces() const {
     return surface.get_faces();
   }
 
-  void generate(const field_function& field_func, double isovalue = 0.0) {
+  void generate(field_function& field_func, double isovalue = 0.0) {
+    field_func.set_evaluation_bbox(lattice.node_bounds());
+
     lattice.clear();
 
     lattice.add_all_nodes(field_func, isovalue);

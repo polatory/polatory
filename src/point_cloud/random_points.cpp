@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "polatory/common/exception.hpp"
 #include "polatory/point_cloud/random_points.hpp"
 
 namespace polatory {
@@ -10,13 +11,16 @@ namespace point_cloud {
 std::vector<Eigen::Vector3d> random_points(const geometry::cuboid3d& cuboid,
                                            size_t n,
                                            seed_type seed) {
+  auto size = cuboid.max() - cuboid.min();
+  if (size.minCoeff() <= 0.0)
+    throw common::invalid_argument("cuboid must be a valid region");
+
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(0.0, 1.0);
 
   std::vector<Eigen::Vector3d> points;
 
   for (size_t i = 0; i < n; i++) {
-    auto size = cuboid.max() - cuboid.min();
     auto x = dist(gen) * size(0);
     auto y = dist(gen) * size(1);
     auto z = dist(gen) * size(2);
@@ -32,6 +36,9 @@ std::vector<Eigen::Vector3d> random_points(const geometry::cuboid3d& cuboid,
 std::vector<Eigen::Vector3d> random_points(const geometry::sphere3d& sphere,
                                            size_t n,
                                            seed_type seed) {
+  if (sphere.radius() <= 0.0)
+    throw common::invalid_argument("sphere must be a valid region");
+
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(-1.0, 1.0);
 

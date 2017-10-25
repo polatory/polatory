@@ -81,12 +81,9 @@ int main(int argc, char *argv[]) {
 
   // Generate isosurface.
   polatory::isosurface::isosurface isosurf(mesh_bbox, mesh_resolution);
-
-  interpolant.set_evaluation_bbox(isosurf.evaluation_bbox());
   rbf_field_function field_f(interpolant);
 
   auto n_seed_points = interpolant.centers().size() / 10;
-
   std::vector<Eigen::Vector3d> seed_points(interpolant.centers().begin(),
                                            interpolant.centers().begin() + n_seed_points);
   isosurf.generate_from_seed_points(seed_points, field_f);

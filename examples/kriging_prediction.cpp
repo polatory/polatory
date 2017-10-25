@@ -53,8 +53,6 @@ int main(int argc, char *argv[]) {
 
   auto resolution = 1e-2;
   isosurface isosurf(mesh_bbox, resolution);
-
-  interpolant.set_evaluation_bbox(isosurf.evaluation_bbox());
   rbf_field_function field_f(interpolant);
 
   for (auto isovalue_name : isovalue_names) {

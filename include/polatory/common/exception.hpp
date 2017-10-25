@@ -8,18 +8,16 @@
 namespace polatory {
 namespace common {
 
-class invalid_parameter : public std::runtime_error {
+class invalid_argument : public std::logic_error {
 public:
-  explicit invalid_parameter(const std::string& expected)
-    : std::runtime_error(std::string("invalid parameter (expected: ") + expected + ")") {
-  }
+  explicit invalid_argument(const std::string& expected)
+    : std::logic_error("Invalid argument (expected: " + expected + ").") {}
 };
 
-class unsupported_method : public std::runtime_error {
+class not_supported : public std::logic_error {
 public:
-  explicit unsupported_method(const std::string& n)
-    : std::runtime_error(std::string("unsupported method (") + n + ")") {
-  }
+  explicit not_supported(const std::string& name)
+    : std::logic_error(name + "is not supported.") {}
 };
 
 } // namespace common

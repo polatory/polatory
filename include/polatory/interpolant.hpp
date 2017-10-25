@@ -29,7 +29,7 @@ public:
     , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree) {
     if (poly_degree < rbf.order_of_cpd() - 1 || poly_degree > 2)
-      throw common::invalid_parameter("rbf.order_of_cpd() - 1 <= poly_degree <= 2");
+      throw common::invalid_argument("rbf.order_of_cpd() - 1 <= poly_degree <= 2");
   }
 
   const points_type& centers() const {
@@ -37,7 +37,7 @@ public:
   }
 
   values_type evaluate_points(const points_type& points) {
-    set_evaluation_bbox(geometry::bbox3d::from_points(points));
+    set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
 
     return evaluate_points_impl(points);
   }
@@ -51,7 +51,7 @@ public:
   void fit(const points_type& points, const values_type& values, double absolute_tolerance) {
     auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
     if (points.size() < min_n_points)
-      throw common::invalid_parameter("points.size() >= " + std::to_string(min_n_points));
+      throw common::invalid_argument("points.size() >= " + std::to_string(min_n_points));
 
     auto transformed = affine_transform_points(points);
 
@@ -64,7 +64,7 @@ public:
   void fit_incrementally(const points_type& points, const values_type& values, double absolute_tolerance) {
     auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
     if (points.size() < min_n_points)
-      throw common::invalid_parameter("points.size() >= " + std::to_string(min_n_points));
+      throw common::invalid_argument("points.size() >= " + std::to_string(min_n_points));
 
     auto transformed = affine_transform_points(points);
 
@@ -77,7 +77,7 @@ public:
     centers_ = std::vector<Eigen::Vector3d>(view.begin(), view.end());
   }
 
-  void set_evaluation_bbox(const geometry::bbox3d& bbox) {
+  void set_evaluation_bbox_impl(const geometry::bbox3d& bbox) {
     auto transformed_bbox = bbox.transform(point_transform_);
 
     evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, centers_, transformed_bbox);

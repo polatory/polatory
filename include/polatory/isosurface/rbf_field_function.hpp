@@ -5,13 +5,14 @@
 #include <Eigen/Core>
 
 #include "field_function.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/interpolant.hpp"
 
 namespace polatory {
 namespace isosurface {
 
 struct rbf_field_function : field_function {
-  rbf_field_function(const interpolant& interpolant)
+  rbf_field_function(interpolant& interpolant)
     : interpolant_(interpolant) {
   }
 
@@ -19,8 +20,12 @@ struct rbf_field_function : field_function {
     return interpolant_.evaluate_points_impl(points);
   }
 
+  void set_evaluation_bbox(const geometry::bbox3d& bbox) override {
+    interpolant_.set_evaluation_bbox_impl(bbox);
+  }
+
 private:
-  const interpolant& interpolant_;
+  interpolant& interpolant_;
 };
 
 } // namespace isosurface
