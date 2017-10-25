@@ -1,6 +1,10 @@
 NOTE: This is a pre-release version. APIs subject to change without notice.
 
-# Polatory
+<div align="center">
+  <img src="https://polatory.github.io/images/polatory_logo.png" width="400" alt="Polatory">
+</div>
+
+----
 
 Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
