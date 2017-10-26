@@ -37,14 +37,10 @@ int main(int argc, char *argv[]) {
   auto max_normal_distance = std::stod(argv[4]);
   auto fitting_accuracy = std::stod(argv[5]);
 
-  bbox3d mesh_bbox(
-    Eigen::Vector3d(std::stod(argv[6]), std::stod(argv[7]), std::stod(argv[8])),
-    Eigen::Vector3d(std::stod(argv[9]), std::stod(argv[10]), std::stod(argv[11]))
-  );
-  auto mesh_resolution = std::stod(argv[12]);
+  auto mesh_resolution = std::stod(argv[6]);
 
-  std::string out_scattered_data_file(argv[13]);
-  std::string out_obj_file(argv[14]);
+  std::string out_scattered_data_file(argv[7]);
+  std::string out_obj_file(argv[8]);
 
   // Read points and normals.
   std::vector<Eigen::Vector3d> cloud_points;
@@ -80,6 +76,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Number of RBF centers: " << interpolant.centers().size() << std::endl;
 
   // Generate isosurface.
+  auto mesh_bbox = bbox3d::from_points(points);
   polatory::isosurface::isosurface isosurf(mesh_bbox, mesh_resolution);
   rbf_field_function field_f(interpolant);
 
