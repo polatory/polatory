@@ -4,10 +4,8 @@
 
 #include <cassert>
 #include <set>
-#include <vector>
 
-#include <Eigen/Core>
-
+#include "polatory/common/exception.hpp"
 #include "polatory/common/vector_view.hpp"
 #include "polatory/point_cloud/kdtree.hpp"
 
@@ -15,8 +13,10 @@ namespace polatory {
 namespace point_cloud {
 
 distance_filter::distance_filter(const std::vector<Eigen::Vector3d>& points, double distance)
-  : points_(points)
-  , n_points_(points.size()) {
+  : n_points_(points.size()) {
+  if (distance <= 0.0)
+    throw common::invalid_argument("distance > 0.0");
+
   kdtree tree(points);
   tree.set_exact_search();
 
@@ -29,11 +29,9 @@ distance_filter::distance_filter(const std::vector<Eigen::Vector3d>& points, dou
     if (indices_to_remove.find(i) != indices_to_remove.end())
       continue;
 
-    auto found = tree.radius_search(points[i], distance, nn_indices, nn_distances);
+    tree.radius_search(points[i], distance, nn_indices, nn_distances);
 
-    for (int k = 0; k < found; k++) {
-      auto j = nn_indices[k];
-
+    for (auto j : nn_indices) {
       if (j != i) {
         indices_to_remove.insert(j);
       }
@@ -41,7 +39,7 @@ distance_filter::distance_filter(const std::vector<Eigen::Vector3d>& points, dou
   }
 
   for (size_t i = 0; i < n_points_; i++) {
-    if (indices_to_remove.count(i) == 0) {
+    if (indices_to_remove.find(i) == indices_to_remove.end()) {
       filtered_indices_.push_back(i);
     }
   }
@@ -51,10 +49,17 @@ const std::vector<size_t>& distance_filter::filtered_indices() const {
   return filtered_indices_;
 }
 
-std::vector<Eigen::Vector3d> distance_filter::filtered_points() const {
-  auto view = common::make_view(points_, filtered_indices_);
+std::vector<Eigen::Vector3d> distance_filter::filter_points(const std::vector<Eigen::Vector3d>& points) const {
+  assert(points.size() == n_points_);
 
-  return std::vector<Eigen::Vector3d>(view.begin(), view.end());
+  std::vector<Eigen::Vector3d> filtered;
+  filtered.reserve(filtered_indices_.size());
+
+  for (auto idx : filtered_indices_) {
+    filtered.push_back(points[idx]);
+  }
+
+  return filtered;
 }
 
 Eigen::VectorXd distance_filter::filter_values(const Eigen::VectorXd& values) const {

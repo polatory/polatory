@@ -15,12 +15,11 @@ public:
 
   const std::vector<size_t>& filtered_indices() const;
 
-  std::vector<Eigen::Vector3d> filtered_points() const;
+  std::vector<Eigen::Vector3d> filter_points(const std::vector<Eigen::Vector3d>& points) const;
 
   Eigen::VectorXd filter_values(const Eigen::VectorXd& values) const;
 
 private:
-  const std::vector<Eigen::Vector3d>& points_;
   const size_t n_points_;
 
   std::vector<size_t> filtered_indices_;

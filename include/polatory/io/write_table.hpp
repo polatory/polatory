@@ -13,12 +13,13 @@
 namespace polatory {
 namespace io {
 
-inline void write_table(const std::string& filename, const std::vector<std::vector<double>>& table) {
+inline void write_table(const std::string& filename,
+                        const std::vector<std::vector<double>>& table) {
   std::ofstream ofs(filename);
   if (!ofs)
     return;
 
-  for (const auto& row : table) {
+  for (auto& row : table) {
     for (size_t i = 0; i < row.size(); i++) {
       ofs << numeric::to_string(row[i]);
       if (i != row.size() - 1)
@@ -28,17 +29,33 @@ inline void write_table(const std::string& filename, const std::vector<std::vect
   }
 }
 
-inline void write_points(const std::string& filename, const std::vector<Eigen::Vector3d>& points) {
+inline void write_points(const std::string& filename,
+                         const std::vector<Eigen::Vector3d>& points) {
   std::vector<std::vector<double>> table;
 
-  for (const auto& p : points) {
+  for (auto& p : points) {
     table.push_back(std::vector<double>{ p(0), p(1), p(2) });
   }
 
   write_table(filename, table);
 }
 
-inline void write_values(const std::string& filename, const Eigen::VectorXd& values) {
+inline void write_points_and_values(const std::string& filename,
+                                    const std::vector<Eigen::Vector3d>& points,
+                                    const Eigen::VectorXd& values) {
+
+  std::vector<std::vector<double>> table;
+
+  for (size_t i = 0; i < values.size(); i++) {
+    auto& p = points[i];
+    table.push_back(std::vector<double>{ p(0), p(1), p(2), values(i) });
+  }
+
+  write_table(filename, table);
+}
+
+inline void write_values(const std::string& filename,
+                         const Eigen::VectorXd& values) {
   std::vector<std::vector<double>> table;
 
   for (size_t i = 0; i < values.size(); i++) {

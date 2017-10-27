@@ -9,6 +9,7 @@
 #include <iterator>
 #include <map>
 #include <random>
+#include <set>
 #include <vector>
 
 #include <omp.h>

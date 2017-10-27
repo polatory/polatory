@@ -29,23 +29,21 @@ TEST(kdtree, trivial) {
 
   kdtree tree(points);
 
-  auto found = tree.knn_search(query_point, k, indices, distances);
+  tree.knn_search(query_point, k, indices, distances);
 
-  ASSERT_EQ(found, k);
-  ASSERT_EQ(found, indices.size());
-  ASSERT_EQ(found, distances.size());
+  ASSERT_EQ(k, indices.size());
+  ASSERT_EQ(indices.size(), distances.size());
 
   std::sort(indices.begin(), indices.end());
-  ASSERT_TRUE(std::unique(indices.begin(), indices.end()) == indices.end());
+  ASSERT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
 
-  found = tree.radius_search(query_point, search_radius, indices, distances);
+  tree.radius_search(query_point, search_radius, indices, distances);
 
-  ASSERT_EQ(found, indices.size());
-  ASSERT_EQ(found, distances.size());
+  ASSERT_EQ(indices.size(), distances.size());
   for (auto distance : distances) {
     ASSERT_LE(distance, search_radius);
   }
 
   std::sort(indices.begin(), indices.end());
-  ASSERT_TRUE(std::unique(indices.begin(), indices.end()) == indices.end());
+  ASSERT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
 }

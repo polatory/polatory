@@ -19,12 +19,14 @@ std::pair<std::vector<Eigen::Vector3d>, Eigen::VectorXd> test_points_values(size
   using namespace polatory;
 
   auto surface_points = point_cloud::random_points(geometry::sphere3d(), n_surface_points);
-  point_cloud::distance_filter filter(surface_points, 1e-6);
-  surface_points = filter.filtered_points();
 
   point_cloud::scattered_data_generator scatter_gen(surface_points, surface_points, 2e-4, 1e-3);
   auto points = scatter_gen.scattered_points();
   auto values = scatter_gen.scattered_values();
+
+  point_cloud::distance_filter filter(points, 1e-6);
+  points = filter.filter_points(points);
+  values = filter.filter_values(values);
 
   return std::make_pair(std::move(points), std::move(values));
 }
