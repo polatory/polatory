@@ -69,7 +69,9 @@ public:
 
   template <class Container>
   void
-  generate_from_seed_points(const Container& seed_points, const field_function& field_func, double isovalue = 0.0) {
+  generate_from_seed_points(const Container& seed_points, field_function& field_func, double isovalue = 0.0) {
+    field_func.set_evaluation_bbox(lattice.node_bounds());
+
     lattice.clear();
 
     for (auto& p : seed_points) {
