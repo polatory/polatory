@@ -56,13 +56,13 @@ int main(int argc, char *argv[]) {
   scattered_data_generator scatter_gen(
     cloud_points, cloud_normals,
     min_normal_distance, max_normal_distance);
-  auto dist_points = scatter_gen.scattered_points();
-  auto dist_values = scatter_gen.scattered_values();
+  auto points = scatter_gen.scattered_points();
+  auto values = scatter_gen.scattered_values();
 
   // Remove very close points.
-  distance_filter filter(distance_filter(dist_points, filter_distance));
-  auto points = filter.filtered_points();
-  auto values = filter.filter_values(dist_values);
+  distance_filter filter(points, filter_distance);
+  points = filter.filter_points(points);
+  values = filter.filter_values(values);
 
   // Output scattered data (optional).
   write_points_and_values(out_scattered_data_file, points, values);
