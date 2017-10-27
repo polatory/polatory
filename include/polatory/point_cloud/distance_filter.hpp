@@ -17,6 +17,8 @@ public:
 
   std::vector<Eigen::Vector3d> filtered_points() const;
 
+  std::vector<Eigen::Vector3d> filter_normals(const std::vector<Eigen::Vector3d>& normals) const;
+
   Eigen::VectorXd filter_values(const Eigen::VectorXd& values) const;
 
 private:

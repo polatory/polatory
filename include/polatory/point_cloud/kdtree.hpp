@@ -16,11 +16,11 @@ public:
 
   ~kdtree();
 
-  int knn_search(const Eigen::Vector3d& point, int k,
-                 std::vector<size_t>& indices, std::vector<double>& distances) const;
+  void knn_search(const Eigen::Vector3d& point, int k,
+                  std::vector<size_t>& indices, std::vector<double>& distances) const;
 
-  int radius_search(const Eigen::Vector3d& point, double radius,
-                    std::vector<size_t>& indices, std::vector<double>& distances) const;
+  void radius_search(const Eigen::Vector3d& point, double radius,
+                     std::vector<size_t>& indices, std::vector<double>& distances) const;
 
   void set_exact_search() const;
 
