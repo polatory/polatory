@@ -17,8 +17,7 @@ distance_filter::distance_filter(const std::vector<Eigen::Vector3d>& points, dou
   if (distance <= 0.0)
     throw common::invalid_argument("distance > 0.0");
 
-  kdtree tree(points);
-  tree.set_exact_search();
+  kdtree tree(points, true);
 
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;

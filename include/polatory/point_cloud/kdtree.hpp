@@ -12,7 +12,7 @@ namespace point_cloud {
 
 class kdtree {
 public:
-  explicit kdtree(const std::vector<Eigen::Vector3d>& points);
+  kdtree(const std::vector<Eigen::Vector3d>& points, bool use_exact_search);
 
   ~kdtree();
 
@@ -21,8 +21,6 @@ public:
 
   void radius_search(const Eigen::Vector3d& point, double radius,
                      std::vector<size_t>& indices, std::vector<double>& distances) const;
-
-  void set_exact_search() const;
 
 private:
   class impl;

@@ -27,7 +27,7 @@ TEST(kdtree, trivial) {
 
   auto points = random_points(sphere3d(center, radius), n_points);
 
-  kdtree tree(points);
+  kdtree tree(points, true);
 
   tree.knn_search(query_point, k, indices, distances);
 

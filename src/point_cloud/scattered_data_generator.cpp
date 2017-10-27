@@ -20,8 +20,7 @@ scattered_data_generator::scattered_data_generator(
   , normals_(normals) {
   assert(points.size() == normals.size());
 
-  kdtree tree(points);
-  tree.set_exact_search();
+  kdtree tree(points, true);
 
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;

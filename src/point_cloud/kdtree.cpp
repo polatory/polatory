@@ -15,11 +15,16 @@ class kdtree::impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
 
 public:
-  explicit impl(const std::vector<Eigen::Vector3d>& points) {
+  impl(const std::vector<Eigen::Vector3d>& points, bool use_exact_search) {
     flann::Matrix<double> points_mat(const_cast<double *>(points[0].data()), points.size(), 3);
 
     flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
     flann_index_->buildIndex();
+
+    if (use_exact_search) {
+      params_knn_.checks = flann::FLANN_CHECKS_UNLIMITED;
+      params_radius_.checks = flann::FLANN_CHECKS_UNLIMITED;
+    }
   }
 
   void knn_search(const Eigen::Vector3d& point, int k,
@@ -54,19 +59,14 @@ public:
     }
   }
 
-  void set_exact_search() {
-    params_knn_.checks = flann::FLANN_CHECKS_UNLIMITED;
-    params_radius_.checks = flann::FLANN_CHECKS_UNLIMITED;
-  }
-
 private:
   flann::SearchParams params_knn_;
   flann::SearchParams params_radius_;
   std::unique_ptr<FlannIndex> flann_index_;
 };
 
-kdtree::kdtree(const std::vector<Eigen::Vector3d>& points)
-  : pimpl_(std::make_unique<impl>(points)) {
+kdtree::kdtree(const std::vector<Eigen::Vector3d>& points, bool use_exact_search)
+  : pimpl_(std::make_unique<impl>(points, use_exact_search)) {
 }
 
 kdtree::~kdtree() = default;
@@ -85,10 +85,6 @@ void kdtree::radius_search(const Eigen::Vector3d& point, double radius,
     throw common::invalid_argument("radius > 0.0");
 
   pimpl_->radius_search(point, radius, indices, distances);
-}
-
-void kdtree::set_exact_search() const {
-  pimpl_->set_exact_search();
 }
 
 } // namespace point_cloud
