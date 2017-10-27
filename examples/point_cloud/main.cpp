@@ -31,21 +31,22 @@ using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic;
 
 int main(int argc, char *argv[]) {
-  if (argc < 9) {
-    std::cerr << "Usage:" << std::endl
-              << "  " << argv[0] << " in_file filter_distance min_normal_distance max_normal_distance" << std::endl
-              << "  fitting_accuracy mesh_resolution out_scattered_data_file out_obj_file" << std::endl;
+  if (argc < 10) {
+    std::cerr << "Usage: " << argv[0] << " in_file min_normal_distance max_normal_distance" << std::endl
+              << "  filter_distance fit_incrementally(0|1) fitting_accuracy" << std::endl
+              << "  mesh_resolution out_scattered_data_file out_obj_file" << std::endl;
     return 1;
   }
 
   auto in_file = argv[1];
-  auto filter_distance = std::stod(argv[2]);
-  auto min_normal_distance = std::stod(argv[3]);
-  auto max_normal_distance = std::stod(argv[4]);
-  auto fitting_accuracy = std::stod(argv[5]);
-  auto mesh_resolution = std::stod(argv[6]);
-  auto out_scattered_data_file = argv[7];
-  auto out_obj_file = argv[8];
+  auto min_normal_distance = std::stod(argv[2]);
+  auto max_normal_distance = std::stod(argv[3]);
+  auto filter_distance = std::stod(argv[4]);
+  auto fit_incrementally = static_cast<bool>(std::stoi(argv[5]));
+  auto fitting_accuracy = std::stod(argv[6]);
+  auto mesh_resolution = std::stod(argv[7]);
+  auto out_scattered_data_file = argv[8];
+  auto out_obj_file = argv[9];
 
   // Read points and normals.
   std::vector<Eigen::Vector3d> cloud_points;
@@ -72,7 +73,11 @@ int main(int argc, char *argv[]) {
   interpolant interpolant(rbf, 3, 0);
 
   // Fit.
-  interpolant.fit(points, values, fitting_accuracy);
+  if (fit_incrementally) {
+    interpolant.fit_incrementally(points, values, fitting_accuracy);
+  } else {
+    interpolant.fit(points, values, fitting_accuracy);
+  }
   std::cout << "Number of RBF centers: " << interpolant.centers().size() << std::endl;
 
   // Generate isosurface.
