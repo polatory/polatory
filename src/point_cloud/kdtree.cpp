@@ -2,6 +2,8 @@
 
 #include "polatory/point_cloud/kdtree.hpp"
 
+#include <cmath>
+
 #include <flann/flann.hpp>
 
 #include "polatory/common/exception.hpp"
@@ -23,25 +25,33 @@ public:
   void knn_search(const Eigen::Vector3d& point, int k,
                   std::vector<size_t>& indices, std::vector<double>& distances) const {
     flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);
-    std::vector<std::vector<size_t>> indices_v(1);
-    std::vector<std::vector<double>> dists_v(1);
+    std::vector<std::vector<size_t>> indices_v;
+    std::vector<std::vector<double>> dists_v;
 
     flann_index_->knnSearch(point_mat, indices_v, dists_v, k, params_knn_);
 
     indices = indices_v[0];
     distances = dists_v[0];
+
+    for (auto& d : distances) {
+      d = std::sqrt(d);
+    }
   }
 
   void radius_search(const Eigen::Vector3d& point, double radius,
                      std::vector<size_t>& indices, std::vector<double>& distances) const {
     flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);
-    std::vector<std::vector<size_t>> indices_v(1);
-    std::vector<std::vector<double>> dists_v(1);
+    std::vector<std::vector<size_t>> indices_v;
+    std::vector<std::vector<double>> dists_v;
 
-    flann_index_->radiusSearch(point_mat, indices_v, dists_v, radius, params_radius_);
+    flann_index_->radiusSearch(point_mat, indices_v, dists_v, radius * radius, params_radius_);
 
     indices = indices_v[0];
     distances = dists_v[0];
+
+    for (auto& d : distances) {
+      d = std::sqrt(d);
+    }
   }
 
   void set_exact_search() {
