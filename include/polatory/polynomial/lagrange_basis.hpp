@@ -32,9 +32,7 @@ public:
 
     auto pt = mono_basis.evaluate_points(points);
 
-    MatrixXF rhs = MatrixXF::Identity(size, size);
-
-    coeffs = pt.transpose().fullPivLu().solve(rhs);
+    coeffs = pt.transpose().fullPivLu().inverse();
   }
 
   template <class Container>

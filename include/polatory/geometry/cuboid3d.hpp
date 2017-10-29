@@ -12,8 +12,8 @@ namespace geometry {
 class cuboid3d {
 public:
   cuboid3d()
-    : min_(Eigen::Vector3d::Ones())
-    , max_(Eigen::Vector3d::Zero()) {
+    : min_(Eigen::Vector3d::Zero())
+    , max_(Eigen::Vector3d::Ones()) {
   }
 
   cuboid3d(const Eigen::Vector3d& min, const Eigen::Vector3d& max)
