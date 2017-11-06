@@ -9,17 +9,19 @@
 namespace polatory {
 namespace point_cloud {
 
-class scattered_data_generator {
+// Generates signed distance field data from given points and normals.
+class sdf_data_generator {
 public:
-  scattered_data_generator(
+  sdf_data_generator(
     const std::vector<Eigen::Vector3d>& points,
     const std::vector<Eigen::Vector3d>& normals,
     double min_distance,
-    double max_distance);
+    double max_distance,
+    double ratio = 1.0);
 
-  std::vector<Eigen::Vector3d> scattered_points() const;
+  std::vector<Eigen::Vector3d> sdf_points() const;
 
-  Eigen::VectorXd scattered_values() const;
+  Eigen::VectorXd sdf_values() const;
 
 private:
   size_t total_size() const;

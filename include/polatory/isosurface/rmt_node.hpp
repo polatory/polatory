@@ -10,6 +10,8 @@
 #include <numeric>
 #include <vector>
 
+#include <Eigen/Geometry>
+
 #include "bit.hpp"
 #include "polatory/common/uncertain.hpp"
 #include "types.hpp"

@@ -180,7 +180,7 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | kriging                | Parameter estimation and validation for kriging. |
 | krylov                 | Krylov subspace methods.                         |
 | numeric                | Numerical utilities.                             |
-| point_cloud            | Scattered data generation from point clouds.     |
+| point_cloud            | SDF data generation from point clouds.           |
 | polynomial             | Polynomial part of RBF interpolant.              |
 | preconditioner         | The preconditioner used with Krylov subspace methods. |
 | rbf                    | Definition of RBFs/covariance functions.         |

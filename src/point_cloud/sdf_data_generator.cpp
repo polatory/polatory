@@ -1,34 +1,34 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "polatory/point_cloud/scattered_data_generator.hpp"
+#include "polatory/point_cloud/sdf_data_generator.hpp"
 
 #include <cassert>
 
 #include <boost/range/combine.hpp>
 
+#include "polatory/common/quasi_random_sequence.hpp"
 #include "polatory/point_cloud/kdtree.hpp"
 
 namespace polatory {
 namespace point_cloud {
 
-scattered_data_generator::scattered_data_generator(
+sdf_data_generator::sdf_data_generator(
   const std::vector<Eigen::Vector3d>& points,
   const std::vector<Eigen::Vector3d>& normals,
   double min_distance,
-  double max_distance)
+  double max_distance,
+  double ratio)
   : points_(points)
   , normals_(normals) {
   assert(points.size() == normals.size());
+  assert(ratio > 0.0 && ratio <= 2.0);
 
   kdtree tree(points, true);
 
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;
 
-  std::vector<size_t> reduced_indices;
-  for (size_t i = 0; i < points.size(); i += 2) {
-    reduced_indices.push_back(i);
-  }
+  auto reduced_indices = common::quasi_random_sequence((ratio / 2.0) * points.size());
 
   for (auto i : reduced_indices) {
     const auto& p = points[i];
@@ -73,9 +73,9 @@ scattered_data_generator::scattered_data_generator(
   }
 }
 
-std::vector<Eigen::Vector3d> scattered_data_generator::scattered_points() const {
-  std::vector<Eigen::Vector3d> scattered_points(points_);
-  scattered_points.reserve(total_size());
+std::vector<Eigen::Vector3d> sdf_data_generator::sdf_points() const {
+  std::vector<Eigen::Vector3d> sdf_points(points_);
+  sdf_points.reserve(total_size());
 
   for (auto i_d : boost::combine(ext_indices_, ext_distances_)) {
     size_t i;
@@ -84,7 +84,7 @@ std::vector<Eigen::Vector3d> scattered_data_generator::scattered_points() const 
 
     const auto& p = points_[i];
     const auto& n = normals_[i];
-    scattered_points.push_back(p + d * n);
+    sdf_points.push_back(p + d * n);
   }
 
   for (auto i_d : boost::combine(int_indices_, int_distances_)) {
@@ -94,13 +94,13 @@ std::vector<Eigen::Vector3d> scattered_data_generator::scattered_points() const 
 
     const auto& p = points_[i];
     const auto& n = normals_[i];
-    scattered_points.push_back(p - d * n);
+    sdf_points.push_back(p - d * n);
   }
 
-  return scattered_points;
+  return sdf_points;
 }
 
-Eigen::VectorXd scattered_data_generator::scattered_values() const {
+Eigen::VectorXd sdf_data_generator::sdf_values() const {
   Eigen::VectorXd values = Eigen::VectorXd::Zero(total_size());
 
   values.segment(points_.size(), ext_indices_.size()) =
@@ -112,7 +112,7 @@ Eigen::VectorXd scattered_data_generator::scattered_values() const {
   return values;
 }
 
-size_t scattered_data_generator::total_size() const {
+size_t sdf_data_generator::total_size() const {
   return points_.size() + ext_indices_.size() + int_indices_.size();
 }
 
