@@ -6,13 +6,13 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <random>
 #include <vector>
 #include <utility>
 
 #include <boost/range/irange.hpp>
 #include <Eigen/Core>
 
+#include "polatory/common/quasi_random_sequence.hpp"
 #include "polatory/common/vector_view.hpp"
 #include "polatory/common/zip_sort.hpp"
 #include "polatory/fmm/tree_height.hpp"
@@ -132,14 +132,9 @@ private:
     } else {
       size_t n_initial_points = initial_points_ratio * n_points_;
 
-      std::random_device rd;
-      std::mt19937 gen(rd());
-
-      indices = std::vector<size_t>(n_points_);
-      std::iota(indices.begin(), indices.end(), 0);
-      std::shuffle(indices.begin(), indices.end(), gen);
-
+      indices = common::quasi_random_sequence(n_points_);
       indices.resize(n_initial_points);
+
       weights = Eigen::VectorXd::Zero(n_initial_points + n_polynomials_);
     }
 

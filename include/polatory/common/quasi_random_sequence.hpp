@@ -3,7 +3,6 @@
 #pragma once
 
 #include <cmath>
-#include <cstddef>
 #include <vector>
 
 namespace polatory {
@@ -35,8 +34,8 @@ private:
 
 public:
   size_t operator()(size_t x) const {
-    return (bit_rev<NextSize>().template operator()(x) << ShiftBits)
-           | (bit_rev<NextSize>().template operator()(x >> ShiftBits));
+    return (bit_rev<NextSize>()(x) << ShiftBits)
+           | (bit_rev<NextSize>()(x >> ShiftBits));
   }
 };
 
@@ -48,21 +47,22 @@ public:
   }
 };
 
-}
-
-size_t bit_reverse(size_t x, int length) {
+inline size_t bit_reverse(size_t x, int length) {
   return detail::bit_rev<sizeof(size_t)>()(x) >> (sizeof(size_t) * 8 - length);
 }
 
+}
+
+// Quasi-random sequence in 0..<n based on binary van der Corput sequence.
 inline std::vector<size_t> quasi_random_sequence(size_t n) {
   std::vector<size_t> seq;
 
   if (n == 0) return seq;
 
-  int length = std::floor(std::log2(n)) + 1;
-  size_t i_end = size_t(1) << length;
+  int n_digits = std::floor(std::log2(n)) + 1;
+  size_t i_end = size_t(1) << n_digits;
   for (size_t i = 0; i < i_end; i++) {
-    size_t i_rev = bit_reverse(i, length);
+    size_t i_rev = detail::bit_reverse(i, n_digits);
     if (i_rev >= n) continue;
 
     seq.push_back(i_rev);
