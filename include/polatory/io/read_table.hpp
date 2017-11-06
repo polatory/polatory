@@ -87,6 +87,22 @@ inline std::pair<std::vector<Eigen::Vector3d>, Eigen::VectorXd> read_points_and_
   return std::make_pair(std::move(points), std::move(values));
 }
 
+inline std::pair<std::vector<Eigen::Vector3d>, Eigen::VectorXd> read_points_2d_and_values(const std::string& filename) {
+  auto table = read_table(filename);
+  auto n_rows = table.size();
+
+  std::vector<Eigen::Vector3d> points(n_rows);
+  Eigen::VectorXd values = Eigen::VectorXd(n_rows);
+
+  for (size_t i = 0; i < n_rows; i++) {
+    const auto& row = table[i];
+    points[i] = Eigen::Vector3d(row[0], row[1], 0.0);
+    values(i) = row[2];
+  }
+
+  return std::make_pair(std::move(points), std::move(values));
+}
+
 inline Eigen::VectorXd read_values(const std::string& filename) {
   auto table = read_table(filename);
   auto n_rows = table.size();
