@@ -14,72 +14,66 @@ namespace polatory {
 namespace kriging {
 
 class empirical_variogram {
-  const size_t n_points;
-  const std::vector<Eigen::Vector3d>& points;
-  const Eigen::VectorXd& values;
-
-  double bin_range;
-  int n_bins;
-
-  std::vector<double> variances;
-  std::vector<int> num_pairs;
-
 public:
   empirical_variogram(
     const std::vector<Eigen::Vector3d>& points,
     const Eigen::VectorXd& values,
-    double bin_range,
-    double n_bins)
-    : n_points(points.size())
-    , points(points)
-    , values(values)
-    , bin_range(bin_range)
-    , n_bins(n_bins)
-    , variances(n_bins)
-    , num_pairs(n_bins) {
+    double bin_width,
+    size_t n_bins)
+    : bin_width_(bin_width)
+    , n_bins_(n_bins)
+    , distance_(n_bins)
+    , num_pairs_(n_bins)
+    , variance_(n_bins) {
+    auto n_points = points.size();
     assert(values.size() == n_points);
 
-    std::vector<numeric::kahan_sum_accumulator<double>> sums(n_bins);
+    std::vector<numeric::kahan_sum_accumulator<double>> var_sum(n_bins_);
+    std::vector<numeric::kahan_sum_accumulator<double>> dist_sum(n_bins_);
 
     for (size_t i = 0; i < n_points - 1; i++) {
       for (size_t j = i + 1; j < n_points; j++) {
-        double distance = (points[i] - points[j]).norm();
-        double diff_sq = std::pow(values[i] - values[j], 2.0);
-        int bin = std::floor(distance / bin_range);
-        if (bin >= n_bins) continue;
+        auto dist = (points[i] - points[j]).norm();
+        size_t bin = std::floor(dist / bin_width_);
+        if (bin >= n_bins_) continue;
 
-        sums[bin] += diff_sq;
-        num_pairs[bin]++;
+        var_sum[bin] += std::pow(values[i] - values[j], 2.0) / 2.0;
+        dist_sum[bin] += dist;
+        num_pairs_[bin]++;
       }
     }
 
-    for (int i = 0; i < n_bins; i++) {
-      if (num_pairs[i] == 0) continue;
-      variances[i] = sums[i].get() / (2.0 * num_pairs[i]);
+    for (int i = 0; i < n_bins_; i++) {
+      if (num_pairs_[i] == 0) continue;
+
+      variance_[i] = var_sum[i].get() / num_pairs_[i];
+      distance_[i] = dist_sum[i].get() / num_pairs_[i];
     }
   }
 
-  std::vector<double> bin_centers() const {
-    std::vector<double> centers(n_bins);
-
-    for (int i = 0; i < n_bins; i++) {
-      centers[i] = (i + 0.5) * bin_range;
-    }
-
-    return centers;
+  const std::vector<double>& bin_distance() const {
+    return distance_;
   }
 
   const std::vector<int>& bin_num_pairs() const {
-    return num_pairs;
+    return num_pairs_;
   }
 
-  const std::vector<double>& bin_variances() const {
-    return variances;
+  const std::vector<double>& bin_variance() const {
+    return variance_;
   }
 
-  int num_bins() const {
-    return n_bins;
+  size_t num_bins() const {
+    return n_bins_;
   }
+
+private:
+  double bin_width_;
+  size_t n_bins_;
+
+  std::vector<double> distance_;
+  std::vector<int> num_pairs_;
+  std::vector<double> variance_;
 };
 
 } // namespace kriging

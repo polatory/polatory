@@ -30,9 +30,9 @@ public:
     params = std::vector<double>(cov->parameters());
 
     auto n_bins = emp_variog.num_bins();
-    auto bin_centers = emp_variog.bin_centers();
-    const auto& bin_num_pairs = emp_variog.bin_num_pairs();
-    const auto& bin_variances = emp_variog.bin_variances();
+    auto& bin_distance = emp_variog.bin_distance();
+    auto& bin_num_pairs = emp_variog.bin_num_pairs();
+    auto& bin_variance = emp_variog.bin_variance();
 
     ceres::Problem problem;
     for (int i = 0; i < n_bins; i++) {
@@ -42,17 +42,17 @@ public:
       switch (weights) {
       case variogram_fitting_weights::cressie:
         weight = std::sqrt(bin_num_pairs[i]);
-        cost_function = cov->cost_function_over_gamma(bin_centers[i], bin_variances[i], weight);
+        cost_function = cov->cost_function_over_gamma(bin_distance[i], bin_variance[i], weight);
         break;
 
       case variogram_fitting_weights::npairs:
         weight = std::sqrt(bin_num_pairs[i]);
-        cost_function = cov->cost_function(bin_centers[i], bin_variances[i], weight);
+        cost_function = cov->cost_function(bin_distance[i], bin_variance[i], weight);
         break;
 
       default:
         weight = 1.0;
-        cost_function = cov->cost_function(bin_centers[i], bin_variances[i], weight);
+        cost_function = cov->cost_function(bin_distance[i], bin_variance[i], weight);
         break;
       }
 
@@ -68,7 +68,6 @@ public:
     options.max_num_iterations = 32;
     options.linear_solver_type = ceres::DENSE_QR;
     options.minimizer_progress_to_stdout = true;
-    //options.logging_type = ceres::SILENT;
 
     ceres::Solver::Summary summary;
     Solve(options, &problem, &summary);

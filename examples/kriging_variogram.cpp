@@ -10,14 +10,14 @@
 #include "polatory/io/read_table.hpp"
 #include "polatory/kriging/empirical_variogram.hpp"
 #include "polatory/kriging/variogram_fitting.hpp"
-#include "polatory/rbf/cov_spherical.hpp"
+#include "polatory/rbf/cov_quasi_spherical9.hpp"
 
 using polatory::io::read_points_and_values;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
 using polatory::kriging::variogram_fitting_weights;
 using polatory::rbf::rbf_base;
-using polatory::rbf::cov_spherical;
+using polatory::rbf::cov_quasi_spherical9;
 
 int main(int argc, char *argv[]) {
   if (argc < 2) return 1;
@@ -31,13 +31,16 @@ int main(int argc, char *argv[]) {
   double bin_range = 0.1;
 
   empirical_variogram emp_variog(points, values, bin_range, n_bins);
-  const auto bin_variances = emp_variog.bin_variances();
+  const auto bin_distance = emp_variog.bin_distance();
   const auto bin_num_pairs = emp_variog.bin_num_pairs();
+  const auto bin_variance = emp_variog.bin_variance();
+
+  std::cout << "np\tdist\tgamma" << std::endl;
   for (int bin = 0; bin < n_bins; bin++) {
-    std::cout << bin_variances[bin] << " " << bin_num_pairs[bin] << std::endl;
+    std::cout << bin_num_pairs[bin] << "\t" << bin_distance[bin] << "\t" <<  bin_variance[bin] << std::endl;
   }
 
-  cov_spherical variog({ 0.02, 0.6, 0.0 });
+  cov_quasi_spherical9 variog({ 0.02, 0.6, 0.0 });
   variogram_fitting fit(emp_variog, &variog, variogram_fitting_weights::cressie);
 
   auto params = fit.parameters();

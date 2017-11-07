@@ -13,24 +13,25 @@ using namespace polatory::kriging;
 
 TEST(empirical_variogram, trivial) {
   int n_points = 4;
-  std::vector<Eigen::Vector3d> points(n_points);
 
   // Tetrahedron vertices separated from each other by a distance d.
   double d = 0.5;
-  points[0] = d * Eigen::Vector3d(std::sqrt(3.0) / 3.0, 0.0, 0.0);
-  points[1] = d * Eigen::Vector3d(-std::sqrt(3.0) / 6.0, 1.0 / 2.0, 0.0);
-  points[2] = d * Eigen::Vector3d(-std::sqrt(3.0) / 6.0, -1.0 / 2.0, 0.0);
-  points[3] = d * Eigen::Vector3d(0.0, 0.0, std::sqrt(6.0) / 3.0);
+  std::vector<Eigen::Vector3d> points{
+    d * Eigen::Vector3d(std::sqrt(3.0) / 3.0, 0.0, 0.0),
+    d * Eigen::Vector3d(-std::sqrt(3.0) / 6.0, 1.0 / 2.0, 0.0),
+    d * Eigen::Vector3d(-std::sqrt(3.0) / 6.0, -1.0 / 2.0, 0.0),
+    d * Eigen::Vector3d(0.0, 0.0, std::sqrt(6.0) / 3.0)
+  };
 
   Eigen::VectorXd values(n_points);
   values << 0.0, 1.0, 2.0, 3.0;
 
   int n_bins = 5;
-  double bin_range = 0.2;
-  int filled_bin = std::floor(d / bin_range);
+  double bin_width = 0.2;
+  int filled_bin = std::floor(d / bin_width);
 
-  empirical_variogram variog(points, values, bin_range, n_bins);
-  const auto bin_variances = variog.bin_variances();
+  empirical_variogram variog(points, values, bin_width, n_bins);
+
   const auto bin_num_pairs = variog.bin_num_pairs();
   for (int bin = 0; bin < n_bins; bin++) {
     if (bin == filled_bin) {
@@ -40,6 +41,10 @@ TEST(empirical_variogram, trivial) {
     }
   }
 
+  const auto bin_distance = variog.bin_distance();
+  ASSERT_DOUBLE_EQ(d, bin_distance[filled_bin]);
+
+  const auto bin_variance = variog.bin_variance();
   double variance_expected =
     (std::pow(values(0) - values(1), 2.0) +
      std::pow(values(0) - values(2), 2.0) +
@@ -48,6 +53,5 @@ TEST(empirical_variogram, trivial) {
      std::pow(values(1) - values(3), 2.0) +
      std::pow(values(2) - values(3), 2.0)
     ) / (2.0 * 6.0);
-
-  ASSERT_DOUBLE_EQ(variance_expected, bin_variances[filled_bin]);
+  ASSERT_DOUBLE_EQ(variance_expected, bin_variance[filled_bin]);
 }

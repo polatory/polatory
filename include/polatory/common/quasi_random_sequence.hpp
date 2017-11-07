@@ -53,7 +53,8 @@ inline size_t bit_reverse(size_t x, int length) {
 
 }
 
-// Quasi-random sequence in 0..<n based on binary van der Corput sequence.
+// Generates quasi-random sequence of integers within 0...n-1,
+// based on binary van der Corput sequence preceded by 0.
 inline std::vector<size_t> quasi_random_sequence(size_t n) {
   std::vector<size_t> seq;
 
