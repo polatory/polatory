@@ -52,7 +52,7 @@ Ubuntu 16.04 LTS / GCC 5.4 and Clang 3.8
 
 ### Windows
 
-Visual Studio 2017 / Intel Parallel Studio XE 2017
+Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
 
 ## Building
 
@@ -62,12 +62,12 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
    ```bash
    sudo apt-get install build-essential cmake git
    ```
-   If you use Clang, Intel OpenMP needs to be installed.
+   If you use Clang, Intel(R) OpenMP is required.
    ```bash
    sudo apt-get install clang-3.8 libiomp-dev
    ```
 
-1. Download and install Intel MKL.
+1. Download and install Intel(R) MKL.
 
    See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
    ```bash
@@ -132,12 +132,12 @@ Visual Studio 2017 / Intel Parallel Studio XE 2017
 
 ### On Windows
 
-1. Install libraries
+1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
    ```
-   cd /d C:
+   cd /d C:\
    git clone https://github.com/Microsoft/vcpkg.git
    cd vcpkg
-   ./vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
+   vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
    ```
 
 1. Build polatory
