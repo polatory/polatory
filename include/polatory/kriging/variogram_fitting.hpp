@@ -8,7 +8,7 @@
 
 #include <ceres/ceres.h>
 
-#include "empirical_variogram.hpp"
+#include "polatory/kriging/empirical_variogram.hpp"
 #include "polatory/rbf/covariance_function.hpp"
 
 namespace polatory {
