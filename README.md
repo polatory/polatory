@@ -111,13 +111,14 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
    sudo apt-get install libflann-dev
    ```
 
-1. Download and extract [Boost](http://www.boost.org/)
-
-   Polatory currently uses header-only libraries of boost, so you don't have to build it.
+1. Download and build [Boost](http://www.boost.org/)
    ```bash
    cd
-   wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
-   tar xvfj boost_1_64_0.tar.bz2
+   wget https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
+   tar xvfj boost_1_65_1.tar.bz2
+   cd boost_1_65_1
+   ./bootstrap.sh
+   ./b2 install -j8 --prefix=.
    ```
 
 1. Build polatory
@@ -126,7 +127,7 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
    git clone https://github.com/polatory/polatory.git
    cd polatory
    mkdir build; cd build
-   cmake .. -DBOOST_ROOT=~/boost_1_64_0 -DCMAKE_BUILD_TYPE=Release
+   cmake .. -DBOOST_ROOT=~/boost_1_65_1 -DCMAKE_BUILD_TYPE=Release
    make -j8
    ```
 
