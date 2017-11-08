@@ -46,6 +46,12 @@ elseif(MSVC)
     set(CMAKE_CXX_FLAGS "/MP /EHsc /fp:strict /fp:except- /Qstd=c++14 /Qopenmp /Qip /QaxAVX")
 endif()
 
+add_definitions(
+    -DEIGEN_DONT_PARALLELIZE
+    -DEIGEN_MPL2_ONLY
+    -DEIGEN_USE_MKL_ALL
+)
+
 include_directories(
     include
     include/polatory/third_party
@@ -54,12 +60,6 @@ include_directories(
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_ROOT}/include
     ${VCPKG_ROOT}/include
-)
-
-add_definitions(
-    -DEIGEN_DONT_PARALLELIZE
-    -DEIGEN_MPL2_ONLY
-    -DEIGEN_USE_MKL_ALL
 )
 
 if(UNIX)

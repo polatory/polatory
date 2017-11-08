@@ -32,7 +32,7 @@ using polatory::rbf::biharmonic;
 
 int main(int argc, char *argv[]) {
   if (argc < 10) {
-    std::cerr << "Usage: " << argv[0] << " in_file min_normal_distance max_normal_distance" << std::endl
+    std::cerr << "Usage: " << argv[0] << " in_file min_sdf_distance max_sdf_distance" << std::endl
               << "  filter_distance fit_incrementally(0|1) fitting_accuracy" << std::endl
               << "  mesh_resolution out_sdf_data_file out_obj_file" << std::endl;
     return 1;
