@@ -28,9 +28,9 @@ options parse_options(int argc, const char *argv[]) {
     ("in", po::value<std::string>(&opts.in_file)->required(),
      "input file")
     ("bin-width", po::value<double>(&opts.bin_width)->required(),
-     "bin width of empirical variogram")
+     "bin width of the empirical variogram")
     ("n-bins", po::value<int>(&opts.n_bins)->default_value(15),
-     "number of bins of empirical variogram")
+     "number of bins in the empirical variogram")
     ("psill", po::value<double>(&opts.psill)->required(),
      "initial value for the partial sill")
     ("range", po::value<double>(&opts.range)->required(),

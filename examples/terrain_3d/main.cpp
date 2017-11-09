@@ -36,7 +36,7 @@ int main(int argc, const char *argv[]) {
 
   // Estimate normals.
   normal_estimator norm_est(terrain_points);
-  norm_est.estimate_with_knn(20);
+  norm_est.estimate_with_knn(20, opts.min_plane_factor);
   norm_est.orient_normals_by_outward_vector(Eigen::Vector3d(0, 0, 1));
   auto terrain_normals = norm_est.normals();
 

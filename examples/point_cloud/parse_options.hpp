@@ -39,18 +39,18 @@ options parse_options(int argc, const char *argv[]) {
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required(),
      "input file")
-    ("min-sdf-dist", po::value<double>(&opts.min_sdf_distance)->required(),
-     "minimum shift distance of off-surface points")
-    ("max-sdf-dist", po::value<double>(&opts.max_sdf_distance)->required(),
-     "maximum shift distance of off-surface points")
+    ("min-sdf-dist", po::value<double>(&opts.min_sdf_distance)->default_value(0.0),
+     "minimum distance of off-surface points")
+    ("sdf-dist", po::value<double>(&opts.max_sdf_distance)->required(),
+     "default distance of off-surface points, average distance between adjacent points is appropriate")
     ("filter-dist", po::value<double>(&opts.filter_distance)->default_value(1e-10),
      "filter distance threshold")
-    ("rho", po::value<double>(&opts.rho)->default_value(0),
+    ("rho", po::value<double>(&opts.rho)->default_value(0.0),
      "spline smoothing")
     ("dim", po::value<int>(&opts.poly_dimension)->default_value(3),
-     "dimension of polynomial")
+     "dimension of the polynomial")
     ("deg", po::value<int>(&opts.poly_degree)->default_value(0),
-     "degree of polynomial")
+     "degree of the polynomial")
     ("incremental-fit", po::bool_switch(&opts.incremental_fit),
      "add RBF centers incrementally")
     ("tol", po::value<double>(&opts.absolute_tolerance)->required(),

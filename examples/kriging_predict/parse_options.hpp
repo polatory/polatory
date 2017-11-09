@@ -49,9 +49,9 @@ options parse_options(int argc, const char *argv[]) {
     ("nugget", po::value<double>(&opts.nugget)->default_value(0),
      "nugget of the variogram")
     ("dim", po::value<int>(&opts.poly_dimension)->default_value(3),
-     "dimension of drift")
+     "dimension of the drift polynomial")
     ("deg", po::value<int>(&opts.poly_degree)->default_value(0),
-     "degree of drift")
+     "degree of the drift polynomial")
     ("tol", po::value<double>(&opts.absolute_tolerance)->required(),
      "absolute tolerance of fitting")
     ("mesh-bbox", po::value<std::vector<double>>(&bbox_vec)->multitoken()->required(),

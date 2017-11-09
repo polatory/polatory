@@ -40,12 +40,12 @@ options parse_options(int argc, const char *argv[]) {
      "input file")
     ("filter-dist", po::value<double>(&opts.filter_distance)->default_value(1e-10),
      "filter distance threshold")
-    ("rho", po::value<double>(&opts.rho)->default_value(0),
+    ("rho", po::value<double>(&opts.rho)->default_value(0.0),
      "spline smoothing")
     ("dim", po::value<int>(&opts.poly_dimension)->default_value(2),
-     "dimension of polynomial")
+     "dimension of the polynomial")
     ("deg", po::value<int>(&opts.poly_degree)->default_value(0),
-     "degree of polynomial")
+     "degree of the polynomial")
     ("incremental-fit", po::bool_switch(&opts.incremental_fit),
      "add RBF centers incrementally")
     ("tol", po::value<double>(&opts.absolute_tolerance)->required(),
