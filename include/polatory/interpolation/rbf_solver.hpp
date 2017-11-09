@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <iomanip>
 #include <iostream>
 #include <memory>
 
@@ -102,16 +103,29 @@ private:
     solver.set_right_preconditioner(*pc_);
     solver.setup();
 
+    std::cout << std::setw(4) << "iter"
+              << std::setw(16) << "rel_res" << std::endl
+              << std::setw(4) << solver.iteration_count()
+              << std::setw(16) << std::scientific << solver.relative_residual() << std::defaultfloat << std::endl;
+
     Eigen::VectorXd solution;
     while (true) {
-      std::cout << solver.iteration_count() << ": \t" << solver.relative_residual() << std::endl;
       solver.iterate_process();
       solution = solver.solution_vector();
-      if (res_eval_->converged(values, solution, absolute_tolerance) ||
-          solver.iteration_count() == solver.max_iterations())
+      std::cout << std::setw(4) << solver.iteration_count()
+                << std::setw(16) << std::scientific << solver.relative_residual() << std::defaultfloat << std::endl;
+
+      auto convergence = res_eval_->converged(values, solution, absolute_tolerance);
+      if (convergence.first) {
+        std::cout << "Achieved absolute residual: " << convergence.second << std::endl;
         break;
+      }
+
+      if (solver.iteration_count() == solver.max_iterations()) {
+        std::cout << "Reached the maximum number of iterations." << std::endl;
+        break;
+      }
     }
-    std::cout << solver.iteration_count() << ": \t" << solver.relative_residual() << std::endl;
 
     return solution;
   }

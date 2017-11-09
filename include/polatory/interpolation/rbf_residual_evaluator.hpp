@@ -6,6 +6,7 @@
 #include <cmath>
 #include <iostream>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include <Eigen/Core>
@@ -42,8 +43,9 @@ public:
   }
 
   template <class Derived, class Derived2>
-  bool converged(const Eigen::MatrixBase<Derived>& values, const Eigen::MatrixBase<Derived2>& weights,
-                 double absolute_tolerance) const {
+  std::pair<bool, double> converged(const Eigen::MatrixBase<Derived>& values,
+                                    const Eigen::MatrixBase<Derived2>& weights,
+                                    double absolute_tolerance) const {
     assert(values.size() == n_points_);
     assert(weights.size() == n_points_ + n_polynomials_);
 
@@ -61,15 +63,13 @@ public:
       for (size_t j = 0; j < end - begin; j++) {
         auto res = std::abs(values(begin + j) - fit(j));
         if (res >= absolute_tolerance + std::abs(rbf_.nugget() * weights(begin + j)))
-          return false;
+          return std::make_pair(false, 0.0);
 
         max_residual = std::max(max_residual, res);
       }
     }
 
-    std::cout << "Maximum residual: " << max_residual << std::endl;
-
-    return true;
+    return std::make_pair(true, max_residual);
   }
 
   template <class Container>

@@ -172,8 +172,6 @@ public:
 
     for (int level = 0; level < n_fine_levels; level++) {
       {
-        std::cout << "Start of level " << level << std::endl;
-
         Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points);
 
         // Solve on subdomains.
@@ -219,8 +217,6 @@ public:
 
         weights_total.head(n_points) += weights;
 
-        std::cout << "End of level " << level << std::endl;
-
 #if REPORT_RESIDUAL
         {
            // Test residual
@@ -232,8 +228,6 @@ public:
       }
 
       {
-        std::cout << "Start of coarse correction" << std::endl;
-
         Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points + n_polynomials);
 
         // Solve on coarse.
@@ -258,8 +252,6 @@ public:
         }
 
         weights_total += weights;
-
-        std::cout << "End of coarse correction" << std::endl;
 
 #if REPORT_RESIDUAL
         {
