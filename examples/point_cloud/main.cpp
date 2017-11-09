@@ -30,7 +30,7 @@ using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::sdf_data_generator;
 using polatory::rbf::biharmonic;
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
   if (argc < 10) {
     std::cerr << "Usage: " << argv[0] << " in_file min_sdf_distance max_sdf_distance" << std::endl
               << "  filter_distance fit_incrementally(0|1) fitting_accuracy" << std::endl

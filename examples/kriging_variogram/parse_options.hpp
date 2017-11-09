@@ -21,14 +21,22 @@ struct options {
 options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 
+  options opts;
+
   po::options_description opts_desc("");
   opts_desc.add_options()
-    ("in", po::value<std::string>()->required(), "input file")
-    ("bin-width", po::value<double>()->required(), "bin width of empirical variogram")
-    ("n-bins", po::value<int>()->default_value(15), "number of bins of empirical variogram")
-    ("psill", po::value<double>()->required(), "initial value for the partial sill")
-    ("range", po::value<double>()->required(), "initial value for the range")
-    ("nugget", po::value<double>()->default_value(0), "initial value for the nugget");
+    ("in", po::value<std::string>(&opts.in_file)->required(),
+     "input file")
+    ("bin-width", po::value<double>(&opts.bin_width)->required(),
+     "bin width of empirical variogram")
+    ("n-bins", po::value<int>(&opts.n_bins)->default_value(15),
+     "number of bins of empirical variogram")
+    ("psill", po::value<double>(&opts.psill)->required(),
+     "initial value for the partial sill")
+    ("range", po::value<double>(&opts.range)->required(),
+     "initial value for the range")
+    ("nugget", po::value<double>(&opts.nugget)->default_value(0),
+     "initial value for the nugget");
 
   po::variables_map vm;
   try {
@@ -40,14 +48,6 @@ options parse_options(int argc, const char *argv[]) {
               << opts_desc;
     std::exit(1);
   }
-
-  options opts;
-  opts.in_file = vm["in"].as<std::string>();
-  opts.bin_width = vm["bin-width"].as<double>();
-  opts.n_bins = vm["n-bins"].as<int>();
-  opts.psill = vm["psill"].as<double>();
-  opts.range = vm["range"].as<double>();
-  opts.nugget = vm["nugget"].as<double>();
 
   return opts;
 }

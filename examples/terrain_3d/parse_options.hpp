@@ -6,7 +6,6 @@
 #include <exception>
 #include <iostream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <boost/program_options.hpp>
@@ -16,16 +15,17 @@
 
 struct options {
   std::string in_file;
+  double min_sdf_distance;
+  double max_sdf_distance;
   double filter_distance;
-  double psill;
-  double range;
-  double nugget;
+  double rho;
   int poly_dimension;
   int poly_degree;
+  bool incremental_fit;
   double absolute_tolerance;
   polatory::geometry::bbox3d mesh_bbox;
   double mesh_resolution;
-  std::vector<std::pair<double, std::string>> mesh_values_files;
+  std::string mesh_file;
 };
 
 options parse_options(int argc, const char *argv[]) {
@@ -33,35 +33,33 @@ options parse_options(int argc, const char *argv[]) {
 
   options opts;
   std::vector<double> bbox_vec;
-  std::vector<double> mesh_vals_vec;
-  std::vector<std::string> mesh_files_vec;
 
   po::options_description opts_desc("");
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required(),
      "input file")
+    ("min-sdf-dist", po::value<double>(&opts.min_sdf_distance)->required(),
+     "minimum shift distance of off-surface points")
+    ("max-sdf-dist", po::value<double>(&opts.max_sdf_distance)->required(),
+     "maximum shift distance of off-surface points")
     ("filter-dist", po::value<double>(&opts.filter_distance)->default_value(1e-10),
      "filter distance threshold")
-    ("psill", po::value<double>(&opts.psill)->required(),
-     "partial sill of the variogram")
-    ("range", po::value<double>(&opts.range)->required(),
-     "range of the variogram")
-    ("nugget", po::value<double>(&opts.nugget)->default_value(0),
-     "nugget of the variogram")
+    ("rho", po::value<double>(&opts.rho)->default_value(0),
+     "spline smoothing")
     ("dim", po::value<int>(&opts.poly_dimension)->default_value(3),
-     "dimension of drift")
+     "dimension of polynomial")
     ("deg", po::value<int>(&opts.poly_degree)->default_value(0),
-     "degree of drift")
+     "degree of polynomial")
+    ("incremental-fit", po::bool_switch(&opts.incremental_fit),
+     "add RBF centers incrementally")
     ("tol", po::value<double>(&opts.absolute_tolerance)->required(),
      "absolute tolerance of fitting")
     ("mesh-bbox", po::value<std::vector<double>>(&bbox_vec)->multitoken()->required(),
      "output mesh bbox: xmin ymin zmin xmax ymax zmax")
     ("mesh-res", po::value<double>(&opts.mesh_resolution)->required(),
      "output mesh resolution")
-    ("mesh-vals", po::value<std::vector<double>>(&mesh_vals_vec)->multitoken()->required(),
-     "output mesh isovalues: val1 [val2 [...]]")
-    ("mesh-files", po::value<std::vector<std::string>>(&mesh_files_vec)->multitoken()->required(),
-     "output mesh filenames: file1 [file2 [...]]");
+    ("mesh-file", po::value<std::string>(&opts.mesh_file)->multitoken()->required(),
+     "output mesh filename");
 
   po::variables_map vm;
   try {
@@ -78,10 +76,6 @@ options parse_options(int argc, const char *argv[]) {
     Eigen::Vector3d(bbox_vec[0], bbox_vec[1], bbox_vec[2]),
     Eigen::Vector3d(bbox_vec[3], bbox_vec[4], bbox_vec[5])
   );
-
-  for (size_t i = 0; i < mesh_vals_vec.size(); i++) {
-    opts.mesh_values_files.push_back(std::make_pair(mesh_vals_vec[i], mesh_files_vec[i]));
-  }
 
   return opts;
 }

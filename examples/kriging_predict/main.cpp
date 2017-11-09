@@ -46,7 +46,7 @@ int main(int argc, const char *argv[]) {
   isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
   rbf_field_function field_f(interpolant);
 
-  for (auto isovalue_name : opts.mesh_values_names) {
+  for (auto isovalue_name : opts.mesh_values_files) {
     isosurf.generate(field_f, isovalue_name.first);
     export_obj(isovalue_name.second, isosurf);
   }
