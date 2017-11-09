@@ -26,6 +26,7 @@ struct options {
   polatory::geometry::bbox3d mesh_bbox;
   double mesh_resolution;
   std::string mesh_file;
+  std::string sdf_data_file;
 };
 
 options parse_options(int argc, const char *argv[]) {
@@ -59,7 +60,9 @@ options parse_options(int argc, const char *argv[]) {
     ("mesh-res", po::value<double>(&opts.mesh_resolution)->required(),
      "output mesh resolution")
     ("mesh-file", po::value<std::string>(&opts.mesh_file)->multitoken()->required(),
-     "output mesh filename");
+     "output mesh filename")
+    ("sdf-data-file", po::value<std::string>(&opts.sdf_data_file),
+     "SDF data output filename");
 
   po::variables_map vm;
   try {

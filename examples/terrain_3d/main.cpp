@@ -6,6 +6,7 @@
 
 #include "polatory/interpolant.hpp"
 #include "polatory/io/read_table.hpp"
+#include "polatory/io/write_table.hpp"
 #include "polatory/isosurface/export_obj.hpp"
 #include "polatory/isosurface/isosurface.hpp"
 #include "polatory/isosurface/rbf_field_function.hpp"
@@ -18,6 +19,7 @@
 
 using polatory::interpolant;
 using polatory::io::read_points;
+using polatory::io::write_points_and_values;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
@@ -47,6 +49,11 @@ int main(int argc, const char *argv[]) {
   distance_filter filter(points, opts.filter_distance);
   points = filter.filter_points(points);
   values = filter.filter_values(values);
+
+  // Output SDF data (optional).
+  if (!opts.sdf_data_file.empty()) {
+    write_points_and_values(opts.sdf_data_file, points, values);
+  }
 
   // Define model.
   biharmonic rbf({ 1.0, opts.rho });

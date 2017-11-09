@@ -38,9 +38,7 @@ int main(int argc, const char *argv[]) {
   std::tie(cloud_points, cloud_normals) = read_points_and_normals(opts.in_file);
 
   // Generate SDF data.
-  sdf_data_generator sdf_data(
-    cloud_points, cloud_normals,
-    opts.min_sdf_distance, opts.max_sdf_distance);
+  sdf_data_generator sdf_data(cloud_points, cloud_normals, opts.min_sdf_distance, opts.max_sdf_distance);
   auto points = sdf_data.sdf_points();
   auto values = sdf_data.sdf_values();
 
