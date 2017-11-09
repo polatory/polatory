@@ -66,7 +66,7 @@ private:
 };
 
 kdtree::kdtree(const std::vector<Eigen::Vector3d>& points, bool use_exact_search)
-  : pimpl_(std::make_unique<impl>(points, use_exact_search)) {
+  : pimpl_(points.size() == 0 ? nullptr : std::make_unique<impl>(points, use_exact_search)) {
 }
 
 kdtree::~kdtree() = default;
@@ -76,7 +76,12 @@ void kdtree::knn_search(const Eigen::Vector3d& point, int k,
   if (k <= 0)
     throw common::invalid_argument("k > 0");
 
-  pimpl_->knn_search(point, k, indices, distances);
+  if (!pimpl_) {
+    indices.clear();
+    distances.clear();
+  } else {
+    pimpl_->knn_search(point, k, indices, distances);
+  }
 }
 
 void kdtree::radius_search(const Eigen::Vector3d& point, double radius,
@@ -84,7 +89,12 @@ void kdtree::radius_search(const Eigen::Vector3d& point, double radius,
   if (radius <= 0.0)
     throw common::invalid_argument("radius > 0.0");
 
-  pimpl_->radius_search(point, radius, indices, distances);
+  if (!pimpl_) {
+    indices.clear();
+    distances.clear();
+  } else {
+    pimpl_->radius_search(point, radius, indices, distances);
+  }
 }
 
 } // namespace point_cloud
