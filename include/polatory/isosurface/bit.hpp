@@ -27,9 +27,7 @@ int naive_popcnt(unsigned int x) {
 }
 
 int count(unsigned int bit_set) {
-#if defined(_MSC_VER)
-  return naive_popcnt32(bit_set);
-#elif defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
   return _popcnt32(bit_set);
 #elif defined(__GNUC__)
   return __builtin_popcount(bit_set);
@@ -41,9 +39,7 @@ int count(unsigned int bit_set) {
 int peek(unsigned int bit_set) {
   if (bit_set == 0) return -1;
 
-#if defined(_MSC_VER)
-  return naive_bit_scan_forward(bit_set);
-#elif defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
   return _bit_scan_forward(bit_set);
 #elif defined(__GNUC__)
   return __builtin_ctz(bit_set);
