@@ -62,9 +62,9 @@ options parse_options(int argc, const char *argv[]) {
      "output mesh bbox: xmin ymin zmin xmax ymax zmax")
     ("mesh-res", po::value<double>(&opts.mesh_resolution)->required(),
      "output mesh resolution")
-    ("mesh-file", po::value<std::string>(&opts.mesh_file)->multitoken()->required(),
+    ("mesh-out", po::value<std::string>(&opts.mesh_file)->multitoken()->required(),
      "output mesh filename")
-    ("sdf-data-file", po::value<std::string>(&opts.sdf_data_file),
+    ("sdf-data-out", po::value<std::string>(&opts.sdf_data_file),
      "SDF data output filename");
 
   po::variables_map vm;

@@ -9,7 +9,7 @@
 namespace polatory {
 namespace point_cloud {
 
-// Generates signed distance field data from given points and normals.
+// Generates signed distance function data from given points and normals.
 class sdf_data_generator {
 public:
   sdf_data_generator(

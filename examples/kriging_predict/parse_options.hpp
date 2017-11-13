@@ -58,9 +58,9 @@ options parse_options(int argc, const char *argv[]) {
      "output mesh bbox: xmin ymin zmin xmax ymax zmax")
     ("mesh-res", po::value<double>(&opts.mesh_resolution)->required(),
      "output mesh resolution")
-    ("mesh-vals", po::value<std::vector<double>>(&mesh_vals_vec)->multitoken()->required(),
-     "output mesh isovalues: val1 [val2 [...]]")
-    ("mesh-files", po::value<std::vector<std::string>>(&mesh_files_vec)->multitoken()->required(),
+    ("mesh-isoval", po::value<std::vector<double>>(&mesh_vals_vec)->multitoken()->required(),
+     "output mesh isovalues: value1 [value2 [...]]")
+    ("mesh-out", po::value<std::vector<std::string>>(&mesh_files_vec)->multitoken()->required(),
      "output mesh filenames: file1 [file2 [...]]");
 
   po::variables_map vm;
