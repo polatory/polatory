@@ -3,11 +3,10 @@
 #include <cmath>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/kriging/empirical_variogram.hpp"
+#include <polatory/kriging/empirical_variogram.hpp>
 
 using namespace polatory::kriging;
 

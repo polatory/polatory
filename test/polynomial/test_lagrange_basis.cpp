@@ -1,11 +1,10 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/point_cloud/random_points.hpp"
-#include "polatory/polynomial/lagrange_basis.hpp"
+#include <polatory/point_cloud/random_points.hpp>
+#include <polatory/polynomial/lagrange_basis.hpp>
 
 using namespace polatory::polynomial;
 using polatory::geometry::cuboid3d;

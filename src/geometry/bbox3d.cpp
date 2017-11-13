@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "polatory/geometry/bbox3d.hpp"
+#include <polatory/geometry/bbox3d.hpp>
 
 #include <limits>
 

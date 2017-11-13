@@ -12,9 +12,9 @@
 
 #include <Eigen/Geometry>
 
-#include "bit.hpp"
-#include "polatory/common/uncertain.hpp"
-#include "types.hpp"
+#include <polatory/common/uncertain.hpp>
+#include <polatory/isosurface/bit.hpp>
+#include <polatory/isosurface/types.hpp>
 
 namespace polatory {
 namespace isosurface {

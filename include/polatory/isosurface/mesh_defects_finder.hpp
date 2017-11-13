@@ -11,8 +11,8 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "polatory/common/utility.hpp"
-#include "types.hpp"
+#include <polatory/common/utility.hpp>
+#include <polatory/isosurface/types.hpp>
 
 namespace polatory {
 namespace isosurface {

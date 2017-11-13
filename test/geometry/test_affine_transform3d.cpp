@@ -1,11 +1,10 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/common/pi.hpp"
-#include "polatory/geometry/affine_transform3d.hpp"
+#include <polatory/common/pi.hpp>
+#include <polatory/geometry/affine_transform3d.hpp>
 
 using namespace polatory::geometry;
 using polatory::common::pi;

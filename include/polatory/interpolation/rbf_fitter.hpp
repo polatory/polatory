@@ -4,8 +4,8 @@
 
 #include <Eigen/Core>
 
-#include "polatory/rbf/rbf_base.hpp"
-#include "rbf_solver.hpp"
+#include <polatory/interpolation/rbf_solver.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace interpolation {

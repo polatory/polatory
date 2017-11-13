@@ -7,8 +7,8 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/cuboid3d.hpp"
-#include "polatory/geometry/sphere3d.hpp"
+#include <polatory/geometry/cuboid3d.hpp>
+#include <polatory/geometry/sphere3d.hpp>
 
 namespace polatory {
 namespace point_cloud {

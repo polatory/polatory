@@ -4,8 +4,8 @@
 
 #include <Eigen/Core>
 
-#include "monomial_basis.hpp"
-#include "basis_base.hpp"
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/polynomial/monomial_basis.hpp>
 
 namespace polatory {
 namespace polynomial {

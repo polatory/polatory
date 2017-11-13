@@ -7,14 +7,14 @@
 
 #include <Eigen/Core>
 
-#include "polatory/fmm/fmm_operator.hpp"
-#include "polatory/fmm/tree_height.hpp"
-#include "polatory/geometry/bbox3d.hpp"
-#include "polatory/interpolation/polynomial_matrix.hpp"
-#include "polatory/krylov/linear_operator.hpp"
-#include "polatory/polynomial/basis_base.hpp"
-#include "polatory/polynomial/monomial_basis.hpp"
-#include "polatory/rbf/rbf_base.hpp"
+#include <polatory/fmm/fmm_operator.hpp>
+#include <polatory/fmm/tree_height.hpp>
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/interpolation/polynomial_matrix.hpp>
+#include <polatory/krylov/linear_operator.hpp>
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace interpolation {

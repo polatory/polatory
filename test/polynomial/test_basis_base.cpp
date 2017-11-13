@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "polatory/polynomial/basis_base.hpp"
+#include <polatory/polynomial/basis_base.hpp>
 
 using namespace polatory::polynomial;
 

@@ -4,12 +4,11 @@
 #include <numeric>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/point_cloud/random_points.hpp"
-#include "polatory/preconditioner/domain_divider.hpp"
+#include <polatory/point_cloud/random_points.hpp>
+#include <polatory/preconditioner/domain_divider.hpp>
 
 using namespace polatory::preconditioner;
 using polatory::geometry::sphere3d;

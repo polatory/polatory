@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/third_party/ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp"
+#include <polatory/third_party/ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
 
 namespace polatory {
 namespace rbf {

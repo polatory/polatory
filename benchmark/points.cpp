@@ -4,9 +4,9 @@
 
 #include <Eigen/Core>
 
-#include "polatory/io/write_table.hpp"
-#include "polatory/point_cloud/distance_filter.hpp"
-#include "polatory/point_cloud/random_points.hpp"
+#include <polatory/io/write_table.hpp>
+#include <polatory/point_cloud/distance_filter.hpp>
+#include <polatory/point_cloud/random_points.hpp>
 
 using polatory::geometry::sphere3d;
 using polatory::io::write_points;

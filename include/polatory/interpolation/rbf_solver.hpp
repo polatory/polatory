@@ -8,14 +8,14 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/bbox3d.hpp"
-#include "polatory/interpolation/rbf_operator.hpp"
-#include "polatory/interpolation/rbf_residual_evaluator.hpp"
-#include "polatory/krylov/fgmres.hpp"
-#include "polatory/polynomial/basis_base.hpp"
-#include "polatory/polynomial/orthonormal_basis.hpp"
-#include "polatory/preconditioner/ras_preconditioner.hpp"
-#include "polatory/rbf/rbf_base.hpp"
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/interpolation/rbf_operator.hpp>
+#include <polatory/interpolation/rbf_residual_evaluator.hpp>
+#include <polatory/krylov/fgmres.hpp>
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/polynomial/orthonormal_basis.hpp>
+#include <polatory/preconditioner/ras_preconditioner.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace interpolation {

@@ -6,15 +6,15 @@
 #include <tuple>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
+#include <polatory/common/vector_view.hpp>
+#include <polatory/interpolation/rbf_evaluator.hpp>
+#include <polatory/interpolation/rbf_incremental_fitter.hpp>
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/rbf/biharmonic.hpp>
 
-#include "polatory/common/vector_view.hpp"
-#include "polatory/interpolation/rbf_evaluator.hpp"
-#include "polatory/interpolation/rbf_incremental_fitter.hpp"
-#include "polatory/polynomial/basis_base.hpp"
-#include "polatory/rbf/biharmonic.hpp"
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;

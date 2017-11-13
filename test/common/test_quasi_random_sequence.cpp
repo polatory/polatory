@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#include "polatory/common/quasi_random_sequence.hpp"
+#include <polatory/common/quasi_random_sequence.hpp>
 
 using namespace polatory::common;
 

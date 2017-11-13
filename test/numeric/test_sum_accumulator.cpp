@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "polatory/numeric/sum_accumulator.hpp"
+#include <polatory/numeric/sum_accumulator.hpp>
 
 using namespace polatory::numeric;
 

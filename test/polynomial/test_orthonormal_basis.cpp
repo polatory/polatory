@@ -2,12 +2,11 @@
 
 #include <cmath>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/point_cloud/random_points.hpp"
-#include "polatory/polynomial/orthonormal_basis.hpp"
+#include <polatory/point_cloud/random_points.hpp>
+#include <polatory/polynomial/orthonormal_basis.hpp>
 
 using namespace polatory::polynomial;
 using polatory::geometry::cuboid3d;

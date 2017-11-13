@@ -8,7 +8,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/numeric/sum_accumulator.hpp"
+#include <polatory/numeric/sum_accumulator.hpp>
 
 namespace polatory {
 namespace kriging {

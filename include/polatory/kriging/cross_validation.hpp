@@ -7,11 +7,11 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/bbox3d.hpp"
-#include "polatory/interpolation/rbf_evaluator.hpp"
-#include "polatory/interpolation/rbf_fitter.hpp"
-#include "polatory/numeric/sum_accumulator.hpp"
-#include "polatory/rbf/rbf_base.hpp"
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/interpolation/rbf_evaluator.hpp>
+#include <polatory/interpolation/rbf_fitter.hpp>
+#include <polatory/numeric/sum_accumulator.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace kriging {

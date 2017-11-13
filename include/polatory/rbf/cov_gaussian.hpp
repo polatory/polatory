@@ -4,7 +4,7 @@
 
 #include <cmath>
 
-#include "covariance_function.hpp"
+#include <polatory/rbf/covariance_function.hpp>
 
 namespace polatory {
 namespace rbf {

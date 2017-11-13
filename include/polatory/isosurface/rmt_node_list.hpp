@@ -5,8 +5,8 @@
 #include <array>
 #include <map>
 
-#include "rmt_node.hpp"
-#include "types.hpp"
+#include <polatory/isosurface/rmt_node.hpp>
+#include <polatory/isosurface/types.hpp>
 
 namespace polatory {
 namespace isosurface {

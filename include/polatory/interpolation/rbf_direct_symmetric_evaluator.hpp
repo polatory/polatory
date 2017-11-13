@@ -5,10 +5,10 @@
 #include <memory>
 #include <vector>
 
-#include "polatory/polynomial/basis_base.hpp"
-#include "polatory/polynomial/monomial_basis.hpp"
-#include "polatory/polynomial/polynomial_evaluator.hpp"
-#include "polatory/rbf/rbf_base.hpp"
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/polynomial/polynomial_evaluator.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace interpolation {

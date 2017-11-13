@@ -12,14 +12,14 @@
 #include <boost/range/irange.hpp>
 #include <Eigen/Core>
 
-#include "polatory/common/quasi_random_sequence.hpp"
-#include "polatory/common/vector_view.hpp"
-#include "polatory/common/zip_sort.hpp"
-#include "polatory/fmm/tree_height.hpp"
-#include "polatory/geometry/bbox3d.hpp"
-#include "polatory/polynomial/basis_base.hpp"
-#include "polatory/rbf/rbf_base.hpp"
-#include "rbf_solver.hpp"
+#include <polatory/common/quasi_random_sequence.hpp>
+#include <polatory/common/vector_view.hpp>
+#include <polatory/common/zip_sort.hpp>
+#include <polatory/fmm/tree_height.hpp>
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/interpolation/rbf_solver.hpp>
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace interpolation {

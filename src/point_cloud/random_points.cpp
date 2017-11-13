@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "polatory/common/exception.hpp"
-#include "polatory/point_cloud/random_points.hpp"
+#include <polatory/common/exception.hpp>
+#include <polatory/point_cloud/random_points.hpp>
 
 namespace polatory {
 namespace point_cloud {

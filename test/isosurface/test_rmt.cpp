@@ -1,13 +1,15 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <gtest/gtest.h>
+#include <array>
+#include <cmath>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <gtest/gtest.h>
 
-#include "polatory/geometry/bbox3d.hpp"
-#include "polatory/isosurface/rmt_lattice.hpp"
-#include "polatory/point_cloud/random_points.hpp"
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/isosurface/rmt_lattice.hpp>
+#include <polatory/point_cloud/random_points.hpp>
 
 using namespace polatory::isosurface;
 using polatory::geometry::bbox3d;

@@ -1,9 +1,9 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "polatory/point_cloud/normal_estimator.hpp"
+#include <polatory/point_cloud/normal_estimator.hpp>
 
-#include "polatory/common/vector_view.hpp"
-#include "polatory/point_cloud/plane_estimator.hpp"
+#include <polatory/common/vector_view.hpp>
+#include <polatory/point_cloud/plane_estimator.hpp>
 
 namespace polatory {
 namespace point_cloud {

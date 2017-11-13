@@ -2,11 +2,10 @@
 
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/point_cloud/distance_filter.hpp"
+#include <polatory/point_cloud/distance_filter.hpp>
 
 using namespace polatory::point_cloud;
 

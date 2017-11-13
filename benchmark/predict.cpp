@@ -5,10 +5,10 @@
 
 #include <Eigen/Core>
 
-#include "polatory/interpolant.hpp"
-#include "polatory/io/read_table.hpp"
-#include "polatory/io/write_table.hpp"
-#include "polatory/rbf/cov_exponential.hpp"
+#include <polatory/interpolant.hpp>
+#include <polatory/io/read_table.hpp>
+#include <polatory/io/write_table.hpp>
+#include <polatory/rbf/cov_exponential.hpp>
 
 using polatory::interpolant;
 using polatory::io::read_points;

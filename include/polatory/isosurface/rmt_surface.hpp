@@ -8,11 +8,11 @@
 
 #include <boost/operators.hpp>
 
-#include "polatory/common/uncertain.hpp"
-#include "rmt_lattice.hpp"
-#include "rmt_node.hpp"
-#include "rmt_node_list.hpp"
-#include "types.hpp"
+#include <polatory/common/uncertain.hpp>
+#include <polatory/isosurface/rmt_lattice.hpp>
+#include <polatory/isosurface/rmt_node.hpp>
+#include <polatory/isosurface/rmt_node_list.hpp>
+#include <polatory/isosurface/types.hpp>
 
 namespace polatory {
 namespace isosurface {

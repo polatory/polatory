@@ -4,7 +4,7 @@
 
 #include <Eigen/Core>
 
-#include "gmres_base.hpp"
+#include <polatory/krylov/gmres_base.hpp>
 
 namespace polatory {
 namespace krylov {

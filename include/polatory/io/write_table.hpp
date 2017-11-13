@@ -8,7 +8,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/numeric/to_string.hpp"
+#include <polatory/numeric/to_string.hpp>
 
 namespace polatory {
 namespace io {

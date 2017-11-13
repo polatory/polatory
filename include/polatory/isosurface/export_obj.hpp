@@ -5,8 +5,8 @@
 #include <fstream>
 #include <string>
 
-#include "isosurface.hpp"
-#include "polatory/numeric/to_string.hpp"
+#include <polatory/isosurface/isosurface.hpp>
+#include <polatory/numeric/to_string.hpp>
 
 namespace polatory {
 namespace isosurface {

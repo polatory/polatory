@@ -6,8 +6,8 @@
 
 #include <Eigen/Core>
 
-#include "gmres.hpp"
-#include "polatory/common/exception.hpp"
+#include <polatory/common/exception.hpp>
+#include <polatory/krylov/gmres.hpp>
 
 namespace polatory {
 namespace krylov {

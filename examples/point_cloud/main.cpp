@@ -7,15 +7,15 @@
 
 #include <Eigen/Core>
 
-#include "polatory/interpolant.hpp"
-#include "polatory/io/read_table.hpp"
-#include "polatory/io/write_table.hpp"
-#include "polatory/isosurface/export_obj.hpp"
-#include "polatory/isosurface/isosurface.hpp"
-#include "polatory/isosurface/rbf_field_function.hpp"
-#include "polatory/point_cloud/distance_filter.hpp"
-#include "polatory/point_cloud/sdf_data_generator.hpp"
-#include "polatory/rbf/biharmonic.hpp"
+#include <polatory/interpolant.hpp>
+#include <polatory/io/read_table.hpp>
+#include <polatory/io/write_table.hpp>
+#include <polatory/isosurface/export_obj.hpp>
+#include <polatory/isosurface/isosurface.hpp>
+#include <polatory/isosurface/rbf_field_function.hpp>
+#include <polatory/point_cloud/distance_filter.hpp>
+#include <polatory/point_cloud/sdf_data_generator.hpp>
+#include <polatory/rbf/biharmonic.hpp>
 
 #include "parse_options.hpp"
 

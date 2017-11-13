@@ -5,14 +5,14 @@
 #include <tuple>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
+#include <polatory/interpolation/rbf_fitter.hpp>
+#include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/rbf/biharmonic.hpp>
 
-#include "polatory/interpolation/rbf_fitter.hpp"
-#include "polatory/interpolation/rbf_symmetric_evaluator.hpp"
-#include "polatory/polynomial/basis_base.hpp"
-#include "polatory/rbf/biharmonic.hpp"
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;

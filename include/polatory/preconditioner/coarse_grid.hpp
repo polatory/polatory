@@ -10,9 +10,9 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
-#include "polatory/polynomial/lagrange_basis.hpp"
-#include "polatory/polynomial/monomial_basis.hpp"
-#include "polatory/rbf/rbf_base.hpp"
+#include <polatory/polynomial/lagrange_basis.hpp>
+#include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace preconditioner {

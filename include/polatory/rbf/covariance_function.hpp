@@ -6,7 +6,7 @@
 
 #include <ceres/ceres.h>
 
-#include "rbf_base.hpp"
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace rbf {

@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "polatory/geometry/affine_transform3d.hpp"
+#include <polatory/geometry/affine_transform3d.hpp>
 
 #include <cassert>
 #include <cmath>

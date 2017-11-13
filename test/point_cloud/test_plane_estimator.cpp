@@ -1,12 +1,12 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#include <cmath>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/point_cloud/plane_estimator.hpp"
+#include <polatory/point_cloud/plane_estimator.hpp>
 
 using namespace polatory::point_cloud;
 

@@ -4,9 +4,9 @@
 
 #include <Eigen/Core>
 
-#include "field_function.hpp"
-#include "polatory/geometry/bbox3d.hpp"
-#include "polatory/interpolant.hpp"
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/interpolant.hpp>
+#include <polatory/isosurface/field_function.hpp>
 
 namespace polatory {
 namespace isosurface {

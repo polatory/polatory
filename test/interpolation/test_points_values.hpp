@@ -5,13 +5,12 @@
 #include <utility>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/point_cloud/distance_filter.hpp"
-#include "polatory/point_cloud/random_points.hpp"
-#include "polatory/point_cloud/sdf_data_generator.hpp"
+#include <polatory/point_cloud/distance_filter.hpp>
+#include <polatory/point_cloud/random_points.hpp>
+#include <polatory/point_cloud/sdf_data_generator.hpp>
 
 namespace {
 

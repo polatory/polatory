@@ -1,13 +1,13 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "polatory/point_cloud/distance_filter.hpp"
+#include <polatory/point_cloud/distance_filter.hpp>
 
 #include <cassert>
 #include <set>
 
-#include "polatory/common/exception.hpp"
-#include "polatory/common/vector_view.hpp"
-#include "polatory/point_cloud/kdtree.hpp"
+#include <polatory/common/exception.hpp>
+#include <polatory/common/vector_view.hpp>
+#include <polatory/point_cloud/kdtree.hpp>
 
 namespace polatory {
 namespace point_cloud {

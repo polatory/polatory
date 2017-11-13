@@ -3,12 +3,11 @@
 #include <algorithm>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/point_cloud/kdtree.hpp"
-#include "polatory/point_cloud/random_points.hpp"
+#include <polatory/point_cloud/kdtree.hpp>
+#include <polatory/point_cloud/random_points.hpp>
 
 using namespace polatory::point_cloud;
 using polatory::geometry::sphere3d;

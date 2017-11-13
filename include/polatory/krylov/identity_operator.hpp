@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "linear_operator.hpp"
+#include <polatory/krylov/linear_operator.hpp>
 
 namespace polatory {
 namespace krylov {

@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include "polatory/isosurface/rmt_surface.hpp"
+#include <polatory/isosurface/rmt_surface.hpp>
 
 namespace polatory {
 namespace isosurface {

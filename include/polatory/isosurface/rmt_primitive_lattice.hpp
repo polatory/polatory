@@ -7,8 +7,8 @@
 #include <stdexcept>
 #include <vector>
 
-#include "polatory/geometry/bbox3d.hpp"
-#include "types.hpp"
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/isosurface/types.hpp>
 
 namespace polatory {
 namespace isosurface {

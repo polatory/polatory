@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "polatory/common/zip_sort.hpp"
+#include <polatory/common/zip_sort.hpp>
 
 using namespace polatory::common;
 

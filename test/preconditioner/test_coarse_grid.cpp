@@ -5,16 +5,15 @@
 #include <random>
 #include <vector>
 
+#include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
-
-#include "polatory/common/vector_range_view.hpp"
-#include "polatory/interpolation/rbf_direct_symmetric_evaluator.hpp"
-#include "polatory/point_cloud/random_points.hpp"
-#include "polatory/polynomial/basis_base.hpp"
-#include "polatory/preconditioner/coarse_grid.hpp"
-#include "polatory/rbf/biharmonic.hpp"
+#include <polatory/common/vector_range_view.hpp>
+#include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
+#include <polatory/point_cloud/random_points.hpp>
+#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/preconditioner/coarse_grid.hpp>
+#include <polatory/rbf/biharmonic.hpp>
 
 using namespace polatory::preconditioner;
 using polatory::common::make_range_view;

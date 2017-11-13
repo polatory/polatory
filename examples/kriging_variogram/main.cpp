@@ -7,10 +7,10 @@
 
 #include <Eigen/Core>
 
-#include "polatory/io/read_table.hpp"
-#include "polatory/kriging/empirical_variogram.hpp"
-#include "polatory/kriging/variogram_fitting.hpp"
-#include "polatory/rbf/cov_quasi_spherical9.hpp"
+#include <polatory/io/read_table.hpp>
+#include <polatory/kriging/empirical_variogram.hpp>
+#include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/rbf/cov_quasi_spherical9.hpp>
 
 #include "parse_options.hpp"
 

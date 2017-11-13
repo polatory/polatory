@@ -3,15 +3,14 @@
 #include <cmath>
 #include <memory>
 
-#include <gtest/gtest.h>
-
 #include <Eigen/Core>
 #include <Eigen/LU>
+#include <gtest/gtest.h>
 
-#include "polatory/krylov/fgmres.hpp"
-#include "polatory/krylov/gmres.hpp"
-#include "polatory/krylov/linear_operator.hpp"
-#include "polatory/krylov/minres.hpp"
+#include <polatory/krylov/fgmres.hpp>
+#include <polatory/krylov/gmres.hpp>
+#include <polatory/krylov/linear_operator.hpp>
+#include <polatory/krylov/minres.hpp>
 
 using polatory::krylov::fgmres;
 using polatory::krylov::gmres;

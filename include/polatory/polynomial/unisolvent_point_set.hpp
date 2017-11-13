@@ -8,8 +8,8 @@
 
 #include <Eigen/Core>
 
-#include "polatory/common/bsearch.hpp"
-#include "polatory/polynomial/basis_base.hpp"
+#include <polatory/common/bsearch.hpp>
+#include <polatory/polynomial/basis_base.hpp>
 
 namespace polatory {
 namespace polynomial {

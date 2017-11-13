@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/point_cloud/kdtree.hpp"
+#include <polatory/point_cloud/kdtree.hpp>
 
 namespace polatory {
 namespace point_cloud {

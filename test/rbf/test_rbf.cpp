@@ -5,16 +5,16 @@
 
 #include <gtest/gtest.h>
 
-#include "polatory/rbf/biharmonic.hpp"
-#include "polatory/rbf/biharmonic2d.hpp"
-#include "polatory/rbf/cov_exponential.hpp"
-#include "polatory/rbf/cov_gaussian.hpp"
-#include "polatory/rbf/cov_quasi_spherical3.hpp"
-#include "polatory/rbf/cov_quasi_spherical5.hpp"
-#include "polatory/rbf/cov_quasi_spherical7.hpp"
-#include "polatory/rbf/cov_quasi_spherical9.hpp"
-#include "polatory/rbf/cov_spherical.hpp"
-#include "polatory/rbf/rbf_base.hpp"
+#include <polatory/rbf/biharmonic.hpp>
+#include <polatory/rbf/biharmonic2d.hpp>
+#include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/rbf/cov_gaussian.hpp>
+#include <polatory/rbf/cov_quasi_spherical3.hpp>
+#include <polatory/rbf/cov_quasi_spherical5.hpp>
+#include <polatory/rbf/cov_quasi_spherical7.hpp>
+#include <polatory/rbf/cov_quasi_spherical9.hpp>
+#include <polatory/rbf/cov_spherical.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 using namespace polatory::rbf;
 

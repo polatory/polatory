@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "basis_base.hpp"
+#include <polatory/polynomial/basis_base.hpp>
 
 namespace polatory {
 namespace polynomial {

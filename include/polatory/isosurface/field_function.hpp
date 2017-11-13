@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "polatory/geometry/bbox3d.hpp"
+#include <polatory/geometry/bbox3d.hpp>
 
 namespace polatory {
 namespace isosurface {

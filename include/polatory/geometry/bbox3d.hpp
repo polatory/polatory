@@ -6,8 +6,8 @@
 
 #include <Eigen/Core>
 
-#include "affine_transform3d.hpp"
-#include "polatory/common/likely.hpp"
+#include <polatory/common/likely.hpp>
+#include <polatory/geometry/affine_transform3d.hpp>
 
 namespace polatory {
 namespace geometry {
