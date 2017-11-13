@@ -36,6 +36,10 @@ public:
     return centers_;
   }
 
+  geometry::bbox3d centers_bbox() const {
+    return centers_bbox_;
+  }
+
   values_type evaluate_points(const points_type& points) {
     set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
 
@@ -58,6 +62,7 @@ public:
     interpolation::rbf_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
 
     centers_ = transformed;
+    centers_bbox_ = geometry::bbox3d::from_points(centers_);
     weights_ = fitter.fit(values, absolute_tolerance);
   }
 
@@ -75,10 +80,17 @@ public:
 
     auto view = common::make_view(transformed, center_indices);
     centers_ = std::vector<Eigen::Vector3d>(view.begin(), view.end());
+    centers_bbox_ = geometry::bbox3d::from_points(centers_);
+  }
+
+  geometry::affine_transform3d point_transform() const {
+    return point_transform_;
   }
 
   void set_evaluation_bbox_impl(const geometry::bbox3d& bbox) {
-    auto transformed_bbox = bbox.transform(point_transform_);
+    auto transformed_bbox = bbox
+      .transform(point_transform_)
+      .union_hull(centers_bbox_);
 
     evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, centers_, transformed_bbox);
     evaluator_->set_weights(weights_);
@@ -114,6 +126,7 @@ private:
   geometry::affine_transform3d point_transform_;
 
   std::vector<Eigen::Vector3d> centers_;
+  geometry::bbox3d centers_bbox_;
   Eigen::VectorXd weights_;
 
   std::unique_ptr<interpolation::rbf_evaluator<>> evaluator_;

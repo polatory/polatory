@@ -28,6 +28,8 @@ public:
 
   bbox3d transform(const affine_transform3d& affine) const;
 
+  bbox3d union_hull(const bbox3d& other) const;
+
   template <class Container>
   static bbox3d from_points(const Container& points) {
     using std::begin;

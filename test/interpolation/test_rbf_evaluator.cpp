@@ -20,7 +20,6 @@ using polatory::rbf::biharmonic;
 
 namespace {
 
-template <class Evaluator>
 void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   size_t n_polynomials = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 5e-7;
@@ -35,7 +34,7 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   direct_eval.set_weights(weights);
   direct_eval.set_field_points(std::vector<Eigen::Vector3d>(points.begin(), points.begin() + n_eval_points));
 
-  Evaluator eval(rbf, 3, poly_degree, points);
+  rbf_evaluator<> eval(rbf, 3, poly_degree, points);
   eval.set_weights(weights);
   eval.set_field_points(points);
 
@@ -52,8 +51,8 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
 } // namespace
 
 TEST(rbf_evaluator, trivial) {
-  test_poly_degree<rbf_evaluator<>>(-1, 32768, 1024);
-  test_poly_degree<rbf_evaluator<>>(0, 32768, 1024);
-  test_poly_degree<rbf_evaluator<>>(1, 32768, 1024);
-  test_poly_degree<rbf_evaluator<>>(2, 32768, 1024);
+  test_poly_degree(-1, 32768, 1024);
+  test_poly_degree(0, 32768, 1024);
+  test_poly_degree(1, 32768, 1024);
+  test_poly_degree(2, 32768, 1024);
 }

@@ -7,6 +7,7 @@
 
 #include <Eigen/Core>
 
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/interpolation/rbf_evaluator.hpp"
 #include "polatory/interpolation/rbf_fitter.hpp"
 #include "polatory/numeric/sum_accumulator.hpp"
@@ -21,6 +22,7 @@ public:
                               const std::vector<Eigen::Vector3d>& points, const Eigen::VectorXd& values,
                               double absolute_tolerance) {
     size_t n_points = points.size();
+    auto bbox = geometry::bbox3d::from_points(points);
 
     std::vector<Eigen::Vector3d> points_one_out(n_points - 1);
     Eigen::VectorXd values_one_out(n_points - 1);
@@ -41,7 +43,7 @@ public:
 
       test_points[0] = points[i];
 
-      interpolation::rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, points_one_out);
+      interpolation::rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, points_one_out, bbox);
       eval.set_weights(weights);
       auto values_fit = eval.evaluate_points(test_points);
 

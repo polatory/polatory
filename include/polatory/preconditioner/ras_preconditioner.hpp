@@ -13,6 +13,7 @@
 
 #include "polatory/common/bsearch.hpp"
 #include "polatory/common/vector_view.hpp"
+#include "polatory/geometry/bbox3d.hpp"
 #include "polatory/interpolation/rbf_evaluator.hpp"
 #include "polatory/interpolation/rbf_symmetric_evaluator.hpp"
 #include "polatory/krylov/linear_operator.hpp"
@@ -84,6 +85,7 @@ public:
       return;
     }
 
+    auto bbox = geometry::bbox3d::from_points(points);
     auto divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs);
 
     fine_grids.push_back(std::vector<FineGrid>());
@@ -103,7 +105,7 @@ public:
     auto ratio = 0 == n_fine_levels - 1
                  ? double(n_coarsest_points) / double(points.size())
                  : coarse_ratio;
-    upward_evaluator.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points));
+    upward_evaluator.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points, bbox));
     point_idcs_.push_back(divider->choose_coarse_points(ratio));
     upward_evaluator.back().set_field_points(common::make_view(points, point_idcs_.back()));
 
@@ -128,7 +130,7 @@ public:
               ? double(n_coarsest_points) / double(point_idcs_.back().size())
               : coarse_ratio;
       upward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::make_view(points, point_idcs_.back())));
+        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::make_view(points, point_idcs_.back()), bbox));
       point_idcs_.push_back(divider->choose_coarse_points(ratio));
       upward_evaluator.back().set_field_points(common::make_view(points, point_idcs_.back()));
     }
@@ -138,7 +140,7 @@ public:
 
     for (int level = 1; level < n_fine_levels; level++) {
       downward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::make_view(points, point_idcs_.back())));
+        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::make_view(points, point_idcs_.back()), bbox));
       downward_evaluator.back().set_field_points(common::make_view(points, point_idcs_[level]));
     }
 

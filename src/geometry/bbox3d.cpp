@@ -68,5 +68,12 @@ bbox3d bbox3d::transform(const affine_transform3d& affine) const {
   return bbox3d(min, max);
 }
 
+bbox3d bbox3d::union_hull(const bbox3d& other) const {
+  return bbox3d(
+    min().cwiseMin(other.min()),
+    max().cwiseMax(other.max())
+  );
+}
+
 } // namespace geometry
 } // namespace polatory
