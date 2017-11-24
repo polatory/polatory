@@ -12,8 +12,9 @@
 #include <boost/range/irange.hpp>
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/quasi_random_sequence.hpp>
-#include <polatory/common/vector_view.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/fmm/tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -30,14 +31,13 @@ class rbf_incremental_fitter {
   const double incremental_points_ratio = 0.1;
 
 public:
-  template <class Container>
   rbf_incremental_fitter(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                         const Container& points)
+                         const geometry::points3d& points)
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree)
     , points_(points)
-    , n_points_(points.size())
+    , n_points_(points.rows())
     , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , bbox_(geometry::bbox3d::from_points(points)) {
   }
@@ -55,7 +55,7 @@ public:
     auto last_tree_height = 0;
 
     while (true) {
-      auto reduced_points = common::make_view(points_, indices);
+      auto reduced_points = common::take_rows(points_, indices);
       auto tree_height = fmm::tree_height(indices.size());
 
       if (tree_height != last_tree_height) {
@@ -68,7 +68,7 @@ public:
       weights = solver->solve(reduced_values(values, indices), absolute_tolerance, weights);
 
       auto indices_c = point_indices_complement(indices);
-      auto reduced_points_c = common::make_view(points_, indices_c);
+      auto reduced_points_c = common::take_rows(points_, indices_c);
 
       if (indices_c.size() == 0) break;
 
@@ -169,7 +169,7 @@ private:
   const rbf::rbf_base& rbf_;
   const int poly_dimension_;
   const int poly_degree_;
-  const std::vector<Eigen::Vector3d>& points_;
+  const geometry::points3d& points_;
 
   const size_t n_points_;
   const size_t n_polynomials_;

@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/rbf/rbf_base.hpp>
@@ -62,7 +63,7 @@ public:
   coarse_grid(const rbf::rbf_base& rbf,
               std::shared_ptr<LagrangeBasis> lagrange_basis,
               const std::vector<size_t>& point_indices,
-              const std::vector<Eigen::Vector3d>& points_full)
+              const geometry::points3d& points_full)
     : coarse_grid(rbf, lagrange_basis, point_indices) {
     setup(points_full);
   }
@@ -75,7 +76,7 @@ public:
     lu_of_p_top_ = Eigen::FullPivLU<MatrixXF>();
   }
 
-  void setup(const std::vector<Eigen::Vector3d>& points_full) {
+  void setup(const geometry::points3d& points_full) {
     // Compute A.
     MatrixXF a(m_, m_);
     auto diagonal = rbf_.evaluate(0.0) + rbf_.nugget();
@@ -84,17 +85,16 @@ public:
     }
     for (size_t i = 0; i < m_ - 1; i++) {
       for (size_t j = i + 1; j < m_; j++) {
-        a(i, j) = rbf_.evaluate(points_full[point_idcs_[i]], points_full[point_idcs_[j]]);
+        a(i, j) = rbf_.evaluate(points_full.row(point_idcs_[i]), points_full.row(point_idcs_[j]));
         a(j, i) = a(i, j);
       }
     }
 
     if (l_ > 0) {
       // Compute -E.
-      std::vector<Vector3F> tail_points;
-      tail_points.reserve(m_ - l_);
-      for (size_t i = l_; i < m_; i++) {
-        tail_points.push_back(points_full[point_idcs_[i]].template cast<Floating>());
+      geometry::points3d tail_points(m_ - l_);
+      for (size_t i = 0; i < m_ - l_; i++) {
+        tail_points.row(i) = points_full.row(point_idcs_[l_ + i]);
       }
 
       me_ = -lagrange_basis_->evaluate_points(tail_points);
@@ -108,10 +108,9 @@ public:
       // Compute matrices used for solving polynomial part.
       a_top_ = a.topRows(l_);
 
-      std::vector<Vector3F> head_points;
-      head_points.reserve(l_);
+      geometry::points3d head_points(l_);
       for (size_t i = 0; i < l_; i++) {
-        head_points.push_back(points_full[point_idcs_[i]].template cast<Floating>());
+        head_points.row(i) = points_full.row(point_idcs_[i]);
       }
 
       MonomialBasis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());

@@ -3,7 +3,6 @@
 #include <iostream>
 #include <memory>
 #include <tuple>
-#include <vector>
 
 #include <Eigen/Core>
 #include <gtest/gtest.h>
@@ -16,17 +15,18 @@
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;
+using polatory::geometry::points3d;
 using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
 
 namespace {
 
 void test_poly_degree(int poly_degree, bool with_initial_solution) {
-  std::vector<Eigen::Vector3d> points;
+  points3d points;
   Eigen::VectorXd values;
   std::tie(points, values) = test_points_values(30000);
 
-  size_t n_points = points.size();
+  size_t n_points = points.rows();
   size_t n_polynomials = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 1e-4;
 

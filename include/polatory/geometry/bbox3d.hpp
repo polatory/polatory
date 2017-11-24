@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include <iterator>
-
-#include <Eigen/Core>
-
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/likely.hpp>
 #include <polatory/geometry/affine_transform3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
 namespace geometry {
@@ -16,26 +14,24 @@ class bbox3d {
 public:
   bbox3d();
 
-  bbox3d(const Eigen::Vector3d& min, const Eigen::Vector3d& max);
+  bbox3d(const point3d& min, const point3d& max);
 
-  Eigen::Vector3d center() const;
+  bool operator==(const bbox3d& other) const;
 
-  const Eigen::Vector3d& max() const;
+  point3d center() const;
 
-  const Eigen::Vector3d& min() const;
+  const point3d& max() const;
 
-  Eigen::Vector3d size() const;
+  const point3d& min() const;
+
+  vector3d size() const;
 
   bbox3d transform(const affine_transform3d& affine) const;
 
   bbox3d union_hull(const bbox3d& other) const;
 
-  template <class Container>
-  static bbox3d from_points(const Container& points) {
-    using std::begin;
-    using std::end;
-
-    return from_points(begin(points), end(points));
+  static bbox3d from_points(const points3d& points) {
+    return from_points(common::row_begin(points), common::row_end(points));
   }
 
   template <class InputIterator>
@@ -46,14 +42,14 @@ public:
       return ret;
 
     auto it = points_begin;
-    const auto& pt = *it;
+    auto pt = *it;
     ret.min_(0) = ret.max_(0) = pt(0);
     ret.min_(1) = ret.max_(1) = pt(1);
     ret.min_(2) = ret.max_(2) = pt(2);
     ++it;
 
     for (; it != points_end; ++it) {
-      const auto& pt = *it;
+      auto pt = *it;
       if (UNLIKELY(ret.min_(0) > pt(0))) ret.min_(0) = pt(0);
       if (UNLIKELY(ret.max_(0) < pt(0))) ret.max_(0) = pt(0);
       if (UNLIKELY(ret.min_(1) > pt(1))) ret.min_(1) = pt(1);
@@ -66,8 +62,8 @@ public:
   }
 
 private:
-  Eigen::Vector3d min_;
-  Eigen::Vector3d max_;
+  point3d min_;
+  point3d max_;
 };
 
 } // namespace geometry

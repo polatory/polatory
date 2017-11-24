@@ -9,6 +9,7 @@
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 
@@ -57,7 +58,7 @@ public:
             std::shared_ptr<LagrangeBasis> lagrange_basis,
             const std::vector<size_t>& point_indices,
             const std::vector<bool>& inner_point,
-            const std::vector<Eigen::Vector3d>& points_full)
+            const geometry::points3d& points_full)
     : fine_grid(rbf, lagrange_basis, point_indices, inner_point) {
     setup(points_full);
   }
@@ -67,7 +68,7 @@ public:
     ldlt_of_qtaq_ = Eigen::LDLT<MatrixXF>();
   }
 
-  void setup(const std::vector<Eigen::Vector3d>& points_full) {
+  void setup(const geometry::points3d& points_full) {
     // Compute A.
     MatrixXF a(m_, m_);
     auto diagonal = rbf_.evaluate(0.0) + rbf_.nugget();
@@ -76,17 +77,16 @@ public:
     }
     for (size_t i = 0; i < m_ - 1; i++) {
       for (size_t j = i + 1; j < m_; j++) {
-        a(i, j) = rbf_.evaluate(points_full[point_idcs_[i]], points_full[point_idcs_[j]]);
+        a(i, j) = rbf_.evaluate(points_full.row(point_idcs_[i]), points_full.row(point_idcs_[j]));
         a(j, i) = a(i, j);
       }
     }
 
     if (l_ > 0) {
       // Compute -E.
-      std::vector<Vector3F> tail_points;
-      tail_points.reserve(m_ - l_);
-      for (size_t i = l_; i < m_; i++) {
-        tail_points.push_back(points_full[point_idcs_[i]].template cast<Floating>());
+      geometry::points3d tail_points(m_ - l_);
+      for (size_t i = 0; i < m_ - l_; i++) {
+        tail_points.row(i) = points_full.row(point_idcs_[l_ + i]);
       }
 
       me_ = -lagrange_basis_->evaluate_points(tail_points);

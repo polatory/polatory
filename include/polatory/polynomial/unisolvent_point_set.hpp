@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 
 #include <polatory/common/bsearch.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 
 namespace polatory {
@@ -21,12 +22,11 @@ class unisolvent_point_set {
   std::vector<size_t> point_idcs_;
 
 public:
-  template <class Container>
-  unisolvent_point_set(const Container& points,
+  unisolvent_point_set(const geometry::vectors3d& points,
                        const std::vector<size_t>& point_indices,
                        int dimension,
                        int degree)
-    : n_points(points.size())
+    : n_points(points.rows())
     , n_polynomials(polynomial::basis_base::basis_size(dimension, degree))
     , point_idcs_(point_indices) {
     if (degree < 0) return;

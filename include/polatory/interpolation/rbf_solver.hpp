@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/interpolation/rbf_residual_evaluator.hpp>
@@ -24,14 +25,13 @@ class rbf_solver {
   using Preconditioner = preconditioner::ras_preconditioner<double>;
 
 public:
-  template <class Container>
   rbf_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-             const Container& points)
+             const geometry::points3d& points)
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree)
     , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
-    , n_points_(points.size()) {
+    , n_points_(points.rows()) {
     op_ = std::make_unique<rbf_operator<>>(rbf, poly_dimension, poly_degree, points);
     res_eval_ = std::make_unique<rbf_residual_evaluator>(rbf, poly_dimension, poly_degree, points);
 
@@ -49,9 +49,8 @@ public:
     res_eval_ = std::make_unique<rbf_residual_evaluator>(rbf, poly_dimension, poly_degree, tree_height, bbox);
   }
 
-  template <class Container>
-  void set_points(const Container& points) {
-    n_points_ = points.size();
+  void set_points(const geometry::points3d& points) {
+    n_points_ = points.rows();
 
     op_->set_points(points);
     res_eval_->set_points(points);

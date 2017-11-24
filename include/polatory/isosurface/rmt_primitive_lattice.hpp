@@ -7,7 +7,10 @@
 #include <stdexcept>
 #include <vector>
 
+#include <polatory/common/pi.hpp>
+#include <polatory/geometry/affine_transform3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
 
 namespace polatory {
@@ -16,31 +19,24 @@ namespace isosurface {
 namespace {
 
 // RotationMatrix[-Pi/2, {0, 0, 1}].RotationMatrix[-Pi/4, {0, 1, 0}]
-Eigen::Matrix3d rotation() {
-  const double inv_sqrt2 = 1.0 / std::sqrt(2.0);
-
-  Eigen::Matrix3d m;
-  m <<
-    0.0, 1.0, 0.0,
-    -inv_sqrt2, 0.0, inv_sqrt2,
-    inv_sqrt2, 0.0, inv_sqrt2;
-  return m;
+geometry::affine_transform3d rotation() {
+  return geometry::affine_transform3d::roll_pitch_yaw({ -common::pi / 2.0, 0.0, -common::pi / 4.0 });
 }
 
 // Primitive vectors of body-centered cubic.
-std::array<Eigen::Vector3d, 3> PrimitiveVectors
+std::array<geometry::vector3d, 3> PrimitiveVectors
   {
-    rotation() * Eigen::Vector3d(+1., +1., -1.),
-    rotation() * Eigen::Vector3d(+1., -1., +1.),
-    rotation() * Eigen::Vector3d(-1., +1., +1.)
+    rotation().transform_vector(geometry::vector3d(+1., +1., -1.)),
+    rotation().transform_vector(geometry::vector3d(+1., -1., +1.)),
+    rotation().transform_vector(geometry::vector3d(-1., +1., +1.))
   };
 
 // Reciprocal primitive vectors of body-centered cubic.
-std::array<Eigen::Vector3d, 3> ReciprocalPrimitiveVectors
+std::array<geometry::vector3d, 3> ReciprocalPrimitiveVectors
   {
-    rotation() * Eigen::Vector3d(1. / 2., 1. / 2., 0.),
-    rotation() * Eigen::Vector3d(1. / 2., 0., 1. / 2.),
-    rotation() * Eigen::Vector3d(0., 1. / 2., 1. / 2.)
+    rotation().transform_vector(geometry::vector3d(1. / 2., 1. / 2., 0.)),
+    rotation().transform_vector(geometry::vector3d(1. / 2., 0., 1. / 2.)),
+    rotation().transform_vector(geometry::vector3d(0., 1. / 2., 1. / 2.))
   };
 
 } // namespace
@@ -60,14 +56,14 @@ protected:
   double rlc;
 
   // Primitive vectors scaled by `lc`.
-  Eigen::Vector3d a0;
-  Eigen::Vector3d a1;
-  Eigen::Vector3d a2;
+  geometry::vector3d a0;
+  geometry::vector3d a1;
+  geometry::vector3d a2;
 
   // Reciprocal primitive vectors scaled by `rlc`.
-  Eigen::Vector3d b0;
-  Eigen::Vector3d b1;
-  Eigen::Vector3d b2;
+  geometry::vector3d b0;
+  geometry::vector3d b1;
+  geometry::vector3d b2;
 
   cell_vector cell_min;
   cell_vector cell_max;
@@ -89,14 +85,14 @@ private:
     b2 = rlc * ReciprocalPrimitiveVectors[2];
 
     auto sqrt2 = std::sqrt(2.0);
-    auto cell_hull = lc * Eigen::Vector3d(3.0, 2.0 * sqrt2, sqrt2);
+    auto cell_hull = lc * geometry::vector3d(3.0, 2.0 * sqrt2, sqrt2);
 
     // Extend each side of bbox by a primitive cell
     // to ensure all required nodes are inside the extended bbox.
     auto ext = cell_hull * (1.0 + std::pow(2.0, -5.0));
     ext_bbox = geometry::bbox3d(bbox.min() - ext, bbox.max() + ext);
 
-    std::vector<Eigen::Vector3d> ext_bbox_vertices{
+    std::vector<geometry::point3d> ext_bbox_vertices{
       { ext_bbox.min()(0), ext_bbox.min()(1), ext_bbox.min()(2) },
       { ext_bbox.max()(0), ext_bbox.min()(1), ext_bbox.min()(2) },
       { ext_bbox.min()(0), ext_bbox.max()(1), ext_bbox.min()(2) },
@@ -107,7 +103,7 @@ private:
       { ext_bbox.max()(0), ext_bbox.max()(1), ext_bbox.max()(2) }
     };
 
-    std::vector<Eigen::Vector3d> cell_vecsd;
+    std::vector<geometry::vector3d> cell_vecsd;
     cell_vecsd.reserve(8);
 
     for (const auto& v : ext_bbox_vertices) {
@@ -119,9 +115,9 @@ private:
     }
 
     cell_vecsd.push_back({
-                           ext_bbox.min().adjoint() * b0,
-                           ext_bbox.min().adjoint() * b1,
-                           ext_bbox.min().adjoint() * b2
+                           ext_bbox.min().dot(b0),
+                           ext_bbox.min().dot(b1),
+                           ext_bbox.min().dot(b2)
                          });
 
     auto cell_mind = cell_vecsd[0];
@@ -160,7 +156,7 @@ public:
     initialize();
   }
 
-  cell_index cell_contains_point(const Eigen::Vector3d& p) const {
+  cell_index cell_contains_point(const geometry::point3d& p) const {
     auto m0 = static_cast<int>(std::floor(p.dot(b0)));
     auto m1 = static_cast<int>(std::floor(p.dot(b1)));
     auto m2 = static_cast<int>(std::floor(p.dot(b2)));
@@ -178,7 +174,7 @@ public:
     return cell_vector(m0, m1, m2);
   }
 
-  bool is_inside_bounds(const Eigen::Vector3d& point) const {
+  bool is_inside_bounds(const geometry::point3d& point) const {
     return
       point(0) >= ext_bbox.min()(0) && point(0) <= ext_bbox.max()(0) &&
       point(1) >= ext_bbox.min()(1) && point(1) <= ext_bbox.max()(1) &&
@@ -189,7 +185,7 @@ public:
     return ext_bbox;
   }
 
-  Eigen::Vector3d point_from_cell_vector(const cell_vector& cv) const {
+  geometry::point3d point_from_cell_vector(const cell_vector& cv) const {
     return cv(0) * a0 + cv(1) * a1 + cv(2) * a2;
   }
 };

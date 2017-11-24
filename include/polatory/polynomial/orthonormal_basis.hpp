@@ -4,6 +4,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 
@@ -21,8 +22,7 @@ class orthonormal_basis : public basis_base {
   MatrixXF c_hat;
 
 public:
-  template <class Container>
-  orthonormal_basis(int dimension, int degree, const Container& points)
+  orthonormal_basis(int dimension, int degree, const geometry::points3d& points)
     : basis_base(dimension, degree)
     , mono_basis(dimension, degree) {
     auto pt = mono_basis.evaluate_points(points);
@@ -51,8 +51,7 @@ public:
     }
   }
 
-  template <class Container>
-  MatrixXF evaluate_points(const Container& points) const {
+  MatrixXF evaluate_points(const geometry::points3d& points) const {
     auto pt = mono_basis.evaluate_points(points);
 
     return c_hat * pt;

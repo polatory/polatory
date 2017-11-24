@@ -6,19 +6,23 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
 using namespace polatory::point_cloud;
+using polatory::geometry::point3d;
+using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
+using polatory::geometry::vector3d;
 using polatory::point_cloud::random_points;
 
 TEST(kdtree, trivial) {
   const size_t n_points = 1024;
   const double radius = 1.0;
-  const Eigen::Vector3d center(0.0, 0.0, 0.0);
+  const point3d center(0.0, 0.0, 0.0);
 
-  const Eigen::Vector3d query_point = center + Eigen::Vector3d(radius, 0.0, 0.0);
+  const point3d query_point = center + vector3d(radius, 0.0, 0.0);
   const int k = 10;
   const auto search_radius = 0.1;
 
@@ -48,11 +52,11 @@ TEST(kdtree, trivial) {
 }
 
 TEST(kdtree, zero_points) {
-  const Eigen::Vector3d query_point = Eigen::Vector3d::Zero();
+  const point3d query_point = point3d::Zero();
   const int k = 10;
   const auto search_radius = 0.1;
 
-  std::vector<Eigen::Vector3d> points;
+  points3d points;
 
   kdtree tree(points, true);
 

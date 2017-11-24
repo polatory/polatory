@@ -11,9 +11,9 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/bsearch.hpp>
-#include <polatory/common/vector_view.hpp>
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/krylov/linear_operator.hpp>
@@ -38,7 +38,7 @@ class ras_preconditioner : public krylov::linear_operator {
   static constexpr int Order = 6;
   const double coarse_ratio = 0.125;
   const size_t n_coarsest_points = 1024;
-  const std::vector<Eigen::Vector3d> points;
+  const geometry::points3d points;
   const size_t n_points;
   const size_t n_polynomials;
   int n_fine_levels;
@@ -57,11 +57,10 @@ class ras_preconditioner : public krylov::linear_operator {
   Eigen::MatrixXd ap;
 
 public:
-  template <class Container>
   ras_preconditioner(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                     const Container& in_points)
-    : points(in_points.begin(), in_points.end())
-    , n_points(in_points.size())
+                     const geometry::points3d& in_points)
+    : points(in_points)
+    , n_points(in_points.rows())
     , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
 #if REPORT_RESIDUAL
     , finest_evaluator(rbf, poly_dimension, poly_degree, points)
@@ -75,7 +74,7 @@ public:
       polynomial::unisolvent_point_set ups(points, point_idcs_.back(), poly_dimension, poly_degree);
       point_idcs_.back() = ups.point_indices();
       poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_polynomials);
-      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::make_view(points, poly_point_idcs));
+      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::take_rows(points, poly_point_idcs));
     }
 
     n_fine_levels = std::max(0, int(
@@ -99,15 +98,15 @@ public:
        fine.setup(points);
     }
 #endif
-    std::cout << "Number of points in level 0: " << points.size() << std::endl;
+    std::cout << "Number of points in level 0: " << points.rows() << std::endl;
     std::cout << "Number of domains in level 0: " << fine_grids.back().size() << std::endl;
 
     auto ratio = 0 == n_fine_levels - 1
-                 ? double(n_coarsest_points) / double(points.size())
+                 ? double(n_coarsest_points) / double(points.rows())
                  : coarse_ratio;
     upward_evaluator.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points, bbox));
     point_idcs_.push_back(divider->choose_coarse_points(ratio));
-    upward_evaluator.back().set_field_points(common::make_view(points, point_idcs_.back()));
+    upward_evaluator.back().set_field_points(common::take_rows(points, point_idcs_.back()));
 
     for (int level = 1; level < n_fine_levels; level++) {
       divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs);
@@ -130,9 +129,9 @@ public:
               ? double(n_coarsest_points) / double(point_idcs_.back().size())
               : coarse_ratio;
       upward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::make_view(points, point_idcs_.back()), bbox));
+        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::take_rows(points, point_idcs_.back()), bbox));
       point_idcs_.push_back(divider->choose_coarse_points(ratio));
-      upward_evaluator.back().set_field_points(common::make_view(points, point_idcs_.back()));
+      upward_evaluator.back().set_field_points(common::take_rows(points, point_idcs_.back()));
     }
 
     std::cout << "Number of points in coarse: " << point_idcs_.back().size() << std::endl;
@@ -140,8 +139,8 @@ public:
 
     for (int level = 1; level < n_fine_levels; level++) {
       downward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::make_view(points, point_idcs_.back()), bbox));
-      downward_evaluator.back().set_field_points(common::make_view(points, point_idcs_[level]));
+        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::take_rows(points, point_idcs_.back()), bbox));
+      downward_evaluator.back().set_field_points(common::take_rows(points, point_idcs_[level]));
     }
 
     if (n_polynomials > 0) {

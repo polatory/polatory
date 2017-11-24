@@ -3,8 +3,8 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
@@ -18,7 +18,7 @@ class rbf_direct_symmetric_evaluator {
 
 public:
   rbf_direct_symmetric_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                                 const std::vector<Eigen::Vector3d>& points);
+                                 const geometry::points3d& points);
 
   Eigen::VectorXd evaluate() const;
 
@@ -40,7 +40,7 @@ private:
 
   std::unique_ptr<PolynomialEvaluator> p_;
 
-  const std::vector<Eigen::Vector3d> points_;
+  const geometry::points3d points_;
   Eigen::VectorXd weights_;
 };
 

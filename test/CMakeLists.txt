@@ -1,7 +1,7 @@
 set(TARGET Unittest)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
-add_executable(${TARGET} ${SOURCES})
+add_executable(${TARGET} ${SOURCES} geometry/test_bbox3d.cpp)
 
 if(UNIX)
     target_link_libraries(${TARGET}

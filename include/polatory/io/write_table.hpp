@@ -8,6 +8,8 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/eigen_utility.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/to_string.hpp>
 
 namespace polatory {
@@ -30,10 +32,10 @@ inline void write_table(const std::string& filename,
 }
 
 inline void write_points(const std::string& filename,
-                         const std::vector<Eigen::Vector3d>& points) {
+                         const geometry::vectors3d& points) {
   std::vector<std::vector<double>> table;
 
-  for (auto& p : points) {
+  for (auto p : common::row_range(points)) {
     table.push_back(std::vector<double>{ p(0), p(1), p(2) });
   }
 
@@ -41,13 +43,12 @@ inline void write_points(const std::string& filename,
 }
 
 inline void write_points_and_values(const std::string& filename,
-                                    const std::vector<Eigen::Vector3d>& points,
+                                    const geometry::vectors3d& points,
                                     const Eigen::VectorXd& values) {
-
   std::vector<std::vector<double>> table;
 
   for (size_t i = 0; i < values.size(); i++) {
-    auto& p = points[i];
+    auto p = points.row(i);
     table.push_back(std::vector<double>{ p(0), p(1), p(2), values(i) });
   }
 

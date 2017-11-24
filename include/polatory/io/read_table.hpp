@@ -9,8 +9,9 @@
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
-
 #include <Eigen/Core>
+
+#include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
 namespace io {
@@ -40,63 +41,62 @@ inline std::vector<std::vector<double>> read_table(const std::string& filename) 
   return table;
 }
 
-inline std::vector<Eigen::Vector3d> read_points(const std::string& filename) {
+inline geometry::points3d read_points(const std::string& filename) {
   auto table = read_table(filename);
   auto n_rows = table.size();
 
-  std::vector<Eigen::Vector3d> points(n_rows);
+  geometry::points3d points(n_rows);
 
   for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
-    points[i] = Eigen::Vector3d(row[0], row[1], row[2]);
+    points.row(i) = geometry::point3d(row[0], row[1], row[2]);
   }
 
   return points;
 }
 
-inline std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3d>> read_points_and_normals(const std::string& filename) {
+inline std::pair<geometry::points3d, geometry::vectors3d> read_points_and_normals(const std::string& filename) {
   auto table = read_table(filename);
   auto n_rows = table.size();
 
-  std::vector<Eigen::Vector3d> points(n_rows);
-  std::vector<Eigen::Vector3d> normals(n_rows);
-  Eigen::VectorXd values = Eigen::VectorXd(n_rows);
+  geometry::points3d points(n_rows);
+  geometry::vectors3d normals(n_rows);
 
   for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
-    points[i] = Eigen::Vector3d(row[0], row[1], row[2]);
-    normals[i] = Eigen::Vector3d(row[3], row[4], row[5]);
+    points.row(i) = geometry::point3d(row[0], row[1], row[2]);
+    normals.row(i) = geometry::vector3d(row[3], row[4], row[5]);
   }
 
   return std::make_pair(std::move(points), std::move(normals));
 }
 
-inline std::pair<std::vector<Eigen::Vector3d>, Eigen::VectorXd> read_points_and_values(const std::string& filename) {
+inline std::pair<geometry::points3d, Eigen::VectorXd> read_points_and_values(const std::string& filename) {
   auto table = read_table(filename);
   auto n_rows = table.size();
 
-  std::vector<Eigen::Vector3d> points(n_rows);
-  Eigen::VectorXd values = Eigen::VectorXd(n_rows);
+  geometry::points3d points(n_rows);
+  Eigen::VectorXd values(n_rows);
 
   for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
-    points[i] = Eigen::Vector3d(row[0], row[1], row[2]);
+    points.row(i) = geometry::point3d(row[0], row[1], row[2]);
     values(i) = row[3];
   }
 
   return std::make_pair(std::move(points), std::move(values));
 }
 
-inline std::pair<std::vector<Eigen::Vector3d>, Eigen::VectorXd> read_points_2d_and_values(const std::string& filename) {
+inline std::pair<geometry::points3d, Eigen::VectorXd> read_points_2d_and_values(const std::string& filename) {
   auto table = read_table(filename);
   auto n_rows = table.size();
 
-  std::vector<Eigen::Vector3d> points(n_rows);
-  Eigen::VectorXd values = Eigen::VectorXd(n_rows);
+  geometry::points3d points(n_rows);
+  Eigen::VectorXd values(n_rows);
 
   for (size_t i = 0; i < n_rows; i++) {
     const auto& row = table[i];
-    points[i] = Eigen::Vector3d(row[0], row[1], 0.0);
+    points.row(i) = geometry::point3d(row[0], row[1], 0.0);
     values(i) = row[2];
   }
 

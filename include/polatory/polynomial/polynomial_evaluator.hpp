@@ -9,6 +9,8 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
+
 namespace polatory {
 namespace polynomial {
 
@@ -16,7 +18,7 @@ template <class Basis>
 class polynomial_evaluator {
   const Basis basis;
 
-  std::vector<Eigen::Vector3d> points;
+  geometry::points3d points;
   Eigen::VectorXd weights;
 
 public:
@@ -31,11 +33,8 @@ public:
     return pt.transpose() * weights;
   }
 
-  template <class Container>
-  void set_field_points(const Container& points) {
-    this->points.clear();
-    this->points.reserve(points.size());
-    std::copy(points.begin(), points.end(), std::back_inserter(this->points));
+  void set_field_points(const geometry::points3d& points) {
+    this->points = points;
   }
 
   void set_weights(const Eigen::VectorXd& weights) {

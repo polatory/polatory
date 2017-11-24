@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/sum_accumulator.hpp>
 
 namespace polatory {
@@ -16,7 +17,7 @@ namespace kriging {
 class empirical_variogram {
 public:
   empirical_variogram(
-    const std::vector<Eigen::Vector3d>& points,
+    const geometry::points3d& points,
     const Eigen::VectorXd& values,
     double bin_width,
     size_t n_bins)
@@ -25,7 +26,7 @@ public:
     , distance_(n_bins)
     , num_pairs_(n_bins)
     , variance_(n_bins) {
-    auto n_points = points.size();
+    auto n_points = points.rows();
     assert(values.size() == n_points);
 
     std::vector<numeric::kahan_sum_accumulator<double>> dist_sum(n_bins_);
@@ -33,7 +34,7 @@ public:
 
     for (size_t i = 0; i < n_points - 1; i++) {
       for (size_t j = i + 1; j < n_points; j++) {
-        auto dist = (points[i] - points[j]).norm();
+        auto dist = (points.row(i) - points.row(j)).norm();
         // gstat's convention (to include more pairs in the first bin?):
         //   https://github.com/edzer/gstat/blob/a2644e4ff5af26e03feff89c033484486231f4bf/src/sem.c#L734
         auto frac = dist / bin_width_;

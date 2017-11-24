@@ -6,7 +6,9 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_surface.hpp>
@@ -67,14 +69,12 @@ public:
     generate_common();
   }
 
-  template <class Container>
-  void
-  generate_from_seed_points(const Container& seed_points, field_function& field_func, double isovalue = 0.0) {
+  void generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_func, double isovalue = 0.0) {
     field_func.set_evaluation_bbox(lattice.node_bounds());
 
     lattice.clear();
 
-    for (auto& p : seed_points) {
+    for (auto p : common::row_range(seed_points)) {
       lattice.add_cell_contains_point(p);
     }
     lattice.add_nodes_by_tracking(field_func, isovalue);
@@ -82,7 +82,7 @@ public:
     generate_common();
   }
 
-  const std::vector<Eigen::Vector3d>& vertices() const {
+  const std::vector<geometry::point3d>& vertices() const {
     return lattice.get_vertices();
   }
 };

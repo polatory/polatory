@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include <Eigen/Core>
-
 #include <polatory/interpolant.hpp>
 #include <polatory/io/read_table.hpp>
 #include <polatory/io/write_table.hpp>
@@ -37,7 +35,7 @@ int main(int argc, const char *argv[]) {
   // Estimate normals.
   normal_estimator norm_est(terrain_points);
   norm_est.estimate_with_knn(20, opts.min_plane_factor);
-  norm_est.orient_normals_by_outward_vector(Eigen::Vector3d(0, 0, 1));
+  norm_est.orient_normals_by_outward_vector({0, 0, 1});
   auto terrain_normals = norm_est.normals();
 
   // Generate SDF data.
@@ -65,7 +63,7 @@ int main(int argc, const char *argv[]) {
   } else {
     interpolant.fit(points, values, opts.absolute_tolerance);
   }
-  std::cout << "Number of RBF centers: " << interpolant.centers().size() << std::endl;
+  std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
 
   // Generate isosurface.
   polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);

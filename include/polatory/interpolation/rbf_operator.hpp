@@ -7,6 +7,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
 #include <polatory/fmm/tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -25,14 +26,13 @@ private:
   using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis<>>;
 
 public:
-  template <class Container>
   rbf_operator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-               const Container& points)
+               const geometry::points3d& points)
     : rbf_(rbf)
     , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(points);
 
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bbox);
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.rows()), bbox);
 
     if (n_polynomials_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
@@ -72,9 +72,8 @@ public:
     return y;
   }
 
-  template <class Container>
-  void set_points(const Container& points) {
-    n_points_ = points.size();
+  void set_points(const geometry::points3d& points) {
+    n_points_ = points.rows();
 
     a_->set_points(points);
 

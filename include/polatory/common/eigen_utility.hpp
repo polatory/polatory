@@ -20,7 +20,7 @@ class col_iterator
   using self_type = col_iterator;
 
 public:
-  self_type(Eigen::MatrixBase<Derived>& m, size_t index)
+  col_iterator(Eigen::MatrixBase<Derived>& m, size_t index)
     : m_ (m)
     , index_(index) {
   }
@@ -78,7 +78,7 @@ class const_col_iterator
   using self_type = const_col_iterator;
 
 public:
-  self_type(const Eigen::MatrixBase<Derived>& m, size_t index)
+  const_col_iterator(const Eigen::MatrixBase<Derived>& m, size_t index)
     : m_(m)
     , index_(index) {
   }
@@ -136,7 +136,7 @@ class row_iterator
   using self_type = row_iterator;
 
 public:
-  self_type(Eigen::MatrixBase<Derived>& m, size_t index)
+  row_iterator(Eigen::MatrixBase<Derived>& m, size_t index)
     : m_ (m)
     , index_(index) {
   }
@@ -194,7 +194,7 @@ class const_row_iterator
   using self_type = const_row_iterator;
 
 public:
-  self_type(const Eigen::MatrixBase<Derived>& m, size_t index)
+  const_row_iterator(const Eigen::MatrixBase<Derived>& m, size_t index)
     : m_(m)
     , index_(index) {
   }

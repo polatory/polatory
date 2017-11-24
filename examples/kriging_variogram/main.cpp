@@ -2,11 +2,11 @@
 
 #include <iomanip>
 #include <iostream>
-#include <utility>
-#include <vector>
+#include <tuple>
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/io/read_table.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
@@ -14,6 +14,7 @@
 
 #include "parse_options.hpp"
 
+using polatory::geometry::points3d;
 using polatory::io::read_points_and_values;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
@@ -24,7 +25,7 @@ using polatory::rbf::cov_quasi_spherical9;
 int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
-  std::vector<Eigen::Vector3d> points;
+  points3d points;
   Eigen::VectorXd values;
   std::tie(points, values) = read_points_and_values(opts.in_file);
 

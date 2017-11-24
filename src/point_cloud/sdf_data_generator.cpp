@@ -4,23 +4,23 @@
 
 #include <cassert>
 
-#include <boost/range/combine.hpp>
-
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/quasi_random_sequence.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 
 namespace polatory {
 namespace point_cloud {
 
 sdf_data_generator::sdf_data_generator(
-  const std::vector<Eigen::Vector3d>& points,
-  const std::vector<Eigen::Vector3d>& normals,
+  const geometry::points3d& points,
+  const geometry::vectors3d& normals,
   double min_distance,
   double max_distance,
   double ratio)
   : points_(points)
   , normals_(normals) {
-  assert(points.size() == normals.size());
+  assert(points.rows() == normals.rows());
   assert(ratio > 0.0 && ratio <= 2.0);
 
   kdtree tree(points, true);
@@ -28,18 +28,18 @@ sdf_data_generator::sdf_data_generator(
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;
 
-  auto reduced_indices = common::quasi_random_sequence((ratio / 2.0) * points.size());
+  auto reduced_indices = common::quasi_random_sequence((ratio / 2.0) * points.rows());
 
   for (auto i : reduced_indices) {
-    const auto& p = points[i];
-    const auto& n = normals[i];
+    auto p = points.row(i);
+    auto n = normals.row(i);
 
     auto d = max_distance;
 
-    Eigen::Vector3d q = p + d * n;
+    geometry::point3d q = p + d * n;
     tree.knn_search(q, 1, nn_indices, nn_distances);
     while (nn_indices[0] != i && nn_distances[0] > 0.0) {
-      d = 0.99 * (points[nn_indices[0]] - p).norm() / 2.0;
+      d = 0.99 * (points.row(nn_indices[0]) - p).norm() / 2.0;
       q = p + d * n;
       tree.knn_search(q, 1, nn_indices, nn_distances);
     }
@@ -52,15 +52,15 @@ sdf_data_generator::sdf_data_generator(
   }
 
   for (auto i : reduced_indices) {
-    const auto& p = points[i];
-    const auto& n = normals[i];
+    auto p = points.row(i);
+    auto n = normals.row(i);
 
     auto d = max_distance;
 
-    Eigen::Vector3d q = p - d * n;
+    geometry::point3d q = p - d * n;
     tree.knn_search(q, 1, nn_indices, nn_distances);
     while (nn_indices[0] != i && nn_distances[0] > 0.0) {
-      d = 0.99 * (points[nn_indices[0]] - p).norm() / 2.0;
+      d = 0.99 * (points.row(nn_indices[0]) - p).norm() / 2.0;
       q = p - d * n;
       tree.knn_search(q, 1, nn_indices, nn_distances);
     }
@@ -73,28 +73,28 @@ sdf_data_generator::sdf_data_generator(
   }
 }
 
-std::vector<Eigen::Vector3d> sdf_data_generator::sdf_points() const {
-  std::vector<Eigen::Vector3d> sdf_points(points_);
-  sdf_points.reserve(total_size());
+geometry::points3d sdf_data_generator::sdf_points() const {
+  geometry::points3d sdf_points(total_size());
+  sdf_points.topRows(points_.rows()) = points_;
 
-  for (auto i_d : boost::combine(ext_indices_, ext_distances_)) {
-    size_t i;
-    double d;
-    boost::tie(i, d) = i_d;
+  auto point_it = common::row_begin(sdf_points) + points_.rows();
 
-    const auto& p = points_[i];
-    const auto& n = normals_[i];
-    sdf_points.push_back(p + d * n);
+  for (size_t i = 0; i < ext_indices_.size(); i++) {
+    auto idx = ext_indices_[i];
+    auto d = ext_distances_[i];
+
+    auto p = points_.row(idx);
+    auto n = normals_.row(idx);
+    *point_it++ = p + d * n;
   }
 
-  for (auto i_d : boost::combine(int_indices_, int_distances_)) {
-    size_t i;
-    double d;
-    boost::tie(i, d) = i_d;
+  for (size_t i = 0; i < int_indices_.size(); i++) {
+    auto idx = int_indices_[i];
+    auto d = int_distances_[i];
 
-    const auto& p = points_[i];
-    const auto& n = normals_[i];
-    sdf_points.push_back(p - d * n);
+    auto p = points_.row(i);
+    auto n = normals_.row(i);
+    *point_it++ = p - d * n;
   }
 
   return sdf_points;
@@ -103,7 +103,7 @@ std::vector<Eigen::Vector3d> sdf_data_generator::sdf_points() const {
 Eigen::VectorXd sdf_data_generator::sdf_values() const {
   Eigen::VectorXd values = Eigen::VectorXd::Zero(total_size());
 
-  values.segment(points_.size(), ext_indices_.size()) =
+  values.segment(points_.rows(), ext_indices_.size()) =
     Eigen::Map<const Eigen::VectorXd>(ext_distances_.data(), ext_indices_.size());
 
   values.tail(int_indices_.size()) =
@@ -113,7 +113,7 @@ Eigen::VectorXd sdf_data_generator::sdf_values() const {
 }
 
 size_t sdf_data_generator::total_size() const {
-  return points_.size() + ext_indices_.size() + int_indices_.size();
+  return points_.rows() + ext_indices_.size() + int_indices_.size();
 }
 
 } // namespace point_cloud

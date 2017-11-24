@@ -11,7 +11,8 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/vector_range_view.hpp>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/polynomial/basis_base.hpp>
@@ -24,13 +25,12 @@ class rbf_residual_evaluator {
   const int chunk_size = 1024;
 
 public:
-  template <class Container>
   rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                         const Container& points)
+                         const geometry::points3d& points)
     : rbf_(rbf)
     , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
-    , points_(points.begin(), points.end())
-    , n_points_(points.size()) {
+    , points_(points)
+    , n_points_(points.rows()) {
     evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, points_);
   }
 
@@ -57,7 +57,7 @@ public:
       auto end = std::min(n_points_, begin + chunk_size);
       if (begin == end) break;
 
-      evaluator_->set_field_points(common::make_range_view(points_, begin, end));
+      evaluator_->set_field_points(points_.middleRows(begin, end - begin));
       auto fit = evaluator_->evaluate();
 
       for (size_t j = 0; j < end - begin; j++) {
@@ -72,10 +72,9 @@ public:
     return std::make_pair(true, max_residual);
   }
 
-  template <class Container>
-  void set_points(const Container& points) {
-    points_ = std::vector<Eigen::Vector3d>(points.begin(), points.end());
-    n_points_ = points.size();
+  void set_points(const geometry::points3d& points) {
+    points_ = points;
+    n_points_ = points.rows();
 
     evaluator_->set_source_points(points);
   }
@@ -84,7 +83,7 @@ private:
   const rbf::rbf_base& rbf_;
   const size_t n_polynomials_;
 
-  std::vector<Eigen::Vector3d> points_;
+  geometry::points3d points_;
   size_t n_points_;
 
   std::unique_ptr<rbf_evaluator<>> evaluator_;

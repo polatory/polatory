@@ -2,10 +2,10 @@
 
 #include <iostream>
 #include <tuple>
-#include <vector>
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/io/read_table.hpp>
 #include <polatory/isosurface/export_obj.hpp>
@@ -16,6 +16,7 @@
 
 #include "parse_options.hpp"
 
+using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::io::read_points_2d_and_values;
 using polatory::isosurface::export_obj;
@@ -28,7 +29,7 @@ int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
   // Read points and normals.
-  std::vector<Eigen::Vector3d> points;
+  points3d points;
   Eigen::VectorXd values;
   std::tie(points, values) = read_points_2d_and_values(opts.in_file);
 
@@ -47,11 +48,11 @@ int main(int argc, const char *argv[]) {
   } else {
     interpolant.fit(points, values, opts.absolute_tolerance);
   }
-  std::cout << "Number of RBF centers: " << interpolant.centers().size() << std::endl;
+  std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
 
   // Generate isosurface.
-  for (size_t i = 0; i < points.size(); i++) {
-    points[i](2) = values(i);
+  for (size_t i = 0; i < points.rows(); i++) {
+    points(i, 2) = values(i);
   }
   polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
   rbf_field_function_25d field_f(interpolant);

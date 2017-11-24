@@ -10,20 +10,21 @@
 #include <Eigen/Core>
 #include <Eigen/SVD>
 
+#include <polatory/geometry/point3d.hpp>
+
 namespace polatory {
 namespace point_cloud {
 
 // Computes the best-fit plane and its "plane factor" for the given points.
 class plane_estimator {
 public:
-  template <class Container>
-  explicit plane_estimator(const Container& points)
+  explicit plane_estimator(const geometry::points3d& points)
     : center_(barycenter(points)) {
-    assert(points.size() >= 3);
+    assert(points.rows() >= 3);
 
     auto svd = pca_svd(points);
 
-    auto n_points = points.size();
+    auto n_points = points.rows();
     auto s0 = svd.singularValues()(0);
     auto s1 = svd.singularValues()(1);
     auto s2 = svd.singularValues()(2);
@@ -53,7 +54,7 @@ public:
     return plane_factor_;
   }
 
-  Eigen::Vector3d plane_normal() const {
+  geometry::vector3d plane_normal() const {
     return basis_.col(2);
   }
 
@@ -66,24 +67,15 @@ public:
   }
 
 private:
-  template <class Container>
-  Eigen::Vector3d barycenter(const Container& points) const {
-    return std::accumulate(
-      points.begin(), points.end(), Eigen::Vector3d(Eigen::Vector3d::Zero())
-    ) / points.size();
+  geometry::point3d barycenter(const geometry::points3d& points) const {
+    return points.colwise().mean();
   }
 
-  template <class Container>
-  Eigen::JacobiSVD<Eigen::MatrixXd> pca_svd(const Container& points) const {
-    Eigen::MatrixXd mat(points.size(), 3);
-    for (size_t i = 0; i < points.size(); i++) {
-      mat.row(i) = points[i] - center_;
-    }
-
-    return Eigen::JacobiSVD<Eigen::MatrixXd>(mat, Eigen::ComputeThinV);
+  Eigen::JacobiSVD<Eigen::MatrixXd> pca_svd(const geometry::points3d& points) const {
+    return Eigen::JacobiSVD<Eigen::MatrixXd>(points.rowwise() - center_, Eigen::ComputeThinV);
   }
 
-  Eigen::Vector3d center_;
+  geometry::point3d center_;
   Eigen::Matrix3d basis_;
 
   double point_err_;

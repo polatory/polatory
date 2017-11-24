@@ -4,10 +4,10 @@
 
 #include <cassert>
 #include <memory>
-#include <vector>
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
 #include <polatory/fmm/tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -25,13 +25,13 @@ class rbf_symmetric_evaluator {
 
 public:
   rbf_symmetric_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                          const std::vector<Eigen::Vector3d>& points)
+                          const geometry::points3d& points)
     : rbf_(rbf)
-    , n_points_(points.size())
+    , n_points_(points.rows())
     , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(points);
 
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.size()), bbox);
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.rows()), bbox);
     a_->set_points(points);
 
     if (n_polynomials_ > 0) {

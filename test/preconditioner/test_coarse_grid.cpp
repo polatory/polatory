@@ -8,7 +8,6 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <polatory/common/vector_range_view.hpp>
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polynomial/basis_base.hpp>
@@ -16,7 +15,6 @@
 #include <polatory/rbf/biharmonic.hpp>
 
 using namespace polatory::preconditioner;
-using polatory::common::make_range_view;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::point_cloud::random_points;
@@ -39,7 +37,7 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  auto lagr_basis = std::make_shared<lagrange_basis<double>>(3, poly_degree, make_range_view(points, 0, n_polynomials));
+  auto lagr_basis = std::make_shared<lagrange_basis<double>>(3, poly_degree, points.topRows(n_polynomials));
 
   biharmonic rbf({ 1.0, nugget });
 

@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include <Eigen/Core>
-
 #include <polatory/io/write_table.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>

@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 
 namespace polatory {
@@ -22,9 +23,8 @@ public:
     assert(degree >= 0 && degree <= 2);
   }
 
-  template <class Container>
-  MatrixXF evaluate_points(const Container& points) const {
-    size_t n_points = points.size();
+  MatrixXF evaluate_points(const geometry::points3d& points) const {
+    size_t n_points = points.rows();
 
     MatrixXF result = MatrixXF(basis_size(), n_points);
 
@@ -40,18 +40,18 @@ public:
       case 1:
         // 1, x
         for (size_t i = 0; i < n_points; i++) {
-          const auto& p = points[i];
+          auto p = points.row(i);
           result(0, i) = 1.0;
-          result(1, i) = p[0];
+          result(1, i) = p(0);
         }
         break;
       case 2:
         // 1, x, x^2
         for (size_t i = 0; i < n_points; i++) {
-          const auto& p = points[i];
+          auto p = points.row(i);
           result(0, i) = 1.0;
-          result(1, i) = p[0];
-          result(2, i) = p[0] * p[0];
+          result(1, i) = p(0);
+          result(2, i) = p(0) * p(0);
         }
         break;
       default:
@@ -71,22 +71,22 @@ public:
       case 1:
         // 1, x, y
         for (size_t i = 0; i < n_points; i++) {
-          const auto& p = points[i];
+          auto p = points.row(i);
           result(0, i) = 1.0;
-          result(1, i) = p[0];
-          result(2, i) = p[1];
+          result(1, i) = p(0);
+          result(2, i) = p(1);
         }
         break;
       case 2:
         // 1, x, y, x^2, xy, y^2
         for (size_t i = 0; i < n_points; i++) {
-          const auto& p = points[i];
+          auto p = points.row(i);
           result(0, i) = 1.0;
-          result(1, i) = p[0];
-          result(2, i) = p[1];
-          result(3, i) = p[0] * p[0];
-          result(4, i) = p[0] * p[1];
-          result(5, i) = p[1] * p[1];
+          result(1, i) = p(0);
+          result(2, i) = p(1);
+          result(3, i) = p(0) * p(0);
+          result(4, i) = p(0) * p(1);
+          result(5, i) = p(1) * p(1);
         }
         break;
       default:
@@ -106,27 +106,27 @@ public:
       case 1:
         // 1, x, y, z
         for (size_t i = 0; i < n_points; i++) {
-          const auto& p = points[i];
+          auto p = points.row(i);
           result(0, i) = 1.0;
-          result(1, i) = p[0];
-          result(2, i) = p[1];
-          result(3, i) = p[2];
+          result(1, i) = p(0);
+          result(2, i) = p(1);
+          result(3, i) = p(2);
         }
         break;
       case 2:
         // 1, x, y, z, x^2, xy, xz, y^2, yz, z^2
         for (size_t i = 0; i < n_points; i++) {
-          const auto& p = points[i];
+          auto p = points.row(i);
           result(0, i) = 1.0;
-          result(1, i) = p[0];
-          result(2, i) = p[1];
-          result(3, i) = p[2];
-          result(4, i) = p[0] * p[0];
-          result(5, i) = p[0] * p[1];
-          result(6, i) = p[0] * p[2];
-          result(7, i) = p[1] * p[1];
-          result(8, i) = p[1] * p[2];
-          result(9, i) = p[2] * p[2];
+          result(1, i) = p(0);
+          result(2, i) = p(1);
+          result(3, i) = p(2);
+          result(4, i) = p(0) * p(0);
+          result(5, i) = p(0) * p(1);
+          result(6, i) = p(0) * p(2);
+          result(7, i) = p(1) * p(1);
+          result(8, i) = p(1) * p(2);
+          result(9, i) = p(2) * p(2);
         }
         break;
       default:

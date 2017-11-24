@@ -17,6 +17,7 @@
 #include <polatory/common/bsearch.hpp>
 #include <polatory/common/uncertain.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
 #include <polatory/isosurface/rmt_node_list.hpp>
@@ -46,7 +47,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   std::vector<cell_index> nodes_to_evaluate;
   std::vector<cell_index> cells_to_visit;
 
-  std::vector<Eigen::Vector3d> vertices;
+  std::vector<geometry::point3d> vertices;
   vertex_index clustered_vertices_begin;
   std::map<vertex_index, vertex_index> cluster_map;
   std::vector<vertex_index> unclustered_vis;
@@ -88,7 +89,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   // Adds a node at cell_idx to node_list and nodes_to_evaluate
   // if the node is within the boundary.
   bool add_node(cell_index cell_idx, const cell_vector& cv) {
-    Eigen::Vector3d pos = point_from_cell_vector(cv);
+    geometry::point3d pos = point_from_cell_vector(cv);
 
     if (!is_inside_bounds(pos)) {
       // Do not insert a node outside the boundary.
@@ -122,10 +123,11 @@ class rmt_lattice : public rmt_primitive_lattice {
     std::minstd_rand gen(rd());
     std::uniform_real_distribution<double> dis(-1e-10, 1e-10);
 
-    std::vector<Eigen::Vector3d> points;
+    geometry::points3d points(nodes_to_evaluate.size());
 
-    for (auto idx : nodes_to_evaluate) {
-      points.push_back(node_list.at(idx).position());
+    for (size_t i = 0; i < nodes_to_evaluate.size(); i++) {
+      auto idx = nodes_to_evaluate[i];
+      points.row(i) = (node_list.at(idx).position());
     }
 
     auto values = field_func(points);
@@ -340,7 +342,7 @@ public:
   }
 
   // TODO: Perform gradient search to find a right cell where the isosurface passes.
-  bool add_cell_contains_point(const Eigen::Vector3d& p) {
+  bool add_cell_contains_point(const geometry::point3d& p) {
     auto cell_idx = cell_contains_point(p);
     return add_cell(cell_idx);
   }
@@ -420,14 +422,14 @@ public:
     }
   }
 
-  const std::vector<Eigen::Vector3d>& get_vertices() const {
+  const std::vector<geometry::point3d>& get_vertices() const {
     return vertices;
   }
 
   // This method should be called right after calling uncluster_vertices().
   void remove_unreferenced_vertices() {
     std::vector<vertex_index> vimap(vertices.size());
-    std::vector<Eigen::Vector3d> reduced_vertices;
+    std::vector<geometry::point3d> reduced_vertices;
     reduced_vertices.reserve(vertices.size() / 3);
 
     for (vertex_index vi = 0; vi < vertices.size(); vi++) {

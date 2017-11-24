@@ -3,36 +3,39 @@
 #include <array>
 #include <cmath>
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 #include <gtest/gtest.h>
 
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
 using namespace polatory::isosurface;
+using polatory::common::row_range;
 using polatory::geometry::bbox3d;
 using polatory::geometry::cuboid3d;
+using polatory::geometry::point3d;
+using polatory::geometry::vector3d;
 using polatory::point_cloud::random_points;
 
 // Relative positions of neighbor nodes connected by each edge.
-std::array<Eigen::Vector3d, 14> NeighborVectors
+std::array<vector3d, 14> NeighborVectors
   {
-    rotation() * Eigen::Vector3d(+1., +1., +1.),
-    rotation() * Eigen::Vector3d(+2., +0., +0.),
-    rotation() * Eigen::Vector3d(+1., -1., -1.),
-    rotation() * Eigen::Vector3d(+0., +2., +0.),
-    rotation() * Eigen::Vector3d(+1., +1., -1.),
-    rotation() * Eigen::Vector3d(+0., +0., -2.),
-    rotation() * Eigen::Vector3d(-1., +1., -1.),
-    rotation() * Eigen::Vector3d(-1., -1., -1.),
-    rotation() * Eigen::Vector3d(-2., +0., +0.),
-    rotation() * Eigen::Vector3d(-1., +1., +1.),
-    rotation() * Eigen::Vector3d(+0., -2., +0.),
-    rotation() * Eigen::Vector3d(-1., -1., +1.),
-    rotation() * Eigen::Vector3d(+0., +0., +2.),
-    rotation() * Eigen::Vector3d(+1., -1., +1.)
+    rotation().transform_vector(vector3d(+1., +1., +1.)),
+    rotation().transform_vector(vector3d(+2., +0., +0.)),
+    rotation().transform_vector(vector3d(+1., -1., -1.)),
+    rotation().transform_vector(vector3d(+0., +2., +0.)),
+    rotation().transform_vector(vector3d(+1., +1., -1.)),
+    rotation().transform_vector(vector3d(+0., +0., -2.)),
+    rotation().transform_vector(vector3d(-1., +1., -1.)),
+    rotation().transform_vector(vector3d(-1., -1., -1.)),
+    rotation().transform_vector(vector3d(-2., +0., +0.)),
+    rotation().transform_vector(vector3d(-1., +1., +1.)),
+    rotation().transform_vector(vector3d(+0., -2., +0.)),
+    rotation().transform_vector(vector3d(-1., -1., +1.)),
+    rotation().transform_vector(vector3d(+0., +0., +2.)),
+    rotation().transform_vector(vector3d(+1., -1., +1.))
   };
 
 TEST(rmt, face_edges) {
@@ -51,8 +54,8 @@ TEST(rmt, face_edges) {
 }
 
 TEST(rmt, lattice) {
-  Eigen::Vector3d min(-1.0, -1.0, -1.0);
-  Eigen::Vector3d max(1.0, 1.0, 1.0);
+  point3d min(-1.0, -1.0, -1.0);
+  point3d max(1.0, 1.0, 1.0);
 
   bbox3d bbox(min, max);
   double resolution = 0.01;
@@ -61,7 +64,7 @@ TEST(rmt, lattice) {
 
   auto points = random_points(cuboid3d(min, max), 100);
 
-  for (const auto& p : points) {
+  for (auto p : row_range(points)) {
     auto ci = lat.cell_contains_point(p);
     auto cv = lat.cell_vector_from_index(ci);
     auto cp = lat.point_from_cell_vector(cv);
@@ -80,7 +83,7 @@ TEST(rmt, neighbor_edge_pairs) {
 
       ASSERT_TRUE(va.dot(vb) > 0.0);
       ASSERT_TRUE(va.dot(vc) > 0.0);
-      ASSERT_DOUBLE_EQ(0.0, vb.cross(va).cross(va.cross(vc)).norm());
+      ASSERT_NEAR(0.0, vb.cross(va).cross(va.cross(vc)).norm(), 1e-15);
     }
   }
 }
@@ -105,13 +108,13 @@ TEST(rmt, neighbors) {
   }
 
   for (edge_index ei = 0; ei < 14; ei++) {
-    Eigen::Vector3d computed =
+    vector3d computed =
       PrimitiveVectors[0] * NeighborCellVectors[ei][0]
       + PrimitiveVectors[1] * NeighborCellVectors[ei][1]
       + PrimitiveVectors[2] * NeighborCellVectors[ei][2];
 
     for (int i = 0; i < 3; i++) {
-      ASSERT_DOUBLE_EQ(NeighborVectors[ei](i), computed(i));
+      ASSERT_NEAR(NeighborVectors[ei](i), computed(i), 1e-15);
     }
   }
 }
@@ -133,9 +136,4 @@ TEST(rmt, primitive_vectors) {
       }
     }
   }
-}
-
-TEST(rmt, rotation) {
-  Eigen::Matrix3d rtr = rotation().transpose() * rotation();
-  ASSERT_LT((Eigen::Matrix3d::Identity() - rtr).lpNorm<Eigen::Infinity>(), 1e-12);
 }

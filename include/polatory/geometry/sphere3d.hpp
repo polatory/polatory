@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include <iterator>
-
-#include <Eigen/Core>
+#include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
 namespace geometry {
@@ -12,16 +10,20 @@ namespace geometry {
 class sphere3d {
 public:
   sphere3d()
-    : center_(Eigen::Vector3d::Zero())
+    : center_(point3d::Zero())
     , radius_(1.0) {
   }
 
-  sphere3d(const Eigen::Vector3d& center, double radius)
+  sphere3d(const point3d& center, double radius)
     : center_(center)
     , radius_(radius) {
   }
 
-  const Eigen::Vector3d& center() const {
+  bool operator==(const sphere3d& other) const {
+    return center_ == other.center_ && radius_ == other.radius_;
+  }
+
+  const point3d& center() const {
     return center_;
   }
 
@@ -30,7 +32,7 @@ public:
   }
 
 private:
-  const Eigen::Vector3d center_;
+  const point3d center_;
   const double radius_;
 };
 

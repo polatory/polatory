@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/third_party/ScalFMM/Components/FTypedLeaf.hpp>
 #include <polatory/third_party/ScalFMM/Containers/FOctree.hpp>
@@ -112,9 +113,8 @@ public:
     return potentials();
   }
 
-  template <class Container>
-  void set_source_points(const Container& points) {
-    n_src_points = points.size();
+  void set_source_points(const geometry::points3d& points) {
+    n_src_points = points.rows();
 
     // Remove all source particles.
     tree->forEachLeaf([&](Leaf *leaf) {
@@ -123,18 +123,18 @@ public:
     });
 
     // Insert source particles.
-    for (size_t idx = 0; idx < points.size(); idx++) {
-      tree->insert(FPoint<FReal>(points[idx].data()), FParticleType::FParticleTypeSource, idx, FReal(0));
+    for (size_t idx = 0; idx < points.rows(); idx++) {
+      tree->insert(FPoint<FReal>(points.row(idx).data()), FParticleType::FParticleTypeSource, idx, FReal(0));
     }
 
     update_weight_ptrs();
   }
 
-  template <class Container, class Derived>
-  void set_source_points_and_weights(const Container& points, const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == points.size());
+  template <class Derived>
+  void set_source_points_and_weights(const geometry::points3d& points, const Eigen::MatrixBase<Derived>& weights) {
+    assert(weights.size() == points.rows());
 
-    n_src_points = points.size();
+    n_src_points = points.rows();
 
     // Remove all source particles.
     tree->forEachLeaf([&](Leaf *leaf) {
@@ -143,8 +143,8 @@ public:
     });
 
     // Insert source particles.
-    for (size_t idx = 0; idx < points.size(); idx++) {
-      tree->insert(FPoint<FReal>(points[idx].data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
+    for (size_t idx = 0; idx < n_src_points; idx++) {
+      tree->insert(FPoint<FReal>(points.row(idx).data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
     }
 
     tree->forEachCell([&](Cell *cell) {
@@ -156,9 +156,8 @@ public:
     weight_ptrs.clear();
   }
 
-  template <class Container>
-  void set_field_points(const Container& points) {
-    n_fld_points = points.size();
+  void set_field_points(const geometry::points3d& points) {
+    n_fld_points = points.rows();
 
     // Remove all target particles.
     tree->forEachLeaf([&](Leaf *leaf) {
@@ -167,8 +166,8 @@ public:
     });
 
     // Insert target particles.
-    for (size_t idx = 0; idx < points.size(); idx++) {
-      tree->insert(FPoint<FReal>(points[idx].data()), FParticleType::FParticleTypeTarget, idx, 0.0);
+    for (size_t idx = 0; idx < n_fld_points; idx++) {
+      tree->insert(FPoint<FReal>(points.row(idx).data()), FParticleType::FParticleTypeTarget, idx, 0.0);
     }
 
     fmm->updateTargetCells();

@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/third_party/ScalFMM/Components/FSimpleLeaf.hpp>
 #include <polatory/third_party/ScalFMM/Containers/FOctree.hpp>
@@ -118,9 +119,8 @@ public:
     return potentials();
   }
 
-  template <class Container>
-  void set_points(const Container& points) {
-    n_points = points.size();
+  void set_points(const geometry::points3d& points) {
+    n_points = points.rows();
 
     // Remove all source particles.
     tree->forEachLeaf([&](Leaf *leaf) {
@@ -129,8 +129,8 @@ public:
     });
 
     // Insert points.
-    for (size_t idx = 0; idx < points.size(); idx++) {
-      tree->insert(FPoint<FReal>(points[idx].data()), idx, FReal(0));
+    for (size_t idx = 0; idx < n_points; idx++) {
+      tree->insert(FPoint<FReal>(points.row(idx).data()), idx, FReal(0));
     }
 
     update_weight_ptrs();

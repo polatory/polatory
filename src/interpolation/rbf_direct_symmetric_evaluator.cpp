@@ -8,9 +8,9 @@ namespace polatory {
 namespace interpolation {
 
 rbf_direct_symmetric_evaluator::rbf_direct_symmetric_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                                                               const std::vector<Eigen::Vector3d>& points)
+                                                               const geometry::points3d& points)
   : rbf_(rbf)
-  , n_points_(points.size())
+  , n_points_(points.rows())
   , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
   , points_(points) {
   if (n_polynomials_ > 0) {
@@ -28,7 +28,7 @@ Eigen::VectorXd rbf_direct_symmetric_evaluator::evaluate() const {
   }
   for (size_t i = 0; i < n_points_ - 1; i++) {
     for (size_t j = i + 1; j < n_points_; j++) {
-      auto a_ij = rbf_.evaluate(points_[i], points_[j]);
+      auto a_ij = rbf_.evaluate(points_.row(i), points_.row(j));
       y_accum[i] += weights_(j) * a_ij;
       y_accum[j] += weights_(i) * a_ij;
     }

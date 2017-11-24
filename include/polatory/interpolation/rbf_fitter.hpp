@@ -4,6 +4,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 
@@ -14,9 +15,8 @@ class rbf_fitter : rbf_solver {
 public:
   using rbf_solver::set_points;
 
-  template <class Container>
   rbf_fitter(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-             const Container& points)
+             const geometry::points3d& points)
     : rbf_solver(rbf, poly_dimension, poly_degree, points) {
   }
 

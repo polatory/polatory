@@ -12,9 +12,10 @@
 #include <Eigen/Core>
 
 #include <polatory/common/bsearch.hpp>
-#include <polatory/common/vector_view.hpp>
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -32,8 +33,6 @@ public:
 
 private:
   friend class domain_divider;
-
-  geometry::bbox3d bbox_;
 
   void merge_poly_points(const std::vector<size_t>& poly_point_idcs) {
     std::vector<size_t> new_point_indices(poly_point_idcs.begin(), poly_point_idcs.end());
@@ -65,13 +64,15 @@ private:
     point_indices = new_point_indices;
     inner_point = new_inner_point;
   }
+
+  geometry::bbox3d bbox_;
 };
 
 class domain_divider {
   const double overlap_quota = 0.75;
   const size_t max_leaf_size = 256;
 
-  const std::vector<Eigen::Vector3d>& points;
+  const geometry::points3d& points;
 
   size_t size_of_root;
   double longest_side_length_of_root;
@@ -88,7 +89,7 @@ class domain_divider {
       d.point_indices.begin(), d.point_indices.end(),
       d.inner_point.begin(), d.inner_point.end(),
       [this, &d, split_axis](const auto& a, const auto& b) {
-        return points[a.first](split_axis) < points[b.first](split_axis);
+        return points(a.first, split_axis) < points(b.first, split_axis);
       });
 
     auto longest_side_length = d.bbox_.size()(split_axis);
@@ -153,7 +154,7 @@ class domain_divider {
   }
 
   geometry::bbox3d domain_bbox(const domain& domain) const {
-    auto domain_points = common::make_view(points, domain.point_indices);
+    auto domain_points = common::take_rows(points, domain.point_indices);
 
     return geometry::bbox3d::from_points(domain_points);
   }
@@ -163,7 +164,7 @@ class domain_divider {
   }
 
 public:
-  domain_divider(const std::vector<Eigen::Vector3d>& points,
+  domain_divider(const geometry::points3d& points,
                  const std::vector<size_t>& point_indices,
                  const std::vector<size_t>& poly_point_indices)
     : points(points)
