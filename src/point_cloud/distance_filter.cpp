@@ -2,11 +2,8 @@
 
 #include <polatory/point_cloud/distance_filter.hpp>
 
-#include <cassert>
 #include <set>
 
-#include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/exception.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 
 namespace polatory {
@@ -46,18 +43,6 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
 
 const std::vector<size_t>& distance_filter::filtered_indices() const {
   return filtered_indices_;
-}
-
-geometry::points3d distance_filter::filter_points(const geometry::points3d& points) const {
-  assert(points.rows() == n_points_);
-
-  return common::take_rows(points, filtered_indices_);
-}
-
-Eigen::VectorXd distance_filter::filter_values(const Eigen::VectorXd& values) const {
-  assert(values.size() == n_points_);
-
-  return common::take_rows(values, filtered_indices_);
 }
 
 } // namespace point_cloud

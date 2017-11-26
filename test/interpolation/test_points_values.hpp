@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <tuple>
 #include <utility>
-#include <vector>
 
 #include <Eigen/Core>
 #include <gtest/gtest.h>
@@ -24,9 +24,8 @@ std::pair<polatory::geometry::points3d, Eigen::VectorXd> test_points_values(size
   auto points = sdf_data.sdf_points();
   auto values = sdf_data.sdf_values();
 
-  point_cloud::distance_filter filter(points, 1e-6);
-  points = filter.filter_points(points);
-  values = filter.filter_values(values);
+  std::tie(points, values) = point_cloud::distance_filter(points, 1e-6)
+    .filtered(points, values);
 
   return std::make_pair(std::move(points), std::move(values));
 }

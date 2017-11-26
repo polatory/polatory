@@ -293,7 +293,7 @@ namespace detail {
 template <class Derived>
 class col_range_wrapper {
 public:
-  col_range_wrapper(Eigen::MatrixBase <Derived>& m)
+  col_range_wrapper(Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -302,13 +302,13 @@ public:
   auto end() { return col_end(m_); }
 
 private:
-  Eigen::MatrixBase <Derived>& m_;
+  Eigen::MatrixBase<Derived>& m_;
 };
 
 template <class Derived>
 class const_col_range_wrapper {
 public:
-  const_col_range_wrapper(const Eigen::MatrixBase <Derived>& m)
+  const_col_range_wrapper(const Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -317,13 +317,13 @@ public:
   auto end() { return col_end(m_); }
 
 private:
-  const Eigen::MatrixBase <Derived>& m_;
+  const Eigen::MatrixBase<Derived>& m_;
 };
 
 template <class Derived>
 class row_range_wrapper {
 public:
-  row_range_wrapper(Eigen::MatrixBase <Derived>& m)
+  row_range_wrapper(Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -332,13 +332,13 @@ public:
   auto end() { return row_end(m_); }
 
 private:
-  Eigen::MatrixBase <Derived>& m_;
+  Eigen::MatrixBase<Derived>& m_;
 };
 
 template <class Derived>
 class const_row_range_wrapper {
 public:
-  const_row_range_wrapper(const Eigen::MatrixBase <Derived>& m)
+  const_row_range_wrapper(const Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -347,7 +347,7 @@ public:
   auto end() { return row_end(m_); }
 
 private:
-  const Eigen::MatrixBase <Derived>& m_;
+  const Eigen::MatrixBase<Derived>& m_;
 };
 
 } // namespace detail
@@ -373,7 +373,7 @@ auto row_range(const Eigen::MatrixBase<Derived>& m) {
 }
 
 template <class Derived, class T, size_t N>
-auto take_cols(const Eigen::MatrixBase <Derived>& m, const T (& indices)[N]) {
+auto take_cols(const Eigen::MatrixBase<Derived>& m, const T (& indices)[N]) {
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
     Eigen::MatrixBase<Derived>::RowsAtCompileTime,
@@ -405,7 +405,7 @@ auto take_cols(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& i
 }
 
 template <class Derived, class T, size_t N>
-auto take_rows(const Eigen::MatrixBase <Derived>& m, const T (& indices)[N]) {
+auto take_rows(const Eigen::MatrixBase<Derived>& m, const T (& indices)[N]) {
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
     N,

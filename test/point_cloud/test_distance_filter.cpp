@@ -38,8 +38,8 @@ TEST(distance_filter, trivial) {
   filtered_values_expected << 0, 3, 6;
 
   distance_filter filter(points, 0.1);
-  auto filtered_points = filter.filter_points(points);
-  auto filtered_values = filter.filter_values(values);
+  auto filtered_points = filter.filtered(points);
+  auto filtered_values = filter.filtered(values);
 
   ASSERT_EQ(filtered_points_expected, filtered_points);
   ASSERT_EQ(filtered_values_expected, filtered_values);
@@ -64,7 +64,7 @@ TEST(distance_filter, filter_distance) {
     point3d(0, 0, 2);
 
   distance_filter filter(points, 1.5);
-  auto filtered_points = filter.filter_points(points);
+  auto filtered_points = filter.filtered(points);
 
   ASSERT_EQ(filtered_points_expected, filtered_points);
 }

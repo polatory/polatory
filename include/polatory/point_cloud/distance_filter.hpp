@@ -2,10 +2,14 @@
 
 #pragma once
 
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include <Eigen/Core>
 
+#include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/exception.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -17,9 +21,18 @@ public:
 
   const std::vector<size_t>& filtered_indices() const;
 
-  geometry::points3d filter_points(const geometry::points3d& points) const;
+  template <class Derived>
+  auto filtered(const Eigen::MatrixBase<Derived>& m) {
+    if (m.rows() != n_points_)
+      throw common::invalid_argument("m.rows() == " + n_points_);
 
-  Eigen::VectorXd filter_values(const Eigen::VectorXd& values) const;
+    return common::take_rows(m, filtered_indices_);
+  }
+
+  template <class Derived, class ...Args>
+  auto filtered(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+    return std::make_tuple(filtered(m), filtered(std::forward<Args>(args))...);
+  }
 
 private:
   const size_t n_points_;

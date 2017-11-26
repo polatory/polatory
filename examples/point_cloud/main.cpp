@@ -43,9 +43,8 @@ int main(int argc, const char *argv[]) {
   auto values = sdf_data.sdf_values();
 
   // Remove very close points.
-  distance_filter filter(points, opts.filter_distance);
-  points = filter.filter_points(points);
-  values = filter.filter_values(values);
+  std::tie(points, values) = distance_filter(points, opts.filter_distance)
+    .filtered(points, values);
 
   // Output SDF data (optional).
   if (!opts.sdf_data_file.empty()) {

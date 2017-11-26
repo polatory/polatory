@@ -34,9 +34,8 @@ int main(int argc, const char *argv[]) {
   std::tie(points, values) = read_points_2d_and_values(opts.in_file);
 
   // Remove very close points.
-  distance_filter filter(points, opts.filter_distance);
-  points = filter.filter_points(points);
-  values = filter.filter_values(values);
+  std::tie(points, values) = distance_filter(points, opts.filter_distance)
+    .filtered(points, values);
 
   // Define model.
   biharmonic rbf({ 1.0, opts.rho });
