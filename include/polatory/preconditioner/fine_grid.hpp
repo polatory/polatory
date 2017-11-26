@@ -23,23 +23,6 @@ class fine_grid {
   using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
   using LagrangeBasis = polynomial::lagrange_basis<Floating>;
 
-  const rbf::rbf_base& rbf_;
-  const std::shared_ptr<LagrangeBasis> lagrange_basis_;
-  const std::vector<size_t> point_idcs_;
-  const std::vector<bool> inner_point_;
-
-  const size_t l_;
-  const size_t m_;
-
-  // Matrix -E.
-  MatrixXF me_;
-
-  // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
-
-  // Current solution.
-  VectorXF lambda_;
-
 public:
   fine_grid(const rbf::rbf_base& rbf,
             std::shared_ptr<LagrangeBasis> lagrange_basis,
@@ -132,6 +115,24 @@ public:
       lambda_ = ldlt_of_qtaq_.solve(values);
     }
   }
+
+private:
+  const rbf::rbf_base& rbf_;
+  const std::shared_ptr<LagrangeBasis> lagrange_basis_;
+  const std::vector<size_t> point_idcs_;
+  const std::vector<bool> inner_point_;
+
+  const size_t l_;
+  const size_t m_;
+
+  // Matrix -E.
+  MatrixXF me_;
+
+  // Cholesky decomposition of matrix Q^T A Q.
+  Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
+
+  // Current solution.
+  VectorXF lambda_;
 };
 
 } // namespace preconditioner

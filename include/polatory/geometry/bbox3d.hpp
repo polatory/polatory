@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/likely.hpp>
 #include <polatory/geometry/affine_transform3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -30,9 +29,7 @@ public:
 
   bbox3d union_hull(const bbox3d& other) const;
 
-  static bbox3d from_points(const points3d& points) {
-    return from_points(common::row_begin(points), common::row_end(points));
-  }
+  static bbox3d from_points(const points3d& points);
 
   template <class InputIterator>
   static bbox3d from_points(InputIterator points_begin, InputIterator points_end) {

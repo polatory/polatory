@@ -16,18 +16,13 @@ namespace polatory {
 namespace polynomial {
 
 class unisolvent_point_set {
-  const size_t n_points;
-  const size_t n_polynomials;
-
-  std::vector<size_t> point_idcs_;
-
 public:
   unisolvent_point_set(const geometry::vectors3d& points,
                        const std::vector<size_t>& point_indices,
                        int dimension,
                        int degree)
-    : n_points(points.rows())
-    , n_polynomials(polynomial::basis_base::basis_size(dimension, degree))
+    : n_points_(points.rows())
+    , n_polynomials_(polynomial::basis_base::basis_size(dimension, degree))
     , point_idcs_(point_indices) {
     if (degree < 0) return;
 
@@ -36,7 +31,7 @@ public:
     std::uniform_int_distribution<int> dist(0, point_indices.size() - 1);
     std::set<size_t> set;
 
-    while (set.size() < n_polynomials) {
+    while (set.size() < n_polynomials_) {
       size_t point_idx = point_idcs_[dist(gen)];
       if (!set.insert(point_idx).second)
         continue;
@@ -53,6 +48,12 @@ public:
   const std::vector<size_t> point_indices() const {
     return point_idcs_;
   }
+
+private:
+  const size_t n_points_;
+  const size_t n_polynomials_;
+
+  std::vector<size_t> point_idcs_;
 };
 
 } // namespace polynomial

@@ -38,58 +38,41 @@ class ras_preconditioner : public krylov::linear_operator {
   static constexpr int Order = 6;
   const double coarse_ratio = 0.125;
   const size_t n_coarsest_points = 1024;
-  const geometry::points3d points;
-  const size_t n_points;
-  const size_t n_polynomials;
-  int n_fine_levels;
-
-#if REPORT_RESIDUAL
-  mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator;
-#endif
-
-  std::vector<std::vector<size_t>> point_idcs_;
-  mutable std::vector<std::vector<FineGrid>> fine_grids;
-  std::shared_ptr<LagrangeBasis> lagrange_basis_;
-  std::unique_ptr<CoarseGrid> coarse;
-  std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator;
-  std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator;
-  Eigen::MatrixXd p;
-  Eigen::MatrixXd ap;
 
 public:
   ras_preconditioner(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                      const geometry::points3d& in_points)
-    : points(in_points)
-    , n_points(in_points.rows())
-    , n_polynomials(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    : points_(in_points)
+    , n_points_(in_points.rows())
+    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
 #if REPORT_RESIDUAL
-    , finest_evaluator(rbf, poly_dimension, poly_degree, points)
+    , finest_evaluator_(rbf, poly_dimension, poly_degree, points_)
 #endif
   {
-    point_idcs_.push_back(std::vector<size_t>(n_points));
+    point_idcs_.push_back(std::vector<size_t>(n_points_));
     std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
 
     std::vector<size_t> poly_point_idcs;
-    if (n_polynomials > 0) {
-      polynomial::unisolvent_point_set ups(points, point_idcs_.back(), poly_dimension, poly_degree);
+    if (n_polynomials_ > 0) {
+      polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), poly_dimension, poly_degree);
       point_idcs_.back() = ups.point_indices();
-      poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_polynomials);
-      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::take_rows(points, poly_point_idcs));
+      poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_polynomials_);
+      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::take_rows(points_, poly_point_idcs));
     }
 
-    n_fine_levels = std::max(0, int(
-      std::ceil(std::log(double(n_points) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
-    if (n_fine_levels == 0) {
-      coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points);
+    n_fine_levels_ = std::max(0, int(
+      std::ceil(std::log(double(n_points_) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
+    if (n_fine_levels_ == 0) {
+      coarse_ = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
       return;
     }
 
-    auto bbox = geometry::bbox3d::from_points(points);
-    auto divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs);
+    auto bbox = geometry::bbox3d::from_points(points_);
+    auto divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
 
-    fine_grids.push_back(std::vector<FineGrid>());
+    fine_grids_.push_back(std::vector<FineGrid>());
     for (const auto& d : divider->domains()) {
-      fine_grids.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
+      fine_grids_.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
     }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
@@ -98,22 +81,22 @@ public:
        fine.setup(points);
     }
 #endif
-    std::cout << "Number of points in level 0: " << points.rows() << std::endl;
-    std::cout << "Number of domains in level 0: " << fine_grids.back().size() << std::endl;
+    std::cout << "Number of points in level 0: " << points_.rows() << std::endl;
+    std::cout << "Number of domains in level 0: " << fine_grids_.back().size() << std::endl;
 
-    auto ratio = 0 == n_fine_levels - 1
-                 ? double(n_coarsest_points) / double(points.rows())
+    auto ratio = 0 == n_fine_levels_ - 1
+                 ? double(n_coarsest_points) / double(points_.rows())
                  : coarse_ratio;
-    upward_evaluator.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points, bbox));
+    upward_evaluator_.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points_, bbox));
     point_idcs_.push_back(divider->choose_coarse_points(ratio));
-    upward_evaluator.back().set_field_points(common::take_rows(points, point_idcs_.back()));
+    upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
 
-    for (int level = 1; level < n_fine_levels; level++) {
-      divider = std::make_unique<domain_divider>(points, point_idcs_.back(), poly_point_idcs);
+    for (int level = 1; level < n_fine_levels_; level++) {
+      divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
 
-      fine_grids.push_back(std::vector<FineGrid>());
+      fine_grids_.push_back(std::vector<FineGrid>());
       for (const auto& d : divider->domains()) {
-        fine_grids.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
+        fine_grids_.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
       }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
@@ -123,35 +106,35 @@ public:
       }
 #endif
       std::cout << "Number of points in level " << level << ": " << point_idcs_.back().size() << std::endl;
-      std::cout << "Number of domains in level " << level << ": " << fine_grids.back().size() << std::endl;
+      std::cout << "Number of domains in level " << level << ": " << fine_grids_.back().size() << std::endl;
 
-      ratio = level == n_fine_levels - 1
+      ratio = level == n_fine_levels_ - 1
               ? double(n_coarsest_points) / double(point_idcs_.back().size())
               : coarse_ratio;
-      upward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::take_rows(points, point_idcs_.back()), bbox));
+      upward_evaluator_.push_back(
+        interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::take_rows(points_, point_idcs_.back()), bbox));
       point_idcs_.push_back(divider->choose_coarse_points(ratio));
-      upward_evaluator.back().set_field_points(common::take_rows(points, point_idcs_.back()));
+      upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
     }
 
     std::cout << "Number of points in coarse: " << point_idcs_.back().size() << std::endl;
-    coarse = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points);
+    coarse_ = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
 
-    for (int level = 1; level < n_fine_levels; level++) {
-      downward_evaluator.push_back(
-        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::take_rows(points, point_idcs_.back()), bbox));
-      downward_evaluator.back().set_field_points(common::take_rows(points, point_idcs_[level]));
+    for (int level = 1; level < n_fine_levels_; level++) {
+      downward_evaluator_.push_back(
+        interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::take_rows(points_, point_idcs_.back()), bbox));
+      downward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_[level]));
     }
 
-    if (n_polynomials > 0) {
-      polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points);
-      p = poly.evaluate_points(points).transpose();
-      ap = Eigen::MatrixXd(p.rows(), p.cols());
+    if (n_polynomials_ > 0) {
+      polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points_);
+      p_ = poly.evaluate_points(points_).transpose();
+      ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
-      auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(rbf, -1, -1, points);
-      for (size_t i = 0; i < p.cols(); i++) {
-        finest_evaluator.set_weights(p.col(i));
-        ap.col(i) = finest_evaluator.evaluate();
+      auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(rbf, -1, -1, points_);
+      for (size_t i = 0; i < p_.cols(); i++) {
+        finest_evaluator.set_weights(p_.col(i));
+        ap_.col(i) = finest_evaluator.evaluate();
       }
     }
   }
@@ -159,11 +142,11 @@ public:
   Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
     assert(v.size() == size());
 
-    Eigen::VectorXd residuals = v.head(n_points);
+    Eigen::VectorXd residuals = v.head(n_points_);
     Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
-    if (n_fine_levels == 0) {
-      coarse->solve(residuals);
-      coarse->set_solution_to(weights_total);
+    if (n_fine_levels_ == 0) {
+      coarse_->solve(residuals);
+      coarse_->set_solution_to(weights_total);
       return weights_total;
     }
 
@@ -171,16 +154,16 @@ public:
     std::cout << "Initial residual: " << residuals.norm() << std::endl;
 #endif
 
-    for (int level = 0; level < n_fine_levels; level++) {
+    for (int level = 0; level < n_fine_levels_; level++) {
       {
-        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points);
+        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points_);
 
         // Solve on subdomains.
 #pragma omp parallel for schedule(guided)
-        for (size_t i = 0; i < fine_grids[level].size(); i++) {
-          auto& fine = fine_grids[level][i];
+        for (size_t i = 0; i < fine_grids_[level].size(); i++) {
+          auto& fine = fine_grids_[level][i];
 #if CLEAR_AND_RECOMPUTE
-          fine.setup(points);
+          fine.setup(points_);
 #endif
           fine.solve(residuals);
           fine.set_solution_to(weights);
@@ -196,55 +179,55 @@ public:
           for (size_t i = 0; i < finer_indices.size(); i++) {
             finer_weights(i) = weights(finer_indices[i]);
           }
-          upward_evaluator[level].set_weights(finer_weights);
+          upward_evaluator_[level].set_weights(finer_weights);
         } else {
-          upward_evaluator[level].set_weights(weights);
+          upward_evaluator_[level].set_weights(weights);
         }
-        auto fit = upward_evaluator[level].evaluate();
+        auto fit = upward_evaluator_[level].evaluate();
 
         const auto& indices = point_idcs_[level + 1];
         for (size_t i = 0; i < indices.size(); i++) {
           residuals(indices[i]) -= fit(i);
         }
 
-        if (n_polynomials > 0) {
+        if (n_polynomials_ > 0) {
           // Orthogonalize weights against P.
-          for (size_t i = 0; i < p.cols(); i++) {
-            auto dot = p.col(i).dot(weights);
-            weights -= dot * p.col(i);
-            residuals -= dot * ap.col(i);
+          for (size_t i = 0; i < p_.cols(); i++) {
+            auto dot = p_.col(i).dot(weights);
+            weights -= dot * p_.col(i);
+            residuals -= dot * ap_.col(i);
           }
         }
 
-        weights_total.head(n_points) += weights;
+        weights_total.head(n_points_) += weights;
 
 #if REPORT_RESIDUAL
         {
            // Test residual
-           finest_evaluator.set_weights(weights_total);
-           Eigen::VectorXd test_residuals = v.head(n_points) - finest_evaluator.evaluate();
+           finest_evaluator_.set_weights(weights_total);
+           Eigen::VectorXd test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
            std::cout << "Residual after level " << level << ": " << test_residuals.norm() << std::endl;
         }
 #endif
       }
 
       {
-        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points + n_polynomials);
+        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points_ + n_polynomials_);
 
         // Solve on coarse.
-        coarse->solve(residuals);
-        coarse->set_solution_to(weights);
+        coarse_->solve(residuals);
+        coarse_->set_solution_to(weights);
 
-        if (level < n_fine_levels - 1) {
+        if (level < n_fine_levels_ - 1) {
           const auto& coarse_indices = point_idcs_.back();
-          Eigen::VectorXd coarse_weights(coarse_indices.size() + n_polynomials);
+          Eigen::VectorXd coarse_weights(coarse_indices.size() + n_polynomials_);
           for (size_t i = 0; i < coarse_indices.size(); i++) {
             coarse_weights(i) = weights(coarse_indices[i]);
           }
-          coarse_weights.tail(n_polynomials) = weights.tail(n_polynomials);
-          downward_evaluator[level].set_weights(coarse_weights);
+          coarse_weights.tail(n_polynomials_) = weights.tail(n_polynomials_);
+          downward_evaluator_[level].set_weights(coarse_weights);
 
-          auto fit = downward_evaluator[level].evaluate();
+          auto fit = downward_evaluator_[level].evaluate();
 
           const auto& indices = point_idcs_[level + 1];
           for (size_t i = 0; i < indices.size(); i++) {
@@ -257,8 +240,8 @@ public:
 #if REPORT_RESIDUAL
         {
            // Test residual
-           finest_evaluator.set_weights(weights_total);
-           Eigen::VectorXd test_residuals = v.head(n_points) - finest_evaluator.evaluate();
+           finest_evaluator_.set_weights(weights_total);
+           Eigen::VectorXd test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
            std::cout << "Residual after coarse correction: " << test_residuals.norm() << std::endl;
         }
 #endif
@@ -269,8 +252,27 @@ public:
   }
 
   size_t size() const override {
-    return n_points + n_polynomials;
+    return n_points_ + n_polynomials_;
   }
+
+private:
+  const geometry::points3d points_;
+  const size_t n_points_;
+  const size_t n_polynomials_;
+  int n_fine_levels_;
+
+#if REPORT_RESIDUAL
+  mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator_;
+#endif
+
+  std::vector<std::vector<size_t>> point_idcs_;
+  mutable std::vector<std::vector<FineGrid>> fine_grids_;
+  std::shared_ptr<LagrangeBasis> lagrange_basis_;
+  std::unique_ptr<CoarseGrid> coarse_;
+  std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator_;
+  std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator_;
+  Eigen::MatrixXd p_;
+  Eigen::MatrixXd ap_;
 };
 
 } // namespace preconditioner

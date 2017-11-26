@@ -26,28 +26,6 @@ class coarse_grid {
   using LagrangeBasis = polynomial::lagrange_basis<Floating>;
   using MonomialBasis = polynomial::monomial_basis<Floating>;
 
-  const rbf::rbf_base& rbf_;
-  const std::shared_ptr<LagrangeBasis> lagrange_basis_;
-  const std::vector<size_t> point_idcs_;
-
-  const size_t l_;
-  const size_t m_;
-
-  // Matrix -E.
-  MatrixXF me_;
-
-  // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
-
-  // First l rows of matrix A.
-  MatrixXF a_top_;
-
-  // LU decomposition of first l rows of matrix P.
-  Eigen::FullPivLU<MatrixXF> lu_of_p_top_;
-
-  // Current solution.
-  VectorXF lambda_c_;
-
 public:
   coarse_grid(const rbf::rbf_base& rbf,
               std::shared_ptr<LagrangeBasis> lagrange_basis,
@@ -157,6 +135,29 @@ public:
       lambda_c_ = ldlt_of_qtaq_.solve(values);
     }
   }
+
+private:
+  const rbf::rbf_base& rbf_;
+  const std::shared_ptr<LagrangeBasis> lagrange_basis_;
+  const std::vector<size_t> point_idcs_;
+
+  const size_t l_;
+  const size_t m_;
+
+  // Matrix -E.
+  MatrixXF me_;
+
+  // Cholesky decomposition of matrix Q^T A Q.
+  Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
+
+  // First l rows of matrix A.
+  MatrixXF a_top_;
+
+  // LU decomposition of first l rows of matrix P.
+  Eigen::FullPivLU<MatrixXF> lu_of_p_top_;
+
+  // Current solution.
+  VectorXF lambda_c_;
 };
 
 } // namespace preconditioner

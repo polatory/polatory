@@ -4,6 +4,8 @@
 
 #include <limits>
 
+#include <polatory/common/eigen_utility.hpp>
+
 namespace polatory {
 namespace geometry {
 
@@ -69,6 +71,10 @@ bbox3d bbox3d::union_hull(const bbox3d& other) const {
     min().cwiseMin(other.min()),
     max().cwiseMax(other.max())
   );
+}
+
+bbox3d bbox3d::from_points(const points3d& points) {
+  return from_points(common::row_begin(points), common::row_end(points));
 }
 
 } // namespace geometry

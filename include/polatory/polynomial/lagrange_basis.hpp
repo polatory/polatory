@@ -19,27 +19,27 @@ class lagrange_basis : public basis_base {
   using Vector3F = Eigen::Matrix<Floating, 3, 1>;
   using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
 
-  monomial_basis<Floating> mono_basis;
-
-  MatrixXF coeffs;
-
 public:
   lagrange_basis(int dimension, int degree, const geometry::points3d& points)
     : basis_base(dimension, degree)
-    , mono_basis(dimension, degree) {
-    auto size = basis_size();
-    assert(points.rows() == size);
+    , mono_basis_(dimension, degree) {
+    assert(points.rows() == basis_size());
 
-    auto pt = mono_basis.evaluate_points(points);
+    auto pt = mono_basis_.evaluate_points(points);
 
-    coeffs = pt.transpose().fullPivLu().inverse();
+    coeffs_ = pt.transpose().fullPivLu().inverse();
   }
 
   MatrixXF evaluate_points(const geometry::points3d& points) const {
-    auto pt = mono_basis.evaluate_points(points);
+    auto pt = mono_basis_.evaluate_points(points);
 
-    return coeffs.transpose() * pt;
+    return coeffs_.transpose() * pt;
   }
+
+private:
+  const monomial_basis<Floating> mono_basis_;
+
+  MatrixXF coeffs_;
 };
 
 } // namespace polynomial

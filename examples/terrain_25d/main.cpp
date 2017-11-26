@@ -51,12 +51,10 @@ int main(int argc, const char *argv[]) {
   std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
 
   // Generate isosurface.
-  for (size_t i = 0; i < points.rows(); i++) {
-    points(i, 2) = values(i);
-  }
   polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
   rbf_field_function_25d field_f(interpolant);
 
+  points.col(2) = values;
   isosurf.generate_from_seed_points(points, field_f);
 
   export_obj(opts.mesh_file, isosurf);
