@@ -75,10 +75,10 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == size());
+    assert(weights.rows() == n_points_);
 
     // Update weights.
-    for (size_t idx = 0; idx < size(); idx++) {
+    for (size_t idx = 0; idx < n_points_; idx++) {
       *weight_ptrs_[idx] = weights[idx];
     }
   }
@@ -89,9 +89,9 @@ public:
 
 private:
   Eigen::VectorXd potentials() const {
-    Eigen::VectorXd phi = Eigen::VectorXd::Zero(size());
+    Eigen::VectorXd phi = Eigen::VectorXd::Zero(n_points_);
 
-    for (size_t i = 0; i < size(); i++) {
+    for (size_t i = 0; i < n_points_; i++) {
       phi[i] = *potential_ptrs_[i];
     }
 
@@ -110,7 +110,7 @@ private:
   }
 
   void update_potential_ptrs() {
-    potential_ptrs_.resize(size());
+    potential_ptrs_.resize(n_points_);
     tree_->forEachLeaf([&](Leaf *leaf) {
       const auto& particles = *leaf->getTargets();
 
@@ -127,7 +127,7 @@ private:
   }
 
   void update_weight_ptrs() {
-    weight_ptrs_.resize(size());
+    weight_ptrs_.resize(n_points_);
     tree_->forEachLeaf([&](Leaf *leaf) {
       auto& particles = *leaf->getSrc();
 

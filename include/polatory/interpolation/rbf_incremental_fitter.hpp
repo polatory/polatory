@@ -38,7 +38,7 @@ public:
     , poly_degree_(poly_degree)
     , points_(points)
     , n_points_(points.rows())
-    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , bbox_(geometry::bbox3d::from_points(points)) {
   }
 
@@ -111,9 +111,9 @@ public:
       indices.insert(indices.end(), indices_c.end() - n_points_to_add, indices_c.end());
 
       auto weights_prev = weights;
-      weights = Eigen::VectorXd::Zero(indices.size() + n_polynomials_);
+      weights = Eigen::VectorXd::Zero(indices.size() + n_poly_basis_);
       weights.head(n_points_prev) = weights_prev.head(n_points_prev);
-      weights.tail(n_polynomials_) = weights_prev.tail(n_polynomials_);
+      weights.tail(n_poly_basis_) = weights_prev.tail(n_poly_basis_);
     }
 
     return std::make_pair(indices, weights);
@@ -128,14 +128,14 @@ private:
       indices = std::vector<size_t>(n_points_);
       std::iota(indices.begin(), indices.end(), 0);
 
-      weights = Eigen::VectorXd::Zero(n_points_ + n_polynomials_);
+      weights = Eigen::VectorXd::Zero(n_points_ + n_poly_basis_);
     } else {
       size_t n_initial_points = initial_points_ratio * n_points_;
 
       indices = common::quasi_random_sequence(n_points_);
       indices.resize(n_initial_points);
 
-      weights = Eigen::VectorXd::Zero(n_initial_points + n_polynomials_);
+      weights = Eigen::VectorXd::Zero(n_initial_points + n_poly_basis_);
     }
 
     return std::make_pair(std::move(indices), std::move(weights));
@@ -172,7 +172,7 @@ private:
   const geometry::points3d& points_;
 
   const size_t n_points_;
-  const size_t n_polynomials_;
+  const size_t n_poly_basis_;
 
   const geometry::bbox3d bbox_;
 };

@@ -11,9 +11,9 @@ rbf_direct_symmetric_evaluator::rbf_direct_symmetric_evaluator(const rbf::rbf_ba
                                                                const geometry::points3d& points)
   : rbf_(rbf)
   , n_points_(points.rows())
-  , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+  , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
   , points_(points) {
-  if (n_polynomials_ > 0) {
+  if (n_poly_basis_ > 0) {
     p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     p_->set_field_points(points);
   }
@@ -34,7 +34,7 @@ Eigen::VectorXd rbf_direct_symmetric_evaluator::evaluate() const {
     }
   }
 
-  if (n_polynomials_ > 0) {
+  if (n_poly_basis_ > 0) {
     // Add polynomial terms.
     auto poly_val = p_->evaluate();
     for (size_t i = 0; i < n_points_; i++) {

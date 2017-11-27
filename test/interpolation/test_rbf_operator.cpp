@@ -18,14 +18,14 @@ using polatory::rbf::biharmonic;
 namespace {
 
 void test_poly_degree(int poly_degree, size_t n_points) {
-  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
+  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 5e-7;
 
   biharmonic rbf({ 1.0, 0.2 });
 
   auto points = random_points(sphere3d(), n_points);
 
-  Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_polynomials);
+  Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_poly_basis);
 
   rbf_direct_symmetric_evaluator direct_eval(rbf, 3, poly_degree, points);
   direct_eval.set_weights(weights);
@@ -35,7 +35,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
   Eigen::VectorXd direct_op_weights = direct_eval.evaluate() + rbf.nugget() * weights.head(n_points);
   Eigen::VectorXd op_weights = op(weights);
 
-  ASSERT_EQ(n_points + n_polynomials, op_weights.size());
+  ASSERT_EQ(n_points + n_poly_basis, op_weights.size());
 
   auto max_residual = (op_weights.head(n_points) - direct_op_weights).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);

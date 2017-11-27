@@ -44,7 +44,7 @@ public:
                      const geometry::points3d& in_points)
     : points_(in_points)
     , n_points_(in_points.rows())
-    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
 #if REPORT_RESIDUAL
     , finest_evaluator_(rbf, poly_dimension, poly_degree, points_)
 #endif
@@ -53,10 +53,10 @@ public:
     std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
 
     std::vector<size_t> poly_point_idcs;
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), poly_dimension, poly_degree);
       point_idcs_.back() = ups.point_indices();
-      poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_polynomials_);
+      poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_poly_basis_);
       lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::take_rows(points_, poly_point_idcs));
     }
 
@@ -126,7 +126,7 @@ public:
       downward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_[level]));
     }
 
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points_);
       p_ = poly.evaluate_points(points_).transpose();
       ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
@@ -140,7 +140,7 @@ public:
   }
 
   Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
-    assert(v.size() == size());
+    assert(v.rows() == size());
 
     Eigen::VectorXd residuals = v.head(n_points_);
     Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
@@ -190,7 +190,7 @@ public:
           residuals(indices[i]) -= fit(i);
         }
 
-        if (n_polynomials_ > 0) {
+        if (n_poly_basis_ > 0) {
           // Orthogonalize weights against P.
           for (size_t i = 0; i < p_.cols(); i++) {
             auto dot = p_.col(i).dot(weights);
@@ -212,7 +212,7 @@ public:
       }
 
       {
-        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points_ + n_polynomials_);
+        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points_ + n_poly_basis_);
 
         // Solve on coarse.
         coarse_->solve(residuals);
@@ -220,11 +220,11 @@ public:
 
         if (level < n_fine_levels_ - 1) {
           const auto& coarse_indices = point_idcs_.back();
-          Eigen::VectorXd coarse_weights(coarse_indices.size() + n_polynomials_);
+          Eigen::VectorXd coarse_weights(coarse_indices.size() + n_poly_basis_);
           for (size_t i = 0; i < coarse_indices.size(); i++) {
             coarse_weights(i) = weights(coarse_indices[i]);
           }
-          coarse_weights.tail(n_polynomials_) = weights.tail(n_polynomials_);
+          coarse_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
           downward_evaluator_[level].set_weights(coarse_weights);
 
           auto fit = downward_evaluator_[level].evaluate();
@@ -252,13 +252,13 @@ public:
   }
 
   size_t size() const override {
-    return n_points_ + n_polynomials_;
+    return n_points_ + n_poly_basis_;
   }
 
 private:
   const geometry::points3d points_;
   const size_t n_points_;
-  const size_t n_polynomials_;
+  const size_t n_poly_basis_;
   int n_fine_levels_;
 
 #if REPORT_RESIDUAL

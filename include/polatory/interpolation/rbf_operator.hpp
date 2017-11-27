@@ -29,12 +29,12 @@ public:
   rbf_operator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                const geometry::points3d& points)
     : rbf_(rbf)
-    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
+    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(points);
 
     a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.rows()), bbox);
 
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     }
 
@@ -44,17 +44,17 @@ public:
   rbf_operator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                int tree_height, const geometry::bbox3d& bbox)
     : rbf_(rbf)
-    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , n_points_(0) {
     a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, tree_height, bbox);
 
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
     }
   }
 
   Eigen::VectorXd operator()(const Eigen::VectorXd& weights) const override {
-    assert(weights.size() == size());
+    assert(weights.rows() == size());
 
     Eigen::VectorXd y = Eigen::VectorXd::Zero(size());
 
@@ -64,7 +64,7 @@ public:
     a_->set_weights(weights.head(n_points_));
     y.head(n_points_) += a_->evaluate();
 
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       // Add polynomial terms.
       y += p_->evaluate(weights);
     }
@@ -77,18 +77,18 @@ public:
 
     a_->set_points(points);
 
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       p_->set_points(points);
     }
   }
 
   size_t size() const override {
-    return n_points_ + n_polynomials_;
+    return n_points_ + n_poly_basis_;
   }
 
 private:
   const rbf::rbf_base& rbf_;
-  const size_t n_polynomials_;
+  const size_t n_poly_basis_;
 
   size_t n_points_;
   std::unique_ptr<fmm::fmm_operator<Order>> a_;

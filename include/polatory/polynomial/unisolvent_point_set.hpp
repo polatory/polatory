@@ -22,7 +22,7 @@ public:
                        int dimension,
                        int degree)
     : n_points_(points.rows())
-    , n_polynomials_(polynomial::basis_base::basis_size(dimension, degree))
+    , n_poly_basis_(polynomial::basis_base::basis_size(dimension, degree))
     , point_idcs_(point_indices) {
     if (degree < 0) return;
 
@@ -31,7 +31,7 @@ public:
     std::uniform_int_distribution<int> dist(0, point_indices.size() - 1);
     std::set<size_t> set;
 
-    while (set.size() < n_polynomials_) {
+    while (set.size() < n_poly_basis_) {
       size_t point_idx = point_idcs_[dist(gen)];
       if (!set.insert(point_idx).second)
         continue;
@@ -51,7 +51,7 @@ public:
 
 private:
   const size_t n_points_;
-  const size_t n_polynomials_;
+  const size_t n_poly_basis_;
 
   std::vector<size_t> point_idcs_;
 };

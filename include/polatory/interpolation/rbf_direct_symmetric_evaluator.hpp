@@ -24,19 +24,19 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == n_points_ + n_polynomials_);
+    assert(weights.rows() == n_points_ + n_poly_basis_);
 
-    this->weights_ = weights;
+    weights_ = weights;
 
-    if (n_polynomials_ > 0) {
-      p_->set_weights(weights.tail(n_polynomials_));
+    if (n_poly_basis_ > 0) {
+      p_->set_weights(weights.tail(n_poly_basis_));
     }
   }
 
 private:
   const rbf::rbf_base& rbf_;
   const size_t n_points_;
-  const size_t n_polynomials_;
+  const size_t n_poly_basis_;
 
   std::unique_ptr<PolynomialEvaluator> p_;
 

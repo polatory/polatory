@@ -34,7 +34,7 @@ public:
     auto l = pt_.rows();
     auto m = pt_.cols();
 
-    assert(lambda_c.size() == m + l);
+    assert(lambda_c.rows() == m + l);
 
     Eigen::VectorXd output(m + l);
 

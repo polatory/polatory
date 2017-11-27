@@ -78,7 +78,7 @@ public:
 
   template <class Derived>
   void set_source_points_and_weights(const geometry::points3d& points, const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == points.rows());
+    assert(weights.rows() == points.rows());
 
     n_src_points_ = points.rows();
 
@@ -123,7 +123,7 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == source_size());
+    assert(weights.size() == n_src_points_);
 
     if (source_size() == 0)
       return;
@@ -131,7 +131,7 @@ public:
     if (weight_ptrs_.empty())
       update_weight_ptrs();
 
-    for (size_t idx = 0; idx < source_size(); idx++) {
+    for (size_t idx = 0; idx < n_src_points_; idx++) {
       *weight_ptrs_[idx] = weights[idx];
     }
 
@@ -146,15 +146,11 @@ public:
     return n_src_points_;
   }
 
-  size_t field_size() const {
-    return n_fld_points_;
-  }
-
 private:
   Eigen::VectorXd potentials() const {
-    Eigen::VectorXd phi = Eigen::VectorXd::Zero(field_size());
+    Eigen::VectorXd phi = Eigen::VectorXd::Zero(n_fld_points_);
 
-    for (size_t i = 0; i < field_size(); i++) {
+    for (size_t i = 0; i < n_fld_points_; i++) {
       phi[i] = *potential_ptrs_[i];
     }
 
@@ -162,7 +158,7 @@ private:
   }
 
   void update_potential_ptrs() {
-    potential_ptrs_.resize(field_size());
+    potential_ptrs_.resize(n_fld_points_);
     tree_->forEachLeaf([&](Leaf *leaf) {
       const auto& particles = *leaf->getTargets();
 

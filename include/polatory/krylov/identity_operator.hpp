@@ -18,7 +18,7 @@ public:
   }
 
   Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
-    assert(v.size() == n_);
+    assert(v.rows() == n_);
     return v;
   }
 

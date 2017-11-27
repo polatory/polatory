@@ -22,7 +22,7 @@ Eigen::VectorXd k_fold_cross_validation(const rbf::rbf_base& rbf, int poly_dimen
                                         int k) {
   auto n_points = points.rows();
   if (k <= 0 || k > n_points)
-    throw common::invalid_argument("0 < k <= points.size()");
+    throw common::invalid_argument("0 < k <= points.rows()");
 
   std::random_device rd;
   std::mt19937 gen(rd());

@@ -28,13 +28,13 @@ public:
                           const geometry::points3d& points)
     : rbf_(rbf)
     , n_points_(points.rows())
-    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
+    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(points);
 
     a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.rows()), bbox);
     a_->set_points(points);
 
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
       p_->set_field_points(points);
     }
@@ -46,7 +46,7 @@ public:
 
     y += a_->evaluate();
 
-    if (n_polynomials_ > 0) {
+    if (n_poly_basis_ > 0) {
       // Add polynomial terms.
       y += p_->evaluate();
     }
@@ -56,21 +56,21 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == n_points_ + n_polynomials_);
+    assert(weights.rows() == n_points_ + n_poly_basis_);
 
-    this->weights_ = weights;
+    weights_ = weights;
 
     a_->set_weights(weights.head(n_points_));
 
-    if (n_polynomials_ > 0) {
-      p_->set_weights(weights.tail(n_polynomials_));
+    if (n_poly_basis_ > 0) {
+      p_->set_weights(weights.tail(n_poly_basis_));
     }
   }
 
 private:
   const rbf::rbf_base& rbf_;
   const size_t n_points_;
-  const size_t n_polynomials_;
+  const size_t n_poly_basis_;
 
   std::unique_ptr<fmm::fmm_operator<Order>> a_;
   std::unique_ptr<PolynomialEvaluator> p_;

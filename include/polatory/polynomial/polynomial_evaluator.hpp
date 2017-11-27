@@ -34,7 +34,7 @@ public:
   }
 
   void set_weights(const Eigen::VectorXd& weights) {
-    assert(weights.size() == basis_.basis_size());
+    assert(weights.rows() == basis_.basis_size());
 
     weights_ = weights;
   }

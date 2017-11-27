@@ -28,16 +28,16 @@ public:
   rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                          const geometry::points3d& points)
     : rbf_(rbf)
-    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
-    , points_(points)
-    , n_points_(points.rows()) {
+    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_points_(points.rows())
+    , points_(points) {
     evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, points_);
   }
 
   rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                          int tree_height, const geometry::bbox3d& bbox)
     : rbf_(rbf)
-    , n_polynomials_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , n_points_(0) {
     evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, tree_height, bbox);
   }
@@ -46,8 +46,8 @@ public:
   std::pair<bool, double> converged(const Eigen::MatrixBase<Derived>& values,
                                     const Eigen::MatrixBase<Derived2>& weights,
                                     double absolute_tolerance) const {
-    assert(values.size() == n_points_);
-    assert(weights.size() == n_points_ + n_polynomials_);
+    assert(values.rows() == n_points_);
+    assert(weights.rows() == n_points_ + n_poly_basis_);
 
     evaluator_->set_weights(weights);
 
@@ -73,18 +73,18 @@ public:
   }
 
   void set_points(const geometry::points3d& points) {
-    points_ = points;
     n_points_ = points.rows();
+    points_ = points;
 
     evaluator_->set_source_points(points);
   }
 
 private:
   const rbf::rbf_base& rbf_;
-  const size_t n_polynomials_;
+  const size_t n_poly_basis_;
 
-  geometry::points3d points_;
   size_t n_points_;
+  geometry::points3d points_;
 
   std::unique_ptr<rbf_evaluator<>> evaluator_;
 };
