@@ -8,10 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-
 #include <polatory/common/utility.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
 
 namespace polatory {
@@ -24,7 +22,7 @@ class mesh_defects_finder {
   typedef std::pair<face_index, bool> face_index_bool;
   typedef std::vector<face_index_bool> face_index_bools;
 
-  const std::vector<Eigen::Vector3d>& vertices;
+  const std::vector<geometry::point3d>& vertices;
   const std::vector<face>& faces;
 
   static halfedge opposite_halfedge(halfedge e) {
@@ -95,7 +93,7 @@ class mesh_defects_finder {
 public:
   typedef std::pair<vertex_index, vertex_index> edge;
 
-  mesh_defects_finder(const std::vector<Eigen::Vector3d>& vertices, const std::vector<face>& faces)
+  mesh_defects_finder(const std::vector<geometry::point3d>& vertices, const std::vector<face>& faces)
     : vertices(vertices)
     , faces(faces) {
   }

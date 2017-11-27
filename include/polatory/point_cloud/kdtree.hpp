@@ -7,19 +7,21 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
+
 namespace polatory {
 namespace point_cloud {
 
 class kdtree {
 public:
-  kdtree(const std::vector<Eigen::Vector3d>& points, bool use_exact_search);
+  kdtree(const geometry::points3d& points, bool use_exact_search);
 
   ~kdtree();
 
-  void knn_search(const Eigen::Vector3d& point, int k,
+  void knn_search(const geometry::point3d& point, int k,
                   std::vector<size_t>& indices, std::vector<double>& distances) const;
 
-  void radius_search(const Eigen::Vector3d& point, double radius,
+  void radius_search(const geometry::point3d& point, double radius,
                      std::vector<size_t>& indices, std::vector<double>& distances) const;
 
 private:

@@ -30,14 +30,13 @@ bool affine_transform3d::is_identity() const {
   return m_ == Eigen::Matrix4d::Identity();
 }
 
-Eigen::Vector3d affine_transform3d::transform_point(const Eigen::Vector3d& p) const {
-  Eigen::Vector4d p_homo;
-  p_homo << p(0), p(1), p(2), 1.0;
-  return m_.topLeftCorner(3, 4) * p_homo;
+point3d affine_transform3d::transform_point(const point3d& p) const {
+  Eigen::RowVector4d p_homo(p(0), p(1), p(2), 1.0);
+  return m_.topLeftCorner(3, 4) * p_homo.transpose();
 }
 
-Eigen::Vector3d affine_transform3d::transform_vector(const Eigen::Vector3d& v) const {
-  return m_.topLeftCorner(3, 3) * v;
+vector3d affine_transform3d::transform_vector(const vector3d& v) const {
+  return m_.topLeftCorner(3, 3) * v.transpose();
 }
 
 affine_transform3d affine_transform3d::operator*(const affine_transform3d& rhs) const {
@@ -59,7 +58,7 @@ affine_transform3d affine_transform3d::scaling(const Eigen::Vector3d& scales) {
   return affine_transform3d(m);
 }
 
-affine_transform3d affine_transform3d::translation(const Eigen::Vector3d& shifts) {
+affine_transform3d affine_transform3d::translation(const vector3d& shifts) {
   Eigen::Matrix4d m = Eigen::Matrix4d::Zero();
 
   m.col(3) << shifts(0), shifts(1), shifts(2), 1.0;

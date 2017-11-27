@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/third_party/ScalFMM/Components/FTypedLeaf.hpp>
 #include <polatory/third_party/ScalFMM/Containers/FOctree.hpp>
@@ -31,29 +32,134 @@ class fmm_evaluator {
   using InterpolatedKernel = FChebSymKernel<FReal, Cell, ParticleContainer, rbf::rbf_base, Order>;
   using Fmm = FFmmAlgorithmThreadTsm<Octree, Cell, ParticleContainer, InterpolatedKernel, Leaf>;
 
-  std::unique_ptr<Fmm> fmm;
-  std::unique_ptr<InterpolatedKernel> interpolated_kernel;
-  std::unique_ptr<Octree> tree;
+public:
+  fmm_evaluator(const rbf::rbf_base& rbf, int tree_height, const geometry::bbox3d& bbox)
+    : n_src_points_(0)
+    , n_fld_points_(0) {
+    auto bbox_width = (1.0 + 1.0 / 64.0) * bbox.size().maxCoeff();
+    auto bbox_center = bbox.center();
 
-  size_t n_src_points;
-  size_t n_fld_points;
+    interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
+      tree_height, bbox_width, FPoint<FReal>(bbox_center.data()), &rbf);
 
-  std::vector<const FReal *> potential_ptrs;
-  std::vector<FReal *> weight_ptrs;
+    tree_ = std::make_unique<Octree>(
+      tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<FReal>(bbox_center.data()));
 
+    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int(FmmAlgorithmScheduleChunkSize));
+  }
+
+  Eigen::VectorXd evaluate() const {
+    tree_->forEachLeaf([&](Leaf *leaf) {
+      auto& particles = *leaf->getTargets();
+      particles.resetForcesAndPotential();
+    });
+
+    fmm_->execute(FFmmM2L | FFmmL2L | FFmmL2P | FFmmP2P);
+
+    return potentials();
+  }
+
+  void set_source_points(const geometry::points3d& points) {
+    n_src_points_ = points.rows();
+
+    // Remove all source particles.
+    tree_->forEachLeaf([&](Leaf *leaf) {
+      auto& particles = *leaf->getSrc();
+      particles.clear();
+    });
+
+    // Insert source particles.
+    for (size_t idx = 0; idx < n_src_points_; idx++) {
+      tree_->insert(FPoint<FReal>(points.row(idx).data()), FParticleType::FParticleTypeSource, idx, FReal(0));
+    }
+
+    update_weight_ptrs();
+  }
+
+  template <class Derived>
+  void set_source_points_and_weights(const geometry::points3d& points, const Eigen::MatrixBase<Derived>& weights) {
+    assert(weights.rows() == points.rows());
+
+    n_src_points_ = points.rows();
+
+    // Remove all source particles.
+    tree_->forEachLeaf([&](Leaf *leaf) {
+      auto& particles = *leaf->getSrc();
+      particles.clear();
+    });
+
+    // Insert source particles.
+    for (size_t idx = 0; idx < n_src_points_; idx++) {
+      tree_->insert(FPoint<FReal>(points.row(idx).data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
+    }
+
+    tree_->forEachCell([&](Cell *cell) {
+      cell->resetToInitialState();
+    });
+
+    fmm_->execute(FFmmP2M | FFmmM2M);
+
+    weight_ptrs_.clear();
+  }
+
+  void set_field_points(const geometry::points3d& points) {
+    n_fld_points_ = points.rows();
+
+    // Remove all target particles.
+    tree_->forEachLeaf([&](Leaf *leaf) {
+      auto& particles = *leaf->getTargets();
+      particles.clear();
+    });
+
+    // Insert target particles.
+    for (size_t idx = 0; idx < n_fld_points_; idx++) {
+      tree_->insert(FPoint<FReal>(points.row(idx).data()), FParticleType::FParticleTypeTarget, idx, 0.0);
+    }
+
+    fmm_->updateTargetCells();
+
+    update_potential_ptrs();
+  }
+
+  template <class Derived>
+  void set_weights(const Eigen::MatrixBase<Derived>& weights) {
+    assert(weights.size() == n_src_points_);
+
+    if (source_size() == 0)
+      return;
+
+    if (weight_ptrs_.empty())
+      update_weight_ptrs();
+
+    for (size_t idx = 0; idx < n_src_points_; idx++) {
+      *weight_ptrs_[idx] = weights[idx];
+    }
+
+    tree_->forEachCell([&](Cell *cell) {
+      cell->resetToInitialState();
+    });
+
+    fmm_->execute(FFmmP2M | FFmmM2M);
+  }
+
+  size_t source_size() const {
+    return n_src_points_;
+  }
+
+private:
   Eigen::VectorXd potentials() const {
-    Eigen::VectorXd phi = Eigen::VectorXd::Zero(field_size());
+    Eigen::VectorXd phi = Eigen::VectorXd::Zero(n_fld_points_);
 
-    for (size_t i = 0; i < field_size(); i++) {
-      phi[i] = *potential_ptrs[i];
+    for (size_t i = 0; i < n_fld_points_; i++) {
+      phi[i] = *potential_ptrs_[i];
     }
 
     return phi;
   }
 
   void update_potential_ptrs() {
-    potential_ptrs.resize(field_size());
-    tree->forEachLeaf([&](Leaf *leaf) {
+    potential_ptrs_.resize(n_fld_points_);
+    tree_->forEachLeaf([&](Leaf *leaf) {
       const auto& particles = *leaf->getTargets();
 
       const auto& indices = particles.getIndexes();
@@ -63,14 +169,14 @@ class fmm_evaluator {
       for (size_t i = 0; i < n_particles; i++) {
         const size_t idx = indices[i];
 
-        potential_ptrs[idx] = &potentials[i];
+        potential_ptrs_[idx] = &potentials[i];
       }
     });
   }
 
   void update_weight_ptrs() {
-    weight_ptrs.resize(source_size());
-    tree->forEachLeaf([&](Leaf *leaf) {
+    weight_ptrs_.resize(source_size());
+    tree_->forEachLeaf([&](Leaf *leaf) {
       auto& particles = *leaf->getSrc();
 
       const auto& indices = particles.getIndexes();
@@ -80,130 +186,20 @@ class fmm_evaluator {
       for (size_t i = 0; i < n_particles; i++) {
         const size_t idx = indices[i];
 
-        weight_ptrs[idx] = &weights[i];
+        weight_ptrs_[idx] = &weights[i];
       }
     });
   }
 
-public:
-  fmm_evaluator(const rbf::rbf_base& rbf, int tree_height, const geometry::bbox3d& bbox)
-    : n_src_points(0)
-    , n_fld_points(0) {
-    auto bbox_width = (1.0 + 1.0 / 64.0) * bbox.size().maxCoeff();
-    auto bbox_center = bbox.center();
+  std::unique_ptr<Fmm> fmm_;
+  std::unique_ptr<InterpolatedKernel> interpolated_kernel_;
+  std::unique_ptr<Octree> tree_;
 
-    interpolated_kernel = std::make_unique<InterpolatedKernel>(
-      tree_height, bbox_width, FPoint<FReal>(bbox_center.data()), &rbf);
+  size_t n_src_points_;
+  size_t n_fld_points_;
 
-    tree = std::make_unique<Octree>(
-      tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<FReal>(bbox_center.data()));
-
-    fmm = std::make_unique<Fmm>(tree.get(), interpolated_kernel.get(), int(FmmAlgorithmScheduleChunkSize));
-  }
-
-  Eigen::VectorXd evaluate() const {
-    tree->forEachLeaf([&](Leaf *leaf) {
-      auto& particles = *leaf->getTargets();
-      particles.resetForcesAndPotential();
-    });
-
-    fmm->execute(FFmmM2L | FFmmL2L | FFmmL2P | FFmmP2P);
-
-    return potentials();
-  }
-
-  template <class Container>
-  void set_source_points(const Container& points) {
-    n_src_points = points.size();
-
-    // Remove all source particles.
-    tree->forEachLeaf([&](Leaf *leaf) {
-      auto& particles = *leaf->getSrc();
-      particles.clear();
-    });
-
-    // Insert source particles.
-    for (size_t idx = 0; idx < points.size(); idx++) {
-      tree->insert(FPoint<FReal>(points[idx].data()), FParticleType::FParticleTypeSource, idx, FReal(0));
-    }
-
-    update_weight_ptrs();
-  }
-
-  template <class Container, class Derived>
-  void set_source_points_and_weights(const Container& points, const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == points.size());
-
-    n_src_points = points.size();
-
-    // Remove all source particles.
-    tree->forEachLeaf([&](Leaf *leaf) {
-      auto& particles = *leaf->getSrc();
-      particles.clear();
-    });
-
-    // Insert source particles.
-    for (size_t idx = 0; idx < points.size(); idx++) {
-      tree->insert(FPoint<FReal>(points[idx].data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
-    }
-
-    tree->forEachCell([&](Cell *cell) {
-      cell->resetToInitialState();
-    });
-
-    fmm->execute(FFmmP2M | FFmmM2M);
-
-    weight_ptrs.clear();
-  }
-
-  template <class Container>
-  void set_field_points(const Container& points) {
-    n_fld_points = points.size();
-
-    // Remove all target particles.
-    tree->forEachLeaf([&](Leaf *leaf) {
-      auto& particles = *leaf->getTargets();
-      particles.clear();
-    });
-
-    // Insert target particles.
-    for (size_t idx = 0; idx < points.size(); idx++) {
-      tree->insert(FPoint<FReal>(points[idx].data()), FParticleType::FParticleTypeTarget, idx, 0.0);
-    }
-
-    fmm->updateTargetCells();
-
-    update_potential_ptrs();
-  }
-
-  template <class Derived>
-  void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == source_size());
-
-    if (source_size() == 0)
-      return;
-
-    if (weight_ptrs.empty())
-      update_weight_ptrs();
-
-    for (size_t idx = 0; idx < source_size(); idx++) {
-      *weight_ptrs[idx] = weights[idx];
-    }
-
-    tree->forEachCell([&](Cell *cell) {
-      cell->resetToInitialState();
-    });
-
-    fmm->execute(FFmmP2M | FFmmM2M);
-  }
-
-  size_t source_size() const {
-    return n_src_points;
-  }
-
-  size_t field_size() const {
-    return n_fld_points;
-  }
+  std::vector<const FReal *> potential_ptrs_;
+  std::vector<FReal *> weight_ptrs_;
 };
 
 } // namespace fmm

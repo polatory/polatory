@@ -34,19 +34,19 @@ double gmres_base::relative_residual() const {
 void gmres_base::set_left_preconditioner(const linear_operator& left_preconditioner) {
   assert(left_preconditioner.size() == m_);
 
-  this->left_pc_ = &left_preconditioner;
+  left_pc_ = &left_preconditioner;
 }
 
 void gmres_base::set_initial_solution(const Eigen::VectorXd& x0) {
-  assert(x0.size() == m_);
+  assert(x0.rows() == m_);
 
-  this->x0_ = x0;
+  x0_ = x0;
 }
 
 void gmres_base::set_right_preconditioner(const linear_operator& right_preconditioner) {
   assert(right_preconditioner.size() == m_);
 
-  this->right_pc_ = &right_preconditioner;
+  right_pc_ = &right_preconditioner;
 }
 
 void gmres_base::setup() {
@@ -105,7 +105,7 @@ void gmres_base::solve(double tolerance) {
 
 gmres_base::gmres_base(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter)
   : op_(op)
-  , m_(rhs.size())
+  , m_(rhs.rows())
   , max_iter_(max_iter)
   , x0_(Eigen::VectorXd::Zero(m_))
   , left_pc_(nullptr)

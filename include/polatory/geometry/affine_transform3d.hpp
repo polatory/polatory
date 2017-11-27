@@ -6,6 +6,8 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
+
 namespace polatory {
 namespace geometry {
 
@@ -19,9 +21,9 @@ public:
 
   const Eigen::Matrix4d& matrix() const;
 
-  Eigen::Vector3d transform_point(const Eigen::Vector3d& p) const;
+  point3d transform_point(const point3d& p) const;
 
-  Eigen::Vector3d transform_vector(const Eigen::Vector3d& v) const;
+  vector3d transform_vector(const vector3d& v) const;
 
   affine_transform3d operator*(const affine_transform3d& rhs) const;
 
@@ -29,7 +31,7 @@ public:
 
   static affine_transform3d scaling(const Eigen::Vector3d& scales);
 
-  static affine_transform3d translation(const Eigen::Vector3d& shifts);
+  static affine_transform3d translation(const vector3d& shifts);
 
 private:
   static Eigen::Matrix4d rotation_matrix(double angle, int axis);

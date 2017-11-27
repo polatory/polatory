@@ -10,9 +10,8 @@
 #include <numeric>
 #include <vector>
 
-#include <Eigen/Geometry>
-
 #include <polatory/common/uncertain.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/types.hpp>
 
@@ -137,7 +136,7 @@ enum binary_sign {
 
 
 class rmt_node {
-  Eigen::Vector3d pos;
+  geometry::point3d pos;
   double val;
 
 public:
@@ -247,7 +246,7 @@ private:
   }
 
 public:
-  explicit rmt_node(const Eigen::Vector3d& position)
+  explicit rmt_node(const geometry::point3d& position)
     : pos(position)
     , val(0.0)
     , cell_is_visited(false)
@@ -285,7 +284,7 @@ public:
   //   |         |  = 1 -> Simple surface
   //   |         .
   //   .
-  void cluster(std::vector<Eigen::Vector3d>& vertices, std::map<vertex_index, vertex_index>& cluster_map) const {
+  void cluster(std::vector<geometry::point3d>& vertices, std::map<vertex_index, vertex_index>& cluster_map) const {
     auto surfaces = get_surfaces();
     auto holes = get_holes();
 
@@ -308,7 +307,7 @@ public:
       auto weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
       assert(weights_sum > 0.0);
 
-      Eigen::Vector3d clustered = Eigen::Vector3d::Zero();
+      geometry::point3d clustered = geometry::point3d::Zero();
       for (size_t i = 0; i < weights.size(); i++) {
         auto vi = (*vis)[i];
         clustered += weights[i] / weights_sum * vertices[vi];
@@ -341,7 +340,7 @@ public:
         auto weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
         assert(weights_sum > 0.0);
 
-        Eigen::Vector3d clustered = Eigen::Vector3d::Zero();
+        geometry::point3d clustered = geometry::point3d::Zero();
         for (size_t i = 0; i < weights.size(); i++) {
           auto edge_idx = edge_idcs[i];
           auto vi = vertex_on_edge(edge_idx);
@@ -363,10 +362,10 @@ public:
       return common::uncertain<double>();
 
     auto& a_node = *neighbor_cache[edge_idx];
-    Eigen::Vector3d oa = a_node.pos - pos;
+    geometry::vector3d oa = a_node.pos - pos;
 
     std::vector<double> alphas;
-    Eigen::Vector3d normal = Eigen::Vector3d::Zero();
+    geometry::vector3d normal = geometry::vector3d::Zero();
 
     // Calculate alphas and accumulate normals per plane.
 
@@ -383,12 +382,12 @@ public:
 
       alphas.push_back(std::abs(theta_b) + std::abs(theta_c));
 
-      auto ob = b_node.pos - pos;
-      auto oc = c_node.pos - pos;
+      geometry::vector3d ob = b_node.pos - pos;
+      geometry::vector3d oc = c_node.pos - pos;
 
       // Orthogonalize ob and oc against oa.
-      auto ob_ortho = ob - ob.dot(oa) / oa.dot(oa) * oa;
-      auto oc_ortho = oc - oc.dot(oa) / oa.dot(oa) * oa;
+      geometry::vector3d ob_ortho = ob - ob.dot(oa) / oa.dot(oa) * oa;
+      geometry::vector3d oc_ortho = oc - oc.dot(oa) / oa.dot(oa) * oa;
 
       normal += ob_ortho.normalized() / std::tan(theta_b);
       normal += oc_ortho.normalized() / std::tan(theta_c);
@@ -405,9 +404,9 @@ public:
       auto neigh_pair = NeighborEdgePairs[edge_idx][i];
       auto& b_node = *neighbor_cache[neigh_pair.first];
 
-      Eigen::Vector3d ob = b_node.pos - pos;
+      geometry::vector3d ob = b_node.pos - pos;
 
-      Eigen::Vector3d plane_normal = oa.cross(ob).normalized();
+      geometry::vector3d plane_normal = oa.cross(ob).normalized();
 
       auto cos_gamma = normal.dot(plane_normal);
 
@@ -489,7 +488,7 @@ public:
     assert(vertex_on_edge(edge_idx) == vi);
   }
 
-  const Eigen::Vector3d& position() const {
+  const geometry::point3d& position() const {
     return pos;
   }
 

@@ -6,21 +6,24 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 
 using namespace polatory::kriging;
+using polatory::geometry::point3d;
+using polatory::geometry::points3d;
 
 TEST(empirical_variogram, trivial) {
-  int n_points = 4;
+  size_t n_points = 4;
 
   // Tetrahedron vertices separated from each other by a distance d.
   double d = 0.5;
-  std::vector<Eigen::Vector3d> points{
-    d * Eigen::Vector3d(std::sqrt(3.0) / 3.0, 0.0, 0.0),
-    d * Eigen::Vector3d(-std::sqrt(3.0) / 6.0, 1.0 / 2.0, 0.0),
-    d * Eigen::Vector3d(-std::sqrt(3.0) / 6.0, -1.0 / 2.0, 0.0),
-    d * Eigen::Vector3d(0.0, 0.0, std::sqrt(6.0) / 3.0)
-  };
+  points3d points(n_points);
+  points <<
+    d * point3d(std::sqrt(3.0) / 3.0, 0.0, 0.0),
+    d * point3d(-std::sqrt(3.0) / 6.0, 1.0 / 2.0, 0.0),
+    d * point3d(-std::sqrt(3.0) / 6.0, -1.0 / 2.0, 0.0),
+    d * point3d(0.0, 0.0, std::sqrt(6.0) / 3.0);
 
   Eigen::VectorXd values(n_points);
   values << 0.0, 1.0, 2.0, 3.0;

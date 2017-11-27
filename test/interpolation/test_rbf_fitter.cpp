@@ -3,7 +3,6 @@
 #include <iostream>
 #include <memory>
 #include <tuple>
-#include <vector>
 
 #include <Eigen/Core>
 #include <gtest/gtest.h>
@@ -16,18 +15,19 @@
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;
+using polatory::geometry::points3d;
 using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
 
 namespace {
 
 void test_poly_degree(int poly_degree, bool with_initial_solution) {
-  std::vector<Eigen::Vector3d> points;
+  points3d points;
   Eigen::VectorXd values;
   std::tie(points, values) = test_points_values(30000);
 
-  size_t n_points = points.size();
-  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
+  size_t n_points = points.rows();
+  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 1e-4;
 
   biharmonic rbf({ 1.0, 0.0 });
@@ -35,7 +35,7 @@ void test_poly_degree(int poly_degree, bool with_initial_solution) {
   auto fitter = std::make_unique<rbf_fitter>(rbf, 3, poly_degree, points);
   Eigen::VectorXd weights;
   if (with_initial_solution) {
-    Eigen::VectorXd x0 = 1e-5 * Eigen::VectorXd::Random(n_points + n_polynomials);
+    Eigen::VectorXd x0 = 1e-5 * Eigen::VectorXd::Random(n_points + n_poly_basis);
     weights = fitter->fit(values, absolute_tolerance, x0);
   } else {
     weights = fitter->fit(values, absolute_tolerance);

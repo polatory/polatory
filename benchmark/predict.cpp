@@ -1,10 +1,5 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <tuple>
-#include <vector>
-
-#include <Eigen/Core>
-
 #include <polatory/interpolant.hpp>
 #include <polatory/io/read_table.hpp>
 #include <polatory/io/write_table.hpp>

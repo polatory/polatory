@@ -8,7 +8,6 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <polatory/common/vector_range_view.hpp>
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polynomial/basis_base.hpp>
@@ -16,7 +15,6 @@
 #include <polatory/rbf/biharmonic.hpp>
 
 using namespace polatory::preconditioner;
-using polatory::common::make_range_view;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::point_cloud::random_points;
@@ -26,8 +24,9 @@ using polatory::rbf::biharmonic;
 
 void test_coarse_grid(double nugget) {
   size_t n_points = 1024;
+  int poly_dimension = 3;
   int poly_degree = 0;
-  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
+  size_t n_poly_basis = basis_base::basis_size(poly_dimension, poly_degree);
   double absolute_tolerance = 1e-10;
 
   auto points = random_points(sphere3d(), n_points);
@@ -39,7 +38,7 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  auto lagr_basis = std::make_shared<lagrange_basis<double>>(3, poly_degree, make_range_view(points, 0, n_polynomials));
+  auto lagr_basis = std::make_shared<lagrange_basis<double>>(poly_dimension, poly_degree, points.topRows(n_poly_basis));
 
   biharmonic rbf({ 1.0, nugget });
 
@@ -48,10 +47,10 @@ void test_coarse_grid(double nugget) {
   Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);
   coarse.solve(values);
 
-  Eigen::VectorXd sol = Eigen::VectorXd::Zero(n_points + n_polynomials);
+  Eigen::VectorXd sol = Eigen::VectorXd::Zero(n_points + n_poly_basis);
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_symmetric_evaluator(rbf, 3, poly_degree, points);
+  auto eval = rbf_direct_symmetric_evaluator(rbf, poly_dimension, poly_degree, points);
   eval.set_weights(sol);
   Eigen::VectorXd values_fit = eval.evaluate();
 

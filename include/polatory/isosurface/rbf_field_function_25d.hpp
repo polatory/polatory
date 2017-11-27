@@ -4,6 +4,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/isosurface/field_function.hpp>
@@ -16,18 +17,12 @@ struct rbf_field_function_25d : field_function {
     : interpolant_(interpolant) {
   }
 
-  Eigen::VectorXd operator()(const std::vector<Eigen::Vector3d>& points) const override {
-    std::vector<Eigen::Vector3d> points_2d(points);
-    for (auto& p : points_2d) {
-      p(2) = 0.0;
-    }
+  Eigen::VectorXd operator()(const geometry::points3d& points) const override {
+    geometry::points3d points_2d(points);
+    points_2d.col(2).array() = 0.0;
 
-    auto values = interpolant_.evaluate_points_impl(points_2d);
-    for (size_t i = 0; i < points.size(); i++) {
-      values(i) = points[i](2) - values(i);
-    }
-
-    return values;
+    return points.col(2) -
+      interpolant_.evaluate_points_impl(points_2d);
   }
 
   void set_evaluation_bbox(const geometry::bbox3d& bbox) override {

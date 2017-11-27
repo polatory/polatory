@@ -3,10 +3,11 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <utility>
+#include <tuple>
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/io/read_table.hpp>
 #include <polatory/kriging/cross_validation.hpp>
@@ -15,6 +16,7 @@
 
 #include "parse_options.hpp"
 
+using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::io::read_points_and_values;
 using polatory::kriging::k_fold_cross_validation;
@@ -24,14 +26,13 @@ using polatory::rbf::cov_quasi_spherical9;
 int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
-  std::vector<Eigen::Vector3d> points;
+  points3d points;
   Eigen::VectorXd values;
   std::tie(points, values) = read_points_and_values(opts.in_file);
 
   // Remove very close points.
-  distance_filter filter(points, opts.filter_distance);
-  points = filter.filter_points(points);
-  values = filter.filter_values(values);
+  std::tie(points, values) = distance_filter(points, opts.filter_distance)
+    .filtered(points, values);
 
   // Define model.
   cov_quasi_spherical9 rbf({ opts.psill, opts.range, opts.nugget });
@@ -39,9 +40,9 @@ int main(int argc, const char *argv[]) {
                                            points, values, opts.absolute_tolerance, opts.k);
 
   std::cout << "Estimated mean absolute error: " << std::endl
-            << std::setw(12) << residuals.lpNorm<1>() / points.size() << std::endl
+            << std::setw(12) << residuals.lpNorm<1>() / points.rows() << std::endl
             << "Estimated root mean square error: " << std::endl
-            << std::setw(12) << std::sqrt(residuals.squaredNorm() / points.size()) << std::endl;
+            << std::setw(12) << std::sqrt(residuals.squaredNorm() / points.rows()) << std::endl;
 
   return 0;
 }

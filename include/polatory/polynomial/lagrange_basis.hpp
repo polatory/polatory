@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 
@@ -18,29 +19,27 @@ class lagrange_basis : public basis_base {
   using Vector3F = Eigen::Matrix<Floating, 3, 1>;
   using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
 
-  monomial_basis <Floating> mono_basis;
-
-  MatrixXF coeffs;
-
 public:
-  template <class Container>
-  lagrange_basis(int dimension, int degree, const Container& points)
+  lagrange_basis(int dimension, int degree, const geometry::points3d& points)
     : basis_base(dimension, degree)
-    , mono_basis(dimension, degree) {
-    auto size = basis_size();
-    assert(points.size() == size);
+    , mono_basis_(dimension, degree) {
+    assert(points.rows() == basis_size());
 
-    auto pt = mono_basis.evaluate_points(points);
+    auto pt = mono_basis_.evaluate_points(points);
 
-    coeffs = pt.transpose().fullPivLu().inverse();
+    coeffs_ = pt.transpose().fullPivLu().inverse();
   }
 
-  template <class Container>
-  MatrixXF evaluate_points(const Container& points) const {
-    auto pt = mono_basis.evaluate_points(points);
+  MatrixXF evaluate_points(const geometry::points3d& points) const {
+    auto pt = mono_basis_.evaluate_points(points);
 
-    return coeffs.transpose() * pt;
+    return coeffs_.transpose() * pt;
   }
+
+private:
+  const monomial_basis<Floating> mono_basis_;
+
+  MatrixXF coeffs_;
 };
 
 } // namespace polynomial

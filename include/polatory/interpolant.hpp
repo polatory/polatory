@@ -7,8 +7,9 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
-#include <polatory/common/vector_view.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/affine_transform3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -21,7 +22,6 @@ namespace polatory {
 
 class interpolant {
 public:
-  using points_type = std::vector<Eigen::Vector3d>;
   using values_type = Eigen::VectorXd;
 
   interpolant(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)
@@ -32,7 +32,7 @@ public:
       throw common::invalid_argument("rbf.order_of_cpd() - 1 <= poly_degree <= 2");
   }
 
-  const points_type& centers() const {
+  const geometry::points3d& centers() const {
     return centers_;
   }
 
@@ -40,22 +40,22 @@ public:
     return centers_bbox_;
   }
 
-  values_type evaluate_points(const points_type& points) {
+  values_type evaluate_points(const geometry::points3d& points) {
     set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
 
     return evaluate_points_impl(points);
   }
 
-  values_type evaluate_points_impl(const points_type& points) const {
+  values_type evaluate_points_impl(const geometry::points3d& points) const {
     auto transformed = affine_transform_points(points);
 
     return evaluator_->evaluate_points(transformed);
   }
 
-  void fit(const points_type& points, const values_type& values, double absolute_tolerance) {
+  void fit(const geometry::points3d& points, const values_type& values, double absolute_tolerance) {
     auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
-    if (points.size() < min_n_points)
-      throw common::invalid_argument("points.size() >= " + std::to_string(min_n_points));
+    if (points.rows() < min_n_points)
+      throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
     auto transformed = affine_transform_points(points);
 
@@ -66,10 +66,10 @@ public:
     weights_ = fitter.fit(values, absolute_tolerance);
   }
 
-  void fit_incrementally(const points_type& points, const values_type& values, double absolute_tolerance) {
+  void fit_incrementally(const geometry::points3d& points, const values_type& values, double absolute_tolerance) {
     auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
-    if (points.size() < min_n_points)
-      throw common::invalid_argument("points.size() >= " + std::to_string(min_n_points));
+    if (points.rows() < min_n_points)
+      throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
     auto transformed = affine_transform_points(points);
 
@@ -78,8 +78,7 @@ public:
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
 
-    auto view = common::make_view(transformed, center_indices);
-    centers_ = std::vector<Eigen::Vector3d>(view.begin(), view.end());
+    centers_ = common::take_rows(transformed, center_indices);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
   }
 
@@ -105,15 +104,15 @@ public:
   }
 
 private:
-  points_type affine_transform_points(const points_type& points) const {
+  geometry::points3d affine_transform_points(const geometry::points3d& points) const {
     if (point_transform_.is_identity())
       return points;
 
-    points_type transformed;
-    transformed.reserve(points.size());
+    geometry::points3d transformed(points.rows());
 
-    for (const auto& p : points) {
-      transformed.push_back(point_transform_.transform_point(p));
+    auto transformed_it = common::row_begin(transformed);
+    for (auto p : common::row_range(points)) {
+      *transformed_it++ = point_transform_.transform_point(p);
     }
 
     return transformed;
@@ -125,7 +124,7 @@ private:
 
   geometry::affine_transform3d point_transform_;
 
-  std::vector<Eigen::Vector3d> centers_;
+  geometry::points3d centers_;
   geometry::bbox3d centers_bbox_;
   Eigen::VectorXd weights_;
 

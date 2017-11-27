@@ -7,6 +7,7 @@
 #include <numeric>
 #include <random>
 
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -16,12 +17,12 @@ namespace polatory {
 namespace kriging {
 
 Eigen::VectorXd k_fold_cross_validation(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                                        const std::vector<Eigen::Vector3d>& points, const Eigen::VectorXd& values,
+                                        const geometry::points3d& points, const Eigen::VectorXd& values,
                                         double absolute_tolerance,
                                         int k) {
-  auto n_points = points.size();
+  auto n_points = points.rows();
   if (k <= 0 || k > n_points)
-    throw common::invalid_argument("0 < k <= points.size()");
+    throw common::invalid_argument("0 < k <= points.rows()");
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -47,25 +48,11 @@ Eigen::VectorXd k_fold_cross_validation(const rbf::rbf_base& rbf, int poly_dimen
     std::copy(indices.begin() + a, indices.begin() + b, test_set.begin());
     std::copy(indices.begin() + b, indices.end(), train_set.begin() + a);
 
-    std::vector<Eigen::Vector3d> train_points(train_set_size);
-    std::transform(train_set.begin(), train_set.end(), train_points.begin(), [&points](auto idx) {
-      return points[idx];
-    });
+    auto train_points = common::take_rows(points, train_set);
+    auto test_points = common::take_rows(points, test_set);
 
-    std::vector<Eigen::Vector3d> test_points(test_set_size);
-    std::transform(test_set.begin(), test_set.end(), test_points.begin(), [&points](auto idx) {
-      return points[idx];
-    });
-
-    Eigen::VectorXd train_values(train_set_size);
-    std::transform(train_set.begin(), train_set.end(), train_values.data(), [&values](auto idx) {
-      return values(idx);
-    });
-
-    Eigen::VectorXd test_values(test_set_size);
-    std::transform(test_set.begin(), test_set.end(), test_values.data(), [&values](auto idx) {
-      return values(idx);
-    });
+    auto train_values = common::take_rows(values, train_set);
+    auto test_values = common::take_rows(values, test_set);
 
     interpolation::rbf_fitter fitter(rbf, poly_dimension, poly_degree, train_points);
     auto weights = fitter.fit(train_values, absolute_tolerance);

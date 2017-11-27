@@ -9,44 +9,45 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
+
 namespace polatory {
 namespace polynomial {
 
 template <class Basis>
 class polynomial_evaluator {
-  const Basis basis;
-
-  std::vector<Eigen::Vector3d> points;
-  Eigen::VectorXd weights;
 
 public:
   explicit polynomial_evaluator(int dimension, int degree)
-    : basis(dimension, degree)
-    , weights(Eigen::VectorXd::Zero(basis.basis_size())) {
+    : basis_(dimension, degree)
+    , weights_(Eigen::VectorXd::Zero(basis_.basis_size())) {
   }
 
   Eigen::VectorXd evaluate() const {
-    Eigen::MatrixXd pt = basis.evaluate_points(points);
+    Eigen::MatrixXd pt = basis_.evaluate_points(points_);
 
-    return pt.transpose() * weights;
+    return pt.transpose() * weights_;
   }
 
-  template <class Container>
-  void set_field_points(const Container& points) {
-    this->points.clear();
-    this->points.reserve(points.size());
-    std::copy(points.begin(), points.end(), std::back_inserter(this->points));
+  void set_field_points(const geometry::points3d& points) {
+    points_ = points;
   }
 
   void set_weights(const Eigen::VectorXd& weights) {
-    assert(weights.size() == basis.basis_size());
+    assert(weights.rows() == basis_.basis_size());
 
-    this->weights = weights;
+    weights_ = weights;
   }
 
   size_t size() const {
-    return basis.basis_size();
+    return basis_.basis_size();
   }
+
+private:
+  const Basis basis_;
+
+  geometry::points3d points_;
+  Eigen::VectorXd weights_;
 };
 
 } // namespace polynomial

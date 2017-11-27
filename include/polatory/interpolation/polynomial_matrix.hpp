@@ -6,6 +6,8 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
+
 namespace polatory {
 namespace interpolation {
 
@@ -32,7 +34,7 @@ public:
     auto l = pt_.rows();
     auto m = pt_.cols();
 
-    assert(lambda_c.size() == m + l);
+    assert(lambda_c.rows() == m + l);
 
     Eigen::VectorXd output(m + l);
 
@@ -45,8 +47,7 @@ public:
     return output;
   }
 
-  template <class Container>
-  void set_points(const Container& points) {
+  void set_points(const geometry::points3d& points) {
     pt_ = basis_.evaluate_points(points);
   }
 

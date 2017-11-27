@@ -1,10 +1,10 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <utility>
-#include <vector>
+#include <tuple>
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/io/read_table.hpp>
 #include <polatory/isosurface/export_obj.hpp>
@@ -15,6 +15,7 @@
 
 #include "parse_options.hpp"
 
+using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::io::read_points_and_values;
 using polatory::isosurface::export_obj;
@@ -26,14 +27,13 @@ using polatory::rbf::cov_quasi_spherical9;
 int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
-  std::vector<Eigen::Vector3d> points;
+  points3d points;
   Eigen::VectorXd values;
   std::tie(points, values) = read_points_and_values(opts.in_file);
 
   // Remove very close points.
-  distance_filter filter(points, opts.filter_distance);
-  points = filter.filter_points(points);
-  values = filter.filter_values(values);
+  std::tie(points, values) = distance_filter(points, opts.filter_distance)
+    .filtered(points, values);
 
   // Define model.
   cov_quasi_spherical9 rbf({ opts.psill, opts.range, opts.nugget });

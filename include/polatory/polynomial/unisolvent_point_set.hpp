@@ -9,25 +9,20 @@
 #include <Eigen/Core>
 
 #include <polatory/common/bsearch.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 
 namespace polatory {
 namespace polynomial {
 
 class unisolvent_point_set {
-  const size_t n_points;
-  const size_t n_polynomials;
-
-  std::vector<size_t> point_idcs_;
-
 public:
-  template <class Container>
-  unisolvent_point_set(const Container& points,
+  unisolvent_point_set(const geometry::vectors3d& points,
                        const std::vector<size_t>& point_indices,
                        int dimension,
                        int degree)
-    : n_points(points.size())
-    , n_polynomials(polynomial::basis_base::basis_size(dimension, degree))
+    : n_points_(points.rows())
+    , n_poly_basis_(polynomial::basis_base::basis_size(dimension, degree))
     , point_idcs_(point_indices) {
     if (degree < 0) return;
 
@@ -36,7 +31,7 @@ public:
     std::uniform_int_distribution<int> dist(0, point_indices.size() - 1);
     std::set<size_t> set;
 
-    while (set.size() < n_polynomials) {
+    while (set.size() < n_poly_basis_) {
       size_t point_idx = point_idcs_[dist(gen)];
       if (!set.insert(point_idx).second)
         continue;
@@ -53,6 +48,12 @@ public:
   const std::vector<size_t> point_indices() const {
     return point_idcs_;
   }
+
+private:
+  const size_t n_points_;
+  const size_t n_poly_basis_;
+
+  std::vector<size_t> point_idcs_;
 };
 
 } // namespace polynomial

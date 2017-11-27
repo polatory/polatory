@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include <Eigen/Core>
-
 #include <polatory/io/write_table.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
@@ -20,7 +18,7 @@ int main(int argc, char *argv[]) {
 
   auto points = random_points(sphere3d(), n_points, seed);
   points = distance_filter(points, 1e-8)
-    .filter_points(points);
+    .filtered(points);
 
   write_points(argv[3], points);
 

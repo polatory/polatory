@@ -12,9 +12,10 @@
 #include <Eigen/Core>
 
 #include <polatory/common/bsearch.hpp>
-#include <polatory/common/vector_view.hpp>
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -32,8 +33,6 @@ public:
 
 private:
   friend class domain_divider;
-
-  geometry::bbox3d bbox_;
 
   void merge_poly_points(const std::vector<size_t>& poly_point_idcs) {
     std::vector<size_t> new_point_indices(poly_point_idcs.begin(), poly_point_idcs.end());
@@ -65,19 +64,69 @@ private:
     point_indices = new_point_indices;
     inner_point = new_inner_point;
   }
+
+  geometry::bbox3d bbox_;
 };
 
 class domain_divider {
   const double overlap_quota = 0.75;
   const size_t max_leaf_size = 256;
 
-  const std::vector<Eigen::Vector3d>& points;
+public:
+  domain_divider(const geometry::points3d& points,
+                 const std::vector<size_t>& point_indices,
+                 const std::vector<size_t>& poly_point_indices)
+    : points_(points)
+    , poly_point_idcs_(poly_point_indices)
+    , size_of_root_(point_indices.size()) {
+    auto root = domain();
 
-  size_t size_of_root;
-  double longest_side_length_of_root;
-  std::vector<size_t> poly_point_idcs_;
-  std::list<domain> domains_;
+    root.point_indices = point_indices;
 
+    root.inner_point = std::vector<bool>(point_indices.size(), true);
+
+    root.bbox_ = domain_bbox(root);
+    longest_side_length_of_root_ = root.bbox_.size().maxCoeff();
+
+    domains_.push_back(root);
+
+    divide_domains();
+  }
+
+  std::vector<size_t> choose_coarse_points(double ratio) const {
+    std::vector<size_t> coarse_idcs(poly_point_idcs_.begin(), poly_point_idcs_.end());
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    for (const auto& d : domains_) {
+      std::vector<size_t> shuffled(d.size() - poly_point_idcs_.size());
+      std::iota(shuffled.begin(), shuffled.end(), poly_point_idcs_.size());
+      std::shuffle(shuffled.begin(), shuffled.end(), gen);
+
+      auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true);
+      auto n_coarse = std::max(size_t(1), static_cast<size_t>(round_half_to_even(ratio * n_inner_pts)));
+
+      size_t count = 0;
+      for (auto i : shuffled) {
+        if (count == n_coarse)
+          break;
+
+        if (d.inner_point[i]) {
+          coarse_idcs.push_back(d.point_indices[i]);
+          count++;
+        }
+      }
+    }
+
+    return coarse_idcs;
+  }
+
+  const std::list<domain>& domains() const {
+    return domains_;
+  }
+
+private:
   void divide_domain(std::list<domain>::iterator it) {
     auto& d = *it;
 
@@ -88,12 +137,12 @@ class domain_divider {
       d.point_indices.begin(), d.point_indices.end(),
       d.inner_point.begin(), d.inner_point.end(),
       [this, &d, split_axis](const auto& a, const auto& b) {
-        return points[a.first](split_axis) < points[b.first](split_axis);
+        return points_(a.first, split_axis) < points_(b.first, split_axis);
       });
 
     auto longest_side_length = d.bbox_.size()(split_axis);
     auto q =
-      longest_side_length_of_root / longest_side_length * std::sqrt(double(max_leaf_size) / double(size_of_root)) *
+      longest_side_length_of_root_ / longest_side_length * std::sqrt(double(max_leaf_size) / double(size_of_root_)) *
       overlap_quota;
     q = std::min(0.5, q);
 
@@ -153,7 +202,7 @@ class domain_divider {
   }
 
   geometry::bbox3d domain_bbox(const domain& domain) const {
-    auto domain_points = common::make_view(points, domain.point_indices);
+    auto domain_points = common::take_rows(points_, domain.point_indices);
 
     return geometry::bbox3d::from_points(domain_points);
   }
@@ -162,59 +211,12 @@ class domain_divider {
     return std::ceil((d - 0.5) / 2.0) + std::floor((d + 0.5) / 2.0);
   }
 
-public:
-  domain_divider(const std::vector<Eigen::Vector3d>& points,
-                 const std::vector<size_t>& point_indices,
-                 const std::vector<size_t>& poly_point_indices)
-    : points(points)
-    , poly_point_idcs_(poly_point_indices)
-    , size_of_root(point_indices.size()) {
-    auto root = domain();
+  const geometry::points3d& points_;
 
-    root.point_indices = point_indices;
-
-    root.inner_point = std::vector<bool>(point_indices.size(), true);
-
-    root.bbox_ = domain_bbox(root);
-    longest_side_length_of_root = root.bbox_.size().maxCoeff();
-
-    domains_.push_back(root);
-
-    divide_domains();
-  }
-
-  std::vector<size_t> choose_coarse_points(double ratio) const {
-    std::vector<size_t> coarse_idcs(poly_point_idcs_.begin(), poly_point_idcs_.end());
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    for (const auto& d : domains_) {
-      std::vector<size_t> shuffled(d.size() - poly_point_idcs_.size());
-      std::iota(shuffled.begin(), shuffled.end(), poly_point_idcs_.size());
-      std::shuffle(shuffled.begin(), shuffled.end(), gen);
-
-      auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true);
-      auto n_coarse = std::max(size_t(1), static_cast<size_t>(round_half_to_even(ratio * n_inner_pts)));
-
-      size_t count = 0;
-      for (auto i : shuffled) {
-        if (count == n_coarse)
-          break;
-
-        if (d.inner_point[i]) {
-          coarse_idcs.push_back(d.point_indices[i]);
-          count++;
-        }
-      }
-    }
-
-    return coarse_idcs;
-  }
-
-  const std::list<domain>& domains() const {
-    return domains_;
-  }
+  size_t size_of_root_;
+  double longest_side_length_of_root_;
+  std::vector<size_t> poly_point_idcs_;
+  std::list<domain> domains_;
 };
 
 } // namespace preconditioner

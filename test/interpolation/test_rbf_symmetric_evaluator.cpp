@@ -1,7 +1,5 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <vector>
-
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
@@ -23,18 +21,18 @@ namespace {
 
 template <class Evaluator>
 void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
-  size_t n_polynomials = basis_base::basis_size(3, poly_degree);
+  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 5e-7;
 
   biharmonic rbf({ 1.0, 0.0 });
 
   auto points = random_points(sphere3d(), n_points);
 
-  Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_polynomials);
+  Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_poly_basis);
 
   rbf_direct_evaluator direct_eval(rbf, 3, poly_degree, points);
   direct_eval.set_weights(weights);
-  direct_eval.set_field_points(std::vector<Eigen::Vector3d>(points.begin(), points.begin() + n_eval_points));
+  direct_eval.set_field_points(points.topRows(n_eval_points));
 
   Evaluator eval(rbf, 3, poly_degree, points);
   eval.set_weights(weights);

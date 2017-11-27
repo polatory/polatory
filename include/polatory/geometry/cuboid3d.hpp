@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include <iterator>
-
-#include <Eigen/Core>
+#include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
 namespace geometry {
@@ -12,26 +10,30 @@ namespace geometry {
 class cuboid3d {
 public:
   cuboid3d()
-    : min_(Eigen::Vector3d::Zero())
-    , max_(Eigen::Vector3d::Ones()) {
+    : min_(point3d::Zero())
+    , max_(point3d::Ones()) {
   }
 
-  cuboid3d(const Eigen::Vector3d& min, const Eigen::Vector3d& max)
+  cuboid3d(const point3d& min, const point3d& max)
     : min_(min)
     , max_(max) {
   }
 
-  const Eigen::Vector3d& max() const {
+  bool operator==(const cuboid3d& other) const {
+    return min_ == other.min_ && max_ == other.max_;
+  }
+
+  const point3d& max() const {
     return max_;
   }
 
-  const Eigen::Vector3d& min() const {
+  const point3d& min() const {
     return min_;
   }
 
 private:
-  const Eigen::Vector3d min_;
-  const Eigen::Vector3d max_;
+  const point3d min_;
+  const point3d max_;
 };
 
 } // namespace geometry

@@ -15,8 +15,8 @@ class kdtree::impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
 
 public:
-  impl(const std::vector<Eigen::Vector3d>& points, bool use_exact_search) {
-    flann::Matrix<double> points_mat(const_cast<double *>(points[0].data()), points.size(), 3);
+  impl(const geometry::points3d& points, bool use_exact_search) {
+    flann::Matrix<double> points_mat(const_cast<double *>(points.data()), points.rows(), 3);
 
     flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
     flann_index_->buildIndex();
@@ -27,7 +27,7 @@ public:
     }
   }
 
-  void knn_search(const Eigen::Vector3d& point, int k,
+  void knn_search(const geometry::point3d& point, int k,
                   std::vector<size_t>& indices, std::vector<double>& distances) const {
     flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);
     std::vector<std::vector<size_t>> indices_v;
@@ -43,7 +43,7 @@ public:
     }
   }
 
-  void radius_search(const Eigen::Vector3d& point, double radius,
+  void radius_search(const geometry::point3d& point, double radius,
                      std::vector<size_t>& indices, std::vector<double>& distances) const {
     flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);
     std::vector<std::vector<size_t>> indices_v;
@@ -65,13 +65,13 @@ private:
   std::unique_ptr<FlannIndex> flann_index_;
 };
 
-kdtree::kdtree(const std::vector<Eigen::Vector3d>& points, bool use_exact_search)
-  : pimpl_(points.size() == 0 ? nullptr : std::make_unique<impl>(points, use_exact_search)) {
+kdtree::kdtree(const geometry::points3d& points, bool use_exact_search)
+  : pimpl_(points.rows() == 0 ? nullptr : std::make_unique<impl>(points, use_exact_search)) {
 }
 
 kdtree::~kdtree() = default;
 
-void kdtree::knn_search(const Eigen::Vector3d& point, int k,
+void kdtree::knn_search(const geometry::point3d& point, int k,
                         std::vector<size_t>& indices, std::vector<double>& distances) const {
   if (k <= 0)
     throw common::invalid_argument("k > 0");
@@ -84,7 +84,7 @@ void kdtree::knn_search(const Eigen::Vector3d& point, int k,
   }
 }
 
-void kdtree::radius_search(const Eigen::Vector3d& point, double radius,
+void kdtree::radius_search(const geometry::point3d& point, double radius,
                            std::vector<size_t>& indices, std::vector<double>& distances) const {
   if (radius <= 0.0)
     throw common::invalid_argument("radius > 0.0");

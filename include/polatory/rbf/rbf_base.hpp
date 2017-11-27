@@ -7,6 +7,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/third_party/ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
 
 namespace polatory {
@@ -95,7 +96,7 @@ public:
     return evaluate(p1.data(), p2.data());
   }
 
-  double evaluate(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2) const {
+  double evaluate(const geometry::point3d& p1, const geometry::point3d& p2) const {
     return evaluate(p1.data(), p2.data());
   }
 
