@@ -110,8 +110,9 @@ private:
 
     geometry::points3d transformed(points.rows());
 
-    for (size_t i = 0; i < points.rows(); i++) {
-      transformed.row(i) = point_transform_.transform_point(points.row(i));
+    auto transformed_it = common::row_begin(transformed);
+    for (auto p : common::row_range(points)) {
+      *transformed_it++ = point_transform_.transform_point(p);
     }
 
     return transformed;

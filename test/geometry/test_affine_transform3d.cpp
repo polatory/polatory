@@ -57,7 +57,7 @@ TEST(affine_transform3d, roll_pitch_yaw) {
 }
 
 TEST(affine_transform3d, scaling) {
-  auto m_actual = affine_transform3d::scaling(Eigen::Vector3d(3.0, 5.0, 7.0))
+  auto m_actual = affine_transform3d::scaling({ 3.0, 5.0, 7.0 })
     .matrix();
 
   Eigen::Matrix4d m;
@@ -71,7 +71,7 @@ TEST(affine_transform3d, scaling) {
 }
 
 TEST(affine_transform3d, translation) {
-  auto m_actual = affine_transform3d::translation(vector3d(3.0, 5.0, 7.0))
+  auto m_actual = affine_transform3d::translation({ 3.0, 5.0, 7.0 })
     .matrix();
 
   Eigen::Matrix4d m;

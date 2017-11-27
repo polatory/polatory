@@ -2,9 +2,8 @@
 
 #pragma once
 
+#include <set>
 #include <vector>
-
-#include <Eigen/Core>
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>

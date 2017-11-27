@@ -31,9 +31,8 @@ bool affine_transform3d::is_identity() const {
 }
 
 point3d affine_transform3d::transform_point(const point3d& p) const {
-  Eigen::Vector4d p_homo;
-  p_homo << p(0), p(1), p(2), 1.0;
-  return m_.topLeftCorner(3, 4) * p_homo;
+  Eigen::RowVector4d p_homo(p(0), p(1), p(2), 1.0);
+  return m_.topLeftCorner(3, 4) * p_homo.transpose();
 }
 
 vector3d affine_transform3d::transform_vector(const vector3d& v) const {

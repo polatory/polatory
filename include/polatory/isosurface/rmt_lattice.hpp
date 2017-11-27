@@ -15,6 +15,7 @@
 #include <omp.h>
 
 #include <polatory/common/bsearch.hpp>
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/uncertain.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -125,9 +126,9 @@ class rmt_lattice : public rmt_primitive_lattice {
 
     geometry::points3d points(nodes_to_evaluate.size());
 
-    for (size_t i = 0; i < nodes_to_evaluate.size(); i++) {
-      auto idx = nodes_to_evaluate[i];
-      points.row(i) = (node_list.at(idx).position());
+    auto point_it = common::row_begin(points);
+    for (auto idx : nodes_to_evaluate) {
+      *point_it++ = node_list.at(idx).position();
     }
 
     auto values = field_func(points);

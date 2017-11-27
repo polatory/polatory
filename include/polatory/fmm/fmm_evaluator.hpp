@@ -69,7 +69,7 @@ public:
     });
 
     // Insert source particles.
-    for (size_t idx = 0; idx < points.rows(); idx++) {
+    for (size_t idx = 0; idx < n_src_points_; idx++) {
       tree_->insert(FPoint<FReal>(points.row(idx).data()), FParticleType::FParticleTypeSource, idx, FReal(0));
     }
 

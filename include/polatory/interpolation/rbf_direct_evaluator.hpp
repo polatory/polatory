@@ -22,11 +22,13 @@ public:
 
   Eigen::VectorXd evaluate() const;
 
+  size_t field_size() const;
+
   void set_field_points(const geometry::points3d& field_points);
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.size() == src_points_.rows() + n_polynomials_);
+    assert(weights.size() == source_size() + n_polynomials_);
 
     this->weights_ = weights;
 
@@ -35,15 +37,15 @@ public:
     }
   }
 
+  size_t source_size() const;
+
 private:
   const rbf::rbf_base& rbf_;
-  const size_t n_src_points_;
   const size_t n_polynomials_;
+  const geometry::points3d src_points_;
 
-  size_t n_fld_points_;
   std::unique_ptr<PolynomialEvaluator> p_;
 
-  const geometry::points3d src_points_;
   geometry::points3d fld_points_;
   Eigen::VectorXd weights_;
 };

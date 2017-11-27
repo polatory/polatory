@@ -3,7 +3,6 @@
 #pragma once
 
 #include <random>
-#include <vector>
 
 #include <Eigen/Core>
 
@@ -17,12 +16,12 @@ namespace point_cloud {
 using seed_type = std::random_device::result_type;
 
 geometry::points3d random_points(const geometry::cuboid3d& cuboid,
-                               size_t n,
-                               seed_type seed = std::random_device()());
+                                 size_t n,
+                                 seed_type seed = std::random_device()());
 
 geometry::points3d random_points(const geometry::sphere3d& sphere,
-                               size_t n,
-                               seed_type seed = std::random_device()());
+                                 size_t n,
+                                 seed_type seed = std::random_device()());
 
 } // namespace point_cloud
 } // namespace polatory

@@ -26,17 +26,17 @@ geometry::affine_transform3d rotation() {
 // Primitive vectors of body-centered cubic.
 std::array<geometry::vector3d, 3> PrimitiveVectors
   {
-    rotation().transform_vector(geometry::vector3d(+1., +1., -1.)),
-    rotation().transform_vector(geometry::vector3d(+1., -1., +1.)),
-    rotation().transform_vector(geometry::vector3d(-1., +1., +1.))
+    rotation().transform_vector({ +1., +1., -1. }),
+    rotation().transform_vector({ +1., -1., +1. }),
+    rotation().transform_vector({ -1., +1., +1. })
   };
 
 // Reciprocal primitive vectors of body-centered cubic.
 std::array<geometry::vector3d, 3> ReciprocalPrimitiveVectors
   {
-    rotation().transform_vector(geometry::vector3d(1. / 2., 1. / 2., 0.)),
-    rotation().transform_vector(geometry::vector3d(1. / 2., 0., 1. / 2.)),
-    rotation().transform_vector(geometry::vector3d(0., 1. / 2., 1. / 2.))
+    rotation().transform_vector({ 1. / 2., 1. / 2., 0. }),
+    rotation().transform_vector({ 1. / 2., 0., 1. / 2. }),
+    rotation().transform_vector({ 0., 1. / 2., 1. / 2. })
   };
 
 } // namespace

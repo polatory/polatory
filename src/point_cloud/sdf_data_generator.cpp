@@ -77,7 +77,7 @@ geometry::points3d sdf_data_generator::sdf_points() const {
   geometry::points3d sdf_points(total_size());
   sdf_points.topRows(points_.rows()) = points_;
 
-  auto point_it = common::row_begin(sdf_points) + points_.rows();
+  auto sdf_point_it = common::row_begin(sdf_points) + points_.rows();
 
   for (size_t i = 0; i < ext_indices_.size(); i++) {
     auto idx = ext_indices_[i];
@@ -85,7 +85,7 @@ geometry::points3d sdf_data_generator::sdf_points() const {
 
     auto p = points_.row(idx);
     auto n = normals_.row(idx);
-    *point_it++ = p + d * n;
+    *sdf_point_it++ = p + d * n;
   }
 
   for (size_t i = 0; i < int_indices_.size(); i++) {
@@ -94,7 +94,7 @@ geometry::points3d sdf_data_generator::sdf_points() const {
 
     auto p = points_.row(i);
     auto n = normals_.row(i);
-    *point_it++ = p - d * n;
+    *sdf_point_it++ = p - d * n;
   }
 
   return sdf_points;

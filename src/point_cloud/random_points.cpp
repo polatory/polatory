@@ -4,6 +4,7 @@
 
 #include <cmath>
 
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
 
 namespace polatory {
@@ -21,12 +22,12 @@ geometry::points3d random_points(const geometry::cuboid3d& cuboid,
 
   geometry::points3d points(n);
 
-  for (size_t i = 0; i < n; i++) {
+  for (auto p : common::row_range(points)) {
     auto x = dist(gen) * size(0);
     auto y = dist(gen) * size(1);
     auto z = dist(gen) * size(2);
 
-    points.row(i) = cuboid.min() + geometry::vector3d(x, y, z);
+    p = cuboid.min() + geometry::vector3d(x, y, z);
   }
 
   return points;
@@ -45,7 +46,7 @@ geometry::points3d random_points(const geometry::sphere3d& sphere,
 
   geometry::points3d points(n);
 
-  for (size_t i = 0; i < n; i++) {
+  for (auto p : common::row_range(points)) {
     double x1;
     double x2;
     double rsq;
@@ -59,7 +60,7 @@ geometry::points3d random_points(const geometry::sphere3d& sphere,
     auto y = 2.0 * x2 * std::sqrt(1.0 - rsq);
     auto z = 1.0 - 2.0 * rsq;
 
-    points.row(i) = sphere.center() + sphere.radius() * geometry::vector3d(x, y, z);
+    p = sphere.center() + sphere.radius() * geometry::vector3d(x, y, z);
   }
 
   return points;
