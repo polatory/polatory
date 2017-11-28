@@ -14,7 +14,7 @@
 #include <polatory/rbf/cov_quasi_spherical7.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
 #include <polatory/rbf/cov_spherical.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf_kernel.hpp>
 
 using namespace polatory::rbf;
 
@@ -24,7 +24,7 @@ double hypot(double x, double y, double z) {
   return std::sqrt(x * x + y * y + z * z);
 }
 
-void test_gradient(const rbf_base& kernel) {
+void test_gradient(const rbf_kernel& kernel) {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<> dist(0.0, 2.0);
@@ -58,7 +58,7 @@ void test_gradient(const rbf_base& kernel) {
 
 } // namespace
 
-TEST(rbf, gradient) {
+TEST(rbf_kernel, gradient) {
   test_gradient(biharmonic({ 1.0, 0.0 }));
   test_gradient(biharmonic2d({ 1.0, 0.0 }));
   test_gradient(cov_exponential({ 1.0, 1.0, 0.0 }));

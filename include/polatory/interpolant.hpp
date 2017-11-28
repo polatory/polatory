@@ -15,18 +15,18 @@
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/polynomial/basis_base.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 
 class interpolant {
 public:
-  interpolant(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)
+  interpolant(const rbf::rbf& rbf, int poly_dimension, int poly_degree)
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree) {
-    if (poly_degree < rbf.order_of_cpd() - 1 || poly_degree > 2)
-      throw common::invalid_argument("rbf.order_of_cpd() - 1 <= poly_degree <= 2");
+    if (poly_degree < rbf.get().order_of_cpd() - 1 || poly_degree > 2)
+      throw common::invalid_argument("rbf.get().order_of_cpd() - 1 <= poly_degree <= 2");
   }
 
   const geometry::points3d& centers() const {
@@ -115,7 +115,7 @@ private:
     return transformed;
   }
 
-  const rbf::rbf_base& rbf_;
+  const rbf::rbf rbf_;
   const int poly_dimension_;
   const int poly_degree_;
 

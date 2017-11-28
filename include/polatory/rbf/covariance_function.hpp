@@ -6,14 +6,14 @@
 
 #include <ceres/ceres.h>
 
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf_kernel.hpp>
 
 namespace polatory {
 namespace rbf {
 
-class covariance_function : public rbf_base {
+class covariance_function : public rbf_kernel {
 public:
-  using rbf_base::rbf_base;
+  using rbf_kernel::rbf_kernel;
 
   double nugget() const override {
     return parameters()[2];
@@ -35,25 +35,21 @@ public:
     return partial_sill() + nugget();
   }
 
-  virtual int num_parameters() const {
+  int num_parameters() const override {
     return 3;
   }
 
-  virtual const double *parameter_lower_bounds() const {
+  const double *parameter_lower_bounds() const override {
     static const double lower_bounds[]{ 0.0, 0.0, 0.0 };
     return lower_bounds;
   }
 
-  virtual const double *parameter_upper_bounds() const {
+  const double *parameter_upper_bounds() const override {
     static const double upper_bounds[]{ std::numeric_limits<double>::infinity(),
                                         std::numeric_limits<double>::infinity(),
                                         std::numeric_limits<double>::infinity() };
     return upper_bounds;
   }
-
-  virtual ceres::CostFunction *cost_function(double h, double gamma, double weight) const = 0;
-
-  virtual ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight) const = 0;
 };
 
 #define DECLARE_COST_FUNCTIONS(RBF)                                         \

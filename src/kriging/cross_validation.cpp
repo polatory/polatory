@@ -16,7 +16,7 @@
 namespace polatory {
 namespace kriging {
 
-common::valuesd k_fold_cross_validation(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+common::valuesd k_fold_cross_validation(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                                         const geometry::points3d& points, const common::valuesd& values,
                                         double absolute_tolerance,
                                         int k) {

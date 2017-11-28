@@ -7,7 +7,7 @@
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -16,7 +16,7 @@ class rbf_fitter : rbf_solver {
 public:
   using rbf_solver::set_points;
 
-  rbf_fitter(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
              const geometry::points3d& points)
     : rbf_solver(rbf, poly_dimension, poly_degree, points) {
   }

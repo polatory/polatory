@@ -15,7 +15,7 @@
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -25,7 +25,7 @@ class rbf_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis<>>;
 
 public:
-  rbf_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                 const geometry::points3d& source_points)
     : n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(source_points);
@@ -39,7 +39,7 @@ public:
     set_source_points(source_points);
   }
 
-  rbf_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                 const geometry::points3d& source_points, const geometry::bbox3d& bbox)
     : n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::tree_height(source_points.rows()), bbox);
@@ -51,7 +51,7 @@ public:
     set_source_points(source_points);
   }
 
-  rbf_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                 int tree_height, const geometry::bbox3d& bbox)
     : n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
     , n_src_points_(0) {

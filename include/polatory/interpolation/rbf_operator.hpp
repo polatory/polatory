@@ -14,7 +14,7 @@
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -25,7 +25,7 @@ private:
   using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis<>>;
 
 public:
-  rbf_operator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_operator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                const geometry::points3d& points)
     : rbf_(rbf)
     , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
@@ -40,7 +40,7 @@ public:
     set_points(points);
   }
 
-  rbf_operator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_operator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                int tree_height, const geometry::bbox3d& bbox)
     : rbf_(rbf)
     , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
@@ -57,7 +57,8 @@ public:
 
     common::valuesd y = common::valuesd::Zero(size());
 
-    auto diagonal = rbf_.evaluate(0.0) + rbf_.nugget();
+    auto& rbf_kern = rbf_.get();
+    auto diagonal = rbf_kern.evaluate(0.0) + rbf_kern.nugget();
     y.head(n_points_) = diagonal * weights.head(n_points_);
 
     a_->set_weights(weights.head(n_points_));
@@ -86,7 +87,7 @@ public:
   }
 
 private:
-  const rbf::rbf_base& rbf_;
+  const rbf::rbf rbf_;
   const size_t n_poly_basis_;
 
   size_t n_points_;

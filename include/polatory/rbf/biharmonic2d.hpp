@@ -3,15 +3,20 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf_kernel.hpp>
 
 namespace polatory {
 namespace rbf {
 
-class biharmonic2d : public rbf_base {
+class biharmonic2d : public rbf_kernel {
 public:
-  using rbf_base::rbf_base;
+  using rbf_kernel::rbf_kernel;
+
+  std::shared_ptr<rbf_kernel> clone() const override {
+    return std::make_shared<biharmonic2d>(parameters());
+  }
 
   static double evaluate(double r, const double *params) {
     auto slope = params[0];

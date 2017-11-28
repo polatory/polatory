@@ -13,7 +13,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -27,7 +27,7 @@ class coarse_grid {
   using MonomialBasis = polynomial::monomial_basis<Floating>;
 
 public:
-  coarse_grid(const rbf::rbf_base& rbf,
+  coarse_grid(const rbf::rbf& rbf,
               std::shared_ptr<LagrangeBasis> lagrange_basis,
               const std::vector<size_t>& point_indices)
     : rbf_(rbf)
@@ -38,7 +38,7 @@ public:
     assert(m_ > l_);
   }
 
-  coarse_grid(const rbf::rbf_base& rbf,
+  coarse_grid(const rbf::rbf& rbf,
               std::shared_ptr<LagrangeBasis> lagrange_basis,
               const std::vector<size_t>& point_indices,
               const geometry::points3d& points_full)
@@ -57,13 +57,14 @@ public:
   void setup(const geometry::points3d& points_full) {
     // Compute A.
     MatrixXF a(m_, m_);
-    auto diagonal = rbf_.evaluate(0.0) + rbf_.nugget();
+    auto& rbf_kern = rbf_.get();
+    auto diagonal = rbf_kern.evaluate(0.0) + rbf_kern.nugget();
     for (size_t i = 0; i < m_; i++) {
       a(i, i) = diagonal;
     }
     for (size_t i = 0; i < m_ - 1; i++) {
       for (size_t j = i + 1; j < m_; j++) {
-        a(i, j) = rbf_.evaluate(points_full.row(point_idcs_[i]), points_full.row(point_idcs_[j]));
+        a(i, j) = rbf_kern.evaluate(points_full.row(point_idcs_[i]), points_full.row(point_idcs_[j]));
         a(j, i) = a(i, j);
       }
     }
@@ -137,7 +138,7 @@ public:
   }
 
 private:
-  const rbf::rbf_base& rbf_;
+  const rbf::rbf rbf_;
   const std::shared_ptr<LagrangeBasis> lagrange_basis_;
   const std::vector<size_t> point_idcs_;
 

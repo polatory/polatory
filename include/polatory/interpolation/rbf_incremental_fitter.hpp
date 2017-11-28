@@ -21,7 +21,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/polynomial/basis_base.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -32,7 +32,7 @@ class rbf_incremental_fitter {
   const double incremental_points_ratio = 0.1;
 
 public:
-  rbf_incremental_fitter(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_incremental_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                          const geometry::points3d& points)
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
@@ -167,7 +167,7 @@ private:
     return reduced;
   }
 
-  const rbf::rbf_base& rbf_;
+  const rbf::rbf rbf_;
   const int poly_dimension_;
   const int poly_degree_;
   const geometry::points3d& points_;

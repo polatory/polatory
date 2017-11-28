@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 
 #include <polatory/rbf/covariance_function.hpp>
 
@@ -12,6 +13,10 @@ namespace rbf {
 class cov_exponential : public covariance_function {
 public:
   using covariance_function::covariance_function;
+
+  std::shared_ptr<rbf_kernel> clone() const override {
+    return std::make_shared<cov_exponential>(parameters());
+  }
 
   static double evaluate(double r, const double *params) {
     auto psill = params[0];

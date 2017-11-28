@@ -17,7 +17,7 @@
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -26,7 +26,7 @@ class rbf_solver {
   using Preconditioner = preconditioner::ras_preconditioner<double>;
 
 public:
-  rbf_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_solver(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
              const geometry::points3d& points)
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
@@ -39,7 +39,7 @@ public:
     set_points(points);
   }
 
-  rbf_solver(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_solver(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
              int tree_height, const geometry::bbox3d& bbox)
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
@@ -130,7 +130,7 @@ private:
     return solution;
   }
 
-  const rbf::rbf_base& rbf_;
+  const rbf::rbf rbf_;
   const int poly_dimension_;
   const int poly_degree_;
   const size_t n_poly_basis_;

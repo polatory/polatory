@@ -7,7 +7,7 @@
 namespace polatory {
 namespace interpolation {
 
-rbf_direct_evaluator::rbf_direct_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+rbf_direct_evaluator::rbf_direct_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                                            const geometry::points3d& source_points)
   : rbf_(rbf)
   , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
@@ -21,9 +21,10 @@ rbf_direct_evaluator::rbf_direct_evaluator(const rbf::rbf_base& rbf, int poly_di
 common::valuesd rbf_direct_evaluator::evaluate() const {
   auto y_accum = std::vector<numeric::kahan_sum_accumulator<double>>(fld_points_.rows());
 
+  auto& rbf_kern = rbf_.get();
   for (size_t i = 0; i < n_src_points_; i++) {
     for (size_t j = 0; j < n_fld_points_; j++) {
-      auto a_ij = rbf_.evaluate(src_points_.row(i), fld_points_.row(j));
+      auto a_ij = rbf_kern.evaluate(src_points_.row(i), fld_points_.row(j));
       y_accum[j] += weights_(i) * a_ij;
     }
   }

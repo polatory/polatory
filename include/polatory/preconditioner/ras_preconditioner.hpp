@@ -25,7 +25,7 @@
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -41,7 +41,7 @@ class ras_preconditioner : public krylov::linear_operator {
   const size_t n_coarsest_points = 1024;
 
 public:
-  ras_preconditioner(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                      const geometry::points3d& in_points)
     : points_(in_points)
     , n_points_(in_points.rows())

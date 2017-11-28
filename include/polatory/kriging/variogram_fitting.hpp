@@ -9,7 +9,7 @@
 #include <ceres/ceres.h>
 
 #include <polatory/kriging/empirical_variogram.hpp>
-#include <polatory/rbf/covariance_function.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace kriging {
@@ -24,10 +24,12 @@ class variogram_fitting {
   std::vector<double> params;
 
 public:
-  variogram_fitting(const empirical_variogram& emp_variog, const rbf::covariance_function *cov,
+  variogram_fitting(const empirical_variogram& emp_variog, const rbf::rbf& rbf,
                     variogram_fitting_weights weights = variogram_fitting_weights::equal) {
-    int n_params = cov->num_parameters();
-    params = std::vector<double>(cov->parameters());
+    auto& cov = rbf.get();
+
+    int n_params = cov.num_parameters();
+    params = std::vector<double>(cov.parameters());
 
     auto n_bins = emp_variog.num_bins();
     auto& bin_distance = emp_variog.bin_distance();
@@ -42,17 +44,17 @@ public:
       switch (weights) {
       case variogram_fitting_weights::cressie:
         weight = std::sqrt(bin_num_pairs[i]);
-        cost_function = cov->cost_function_over_gamma(bin_distance[i], bin_variance[i], weight);
+        cost_function = cov.cost_function_over_gamma(bin_distance[i], bin_variance[i], weight);
         break;
 
       case variogram_fitting_weights::npairs:
         weight = std::sqrt(bin_num_pairs[i]);
-        cost_function = cov->cost_function(bin_distance[i], bin_variance[i], weight);
+        cost_function = cov.cost_function(bin_distance[i], bin_variance[i], weight);
         break;
 
       default:
         weight = 1.0;
-        cost_function = cov->cost_function(bin_distance[i], bin_variance[i], weight);
+        cost_function = cov.cost_function(bin_distance[i], bin_variance[i], weight);
         break;
       }
 
@@ -60,8 +62,8 @@ public:
     }
 
     for (int i = 0; i < n_params; i++) {
-      problem.SetParameterLowerBound(params.data(), i, cov->parameter_lower_bounds()[i]);
-      problem.SetParameterUpperBound(params.data(), i, cov->parameter_upper_bounds()[i]);
+      problem.SetParameterLowerBound(params.data(), i, cov.parameter_lower_bounds()[i]);
+      problem.SetParameterUpperBound(params.data(), i, cov.parameter_upper_bounds()[i]);
     }
 
     ceres::Solver::Options options;

@@ -3,25 +3,30 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 #include <vector>
 
+#include <ceres/ceres.h>
 #include <Eigen/Core>
 
+#include <polatory/common/exception.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/third_party/ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
 
 namespace polatory {
 namespace rbf {
 
-class rbf_base : FInterpAbstractMatrixKernel<double> {
+class rbf_kernel : FInterpAbstractMatrixKernel<double> {
 public:
-  explicit rbf_base(const std::vector<double>& params)
+  explicit rbf_kernel(const std::vector<double>& params)
     : params_(params) {
   }
 
-  rbf_base(const rbf_base& other)
+  rbf_kernel(const rbf_kernel& other)
     : params_(other.params_) {
   }
+
+  virtual std::shared_ptr<rbf_kernel> clone() const = 0;
 
   virtual double evaluate(double r) const = 0;
 
@@ -39,6 +44,28 @@ public:
 
   const std::vector<double>& parameters() const {
     return params_;
+  }
+
+  // The following members are used in covariance functions.
+
+  virtual int num_parameters() const {
+    throw common::not_supported("num_parameters");
+  }
+
+  virtual const double *parameter_lower_bounds() const {
+    throw common::not_supported("parameter_lower_bounds");
+  }
+
+  virtual const double *parameter_upper_bounds() const {
+    throw common::not_supported("parameter_upper_bounds");
+  }
+
+  virtual ceres::CostFunction *cost_function(double h, double gamma, double weight) const {
+    throw common::not_supported("cost_function");
+  }
+
+  virtual ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight) const {
+    throw common::not_supported("cost_function_over_gamma");
   }
 
   // The following definitions are used in ScalFMM.

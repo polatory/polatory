@@ -2,7 +2,6 @@
 
 #include <iomanip>
 #include <iostream>
-#include <tuple>
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -18,7 +17,6 @@ using polatory::geometry::points3d;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
 using polatory::kriging::variogram_fitting_weights;
-using polatory::rbf::rbf_base;
 using polatory::rbf::cov_quasi_spherical9;
 using polatory::read_table;
 
@@ -41,7 +39,7 @@ int main(int argc, const char *argv[]) {
   }
 
   cov_quasi_spherical9 variog({ opts.psill, opts.range, opts.nugget });
-  variogram_fitting fit(emp_variog, &variog, variogram_fitting_weights::equal);
+  variogram_fitting fit(emp_variog, variog, variogram_fitting_weights::equal);
 
   auto params = fit.parameters();
   std::cout << "Fitted parameters:" << std::endl

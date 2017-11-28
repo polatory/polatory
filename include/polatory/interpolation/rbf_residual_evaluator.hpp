@@ -16,7 +16,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/polynomial/basis_base.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -25,7 +25,7 @@ class rbf_residual_evaluator {
   const int chunk_size = 1024;
 
 public:
-  rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_residual_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                          const geometry::points3d& points)
     : rbf_(rbf)
     , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
@@ -34,7 +34,7 @@ public:
     evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, points_);
   }
 
-  rbf_residual_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_residual_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                          int tree_height, const geometry::bbox3d& bbox)
     : rbf_(rbf)
     , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
@@ -51,6 +51,9 @@ public:
 
     evaluator_->set_weights(weights);
 
+    auto& rbf_kern = rbf_.get();
+    auto nugget = rbf_kern.nugget();
+
     double max_residual = 0.0;
     for (size_t i = 0; i < n_points_ / chunk_size + 1; i++) {
       auto begin = i * chunk_size;
@@ -62,7 +65,7 @@ public:
 
       for (size_t j = 0; j < end - begin; j++) {
         auto res = std::abs(values(begin + j) - fit(j));
-        if (res >= absolute_tolerance + std::abs(rbf_.nugget() * weights(begin + j)))
+        if (res >= absolute_tolerance + std::abs(nugget * weights(begin + j)))
           return std::make_pair(false, 0.0);
 
         max_residual = std::max(max_residual, res);
@@ -80,7 +83,7 @@ public:
   }
 
 private:
-  const rbf::rbf_base& rbf_;
+  const rbf::rbf rbf_;
   const size_t n_poly_basis_;
 
   size_t n_points_;

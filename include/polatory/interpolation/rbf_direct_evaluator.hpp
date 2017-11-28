@@ -9,7 +9,7 @@
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -18,7 +18,7 @@ class rbf_direct_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis<>>;
 
 public:
-  rbf_direct_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+  rbf_direct_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                        const geometry::points3d& source_points);
 
   common::valuesd evaluate() const;
@@ -37,7 +37,7 @@ public:
   }
 
 private:
-  const rbf::rbf_base& rbf_;
+  const rbf::rbf rbf_;
   const size_t n_poly_basis_;
   const size_t n_src_points_;
   const geometry::points3d src_points_;
