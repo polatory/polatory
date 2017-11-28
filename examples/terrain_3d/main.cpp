@@ -17,6 +17,7 @@
 #include "parse_options.hpp"
 
 using polatory::common::concatenate_cols;
+using polatory::common::take_cols;
 using polatory::interpolant;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
@@ -32,7 +33,8 @@ int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
   // Read points.
-  auto terrain_points = read_table(opts.in_file);
+  auto table = read_table(opts.in_file);
+  auto terrain_points = take_cols(table, 0, 1, 2);
 
   // Estimate normals.
   normal_estimator norm_est(terrain_points);

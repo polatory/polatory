@@ -33,8 +33,8 @@ int main(int argc, const char *argv[]) {
 
   // Read points and normals.
   auto table = read_table(opts.in_file);
-  auto points = concatenate_cols(take_cols(table, { 0, 1 }), valuesd::Zero(table.rows()));
-  auto values = table.col(1);
+  auto points = concatenate_cols(take_cols(table, 0, 1), valuesd::Zero(table.rows()));
+  auto values = table.col(2);
 
   // Remove very close points.
   std::tie(points, values) = distance_filter(points, opts.filter_distance)

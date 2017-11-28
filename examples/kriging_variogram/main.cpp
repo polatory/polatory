@@ -26,7 +26,7 @@ int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
   auto table = read_table(opts.in_file);
-  auto points = take_cols(table, { 0, 1, 2 });
+  auto points = take_cols(table, 0, 1, 2);
   auto values = table.col(3);
 
   empirical_variogram emp_variog(points, values, opts.bin_width, opts.n_bins);

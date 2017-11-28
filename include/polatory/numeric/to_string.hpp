@@ -8,27 +8,12 @@
 #include <string>
 #include <type_traits>
 
+#include <boost/lexical_cast.hpp>
+
 namespace polatory {
 namespace numeric {
 
 namespace detail {
-
-template <class Floating>
-struct lexical_cast;
-
-template <>
-struct lexical_cast<float> {
-  float operator()(const std::string& str) const {
-    return std::stof(str);
-  }
-};
-
-template <>
-struct lexical_cast<double> {
-  double operator()(const std::string& str) const {
-    return std::stod(str);
-  }
-};
 
 template <class Floating>
 struct format;
@@ -70,7 +55,7 @@ std::string to_string(Floating arg) {
     return std::signbit(arg) ? "-inf" : "inf";
 
   std::sprintf(str, detail::format<Floating>::shorthand(), arg);
-  Floating arg_rep = detail::lexical_cast<Floating>()(str);
+  Floating arg_rep = boost::lexical_cast<Floating>(str);
   if (arg == arg_rep)
     return str;
 

@@ -27,8 +27,8 @@ public:
 private:
   size_t total_size() const;
 
-  const geometry::points3d& points_;
-  const geometry::vectors3d& normals_;
+  const geometry::points3d points_;   // Do not hold a reference to a temporary object.
+  const geometry::vectors3d normals_; // Do not hold a reference to a temporary object.
 
   std::vector<size_t> ext_indices_;
   std::vector<size_t> int_indices_;

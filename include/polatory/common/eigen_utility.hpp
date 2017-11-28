@@ -376,18 +376,29 @@ auto row_range(const Eigen::MatrixBase<Derived>& m) {
   return detail::const_row_range_wrapper<Derived>(m);
 }
 
-template <class Derived, class T, size_t N>
-auto take_cols(const Eigen::MatrixBase<Derived>& m, const T (& indices)[N]) {
+template <class ResultDerived, class Derived>
+void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index) {
+  result.col(0) = m.col(index);
+}
+
+template <class ResultDerived, class Derived, class... Ts>
+void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+  result.col(0) = m.col(index);
+
+  auto result_tail = result.rightCols(result.cols() - 1);
+  take_cols_impl(result_tail, m, indices...);
+}
+
+template <class Derived, class... Ts>
+auto take_cols(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
     Eigen::MatrixBase<Derived>::RowsAtCompileTime,
-    N,
+    sizeof...(indices),
     Eigen::MatrixBase<Derived>::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor
-  > result(m.rows(), N);
+  > result(m.rows(), sizeof...(indices));
 
-  for (size_t i = 0; i < N; i++) {
-    result.col(i) = m.col(indices[i]);
-  }
+  take_cols_impl(result, m, indices...);
 
   return result;
 }
@@ -408,18 +419,29 @@ auto take_cols(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& i
   return result;
 }
 
-template <class Derived, class T, size_t N>
-auto take_rows(const Eigen::MatrixBase<Derived>& m, const T (& indices)[N]) {
+template <class ResultDerived, class Derived>
+void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index) {
+  result.row(0) = m.row(index);
+}
+
+template <class ResultDerived, class Derived, class... Ts>
+void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+  result.row(0) = m.row(index);
+
+  auto result_tail = result.bottomRows(result.rows() - 1);
+  take_rows_impl(result_tail, m, indices...);
+}
+
+template <class Derived, class... Ts>
+auto take_rows(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
-    N,
+    sizeof...(indices),
     Eigen::MatrixBase<Derived>::ColsAtCompileTime,
     Eigen::MatrixBase<Derived>::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor
-  > result(N, m.cols());
+  > result(sizeof...(indices), m.cols());
 
-  for (size_t i = 0; i < N; i++) {
-    result.row(i) = m.row(indices[i]);
-  }
+  take_rows_impl(result, m, indices...);
 
   return result;
 }

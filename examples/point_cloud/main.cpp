@@ -5,7 +5,6 @@
 #include <tuple>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/isosurface/export_obj.hpp>
 #include <polatory/isosurface/isosurface.hpp>
@@ -19,8 +18,6 @@
 
 using polatory::common::concatenate_cols;
 using polatory::common::take_cols;
-using polatory::geometry::points3d;
-using polatory::geometry::vectors3d;
 using polatory::interpolant;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
@@ -36,8 +33,8 @@ int main(int argc, const char *argv[]) {
 
   // Read points and normals.
   auto table = read_table(opts.in_file);
-  points3d cloud_points = take_cols(table, { 0, 1, 2 });
-  vectors3d cloud_normals = take_cols(table, { 3, 4, 5 });
+  auto cloud_points = take_cols(table, 0, 1, 2);
+  auto cloud_normals = take_cols(table, 3, 4, 5);
 
   // Generate SDF data.
   sdf_data_generator sdf_data(cloud_points, cloud_normals, opts.min_sdf_distance, opts.max_sdf_distance);
@@ -70,7 +67,7 @@ int main(int argc, const char *argv[]) {
   rbf_field_function field_f(interpolant);
 
   auto n_seed_points = std::max(size_t(cloud_points.rows() / 10), size_t(100));
-  points3d seed_points = cloud_points.topRows(n_seed_points);
+  auto seed_points = cloud_points.topRows(n_seed_points);
   isosurf.generate_from_seed_points(seed_points, field_f);
 
   export_obj(opts.mesh_file, isosurf);
