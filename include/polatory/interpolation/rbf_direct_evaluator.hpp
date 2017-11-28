@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -20,7 +21,7 @@ public:
   rbf_direct_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                        const geometry::points3d& source_points);
 
-  Eigen::VectorXd evaluate() const;
+  common::valuesd evaluate() const;
 
   void set_field_points(const geometry::points3d& field_points);
 
@@ -45,7 +46,7 @@ private:
 
   size_t n_fld_points_;
   geometry::points3d fld_points_;
-  Eigen::VectorXd weights_;
+  common::valuesd weights_;
 };
 
 } // namespace interpolation

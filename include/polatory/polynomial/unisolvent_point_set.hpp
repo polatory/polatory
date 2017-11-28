@@ -6,8 +6,6 @@
 #include <set>
 #include <vector>
 
-#include <Eigen/Core>
-
 #include <polatory/common/bsearch.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>

@@ -7,6 +7,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/tree_height.hpp>
@@ -61,7 +62,7 @@ public:
     }
   }
 
-  Eigen::VectorXd evaluate() const {
+  common::valuesd evaluate() const {
     auto y = a_->evaluate();
 
     if (n_poly_basis_ > 0) {
@@ -72,14 +73,12 @@ public:
     return y;
   }
 
-  template <class Container>
-  Eigen::VectorXd evaluate_points(const Container& field_points) const {
+  common::valuesd evaluate_points(const geometry::points3d& field_points) const {
     set_field_points(field_points);
     return evaluate();
   }
 
-  template <class Container>
-  void set_field_points(const Container& points) const {
+  void set_field_points(const geometry::points3d& points) const {
     a_->set_field_points(points);
 
     if (n_poly_basis_ > 0) {
@@ -87,8 +86,7 @@ public:
     }
   }
 
-  template <class Container>
-  void set_source_points(const Container& points) {
+  void set_source_points(const geometry::points3d& points) {
     n_src_points_ = points.rows();
 
     a_->set_source_points(points);

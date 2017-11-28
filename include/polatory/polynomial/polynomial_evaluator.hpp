@@ -9,6 +9,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -20,10 +21,10 @@ class polynomial_evaluator {
 public:
   explicit polynomial_evaluator(int dimension, int degree)
     : basis_(dimension, degree)
-    , weights_(Eigen::VectorXd::Zero(basis_.basis_size())) {
+    , weights_(common::valuesd::Zero(basis_.basis_size())) {
   }
 
-  Eigen::VectorXd evaluate() const {
+  common::valuesd evaluate() const {
     Eigen::MatrixXd pt = basis_.evaluate_points(points_);
 
     return pt.transpose() * weights_;
@@ -33,7 +34,7 @@ public:
     points_ = points;
   }
 
-  void set_weights(const Eigen::VectorXd& weights) {
+  void set_weights(const common::valuesd& weights) {
     assert(weights.rows() == basis_.basis_size());
 
     weights_ = weights;
@@ -47,7 +48,7 @@ private:
   const Basis basis_;
 
   geometry::points3d points_;
-  Eigen::VectorXd weights_;
+  common::valuesd weights_;
 };
 
 } // namespace polynomial

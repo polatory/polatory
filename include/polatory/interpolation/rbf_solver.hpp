@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
@@ -64,19 +65,19 @@ public:
   }
 
   template <class Derived>
-  Eigen::VectorXd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
+  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
     assert(values.rows() == n_points_);
 
     return solve_impl(values, absolute_tolerance);
   }
 
   template <class Derived, class Derived2>
-  Eigen::VectorXd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
+  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         const Eigen::MatrixBase<Derived2>& initial_solution) const {
     assert(values.rows() == n_points_);
     assert(initial_solution.rows() == n_points_ + n_poly_basis_);
 
-    Eigen::VectorXd ini_sol = initial_solution;
+    common::valuesd ini_sol = initial_solution;
 
     if (n_poly_basis_ > 0) {
       // Orthogonalize weights against P.
@@ -89,12 +90,12 @@ public:
   }
 
 private:
-  template <class Derived, class Derived2 = Eigen::VectorXd>
-  Eigen::VectorXd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
+  template <class Derived, class Derived2 = common::valuesd>
+  common::valuesd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                              const Eigen::MatrixBase<Derived2> *initial_solution = nullptr) const {
-    Eigen::VectorXd rhs(n_points_ + n_poly_basis_);
+    common::valuesd rhs(n_points_ + n_poly_basis_);
     rhs.head(n_points_) = values;
-    rhs.tail(n_poly_basis_) = Eigen::VectorXd::Zero(n_poly_basis_);
+    rhs.tail(n_poly_basis_) = common::valuesd::Zero(n_poly_basis_);
 
     krylov::fgmres solver(*op_, rhs, 32);
     if (initial_solution != nullptr)
@@ -107,7 +108,7 @@ private:
               << std::setw(4) << solver.iteration_count()
               << std::setw(16) << std::scientific << solver.relative_residual() << std::defaultfloat << std::endl;
 
-    Eigen::VectorXd solution;
+    common::valuesd solution;
     while (true) {
       solver.iterate_process();
       solution = solver.solution_vector();

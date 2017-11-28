@@ -3,11 +3,15 @@
 #pragma once
 
 #include <cassert>
+#include <functional>
 #include <memory>
 #include <vector>
 
 #include <boost/operators.hpp>
 #include <Eigen/Core>
+
+#include <polatory/common/exception.hpp>
+#include <polatory/common/fold.hpp>
 
 namespace polatory {
 namespace common {
@@ -372,18 +376,29 @@ auto row_range(const Eigen::MatrixBase<Derived>& m) {
   return detail::const_row_range_wrapper<Derived>(m);
 }
 
-template <class Derived, class T, size_t N>
-auto take_cols(const Eigen::MatrixBase<Derived>& m, const T (& indices)[N]) {
+template <class ResultDerived, class Derived>
+void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index) {
+  result.col(0) = m.col(index);
+}
+
+template <class ResultDerived, class Derived, class... Ts>
+void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+  result.col(0) = m.col(index);
+
+  auto result_tail = result.rightCols(result.cols() - 1);
+  take_cols_impl(result_tail, m, indices...);
+}
+
+template <class Derived, class... Ts>
+auto take_cols(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
     Eigen::MatrixBase<Derived>::RowsAtCompileTime,
-    N,
+    sizeof...(indices),
     Eigen::MatrixBase<Derived>::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor
-  > result(m.rows(), N);
+  > result(m.rows(), sizeof...(indices));
 
-  for (size_t i = 0; i < N; i++) {
-    result.col(i) = m.col(indices[i]);
-  }
+  take_cols_impl(result, m, indices...);
 
   return result;
 }
@@ -404,18 +419,29 @@ auto take_cols(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& i
   return result;
 }
 
-template <class Derived, class T, size_t N>
-auto take_rows(const Eigen::MatrixBase<Derived>& m, const T (& indices)[N]) {
+template <class ResultDerived, class Derived>
+void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index) {
+  result.row(0) = m.row(index);
+}
+
+template <class ResultDerived, class Derived, class... Ts>
+void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+  result.row(0) = m.row(index);
+
+  auto result_tail = result.bottomRows(result.rows() - 1);
+  take_rows_impl(result_tail, m, indices...);
+}
+
+template <class Derived, class... Ts>
+auto take_rows(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
-    N,
+    sizeof...(indices),
     Eigen::MatrixBase<Derived>::ColsAtCompileTime,
     Eigen::MatrixBase<Derived>::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor
-  > result(N, m.cols());
+  > result(sizeof...(indices), m.cols());
 
-  for (size_t i = 0; i < N; i++) {
-    result.row(i) = m.row(indices[i]);
-  }
+  take_rows_impl(result, m, indices...);
 
   return result;
 }
@@ -432,6 +458,86 @@ auto take_rows(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& i
   for (size_t i = 0; i < indices.size(); i++) {
     result.row(i) = m.row(indices[i]);
   }
+
+  return result;
+}
+
+namespace detail {
+
+template <class Derived>
+size_t common_cols(const Eigen::MatrixBase<Derived>& m) {
+  return m.cols();
+}
+
+template <class Derived, class ...Args>
+size_t common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+  if (m.cols() == common_cols(std::forward<Args>(args)...))
+    return m.cols();
+  else
+    throw common::invalid_argument("All matrices must have the same number of columns.");
+}
+
+template <class Derived>
+size_t common_rows(const Eigen::MatrixBase<Derived>& m) {
+  return m.rows();
+};
+
+template <class Derived, class ...Args>
+size_t common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+  if (m.rows() == common_rows(std::forward<Args>(args)...))
+    return m.rows();
+  else
+    throw common::invalid_argument("All matrices must have the same number of rows.");
+};
+
+template <class ResultDerived, class Derived>
+void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m) {
+  result = m;
+};
+
+template <class ResultDerived, class Derived, class ...Args>
+void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+  result.leftCols(m.cols()) = m;
+
+  auto result_tail = result.rightCols(result.cols() - m.cols());
+  concatenate_cols_impl(result_tail, std::forward<Args>(args)...);
+};
+
+template <class ResultDerived, class Derived>
+void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m) {
+  result = m;
+};
+
+template <class ResultDerived, class Derived, class ...Args>
+void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+  result.topRows(m.rows()) = m;
+
+  auto result_tail = result.bottomRows(result.rows() - m.rows());
+  concatenate_rows_impl(result_tail, std::forward<Args>(args)...);
+};
+
+};
+
+template <class ...Args>
+auto concatenate_cols(Args&&... args) {
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(
+    detail::common_rows(std::forward<Args>(args)...),
+    common::fold_left(std::plus<>(), args.cols()...)
+  );
+
+  detail::concatenate_cols_impl(result, std::forward<Args>(args)...);
+
+  return result;
+}
+
+template <class ...Args>
+auto concatenate_rows(Args&&... args) {
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(
+    common::fold_left(std::plus<>(), args.rows()...),
+    detail::common_cols(std::forward<Args>(args)...)
+  );
+
+  detail::concatenate_rows_impl(result, std::forward<Args>(args)...);
 
   return result;
 }

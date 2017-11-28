@@ -3,13 +3,14 @@
 #include <cmath>
 #include <vector>
 
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 
 using namespace polatory::kriging;
+using polatory::common::valuesd;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 
@@ -25,7 +26,7 @@ TEST(empirical_variogram, trivial) {
     d * point3d(-std::sqrt(3.0) / 6.0, -1.0 / 2.0, 0.0),
     d * point3d(0.0, 0.0, std::sqrt(6.0) / 3.0);
 
-  Eigen::VectorXd values(n_points);
+  valuesd values(n_points);
   values << 0.0, 1.0, 2.0, 3.0;
 
   int n_bins = 5;

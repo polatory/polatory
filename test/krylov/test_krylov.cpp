@@ -7,11 +7,13 @@
 #include <Eigen/LU>
 #include <gtest/gtest.h>
 
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/krylov/gmres.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/krylov/minres.hpp>
 
+using polatory::common::valuesd;
 using polatory::krylov::fgmres;
 using polatory::krylov::gmres;
 using polatory::krylov::linear_operator;
@@ -33,7 +35,7 @@ struct random_symmetric : linear_operator {
     }
   }
 
-  Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
+  valuesd operator()(const valuesd& v) const override {
     return m * v;
   }
 
@@ -48,11 +50,11 @@ struct preconditioner : linear_operator {
 
   preconditioner(random_symmetric op)
     : n(op.size()) {
-    Eigen::MatrixXd perturbation = 0.1 * Eigen::VectorXd::Random(n).asDiagonal();
+    Eigen::MatrixXd perturbation = 0.1 * valuesd::Random(n).asDiagonal();
     m = op.m.inverse() + perturbation;
   }
 
-  Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
+  valuesd operator()(const valuesd& v) const override {
     return m * v;
   }
 
@@ -68,10 +70,10 @@ protected:
   std::unique_ptr<random_symmetric> op;
   std::unique_ptr<preconditioner> pc;
 
-  Eigen::VectorXd solution;
-  Eigen::VectorXd rhs;
+  valuesd solution;
+  valuesd rhs;
 
-  Eigen::VectorXd x0;
+  valuesd x0;
 
   void SetUp() override {
     n = 100;
@@ -79,10 +81,10 @@ protected:
     op = std::make_unique<random_symmetric>(n);
     pc = std::make_unique<preconditioner>(*op);
 
-    solution = (Eigen::VectorXd::Random(n) + Eigen::VectorXd::Ones(n)) / 2.0;
+    solution = (valuesd::Random(n) + valuesd::Ones(n)) / 2.0;
     rhs = (*op)(solution);
 
-    x0 = Eigen::VectorXd::Random(n);
+    x0 = valuesd::Random(n);
   }
 
   void TearDown() override {

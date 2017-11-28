@@ -16,8 +16,8 @@
 namespace polatory {
 namespace kriging {
 
-Eigen::VectorXd k_fold_cross_validation(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
-                                        const geometry::points3d& points, const Eigen::VectorXd& values,
+common::valuesd k_fold_cross_validation(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
+                                        const geometry::points3d& points, const common::valuesd& values,
                                         double absolute_tolerance,
                                         int k) {
   auto n_points = points.rows();
@@ -32,7 +32,7 @@ Eigen::VectorXd k_fold_cross_validation(const rbf::rbf_base& rbf, int poly_dimen
   std::shuffle(indices.begin(), indices.end(), gen);
 
   auto bbox = geometry::bbox3d::from_points(points);
-  Eigen::VectorXd residuals(n_points);
+  common::valuesd residuals(n_points);
 
   double n_k = static_cast<double>(n_points) / k;
   for (size_t i = 0; i < k; i++) {

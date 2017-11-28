@@ -4,8 +4,7 @@
 
 #include <vector>
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -23,13 +22,13 @@ public:
 
   geometry::points3d sdf_points() const;
 
-  Eigen::VectorXd sdf_values() const;
+  common::valuesd sdf_values() const;
 
 private:
   size_t total_size() const;
 
-  const geometry::points3d& points_;
-  const geometry::vectors3d& normals_;
+  const geometry::points3d points_;   // Do not hold a reference to a temporary object.
+  const geometry::vectors3d normals_; // Do not hold a reference to a temporary object.
 
   std::vector<size_t> ext_indices_;
   std::vector<size_t> int_indices_;

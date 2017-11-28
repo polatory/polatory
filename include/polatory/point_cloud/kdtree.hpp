@@ -5,8 +5,6 @@
 #include <memory>
 #include <vector>
 
-#include <Eigen/Core>
-
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {

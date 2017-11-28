@@ -12,6 +12,7 @@
 #include <boost/range/irange.hpp>
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/quasi_random_sequence.hpp>
@@ -43,10 +44,10 @@ public:
   }
 
   template <class Derived>
-  std::pair<std::vector<size_t>, Eigen::VectorXd>
+  std::pair<std::vector<size_t>, common::valuesd>
   fit(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
     std::vector<size_t> indices;
-    Eigen::VectorXd weights;
+    common::valuesd weights;
 
     std::tie(indices, weights) = initial_point_indices_and_weights();
 
@@ -81,7 +82,7 @@ public:
       auto fit_c = res_eval->evaluate_points(reduced_points_c);
       auto values_c = reduced_values(values, indices_c);
       residuals_c.resize(indices_c.size());
-      Eigen::VectorXd::Map(residuals_c.data(), indices_c.size()) = (values_c - fit_c).cwiseAbs();
+      common::valuesd::Map(residuals_c.data(), indices_c.size()) = (values_c - fit_c).cwiseAbs();
 
       // Sort point indices by their residuals.
 
@@ -111,7 +112,7 @@ public:
       indices.insert(indices.end(), indices_c.end() - n_points_to_add, indices_c.end());
 
       auto weights_prev = weights;
-      weights = Eigen::VectorXd::Zero(indices.size() + n_poly_basis_);
+      weights = common::valuesd::Zero(indices.size() + n_poly_basis_);
       weights.head(n_points_prev) = weights_prev.head(n_points_prev);
       weights.tail(n_poly_basis_) = weights_prev.tail(n_poly_basis_);
     }
@@ -120,22 +121,22 @@ public:
   }
 
 private:
-  std::pair<std::vector<size_t>, Eigen::VectorXd> initial_point_indices_and_weights() const {
+  std::pair<std::vector<size_t>, common::valuesd> initial_point_indices_and_weights() const {
     std::vector<size_t> indices;
-    Eigen::VectorXd weights;
+    common::valuesd weights;
 
     if (n_points_ < min_n_points_for_incremental_fitting) {
       indices = std::vector<size_t>(n_points_);
       std::iota(indices.begin(), indices.end(), 0);
 
-      weights = Eigen::VectorXd::Zero(n_points_ + n_poly_basis_);
+      weights = common::valuesd::Zero(n_points_ + n_poly_basis_);
     } else {
       size_t n_initial_points = initial_points_ratio * n_points_;
 
       indices = common::quasi_random_sequence(n_points_);
       indices.resize(n_initial_points);
 
-      weights = Eigen::VectorXd::Zero(n_initial_points + n_poly_basis_);
+      weights = common::valuesd::Zero(n_initial_points + n_poly_basis_);
     }
 
     return std::make_pair(std::move(indices), std::move(weights));
@@ -156,8 +157,8 @@ private:
     return indices_c;
   }
 
-  Eigen::VectorXd reduced_values(const Eigen::VectorXd& values, const std::vector<size_t>& indices) const {
-    Eigen::VectorXd reduced(indices.size());
+  common::valuesd reduced_values(const common::valuesd& values, const std::vector<size_t>& indices) const {
+    common::valuesd reduced(indices.size());
 
     for (size_t i = 0; i < indices.size(); i++) {
       reduced(i) = values(indices[i]);

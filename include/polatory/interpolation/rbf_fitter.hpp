@@ -4,6 +4,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/rbf/rbf_base.hpp>
@@ -21,12 +22,12 @@ public:
   }
 
   template <class Derived>
-  Eigen::VectorXd fit(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
+  common::valuesd fit(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
     return solve(values, absolute_tolerance);
   }
 
   template <class Derived, class Derived2>
-  Eigen::VectorXd fit(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
+  common::valuesd fit(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                       const Eigen::MatrixBase<Derived2>& initial_solution) const {
     return solve(values, absolute_tolerance, initial_solution);
   }

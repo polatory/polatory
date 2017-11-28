@@ -4,6 +4,9 @@
 
 #include <memory>
 
+#include <Eigen/Core>
+
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -20,7 +23,7 @@ public:
   rbf_direct_symmetric_evaluator(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree,
                                  const geometry::points3d& points);
 
-  Eigen::VectorXd evaluate() const;
+  common::valuesd evaluate() const;
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
@@ -41,7 +44,7 @@ private:
   std::unique_ptr<PolynomialEvaluator> p_;
 
   const geometry::points3d points_;
-  Eigen::VectorXd weights_;
+  common::valuesd weights_;
 };
 
 } // namespace interpolation

@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolant.hpp>
@@ -17,7 +16,7 @@ struct rbf_field_function_25d : field_function {
     : interpolant_(interpolant) {
   }
 
-  Eigen::VectorXd operator()(const geometry::points3d& points) const override {
+  common::valuesd operator()(const geometry::points3d& points) const override {
     geometry::points3d points_2d(points);
     points_2d.col(2).array() = 0.0;
 

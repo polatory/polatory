@@ -18,7 +18,7 @@ rbf_direct_evaluator::rbf_direct_evaluator(const rbf::rbf_base& rbf, int poly_di
   }
 }
 
-Eigen::VectorXd rbf_direct_evaluator::evaluate() const {
+common::valuesd rbf_direct_evaluator::evaluate() const {
   auto y_accum = std::vector<numeric::kahan_sum_accumulator<double>>(fld_points_.rows());
 
   for (size_t i = 0; i < n_src_points_; i++) {
@@ -36,7 +36,7 @@ Eigen::VectorXd rbf_direct_evaluator::evaluate() const {
     }
   }
 
-  Eigen::VectorXd y(n_fld_points_);
+  common::valuesd y(n_fld_points_);
   for (size_t i = 0; i < n_fld_points_; i++) {
     y(i) = y_accum[i].get();
   }

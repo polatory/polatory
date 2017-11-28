@@ -7,7 +7,7 @@
 namespace polatory {
 namespace krylov {
 
-minres::minres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter)
+minres::minres(const linear_operator& op, const common::valuesd& rhs, int max_iter)
   : gmres_base(op, rhs, max_iter)
   , beta_(0.0) {
 }

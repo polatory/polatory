@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include <vector>
-
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 
@@ -15,7 +12,7 @@ namespace isosurface {
 struct field_function {
   virtual ~field_function() {}
 
-  virtual Eigen::VectorXd operator()(const geometry::points3d& points) const = 0;
+  virtual common::valuesd operator()(const geometry::points3d& points) const = 0;
 
   virtual void set_evaluation_bbox(const geometry::bbox3d& bbox) {}
 };

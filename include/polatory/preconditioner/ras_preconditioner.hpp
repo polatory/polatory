@@ -11,6 +11,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -139,11 +140,11 @@ public:
     }
   }
 
-  Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
+  common::valuesd operator()(const common::valuesd& v) const override {
     assert(v.rows() == size());
 
-    Eigen::VectorXd residuals = v.head(n_points_);
-    Eigen::VectorXd weights_total = Eigen::VectorXd::Zero(size());
+    common::valuesd residuals = v.head(n_points_);
+    common::valuesd weights_total = common::valuesd::Zero(size());
     if (n_fine_levels_ == 0) {
       coarse_->solve(residuals);
       coarse_->set_solution_to(weights_total);
@@ -156,7 +157,7 @@ public:
 
     for (int level = 0; level < n_fine_levels_; level++) {
       {
-        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points_);
+        common::valuesd weights = common::valuesd::Zero(n_points_);
 
         // Solve on subdomains.
 #pragma omp parallel for schedule(guided)
@@ -175,7 +176,7 @@ public:
         // Evaluate residuals at coarse points.
         if (level > 0) {
           const auto& finer_indices = point_idcs_[level];
-          Eigen::VectorXd finer_weights(finer_indices.size());
+          common::valuesd finer_weights(finer_indices.size());
           for (size_t i = 0; i < finer_indices.size(); i++) {
             finer_weights(i) = weights(finer_indices[i]);
           }
@@ -205,14 +206,14 @@ public:
         {
            // Test residual
            finest_evaluator_.set_weights(weights_total);
-           Eigen::VectorXd test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
+           common::vectord test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
            std::cout << "Residual after level " << level << ": " << test_residuals.norm() << std::endl;
         }
 #endif
       }
 
       {
-        Eigen::VectorXd weights = Eigen::VectorXd::Zero(n_points_ + n_poly_basis_);
+        common::valuesd weights = common::valuesd::Zero(n_points_ + n_poly_basis_);
 
         // Solve on coarse.
         coarse_->solve(residuals);
@@ -220,7 +221,7 @@ public:
 
         if (level < n_fine_levels_ - 1) {
           const auto& coarse_indices = point_idcs_.back();
-          Eigen::VectorXd coarse_weights(coarse_indices.size() + n_poly_basis_);
+          common::valuesd coarse_weights(coarse_indices.size() + n_poly_basis_);
           for (size_t i = 0; i < coarse_indices.size(); i++) {
             coarse_weights(i) = weights(coarse_indices[i]);
           }
@@ -241,7 +242,7 @@ public:
         {
            // Test residual
            finest_evaluator_.set_weights(weights_total);
-           Eigen::VectorXd test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
+           common::vectord test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
            std::cout << "Residual after coarse correction: " << test_residuals.norm() << std::endl;
         }
 #endif

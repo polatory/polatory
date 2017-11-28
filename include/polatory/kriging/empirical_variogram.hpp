@@ -6,8 +6,7 @@
 #include <cmath>
 #include <vector>
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/sum_accumulator.hpp>
 
@@ -18,7 +17,7 @@ class empirical_variogram {
 public:
   empirical_variogram(
     const geometry::points3d& points,
-    const Eigen::VectorXd& values,
+    const common::valuesd& values,
     double bin_width,
     size_t n_bins)
     : bin_width_(bin_width)

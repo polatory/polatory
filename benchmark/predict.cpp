@@ -1,21 +1,23 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#include <polatory/common/types.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
-#include <polatory/io/read_table.hpp>
-#include <polatory/io/write_table.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/table.hpp>
 
+using polatory::common::valuesd;
+using polatory::geometry::points3d;
 using polatory::interpolant;
-using polatory::io::read_points;
-using polatory::io::read_values;
-using polatory::io::write_values;
 using polatory::polynomial::basis_base;
 using polatory::rbf::cov_exponential;
+using polatory::read_table;
+using polatory::write_table;
 
 int main(int argc, char *argv[]) {
-  auto points = read_points(argv[1]);
-  auto values = read_values(argv[2]);
-  auto prediction_points = read_points(argv[3]);
+  points3d points = read_table(argv[1]);
+  valuesd values = read_table(argv[2]);
+  points3d prediction_points = read_table(argv[3]);
 
   double absolute_tolerance = 1e-4;
 
@@ -28,7 +30,7 @@ int main(int argc, char *argv[]) {
   ip.fit(points, values, absolute_tolerance);
   auto prediction_values = ip.evaluate_points(prediction_points);
 
-  write_values(argv[4], prediction_values);
+  write_table(argv[4], prediction_values);
 
   return 0;
 }

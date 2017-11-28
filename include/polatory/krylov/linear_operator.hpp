@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include <polatory/common/types.hpp>
 
 namespace polatory {
 namespace krylov {
@@ -11,7 +11,7 @@ class linear_operator {
 public:
   virtual ~linear_operator() {}
 
-  virtual Eigen::VectorXd operator()(const Eigen::VectorXd& v) const = 0;
+  virtual common::valuesd operator()(const common::valuesd& v) const = 0;
 
   virtual size_t size() const = 0;
 };

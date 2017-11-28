@@ -5,9 +5,9 @@
 #include <random>
 #include <vector>
 
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polynomial/basis_base.hpp>
@@ -15,6 +15,7 @@
 #include <polatory/rbf/biharmonic.hpp>
 
 using namespace polatory::preconditioner;
+using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::point_cloud::random_points;
@@ -44,18 +45,18 @@ void test_coarse_grid(double nugget) {
 
   coarse_grid<double> coarse(rbf, lagr_basis, point_indices, points);
 
-  Eigen::VectorXd values = Eigen::VectorXd::Random(n_points);
+  valuesd values = valuesd::Random(n_points);
   coarse.solve(values);
 
-  Eigen::VectorXd sol = Eigen::VectorXd::Zero(n_points + n_poly_basis);
+  valuesd sol = valuesd::Zero(n_points + n_poly_basis);
   coarse.set_solution_to(sol);
 
   auto eval = rbf_direct_symmetric_evaluator(rbf, poly_dimension, poly_degree, points);
   eval.set_weights(sol);
-  Eigen::VectorXd values_fit = eval.evaluate();
+  valuesd values_fit = eval.evaluate();
 
-  Eigen::VectorXd residuals = (values - values_fit).cwiseAbs();
-  Eigen::VectorXd smoothing_error_bounds = rbf.nugget() * sol.head(n_points).cwiseAbs();
+  valuesd residuals = (values - values_fit).cwiseAbs();
+  valuesd smoothing_error_bounds = rbf.nugget() * sol.head(n_points).cwiseAbs();
 
   for (size_t i = 0; i < n_points; i++) {
     EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));

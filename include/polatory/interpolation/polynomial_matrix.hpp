@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -30,13 +31,13 @@ public:
   //   m...m+l-1 : P^T lambda
   // where m is the number of points and l is the size of the basis.
   template <class Derived>
-  Eigen::VectorXd evaluate(const Eigen::MatrixBase<Derived>& lambda_c) const {
+  common::valuesd evaluate(const Eigen::MatrixBase<Derived>& lambda_c) const {
     auto l = pt_.rows();
     auto m = pt_.cols();
 
     assert(lambda_c.rows() == m + l);
 
-    Eigen::VectorXd output(m + l);
+    common::valuesd output(m + l);
 
     auto lambda = lambda_c.head(m);
     auto c = lambda_c.tail(l);

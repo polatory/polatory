@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
@@ -48,7 +49,7 @@ public:
     fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int(FmmAlgorithmScheduleChunkSize));
   }
 
-  Eigen::VectorXd evaluate() const {
+  common::valuesd evaluate() const {
     tree_->forEachLeaf([&](Leaf *leaf) {
       auto& particles = *leaf->getTargets();
       particles.resetForcesAndPotential();
@@ -147,8 +148,8 @@ public:
   }
 
 private:
-  Eigen::VectorXd potentials() const {
-    Eigen::VectorXd phi = Eigen::VectorXd::Zero(n_fld_points_);
+  common::valuesd potentials() const {
+    common::valuesd phi = common::valuesd::Zero(n_fld_points_);
 
     for (size_t i = 0; i < n_fld_points_; i++) {
       phi[i] = *potential_ptrs_[i];
