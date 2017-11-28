@@ -5,8 +5,7 @@
 #include <cassert>
 #include <memory>
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
 #include <polatory/fmm/tree_height.hpp>
@@ -53,10 +52,10 @@ public:
     }
   }
 
-  Eigen::VectorXd operator()(const Eigen::VectorXd& weights) const override {
+  common::valuesd operator()(const common::valuesd& weights) const override {
     assert(weights.rows() == size());
 
-    Eigen::VectorXd y = Eigen::VectorXd::Zero(size());
+    common::valuesd y = common::valuesd::Zero(size());
 
     auto diagonal = rbf_.evaluate(0.0) + rbf_.nugget();
     y.head(n_points_) = diagonal * weights.head(n_points_);

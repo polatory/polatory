@@ -4,8 +4,7 @@
 
 #include <cassert>
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 
 namespace polatory {
@@ -17,7 +16,7 @@ public:
     : n_(n) {
   }
 
-  Eigen::VectorXd operator()(const Eigen::VectorXd& v) const override {
+  common::valuesd operator()(const common::valuesd& v) const override {
     assert(v.rows() == n_);
     return v;
   }

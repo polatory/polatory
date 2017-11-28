@@ -4,38 +4,40 @@
 #include <iostream>
 #include <tuple>
 
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
-#include <polatory/io/read_table.hpp>
-#include <polatory/io/write_table.hpp>
 #include <polatory/isosurface/export_obj.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <polatory/rbf/biharmonic.hpp>
+#include <polatory/table.hpp>
 
 #include "parse_options.hpp"
 
+using polatory::common::concatenate_cols;
+using polatory::common::take_cols;
 using polatory::geometry::points3d;
 using polatory::geometry::vectors3d;
 using polatory::interpolant;
-using polatory::io::read_points_and_normals;
-using polatory::io::write_points_and_values;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
 using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::sdf_data_generator;
 using polatory::rbf::biharmonic;
+using polatory::read_table;
+using polatory::write_table;
 
 int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
   // Read points and normals.
-  points3d cloud_points;
-  vectors3d cloud_normals;
-  std::tie(cloud_points, cloud_normals) = read_points_and_normals(opts.in_file);
+  auto table = read_table(opts.in_file);
+  points3d cloud_points = take_cols(table, { 0, 1, 2 });
+  vectors3d cloud_normals = take_cols(table, { 3, 4, 5 });
 
   // Generate SDF data.
   sdf_data_generator sdf_data(cloud_points, cloud_normals, opts.min_sdf_distance, opts.max_sdf_distance);
@@ -48,7 +50,7 @@ int main(int argc, const char *argv[]) {
 
   // Output SDF data (optional).
   if (!opts.sdf_data_file.empty()) {
-    write_points_and_values(opts.sdf_data_file, points, values);
+    write_table(opts.sdf_data_file, concatenate_cols(points, values));
   }
 
   // Define model.

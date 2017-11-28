@@ -4,8 +4,7 @@
 
 #include <vector>
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -23,7 +22,7 @@ public:
 
   geometry::points3d sdf_points() const;
 
-  Eigen::VectorXd sdf_values() const;
+  common::valuesd sdf_values() const;
 
 private:
   size_t total_size() const;

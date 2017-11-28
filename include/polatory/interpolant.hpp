@@ -5,8 +5,7 @@
 #include <tuple>
 #include <vector>
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -22,8 +21,6 @@ namespace polatory {
 
 class interpolant {
 public:
-  using values_type = Eigen::VectorXd;
-
   interpolant(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
@@ -40,19 +37,19 @@ public:
     return centers_bbox_;
   }
 
-  values_type evaluate_points(const geometry::points3d& points) {
+  common::valuesd evaluate_points(const geometry::points3d& points) {
     set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
 
     return evaluate_points_impl(points);
   }
 
-  values_type evaluate_points_impl(const geometry::points3d& points) const {
+  common::valuesd evaluate_points_impl(const geometry::points3d& points) const {
     auto transformed = affine_transform_points(points);
 
     return evaluator_->evaluate_points(transformed);
   }
 
-  void fit(const geometry::points3d& points, const values_type& values, double absolute_tolerance) {
+  void fit(const geometry::points3d& points, const common::valuesd& values, double absolute_tolerance) {
     auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
@@ -66,7 +63,7 @@ public:
     weights_ = fitter.fit(values, absolute_tolerance);
   }
 
-  void fit_incrementally(const geometry::points3d& points, const values_type& values, double absolute_tolerance) {
+  void fit_incrementally(const geometry::points3d& points, const common::valuesd& values, double absolute_tolerance) {
     auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
@@ -99,7 +96,7 @@ public:
     point_transform_ = affine;
   }
 
-  const values_type& weights() const {
+  const common::valuesd& weights() const {
     return weights_;
   }
 
@@ -126,7 +123,7 @@ private:
 
   geometry::points3d centers_;
   geometry::bbox3d centers_bbox_;
-  Eigen::VectorXd weights_;
+  common::valuesd weights_;
 
   std::unique_ptr<interpolation::rbf_evaluator<>> evaluator_;
 };

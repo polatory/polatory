@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/gmres_base.hpp>
 
 namespace polatory {
@@ -11,7 +10,7 @@ namespace krylov {
 
 class gmres : public gmres_base {
 public:
-  gmres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter);
+  gmres(const linear_operator& op, const common::valuesd& rhs, int max_iter);
 
   void iterate_process() override;
 };

@@ -4,30 +4,30 @@
 #include <iostream>
 #include <tuple>
 
-#include <Eigen/Core>
-
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/io/read_table.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
+#include <polatory/table.hpp>
 
 #include "parse_options.hpp"
 
+using polatory::common::take_cols;
 using polatory::geometry::points3d;
-using polatory::io::read_points_and_values;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
 using polatory::kriging::variogram_fitting_weights;
 using polatory::rbf::rbf_base;
 using polatory::rbf::cov_quasi_spherical9;
+using polatory::read_table;
 
 int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
-  points3d points;
-  Eigen::VectorXd values;
-  std::tie(points, values) = read_points_and_values(opts.in_file);
+  auto table = read_table(opts.in_file);
+  auto points = take_cols(table, { 0, 1, 2 });
+  auto values = table.col(3);
 
   empirical_variogram emp_variog(points, values, opts.bin_width, opts.n_bins);
   const auto bin_distance = emp_variog.bin_distance();

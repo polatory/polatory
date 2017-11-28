@@ -2,13 +2,14 @@
 
 #include <vector>
 
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 
 using namespace polatory::point_cloud;
+using polatory::common::valuesd;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 
@@ -25,7 +26,7 @@ TEST(distance_filter, trivial) {
     point3d(2, 0, 0),
     point3d(2, 0, 0);
 
-  Eigen::VectorXd values(9);
+  valuesd values(9);
   values << 0, 1, 2, 3, 4, 5, 6, 7, 8;
 
   points3d filtered_points_expected(3);
@@ -34,7 +35,7 @@ TEST(distance_filter, trivial) {
     point3d(1, 0, 0),
     point3d(2, 0, 0);
 
-  Eigen::VectorXd filtered_values_expected(3);
+  valuesd filtered_values_expected(3);
   filtered_values_expected << 0, 3, 6;
 
   distance_filter filter(points, 0.1);

@@ -2,15 +2,14 @@
 
 #include <string>
 
-#include <polatory/io/write_table.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
+#include <polatory/table.hpp>
 
 using polatory::geometry::sphere3d;
-using polatory::io::write_points;
-using polatory::numeric::to_string;
 using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::random_points;
+using polatory::write_table;
 
 int main(int argc, char *argv[]) {
   auto n_points = std::stoi(argv[1]);
@@ -20,7 +19,7 @@ int main(int argc, char *argv[]) {
   points = distance_filter(points, 1e-8)
     .filtered(points);
 
-  write_points(argv[3], points);
+  write_table(argv[3], points);
 
   return 0;
 }

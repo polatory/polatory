@@ -7,6 +7,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
 #include <polatory/fmm/tree_height.hpp>
@@ -40,9 +41,9 @@ public:
     }
   }
 
-  Eigen::VectorXd evaluate() const {
+  common::valuesd evaluate() const {
     auto rbf_at_center = rbf_.evaluate(0.0);
-    Eigen::VectorXd y = weights_.head(n_points_) * rbf_at_center;
+    common::valuesd y = weights_.head(n_points_) * rbf_at_center;
 
     y += a_->evaluate();
 
@@ -75,7 +76,7 @@ private:
   std::unique_ptr<fmm::fmm_operator<Order>> a_;
   std::unique_ptr<PolynomialEvaluator> p_;
 
-  Eigen::VectorXd weights_;
+  common::valuesd weights_;
 };
 
 } // namespace interpolation

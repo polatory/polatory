@@ -3,35 +3,38 @@
 #include <iostream>
 #include <tuple>
 
-#include <Eigen/Core>
-
+#include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
-#include <polatory/io/read_table.hpp>
 #include <polatory/isosurface/export_obj.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/rbf/biharmonic.hpp>
+#include <polatory/table.hpp>
 
 #include "parse_options.hpp"
 
+using polatory::common::concatenate_cols;
+using polatory::common::take_cols;
+using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolant;
-using polatory::io::read_points_2d_and_values;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function_25d;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic;
+using polatory::read_table;
 
 int main(int argc, const char *argv[]) {
   auto opts = parse_options(argc, argv);
 
   // Read points and normals.
-  points3d points;
-  Eigen::VectorXd values;
-  std::tie(points, values) = read_points_2d_and_values(opts.in_file);
+  auto table = read_table(opts.in_file);
+  auto points = concatenate_cols(take_cols(table, { 0, 1 }), valuesd::Zero(table.rows()));
+  auto values = table.col(1);
 
   // Remove very close points.
   std::tie(points, values) = distance_filter(points, opts.filter_distance)

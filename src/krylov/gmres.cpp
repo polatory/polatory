@@ -4,10 +4,12 @@
 
 #include <cmath>
 
+#include <polatory/common/types.hpp>
+
 namespace polatory {
 namespace krylov {
 
-gmres::gmres(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter)
+gmres::gmres(const linear_operator& op, const common::valuesd& rhs, int max_iter)
   : gmres_base(op, rhs, max_iter) {
 }
 

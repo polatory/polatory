@@ -10,7 +10,6 @@
 #include <vector>
 
 #include <boost/program_options.hpp>
-#include <Eigen/Core>
 
 #include <polatory/geometry/bbox3d.hpp>
 
@@ -75,8 +74,8 @@ options parse_options(int argc, const char *argv[]) {
   }
 
   opts.mesh_bbox = polatory::geometry::bbox3d(
-    Eigen::Vector3d(bbox_vec[0], bbox_vec[1], bbox_vec[2]),
-    Eigen::Vector3d(bbox_vec[3], bbox_vec[4], bbox_vec[5])
+    { bbox_vec[0], bbox_vec[1], bbox_vec[2] },
+    { bbox_vec[3], bbox_vec[4], bbox_vec[5] }
   );
 
   for (size_t i = 0; i < mesh_vals_vec.size(); i++) {

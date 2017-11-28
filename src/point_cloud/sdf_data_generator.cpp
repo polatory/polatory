@@ -100,14 +100,14 @@ geometry::points3d sdf_data_generator::sdf_points() const {
   return sdf_points;
 }
 
-Eigen::VectorXd sdf_data_generator::sdf_values() const {
-  Eigen::VectorXd values = Eigen::VectorXd::Zero(total_size());
+common::valuesd sdf_data_generator::sdf_values() const {
+  common::valuesd values = common::valuesd::Zero(total_size());
 
   values.segment(points_.rows(), ext_indices_.size()) =
-    Eigen::Map<const Eigen::VectorXd>(ext_distances_.data(), ext_indices_.size());
+    Eigen::Map<const common::valuesd>(ext_distances_.data(), ext_indices_.size());
 
   values.tail(int_indices_.size()) =
-    -Eigen::Map<const Eigen::VectorXd>(int_distances_.data(), int_indices_.size());
+    -Eigen::Map<const common::valuesd>(int_distances_.data(), int_indices_.size());
 
   return values;
 }

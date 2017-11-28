@@ -19,7 +19,7 @@ rbf_direct_symmetric_evaluator::rbf_direct_symmetric_evaluator(const rbf::rbf_ba
   }
 }
 
-Eigen::VectorXd rbf_direct_symmetric_evaluator::evaluate() const {
+common::valuesd rbf_direct_symmetric_evaluator::evaluate() const {
   auto y_accum = std::vector<numeric::kahan_sum_accumulator<double>>(n_points_);
 
   auto rbf_at_center = rbf_.evaluate(0.0);
@@ -42,7 +42,7 @@ Eigen::VectorXd rbf_direct_symmetric_evaluator::evaluate() const {
     }
   }
 
-  Eigen::VectorXd y(n_points_);
+  common::valuesd y(n_points_);
   for (size_t i = 0; i < n_points_; i++) {
     y(i) = y_accum[i].get();
   }

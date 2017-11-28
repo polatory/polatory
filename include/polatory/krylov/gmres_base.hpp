@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 
 namespace polatory {
@@ -29,27 +30,27 @@ public:
 
   virtual void set_left_preconditioner(const linear_operator& left_preconditioner);
 
-  void set_initial_solution(const Eigen::VectorXd& x0);
+  void set_initial_solution(const common::valuesd& x0);
 
   virtual void set_right_preconditioner(const linear_operator& right_preconditioner);
 
   virtual void setup();
 
-  virtual Eigen::VectorXd solution_vector() const;
+  virtual common::valuesd solution_vector() const;
 
   // tolerance: Tolerance of the relative residual (stopping criterion).
   void solve(double tolerance);
 
 protected:
-  gmres_base(const linear_operator& op, const Eigen::VectorXd& rhs, int max_iter);
+  gmres_base(const linear_operator& op, const common::valuesd& rhs, int max_iter);
 
   virtual ~gmres_base() {}
 
-  virtual void add_preconditioned_krylov_basis(const Eigen::VectorXd& z) {}
+  virtual void add_preconditioned_krylov_basis(const common::valuesd& z) {}
 
-  Eigen::VectorXd left_preconditioned(const Eigen::VectorXd x) const;
+  common::valuesd left_preconditioned(const common::valuesd x) const;
 
-  Eigen::VectorXd right_preconditioned(const Eigen::VectorXd x) const;
+  common::valuesd right_preconditioned(const common::valuesd x) const;
 
   const linear_operator& op_;
 
@@ -60,7 +61,7 @@ protected:
   const int max_iter_;
 
   // Initial solution.
-  Eigen::VectorXd x0_;
+  common::valuesd x0_;
 
   // Left preconditioner.
   const linear_operator *left_pc_;
@@ -72,25 +73,25 @@ protected:
   int iter_;
 
   // Constant (right-hand side) vector.
-  const Eigen::VectorXd rhs_;
+  const common::valuesd rhs_;
 
   // L2 norm of rhs.
   double rhs_norm_;
 
   // Orthonormal basis vectors for the Krylov subspace.
-  std::vector<Eigen::VectorXd> vs_;
+  std::vector<common::valuesd> vs_;
 
   // Upper triangular matrix of QR decomposition.
   Eigen::MatrixXd r_;
 
   // Cosines for the Givens rotations.
-  Eigen::VectorXd c_;
+  common::valuesd c_;
 
   // Sines for the Givens rotations.
-  Eigen::VectorXd s_;
+  common::valuesd s_;
 
   // Sequence of residuals.
-  Eigen::VectorXd g_;
+  common::valuesd g_;
 
   bool converged_;
 };

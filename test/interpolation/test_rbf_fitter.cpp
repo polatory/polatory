@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/polynomial/basis_base.hpp>
@@ -15,6 +16,7 @@
 #include "test_points_values.hpp"
 
 using namespace polatory::interpolation;
+using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
@@ -23,7 +25,7 @@ namespace {
 
 void test_poly_degree(int poly_degree, bool with_initial_solution) {
   points3d points;
-  Eigen::VectorXd values;
+  valuesd values;
   std::tie(points, values) = test_points_values(30000);
 
   size_t n_points = points.rows();
@@ -33,9 +35,9 @@ void test_poly_degree(int poly_degree, bool with_initial_solution) {
   biharmonic rbf({ 1.0, 0.0 });
 
   auto fitter = std::make_unique<rbf_fitter>(rbf, 3, poly_degree, points);
-  Eigen::VectorXd weights;
+  valuesd weights;
   if (with_initial_solution) {
-    Eigen::VectorXd x0 = 1e-5 * Eigen::VectorXd::Random(n_points + n_poly_basis);
+    valuesd x0 = 1e-5 * valuesd::Random(n_points + n_poly_basis);
     weights = fitter->fit(values, absolute_tolerance, x0);
   } else {
     weights = fitter->fit(values, absolute_tolerance);
@@ -44,10 +46,10 @@ void test_poly_degree(int poly_degree, bool with_initial_solution) {
 
   rbf_symmetric_evaluator<> eval(rbf, 3, poly_degree, points);
   eval.set_weights(weights);
-  Eigen::VectorXd values_fit = eval.evaluate();
+  valuesd values_fit = eval.evaluate();
 
-  Eigen::VectorXd residuals = (values - values_fit).cwiseAbs();
-  Eigen::VectorXd smoothing_error_bounds = rbf.nugget() * weights.head(n_points).cwiseAbs();
+  valuesd residuals = (values - values_fit).cwiseAbs();
+  valuesd smoothing_error_bounds = rbf.nugget() * weights.head(n_points).cwiseAbs();
 
   std::cout << "Maximum residual:" << std::endl
             << "  " << residuals.lpNorm<Eigen::Infinity>() << std::endl;

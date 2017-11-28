@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/point_cloud/random_points.hpp>
@@ -10,6 +11,7 @@
 #include <polatory/rbf/biharmonic.hpp>
 
 using namespace polatory::interpolation;
+using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::basis_base;
@@ -25,7 +27,7 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
 
   auto points = random_points(sphere3d(), n_points);
 
-  Eigen::VectorXd weights = Eigen::VectorXd::Random(n_points + n_poly_basis);
+  valuesd weights = valuesd::Random(n_points + n_poly_basis);
 
   rbf_direct_evaluator direct_eval(rbf, 3, poly_degree, points);
   direct_eval.set_weights(weights);
