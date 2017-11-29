@@ -264,7 +264,7 @@ public:
     : lattice(lattice) {
   }
 
-  const std::vector<face>& get_faces() const {
+  std::vector<face>& get_faces() {
     return faces;
   }
 

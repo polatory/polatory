@@ -6,7 +6,6 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/interpolant.hpp>
-#include <polatory/isosurface/export_obj.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
@@ -19,7 +18,6 @@ using polatory::common::concatenate_cols;
 using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::interpolant;
-using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function_25d;
 using polatory::point_cloud::distance_filter;
@@ -55,9 +53,8 @@ int main(int argc, const char *argv[]) {
   rbf_field_function_25d field_f(interpolant);
 
   points.col(2) = values;
-  isosurf.generate_from_seed_points(points, field_f);
-
-  export_obj(opts.mesh_file, isosurf);
+  isosurf.generate_from_seed_points(points, field_f)
+    .export_obj(opts.mesh_file);
 
   return 0;
 }

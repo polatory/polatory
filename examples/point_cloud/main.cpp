@@ -6,7 +6,6 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/interpolant.hpp>
-#include <polatory/isosurface/export_obj.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
@@ -19,7 +18,6 @@
 using polatory::common::concatenate_cols;
 using polatory::common::take_cols;
 using polatory::interpolant;
-using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
 using polatory::point_cloud::distance_filter;
@@ -68,9 +66,8 @@ int main(int argc, const char *argv[]) {
 
   auto n_seed_points = std::max(size_t(cloud_points.rows() / 10), size_t(100));
   auto seed_points = cloud_points.topRows(n_seed_points);
-  isosurf.generate_from_seed_points(seed_points, field_f);
-
-  export_obj(opts.mesh_file, isosurf);
+  isosurf.generate_from_seed_points(seed_points, field_f)
+    .export_obj(opts.mesh_file);
 
   return 0;
 }

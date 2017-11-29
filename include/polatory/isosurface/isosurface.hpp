@@ -3,7 +3,6 @@
 #pragma once
 
 #include <set>
-#include <vector>
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -11,19 +10,44 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_surface.hpp>
+#include <polatory/isosurface/surface.hpp>
 
 namespace polatory {
 namespace isosurface {
 
 class isosurface {
-  rmt_lattice lattice;
-  rmt_surface surface;
+public:
+  isosurface(const geometry::bbox3d& bbox, double resolution)
+    : rmt_lattice_(bbox, resolution) {
+  }
 
-  void generate_common() {
-    lattice.cluster_vertices();
-    surface.generate_surface();
+  surface generate(field_function& field_func, double isovalue = 0.0) {
+    field_func.set_evaluation_bbox(rmt_lattice_.node_bounds());
 
-    mesh_defects_finder defects(lattice.get_vertices(), surface.get_faces());
+    rmt_lattice_.add_all_nodes(field_func, isovalue);
+
+    return generate_common();
+  }
+
+  surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_func, double isovalue = 0.0) {
+    field_func.set_evaluation_bbox(rmt_lattice_.node_bounds());
+
+    for (auto p : common::row_range(seed_points)) {
+      rmt_lattice_.add_cell_contains_point(p);
+    }
+    rmt_lattice_.add_nodes_by_tracking(field_func, isovalue);
+
+    return generate_common();
+  }
+
+private:
+  surface generate_common() {
+    rmt_lattice_.cluster_vertices();
+
+    rmt_surface rmt_surf(rmt_lattice_);
+    rmt_surf.generate_surface();
+
+    mesh_defects_finder defects(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
 
     auto edges = defects.non_manifold_edges();
     auto vertices = defects.non_manifold_vertices();
@@ -43,47 +67,17 @@ class isosurface {
       vertices_to_uncluster.insert(face[2]);
     }
 
-    lattice.uncluster_vertices(vertices_to_uncluster.begin(), vertices_to_uncluster.end());
-    lattice.remove_unreferenced_vertices();
-    surface.generate_surface();
+    rmt_lattice_.uncluster_vertices(vertices_to_uncluster.begin(), vertices_to_uncluster.end());
+    rmt_lattice_.remove_unreferenced_vertices();
+    rmt_surf.generate_surface();
+
+    surface surf(std::move(rmt_lattice_.get_vertices()), std::move(rmt_surf.get_faces()));
+    rmt_lattice_.clear();
+
+    return surf;
   }
 
-public:
-  isosurface(const geometry::bbox3d& bbox, double resolution)
-    : lattice(bbox, resolution)
-    , surface(lattice) {
-  }
-
-  const std::vector<face>& faces() const {
-    return surface.get_faces();
-  }
-
-  void generate(field_function& field_func, double isovalue = 0.0) {
-    field_func.set_evaluation_bbox(lattice.node_bounds());
-
-    lattice.clear();
-
-    lattice.add_all_nodes(field_func, isovalue);
-
-    generate_common();
-  }
-
-  void generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_func, double isovalue = 0.0) {
-    field_func.set_evaluation_bbox(lattice.node_bounds());
-
-    lattice.clear();
-
-    for (auto p : common::row_range(seed_points)) {
-      lattice.add_cell_contains_point(p);
-    }
-    lattice.add_nodes_by_tracking(field_func, isovalue);
-
-    generate_common();
-  }
-
-  const std::vector<geometry::point3d>& vertices() const {
-    return lattice.get_vertices();
-  }
+  rmt_lattice rmt_lattice_;
 };
 
 } // namespace isosurface

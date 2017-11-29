@@ -423,7 +423,7 @@ public:
     }
   }
 
-  const std::vector<geometry::point3d>& get_vertices() const {
+  std::vector<geometry::point3d>& get_vertices() {
     return vertices;
   }
 
