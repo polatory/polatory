@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <vector>
 
@@ -12,6 +13,7 @@
 
 #include <polatory/common/exception.hpp>
 #include <polatory/common/fold.hpp>
+#include <polatory/common/iterator_range.hpp>
 
 namespace polatory {
 namespace common {
@@ -496,20 +498,28 @@ auto take_cols(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
   return result;
 }
 
-template <class Derived>
-auto take_cols(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& indices) {
+template <class Derived, class ForwardRange>
+auto take_cols(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
+  size_t n_cols = std::distance(indices.begin(), indices.end());
+
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
     Eigen::MatrixBase<Derived>::RowsAtCompileTime,
     Eigen::Dynamic,
     Eigen::MatrixBase<Derived>::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor
-  > result(m.rows(), indices.size());
+  > result(m.rows(), n_cols);
 
-  for (size_t i = 0; i < indices.size(); i++) {
-    result.col(i) = m.col(indices[i]);
+  auto it = indices.begin();
+  for (size_t i = 0; i < n_cols; i++) {
+    result.col(i) = m.col(*it++);
   }
 
   return result;
+}
+
+template <class Derived>
+auto take_cols(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& indices) {
+  return take_cols(m, make_range(indices.begin(), indices.end()));
 }
 
 template <class Derived, class... Ts>
@@ -526,20 +536,28 @@ auto take_rows(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
   return result;
 }
 
-template <class Derived>
-auto take_rows(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& indices) {
+template <class Derived, class ForwardRange>
+auto take_rows(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
+  size_t n_rows = std::distance(indices.begin(), indices.end());
+
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
     Eigen::Dynamic,
     Eigen::MatrixBase<Derived>::ColsAtCompileTime,
     Eigen::MatrixBase<Derived>::IsRowMajor ? Eigen::RowMajor : Eigen::ColMajor
-  > result(indices.size(), m.cols());
+  > result(n_rows, m.cols());
 
-  for (size_t i = 0; i < indices.size(); i++) {
-    result.row(i) = m.row(indices[i]);
+  auto it = indices.begin();
+  for (size_t i = 0; i < n_rows; i++) {
+    result.row(i) = m.row(*it++);
   }
 
   return result;
+}
+
+template <class Derived>
+auto take_rows(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& indices) {
+  return take_rows(m, make_range(indices.begin(), indices.end()));
 }
 
 } // namespace common

@@ -10,6 +10,8 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
+#include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/iterator_range.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -71,11 +73,7 @@ public:
 
     if (l_ > 0) {
       // Compute -E.
-      geometry::points3d tail_points(m_ - l_, 3);
-      for (size_t i = 0; i < m_ - l_; i++) {
-        tail_points.row(i) = points_full.row(point_idcs_[l_ + i]);
-      }
-
+      auto tail_points = common::take_rows(points_full, common::make_range(point_idcs_.begin() + l_, point_idcs_.end()));
       me_ = -lagrange_basis_->evaluate_points(tail_points);
 
       // Compute decomposition of Q^T A Q.
@@ -87,12 +85,8 @@ public:
       // Compute matrices used for solving polynomial part.
       a_top_ = a.topRows(l_);
 
-      geometry::points3d head_points(l_, 3);
-      for (size_t i = 0; i < l_; i++) {
-        head_points.row(i) = points_full.row(point_idcs_[i]);
-      }
-
       MonomialBasis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
+      auto head_points = common::take_rows(points_full, common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_));
       MatrixXF p_top = mono_basis.evaluate_points(head_points).transpose();
       lu_of_p_top_ = p_top.fullPivLu();
     } else {
