@@ -68,7 +68,7 @@ public:
 
     if (l_ > 0) {
       // Compute -E.
-      geometry::points3d tail_points(m_ - l_);
+      geometry::points3d tail_points(m_ - l_, 3);
       for (size_t i = 0; i < m_ - l_; i++) {
         tail_points.row(i) = points_full.row(point_idcs_[l_ + i]);
       }

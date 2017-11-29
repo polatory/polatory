@@ -1,7 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
 #include <cmath>
-#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -19,7 +18,7 @@ TEST(empirical_variogram, trivial) {
 
   // Tetrahedron vertices separated from each other by a distance d.
   double d = 0.5;
-  points3d points(n_points);
+  points3d points(n_points, 3);
   points <<
     d * point3d(std::sqrt(3.0) / 3.0, 0.0, 0.0),
     d * point3d(-std::sqrt(3.0) / 6.0, 1.0 / 2.0, 0.0),

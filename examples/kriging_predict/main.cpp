@@ -3,7 +3,6 @@
 #include <tuple>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/isosurface/export_obj.hpp>
 #include <polatory/isosurface/isosurface.hpp>
@@ -15,7 +14,6 @@
 #include "parse_options.hpp"
 
 using polatory::common::take_cols;
-using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;

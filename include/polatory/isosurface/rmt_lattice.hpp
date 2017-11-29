@@ -124,7 +124,7 @@ class rmt_lattice : public rmt_primitive_lattice {
     std::minstd_rand gen(rd());
     std::uniform_real_distribution<double> dis(-1e-10, 1e-10);
 
-    geometry::points3d points(nodes_to_evaluate.size());
+    geometry::points3d points(nodes_to_evaluate.size(), 3);
 
     auto point_it = common::row_begin(points);
     for (auto idx : nodes_to_evaluate) {

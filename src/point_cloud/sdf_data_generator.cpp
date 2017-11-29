@@ -74,7 +74,7 @@ sdf_data_generator::sdf_data_generator(
 }
 
 geometry::points3d sdf_data_generator::sdf_points() const {
-  geometry::points3d sdf_points(total_size());
+  geometry::points3d sdf_points(total_size(), 3);
   sdf_points.topRows(points_.rows()) = points_;
 
   auto sdf_point_it = common::row_begin(sdf_points) + points_.rows();

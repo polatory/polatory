@@ -50,7 +50,7 @@ bbox3d bbox3d::transform(const affine_transform3d& affine) const {
   v2 = affine.transform_vector(v2);
   v3 = affine.transform_vector(v3);
 
-  points3d vertices(8);
+  vectors3d vertices(8, 3);
   vertices.row(0) = -v1 - v2 - v3;  // min, min, min
   vertices.row(1) = -v1;            // max, min, min
   vertices.row(2) = v3;             // max, max, min

@@ -20,7 +20,7 @@ geometry::points3d random_points(const geometry::cuboid3d& cuboid,
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(0.0, 1.0);
 
-  geometry::points3d points(n);
+  geometry::points3d points(n, 3);
 
   for (auto p : common::row_range(points)) {
     auto x = dist(gen) * size(0);
@@ -44,7 +44,7 @@ geometry::points3d random_points(const geometry::sphere3d& sphere,
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(-1.0, 1.0);
 
-  geometry::points3d points(n);
+  geometry::points3d points(n, 3);
 
   for (auto p : common::row_range(points)) {
     double x1;

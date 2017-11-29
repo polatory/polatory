@@ -5,7 +5,6 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/types.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/isosurface/export_obj.hpp>
 #include <polatory/isosurface/isosurface.hpp>
@@ -19,7 +18,6 @@
 using polatory::common::concatenate_cols;
 using polatory::common::take_cols;
 using polatory::common::valuesd;
-using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::isosurface::export_obj;
 using polatory::isosurface::isosurface;

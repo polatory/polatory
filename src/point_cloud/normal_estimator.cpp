@@ -18,7 +18,7 @@ void normal_estimator::estimate_with_knn(int k, double plane_factor_threshold) {
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;
 
-  normals_ = geometry::vectors3d(n_points);
+  normals_ = geometry::vectors3d(n_points, 3);
   for (size_t i = 0; i < n_points; i++) {
     tree_.knn_search(points_.row(i), k, nn_indices, nn_distances);
 
@@ -30,7 +30,7 @@ void normal_estimator::estimate_with_radius(double radius, double plane_factor_t
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;
 
-  normals_ = geometry::vectors3d(n_points);
+  normals_ = geometry::vectors3d(n_points, 3);
   for (size_t i = 0; i < n_points; i++) {
     tree_.radius_search(points_.row(i), radius, nn_indices, nn_distances);
 

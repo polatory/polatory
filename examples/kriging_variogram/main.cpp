@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
@@ -13,7 +12,6 @@
 #include "parse_options.hpp"
 
 using polatory::common::take_cols;
-using polatory::geometry::points3d;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
 using polatory::kriging::variogram_fitting_weights;

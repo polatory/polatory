@@ -5,7 +5,6 @@
 #include <iostream>
 #include <tuple>
 
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/kriging/cross_validation.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
@@ -15,7 +14,6 @@
 #include "parse_options.hpp"
 
 using polatory::common::take_cols;
-using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::kriging::k_fold_cross_validation;
 using polatory::point_cloud::distance_filter;

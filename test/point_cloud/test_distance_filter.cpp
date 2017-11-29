@@ -14,7 +14,7 @@ using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 
 TEST(distance_filter, trivial) {
-  points3d points(9);
+  points3d points(9, 3);
   points <<
     point3d(0, 0, 0),
     point3d(0, 0, 0),
@@ -29,7 +29,7 @@ TEST(distance_filter, trivial) {
   valuesd values(9);
   values << 0, 1, 2, 3, 4, 5, 6, 7, 8;
 
-  points3d filtered_points_expected(3);
+  points3d filtered_points_expected(3, 3);
   filtered_points_expected <<
     point3d(0, 0, 0),
     point3d(1, 0, 0),
@@ -47,7 +47,7 @@ TEST(distance_filter, trivial) {
 }
 
 TEST(distance_filter, filter_distance) {
-  points3d points(7);
+  points3d points(7, 3);
   points <<
     point3d(0, 0, 0),
     point3d(1, 0, 0),
@@ -57,7 +57,7 @@ TEST(distance_filter, filter_distance) {
     point3d(0, 2, 0),
     point3d(0, 0, 2);
 
-  points3d filtered_points_expected(4);
+  points3d filtered_points_expected(4, 3);
   filtered_points_expected <<
     point3d(0, 0, 0),
     point3d(2, 0, 0),

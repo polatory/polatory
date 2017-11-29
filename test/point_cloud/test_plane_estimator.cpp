@@ -15,7 +15,7 @@ using polatory::geometry::vector3d;
 TEST(plane_estimator, trivial) {
   point3d center(10.0, 11.0, 12.0);
 
-  points3d points(6);
+  points3d points(6, 3);
   points <<
     center + vector3d(-3.0, 0.0, 0.0),
     center + vector3d(3.0, 0.0, 0.0),

@@ -8,7 +8,7 @@
 using namespace polatory::geometry;
 
 TEST(bbox3d, from_points) {
-  points3d points(7);
+  points3d points(7, 3);
   points <<
     point3d(0, 0, 0),
     point3d(-1, 0, 0),

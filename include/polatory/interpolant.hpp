@@ -105,7 +105,7 @@ private:
     if (point_transform_.is_identity())
       return points;
 
-    geometry::points3d transformed(points.rows());
+    geometry::points3d transformed(points.rows(), 3);
 
     auto transformed_it = common::row_begin(transformed);
     for (auto p : common::row_range(points)) {
