@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/numeric/to_string.hpp>
+#include <polatory/numeric/roundtrip_string.hpp>
 
 namespace polatory {
 
@@ -40,7 +40,7 @@ inline auto read_table(const std::string& filename) {
     }
 
     for (const auto& cell : row) {
-      buffer.push_back(std::stod(cell));
+      buffer.push_back(numeric::to_double(cell));
     }
   }
 

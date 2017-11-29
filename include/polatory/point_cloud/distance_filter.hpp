@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -24,7 +25,7 @@ public:
   template <class Derived>
   auto filtered(const Eigen::MatrixBase<Derived>& m) {
     if (m.rows() != n_points_)
-      throw common::invalid_argument("m.rows() == " + n_points_);
+      throw common::invalid_argument("m.rows() == " + std::to_string(n_points_));
 
     return common::take_rows(m, filtered_indices_);
   }

@@ -27,9 +27,9 @@ public:
 
   affine_transform3d operator*(const affine_transform3d& rhs) const;
 
-  static affine_transform3d roll_pitch_yaw(const Eigen::Vector3d& angles, const std::array<int, 3>& axes = { 2, 1, 0 });
+  static affine_transform3d roll_pitch_yaw(const vector3d& angles, const std::array<int, 3>& axes = { 2, 1, 0 });
 
-  static affine_transform3d scaling(const Eigen::Vector3d& scales);
+  static affine_transform3d scaling(const vector3d& scales);
 
   static affine_transform3d translation(const vector3d& shifts);
 

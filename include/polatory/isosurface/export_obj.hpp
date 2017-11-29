@@ -6,7 +6,7 @@
 #include <string>
 
 #include <polatory/isosurface/isosurface.hpp>
-#include <polatory/numeric/to_string.hpp>
+#include <polatory/numeric/roundtrip_string.hpp>
 
 namespace polatory {
 namespace isosurface {

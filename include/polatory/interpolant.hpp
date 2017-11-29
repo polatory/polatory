@@ -4,12 +4,13 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <utility>
 
 #include <polatory/common/types.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/affine_transform3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
@@ -54,11 +55,12 @@ public:
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
-    auto transformed = affine_transform_points(points);
+    clear_centers();
 
+    auto transformed = affine_transform_points(points);
     interpolation::rbf_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
 
-    centers_ = transformed;
+    centers_ = std::move(transformed);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
     weights_ = fitter.fit(values, absolute_tolerance);
   }
@@ -68,8 +70,9 @@ public:
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
-    auto transformed = affine_transform_points(points);
+    clear_centers();
 
+    auto transformed = affine_transform_points(points);
     interpolation::rbf_incremental_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
 
     std::vector<size_t> center_indices;
@@ -113,6 +116,12 @@ private:
     }
 
     return transformed;
+  }
+
+  void clear_centers() {
+    centers_ = geometry::points3d();
+    centers_bbox_ = geometry::bbox3d();
+    weights_ = common::valuesd();
   }
 
   const rbf::rbf rbf_;

@@ -5,8 +5,6 @@
 #include <cassert>
 #include <cmath>
 
-#include <Eigen/Core>
-
 namespace polatory {
 namespace geometry {
 
@@ -16,10 +14,7 @@ affine_transform3d::affine_transform3d()
 
 affine_transform3d::affine_transform3d(const Eigen::Matrix4d& m)
   : m_(m) {
-  assert(m(3, 0) == 0.0);
-  assert(m(3, 1) == 0.0);
-  assert(m(3, 2) == 0.0);
-  assert(m(3, 3) == 1.0);
+  assert(m.row(3) == Eigen::RowVector4d(0, 0, 0, 1));
 }
 
 const Eigen::Matrix4d& affine_transform3d::matrix() const {
@@ -31,8 +26,7 @@ bool affine_transform3d::is_identity() const {
 }
 
 point3d affine_transform3d::transform_point(const point3d& p) const {
-  Eigen::RowVector4d p_homo(p(0), p(1), p(2), 1.0);
-  return m_.topLeftCorner(3, 4) * p_homo.transpose();
+  return m_.topLeftCorner(3, 4) * p.homogeneous().transpose();
 }
 
 vector3d affine_transform3d::transform_vector(const vector3d& v) const {
@@ -43,14 +37,14 @@ affine_transform3d affine_transform3d::operator*(const affine_transform3d& rhs) 
   return affine_transform3d(m_ * rhs.m_);
 }
 
-affine_transform3d affine_transform3d::roll_pitch_yaw(const Eigen::Vector3d& angles, const std::array<int, 3>& axes) {
+affine_transform3d affine_transform3d::roll_pitch_yaw(const vector3d& angles, const std::array<int, 3>& axes) {
   return affine_transform3d(
     rotation_matrix(angles(2), axes[2]) *
     rotation_matrix(angles(1), axes[1]) *
     rotation_matrix(angles(0), axes[0]));
 }
 
-affine_transform3d affine_transform3d::scaling(const Eigen::Vector3d& scales) {
+affine_transform3d affine_transform3d::scaling(const vector3d& scales) {
   Eigen::Matrix4d m = Eigen::Matrix4d::Zero();
 
   m.diagonal() << scales(0), scales(1), scales(2), 1.0;
@@ -72,7 +66,7 @@ Eigen::Matrix4d affine_transform3d::rotation_matrix(double angle, int axis) {
   auto c = std::cos(angle);
   auto s = std::sin(angle);
 
-  auto m = Eigen::Matrix4d();
+  Eigen::Matrix4d m;
   switch (axis) {
   case 0:
     m <<

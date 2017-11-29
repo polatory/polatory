@@ -42,6 +42,14 @@ struct format<double> {
 
 } // namespace detail
 
+inline double to_double(const std::string& str) {
+  return boost::lexical_cast<double>(str);
+}
+
+inline float to_float(const std::string& str) {
+  return boost::lexical_cast<float>(str);
+}
+
 // Performance comparison between std::stringstream and std::sprintf:
 // http://www.boost.org/doc/libs/1_65_1/doc/html/boost_lexical_cast/performance.html
 template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>

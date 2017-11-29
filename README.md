@@ -176,7 +176,6 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | fmm                    | Fast multipole methods (wrapper of ScalFMM).     |
 | geometry               | Geometric utilities.                             |
 | interpolation          | RBF fitting and evaluation.                      |
-| io                     | Reader and writer for table data.                |
 | isosurface             | Isosurface generation.                           |
 | kriging                | Parameter estimation and validation for kriging. |
 | krylov                 | Krylov subspace methods.                         |
