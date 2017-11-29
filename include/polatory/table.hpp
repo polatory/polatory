@@ -40,7 +40,9 @@ inline auto read_table(const std::string& filename) {
     }
 
     for (const auto& cell : row) {
-      buffer.push_back(numeric::to_double(cell));
+      // On Unix platforms, std::getline() keeps the \r if the line ends with \r\n.
+      // Use boost::trim_copy() to remove it.
+      buffer.push_back(numeric::to_double(boost::trim_copy(cell)));
     }
   }
 
@@ -63,7 +65,7 @@ inline void write_table(const std::string& filename,
       if (i != n_cols - 1)
         ofs << ' ';
     }
-    ofs << '\n';
+    ofs << std::endl;
   }
 }
 

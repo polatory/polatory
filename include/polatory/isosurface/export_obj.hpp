@@ -19,11 +19,11 @@ inline bool export_obj(std::string filename, const isosurface& isosurf) {
     ofs << "v "
         << numeric::to_string(v[0]) << ' '
         << numeric::to_string(v[1]) << ' '
-        << numeric::to_string(v[2]) << '\n';
+        << numeric::to_string(v[2]) << std::endl;
   }
 
   for (auto& f : isosurf.faces()) {
-    ofs << "f " << f[0] + 1 << ' ' << f[1] + 1 << ' ' << f[2] + 1 << '\n';
+    ofs << "f " << f[0] + 1 << ' ' << f[1] + 1 << ' ' << f[2] + 1 << std::endl;
   }
 
   return true;
