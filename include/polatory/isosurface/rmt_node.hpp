@@ -252,20 +252,7 @@ public:
     , cell_is_visited(false)
     , evaluated(false)
     , intersections(0)
-    , all_intersections(0)
-    , vis(nullptr)
-    , neighbor_cache(nullptr) {
-  }
-
-  rmt_node(rmt_node&& other) noexcept
-    : pos(other.pos)
-    , val(other.val)
-    , cell_is_visited(other.cell_is_visited)
-    , evaluated(other.evaluated)
-    , intersections(other.intersections)
-    , all_intersections(other.all_intersections)
-    , vis(std::move(other.vis))
-    , neighbor_cache(std::move(other.neighbor_cache)) {
+    , all_intersections(0) {
   }
 
   // Vertex clustering decision tree
