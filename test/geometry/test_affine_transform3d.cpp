@@ -43,7 +43,7 @@ TEST(affine_transform3d, transform_vector) {
 }
 
 TEST(affine_transform3d, roll_pitch_yaw) {
-  auto m_actual = affine_transform3d::roll_pitch_yaw(Eigen::Vector3d(pi / 3.0, pi / 5.0, pi / 7.0))
+  auto m_actual = affine_transform3d::roll_pitch_yaw(Eigen::Vector3d(pi<double> / 3.0, pi<double> / 5.0, pi<double> / 7.0))
     .matrix();
 
   Eigen::Matrix4d m;
