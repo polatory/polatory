@@ -41,9 +41,5 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
   }
 }
 
-const std::vector<size_t>& distance_filter::filtered_indices() const {
-  return filtered_indices_;
-}
-
 } // namespace point_cloud
 } // namespace polatory

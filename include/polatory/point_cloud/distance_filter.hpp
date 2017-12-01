@@ -20,8 +20,6 @@ class distance_filter {
 public:
   distance_filter(const geometry::points3d& points, double distance);
 
-  const std::vector<size_t>& filtered_indices() const;
-
   template <class Derived>
   auto filtered(const Eigen::MatrixBase<Derived>& m) {
     if (m.rows() != n_points_)

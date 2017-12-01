@@ -16,18 +16,16 @@ class normal_estimator {
 public:
   normal_estimator(const geometry::points3d& points);
 
-  void estimate_with_knn(int k, double plane_factor_threshold = 1.8);
+  const normal_estimator& estimate_with_knn(int k, double plane_factor_threshold = 1.8);
 
-  void estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
+  const normal_estimator& estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
 
-  const geometry::vectors3d& normals() const;
-
-  void orient_normals_by_outward_vector(const geometry::vector3d& v);
+  geometry::vectors3d orient_by_outward_vector(const geometry::vector3d& v) const;
 
 private:
   geometry::vector3d estimate_impl(const std::vector<size_t>& nn_indices, double plane_factor_threshold) const;
 
-  const size_t n_points;
+  const size_t n_points_;
   const geometry::points3d points_; // Do not hold a reference to a temporary object.
   kdtree tree_;
 
