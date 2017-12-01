@@ -2,11 +2,8 @@
 
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 
-#include <cassert>
-
-#include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/exception.hpp>
 #include <polatory/common/quasi_random_sequence.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 
 namespace polatory {
@@ -17,103 +14,111 @@ sdf_data_generator::sdf_data_generator(
   const geometry::vectors3d& normals,
   double min_distance,
   double max_distance,
-  double ratio)
+  double multiplication)
   : points_(points)
   , normals_(normals) {
-  assert(points.rows() == normals.rows());
-  assert(ratio > 0.0 && ratio <= 2.0);
+  if (points.rows() != normals.rows())
+    throw common::invalid_argument("points.rows() == normals.rows()");
+
+  if (min_distance > max_distance)
+    throw common::invalid_argument("min_distance <= max_distance");
+
+  if (multiplication <= 1.0 || multiplication > 3.0)
+    throw common::invalid_argument("ratio > 1.0 && ratio <= 3.0");
 
   kdtree tree(points, true);
 
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;
 
-  auto reduced_indices = common::quasi_random_sequence((ratio / 2.0) * points.rows());
+  auto reduced_indices = common::quasi_random_sequence(((multiplication - 1.0) / 2.0) * points.rows());
+
+  size_t n_points = points.rows();
+  size_t n_max_sdf_points = n_points + 2 * reduced_indices.size();
+  size_t n_sdf_points = n_points;
+
+  sdf_points_ = geometry::points3d(n_max_sdf_points, 3);
+  sdf_points_.topRows(n_points) = points_;
+  sdf_values_ = common::valuesd::Zero(n_max_sdf_points);
 
   for (auto i : reduced_indices) {
     auto p = points.row(i);
     auto n = normals.row(i);
 
-    auto d = max_distance;
+    if (n == geometry::vector3d::Zero())
+      continue;
 
+    auto d = max_distance;
     geometry::point3d q = p + d * n;
+
     tree.knn_search(q, 1, nn_indices, nn_distances);
-    while (nn_indices[0] != i && nn_distances[0] > 0.0) {
-      d = 0.99 * (points.row(nn_indices[0]) - p).norm() / 2.0;
+    auto i_nearest = nn_indices[0];
+
+    while (i_nearest != i) {
+      auto p_nearest = points.row(i_nearest);
+
+      d = 0.99 * (p_nearest - p).norm() / 2.0;
       q = p + d * n;
+
+      if (d < min_distance)
+        break;
+
       tree.knn_search(q, 1, nn_indices, nn_distances);
+      i_nearest = nn_indices[0];
     }
 
     if (d < min_distance)
       continue;
 
-    ext_indices_.push_back(i);
-    ext_distances_.push_back(d);
+    sdf_points_.row(n_sdf_points) = q;
+    sdf_values_(n_sdf_points) = d;
+    n_sdf_points++;
   }
 
   for (auto i : reduced_indices) {
     auto p = points.row(i);
     auto n = normals.row(i);
 
-    auto d = max_distance;
+    if (n == geometry::vector3d::Zero())
+      continue;
 
+    auto d = max_distance;
     geometry::point3d q = p - d * n;
+
     tree.knn_search(q, 1, nn_indices, nn_distances);
-    while (nn_indices[0] != i && nn_distances[0] > 0.0) {
-      d = 0.99 * (points.row(nn_indices[0]) - p).norm() / 2.0;
+    auto i_nearest = nn_indices[0];
+
+    while (i_nearest != i) {
+      auto p_nearest = points.row(i_nearest);
+
+      d = 0.99 * (p_nearest - p).norm() / 2.0;
       q = p - d * n;
+
+      if (d < min_distance)
+        break;
+
       tree.knn_search(q, 1, nn_indices, nn_distances);
+      i_nearest = nn_indices[0];
     }
 
     if (d < min_distance)
       continue;
 
-    int_indices_.push_back(i);
-    int_distances_.push_back(d);
-  }
-}
-
-geometry::points3d sdf_data_generator::sdf_points() const {
-  geometry::points3d sdf_points(total_size(), 3);
-  sdf_points.topRows(points_.rows()) = points_;
-
-  auto sdf_point_it = common::row_begin(sdf_points) + points_.rows();
-
-  for (size_t i = 0; i < ext_indices_.size(); i++) {
-    auto idx = ext_indices_[i];
-    auto d = ext_distances_[i];
-
-    auto p = points_.row(idx);
-    auto n = normals_.row(idx);
-    *sdf_point_it++ = p + d * n;
+    sdf_points_.row(n_sdf_points) = q;
+    sdf_values_(n_sdf_points) = -d;
+    n_sdf_points++;
   }
 
-  for (size_t i = 0; i < int_indices_.size(); i++) {
-    auto idx = int_indices_[i];
-    auto d = int_distances_[i];
-
-    auto p = points_.row(i);
-    auto n = normals_.row(i);
-    *sdf_point_it++ = p - d * n;
-  }
-
-  return sdf_points;
+  sdf_points_.conservativeResize(n_sdf_points, 3);
+  sdf_values_.conservativeResize(n_sdf_points);
 }
 
-common::valuesd sdf_data_generator::sdf_values() const {
-  common::valuesd values = common::valuesd::Zero(total_size());
-
-  values.segment(points_.rows(), ext_indices_.size()) =
-    Eigen::Map<const common::valuesd>(ext_distances_.data(), ext_indices_.size());
-
-  values.tail(int_indices_.size()) =
-    -Eigen::Map<const common::valuesd>(int_distances_.data(), int_indices_.size());
-
-  return values;
+const geometry::points3d& sdf_data_generator::sdf_points() const {
+  return sdf_points_;
 }
 
-size_t sdf_data_generator::total_size() const {
-  return points_.rows() + ext_indices_.size() + int_indices_.size();
+const common::valuesd& sdf_data_generator::sdf_values() const {
+  return sdf_values_;
 }
 
 } // namespace point_cloud

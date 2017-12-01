@@ -14,6 +14,11 @@ public:
     : std::logic_error("Invalid argument (expected: " + expected + ").") {}
 };
 
+class io_error : public std::runtime_error {
+public:
+  using std::runtime_error::runtime_error;
+};
+
 class not_supported : public std::logic_error {
 public:
   explicit not_supported(const std::string& name)

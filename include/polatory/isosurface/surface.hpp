@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include <polatory/common/exception.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/numeric/roundtrip_string.hpp>
@@ -26,7 +27,8 @@ public:
 
   bool export_obj(const std::string& filename) {
     std::ofstream ofs(filename);
-    if (!ofs) return false;
+    if (!ofs)
+      throw common::io_error("Could not open file '" + filename + "'.");
 
     for (auto& v : vertices_) {
       ofs << "v "

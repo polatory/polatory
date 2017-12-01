@@ -41,7 +41,7 @@ int main(int argc, const char *argv[]) {
   auto terrain_normals = norm_est.normals();
 
   // Generate SDF data.
-  sdf_data_generator sdf_data(terrain_points, terrain_normals, opts.min_sdf_distance, opts.max_sdf_distance, 2.0);
+  sdf_data_generator sdf_data(terrain_points, terrain_normals, opts.min_sdf_distance, opts.max_sdf_distance, opts.sdf_multiplication);
   auto points = sdf_data.sdf_points();
   auto values = sdf_data.sdf_values();
 

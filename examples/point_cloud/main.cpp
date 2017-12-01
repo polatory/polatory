@@ -35,7 +35,7 @@ int main(int argc, const char *argv[]) {
   auto cloud_normals = take_cols(table, 3, 4, 5);
 
   // Generate SDF data.
-  sdf_data_generator sdf_data(cloud_points, cloud_normals, opts.min_sdf_distance, opts.max_sdf_distance);
+  sdf_data_generator sdf_data(cloud_points, cloud_normals, opts.min_sdf_distance, opts.max_sdf_distance, opts.sdf_multiplication);
   auto points = sdf_data.sdf_points();
   auto values = sdf_data.sdf_values();
 

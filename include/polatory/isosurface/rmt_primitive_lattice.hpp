@@ -85,51 +85,33 @@ private:
     b2 = rlc * ReciprocalPrimitiveVectors[2];
 
     auto sqrt2 = std::sqrt(2.0);
-    auto cell_hull = lc * geometry::vector3d(3.0, 2.0 * sqrt2, sqrt2);
+    geometry::vector3d cell_hull = lc * geometry::vector3d(3.0, 2.0 * sqrt2, sqrt2);
 
     // Extend each side of bbox by a primitive cell
     // to ensure all required nodes are inside the extended bbox.
-    auto ext = cell_hull * (1.0 + std::pow(2.0, -5.0));
+    geometry::vector3d ext = cell_hull * (1.0 + std::pow(2.0, -5.0));
     ext_bbox = geometry::bbox3d(bbox.min() - ext, bbox.max() + ext);
 
-    std::vector<geometry::point3d> ext_bbox_vertices{
-      { ext_bbox.min()(0), ext_bbox.min()(1), ext_bbox.min()(2) },
-      { ext_bbox.max()(0), ext_bbox.min()(1), ext_bbox.min()(2) },
-      { ext_bbox.min()(0), ext_bbox.max()(1), ext_bbox.min()(2) },
-      { ext_bbox.min()(0), ext_bbox.min()(1), ext_bbox.max()(2) },
-      { ext_bbox.min()(0), ext_bbox.max()(1), ext_bbox.max()(2) },
-      { ext_bbox.max()(0), ext_bbox.min()(1), ext_bbox.max()(2) },
-      { ext_bbox.max()(0), ext_bbox.max()(1), ext_bbox.min()(2) },
-      { ext_bbox.max()(0), ext_bbox.max()(1), ext_bbox.max()(2) }
-    };
+    geometry::points3d ext_bbox_vertices(8, 3);
+    ext_bbox_vertices <<
+      ext_bbox.min()(0), ext_bbox.min()(1), ext_bbox.min()(2),
+      ext_bbox.max()(0), ext_bbox.min()(1), ext_bbox.min()(2),
+      ext_bbox.min()(0), ext_bbox.max()(1), ext_bbox.min()(2),
+      ext_bbox.min()(0), ext_bbox.min()(1), ext_bbox.max()(2),
+      ext_bbox.min()(0), ext_bbox.max()(1), ext_bbox.max()(2),
+      ext_bbox.max()(0), ext_bbox.min()(1), ext_bbox.max()(2),
+      ext_bbox.max()(0), ext_bbox.max()(1), ext_bbox.min()(2),
+      ext_bbox.max()(0), ext_bbox.max()(1), ext_bbox.max()(2);
 
-    std::vector<geometry::vector3d> cell_vecsd;
-    cell_vecsd.reserve(8);
+    geometry::vectors3d cell_vecsd(8, 3);
 
-    for (const auto& v : ext_bbox_vertices) {
-      cell_vecsd.push_back({
-                             v.dot(b0),
-                             v.dot(b1),
-                             v.dot(b2)
-                           });
+    for (size_t i = 0; i < 8; i++) {
+      auto v = ext_bbox_vertices.row(i);
+      cell_vecsd.row(i) = geometry::vector3d(v.dot(b0),  v.dot(b1),  v.dot(b2));
     }
 
-    cell_vecsd.push_back({
-                           ext_bbox.min().dot(b0),
-                           ext_bbox.min().dot(b1),
-                           ext_bbox.min().dot(b2)
-                         });
-
-    auto cell_mind = cell_vecsd[0];
-    auto cell_maxd = cell_vecsd[0];
-    for (const auto& cv : cell_vecsd) {
-      if (cell_mind(0) > cv(0)) cell_mind(0) = cv(0);
-      if (cell_maxd(0) < cv(0)) cell_maxd(0) = cv(0);
-      if (cell_mind(1) > cv(1)) cell_mind(1) = cv(1);
-      if (cell_maxd(1) < cv(1)) cell_maxd(1) = cv(1);
-      if (cell_mind(2) > cv(2)) cell_mind(2) = cv(2);
-      if (cell_maxd(2) < cv(2)) cell_maxd(2) = cv(2);
-    }
+    geometry::vector3d cell_mind = cell_vecsd.colwise().minCoeff();
+    geometry::vector3d cell_maxd = cell_vecsd.colwise().maxCoeff();
 
     cell_min = cell_vector(
       static_cast<int>(std::floor(cell_mind(0))),

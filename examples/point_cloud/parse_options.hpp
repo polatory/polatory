@@ -16,6 +16,7 @@ struct options {
   std::string in_file;
   double min_sdf_distance;
   double max_sdf_distance;
+  double sdf_multiplication;
   double filter_distance;
   double rho;
   int poly_dimension;
@@ -42,6 +43,8 @@ options parse_options(int argc, const char *argv[]) {
      "minimum distance of off-surface points")
     ("sdf-dist", po::value<double>(&opts.max_sdf_distance)->required(),
      "default distance of off-surface points, average distance between adjacent points is appropriate")
+    ("sdf-mult", po::value<double>(&opts.sdf_multiplication)->default_value(2.0),
+     "multiplication factor of sdf data (1.0--3.0)")
     ("filter-dist", po::value<double>(&opts.filter_distance)->default_value(1e-10),
      "filter distance threshold")
     ("rho", po::value<double>(&opts.rho)->default_value(0.0),

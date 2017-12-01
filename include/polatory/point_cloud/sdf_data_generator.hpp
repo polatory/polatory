@@ -18,23 +18,17 @@ public:
     const geometry::vectors3d& normals,
     double min_distance,
     double max_distance,
-    double ratio = 1.0);
+    double multiplication = 2.0);
 
-  geometry::points3d sdf_points() const;
-
-  common::valuesd sdf_values() const;
+  const geometry::points3d& sdf_points() const;
+  const common::valuesd& sdf_values() const;
 
 private:
-  size_t total_size() const;
-
   const geometry::points3d points_;   // Do not hold a reference to a temporary object.
   const geometry::vectors3d normals_; // Do not hold a reference to a temporary object.
 
-  std::vector<size_t> ext_indices_;
-  std::vector<size_t> int_indices_;
-
-  std::vector<double> ext_distances_;
-  std::vector<double> int_distances_;
+  geometry::points3d sdf_points_;
+  common::valuesd sdf_values_;
 };
 
 } // namespace point_cloud

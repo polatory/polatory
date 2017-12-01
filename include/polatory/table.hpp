@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 
 #include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/exception.hpp>
 #include <polatory/numeric/roundtrip_string.hpp>
 
 namespace polatory {
@@ -21,7 +22,7 @@ inline auto read_table(const std::string& filename) {
 
   std::ifstream ifs(filename);
   if (!ifs)
-    return table;
+    throw common::io_error("Could not open file '" + filename + "'.");
 
   std::vector<double> buffer;
 
@@ -56,7 +57,7 @@ inline void write_table(const std::string& filename,
                         const Eigen::MatrixBase<Derived>& table) {
   std::ofstream ofs(filename);
   if (!ofs)
-    return;
+    throw common::io_error("Could not open file '" + filename + "'.");
 
   size_t n_cols = table.cols();
   for (auto row : common::row_range(table)) {
