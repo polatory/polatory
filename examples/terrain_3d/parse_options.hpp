@@ -56,7 +56,7 @@ options parse_options(int argc, const char *argv[]) {
      "dimension of the polynomial")
     ("deg", po::value<int>(&opts.poly_degree)->default_value(0),
      "degree of the polynomial")
-    ("incremental-fit", po::bool_switch(&opts.incremental_fit),
+    ("incremental", po::bool_switch(&opts.incremental_fit),
      "add RBF centers incrementally")
     ("tol", po::value<double>(&opts.absolute_tolerance)->required(),
      "absolute tolerance of fitting")
