@@ -55,6 +55,12 @@ public:
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
+    if (values.rows() != points.rows())
+      throw common::invalid_argument("values.rows() == points.rows()");
+
+    if (absolute_tolerance <= 0.0)
+      throw common::invalid_argument("absolute_tolerance > 0.0");
+
     clear_centers();
 
     auto transformed = affine_transform_points(points);
@@ -69,6 +75,12 @@ public:
     auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
+
+    if (values.rows() != points.rows())
+      throw common::invalid_argument("values.rows() == points.rows()");
+
+    if (absolute_tolerance <= 0.0)
+      throw common::invalid_argument("absolute_tolerance > 0.0");
 
     clear_centers();
 
