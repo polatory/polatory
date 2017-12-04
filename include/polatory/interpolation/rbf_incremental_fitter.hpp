@@ -12,13 +12,13 @@
 #include <boost/range/irange.hpp>
 #include <Eigen/Core>
 
-#include <polatory/common/types.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/quasi_random_sequence.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/fmm/tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/rbf.hpp>
@@ -66,7 +66,7 @@ public:
       }
 
       solver->set_points(reduced_points);
-      weights = solver->solve(reduced_values(values, indices), absolute_tolerance, weights);
+      weights = solver->solve(common::take_rows(values, indices), absolute_tolerance, weights);
 
       auto indices_c = point_indices_complement(indices);
       auto reduced_points_c = common::take_rows(points_, indices_c);
@@ -80,7 +80,7 @@ public:
 
       std::vector<double> residuals_c;
       auto fit_c = res_eval->evaluate_points(reduced_points_c);
-      auto values_c = reduced_values(values, indices_c);
+      auto values_c = common::take_rows(values, indices_c);
       residuals_c.resize(indices_c.size());
       common::valuesd::Map(residuals_c.data(), indices_c.size()) = (values_c - fit_c).cwiseAbs();
 
@@ -148,23 +148,11 @@ private:
 
     auto universe = boost::irange<size_t>(0, n_points_);
 
-    std::vector<size_t> indices_c;
-    indices_c.reserve(n_points_ - indices.size());
-
+    std::vector<size_t> indices_c(n_points_ - indices.size());
     std::set_difference(universe.begin(), universe.end(),
-                        indices.begin(), indices.end(), std::back_inserter(indices_c));
+                        indices.begin(), indices.end(), indices_c.begin());
 
     return indices_c;
-  }
-
-  common::valuesd reduced_values(const common::valuesd& values, const std::vector<size_t>& indices) const {
-    common::valuesd reduced(indices.size());
-
-    for (size_t i = 0; i < indices.size(); i++) {
-      reduced(i) = values(indices[i]);
-    }
-
-    return reduced;
   }
 
   const rbf::rbf rbf_;
