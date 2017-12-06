@@ -20,7 +20,7 @@ namespace {
 
 // RotationMatrix[-Pi/2, {0, 0, 1}].RotationMatrix[-Pi/4, {0, 1, 0}]
 geometry::affine_transform3d rotation() {
-  return geometry::affine_transform3d::roll_pitch_yaw({ -common::pi<double> / 2.0, 0.0, -common::pi<double> / 4.0 });
+  return geometry::affine_transform3d::roll_pitch_yaw({ -common::pi<double>() / 2.0, 0.0, -common::pi<double>() / 4.0 });
 }
 
 // Primitive vectors of body-centered cubic.

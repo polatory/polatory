@@ -8,7 +8,9 @@ namespace polatory {
 namespace common {
 
 template <class T>
-const T pi = T(4.0) * std::atan(T(1.0));
+T pi() {
+  return T(4.0) * std::atan(T(1.0));
+}
 
 } // namespace common
 } // namespace polatory
