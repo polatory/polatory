@@ -69,8 +69,8 @@ private:
 };
 
 class domain_divider {
-  const double overlap_quota = 0.75;
-  const size_t max_leaf_size = 256;
+  static constexpr double overlap_quota = 0.75;
+  static constexpr size_t max_leaf_size = 256;
 
 public:
   domain_divider(const geometry::points3d& points,

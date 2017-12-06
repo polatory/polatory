@@ -20,12 +20,16 @@ namespace common {
 
 namespace detail {
 
+// NB: These iterator types are NOT models of InputIterator as they do not implement operator->().
+
 template <class Derived>
 class col_iterator
-  : public boost::random_access_iterator_helper<col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ColXpr, std::ptrdiff_t, void, col_iterator<Derived>> {
+  : public boost::random_access_iterator_helper<col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ColXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::ColXpr> {
   using self_type = col_iterator;
 
 public:
+  using iterator_category = std::input_iterator_tag;
+
   col_iterator(Eigen::MatrixBase<Derived>& m, size_t index)
     : m_ (std::addressof(m))
     , index_(index) {
@@ -48,8 +52,13 @@ public:
     return *this;
   }
 
-  typename self_type::value_type operator*() {
+  typename self_type::reference operator*() const {
     return m_->col(index_);
+  }
+
+  typename self_type::pointer operator->() const {
+    assert(false);
+    return;
   }
 
   bool operator<(const self_type& other) const {
@@ -69,7 +78,7 @@ public:
 
   friend typename self_type::difference_type
   operator-(const self_type& lhs, const self_type& rhs) {
-    assert(std::addressof(lhs.m_) == std::addressof(rhs.m_));
+    assert(lhs.m_ == rhs.m_);
     return lhs.index_ - rhs.index_;
   }
 
@@ -80,17 +89,19 @@ private:
 
 template <class Derived>
 class const_col_iterator
-  : public boost::random_access_iterator_helper<const_col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstColXpr, std::ptrdiff_t, void, const_col_iterator<Derived>> {
+  : public boost::random_access_iterator_helper<const_col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstColXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::ConstColXpr> {
   using self_type = const_col_iterator;
 
 public:
+  using iterator_category = std::input_iterator_tag;
+
   const_col_iterator(const Eigen::MatrixBase<Derived>& m, size_t index)
     : m_(std::addressof(m))
     , index_(index) {
   }
 
   bool operator==(const self_type& other) const {
-    assert(std::addressof(m_) == std::addressof(other.m_));
+    assert(m_ == other.m_);
     return index_ == other.index_;
   }
 
@@ -106,8 +117,13 @@ public:
     return *this;
   }
 
-  typename self_type::value_type operator*() const {
+  typename self_type::reference operator*() const {
     return m_->col(index_);
+  }
+
+  typename self_type::pointer operator->() const {
+    assert(false);
+    return;
   }
 
   bool operator<(const self_type& other) const {
@@ -138,17 +154,19 @@ private:
 
 template <class Derived>
 class row_iterator
-  : public boost::random_access_iterator_helper<row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::RowXpr, std::ptrdiff_t, void, row_iterator<Derived>> {
+  : public boost::random_access_iterator_helper<row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::RowXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::RowXpr> {
   using self_type = row_iterator;
 
 public:
+  using iterator_category = std::input_iterator_tag;
+
   row_iterator(Eigen::MatrixBase<Derived>& m, size_t index)
     : m_ (std::addressof(m))
     , index_(index) {
   }
 
   bool operator==(const self_type& other) const {
-    assert(std::addressof(m_) == std::addressof(other.m_));
+    assert(m_ == other.m_);
     return index_ == other.index_;
   }
 
@@ -164,8 +182,13 @@ public:
     return *this;
   }
 
-  typename self_type::value_type operator*() {
+  typename self_type::reference operator*() const {
     return m_->row(index_);
+  }
+
+  typename self_type::pointer operator->() const {
+    assert(false);
+    return;
   }
 
   bool operator<(const self_type& other) const {
@@ -196,17 +219,19 @@ private:
 
 template <class Derived>
 class const_row_iterator
-  : public boost::random_access_iterator_helper<const_row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstRowXpr, std::ptrdiff_t, void, const_row_iterator<Derived>> {
+  : public boost::random_access_iterator_helper<const_row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstRowXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::ConstRowXpr> {
   using self_type = const_row_iterator;
 
 public:
+  using iterator_category = std::input_iterator_tag;
+
   const_row_iterator(const Eigen::MatrixBase<Derived>& m, size_t index)
     : m_(std::addressof(m))
     , index_(index) {
   }
 
   bool operator==(const self_type& other) const {
-    assert(std::addressof(m_) == std::addressof(other.m_));
+    assert(m_ == other.m_);
     return index_ == other.index_;
   }
 
@@ -222,8 +247,13 @@ public:
     return *this;
   }
 
-  typename self_type::value_type operator*() const {
+  typename self_type::reference operator*() const {
     return m_->row(index_);
+  }
+
+  typename self_type::pointer operator->() const {
+    assert(false);
+    return;
   }
 
   bool operator<(const self_type& other) const {

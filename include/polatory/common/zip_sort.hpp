@@ -17,6 +17,8 @@ namespace detail {
 template <class RandomAccessIterator,
           class D = typename std::iterator_traits<RandomAccessIterator>::difference_type>
 static void inverse_permute(RandomAccessIterator begin, RandomAccessIterator end, const std::vector<D>& p) {
+  using std::swap;
+
   auto size = std::distance(begin, end);
 
   std::vector<bool> done(size);
@@ -27,7 +29,7 @@ static void inverse_permute(RandomAccessIterator begin, RandomAccessIterator end
     auto prev_j = i;
     auto j = p[i];
     while (i != j) {
-      std::swap(begin[prev_j], begin[j]);
+      swap(begin[prev_j], begin[j]);
       done[j] = true;
       prev_j = j;
       j = p[j];

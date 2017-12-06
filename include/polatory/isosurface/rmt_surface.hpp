@@ -190,18 +190,8 @@ public:
 };
 
 class rmt_tetrahedron_iterator
-  : public boost::input_iterator_helper<rmt_tetrahedron_iterator, rmt_tetrahedron, int> {
-  const rmt_node& node;
-  const rmt_node_list& node_list;
-  int index;
-
-  // Returns if all tetrahedron nodes exist.
-  bool tetrahedron_exists() const {
-    return
-      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][0]] != nullptr &&
-      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][1]] != nullptr &&
-      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][2]] != nullptr;
-  }
+  : public boost::input_iterator_helper<rmt_tetrahedron_iterator, rmt_tetrahedron, int, void, rmt_tetrahedron> {
+  using self_type = rmt_tetrahedron_iterator;
 
   // The number of tetrahedra in each cell.
   static constexpr int number_of_tetrahedra = 6;
@@ -217,11 +207,11 @@ public:
     }
   }
 
-  bool operator==(const rmt_tetrahedron_iterator& other) const {
+  bool operator==(const self_type& other) const {
     return index == other.index;
   }
 
-  rmt_tetrahedron_iterator& operator++() {
+  self_type& operator++() {
     if (!is_valid()) {
       assert(false);
       return *this;
@@ -234,12 +224,30 @@ public:
     return *this;
   }
 
-  rmt_tetrahedron operator*() const {
+  self_type::reference operator*() const {
     return rmt_tetrahedron(node, node_list, index);
+  }
+
+  self_type::pointer operator->() const {
+    assert(false);
+    return;
   }
 
   bool is_valid() const {
     return index < number_of_tetrahedra;
+  }
+
+private:
+  const rmt_node& node;
+  const rmt_node_list& node_list;
+  int index;
+
+  // Returns if all tetrahedron nodes exist.
+  bool tetrahedron_exists() const {
+    return
+      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][0]] != nullptr &&
+      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][1]] != nullptr &&
+      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][2]] != nullptr;
   }
 };
 

@@ -37,8 +37,8 @@ class ras_preconditioner : public krylov::linear_operator {
   using CoarseGrid = coarse_grid<Floating>;
 
   static constexpr int Order = 6;
-  const double coarse_ratio = 0.125;
-  const size_t n_coarsest_points = 1024;
+  static constexpr const double coarse_ratio = 0.125;
+  static constexpr const size_t n_coarsest_points = 1024;
 
 public:
   ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
