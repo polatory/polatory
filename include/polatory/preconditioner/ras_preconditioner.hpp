@@ -196,7 +196,7 @@ public:
           for (size_t i = 0; i < p_.cols(); i++) {
             auto dot = p_.col(i).dot(weights);
             weights -= dot * p_.col(i);
-            residuals -= dot * ap_.col(i);
+            residuals += dot * ap_.col(i);
           }
         }
 
