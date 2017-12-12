@@ -1,6 +1,7 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
 #include <polatory/common/types.hpp>
+#include <polatory/config.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/rbf/cov_exponential.hpp>

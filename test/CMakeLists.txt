@@ -5,7 +5,7 @@ add_executable(${TARGET} ${SOURCES})
 
 if(UNIX)
     target_link_libraries(${TARGET}
-        ${PROJECT_NAME} gtest_main gtest pthread
+        ${PROJECT_NAME} gtest pthread
     )
 elseif(MSVC)
     target_link_libraries(${TARGET}
@@ -14,12 +14,10 @@ elseif(MSVC)
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         target_link_libraries(${TARGET}
             ${VCPKG_ROOT}/debug/lib/manual-link/gtest.lib
-            ${VCPKG_ROOT}/debug/lib/manual-link/gtest_main.lib
         )
     else()
         target_link_libraries(${TARGET}
             ${VCPKG_ROOT}/lib/manual-link/gtest.lib
-            ${VCPKG_ROOT}/lib/manual-link/gtest_main.lib
         )
     endif()
 

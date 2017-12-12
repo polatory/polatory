@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include <polatory/common/eigen_utility.hpp>
+#include <polatory/config.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>

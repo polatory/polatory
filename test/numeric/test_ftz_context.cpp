@@ -7,6 +7,10 @@
 using polatory::numeric::ftz_context;
 
 TEST(ftz_context, trivial) {
+#ifdef POLATORY_FTZ
+  ASSERT_TRUE(ftz_context::daz_is_active());
+  ASSERT_TRUE(ftz_context::ftz_is_active());
+#else
   ASSERT_FALSE(ftz_context::daz_is_active());
   ASSERT_FALSE(ftz_context::ftz_is_active());
 
@@ -22,4 +26,5 @@ TEST(ftz_context, trivial) {
 
   ASSERT_FALSE(ftz_context::daz_is_active());
   ASSERT_FALSE(ftz_context::ftz_is_active());
+#endif
 }

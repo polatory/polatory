@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <polatory/config.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/table.hpp>

@@ -51,6 +51,7 @@ add_definitions(
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
     -DEIGEN_USE_MKL_ALL
+    -DPOLATORY_FTZ
 )
 
 include_directories(

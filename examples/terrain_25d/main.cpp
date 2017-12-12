@@ -6,6 +6,7 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/types.hpp>
+#include <polatory/config.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>

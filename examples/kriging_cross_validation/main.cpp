@@ -6,6 +6,7 @@
 #include <iostream>
 #include <tuple>
 
+#include <polatory/config.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/kriging/cross_validation.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
