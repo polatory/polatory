@@ -10,7 +10,7 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 
 ## Features
 
-* Fast spline surface reconstruction of 2.5D/3D point cloud
+* Fast spline surface reconstruction from 2.5D/3D point cloud
 * Fast interpolation (global kriging prediction) of 1D/2D/3D scattered data
 * Meshing isosurfaces
 * Supports large number (millions) of input points
@@ -33,7 +33,7 @@ Polatory can perform global kriging prediction via RBF interpolation. Here is th
 | Weights             | (Not computed)                             |
 | Standard errors     | (Not computed)                             |
 
-**Rapidly decaying covariance functions are not supported in the current release, such as the spherical model and the Gaussian model.** These RBFs are included for reference purposes. The spherical model can be substituted by `cov_quasi_spherical9`, which is quite similar to the original one.
+**Rapidly decaying covariance functions are not supported in the current release, such as the spherical model and the Gaussian model.** These RBFs are included for reference purposes. The spherical model can be substituted by its approximate function `cov_quasi_spherical9`.
 
 ## License
 
@@ -44,7 +44,7 @@ Polatory is available under two different licenses:
 
 ## Platforms
 
-Polatory is available on following platforms/toolchains.
+Polatory runs on x86 processors with AVX instructions (Sandy Bridge or newer). It is available on following platforms/toolchains.
 
 ### Linux
 
@@ -60,11 +60,11 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
 
 1. Install build tools
    ```bash
-   sudo apt-get install build-essential cmake git
+   sudo apt install build-essential cmake git
    ```
    If you use Clang, Intel(R) OpenMP is required.
    ```bash
-   sudo apt-get install clang-3.8 libiomp-dev
+   sudo apt install clang-3.8 libiomp-dev
    ```
 
 1. Download and install Intel(R) MKL.
@@ -75,18 +75,18 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
    wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
    sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
    sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
-   sudo apt-get update
-   sudo apt-get install intel-mkl-64bit-2017.4-061
+   sudo apt update
+   sudo apt install intel-mkl-64bit-2017.4-061
    ```
 
 1. Install [Eigen](http://eigen.tuxfamily.org/)
    ```bash
-   sudo apt-get install libeigen3-dev
+   sudo apt install libeigen3-dev
    ```
 
 1. Install [Google Test](https://github.com/google/googletest)
    ```bash
-   sudo apt-get install libgtest-dev
+   sudo apt install libgtest-dev
    cd
    mkdir gtest-build; cd gtest-build/
    cmake /usr/src/gtest/
@@ -96,7 +96,7 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
 
 1. Install [Ceres Solver](http://ceres-solver.org/)
    ```bash
-   sudo apt-get install libgoogle-glog-dev
+   sudo apt install libgoogle-glog-dev
    cd
    git clone https://ceres-solver.googlesource.com/ceres-solver
    cd ceres-solver
@@ -108,7 +108,7 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
 
 1. Install [FLANN](http://www.cs.ubc.ca/research/flann/)
    ```bash
-   sudo apt-get install libflann-dev
+   sudo apt install libflann-dev
    ```
 
 1. Download and build [Boost](http://www.boost.org/)
