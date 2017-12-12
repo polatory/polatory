@@ -1,7 +1,7 @@
-add_executable(points "points.cpp")
+add_executable(points points.cpp)
 target_link_libraries(points ${PROJECT_NAME})
 
-add_executable(predict "predict.cpp")
+add_executable(predict predict.cpp)
 target_link_libraries(predict ${PROJECT_NAME})
 
 foreach(dll ${DLLS})

@@ -9,7 +9,7 @@ if(UNIX)
     set(MKL_ROOT /opt/intel/mkl)
 
     set(CMAKE_CXX_FLAGS "-std=c++14 -fopenmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG -mavx")
 elseif(MSVC)
     set(MKL_ROOT "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/mkl")
     set(MKL_DLL_DIR "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/redist/intel64/mkl")
