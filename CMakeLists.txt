@@ -43,7 +43,8 @@ elseif(MSVC)
         )
     endif()
     
-    set(CMAKE_CXX_FLAGS "/MP /EHsc /fp:strict /fp:except- /Qstd=c++14 /Qopenmp /Qip /QaxAVX")
+    set(CMAKE_CXX_FLAGS "/MP /EHsc /fp:strict /fp:except- /Qstd=c++14 /Qopenmp")
+    set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /QaxAVX /Qip")
 endif()
 
 add_definitions(
