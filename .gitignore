@@ -3,7 +3,7 @@
 \#*\#
 
 # Build output
-build/
+build*/
 cmake-build-*/
 
 # CLion settings

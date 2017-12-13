@@ -59,98 +59,108 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
 ### On Ubuntu
 
 1. Install build tools
-   ```bash
-   sudo apt install build-essential cmake git
-   ```
-   If you use Clang, Intel(R) OpenMP is required.
-   ```bash
-   sudo apt install clang-3.8 libiomp-dev
-   ```
+
+    ```bash
+    sudo apt install build-essential cmake git
+    ```
+    If you use Clang, Intel(R) OpenMP is required.
+    ```bash
+    sudo apt install clang-3.8 libiomp-dev
+    ```
 
 1. Download and install Intel(R) MKL.
 
-   See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
-   ```bash
-   cd
-   wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
-   sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
-   sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
-   sudo apt update
-   sudo apt install intel-mkl-64bit-2017.4-061
-   ```
+    See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
+
+    ```bash
+    cd
+    wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+    sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+    sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
+    sudo apt update
+    sudo apt install intel-mkl-64bit-2017.4-061
+    ```
 
 1. Install [Eigen](http://eigen.tuxfamily.org/)
-   ```bash
-   sudo apt install libeigen3-dev
-   ```
+
+    ```bash
+    sudo apt install libeigen3-dev
+    ```
 
 1. Install [Google Test](https://github.com/google/googletest)
-   ```bash
-   sudo apt install libgtest-dev
-   cd
-   mkdir gtest-build; cd gtest-build/
-   cmake /usr/src/gtest/
-   make
-   sudo cp *.a /usr/local/lib/
-   ```
+
+    ```bash
+    sudo apt install libgtest-dev
+    cd
+    mkdir gtest-build; cd gtest-build/
+    cmake /usr/src/gtest/
+    make
+    sudo cp *.a /usr/local/lib/
+    ```
 
 1. Install [Ceres Solver](http://ceres-solver.org/)
-   ```bash
-   sudo apt install libgoogle-glog-dev
-   cd
-   git clone https://ceres-solver.googlesource.com/ceres-solver
-   cd ceres-solver
-   mkdir build; cd build/
-   cmake .. -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
-   make -j8
-   sudo make install
-   ```
+
+    ```bash
+    sudo apt install libgoogle-glog-dev
+    cd
+    git clone https://ceres-solver.googlesource.com/ceres-solver
+    cd ceres-solver
+    mkdir build; cd build/
+    cmake .. -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
+    make -j8
+    sudo make install
+    ```
 
 1. Install [FLANN](http://www.cs.ubc.ca/research/flann/)
-   ```bash
-   sudo apt install libflann-dev
-   ```
+
+    ```bash
+    sudo apt install libflann-dev
+    ```
 
 1. Download and build [Boost](http://www.boost.org/)
-   ```bash
-   cd
-   wget https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
-   tar xvfj boost_1_65_1.tar.bz2
-   cd boost_1_65_1
-   ./bootstrap.sh
-   ./b2 install -j8 --prefix=.
-   ```
+
+    ```bash
+    cd
+    wget https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
+    tar xvfj boost_1_65_1.tar.bz2
+    cd boost_1_65_1
+    ./bootstrap.sh
+    ./b2 install -j8 --prefix=.
+    ```
 
 1. Build polatory
-   ```bash
-   cd
-   git clone https://github.com/polatory/polatory.git
-   cd polatory
-   mkdir build; cd build
-   cmake .. -DBOOST_ROOT=~/boost_1_65_1 -DCMAKE_BUILD_TYPE=Release
-   make -j8
-   ```
+
+    ```bash
+    cd
+    git clone https://github.com/polatory/polatory.git
+    cd polatory
+    mkdir build; cd build
+    cmake .. -DBOOST_ROOT=~/boost_1_65_1 -DCMAKE_BUILD_TYPE=Release
+    make -j8
+    ```
 
 ### On Windows
 
 1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
-   ```
-   cd /d C:\
-   git clone https://github.com/Microsoft/vcpkg.git
-   cd vcpkg
-   vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
-   ```
+
+    ```
+    cd /d C:\
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
+    ```
 
 1. Build polatory
-   ```
-   cd /d %userprofile%
-   git clone https://github.com/polatory/polatory.git
-   cd polatory
-   mkdir build
-   cd build
-   cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
-   msbuild polatory.sln /p:Configuration=Release
-   ```
+
+    ```
+    cd /d %userprofile%
+    git clone https://github.com/polatory/polatory.git
+    cd polatory
+    mkdir build
+    cd build
+    cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
+    msbuild polatory.sln /m:8
+    ```
 
 ## Contribution
 
