@@ -2,11 +2,6 @@
 
 #pragma once
 
-#include <cassert>
-#include <cmath>
-#include <limits>
-#include <numeric>
-
 #include <Eigen/Core>
 #include <Eigen/SVD>
 
@@ -18,64 +13,21 @@ namespace point_cloud {
 // Computes the best-fit plane and its "plane factor" for the given points.
 class plane_estimator {
 public:
-  explicit plane_estimator(const geometry::points3d& points)
-    : center_(barycenter(points)) {
-    assert(points.rows() >= 3);
+  explicit plane_estimator(const geometry::points3d& points);
 
-    auto svd = pca_svd(points);
+  double line_error() const;
 
-    auto n_points = points.rows();
-    auto s0 = svd.singularValues()(0);
-    auto s1 = svd.singularValues()(1);
-    auto s2 = svd.singularValues()(2);
+  double plane_factor() const;
 
-    point_err_ = std::sqrt(s0 * s0 + s1 * s1 + s2 * s2) / std::sqrt(n_points);
-    line_err_ = std::hypot(s1, s2) / std::sqrt(n_points);
-    plane_err_ = std::abs(s2) / std::sqrt(n_points);
+  geometry::vector3d plane_normal() const;
 
-    if (s0 == 0.0) {
-      plane_factor_ = std::numeric_limits<double>::quiet_NaN();
-    } else if (s1 == 0.0) {
-      plane_factor_ = 0.0;
-    } else if (s2 == 0.0) {
-      plane_factor_ = std::numeric_limits<double>::infinity();
-    } else {
-      plane_factor_ = line_err_ * line_err_ / (plane_err_ * point_err_);
-    }
+  double plane_error() const;
 
-    basis_ = svd.matrixV();
-  }
-
-  double line_error() const {
-    return line_err_;
-  }
-
-  double plane_factor() const {
-    return plane_factor_;
-  }
-
-  geometry::vector3d plane_normal() const {
-    return basis_.col(2);
-  }
-
-  double plane_error() const {
-    return plane_err_;
-  }
-
-  double point_error() const {
-    return point_err_;
-  }
+  double point_error() const;
 
 private:
-  geometry::point3d barycenter(const geometry::points3d& points) const {
-    return points.colwise().mean();
-  }
+  static Eigen::JacobiSVD<Eigen::MatrixXd> pca_svd(const geometry::points3d& points);
 
-  Eigen::JacobiSVD<Eigen::MatrixXd> pca_svd(const geometry::points3d& points) const {
-    return Eigen::JacobiSVD<Eigen::MatrixXd>(points.rowwise() - center_, Eigen::ComputeThinV);
-  }
-
-  geometry::point3d center_;
   Eigen::Matrix3d basis_;
 
   double point_err_;
