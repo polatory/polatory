@@ -23,7 +23,7 @@ namespace polatory {
 namespace interpolation {
 
 class rbf_solver {
-  using Preconditioner = preconditioner::ras_preconditioner<double>;
+  using Preconditioner = preconditioner::ras_preconditioner;
 
 public:
   rbf_solver(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
@@ -59,7 +59,7 @@ public:
     pc_ = std::make_unique<Preconditioner>(rbf_, poly_dimension_, poly_degree_, points);
 
     if (n_poly_basis_ > 0) {
-      polynomial::orthonormal_basis<> poly(poly_dimension_, poly_degree_, points);
+      polynomial::orthonormal_basis poly(poly_dimension_, poly_degree_, points);
       p_ = poly.evaluate_points(points).transpose();
     }
   }

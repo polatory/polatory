@@ -19,7 +19,7 @@ void test_degree(int dimension, int degree) {
 
   auto points = random_points(cuboid3d(), n_points);
 
-  orthonormal_basis<> basis(dimension, degree, points);
+  orthonormal_basis basis(dimension, degree, points);
   auto pt = basis.evaluate_points(points);
   auto size = basis.basis_size();
 

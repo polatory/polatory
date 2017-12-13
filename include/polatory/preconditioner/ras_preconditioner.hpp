@@ -30,12 +30,7 @@
 namespace polatory {
 namespace preconditioner {
 
-template <class Floating>
 class ras_preconditioner : public krylov::linear_operator {
-  using LagrangeBasis = polynomial::lagrange_basis<Floating>;
-  using FineGrid = fine_grid<Floating>;
-  using CoarseGrid = coarse_grid<Floating>;
-
   static constexpr int Order = 6;
   static constexpr const double coarse_ratio = 0.125;
   static constexpr const size_t n_coarsest_points = 1024;
@@ -58,22 +53,22 @@ public:
       polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), poly_dimension, poly_degree);
       point_idcs_.back() = ups.point_indices();
       poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_poly_basis_);
-      lagrange_basis_ = std::make_shared<LagrangeBasis>(poly_dimension, poly_degree, common::take_rows(points_, poly_point_idcs));
+      lagrange_basis_ = std::make_shared<polynomial::lagrange_basis>(poly_dimension, poly_degree, common::take_rows(points_, poly_point_idcs));
     }
 
     n_fine_levels_ = std::max(0, int(
       std::ceil(std::log(double(n_points_) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
     if (n_fine_levels_ == 0) {
-      coarse_ = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
+      coarse_ = std::make_unique<coarse_grid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
       return;
     }
 
     auto bbox = geometry::bbox3d::from_points(points_);
     auto divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
 
-    fine_grids_.push_back(std::vector<FineGrid>());
+    fine_grids_.push_back(std::vector<fine_grid>());
     for (const auto& d : divider->domains()) {
-      fine_grids_.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
+      fine_grids_.back().push_back(fine_grid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
     }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
@@ -95,9 +90,9 @@ public:
     for (int level = 1; level < n_fine_levels_; level++) {
       divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
 
-      fine_grids_.push_back(std::vector<FineGrid>());
+      fine_grids_.push_back(std::vector<fine_grid>());
       for (const auto& d : divider->domains()) {
-        fine_grids_.back().push_back(FineGrid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
+        fine_grids_.back().push_back(fine_grid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
       }
 #if !CLEAR_AND_RECOMPUTE
 #pragma omp parallel for
@@ -119,7 +114,7 @@ public:
     }
 
     std::cout << "Number of points in coarse: " << point_idcs_.back().size() << std::endl;
-    coarse_ = std::make_unique<CoarseGrid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
+    coarse_ = std::make_unique<coarse_grid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
 
     for (int level = 1; level < n_fine_levels_; level++) {
       downward_evaluator_.push_back(
@@ -128,7 +123,7 @@ public:
     }
 
     if (n_poly_basis_ > 0) {
-      polynomial::orthonormal_basis<> poly(poly_dimension, poly_degree, points_);
+      polynomial::orthonormal_basis poly(poly_dimension, poly_degree, points_);
       p_ = poly.evaluate_points(points_).transpose();
       ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
@@ -267,9 +262,9 @@ private:
 #endif
 
   std::vector<std::vector<size_t>> point_idcs_;
-  mutable std::vector<std::vector<FineGrid>> fine_grids_;
-  std::shared_ptr<LagrangeBasis> lagrange_basis_;
-  std::unique_ptr<CoarseGrid> coarse_;
+  mutable std::vector<std::vector<fine_grid>> fine_grids_;
+  std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
+  std::unique_ptr<coarse_grid> coarse_;
   std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator_;
   std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator_;
   Eigen::MatrixXd p_;

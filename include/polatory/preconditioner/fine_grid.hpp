@@ -11,6 +11,7 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/iterator_range.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/rbf/rbf.hpp>
@@ -18,16 +19,10 @@
 namespace polatory {
 namespace preconditioner {
 
-template <class Floating>
 class fine_grid {
-  using Vector3F = Eigen::Matrix<Floating, 3, 1>;
-  using VectorXF = Eigen::Matrix<Floating, Eigen::Dynamic, 1>;
-  using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
-  using LagrangeBasis = polynomial::lagrange_basis<Floating>;
-
 public:
   fine_grid(const rbf::rbf& rbf,
-            std::shared_ptr<LagrangeBasis> lagrange_basis,
+            std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
             const std::vector<size_t>& point_indices,
             const std::vector<bool>& inner_point)
     : rbf_(rbf)
@@ -40,7 +35,7 @@ public:
   }
 
   fine_grid(const rbf::rbf& rbf,
-            std::shared_ptr<LagrangeBasis> lagrange_basis,
+            std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
             const std::vector<size_t>& point_indices,
             const std::vector<bool>& inner_point,
             const geometry::points3d& points_full)
@@ -49,13 +44,13 @@ public:
   }
 
   void clear() {
-    me_ = MatrixXF();
-    ldlt_of_qtaq_ = Eigen::LDLT<MatrixXF>();
+    me_ = Eigen::MatrixXd();
+    ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
   }
 
   void setup(const geometry::points3d& points_full) {
     // Compute A.
-    MatrixXF a(m_, m_);
+    Eigen::MatrixXd a(m_, m_);
     auto& rbf_kern = rbf_.get();
     auto diagonal = rbf_kern.evaluate(0.0) + rbf_kern.nugget();
     for (size_t i = 0; i < m_; i++) {
@@ -93,21 +88,21 @@ public:
 
   template <class Derived>
   void solve(const Eigen::MatrixBase<Derived>& values_full) {
-    VectorXF values = VectorXF(m_);
+    common::valuesd values(m_);
     for (size_t i = 0; i < m_; i++) {
       values(i) = values_full(point_idcs_[i]);
     }
 
     if (l_ > 0) {
       // Compute Q^T d.
-      VectorXF qtd = me_.transpose() * values.head(l_)
+      common::valuesd qtd = me_.transpose() * values.head(l_)
                      + values.tail(m_ - l_);
 
       // Solve Q^T A Q gamma = Q^T d for gamma.
-      VectorXF gamma = ldlt_of_qtaq_.solve(qtd);
+      common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
 
       // Compute lambda = Q gamma.
-      lambda_ = VectorXF(m_);
+      lambda_ = common::valuesd(m_);
       lambda_.head(l_) = me_ * gamma;
       lambda_.tail(m_ - l_) = gamma;
     } else {
@@ -117,7 +112,7 @@ public:
 
 private:
   const rbf::rbf rbf_;
-  const std::shared_ptr<LagrangeBasis> lagrange_basis_;
+  const std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
   const std::vector<size_t> point_idcs_;
   const std::vector<bool> inner_point_;
 
@@ -125,13 +120,13 @@ private:
   const size_t m_;
 
   // Matrix -E.
-  MatrixXF me_;
+  Eigen::MatrixXd me_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
+  Eigen::LDLT<Eigen::MatrixXd> ldlt_of_qtaq_;
 
   // Current solution.
-  VectorXF lambda_;
+  common::valuesd lambda_;
 };
 
 } // namespace preconditioner

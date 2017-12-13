@@ -15,7 +15,7 @@ namespace polatory {
 namespace interpolation {
 
 class rbf_direct_evaluator {
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis<>>;
+  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
 public:
   rbf_direct_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,

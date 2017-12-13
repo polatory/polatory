@@ -12,21 +12,17 @@
 namespace polatory {
 namespace polynomial {
 
-template <class Floating = double>
 class monomial_basis : public basis_base {
-  using Vector3F = Eigen::Matrix<Floating, 3, 1>;
-  using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
-
 public:
   explicit monomial_basis(int dimension, int degree)
     : basis_base(dimension, degree) {
     assert(degree >= 0 && degree <= 2);
   }
 
-  MatrixXF evaluate_points(const geometry::points3d& points) const {
+  Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {
     size_t n_points = points.rows();
 
-    MatrixXF result = MatrixXF(basis_size(), n_points);
+    Eigen::MatrixXd result(basis_size(), n_points);
 
     switch (dimension()) {
     case 1:

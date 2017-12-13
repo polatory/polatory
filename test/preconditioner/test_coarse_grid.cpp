@@ -39,11 +39,11 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  auto lagr_basis = std::make_shared<lagrange_basis<double>>(poly_dimension, poly_degree, points.topRows(n_poly_basis));
+  auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(n_poly_basis));
 
   biharmonic rbf({ 1.0, nugget });
 
-  coarse_grid<double> coarse(rbf, lagr_basis, point_indices, points);
+  coarse_grid coarse(rbf, lagr_basis, point_indices, points);
 
   valuesd values = valuesd::Random(n_points);
   coarse.solve(values);

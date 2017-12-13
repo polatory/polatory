@@ -13,11 +13,11 @@ using polatory::point_cloud::random_points;
 namespace {
 
 void test_degree(int dimension, int degree) {
-  size_t n_points = lagrange_basis<>::basis_size(dimension, degree);
+  size_t n_points = lagrange_basis::basis_size(dimension, degree);
 
   auto points = random_points(cuboid3d(), n_points);
 
-  lagrange_basis<> basis(dimension, degree, points);
+  lagrange_basis basis(dimension, degree, points);
   auto pt = basis.evaluate_points(points);
 
   ASSERT_EQ(basis.basis_size(), pt.rows());

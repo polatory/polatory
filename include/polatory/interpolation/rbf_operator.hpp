@@ -22,7 +22,7 @@ namespace interpolation {
 template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
 private:
-  using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis<>>;
+  using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis>;
 
 public:
   rbf_operator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,

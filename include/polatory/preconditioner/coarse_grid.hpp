@@ -12,6 +12,7 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/iterator_range.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -20,17 +21,10 @@
 namespace polatory {
 namespace preconditioner {
 
-template <class Floating>
 class coarse_grid {
-  using Vector3F = Eigen::Matrix<Floating, 3, 1>;
-  using VectorXF = Eigen::Matrix<Floating, Eigen::Dynamic, 1>;
-  using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
-  using LagrangeBasis = polynomial::lagrange_basis<Floating>;
-  using MonomialBasis = polynomial::monomial_basis<Floating>;
-
 public:
   coarse_grid(const rbf::rbf& rbf,
-              std::shared_ptr<LagrangeBasis> lagrange_basis,
+              std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
               const std::vector<size_t>& point_indices)
     : rbf_(rbf)
     , lagrange_basis_(lagrange_basis)
@@ -41,7 +35,7 @@ public:
   }
 
   coarse_grid(const rbf::rbf& rbf,
-              std::shared_ptr<LagrangeBasis> lagrange_basis,
+              std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
               const std::vector<size_t>& point_indices,
               const geometry::points3d& points_full)
     : coarse_grid(rbf, lagrange_basis, point_indices) {
@@ -49,16 +43,16 @@ public:
   }
 
   void clear() {
-    me_ = MatrixXF();
-    ldlt_of_qtaq_ = Eigen::LDLT<MatrixXF>();
+    me_ = Eigen::MatrixXd();
+    ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
 
-    a_top_ = MatrixXF();
-    lu_of_p_top_ = Eigen::FullPivLU<MatrixXF>();
+    a_top_ = Eigen::MatrixXd();
+    lu_of_p_top_ = Eigen::FullPivLU<Eigen::MatrixXd>();
   }
 
   void setup(const geometry::points3d& points_full) {
     // Compute A.
-    MatrixXF a(m_, m_);
+    Eigen::MatrixXd a(m_, m_);
     auto& rbf_kern = rbf_.get();
     auto diagonal = rbf_kern.evaluate(0.0) + rbf_kern.nugget();
     for (size_t i = 0; i < m_; i++) {
@@ -85,9 +79,9 @@ public:
       // Compute matrices used for solving polynomial part.
       a_top_ = a.topRows(l_);
 
-      MonomialBasis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
+      polynomial::monomial_basis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
       auto head_points = common::take_rows(points_full, common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_));
-      MatrixXF p_top = mono_basis.evaluate_points(head_points).transpose();
+      Eigen::MatrixXd p_top = mono_basis.evaluate_points(head_points).transpose();
       lu_of_p_top_ = p_top.fullPivLu();
     } else {
       ldlt_of_qtaq_ = a.ldlt();
@@ -105,26 +99,26 @@ public:
 
   template <class Derived>
   void solve(const Eigen::MatrixBase<Derived>& values_full) {
-    VectorXF values = VectorXF(m_);
+    common::valuesd values(m_);
     for (size_t i = 0; i < m_; i++) {
       values(i) = values_full(point_idcs_[i]);
     }
 
     if (l_ > 0) {
       // Compute Q^T d.
-      VectorXF qtd = me_.transpose() * values.head(l_)
-                     + values.tail(m_ - l_);
+      common::valuesd qtd = me_.transpose() * values.head(l_)
+                            + values.tail(m_ - l_);
 
       // Solve Q^T A Q gamma = Q^T d for gamma.
-      VectorXF gamma = ldlt_of_qtaq_.solve(qtd);
+      common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
 
       // Compute lambda = Q gamma.
-      lambda_c_ = VectorXF(m_ + l_);
+      lambda_c_ = common::valuesd(m_ + l_);
       lambda_c_.head(l_) = me_ * gamma;
       lambda_c_.segment(l_, m_ - l_) = gamma;
 
       // Solve P c = d - A lambda for c at poly_points.
-      VectorXF a_top_lambda = a_top_ * lambda_c_.head(m_);
+      common::valuesd a_top_lambda = a_top_ * lambda_c_.head(m_);
       lambda_c_.tail(l_) = lu_of_p_top_.solve(values.head(l_) - a_top_lambda);
     } else {
       lambda_c_ = ldlt_of_qtaq_.solve(values);
@@ -133,26 +127,26 @@ public:
 
 private:
   const rbf::rbf rbf_;
-  const std::shared_ptr<LagrangeBasis> lagrange_basis_;
+  const std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
   const std::vector<size_t> point_idcs_;
 
   const size_t l_;
   const size_t m_;
 
   // Matrix -E.
-  MatrixXF me_;
+  Eigen::MatrixXd me_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT<MatrixXF> ldlt_of_qtaq_;
+  Eigen::LDLT<Eigen::MatrixXd> ldlt_of_qtaq_;
 
   // First l rows of matrix A.
-  MatrixXF a_top_;
+  Eigen::MatrixXd a_top_;
 
   // LU decomposition of first l rows of matrix P.
-  Eigen::FullPivLU<MatrixXF> lu_of_p_top_;
+  Eigen::FullPivLU<Eigen::MatrixXd> lu_of_p_top_;
 
   // Current solution.
-  VectorXF lambda_c_;
+  common::valuesd lambda_c_;
 };
 
 } // namespace preconditioner

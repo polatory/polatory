@@ -14,11 +14,7 @@
 namespace polatory {
 namespace polynomial {
 
-template <class Floating = double>
 class lagrange_basis : public basis_base {
-  using Vector3F = Eigen::Matrix<Floating, 3, 1>;
-  using MatrixXF = Eigen::Matrix<Floating, Eigen::Dynamic, Eigen::Dynamic>;
-
 public:
   lagrange_basis(int dimension, int degree, const geometry::points3d& points)
     : basis_base(dimension, degree)
@@ -30,16 +26,16 @@ public:
     coeffs_ = pt.transpose().fullPivLu().inverse();
   }
 
-  MatrixXF evaluate_points(const geometry::points3d& points) const {
+  Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {
     auto pt = mono_basis_.evaluate_points(points);
 
     return coeffs_.transpose() * pt;
   }
 
 private:
-  const monomial_basis<Floating> mono_basis_;
+  const monomial_basis mono_basis_;
 
-  MatrixXF coeffs_;
+  Eigen::MatrixXd coeffs_;
 };
 
 } // namespace polynomial

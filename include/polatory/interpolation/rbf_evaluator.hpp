@@ -22,7 +22,7 @@ namespace interpolation {
 
 template <int Order = 10>
 class rbf_evaluator {
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis<>>;
+  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
 public:
   rbf_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,

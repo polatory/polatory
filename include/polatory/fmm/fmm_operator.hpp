@@ -26,12 +26,11 @@ namespace fmm {
 template <int Order>
 class fmm_operator {
   static const int FmmAlgorithmScheduleChunkSize = 1;
-  using FReal = double;
-  using Cell = FChebCell<FReal, Order>;
-  using ParticleContainer = FP2PParticleContainerIndexed<FReal>;
-  using Leaf = FSimpleLeaf<FReal, ParticleContainer>;
-  using Octree = FOctree<FReal, Cell, ParticleContainer, Leaf>;
-  using InterpolatedKernel = FChebSymKernel<FReal, Cell, ParticleContainer, rbf::rbf_kernel, Order>;
+  using Cell = FChebCell<double, Order>;
+  using ParticleContainer = FP2PParticleContainerIndexed<double>;
+  using Leaf = FSimpleLeaf<double, ParticleContainer>;
+  using Octree = FOctree<double, Cell, ParticleContainer, Leaf>;
+  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, rbf::rbf_kernel, Order>;
   using Fmm = FFmmAlgorithmThread<Octree, Cell, ParticleContainer, InterpolatedKernel, Leaf>;
 
 public:
@@ -42,10 +41,10 @@ public:
     auto bbox_center = bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-      tree_height, bbox_width, FPoint<FReal>(bbox_center.data()), &rbf_.get());
+      tree_height, bbox_width, FPoint<double>(bbox_center.data()), &rbf_.get());
 
     tree_ = std::make_unique<Octree>(
-      tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<FReal>(bbox_center.data()));
+      tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<double>(bbox_center.data()));
 
     fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int(FmmAlgorithmScheduleChunkSize));
   }
@@ -69,7 +68,7 @@ public:
 
     // Insert points.
     for (size_t idx = 0; idx < n_points_; idx++) {
-      tree_->insert(FPoint<FReal>(points.row(idx).data()), idx, FReal(0));
+      tree_->insert(FPoint<double>(points.row(idx).data()), idx, 0.0);
     }
 
     update_weight_ptrs();
@@ -118,7 +117,7 @@ private:
       const auto& particles = *leaf->getTargets();
 
       const auto& indices = particles.getIndexes();
-      const FReal *potentials = particles.getPotentials();
+      const double *potentials = particles.getPotentials();
 
       const size_t n_particles = particles.getNbParticles();
       for (size_t i = 0; i < n_particles; i++) {
@@ -135,7 +134,7 @@ private:
       auto& particles = *leaf->getSrc();
 
       const auto& indices = particles.getIndexes();
-      FReal *weights = particles.getPhysicalValues();
+      double *weights = particles.getPhysicalValues();
 
       const size_t n_particles = particles.getNbParticles();
       for (size_t i = 0; i < n_particles; i++) {
@@ -154,8 +153,8 @@ private:
   std::unique_ptr<InterpolatedKernel> interpolated_kernel_;
   std::unique_ptr<Octree> tree_;
 
-  std::vector<const FReal *> potential_ptrs_;
-  std::vector<FReal *> weight_ptrs_;
+  std::vector<const double *> potential_ptrs_;
+  std::vector<double *> weight_ptrs_;
 };
 
 } // namespace fmm
