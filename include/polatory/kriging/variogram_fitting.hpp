@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <vector>
 
 #include <polatory/kriging/empirical_variogram.hpp>
@@ -10,16 +11,32 @@
 namespace polatory {
 namespace kriging {
 
-enum class variogram_fitting_weights {
-  cressie,
-  equal,
-  npairs
-};
+namespace {
+
+rbf::weight_function weight_n =
+  [](size_t n, double h, double model_gamma) { return std::sqrt(n); };
+
+rbf::weight_function weight_n_over_gamma_squared =
+  [](size_t n, double h, double model_gamma) { return std::sqrt(n) / std::abs(model_gamma); };
+
+rbf::weight_function weight_n_over_h_squared =
+  [](size_t n, double h, double model_gamma) { return std::sqrt(n) / std::abs(h); };
+
+rbf::weight_function weight_one =
+  [](size_t n, double h, double model_gamma) { return 1.0; };
+
+rbf::weight_function weight_one_over_gamma_squared =
+  [](size_t n, double h, double model_gamma) { return 1.0 / std::abs(model_gamma); };
+
+rbf::weight_function weight_one_over_h_squared =
+  [](size_t n, double h, double model_gamma) { return 1.0 / std::abs(h); };
+
+} // namespace
 
 class variogram_fitting {
 public:
   variogram_fitting(const empirical_variogram& emp_variog, const rbf::rbf& rbf,
-                    variogram_fitting_weights weights = variogram_fitting_weights::equal);
+                    rbf::weight_function weight = weight_one);
 
   const std::vector<double>& parameters() const;
 

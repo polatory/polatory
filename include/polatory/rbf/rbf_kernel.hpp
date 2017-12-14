@@ -16,6 +16,8 @@
 namespace polatory {
 namespace rbf {
 
+using weight_function = std::function<double(size_t, double, double)>;
+
 class rbf_kernel : FInterpAbstractMatrixKernel<double> {
 public:
   explicit rbf_kernel(const std::vector<double>& params)
@@ -48,24 +50,20 @@ public:
 
   // The following members are used in covariance functions.
 
-  virtual int num_parameters() const {
+  virtual size_t num_parameters() const {
     throw common::not_supported("num_parameters");
   }
 
-  virtual const double *parameter_lower_bounds() const {
+  virtual const std::vector<double>& parameter_lower_bounds() const {
     throw common::not_supported("parameter_lower_bounds");
   }
 
-  virtual const double *parameter_upper_bounds() const {
+  virtual const std::vector<double>& parameter_upper_bounds() const {
     throw common::not_supported("parameter_upper_bounds");
   }
 
-  virtual ceres::CostFunction *cost_function(double h, double gamma, double weight) const {
+  virtual ceres::CostFunction *cost_function(size_t n, double h, double gamma, weight_function weight) const {
     throw common::not_supported("cost_function");
-  }
-
-  virtual ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight) const {
-    throw common::not_supported("cost_function_over_gamma");
   }
 
   // The following definitions are used in ScalFMM.

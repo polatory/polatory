@@ -16,7 +16,6 @@
 using polatory::common::take_cols;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
-using polatory::kriging::variogram_fitting_weights;
 using polatory::rbf::cov_quasi_spherical9;
 using polatory::read_table;
 
@@ -35,12 +34,12 @@ int main(int argc, const char *argv[]) {
 
     std::cout << "Empirical variogram:" << std::endl
               << std::setw(12) << "n_pairs" << std::setw(12) << "distance" << std::setw(12) << "gamma" << std::endl;
-    for (int bin = 0; bin < bin_distance.size(); bin++) {
+    for (size_t bin = 0; bin < bin_distance.size(); bin++) {
       std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin] << std::setw(12) <<  bin_variance[bin] << std::endl;
     }
 
     cov_quasi_spherical9 variog({ opts.psill, opts.range, opts.nugget });
-    variogram_fitting fit(emp_variog, variog, variogram_fitting_weights::equal);
+    variogram_fitting fit(emp_variog, variog);
 
     auto params = fit.parameters();
     std::cout << "Fitted parameters:" << std::endl

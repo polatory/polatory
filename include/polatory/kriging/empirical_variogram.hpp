@@ -17,7 +17,7 @@ public:
 
   const std::vector<double>& bin_distance() const;
 
-  const std::vector<int>& bin_num_pairs() const;
+  const std::vector<size_t>& bin_num_pairs() const;
 
   const std::vector<double>& bin_variance() const;
 
@@ -28,7 +28,7 @@ private:
   size_t n_bins_;
 
   std::vector<double> distance_;
-  std::vector<int> num_pairs_;
+  std::vector<size_t> num_pairs_;
   std::vector<double> variance_;
 };
 

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <functional>
 #include <limits>
 
 #include <ceres/ceres.h>
@@ -35,72 +36,51 @@ public:
     return partial_sill() + nugget();
   }
 
-  int num_parameters() const override {
+  size_t num_parameters() const override {
     return 3;
   }
 
-  const double *parameter_lower_bounds() const override {
-    static const double lower_bounds[]{ 0.0, 0.0, 0.0 };
+  const std::vector<double>& parameter_lower_bounds() const override {
+    static const std::vector<double> lower_bounds{ 0.0, 0.0, 0.0 };
     return lower_bounds;
   }
 
-  const double *parameter_upper_bounds() const override {
-    static const double upper_bounds[]{ std::numeric_limits<double>::infinity(),
-                                        std::numeric_limits<double>::infinity(),
-                                        std::numeric_limits<double>::infinity() };
+  const std::vector<double>& parameter_upper_bounds() const override {
+    static const std::vector<double> upper_bounds{ std::numeric_limits<double>::infinity(),
+                                                   std::numeric_limits<double>::infinity(),
+                                                   std::numeric_limits<double>::infinity() };
     return upper_bounds;
   }
 };
 
-#define POLATORY_DEFINE_COST_FUNCTIONS(RBF, NPARAMS)                        \
-struct residual {                                                           \
-  residual(double h, double gamma, double weight)                           \
-    : h_(h), gamma_(gamma), weight_(weight) {}                              \
-                                                                            \
-  template <class T>                                                        \
-  bool operator()(const T *params, T *residual) const {                     \
-    auto sill = params[0] + params[2];                                      \
-    auto model_gamma = sill - RBF::evaluate(T(h_), params);                 \
-    residual[0] = T(weight_) * (T(gamma_) - model_gamma);                   \
-                                                                            \
-    return true;                                                            \
-  }                                                                         \
-                                                                            \
-private:                                                                    \
-  const double h_;                                                          \
-  const double gamma_;                                                      \
-  const double weight_;                                                     \
-};                                                                          \
-                                                                            \
-struct residual_over_gamma {                                                \
-  residual_over_gamma(double h, double gamma, double weight)                \
-    : h_(h), gamma_(gamma), weight_(weight) {}                              \
-                                                                            \
-  template <class T>                                                        \
-  bool operator()(const T *params, T *residual) const {                     \
-    auto sill = params[0] + params[2];                                      \
-    auto model_gamma = sill - RBF::evaluate(T(h_), params);                 \
-    residual[0] = T(weight_) * (T(gamma_) - model_gamma) / model_gamma;     \
-                                                                            \
-    return true;                                                            \
-  }                                                                         \
-                                                                            \
-private:                                                                    \
-  const double h_;                                                          \
-  const double gamma_;                                                      \
-  const double weight_;                                                     \
-};                                                                          \
-                                                                            \
-ceres::CostFunction *cost_function(double h, double gamma, double weight = 1.0) const override { \
+#define POLATORY_DEFINE_COST_FUNCTION(RBF, NPARAMS)                           \
+struct residual {                                                             \
+  residual(size_t n, double h, double gamma, weight_function weight)          \
+    : n_(n)                                                                   \
+    , h_(h)                                                                   \
+    , gamma_(gamma)                                                           \
+    , weight_(weight) {}                                                      \
+                                                                              \
+  template <class T>                                                          \
+  bool operator()(const T *params, T *residual) const {                       \
+    auto sill = params[0] + params[2];                                        \
+    auto model_gamma = sill - RBF::evaluate(h_, params);                      \
+    residual[0] = weight_(n_, h_, model_gamma) * (gamma_ - model_gamma);      \
+                                                                              \
+    return true;                                                              \
+  }                                                                           \
+                                                                              \
+private:                                                                      \
+  const size_t n_;                                                            \
+  const double h_;                                                            \
+  const double gamma_;                                                        \
+  const weight_function weight_;                                              \
+};                                                                            \
+                                                                              \
+ceres::CostFunction *cost_function(size_t n, double h, double gamma, weight_function weight) const override { \
   return new ceres::NumericDiffCostFunction<residual, ceres::CENTRAL, 1, NPARAMS>( \
-    new residual(h, gamma, weight)                                          \
-  );                                                                        \
-}                                                                           \
-                                                                            \
-ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight = 1.0) const override { \
-  return new ceres::NumericDiffCostFunction<residual_over_gamma, ceres::CENTRAL, 1, NPARAMS>( \
-    new residual_over_gamma(h, gamma, weight)                               \
-  );                                                                        \
+    new residual(n, h, gamma, weight)                                         \
+  );                                                                          \
 }
 
 } // namespace rbf

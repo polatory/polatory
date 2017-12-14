@@ -40,7 +40,7 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points, const
     }
   }
 
-  for (int i = 0; i < n_bins_; i++) {
+  for (size_t i = 0; i < n_bins_; i++) {
     if (num_pairs_[i] == 0) continue;
 
     distance_[i] = dist_sum[i].get() / num_pairs_[i];
@@ -52,7 +52,7 @@ const std::vector<double>& empirical_variogram::bin_distance() const {
   return distance_;
 }
 
-const std::vector<int>& empirical_variogram::bin_num_pairs() const {
+const std::vector<size_t>& empirical_variogram::bin_num_pairs() const {
   return num_pairs_;
 }
 
