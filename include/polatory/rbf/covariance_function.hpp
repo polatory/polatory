@@ -52,15 +52,9 @@ public:
   }
 };
 
-#define DECLARE_COST_FUNCTIONS(RBF)                                         \
-ceres::CostFunction *cost_function(double h, double gamma, double weight = 1.0) const override; \
-ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight = 1.0) const override;
-
-#define DEFINE_COST_FUNCTIONS(RBF, NPARAMS)                                 \
-namespace detail {                                                          \
-                                                                            \
-struct RBF##_residual {                                                     \
-  RBF##_residual(double h, double gamma, double weight)                     \
+#define POLATORY_DEFINE_COST_FUNCTIONS(RBF, NPARAMS)                        \
+struct residual {                                                           \
+  residual(double h, double gamma, double weight)                           \
     : h_(h), gamma_(gamma), weight_(weight) {}                              \
                                                                             \
   template <class T>                                                        \
@@ -78,8 +72,8 @@ private:                                                                    \
   const double weight_;                                                     \
 };                                                                          \
                                                                             \
-struct RBF##_residual_over_gamma {                                          \
-  RBF##_residual_over_gamma(double h, double gamma, double weight)          \
+struct residual_over_gamma {                                                \
+  residual_over_gamma(double h, double gamma, double weight)                \
     : h_(h), gamma_(gamma), weight_(weight) {}                              \
                                                                             \
   template <class T>                                                        \
@@ -97,19 +91,15 @@ private:                                                                    \
   const double weight_;                                                     \
 };                                                                          \
                                                                             \
-}                                                                           \
-                                                                            \
-inline                                                                      \
-ceres::CostFunction *RBF::cost_function(double h, double gamma, double weight) const { \
-  return new ceres::NumericDiffCostFunction<detail::RBF##_residual, ceres::CENTRAL, 1, NPARAMS>( \
-    new detail::RBF##_residual(h, gamma, weight)                            \
+ceres::CostFunction *cost_function(double h, double gamma, double weight = 1.0) const override { \
+  return new ceres::NumericDiffCostFunction<residual, ceres::CENTRAL, 1, NPARAMS>( \
+    new residual(h, gamma, weight)                                          \
   );                                                                        \
 }                                                                           \
                                                                             \
-inline                                                                      \
-ceres::CostFunction *RBF::cost_function_over_gamma(double h, double gamma, double weight) const { \
-  return new ceres::NumericDiffCostFunction<detail::RBF##_residual_over_gamma, ceres::CENTRAL, 1, NPARAMS>( \
-    new detail::RBF##_residual_over_gamma(h, gamma, weight)                 \
+ceres::CostFunction *cost_function_over_gamma(double h, double gamma, double weight = 1.0) const override { \
+  return new ceres::NumericDiffCostFunction<residual_over_gamma, ceres::CENTRAL, 1, NPARAMS>( \
+    new residual_over_gamma(h, gamma, weight)                               \
   );                                                                        \
 }
 

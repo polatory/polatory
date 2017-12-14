@@ -45,10 +45,8 @@ public:
     gradz = c * z;
   }
 
-  DECLARE_COST_FUNCTIONS(cov_quasi_spherical5)
+  POLATORY_DEFINE_COST_FUNCTIONS(cov_quasi_spherical5, 3)
 };
-
-DEFINE_COST_FUNCTIONS(cov_quasi_spherical5, 3)
 
 } // namespace rbf
 } // namespace polatory

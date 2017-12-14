@@ -19,7 +19,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
   : points_(in_points)
   , n_points_(in_points.rows())
   , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
-#if REPORT_RESIDUAL
+#if POLATORY_REPORT_RESIDUAL
   , finest_evaluator_(rbf, poly_dimension, poly_degree, points_)
 #endif
 {
@@ -48,7 +48,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
   for (const auto& d : divider->domains()) {
     fine_grids_.back().push_back(fine_grid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
   }
-#if !RECOMPUTE_AND_CLEAR
+#if !POLATORY_RECOMPUTE_AND_CLEAR
 #pragma omp parallel for
   for (size_t i = 0; i < fine_grids_.back().size(); i++) {
      auto& fine = fine_grids_.back()[i];
@@ -72,7 +72,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
     for (const auto& d : divider->domains()) {
       fine_grids_.back().push_back(fine_grid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
     }
-#if !RECOMPUTE_AND_CLEAR
+#if !POLATORY_RECOMPUTE_AND_CLEAR
 #pragma omp parallel for
     for (size_t i = 0; i < fine_grids_.back().size(); i++) {
        auto& fine = fine_grids_.back()[i];
@@ -124,7 +124,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
     return weights_total;
   }
 
-#if REPORT_RESIDUAL
+#if POLATORY_REPORT_RESIDUAL
   std::cout << "Initial residual: " << residuals.norm() << std::endl;
 #endif
 
@@ -136,12 +136,12 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 #pragma omp parallel for schedule(guided)
       for (size_t i = 0; i < fine_grids_[level].size(); i++) {
         auto& fine = fine_grids_[level][i];
-#if RECOMPUTE_AND_CLEAR
+#if POLATORY_RECOMPUTE_AND_CLEAR
         fine.setup(points_);
 #endif
         fine.solve(residuals);
         fine.set_solution_to(weights);
-#if RECOMPUTE_AND_CLEAR
+#if POLATORY_RECOMPUTE_AND_CLEAR
         fine.clear();
 #endif
       }
@@ -175,7 +175,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       weights_total.head(n_points_) += weights;
 
-#if REPORT_RESIDUAL
+#if POLATORY_REPORT_RESIDUAL
       {
          // Test residual
          finest_evaluator_.set_weights(weights_total);
@@ -211,7 +211,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       weights_total += weights;
 
-#if REPORT_RESIDUAL
+#if POLATORY_REPORT_RESIDUAL
       {
          // Test residual
          finest_evaluator_.set_weights(weights_total);

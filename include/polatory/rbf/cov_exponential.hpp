@@ -41,10 +41,8 @@ public:
     gradz = c * z;
   }
 
-  DECLARE_COST_FUNCTIONS(cov_exponential)
+  POLATORY_DEFINE_COST_FUNCTIONS(cov_exponential, 3)
 };
-
-DEFINE_COST_FUNCTIONS(cov_exponential, 3)
 
 } // namespace rbf
 } // namespace polatory

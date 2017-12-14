@@ -2,8 +2,8 @@
 
 #pragma once
 
-#define REPORT_RESIDUAL 0
-#define RECOMPUTE_AND_CLEAR 1
+#define POLATORY_REPORT_RESIDUAL 0
+#define POLATORY_RECOMPUTE_AND_CLEAR 1
 
 #include <memory>
 #include <vector>
@@ -42,7 +42,7 @@ private:
   const size_t n_poly_basis_;
   int n_fine_levels_;
 
-#if REPORT_RESIDUAL
+#if POLATORY_REPORT_RESIDUAL
   mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator_;
 #endif
 

@@ -55,11 +55,10 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
   ceres::Solver::Options options;
   options.max_num_iterations = 32;
   options.linear_solver_type = ceres::DENSE_QR;
-  options.minimizer_progress_to_stdout = true;
 
   ceres::Solver::Summary summary;
   Solve(options, &problem, &summary);
-  std::cout << summary.BriefReport() << "\n";
+  std::cout << summary.BriefReport() << std::endl;
 }
 
 const std::vector<double>& variogram_fitting::parameters() const {

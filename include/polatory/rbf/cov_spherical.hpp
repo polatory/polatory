@@ -49,10 +49,8 @@ public:
     }
   }
 
-  DECLARE_COST_FUNCTIONS(cov_spherical)
+  POLATORY_DEFINE_COST_FUNCTIONS(cov_spherical, 3)
 };
-
-DEFINE_COST_FUNCTIONS(cov_spherical, 3)
 
 } // namespace rbf
 } // namespace polatory

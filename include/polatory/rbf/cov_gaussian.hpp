@@ -41,10 +41,8 @@ public:
     gradz = c * z;
   }
 
-  DECLARE_COST_FUNCTIONS(cov_gaussian)
+  POLATORY_DEFINE_COST_FUNCTIONS(cov_gaussian, 3)
 };
-
-DEFINE_COST_FUNCTIONS(cov_gaussian, 3)
 
 } // namespace rbf
 } // namespace polatory
