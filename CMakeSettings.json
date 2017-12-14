@@ -1,0 +1,50 @@
+{
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "generator": "Visual Studio 15 2017 Win64",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\build\\${name}",
+      "cmakeCommandArgs": "-T\"Intel C++ Compiler 17.0\"",
+      "buildCommandArgs": "/m:8",
+      "ctestCommandArgs": "-C ${configurationType} -VV",
+      "variables": [
+        {
+          "name": "CMAKE_BUILD_TYPE",
+          "value": "${configurationType}"
+        },
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+          "name": "VCPKG_ROOT",
+          "value": "C:/vcpkg/installed/x64-windows"
+        }
+      ]
+    },
+    {
+      "name": "x64-Release",
+      "generator": "Visual Studio 15 2017 Win64",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\build\\${name}",
+      "cmakeCommandArgs": "-T\"Intel C++ Compiler 17.0\"",
+      "buildCommandArgs": "/m:8",
+      "ctestCommandArgs": "-C ${configurationType} -VV",
+      "variables": [
+        {
+          "name": "CMAKE_BUILD_TYPE",
+          "value": "${configurationType}"
+        },
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+          "name": "VCPKG_ROOT",
+          "value": "C:/vcpkg/installed/x64-windows"
+        }
+      ]
+    }
+  ]
+}

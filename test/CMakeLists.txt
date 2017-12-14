@@ -30,3 +30,8 @@ elseif(MSVC)
         )
     endforeach(dll)
 endif()
+
+add_test(
+    NAME ${TARGET}
+    COMMAND $<TARGET_FILE:${TARGET}>
+)

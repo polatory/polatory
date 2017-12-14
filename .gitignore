@@ -9,3 +9,6 @@ cmake-build-*/
 # CLion settings
 .idea/*
 !.idea/codeStyleSettings.xml
+
+# Visual Studio
+.vs/

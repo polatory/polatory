@@ -93,9 +93,9 @@ elseif(MSVC)
     endif()
 endif()
 
-add_subdirectory(src)
 add_subdirectory(benchmark)
 add_subdirectory(examples)
+add_subdirectory(src)
 
 enable_testing()
 add_subdirectory(test)
