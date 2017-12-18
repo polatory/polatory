@@ -10,8 +10,8 @@ compiler:
   - gcc
   - clang
 
-before_install:
-# Intel OpenMP (for building with clang)
+install:
+# Intel OpenMP (for building with Clang)
   - sudo apt-get install -y libiomp-dev
 # Intel MKL
   - curl https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB | sudo apt-key add -
@@ -52,3 +52,12 @@ script:
   - cmake .. -DBOOST_ROOT=~/boost_1_65_1 -DCMAKE_BUILD_TYPE=Release
   - make -j4
   - ctest -VV
+
+branches:
+  only:
+    - master
+
+notifications:
+  email: false
+  slack:
+    secure: kn9eTphQ9g/EGA3dJSaJCgL59u04jCZCdhUm6+blw+smnbGd16Rn6doTKdLUHl98+xtra+XY6nCZsxh2uClUd2/95YfXuPd7XMzTymFuo/O+BD4L5ZFjhzAuXtlD/h97ftUpACARqfWlDuKti186OoZ9ln6BJpS0Eq40ILPijNpJachhj6nNOWoK5iIN2oxdIqobMQ4U+Axk9/M0f6oRCdrVZ2uNJJFmQg9FLSzCd2pnJVRvw6jnWbHJc+mV4O38mYOdohj57gy4FSo7FOC0nPFGJXGKT8RIQBiWzI4RvF/TtaWEUfak7xTvcnfprLzeHSMt1pZfqDCAbkPddBIZovUHS8f1RToiuslcIg8heWSDd5Bth444ET7RnnVfVbWuyZm28g9u57SZ2CpXlnSwmqpp0ozD7aCETfUEsluVP+bJTlz+nvgKdVZghZzeo42lbm4f4lVUfsgiVJv7DF3tRLIBG5gCAw1dzsN2qX70TaXaCTtEuaXX9SqNE3r/NuyznqEaP1DRI4M5OX+TCLW9oIJnRF3Hzy24sT5Q+E8lA2C5iys4xfwLtOFU332DN8ZW6dZU09ncHqjpfZIgxzkudlaRlXE52Jg35vtZCovuVJHQdzvqDO1CVT9JF6s2P9Iqm5y9wRvL08T4nmEoxHkxP/KIp8duiaLPAaBSt4SgDlE=
