@@ -8,6 +8,8 @@ Polatory is a fast and memory-efficient framework for RBF (radial basis function
 
 NOTE: This is a pre-release version. APIs subject to change without notice.
 
+master: [![Build Status](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
+
 ## Features
 
 * Fast spline surface reconstruction from 2.5D/3D point cloud

@@ -2,14 +2,20 @@ cmake_minimum_required(VERSION 3.0)
 
 project(polatory CXX)
 
-find_package(Boost 1.60 REQUIRED)
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+find_package(Boost 1.65.1 REQUIRED)
 find_package(Eigen3 REQUIRED)
+
+option(COVERAGE "Compile with --coverage option" OFF)
 
 if(UNIX)
     set(MKL_ROOT /opt/intel/mkl)
 
     set(CMAKE_CXX_FLAGS "-std=c++14 -fopenmp")
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG -mavx")
+    if (COVERAGE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    endif()
 elseif(MSVC)
     set(MKL_ROOT "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/mkl")
     set(MKL_DLL_DIR "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/redist/intel64/mkl")
