@@ -25,13 +25,14 @@ namespace fmm {
 
 template <int Order>
 class fmm_operator {
-  static const int FmmAlgorithmScheduleChunkSize = 1;
   using Cell = FChebCell<double, Order>;
   using ParticleContainer = FP2PParticleContainerIndexed<double>;
   using Leaf = FSimpleLeaf<double, ParticleContainer>;
   using Octree = FOctree<double, Cell, ParticleContainer, Leaf>;
   using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, rbf::rbf_kernel, Order>;
   using Fmm = FFmmAlgorithmThread<Octree, Cell, ParticleContainer, InterpolatedKernel, Leaf>;
+
+  static constexpr int FmmAlgorithmScheduleChunkSize = 1;
 
 public:
   fmm_operator(const rbf::rbf& rbf, int tree_height, const geometry::bbox3d& bbox)
@@ -46,7 +47,7 @@ public:
     tree_ = std::make_unique<Octree>(
       tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<double>(bbox_center.data()));
 
-    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), FmmAlgorithmScheduleChunkSize);
+    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), static_cast<int>(FmmAlgorithmScheduleChunkSize));
   }
 
   common::valuesd evaluate() const {
