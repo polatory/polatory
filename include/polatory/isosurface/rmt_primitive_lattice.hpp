@@ -58,7 +58,7 @@ protected:
   const cell_index mask = (cell_index{ 1 } << 21) - 1;
 
 private:
-  // TODO: Make sure we have some additional margins so that
+  // TODO(mizuno): Make sure we have some additional margins so that
   // neighbor_cell_index() will never return unintended cell index
   // when an index of a boundary cell is passed.
   void initialize() {

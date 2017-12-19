@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <cmath>
-#include <limits>
 #include <pmmintrin.h>
 #include <xmmintrin.h>
+#include <cmath>
+#include <limits>
 
 #include <boost/core/noncopyable.hpp>
 

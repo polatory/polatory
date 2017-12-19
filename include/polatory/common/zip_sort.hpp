@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-// TODO: Should be replaced by ranges.
+// TODO(mizuno): Should be replaced by ranges.
 
 namespace polatory {
 namespace common {

@@ -13,8 +13,7 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 
-namespace {
-
+inline
 std::pair<polatory::geometry::points3d, polatory::common::valuesd> test_points_values(size_t n_surface_points) {
   using namespace polatory;
 
@@ -29,5 +28,3 @@ std::pair<polatory::geometry::points3d, polatory::common::valuesd> test_points_v
 
   return std::make_pair(std::move(points), std::move(values));
 }
-
-} // namespace

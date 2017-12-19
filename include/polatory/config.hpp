@@ -1,5 +1,7 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#pragma once
+
 #include <polatory/numeric/ftz_context.hpp>
 
 namespace polatory {

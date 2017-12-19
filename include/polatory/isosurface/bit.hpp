@@ -6,8 +6,7 @@ namespace polatory {
 namespace isosurface {
 namespace bit {
 
-namespace {
-
+inline
 int naive_ctz(unsigned int x) {
   int count = 0;
   while (!(x & 0x1)) {
@@ -17,6 +16,7 @@ int naive_ctz(unsigned int x) {
   return count;
 }
 
+inline
 int naive_popcnt(unsigned int x) {
   int count = 0;
   while (x) {
@@ -26,6 +26,7 @@ int naive_popcnt(unsigned int x) {
   return count;
 }
 
+inline
 int count(unsigned int bit_set) {
 #if defined(__INTEL_COMPILER)
   return _popcnt32(bit_set);
@@ -36,6 +37,7 @@ int count(unsigned int bit_set) {
 #endif
 }
 
+inline
 int peek(unsigned int bit_set) {
   if (bit_set == 0) return -1;
 
@@ -48,6 +50,7 @@ int peek(unsigned int bit_set) {
 #endif
 }
 
+inline
 int pop(unsigned int *bit_set) {
   if (*bit_set == 0) return -1;
 
@@ -58,6 +61,7 @@ int pop(unsigned int *bit_set) {
   return bit_idx;
 }
 
+inline
 int pop(unsigned short *bit_set) {
   if (*bit_set == 0) return -1;
 
@@ -67,8 +71,6 @@ int pop(unsigned short *bit_set) {
 
   return bit_idx;
 }
-
-} // namespace
 
 } // namespace bit
 } // namespace isosurface

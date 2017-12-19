@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <omp.h>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -10,9 +11,8 @@
 #include <map>
 #include <random>
 #include <set>
+#include <utility>
 #include <vector>
-
-#include <omp.h>
 
 #include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
@@ -129,7 +129,6 @@ class rmt_lattice : public rmt_primitive_lattice {
     for (auto idx : nodes_to_evaluate) {
       auto value = values(i);
       while (value == 0.0) {
-        // TODO: Take the variance of the field value into account?
         value = dis(gen);
       }
 
@@ -333,7 +332,7 @@ public:
     update_neighbor_cache();
   }
 
-  // TODO: Perform gradient search to find a right cell where the isosurface passes.
+  // TODO(mizuno): Perform gradient search to find a right cell where the isosurface passes.
   bool add_cell_contains_point(const geometry::point3d& p) {
     auto cell_idx = cell_contains_point(p);
     return add_cell(cell_idx);

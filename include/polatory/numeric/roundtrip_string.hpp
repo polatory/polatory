@@ -42,11 +42,13 @@ struct format<double> {
 
 } // namespace detail
 
-inline double to_double(const std::string& str) {
+inline
+double to_double(const std::string& str) {
   return boost::lexical_cast<double>(str);
 }
 
-inline float to_float(const std::string& str) {
+inline
+float to_float(const std::string& str) {
   return boost::lexical_cast<float>(str);
 }
 

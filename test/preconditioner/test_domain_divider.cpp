@@ -57,5 +57,5 @@ TEST(domain_divider, trivial) {
     ASSERT_EQ(poly_point_idcs[i], coarse_point_idcs[i]);
   }
 
-  // TODO: Check at least one coarse point is chosen from each domain.
+  // TODO(mizuno): Check at least one coarse point is chosen from each domain.
 }

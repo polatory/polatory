@@ -42,7 +42,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
   auto max_residual = (op_weights.head(n_points) - direct_op_weights).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
 
-  // TODO: Test the polynomial part.
+  // TODO(mizuno): Test the polynomial part.
 }
 
 } // namespace

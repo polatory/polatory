@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Copy this file to .git/hooks/ when you have cloned the repo.
+
+tools/inspection/inspect

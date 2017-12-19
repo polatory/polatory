@@ -47,7 +47,8 @@ public:
   }
 };
 
-inline size_t bit_reverse(size_t x, int length) {
+inline
+size_t bit_reverse(size_t x, int length) {
   return detail::bit_rev<sizeof(size_t)>()(x) >> (sizeof(size_t) * 8 - length);
 }
 
@@ -55,7 +56,8 @@ inline size_t bit_reverse(size_t x, int length) {
 
 // Generates quasi-random sequence of integers within 0...n-1,
 // based on binary van der Corput sequence preceded by 0.
-inline std::vector<size_t> quasi_random_sequence(size_t n) {
+inline
+std::vector<size_t> quasi_random_sequence(size_t n) {
   std::vector<size_t> seq;
 
   if (n == 0) return seq;

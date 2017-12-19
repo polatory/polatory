@@ -4,11 +4,11 @@
 
 ----
 
+[![Build Status](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
+
 Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
 NOTE: This is a pre-release version. APIs subject to change without notice.
-
-master: [![Build Status](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
 
 ## Features
 
