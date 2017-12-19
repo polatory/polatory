@@ -48,22 +48,22 @@ int peek(unsigned int bit_set) {
 #endif
 }
 
-int pop(unsigned int& bit_set) {
-  if (bit_set == 0) return -1;
+int pop(unsigned int *bit_set) {
+  if (*bit_set == 0) return -1;
 
-  int bit_idx = peek(bit_set);
+  int bit_idx = peek(*bit_set);
   unsigned int bit = 1 << bit_idx;
-  bit_set ^= bit;
+  *bit_set ^= bit;
 
   return bit_idx;
 }
 
-int pop(unsigned short& bit_set) {
-  if (bit_set == 0) return -1;
+int pop(unsigned short *bit_set) {
+  if (*bit_set == 0) return -1;
 
-  int bit_idx = peek(bit_set);
+  int bit_idx = peek(*bit_set);
   unsigned short bit = 1 << bit_idx;
-  bit_set ^= bit;
+  *bit_set ^= bit;
 
   return bit_idx;
 }

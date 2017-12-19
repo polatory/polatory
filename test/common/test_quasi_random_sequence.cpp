@@ -24,7 +24,7 @@ void test_n(size_t n) {
   ASSERT_EQ(expected, seq);
 }
 
-}
+} // namespace
 
 TEST(quasi_random_sequence, trivial) {
   for (size_t n = 0; n < 16; n++) {

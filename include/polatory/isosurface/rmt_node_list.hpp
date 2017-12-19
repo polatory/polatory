@@ -11,30 +11,9 @@
 namespace polatory {
 namespace isosurface {
 
-namespace {
-
 // Coefficients for the three primitive vectors
 // to reproduce each NeighborVectors.
-const std::array<cell_vector, 14> NeighborCellVectors
-  {
-    cell_vector(+1, +1, +1),
-    cell_vector(+1, +1, +0),
-    cell_vector(+0, +0, -1),
-    cell_vector(+1, +0, +1),
-    cell_vector(+1, +0, +0),
-    cell_vector(+0, -1, -1),
-    cell_vector(+0, -1, +0),
-    cell_vector(-1, -1, -1),
-    cell_vector(-1, -1, +0),
-    cell_vector(+0, +0, +1),
-    cell_vector(-1, +0, -1),
-    cell_vector(-1, +0, +0),
-    cell_vector(+0, +1, +1),
-    cell_vector(+0, +1, +0)
-  };
-
-} // namespace
-
+extern const std::array<cell_vector, 14> NeighborCellVectors;
 
 class rmt_node_list : std::map<cell_index, rmt_node> {
   typedef rmt_node Node;

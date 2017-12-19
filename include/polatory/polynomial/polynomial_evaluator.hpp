@@ -17,7 +17,6 @@ namespace polynomial {
 
 template <class Basis>
 class polynomial_evaluator {
-
 public:
   explicit polynomial_evaluator(int dimension, int degree)
     : basis_(dimension, degree)

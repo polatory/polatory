@@ -28,16 +28,7 @@
 namespace polatory {
 namespace isosurface {
 
-namespace {
-
-constexpr std::array<edge_index, 14> OppositeEdge
-  {
-    7, 8, 9, 10, 11, 12, 13,
-    0, 1, 2, 3, 4, 5, 6
-  };
-
-} // namespace
-
+extern const std::array<edge_index, 14> OppositeEdge;
 
 class rmt_lattice : public rmt_primitive_lattice {
   friend class rmt_surface;

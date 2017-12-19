@@ -10,7 +10,7 @@
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
-#include <polatory/fmm/tree_height.hpp>
+#include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -32,7 +32,7 @@ public:
     , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
     auto bbox = geometry::bbox3d::from_points(points);
 
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::tree_height(points.rows()), bbox);
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::fmm_tree_height(points.rows()), bbox);
     a_->set_points(points);
 
     if (n_poly_basis_ > 0) {

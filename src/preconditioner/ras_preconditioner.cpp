@@ -35,7 +35,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
   }
 
   n_fine_levels_ = std::max(0, int(
-    std::ceil(std::log(double(n_points_) / double(n_coarsest_points)) / log(1.0 / coarse_ratio))));
+    std::ceil(std::log(static_cast<double>(n_points_) / static_cast<double>(n_coarsest_points)) / log(1.0 / coarse_ratio))));
   if (n_fine_levels_ == 0) {
     coarse_ = std::make_unique<coarse_grid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
     return;
@@ -59,7 +59,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
   std::cout << "Number of domains in level 0: " << fine_grids_.back().size() << std::endl;
 
   auto ratio = 0 == n_fine_levels_ - 1
-               ? double(n_coarsest_points) / double(points_.rows())
+               ? static_cast<double>(n_coarsest_points) / static_cast<double>(points_.rows())
                : coarse_ratio;
   upward_evaluator_.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points_, bbox));
   point_idcs_.push_back(divider->choose_coarse_points(ratio));
@@ -83,7 +83,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
     std::cout << "Number of domains in level " << level << ": " << fine_grids_.back().size() << std::endl;
 
     ratio = level == n_fine_levels_ - 1
-            ? double(n_coarsest_points) / double(point_idcs_.back().size())
+            ? static_cast<double>(n_coarsest_points) / static_cast<double>(point_idcs_.back().size())
             : coarse_ratio;
     upward_evaluator_.push_back(
       interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::take_rows(points_, point_idcs_.back()), bbox));

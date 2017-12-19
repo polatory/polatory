@@ -3,6 +3,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <iterator>
 
 namespace polatory {

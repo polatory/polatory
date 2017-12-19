@@ -12,7 +12,7 @@ namespace krylov {
 
 class identity_operator : public linear_operator {
 public:
-  identity_operator(size_t n)
+  explicit identity_operator(size_t n)
     : n_(n) {
   }
 

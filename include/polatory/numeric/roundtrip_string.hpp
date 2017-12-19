@@ -54,7 +54,8 @@ inline float to_float(const std::string& str) {
 // http://www.boost.org/doc/libs/1_65_1/doc/html/boost_lexical_cast/performance.html
 template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>
 std::string to_string(Floating arg) {
-  char str[32];
+  static constexpr size_t str_size = 32;
+  char str[str_size]; // NOLINT(runtime/arrays)
 
   if (std::isnan(arg))
     return "nan";
@@ -62,12 +63,12 @@ std::string to_string(Floating arg) {
   if (std::isinf(arg))
     return std::signbit(arg) ? "-inf" : "inf";
 
-  std::sprintf(str, detail::format<Floating>::shorthand(), arg);
+  std::snprintf(str, str_size, detail::format<Floating>::shorthand(), arg);
   Floating arg_rep = boost::lexical_cast<Floating>(str);
   if (arg == arg_rep)
     return str;
 
-  std::sprintf(str, detail::format<Floating>::complete(), arg);
+  std::snprintf(str, str_size, detail::format<Floating>::complete(), arg);
   return str;
 }
 

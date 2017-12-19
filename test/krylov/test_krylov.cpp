@@ -25,7 +25,7 @@ struct random_symmetric : linear_operator {
   const size_t n;
   Eigen::MatrixXd m;
 
-  random_symmetric(size_t n)
+  explicit random_symmetric(size_t n)
     : n(n) {
     m = (Eigen::MatrixXd::Random(n, n) + Eigen::MatrixXd::Ones(n, n)) / 2.0;
     for (size_t i = 1; i < n; i++) {
@@ -48,7 +48,7 @@ struct preconditioner : linear_operator {
   const size_t n;
   Eigen::MatrixXd m;
 
-  preconditioner(random_symmetric op)
+  explicit preconditioner(random_symmetric op)
     : n(op.size()) {
     Eigen::MatrixXd perturbation = 0.1 * valuesd::Random(n).asDiagonal();
     m = op.m.inverse() + perturbation;

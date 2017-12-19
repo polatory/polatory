@@ -11,27 +11,23 @@
 namespace polatory {
 namespace kriging {
 
-namespace {
-
-rbf::weight_function weight_n =
+static const rbf::weight_function weight_n =
   [](size_t n, double h, double model_gamma) { return std::sqrt(n); };
 
-rbf::weight_function weight_n_over_gamma_squared =
+static const rbf::weight_function weight_n_over_gamma_squared =
   [](size_t n, double h, double model_gamma) { return std::sqrt(n) / std::abs(model_gamma); };
 
-rbf::weight_function weight_n_over_h_squared =
+static const rbf::weight_function weight_n_over_h_squared =
   [](size_t n, double h, double model_gamma) { return std::sqrt(n) / std::abs(h); };
 
-rbf::weight_function weight_one =
+static const rbf::weight_function weight_one =
   [](size_t n, double h, double model_gamma) { return 1.0; };
 
-rbf::weight_function weight_one_over_gamma_squared =
+static const rbf::weight_function weight_one_over_gamma_squared =
   [](size_t n, double h, double model_gamma) { return 1.0 / std::abs(model_gamma); };
 
-rbf::weight_function weight_one_over_h_squared =
+static const rbf::weight_function weight_one_over_h_squared =
   [](size_t n, double h, double model_gamma) { return 1.0 / std::abs(h); };
-
-} // namespace
 
 class variogram_fitting {
 public:

@@ -16,7 +16,7 @@
 #include <polatory/common/quasi_random_sequence.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/common/zip_sort.hpp>
-#include <polatory/fmm/tree_height.hpp>
+#include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
@@ -57,7 +57,7 @@ public:
 
     while (true) {
       auto reduced_points = common::take_rows(points_, indices);
-      auto tree_height = fmm::tree_height(indices.size());
+      auto tree_height = fmm::fmm_tree_height(indices.size());
 
       if (tree_height != last_tree_height) {
         solver = std::make_unique<rbf_solver>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);

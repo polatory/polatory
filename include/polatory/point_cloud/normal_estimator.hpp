@@ -14,7 +14,7 @@ namespace point_cloud {
 
 class normal_estimator {
 public:
-  normal_estimator(const geometry::points3d& points);
+  explicit normal_estimator(const geometry::points3d& points);
 
   const normal_estimator& estimate_with_knn(int k, double plane_factor_threshold = 1.8);
 

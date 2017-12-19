@@ -18,7 +18,7 @@ public:
     , certain(false) {
   }
 
-  uncertain(T value)
+  uncertain(T value) // NOLINT(runtime/explicit)
     : value(value)
     , certain(true) {
   }
@@ -33,13 +33,13 @@ public:
   }
 };
 
-namespace {
-
+inline
 uncertain<bool> operator!(uncertain<bool> a) {
   if (a.is_certain()) return !a.get();
   return uncertain<bool>();
 }
 
+inline
 uncertain<bool> operator&&(uncertain<bool> a, uncertain<bool> b) {
   if (a.is_certain()) {
     if (b.is_certain()) {
@@ -55,6 +55,7 @@ uncertain<bool> operator&&(uncertain<bool> a, uncertain<bool> b) {
   return uncertain<bool>();
 }
 
+inline
 uncertain<bool> operator||(uncertain<bool> a, uncertain<bool> b) {
   if (a.is_certain()) {
     if (b.is_certain()) {
@@ -70,23 +71,25 @@ uncertain<bool> operator||(uncertain<bool> a, uncertain<bool> b) {
   return uncertain<bool>();
 }
 
+inline
 bool certainly(uncertain<bool> a) {
   return a.is_certain() && a.get() == true;
 }
 
+inline
 bool certainly_not(uncertain<bool> a) {
   return a.is_certain() && a.get() == false;
 }
 
+inline
 bool possibly(uncertain<bool> a) {
   return !a.is_certain() || a.get() == true;
 }
 
+inline
 bool possibly_not(uncertain<bool> a) {
   return !a.is_certain() || a.get() == false;
 }
-
-} // namespace
 
 } // namespace common
 } // namespace polatory

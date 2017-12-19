@@ -12,7 +12,7 @@ namespace polatory {
 namespace isosurface {
 
 struct rbf_field_function_25d : field_function {
-  rbf_field_function_25d(interpolant& interpolant)
+  explicit rbf_field_function_25d(interpolant& interpolant)
     : interpolant_(interpolant) {
   }
 

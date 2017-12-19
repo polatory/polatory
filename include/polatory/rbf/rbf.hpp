@@ -14,7 +14,7 @@ public:
   rbf() {
   }
 
-  rbf(const rbf_kernel& kernel)
+  rbf(const rbf_kernel& kernel) // NOLINT(runtime/explicit)
     : kern_(kernel.clone()) {
   }
 

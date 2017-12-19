@@ -6,6 +6,8 @@
 #include <iterator>
 #include <numeric>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 // TODO: Should be replaced by ranges.
 

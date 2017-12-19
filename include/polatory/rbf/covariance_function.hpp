@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <limits>
+#include <vector>
 
 #include <ceres/ceres.h>
 

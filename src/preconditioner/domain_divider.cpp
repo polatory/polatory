@@ -119,7 +119,7 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
 
   auto longest_side_length = d.bbox_.size()(split_axis);
   auto q =
-    longest_side_length_of_root_ / longest_side_length * std::sqrt(double(max_leaf_size) / double(size_of_root_)) *
+    longest_side_length_of_root_ / longest_side_length * std::sqrt(static_cast<double>(max_leaf_size) / static_cast<double>(size_of_root_)) *
     overlap_quota;
   q = std::min(0.5, q);
 

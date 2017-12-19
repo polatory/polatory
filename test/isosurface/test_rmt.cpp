@@ -40,9 +40,9 @@ std::array<vector3d, 14> NeighborVectors
 
 TEST(rmt, face_edges) {
   for (edge_bitset edge_set : FaceEdges) {
-    auto e0 = bit::pop(edge_set);
-    auto e1 = bit::pop(edge_set);
-    auto e2 = bit::pop(edge_set);
+    auto e0 = bit::pop(&edge_set);
+    auto e1 = bit::pop(&edge_set);
+    auto e2 = bit::pop(&edge_set);
 
     auto& v0 = NeighborVectors[e0];
     auto& v1 = NeighborVectors[e1];
@@ -96,7 +96,7 @@ TEST(rmt, neighbors) {
 
     auto vi = NeighborVectors[i];
     for (int k = 0; k < count; k++) {
-      auto j = bit::pop(mask);
+      auto j = bit::pop(&mask);
       auto vj = NeighborVectors[j];
       double vijsq = (vj - vi).squaredNorm();
       if (vijsq > 3.5) {

@@ -48,7 +48,7 @@ public:
     tree_ = std::make_unique<Octree>(
       tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<double>(bbox_center.data()));
 
-    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int(FmmAlgorithmScheduleChunkSize));
+    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), FmmAlgorithmScheduleChunkSize);
   }
 
   common::valuesd evaluate() const {

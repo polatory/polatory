@@ -16,31 +16,17 @@
 namespace polatory {
 namespace isosurface {
 
-namespace {
-
 // RotationMatrix[-Pi/2, {0, 0, 1}].RotationMatrix[-Pi/4, {0, 1, 0}]
+inline
 geometry::affine_transform3d rotation() {
   return geometry::affine_transform3d::roll_pitch_yaw({ -common::pi<double>() / 2.0, 0.0, -common::pi<double>() / 4.0 });
 }
 
 // Primitive vectors of body-centered cubic.
-std::array<geometry::vector3d, 3> PrimitiveVectors
-  {
-    rotation().transform_vector({ +1., +1., -1. }),
-    rotation().transform_vector({ +1., -1., +1. }),
-    rotation().transform_vector({ -1., +1., +1. })
-  };
+extern const std::array<geometry::vector3d, 3> PrimitiveVectors;
 
 // Reciprocal primitive vectors of body-centered cubic.
-std::array<geometry::vector3d, 3> ReciprocalPrimitiveVectors
-  {
-    rotation().transform_vector({ 1. / 2., 1. / 2., 0. }),
-    rotation().transform_vector({ 1. / 2., 0., 1. / 2. }),
-    rotation().transform_vector({ 0., 1. / 2., 1. / 2. })
-  };
-
-} // namespace
-
+extern const std::array<geometry::vector3d, 3> ReciprocalPrimitiveVectors;
 
 class rmt_primitive_lattice {
 protected:

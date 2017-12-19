@@ -51,7 +51,7 @@ inline size_t bit_reverse(size_t x, int length) {
   return detail::bit_rev<sizeof(size_t)>()(x) >> (sizeof(size_t) * 8 - length);
 }
 
-}
+} // namespace detail
 
 // Generates quasi-random sequence of integers within 0...n-1,
 // based on binary van der Corput sequence preceded by 0.

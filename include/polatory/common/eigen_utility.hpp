@@ -329,7 +329,7 @@ namespace detail {
 template <class Derived>
 class col_range_wrapper {
 public:
-  col_range_wrapper(Eigen::MatrixBase<Derived>& m)
+  explicit col_range_wrapper(Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -344,7 +344,7 @@ private:
 template <class Derived>
 class const_col_range_wrapper {
 public:
-  const_col_range_wrapper(const Eigen::MatrixBase<Derived>& m)
+  explicit const_col_range_wrapper(const Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -359,7 +359,7 @@ private:
 template <class Derived>
 class row_range_wrapper {
 public:
-  row_range_wrapper(Eigen::MatrixBase<Derived>& m)
+  explicit row_range_wrapper(Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -374,7 +374,7 @@ private:
 template <class Derived>
 class const_row_range_wrapper {
 public:
-  const_row_range_wrapper(const Eigen::MatrixBase<Derived>& m)
+  explicit const_row_range_wrapper(const Eigen::MatrixBase<Derived>& m)
     : m_(m) {
   }
 
@@ -426,7 +426,7 @@ size_t common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
 template <class Derived>
 size_t common_rows(const Eigen::MatrixBase<Derived>& m) {
   return m.rows();
-};
+}
 
 template <class Derived, class ...Args>
 size_t common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
@@ -434,12 +434,12 @@ size_t common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
     return m.rows();
   else
     throw common::invalid_argument("All matrices must have the same number of rows.");
-};
+}
 
 template <class ResultDerived, class Derived>
 void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m) {
   result = m;
-};
+}
 
 template <class ResultDerived, class Derived, class ...Args>
 void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, Args&&... args) {
@@ -447,12 +447,12 @@ void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen
 
   auto result_tail = result.rightCols(result.cols() - m.cols());
   concatenate_cols_impl(result_tail, std::forward<Args>(args)...);
-};
+}
 
 template <class ResultDerived, class Derived>
 void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m) {
   result = m;
-};
+}
 
 template <class ResultDerived, class Derived, class ...Args>
 void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, Args&&... args) {
@@ -460,7 +460,7 @@ void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen
 
   auto result_tail = result.bottomRows(result.rows() - m.rows());
   concatenate_rows_impl(result_tail, std::forward<Args>(args)...);
-};
+}
 
 template <class ResultDerived, class Derived>
 void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index) {
