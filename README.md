@@ -70,7 +70,7 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
     sudo apt install clang-3.8 libiomp-dev
     ```
 
-1. Download and install Intel(R) MKL.
+1. Download and install [Intel(R) MKL](https://software.intel.com/mkl).
 
     See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
 
@@ -245,6 +245,15 @@ Polatory utilizes the following libraries:
     <dd>The 3-clause BSD license</dd>
     <dt>Used in</dt>
     <dd>Unit testing</dd>
+  </dl>
+
+* [Intel(R) MKL](https://software.intel.com/mkl)
+  
+  <dl>
+    <dt>License</dt>
+    <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
+    <dt>Used in</dt>
+    <dd>Backend of Ceres Solver, Eigen and ScalFMM</dd>
   </dl>
 
 * [ScalFMM](https://gitlab.inria.fr/solverstack/ScalFMM)
