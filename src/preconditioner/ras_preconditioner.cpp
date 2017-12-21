@@ -134,7 +134,9 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       // Solve on subdomains.
 #pragma omp parallel for schedule(guided)
-      for (size_t i = 0; i < fine_grids_[level].size(); i++) {
+      // Do not declare i to be of type size_t.
+      //   https://docs.microsoft.com/cpp/error-messages/compiler-errors-2/compiler-error-c3016
+      for (int i = 0; i < fine_grids_[level].size(); i++) {
         auto& fine = fine_grids_[level][i];
 #if POLATORY_RECOMPUTE_AND_CLEAR
         fine.setup(points_);

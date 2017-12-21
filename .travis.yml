@@ -4,6 +4,7 @@ dist: xenial
 
 env:
   global:
+    - MAKEFLAGS=-j5
     - OMP_NUM_THREADS=4
 
 compiler:
@@ -25,7 +26,7 @@ install:
   - cd
   - mkdir gtest-build; cd gtest-build/
   - cmake /usr/src/gtest/
-  - make -j4
+  - make
   - sudo cp *.a /usr/local/lib/
 # Ceres Solver
   - sudo apt-get install -y libgoogle-glog-dev
@@ -34,7 +35,7 @@ install:
   - cd ceres-solver
   - mkdir build; cd build/
   - cmake .. -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DCXSPARSE=OFF -DEIGENSPARSE=OFF -DGFLAGS=OFF -DSCHUR_SPECIALIZATIONS=OFF -DSUITESPARSE=OFF
-  - make -j4
+  - make
   - sudo make install
 # FLANN
   - sudo apt-get install -y libflann-dev
@@ -50,7 +51,7 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
   - cmake .. -DBOOST_ROOT=~/boost_1_65_1 -DCMAKE_BUILD_TYPE=Release
-  - make -j4
+  - make
   - ctest -VV
   - $TRAVIS_BUILD_DIR/tools/inspection/inspect
 

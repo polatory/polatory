@@ -5,7 +5,6 @@
       "generator": "Visual Studio 15 2017 Win64",
       "configurationType": "Debug",
       "buildRoot": "${projectDir}\\build\\${name}",
-      "cmakeCommandArgs": "-T\"Intel C++ Compiler 17.0\"",
       "buildCommandArgs": "/m:8",
       "ctestCommandArgs": "-C ${configurationType} -VV",
       "variables": [
@@ -28,7 +27,6 @@
       "generator": "Visual Studio 15 2017 Win64",
       "configurationType": "Release",
       "buildRoot": "${projectDir}\\build\\${name}",
-      "cmakeCommandArgs": "-T\"Intel C++ Compiler 17.0\"",
       "buildCommandArgs": "/m:8",
       "ctestCommandArgs": "-C ${configurationType} -VV",
       "variables": [
