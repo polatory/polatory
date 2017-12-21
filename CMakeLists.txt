@@ -49,7 +49,7 @@ elseif(MSVC)
         )
     endif()
     
-    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
         set(CMAKE_CXX_FLAGS "/MP /EHsc /fp:strict /fp:except- /Qstd=c++14 /Qopenmp")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /QaxAVX /Qip")
     else()

@@ -20,7 +20,7 @@ install:
 # Intel OpenMP (for building with Clang)
   - sudo apt-get install -y libiomp-dev
 # Intel MKL
-  - sudo apt-get install -y intel-mkl-64bit-2017.4-061
+  - sudo apt-get install -y intel-mkl-64bit-2018.1-038
 # Eigen
   - sudo apt-get install -y libeigen3-dev
 # Google Test
