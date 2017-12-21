@@ -46,19 +46,19 @@ Polatory is available under two different licenses:
 
 ## Platforms
 
-Polatory runs on x86 processors with AVX instructions (Sandy Bridge or newer). It is available on following platforms/toolchains.
+Polatory runs on x86 processors with AVX instructions (Sandy Bridge or newer). It is available for following operating systems and toolchains.
 
-### Linux
+### Ubuntu 16.04 LTS
 
-Ubuntu 16.04 LTS / GCC 5.4 and Clang 3.8
+GCC 5.4 and Clang 3.8
 
 ### Windows
 
-Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
+Visual Studio 2017 and Intel(R) Parallel Studio XE 2017
 
 ## Building
 
-### On Ubuntu
+### On Ubuntu 16.04 LTS
 
 1. Install build tools
 
@@ -152,6 +152,8 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
     vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
     ```
 
+1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
+
 1. Build polatory
 
     ```
@@ -160,7 +162,7 @@ Visual Studio 2017 / Intel(R) Parallel Studio XE 2017
     cd polatory
     mkdir build
     cd build
-    cmake .. -G"Visual Studio 15 2017 Win64" -T"Intel C++ Compiler 17.0" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
+    cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
     msbuild polatory.sln /m:8
     ```
 
@@ -225,7 +227,7 @@ Polatory utilizes the following libraries:
   <dl>
     <dt>License</dt>
     <dd>MPL2</dd>
-    <dt>Used in</dt>
+    <dt>Used</dt>
     <dd>Almost everywhere</dd>
   </dl>
 
@@ -252,8 +254,8 @@ Polatory utilizes the following libraries:
   <dl>
     <dt>License</dt>
     <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
-    <dt>Used in</dt>
-    <dd>Backend of Ceres Solver, Eigen and ScalFMM</dd>
+    <dt>Used as</dt>
+    <dd>Backends for Ceres Solver, Eigen and ScalFMM</dd>
   </dl>
 
 * [ScalFMM](https://gitlab.inria.fr/solverstack/ScalFMM)
