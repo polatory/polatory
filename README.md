@@ -227,7 +227,7 @@ Polatory utilizes the following libraries:
   <dl>
     <dt>License</dt>
     <dd>MPL2</dd>
-    <dt>Used in</dt>
+    <dt>Used</dt>
     <dd>Almost everywhere</dd>
   </dl>
 
@@ -254,8 +254,8 @@ Polatory utilizes the following libraries:
   <dl>
     <dt>License</dt>
     <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
-    <dt>Used in</dt>
-    <dd>Backend of Ceres Solver, Eigen and ScalFMM</dd>
+    <dt>Used as</dt>
+    <dd>Backends for Ceres Solver, Eigen and ScalFMM</dd>
   </dl>
 
 * [ScalFMM](https://gitlab.inria.fr/solverstack/ScalFMM)
