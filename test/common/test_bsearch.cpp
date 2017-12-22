@@ -6,7 +6,11 @@
 
 #include <polatory/common/bsearch.hpp>
 
-using namespace polatory::common;
+using polatory::common::bsearch_eq;
+using polatory::common::bsearch_ge;
+using polatory::common::bsearch_gt;
+using polatory::common::bsearch_le;
+using polatory::common::bsearch_lt;
 
 TEST(bsearch, trivial) {
   std::vector<int> v = { 1, 1, 2, 3, 3, 3, 3, 4, 4, 4, 6 };

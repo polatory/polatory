@@ -4,7 +4,8 @@
 
 #include <polatory/numeric/sum_accumulator.hpp>
 
-using namespace polatory::numeric;
+using polatory::numeric::kahan_sum_accumulator;
+using polatory::numeric::knuth_sum_accumulator;
 
 namespace {
 

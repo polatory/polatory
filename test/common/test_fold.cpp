@@ -6,7 +6,8 @@
 
 #include <polatory/common/fold.hpp>
 
-using namespace polatory::common;
+using polatory::common::fold_left;
+using polatory::common::fold_right;
 
 TEST(fold_left, trivial) {
   EXPECT_EQ(42, fold_left(std::plus<>(), 42));

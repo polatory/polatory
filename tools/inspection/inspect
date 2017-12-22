@@ -9,5 +9,5 @@ cd $(dirname $0)/../..
     -path 'include/polatory/third_party/*' -or \
     -path 'src/third_party/*' \
   ')' \
-  | xargs python tools/inspection/cpplint/cpplint.py --filter=-build/namespace,-runtime/int,-runtime/references,-whitespace/braces,-whitespace/comments,-whitespace/indent,-whitespace/line_length,-whitespace/parens 2>&1 \
+  | xargs python tools/inspection/cpplint/cpplint.py --filter=-runtime/int,-runtime/references,-whitespace/braces,-whitespace/comments,-whitespace/indent,-whitespace/line_length,-whitespace/parens 2>&1 \
   | grep -v '^Done processing '

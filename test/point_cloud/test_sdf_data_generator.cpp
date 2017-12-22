@@ -8,13 +8,14 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 
-using namespace polatory::point_cloud;
 using polatory::common::valuesd;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
-using polatory::geometry::vector3d;
-using polatory::geometry::vectors3d;
 using polatory::geometry::sphere3d;
+using polatory::geometry::vectors3d;
+using polatory::point_cloud::kdtree;
+using polatory::point_cloud::random_points;
+using polatory::point_cloud::sdf_data_generator;
 
 TEST(sdf_data_generator, trivial) {
   size_t n_points = 512;

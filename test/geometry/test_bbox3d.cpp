@@ -5,7 +5,9 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 
-using namespace polatory::geometry;
+using polatory::geometry::bbox3d;
+using polatory::geometry::point3d;
+using polatory::geometry::points3d;
 
 TEST(bbox3d, from_points) {
   points3d points(7, 3);

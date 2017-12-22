@@ -7,10 +7,10 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
 
-using namespace polatory::point_cloud;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::geometry::vector3d;
+using polatory::point_cloud::plane_estimator;
 
 TEST(plane_estimator, trivial) {
   point3d center(10.0, 11.0, 12.0);

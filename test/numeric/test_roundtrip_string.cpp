@@ -8,7 +8,9 @@
 
 #include <polatory/numeric/roundtrip_string.hpp>
 
-using namespace polatory::numeric;
+using polatory::numeric::to_double;
+using polatory::numeric::to_float;
+using polatory::numeric::to_string;
 
 TEST(roundtrip_string, denorm_min) {
   auto f = std::numeric_limits<float>::denorm_min();

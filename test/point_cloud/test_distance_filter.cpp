@@ -8,10 +8,10 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 
-using namespace polatory::point_cloud;
 using polatory::common::valuesd;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
+using polatory::point_cloud::distance_filter;
 
 TEST(distance_filter, trivial) {
   points3d points(9, 3);

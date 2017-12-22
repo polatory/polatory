@@ -14,13 +14,13 @@
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/rbf/biharmonic.hpp>
 
-using namespace polatory::preconditioner;
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::basis_base;
 using polatory::polynomial::lagrange_basis;
+using polatory::preconditioner::coarse_grid;
 using polatory::rbf::biharmonic;
 
 void test_coarse_grid(double nugget) {

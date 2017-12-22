@@ -11,9 +11,11 @@
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/biharmonic.hpp>
 
-using namespace polatory::interpolation;
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
+using polatory::interpolation::rbf_direct_evaluator;
+using polatory::interpolation::rbf_direct_symmetric_evaluator;
+using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;

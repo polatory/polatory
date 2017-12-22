@@ -5,7 +5,12 @@
 
 #include <polatory/common/eigen_utility.hpp>
 
-using namespace polatory::common;
+using polatory::common::col_range;
+using polatory::common::concatenate_cols;
+using polatory::common::concatenate_rows;
+using polatory::common::row_range;
+using polatory::common::take_cols;
+using polatory::common::take_rows;
 
 template <bool RowMajor>
 void test_take_cols() {

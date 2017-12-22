@@ -15,15 +15,18 @@
 
 inline
 std::pair<polatory::geometry::points3d, polatory::common::valuesd> test_points_values(size_t n_surface_points) {
-  using namespace polatory;
+  using polatory::geometry::sphere3d;
+  using polatory::point_cloud::distance_filter;
+  using polatory::point_cloud::random_points;
+  using polatory::point_cloud::sdf_data_generator;
 
-  auto surface_points = point_cloud::random_points(geometry::sphere3d(), n_surface_points);
+  auto surface_points = random_points(sphere3d(), n_surface_points);
 
-  point_cloud::sdf_data_generator sdf_data(surface_points, surface_points, 2e-4, 1e-3);
+  sdf_data_generator sdf_data(surface_points, surface_points, 2e-4, 1e-3);
   auto points = sdf_data.sdf_points();
   auto values = sdf_data.sdf_values();
 
-  std::tie(points, values) = point_cloud::distance_filter(points, 1e-6)
+  std::tie(points, values) = distance_filter(points, 1e-6)
     .filtered(points, values);
 
   return std::make_pair(std::move(points), std::move(values));

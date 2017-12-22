@@ -8,7 +8,7 @@
 
 #include <polatory/common/quasi_random_sequence.hpp>
 
-using namespace polatory::common;
+using polatory::common::quasi_random_sequence;
 
 namespace {
 

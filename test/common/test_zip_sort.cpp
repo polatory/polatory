@@ -6,7 +6,7 @@
 
 #include <polatory/common/zip_sort.hpp>
 
-using namespace polatory::common;
+using polatory::common::zip_sort;
 
 TEST(zip_sort, sort_by_first) {
   std::vector<int> a{ 4, 2, 5, 1, 3 };

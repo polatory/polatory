@@ -10,11 +10,11 @@
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
-using namespace polatory::point_cloud;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
 using polatory::geometry::vector3d;
+using polatory::point_cloud::kdtree;
 using polatory::point_cloud::random_points;
 
 TEST(kdtree, trivial) {

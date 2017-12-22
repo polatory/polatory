@@ -10,9 +10,9 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
 
-using namespace polatory::preconditioner;
 using polatory::geometry::sphere3d;
 using polatory::point_cloud::random_points;
+using polatory::preconditioner::domain_divider;
 
 TEST(domain_divider, trivial) {
   size_t n_points = 10000;

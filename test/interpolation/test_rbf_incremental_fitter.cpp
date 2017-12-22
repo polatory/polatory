@@ -18,10 +18,11 @@
 
 #include "test_points_values.hpp"
 
-using namespace polatory::interpolation;
 using polatory::common::take_rows;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
+using polatory::interpolation::rbf_evaluator;
+using polatory::interpolation::rbf_incremental_fitter;
 using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
 

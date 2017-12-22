@@ -4,7 +4,7 @@
 
 #include <polatory/polynomial/basis_base.hpp>
 
-using namespace polatory::polynomial;
+using polatory::polynomial::basis_base;
 
 TEST(basis_base, trivial) {
   ASSERT_EQ(0u, basis_base::basis_size(-1, -1));

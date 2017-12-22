@@ -8,10 +8,10 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 
-using namespace polatory::kriging;
 using polatory::common::valuesd;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
+using polatory::kriging::empirical_variogram;
 
 TEST(empirical_variogram, trivial) {
   size_t n_points = 4;

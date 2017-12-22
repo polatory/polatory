@@ -16,7 +16,16 @@
 #include <polatory/rbf/cov_spherical.hpp>
 #include <polatory/rbf/rbf_kernel.hpp>
 
-using namespace polatory::rbf;
+using polatory::rbf::biharmonic;
+using polatory::rbf::biharmonic2d;
+using polatory::rbf::cov_exponential;
+using polatory::rbf::cov_gaussian;
+using polatory::rbf::cov_quasi_spherical3;
+using polatory::rbf::cov_quasi_spherical5;
+using polatory::rbf::cov_quasi_spherical7;
+using polatory::rbf::cov_quasi_spherical9;
+using polatory::rbf::cov_spherical;
+using polatory::rbf::rbf_kernel;
 
 namespace {
 

@@ -8,9 +8,9 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 
-using namespace polatory::polynomial;
 using polatory::geometry::cuboid3d;
 using polatory::point_cloud::random_points;
+using polatory::polynomial::orthonormal_basis;
 
 namespace {
 

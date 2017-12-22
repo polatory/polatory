@@ -6,7 +6,7 @@
 
 #include <polatory/common/iterator_range.hpp>
 
-using namespace polatory::common;
+using polatory::common::make_range;
 
 TEST(iterator_range, trivial) {
   std::vector<int> v{ 0, 1, 2, 3, 4 };

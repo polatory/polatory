@@ -7,8 +7,9 @@
 #include <polatory/geometry/affine_transform3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 
-using namespace polatory::geometry;
 using polatory::common::pi;
+using polatory::geometry::affine_transform3d;
+using polatory::geometry::point3d;
 
 TEST(affine_transform3d, transform_point) {
   Eigen::Matrix4d m;

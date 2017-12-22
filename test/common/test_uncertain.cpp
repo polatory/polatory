@@ -4,7 +4,7 @@
 
 #include <polatory/common/uncertain.hpp>
 
-using namespace polatory::common;
+using polatory::common::uncertain;
 
 namespace {
 
