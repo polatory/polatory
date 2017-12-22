@@ -10,15 +10,15 @@
 namespace polatory {
 namespace isosurface {
 
-typedef uint64_t cell_index;
+using cell_index = uint64_t;
 
-typedef int64_t cell_index_difference;
+using cell_index_difference = int64_t;
 
-typedef Eigen::Vector3i cell_vector;
+using cell_vector = Eigen::Vector3i;
 
-typedef int vertex_index;
+using vertex_index = int;
 
-typedef std::array<vertex_index, 3> face;
+using face = std::array<vertex_index, 3>;
 
 } // namespace isosurface
 } // namespace polatory

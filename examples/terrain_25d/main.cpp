@@ -4,21 +4,14 @@
 #include <iostream>
 #include <tuple>
 
-#include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/types.hpp>
-#include <polatory/config.hpp>
-#include <polatory/interpolant.hpp>
-#include <polatory/isosurface/isosurface.hpp>
-#include <polatory/isosurface/rbf_field_function_25d.hpp>
-#include <polatory/point_cloud/distance_filter.hpp>
-#include <polatory/rbf/biharmonic.hpp>
-#include <polatory/table.hpp>
+#include <polatory/polatory.hpp>
 
 #include "parse_options.hpp"
 
 using polatory::common::concatenate_cols;
 using polatory::common::take_cols;
 using polatory::common::valuesd;
+using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function_25d;
@@ -32,8 +25,8 @@ int main(int argc, const char *argv[]) {
 
     // Read points and normals.
     auto table = read_table(opts.in_file);
-    auto points = concatenate_cols(take_cols(table, 0, 1), valuesd::Zero(table.rows()));
-    auto values = table.col(2);
+    points3d points = concatenate_cols(take_cols(table, 0, 1), valuesd::Zero(table.rows()));
+    valuesd values = table.col(2);
 
     // Remove very close points.
     std::tie(points, values) = distance_filter(points, opts.filter_distance)

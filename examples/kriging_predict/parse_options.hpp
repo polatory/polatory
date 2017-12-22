@@ -11,7 +11,7 @@
 
 #include <boost/program_options.hpp>
 
-#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/polatory.hpp>
 
 struct options {
   std::string in_file;

@@ -16,25 +16,24 @@ namespace isosurface {
 extern const std::array<cell_vector, 14> NeighborCellVectors;
 
 class rmt_node_list : std::map<cell_index, rmt_node> {
-  typedef rmt_node Node;
-  typedef std::map<cell_index, Node> base;
+  using base_type = std::map<cell_index, rmt_node>;
 
   std::array<cell_index_difference, 14> NeighborCellIndexDeltas;
 
 public:
-  using iterator = base::iterator;
+  using iterator = base_type::iterator;
 
-  using base::at;
-  using base::begin;
-  using base::clear;
-  using base::count;
-  using base::end;
-  using base::erase;
-  using base::find;
-  using base::insert;
-  using base::size;
+  using base_type::at;
+  using base_type::begin;
+  using base_type::clear;
+  using base_type::count;
+  using base_type::end;
+  using base_type::erase;
+  using base_type::find;
+  using base_type::insert;
+  using base_type::size;
 
-  Node *node_ptr(cell_index cell_index) {
+  rmt_node *node_ptr(cell_index cell_index) {
     auto it = find(cell_index);
     return it != end() ? &it->second : nullptr;
   }
@@ -55,7 +54,7 @@ public:
     return find(neighbor_cell_index(cell_index, ei));
   }
 
-  Node *neighbor_node_ptr(cell_index cell_index, edge_index ei) {
+  rmt_node *neighbor_node_ptr(cell_index cell_index, edge_index ei) {
     return node_ptr(neighbor_cell_index(cell_index, ei));
   }
 };
