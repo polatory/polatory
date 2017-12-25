@@ -5,6 +5,7 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -20,9 +21,9 @@ namespace polatory {
 namespace isosurface {
 
 // Encodes 0 or 1 on 14 outgoing halfedges for each node.
-using edge_bitset = unsigned short;
+using edge_bitset = uint16_t;
 // Encodes 0 or 1 on 24 faces for each node.
-using face_bitset = unsigned int;
+using face_bitset = uint32_t;
 
 static constexpr int FaceSetMask = 0xffffff;
 
@@ -82,14 +83,14 @@ private:
 
     while (remaining_faces != 0) {
       // visit a new hole
-      face_bitset to_visit_faces = 1 << bit::peek(remaining_faces);
+      face_bitset to_visit_faces = 1 << bit_peek(remaining_faces);
       face_bitset visited_faces = 0;
 
       while (to_visit_faces != 0) {
         // scan to_visit_faces and construct its neighbor list
         face_bitset neighbors = 0;
         do {
-          face_index face_idx = bit::peek(to_visit_faces);
+          face_index face_idx = bit_peek(to_visit_faces);
           face_bitset visiting = 1 << face_idx;
 
           // move current face from to_visit_faces to visited_faces
@@ -117,14 +118,14 @@ private:
 
     while (remaining_edges != 0) {
       // visit a new surface
-      edge_bitset to_visit_edges = 1 << bit::peek(remaining_edges);
+      edge_bitset to_visit_edges = 1 << bit_peek(remaining_edges);
       edge_bitset visited_edges = 0;
 
       while (to_visit_edges != 0) {
         // scan to_visit_edges and build its neighbor list
         edge_bitset neighbors = 0;
         do {
-          edge_index edge_idx = bit::peek(to_visit_edges);
+          edge_index edge_idx = bit_peek(to_visit_edges);
           edge_bitset visiting = 1 << edge_idx;
 
           // move current edge from to_visit_edges to visited_edges
@@ -152,7 +153,7 @@ private:
 
     edge_bitset neighbors = 0;
     do {
-      edge_index edge_idx = bit::pop(&edge_set);
+      edge_index edge_idx = bit_pop(&edge_set);
       neighbors |= NeighborMasks[edge_idx];
     } while (edge_set != 0);
 
@@ -195,11 +196,11 @@ public:
 
       std::vector<double> weights;
 
-      if (bit::count(surface) == 1) {
+      if (bit_count(surface) == 1) {
         weights.push_back(1.0);
       } else {
         while (surface) {
-          auto edge_idx = bit::pop(&surface);
+          auto edge_idx = bit_pop(&surface);
           auto weight = clustering_weight(edge_idx);
           if (!weight.is_certain()) return;
           weights.push_back(weight.get());
@@ -226,12 +227,12 @@ public:
         std::vector<double> weights;
         std::vector<edge_index> edge_idcs;
 
-        if (bit::count(surface) == 1) {
+        if (bit_count(surface) == 1) {
           weights.push_back(1.0);
-          edge_idcs.push_back(bit::pop(&surface));
+          edge_idcs.push_back(bit_pop(&surface));
         } else {
           while (surface) {
-            auto edge_idx = bit::pop(&surface);
+            auto edge_idx = bit_pop(&surface);
             auto weight = clustering_weight(edge_idx);
             if (!weight.is_certain()) return;
             weights.push_back(weight.get());
@@ -383,7 +384,7 @@ public:
 
     intersections |= edge_bit;
 
-    auto it = vis->begin() + bit::count(intersections & edge_count_mask);
+    auto it = vis->begin() + bit_count(intersections & edge_count_mask);
     vis->insert(it, vi);
 
     assert(vertex_on_edge(edge_idx) == vi);
@@ -419,7 +420,7 @@ public:
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;
-    return (*vis)[bit::count(intersections & edge_count_mask)];
+    return (*vis)[bit_count(intersections & edge_count_mask)];
   }
 };
 

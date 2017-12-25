@@ -8,7 +8,11 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
+#include <polatory/isosurface/rmt_node.hpp>
+#include <polatory/isosurface/rmt_node_list.hpp>
+#include <polatory/isosurface/rmt_primitive_lattice.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
 using polatory::common::row_range;
@@ -16,6 +20,8 @@ using polatory::geometry::bbox3d;
 using polatory::geometry::cuboid3d;
 using polatory::geometry::point3d;
 using polatory::geometry::vector3d;
+using polatory::isosurface::bit_count;
+using polatory::isosurface::bit_pop;
 using polatory::isosurface::edge_bitset;
 using polatory::isosurface::edge_index;
 using polatory::isosurface::FaceEdges;
@@ -50,9 +56,9 @@ std::array<vector3d, 14> NeighborVectors
 
 TEST(rmt, face_edges) {
   for (edge_bitset edge_set : FaceEdges) {
-    auto e0 = polatory::isosurface::bit::pop(&edge_set);
-    auto e1 = polatory::isosurface::bit::pop(&edge_set);
-    auto e2 = polatory::isosurface::bit::pop(&edge_set);
+    auto e0 = bit_pop(&edge_set);
+    auto e1 = bit_pop(&edge_set);
+    auto e2 = bit_pop(&edge_set);
 
     auto& v0 = NeighborVectors[e0];
     auto& v1 = NeighborVectors[e1];
@@ -101,12 +107,12 @@ TEST(rmt, neighbor_edge_pairs) {
 TEST(rmt, neighbors) {
   for (size_t i = 0; i < NeighborMasks.size(); i++) {
     auto mask = NeighborMasks[i];
-    auto count = polatory::isosurface::bit::count(mask);
+    auto count = bit_count(mask);
     ASSERT_TRUE(count == 4 || count == 6);
 
     auto vi = NeighborVectors[i];
     for (int k = 0; k < count; k++) {
-      auto j = polatory::isosurface::bit::pop(&mask);
+      auto j = bit_pop(&mask);
       auto vj = NeighborVectors[j];
       double vijsq = (vj - vi).squaredNorm();
       if (vijsq > 3.5) {

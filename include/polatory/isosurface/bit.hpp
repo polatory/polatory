@@ -2,14 +2,17 @@
 
 #pragma once
 
+#include <type_traits>
+
 namespace polatory {
 namespace isosurface {
-namespace bit {
+
+namespace detail {
 
 inline
-int naive_ctz(unsigned int x) {
+int naive_ctz(int x) {
   int count = 0;
-  while (!(x & 0x1)) {
+  while (!(x & 1)) {
     x >>= 1;
     count++;
   }
@@ -17,7 +20,7 @@ int naive_ctz(unsigned int x) {
 }
 
 inline
-int naive_popcnt(unsigned int x) {
+int naive_popcnt(int x) {
   int count = 0;
   while (x) {
     x &= x - 1;
@@ -26,19 +29,25 @@ int naive_popcnt(unsigned int x) {
   return count;
 }
 
-inline
-int count(unsigned int bit_set) {
+} // namespace detail
+
+template <class Integral, typename std::enable_if<
+  std::is_integral<Integral>::value && sizeof(Integral) <= sizeof(int)
+  , std::nullptr_t>::type = nullptr>
+int bit_count(Integral bit_set) {
 #if defined(__INTEL_COMPILER)
   return _popcnt32(bit_set);
 #elif defined(__GNUC__)
   return __builtin_popcount(bit_set);
 #else
-  return naive_popcnt(bit_set);
+  return detail::naive_popcnt(bit_set);
 #endif
 }
 
-inline
-int peek(unsigned int bit_set) {
+template <class Integral, typename std::enable_if<
+  std::is_integral<Integral>::value && sizeof(Integral) <= sizeof(int)
+  , std::nullptr_t>::type = nullptr>
+int bit_peek(Integral bit_set) {
   if (bit_set == 0) return -1;
 
 #if defined(__INTEL_COMPILER)
@@ -46,32 +55,22 @@ int peek(unsigned int bit_set) {
 #elif defined(__GNUC__)
   return __builtin_ctz(bit_set);
 #else
-  return naive_ctz(bit_set);
+  return detail::naive_ctz(bit_set);
 #endif
 }
 
-inline
-int pop(unsigned int *bit_set) {
+template <class Integral, typename std::enable_if<
+  std::is_integral<Integral>::value && sizeof(Integral) <= sizeof(int)
+  , std::nullptr_t>::type = nullptr>
+int bit_pop(Integral *bit_set) {
   if (*bit_set == 0) return -1;
 
-  int bit_idx = peek(*bit_set);
-  unsigned int bit = 1 << bit_idx;
+  int bit_idx = bit_peek(*bit_set);
+  int bit = 1 << bit_idx;
   *bit_set ^= bit;
 
   return bit_idx;
 }
 
-inline
-int pop(unsigned short *bit_set) {
-  if (*bit_set == 0) return -1;
-
-  int bit_idx = peek(*bit_set);
-  unsigned short bit = 1 << bit_idx;
-  *bit_set ^= bit;
-
-  return bit_idx;
-}
-
-} // namespace bit
 } // namespace isosurface
 } // namespace polatory
