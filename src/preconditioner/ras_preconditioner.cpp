@@ -231,5 +231,5 @@ size_t ras_preconditioner::size() const {
   return n_points_ + n_poly_basis_;
 }
 
-} // namespace preconditioner
-} // namespace polatory
+}  // namespace preconditioner
+}  // namespace polatory

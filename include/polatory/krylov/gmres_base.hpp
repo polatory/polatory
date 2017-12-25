@@ -96,5 +96,5 @@ protected:
   bool converged_;
 };
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

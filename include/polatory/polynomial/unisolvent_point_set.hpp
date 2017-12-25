@@ -54,5 +54,5 @@ private:
   std::vector<size_t> point_idcs_;
 };
 
-} // namespace polynomial
-} // namespace polatory
+}  // namespace polynomial
+}  // namespace polatory

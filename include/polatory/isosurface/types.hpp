@@ -20,5 +20,5 @@ using vertex_index = int;
 
 using face = std::array<vertex_index, 3>;
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

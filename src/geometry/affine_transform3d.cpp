@@ -96,5 +96,5 @@ Eigen::Matrix4d affine_transform3d::rotation_matrix(double angle, int axis) {
   return m;
 }
 
-} // namespace geometry
-} // namespace polatory
+}  // namespace geometry
+}  // namespace polatory

@@ -142,5 +142,5 @@ private:
   Eigen::MatrixXd p_;
 };
 
-} // namespace interpolation
-} // namespace polatory
+}  // namespace interpolation
+}  // namespace polatory

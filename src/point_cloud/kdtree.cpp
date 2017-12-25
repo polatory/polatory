@@ -97,5 +97,5 @@ void kdtree::radius_search(const geometry::point3d& point, double radius,
   }
 }
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

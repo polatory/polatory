@@ -140,5 +140,5 @@ public:
   }
 };
 
-} // namespace polynomial
-} // namespace polatory
+}  // namespace polynomial
+}  // namespace polatory

@@ -60,5 +60,5 @@ private:
   Floating correction_;
 };
 
-} // namespace numeric
-} // namespace polatory
+}  // namespace numeric
+}  // namespace polatory

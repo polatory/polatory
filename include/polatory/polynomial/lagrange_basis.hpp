@@ -38,5 +38,5 @@ private:
   Eigen::MatrixXd coeffs_;
 };
 
-} // namespace polynomial
-} // namespace polatory
+}  // namespace polynomial
+}  // namespace polatory

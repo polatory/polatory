@@ -46,7 +46,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
   // TODO(mizuno): Test the polynomial part.
 }
 
-} // namespace
+}  // namespace
 
 TEST(rbf_operator, trivial) {
   test_poly_degree(-1, 1024);

@@ -58,5 +58,5 @@ auto bsearch_eq(BidirectionalIterator begin, BidirectionalIterator end,
   return end;
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

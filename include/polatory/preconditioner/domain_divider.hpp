@@ -58,5 +58,5 @@ private:
   std::list<domain> domains_;
 };
 
-} // namespace preconditioner
-} // namespace polatory
+}  // namespace preconditioner
+}  // namespace polatory

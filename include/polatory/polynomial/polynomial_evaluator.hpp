@@ -50,5 +50,5 @@ private:
   common::valuesd weights_;
 };
 
-} // namespace polynomial
-} // namespace polatory
+}  // namespace polynomial
+}  // namespace polatory

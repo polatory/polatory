@@ -93,5 +93,5 @@ private:
   std::unique_ptr<rbf_evaluator<>> evaluator_;
 };
 
-} // namespace interpolation
-} // namespace polatory
+}  // namespace interpolation
+}  // namespace polatory

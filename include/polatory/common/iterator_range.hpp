@@ -31,5 +31,5 @@ iterator_range<Forwarditerator> make_range(Forwarditerator begin, Forwarditerato
   return iterator_range<Forwarditerator>(begin, end);
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

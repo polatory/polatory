@@ -84,5 +84,5 @@ private:
   common::valuesd lambda_;
 };
 
-} // namespace preconditioner
-} // namespace polatory
+}  // namespace preconditioner
+}  // namespace polatory

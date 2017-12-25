@@ -188,5 +188,5 @@ double domain_divider::round_half_to_even(double d) {
   return std::ceil((d - 0.5) / 2.0) + std::floor((d + 0.5) / 2.0);
 }
 
-} // namespace preconditioner
-} // namespace polatory
+}  // namespace preconditioner
+}  // namespace polatory

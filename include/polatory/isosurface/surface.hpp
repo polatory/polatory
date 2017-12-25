@@ -57,5 +57,5 @@ private:
   faces_type faces_;
 };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

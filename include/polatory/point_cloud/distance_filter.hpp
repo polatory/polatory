@@ -39,5 +39,5 @@ private:
   std::vector<size_t> filtered_indices_;
 };
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

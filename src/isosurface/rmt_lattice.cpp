@@ -11,5 +11,5 @@ const std::array<edge_index, 14> OppositeEdge
     0, 1, 2, 3, 4, 5, 6
   };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

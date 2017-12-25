@@ -28,5 +28,5 @@ private:
   std::vector<common::valuesd> zs_;
 };
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

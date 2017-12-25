@@ -84,5 +84,5 @@ ceres::CostFunction *cost_function(size_t n, double h, double gamma, weight_func
   );                                                                          \
 }
 
-} // namespace rbf
-} // namespace polatory
+}  // namespace rbf
+}  // namespace polatory

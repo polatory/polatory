@@ -16,5 +16,5 @@ public:
   virtual size_t size() const = 0;
 };
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

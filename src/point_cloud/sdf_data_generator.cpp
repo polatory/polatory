@@ -121,5 +121,5 @@ const common::valuesd& sdf_data_generator::sdf_values() const {
   return sdf_values_;
 }
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

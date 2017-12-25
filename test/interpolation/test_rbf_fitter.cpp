@@ -60,7 +60,7 @@ void test_poly_degree(int poly_degree, bool with_initial_solution) {
   }
 }
 
-} // namespace
+}  // namespace
 
 TEST(rbf_fitter, trivial) {
   test_poly_degree(0, false);

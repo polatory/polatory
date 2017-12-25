@@ -57,5 +57,5 @@ private:
   const size_t basis_size_;
 };
 
-} // namespace polynomial
-} // namespace polatory
+}  // namespace polynomial
+}  // namespace polatory

@@ -57,7 +57,7 @@ void test_poly_degree(int poly_degree) {
   EXPECT_LT(max_residual, absolute_tolerance);
 }
 
-} // namespace
+}  // namespace
 
 TEST(rbf_incremental_fitter, trivial) {
   test_poly_degree(0);

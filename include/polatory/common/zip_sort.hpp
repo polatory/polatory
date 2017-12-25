@@ -40,7 +40,7 @@ static void inverse_permute(RandomAccessIterator begin, RandomAccessIterator end
   }
 }
 
-} // namespace detail
+}  // namespace detail
 
 template <class RandomAccessIterator1, class RandomAccessIterator2, class Compare>
 void zip_sort(RandomAccessIterator1 begin1, RandomAccessIterator1 end1,
@@ -67,5 +67,5 @@ void zip_sort(RandomAccessIterator1 begin1, RandomAccessIterator1 end1,
   detail::inverse_permute(begin2, end2, permutation);
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

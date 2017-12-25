@@ -33,5 +33,5 @@ void fgmres::add_preconditioned_krylov_basis(const common::valuesd& z) {
   zs_.push_back(z);
 }
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

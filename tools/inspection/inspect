@@ -9,4 +9,4 @@ find benchmark/ examples/ include/ src/ test/ '(' \
     -path 'include/polatory/third_party/*' -or \
     -path 'src/third_party/*' \
   ')' \
-  | xargs python tools/inspection/cpplint/cpplint.py --quiet --filter=-runtime/references,-whitespace/braces,-whitespace/comments,-whitespace/indent,-whitespace/line_length,-whitespace/parens
+  | xargs python tools/inspection/cpplint/cpplint.py --quiet --filter=-runtime/references,-whitespace/braces,-whitespace/indent,-whitespace/line_length,-whitespace/parens

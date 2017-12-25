@@ -56,5 +56,5 @@ private:
   Eigen::MatrixXd ap_;
 };
 
-} // namespace preconditioner
-} // namespace polatory
+}  // namespace preconditioner
+}  // namespace polatory

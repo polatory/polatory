@@ -64,5 +64,5 @@ size_t empirical_variogram::num_bins() const {
   return n_bins_;
 }
 
-} // namespace kriging
-} // namespace polatory
+}  // namespace kriging
+}  // namespace polatory

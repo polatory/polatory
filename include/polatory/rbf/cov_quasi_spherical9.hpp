@@ -48,5 +48,5 @@ public:
   POLATORY_DEFINE_COST_FUNCTION(cov_quasi_spherical9, 3)
 };
 
-} // namespace rbf
-} // namespace polatory
+}  // namespace rbf
+}  // namespace polatory

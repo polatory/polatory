@@ -251,7 +251,7 @@ private:
   }
 };
 
-} // namespace detail
+}  // namespace detail
 
 class rmt_surface {
   const rmt_lattice& lattice;
@@ -293,5 +293,5 @@ public:
   }
 };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

@@ -29,7 +29,7 @@ int naive_popcnt(int x) {
   return count;
 }
 
-} // namespace detail
+}  // namespace detail
 
 template <class Integral, typename std::enable_if<
   std::is_integral<Integral>::value && sizeof(Integral) <= sizeof(int)
@@ -72,5 +72,5 @@ int bit_pop(Integral *bit_set) {
   return bit_idx;
 }
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

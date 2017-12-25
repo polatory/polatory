@@ -54,5 +54,5 @@ void rbf_direct_evaluator::set_field_points(const geometry::points3d& field_poin
   }
 }
 
-} // namespace interpolation
-} // namespace polatory
+}  // namespace interpolation
+}  // namespace polatory

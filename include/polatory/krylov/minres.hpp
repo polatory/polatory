@@ -18,5 +18,5 @@ private:
   double beta_;
 };
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

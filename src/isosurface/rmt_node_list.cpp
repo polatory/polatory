@@ -23,5 +23,5 @@ const std::array<cell_vector, 14> NeighborCellVectors
     cell_vector(+0, +1, +0)
   };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

@@ -25,7 +25,7 @@ public:
 
   vector3d size() const;
 
-  bbox3d transform(const affine_transform3d& affine) const; // NOLINT(build/include_what_you_use)
+  bbox3d transform(const affine_transform3d& affine) const;  // NOLINT(build/include_what_you_use)
 
   bbox3d union_hull(const bbox3d& other) const;
 
@@ -63,5 +63,5 @@ private:
   point3d max_;
 };
 
-} // namespace geometry
-} // namespace polatory
+}  // namespace geometry
+}  // namespace polatory

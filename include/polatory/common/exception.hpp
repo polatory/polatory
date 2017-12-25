@@ -25,5 +25,5 @@ public:
     : std::logic_error(name + "is not supported.") {}
 };
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

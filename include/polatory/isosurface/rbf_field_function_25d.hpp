@@ -32,5 +32,5 @@ private:
   interpolant& interpolant_;
 };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

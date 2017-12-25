@@ -39,5 +39,5 @@ private:
   Eigen::Matrix4d m_;
 };
 
-} // namespace geometry
-} // namespace polatory
+}  // namespace geometry
+}  // namespace polatory

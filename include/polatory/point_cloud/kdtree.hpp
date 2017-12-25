@@ -28,5 +28,5 @@ private:
   std::unique_ptr<impl> pimpl_;
 };
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

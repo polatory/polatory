@@ -50,7 +50,7 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   EXPECT_LT(max_residual, absolute_tolerance);
 }
 
-} // namespace
+}  // namespace
 
 TEST(rbf_direct_symmetric_evaluator, trivial) {
   test_poly_degree<rbf_direct_symmetric_evaluator>(-1, 1024, 1024);

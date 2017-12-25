@@ -27,5 +27,5 @@ auto fold_right(BinaryFunction f, T1&& x1, T2&& x2, Ts&&... xs) {
   return f(std::forward<T1>(x1), fold_right(f, std::forward<T2>(x2), std::forward<Ts>(xs)...));
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

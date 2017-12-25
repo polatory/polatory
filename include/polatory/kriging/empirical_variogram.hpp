@@ -32,5 +32,5 @@ private:
   std::vector<double> variance_;
 };
 
-} // namespace kriging
-} // namespace polatory
+}  // namespace kriging
+}  // namespace polatory

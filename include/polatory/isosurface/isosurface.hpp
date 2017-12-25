@@ -81,5 +81,5 @@ private:
   rmt_lattice rmt_lattice_;
 };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

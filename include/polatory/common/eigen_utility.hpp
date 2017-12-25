@@ -283,7 +283,7 @@ private:
   size_t index_;
 };
 
-} // namespace detail
+}  // namespace detail
 
 template <class Derived>
 auto col_begin(Eigen::MatrixBase<Derived>& m) {
@@ -387,7 +387,7 @@ private:
   const Eigen::MatrixBase<Derived>& m_;
 };
 
-} // namespace detail
+}  // namespace detail
 
 template <class Derived>
 auto col_range(Eigen::MatrixBase<Derived>& m) {
@@ -489,7 +489,7 @@ void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::Matri
   take_rows_impl(result_tail, m, indices...);
 }
 
-} // namespace detail
+}  // namespace detail
 
 template <class ...Args>
 auto concatenate_cols(Args&&... args) {
@@ -591,5 +591,5 @@ auto take_rows(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& i
   return take_rows(m, make_range(indices.begin(), indices.end()));
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

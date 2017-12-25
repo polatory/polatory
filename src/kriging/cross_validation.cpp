@@ -69,5 +69,5 @@ common::valuesd k_fold_cross_validation(const rbf::rbf& rbf, int poly_dimension,
   return residuals;
 }
 
-} // namespace kriging
-} // namespace polatory
+}  // namespace kriging
+}  // namespace polatory

@@ -9,5 +9,5 @@ namespace common {
 
 using valuesd = Eigen::VectorXd;
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

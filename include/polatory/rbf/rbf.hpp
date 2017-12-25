@@ -14,7 +14,7 @@ public:
   rbf() {
   }
 
-  rbf(const rbf_kernel& kernel) // NOLINT(runtime/explicit)
+  rbf(const rbf_kernel& kernel)  // NOLINT(runtime/explicit)
     : kern_(kernel.clone()) {
   }
 
@@ -30,5 +30,5 @@ private:
   std::shared_ptr<rbf_kernel> kern_;
 };
 
-} // namespace rbf
-} // namespace polatory
+}  // namespace rbf
+}  // namespace polatory

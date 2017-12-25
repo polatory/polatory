@@ -39,7 +39,7 @@ void test_degree(int dimension, int degree) {
   }
 }
 
-} // namespace
+}  // namespace
 
 TEST(orthonormal_basis, trivial) {
   for (int dim = 1; dim <= 3; dim++) {

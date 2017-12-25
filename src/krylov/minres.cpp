@@ -52,5 +52,5 @@ void minres::iterate_process() {
   iter_++;
 }
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

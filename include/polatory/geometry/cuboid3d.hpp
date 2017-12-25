@@ -36,5 +36,5 @@ private:
   const point3d max_;
 };
 
-} // namespace geometry
-} // namespace polatory
+}  // namespace geometry
+}  // namespace polatory

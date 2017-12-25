@@ -18,7 +18,7 @@ public:
     , certain(false) {
   }
 
-  uncertain(T value) // NOLINT(runtime/explicit)
+  uncertain(T value)  // NOLINT(runtime/explicit)
     : value(value)
     , certain(true) {
   }
@@ -91,5 +91,5 @@ bool possibly_not(uncertain<bool> a) {
   return !a.is_certain() || a.get() == false;
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

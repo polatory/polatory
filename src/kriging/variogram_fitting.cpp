@@ -48,5 +48,5 @@ const std::vector<double>& variogram_fitting::parameters() const {
   return params_;
 }
 
-} // namespace kriging
-} // namespace polatory
+}  // namespace kriging
+}  // namespace polatory

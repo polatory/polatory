@@ -18,7 +18,7 @@ void test_sum_accumulator() {
   ASSERT_DOUBLE_EQ(1e5, accum.get());
 }
 
-} // namespace
+}  // namespace
 
 TEST(kahan_sum_accumulator, trivial) {
   test_sum_accumulator<kahan_sum_accumulator<double>>();

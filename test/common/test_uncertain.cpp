@@ -28,7 +28,7 @@ void test(Result expected, uncertain<bool> actual) {
   }
 }
 
-} // namespace
+}  // namespace
 
 TEST(uncertain, operators) {
   auto f = uncertain<bool>(false);

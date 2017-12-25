@@ -65,7 +65,7 @@ void test_gradient(const rbf_kernel& kernel) {
   }
 }
 
-} // namespace
+}  // namespace
 
 TEST(rbf_kernel, gradient) {
   test_gradient(biharmonic({ 1.0, 0.0 }));

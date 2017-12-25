@@ -40,5 +40,5 @@ private:
   std::vector<double> params_;
 };
 
-} // namespace kriging
-} // namespace polatory
+}  // namespace kriging
+}  // namespace polatory

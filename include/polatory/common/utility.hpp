@@ -15,5 +15,5 @@ auto make_sorted_pair(T&& first, T&& second, Compare comp = Compare()) {
          : std::make_pair(std::forward<T>(second), std::forward<T>(first));
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

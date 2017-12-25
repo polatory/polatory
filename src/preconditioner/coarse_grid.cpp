@@ -76,5 +76,5 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
   }
 }
 
-} // namespace preconditioner
-} // namespace polatory
+}  // namespace preconditioner
+}  // namespace polatory

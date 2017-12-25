@@ -128,5 +128,5 @@ common::valuesd gmres_base::right_preconditioned(const common::valuesd x) const 
          : x;
 }
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

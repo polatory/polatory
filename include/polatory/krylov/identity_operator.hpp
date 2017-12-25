@@ -29,5 +29,5 @@ private:
   const size_t n_;
 };
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

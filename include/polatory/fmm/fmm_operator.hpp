@@ -158,5 +158,5 @@ private:
   std::vector<double *> weight_ptrs_;
 };
 
-} // namespace fmm
-} // namespace polatory
+}  // namespace fmm
+}  // namespace polatory

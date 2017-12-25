@@ -48,7 +48,7 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   EXPECT_LT(max_residual, absolute_tolerance);
 }
 
-} // namespace
+}  // namespace
 
 TEST(rbf_evaluator, trivial) {
   test_poly_degree(-1, 32768, 1024);

@@ -151,4 +151,4 @@ private:
   std::unique_ptr<interpolation::rbf_evaluator<>> evaluator_;
 };
 
-} // namespace polatory
+}  // namespace polatory

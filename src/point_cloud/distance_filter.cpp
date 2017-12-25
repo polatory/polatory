@@ -41,5 +41,5 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
   }
 }
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

@@ -12,5 +12,5 @@ T pi() {
   return T(4.0) * std::atan(T(1.0));
 }
 
-} // namespace common
-} // namespace polatory
+}  // namespace common
+}  // namespace polatory

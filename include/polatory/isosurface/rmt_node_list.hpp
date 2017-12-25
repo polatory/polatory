@@ -59,5 +59,5 @@ public:
   }
 };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

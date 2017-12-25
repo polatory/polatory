@@ -41,5 +41,5 @@ private:
   decltype(_MM_DENORMALS_ZERO_ON) daz_mode_backup_;
 };
 
-} // namespace numeric
-} // namespace polatory
+}  // namespace numeric
+}  // namespace polatory

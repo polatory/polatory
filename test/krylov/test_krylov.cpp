@@ -126,7 +126,7 @@ protected:
   }
 };
 
-} // namespace
+}  // namespace
 
 TEST_F(krylov_test, fgmres) {
   test_solver<fgmres>(false, false, false);

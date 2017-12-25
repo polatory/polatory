@@ -13,5 +13,5 @@ int fmm_tree_height(size_t points_estimated) {
   return 2 + std::max(2, static_cast<int>(std::floor(std::log(points_estimated) / std::log(8))));
 }
 
-} // namespace fmm
-} // namespace polatory
+}  // namespace fmm
+}  // namespace polatory

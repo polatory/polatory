@@ -16,5 +16,5 @@ using vectors3d = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 using points3d = vectors3d;
 
-} // namespace geometry
-} // namespace polatory
+}  // namespace geometry
+}  // namespace polatory

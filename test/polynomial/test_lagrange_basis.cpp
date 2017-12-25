@@ -28,7 +28,7 @@ void test_degree(int dimension, int degree) {
   EXPECT_LT(diff.lpNorm<Eigen::Infinity>(), 1e-12);
 }
 
-} // namespace
+}  // namespace
 
 TEST(lagrange_basis, trivial) {
   for (int dim = 1; dim <= 3; dim++) {

@@ -70,4 +70,4 @@ inline void write_table(const std::string& filename,
   }
 }
 
-} // namespace polatory
+}  // namespace polatory

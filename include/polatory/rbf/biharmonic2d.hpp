@@ -56,5 +56,5 @@ public:
   }
 };
 
-} // namespace rbf
-} // namespace polatory
+}  // namespace rbf
+}  // namespace polatory

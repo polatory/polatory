@@ -17,5 +17,5 @@ struct field_function {
   virtual void set_evaluation_bbox(const geometry::bbox3d& bbox) {}
 };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

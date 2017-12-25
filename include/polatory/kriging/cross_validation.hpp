@@ -14,5 +14,5 @@ common::valuesd k_fold_cross_validation(const rbf::rbf& rbf, int poly_dimension,
                                         double absolute_tolerance,
                                         int k);
 
-} // namespace kriging
-} // namespace polatory
+}  // namespace kriging
+}  // namespace polatory

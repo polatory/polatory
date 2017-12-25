@@ -15,5 +15,5 @@ public:
   void iterate_process() override;
 };
 
-} // namespace krylov
-} // namespace polatory
+}  // namespace krylov
+}  // namespace polatory

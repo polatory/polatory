@@ -71,5 +71,5 @@ geometry::vector3d normal_estimator::estimate_impl(const std::vector<size_t>& nn
   return est.plane_normal();
 }
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

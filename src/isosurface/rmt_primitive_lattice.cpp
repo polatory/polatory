@@ -19,5 +19,5 @@ const std::array<geometry::vector3d, 3> ReciprocalPrimitiveVectors
     rotation().transform_vector({ 0., 1. / 2., 1. / 2. })
   };
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

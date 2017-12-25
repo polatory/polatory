@@ -40,7 +40,7 @@ struct format<double> {
   }
 };
 
-} // namespace detail
+}  // namespace detail
 
 inline
 double to_double(const std::string& str) {
@@ -57,7 +57,7 @@ float to_float(const std::string& str) {
 template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>
 std::string to_string(Floating arg) {
   static constexpr size_t str_size = 32;
-  char str[str_size]; // NOLINT(runtime/arrays)
+  char str[str_size];  // NOLINT(runtime/arrays)
 
   if (std::isnan(arg))
     return "nan";
@@ -74,5 +74,5 @@ std::string to_string(Floating arg) {
   return str;
 }
 
-} // namespace numeric
-} // namespace polatory
+}  // namespace numeric
+}  // namespace polatory

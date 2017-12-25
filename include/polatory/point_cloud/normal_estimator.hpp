@@ -26,11 +26,11 @@ private:
   geometry::vector3d estimate_impl(const std::vector<size_t>& nn_indices, double plane_factor_threshold) const;
 
   const size_t n_points_;
-  const geometry::points3d points_; // Do not hold a reference to a temporary object.
+  const geometry::points3d points_;  // Do not hold a reference to a temporary object.
   kdtree tree_;
 
   geometry::vectors3d normals_;
 };
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

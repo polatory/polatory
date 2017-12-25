@@ -33,5 +33,5 @@ public:
   }
 };
 
-} // namespace interpolation
-} // namespace polatory
+}  // namespace interpolation
+}  // namespace polatory

@@ -51,5 +51,5 @@ common::valuesd rbf_direct_symmetric_evaluator::evaluate() const {
   return y;
 }
 
-} // namespace interpolation
-} // namespace polatory
+}  // namespace interpolation
+}  // namespace polatory

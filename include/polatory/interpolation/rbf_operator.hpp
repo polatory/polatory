@@ -95,5 +95,5 @@ private:
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 
-} // namespace interpolation
-} // namespace polatory
+}  // namespace interpolation
+}  // namespace polatory

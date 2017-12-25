@@ -55,5 +55,5 @@ private:
   Eigen::MatrixXd c_hat_;
 };
 
-} // namespace polynomial
-} // namespace polatory
+}  // namespace polynomial
+}  // namespace polatory

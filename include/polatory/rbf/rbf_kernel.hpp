@@ -129,5 +129,5 @@ private:
   const std::vector<double> params_;
 };
 
-} // namespace rbf
-} // namespace polatory
+}  // namespace rbf
+}  // namespace polatory

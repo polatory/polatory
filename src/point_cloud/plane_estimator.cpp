@@ -61,5 +61,5 @@ Eigen::JacobiSVD<Eigen::MatrixXd> plane_estimator::pca_svd(const geometry::point
   return Eigen::JacobiSVD<Eigen::MatrixXd>(points.rowwise() - barycenter, Eigen::ComputeThinV);
 }
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory

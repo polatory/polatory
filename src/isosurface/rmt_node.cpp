@@ -95,5 +95,5 @@ const std::array<std::vector<std::pair<int, int>>, 14> NeighborEdgePairs
      }
    }};
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

@@ -200,5 +200,5 @@ mesh_defects_finder::halfedge mesh_defects_finder::vertex_outgoing_halfedge(face
   return std::make_pair(vi, face[0]);
 }
 
-} // namespace isosurface
-} // namespace polatory
+}  // namespace isosurface
+}  // namespace polatory

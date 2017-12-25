@@ -36,5 +36,5 @@ private:
   const double radius_;
 };
 
-} // namespace geometry
-} // namespace polatory
+}  // namespace geometry
+}  // namespace polatory

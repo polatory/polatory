@@ -66,5 +66,5 @@ geometry::points3d random_points(const geometry::sphere3d& sphere,
   return points;
 }
 
-} // namespace point_cloud
-} // namespace polatory
+}  // namespace point_cloud
+}  // namespace polatory
