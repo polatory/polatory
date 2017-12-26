@@ -623,6 +623,189 @@ public:
         delete[] currentBlockIndexes;
     }
 
+    template<class ParticleContainer>
+    FGroupTree(const int inTreeHeight, const FReal inBoxWidth, const FPoint<FReal>& inBoxCenter,
+               const int inNbElementsPerBlock, ParticleContainer* inParticlesContainer,
+			   std::vector<std::vector<int>> & blockSizeAtEachLevel,
+               const bool particlesAreSorted = false):
+            treeHeight(inTreeHeight),nbElementsPerBlock(inNbElementsPerBlock),cellBlocksPerLevel(nullptr),
+            boxCenter(inBoxCenter), boxCorner(inBoxCenter,-(inBoxWidth/2)), boxWidth(inBoxWidth),
+            boxWidthAtLeafLevel(inBoxWidth/FReal(1<<(inTreeHeight-1))){
+
+        cellBlocksPerLevel = new std::vector<CellGroupClass*>[treeHeight];
+
+        MortonIndex* currentBlockIndexes = new MortonIndex[nbElementsPerBlock];
+        // First we work at leaf level
+        {
+            // Build morton index for particles
+            struct ParticleSortingStruct{
+                FSize originalIndex;
+                MortonIndex mindex;
+            };
+            // Convert position to morton index
+            const FSize nbParticles = inParticlesContainer->getNbParticles();
+            ParticleSortingStruct* particlesToSort = new ParticleSortingStruct[nbParticles];
+            {
+                const FReal* xpos = inParticlesContainer->getPositions()[0];
+                const FReal* ypos = inParticlesContainer->getPositions()[1];
+                const FReal* zpos = inParticlesContainer->getPositions()[2];
+
+                for(FSize idxPart = 0 ; idxPart < nbParticles ; ++idxPart){
+                    const FTreeCoordinate host = FCoordinateComputer::GetCoordinateFromPositionAndCorner<FReal>(this->boxCorner, this->boxWidth,
+                                                                                                       treeHeight,
+                                                                                                       FPoint<FReal>(xpos[idxPart], ypos[idxPart], zpos[idxPart]) );
+                    const MortonIndex particleIndex = host.getMortonIndex(treeHeight-1);
+                    particlesToSort[idxPart].mindex = particleIndex;
+                    particlesToSort[idxPart].originalIndex = idxPart;
+                }
+            }
+
+            // Sort if needed
+            if(particlesAreSorted == false){
+                FQuickSort<ParticleSortingStruct, FSize>::QsOmp(particlesToSort, nbParticles, [](const ParticleSortingStruct& v1, const ParticleSortingStruct& v2){
+                    return v1.mindex <= v2.mindex;
+                });
+            }
+
+
+            // Convert to block
+            const int idxLevel = (treeHeight - 1);
+			int idxBlock = 0;
+            FSize* nbParticlesPerLeaf = new FSize[nbElementsPerBlock];
+            FSize firstParticle = 0;
+            // We need to proceed each group in sub level
+            while(firstParticle != nbParticles){
+                int sizeOfBlock = 0;
+                FSize lastParticle = firstParticle;
+                // Count until end of sub group is reached or we have enough cells
+                while(sizeOfBlock < blockSizeAtEachLevel[treeHeight-1][idxBlock] && lastParticle < nbParticles){
+                    if(sizeOfBlock == 0 || currentBlockIndexes[sizeOfBlock-1] != particlesToSort[lastParticle].mindex){
+                        currentBlockIndexes[sizeOfBlock] = particlesToSort[lastParticle].mindex;
+                        nbParticlesPerLeaf[sizeOfBlock]  = 1;
+                        sizeOfBlock += 1;
+                    }
+                    else{
+                        nbParticlesPerLeaf[sizeOfBlock-1] += 1;
+                    }
+                    lastParticle += 1;
+                }
+                while(lastParticle < nbParticles && currentBlockIndexes[sizeOfBlock-1] == particlesToSort[lastParticle].mindex){
+                    nbParticlesPerLeaf[sizeOfBlock-1] += 1;
+                    lastParticle += 1;
+                }
+
+                // Create a group
+                CellGroupClass*const newBlock = new CellGroupClass(currentBlockIndexes[0],
+                                                                 currentBlockIndexes[sizeOfBlock-1]+1,
+                                                                 sizeOfBlock);
+                FGroupOfParticles<FReal, NbSymbAttributes, NbAttributesPerParticle, AttributeClass>*const newParticleBlock = new FGroupOfParticles<FReal, NbSymbAttributes, NbAttributesPerParticle, AttributeClass>(currentBlockIndexes[0],
+                        currentBlockIndexes[sizeOfBlock-1]+1,
+                        sizeOfBlock, lastParticle-firstParticle);
+#include <iostream>
+				using namespace std;
+				if(currentBlockIndexes[sizeOfBlock-1]+1 == 511)
+					cout << "Suricate" << endl;
+                // Init cells
+                size_t nbParticlesOffsetBeforeLeaf = 0;
+                FSize offsetParticles = firstParticle;
+                for(int cellIdInBlock = 0; cellIdInBlock != sizeOfBlock ; ++cellIdInBlock){
+                    newBlock->newCell(currentBlockIndexes[cellIdInBlock], cellIdInBlock);
+
+                    CompositeCellClass newNode = newBlock->getCompleteCell(cellIdInBlock);
+                    newNode.setMortonIndex(currentBlockIndexes[cellIdInBlock]);
+                    FTreeCoordinate coord;
+                    coord.setPositionFromMorton(currentBlockIndexes[cellIdInBlock], idxLevel);
+                    newNode.setCoordinate(coord);
+
+                    // Add leaf
+                    nbParticlesOffsetBeforeLeaf = newParticleBlock->newLeaf(currentBlockIndexes[cellIdInBlock], cellIdInBlock,
+                                              nbParticlesPerLeaf[cellIdInBlock], nbParticlesOffsetBeforeLeaf);
+
+                    BasicAttachedClass attachedLeaf = newParticleBlock->template getLeaf<BasicAttachedClass>(cellIdInBlock);
+                    // Copy each particle from the original position
+                    for(FSize idxPart = 0 ; idxPart < nbParticlesPerLeaf[cellIdInBlock] ; ++idxPart){
+                        attachedLeaf.setParticle(idxPart, particlesToSort[idxPart + offsetParticles].originalIndex, inParticlesContainer);
+                    }
+                    offsetParticles += nbParticlesPerLeaf[cellIdInBlock];
+                }
+
+                // Keep the block
+                cellBlocksPerLevel[idxLevel].push_back(newBlock);
+                particleBlocks.push_back(newParticleBlock);
+
+                sizeOfBlock = 0;
+                firstParticle = lastParticle;
+				++idxBlock;
+            }
+            delete[] nbParticlesPerLeaf;
+            delete[] particlesToSort;
+        }
+
+
+        // For each level from heigth - 2 to 1
+        for(int idxLevel = treeHeight-2; idxLevel > 0 ; --idxLevel){
+
+            CellGroupConstIterator iterChildCells = cellBlocksPerLevel[idxLevel+1].begin();
+            const CellGroupConstIterator iterChildEndCells = cellBlocksPerLevel[idxLevel+1].end();
+
+            // If lower level is empty or all blocks skiped stop here
+            if(iterChildCells == iterChildEndCells){
+                break;
+            }
+
+            MortonIndex currentCellIndex = (*iterChildCells)->getStartingIndex();
+            int sizeOfBlock = 0;
+			int idxBlock = 0;
+            // We need to proceed each group in sub level
+            while(iterChildCells != iterChildEndCells){
+                // Count until end of sub group is reached or we have enough cells
+                while(sizeOfBlock < blockSizeAtEachLevel[idxLevel][idxBlock] && iterChildCells != iterChildEndCells ){
+                    if((sizeOfBlock == 0 || currentBlockIndexes[sizeOfBlock-1] != (currentCellIndex>>3))
+                            && (*iterChildCells)->exists(currentCellIndex)){
+                        currentBlockIndexes[sizeOfBlock] = (currentCellIndex>>3);
+                        sizeOfBlock += 1;
+                        currentCellIndex = (((currentCellIndex>>3)+1)<<3);
+                    }
+                    else{
+                        currentCellIndex += 1;
+                    }
+                    // If we are at the end of the sub group, move to next
+                    while(iterChildCells != iterChildEndCells && (*iterChildCells)->getEndingIndex() <= currentCellIndex){
+                        ++iterChildCells;
+                        // Update morton index
+                        if(iterChildCells != iterChildEndCells && currentCellIndex < (*iterChildCells)->getStartingIndex()){
+                            currentCellIndex = (*iterChildCells)->getStartingIndex();
+                        }
+                    }
+                }
+
+                // If group is full
+                if(sizeOfBlock == blockSizeAtEachLevel[idxLevel][idxBlock] || (sizeOfBlock && iterChildCells == iterChildEndCells)){ //NOTE la seconde partie va sûrement sauter, car la taille est pré-calculée
+                    // Create a group
+                    CellGroupClass*const newBlock = new CellGroupClass(currentBlockIndexes[0],
+                                                                     currentBlockIndexes[sizeOfBlock-1]+1,
+                                                                     sizeOfBlock);
+                    // Init cells
+                    for(int cellIdInBlock = 0; cellIdInBlock != sizeOfBlock ; ++cellIdInBlock){
+                        newBlock->newCell(currentBlockIndexes[cellIdInBlock], cellIdInBlock);
+
+                        CompositeCellClass newNode = newBlock->getCompleteCell(cellIdInBlock);
+                        newNode.setMortonIndex(currentBlockIndexes[cellIdInBlock]);
+                        FTreeCoordinate coord;
+                        coord.setPositionFromMorton(currentBlockIndexes[cellIdInBlock], idxLevel);
+                        newNode.setCoordinate(coord);
+                    }
+
+                    // Keep the block
+                    cellBlocksPerLevel[idxLevel].push_back(newBlock);
+
+                    sizeOfBlock = 0;
+					++idxBlock;
+                }
+            }
+        }
+        delete[] currentBlockIndexes;
+    }
 
     /** This function dealloc the tree by deleting each block */
     ~FGroupTree(){

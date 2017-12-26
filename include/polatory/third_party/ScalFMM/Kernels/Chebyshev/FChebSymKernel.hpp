@@ -1,19 +1,6 @@
 #ifndef FCHEBSYMKERNEL_HPP
 #define FCHEBSYMKERNEL_HPP
-// ===================================================================================
-// Copyright ScalFmm 2011 INRIA,
-// This software is a computer program whose purpose is to compute the FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.  
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info". 
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 
 #include "Utils/FGlobal.hpp"
 
@@ -192,7 +179,7 @@ public:
 
 
     void P2M(CellClass* const LeafCell,
-             const ContainerClass* const SourceParticles/*, const int level = AbstractBaseClass::TreeHeight*/)
+             const ContainerClass* const SourceParticles/*, const int level = AbstractBaseClass::TreeHeight*/) override
     {
         // apply Sy
         const FPoint<FReal> LeafCellCenter(AbstractBaseClass::getLeafCellCenter(LeafCell->getCoordinate()));
@@ -204,7 +191,7 @@ public:
 
     void M2M(CellClass* const FRestrict ParentCell,
              const CellClass*const FRestrict *const FRestrict ChildCells,
-             const int /*TreeLevel*/)
+             const int /*TreeLevel*/) override
     {
         for(int idxRhs = 0 ; idxRhs < NVALS ; ++idxRhs){
             // Reset the Parent expansion to zero
@@ -428,7 +415,7 @@ public:
 
     void L2L(const CellClass* const FRestrict ParentCell,
              CellClass* FRestrict *const FRestrict ChildCells,
-             const int /*TreeLevel*/)
+             const int /*TreeLevel*/) override
     {
         for(int idxRhs = 0 ; idxRhs < NVALS ; ++idxRhs){
             // apply Sx
@@ -443,7 +430,7 @@ public:
 
 
     void L2P(const CellClass* const LeafCell,
-             ContainerClass* const TargetParticles)
+             ContainerClass* const TargetParticles) override
     {
         const FPoint<FReal> LeafCellCenter(AbstractBaseClass::getLeafCellCenter(LeafCell->getCoordinate()));
         //      // a) apply Sx

@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FFMMALGORITHMSECTIONTASK_HPP
 #define FFMMALGORITHMSECTIONTASK_HPP
 
@@ -24,6 +6,7 @@
 #include "../Utils/FGlobal.hpp"
 #include "../Utils/FAssert.hpp"
 #include "../Utils/FLog.hpp"
+#include "Utils/FAlgorithmTimers.hpp"
 
 #include "../Utils/FTic.hpp"
 #include "../Utils/FEnv.hpp"
@@ -33,6 +16,8 @@
 
 #include "FCoreCommon.hpp"
 #include "FP2PExclusion.hpp"
+
+#include <omp.h>
 
 /**
  * @author Berenger Bramas (berenger.bramas@inria.fr)
@@ -53,7 +38,7 @@
  */
 template<class OctreeClass, class CellClass, class ContainerClass, class KernelClass, class LeafClass, class P2PExclusionClass = FP2PMiddleExclusion>
 class FFmmAlgorithmSectionTask : public FAbstractAlgorithm, public FAlgorithmTimers {
-    
+
     OctreeClass* const tree;  ///< The octree to work on
     KernelClass** kernels;    ///< The kernels
 
@@ -64,7 +49,7 @@ class FFmmAlgorithmSectionTask : public FAbstractAlgorithm, public FAlgorithmTim
     const int leafLevelSeparationCriteria;
 public:
     /** \brief Class constructor
-     * 
+     *
      * \note An assert checks whether one of the arguments is null.
      * \param inTree the octree to work on.
      * \param inKernels the kernels used for computation.
@@ -113,26 +98,26 @@ protected:
         Timers[P2MTimer].tic();
         #pragma omp parallel num_threads(MaxThreads)
         {
-            #pragma omp sections 
+            #pragma omp sections
             {
-                #pragma omp section  
+                #pragma omp section
                 {
                     if(operationsToProceed & FFmmP2M) bottomPass();
-                    
+
                     if(operationsToProceed & FFmmM2M) upwardPass();
-                    
+
                     if(operationsToProceed & FFmmM2L) transferPass();
-                    
+
                     if(operationsToProceed & FFmmL2L) downardPass();
-                    
+
                 }
                 #pragma omp section
                 {
                     if( operationsToProceed & FFmmP2P ) directPass();
                 }
             }
-            
-            #pragma omp single 
+
+            #pragma omp single
             {
                 if(operationsToProceed & FFmmL2P) L2PPass();
             }
@@ -165,7 +150,7 @@ protected:
         #pragma omp taskwait
 
 
-        FLOG( FLog::Controller << "\tFinished (@Bottom Pass (P2M) = "  << counterTime.tacAndElapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Bottom Pass (P2M) = "  << counterTime.tacAndElapsed() << " s)\n" );
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -205,11 +190,11 @@ protected:
             octreeIterator = avoidGotoLeftIterator;// equal octreeIterator.moveUp(); octreeIterator.gotoLeft();
 
             #pragma omp taskwait
-            FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << "s\n" );
+            FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << " s\n" );
         }
 
 
-        FLOG( FLog::Controller << "\tFinished (@Upward Pass (M2M) = "  << counterTime.tacAndElapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Upward Pass (M2M) = "  << counterTime.tacAndElapsed() << " s)\n" );
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -220,7 +205,7 @@ protected:
  	/** M2L  */
   void transferPass(){
 #ifdef SCALFMM_USE_EZTRACE
-    
+
     eztrace_start();
 #endif
     if(KernelClass::NeedFinishedM2LEvent()){
@@ -360,10 +345,10 @@ protected:
             octreeIterator = avoidGotoLeftIterator;
 
             #pragma omp taskwait
-            FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << "s\n" );
+            FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << " s\n" );
         }
 
-        FLOG( FLog::Controller << "\tFinished (@Downward Pass (L2L) = "  << counterTime.tacAndElapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Downward Pass (L2L) = "  << counterTime.tacAndElapsed() << " s)\n" );
     }
 
 
@@ -420,7 +405,7 @@ protected:
         FLOG( computationCounter.tac() );
 
 
-        FLOG( FLog::Controller << "\tFinished (@Direct Pass (P2P) = "  << counterTime.tacAndElapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Direct Pass (P2P) = "  << counterTime.tacAndElapsed() << " s)\n" );
         FLOG( FLog::Controller << "\t\t Computation P2P : " << computationCounter.cumulated() << " s\n" );
     }
 
@@ -441,12 +426,10 @@ protected:
 
         #pragma omp taskwait
 
-        FLOG( FLog::Controller << "\tFinished (@Direct Pass (L2P) = "  << counterTime.tacAndElapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Direct Pass (L2P) = "  << counterTime.tacAndElapsed() << " s)\n" );
     }
 
 };
 
 
 #endif //FFMMALGORITHMTASK_HPP
-
-

@@ -345,6 +345,50 @@ public:
 #endif
                                             blockHeader->attributeLeadingDim);
     }
+
+
+    /** Extract methods */
+
+    size_t getExtractBufferSize(const std::vector<int>& inLeavesIdxToExtract) const {
+        size_t totalSize = 0;
+        for(size_t idxEx = 0 ; idxEx < inLeavesIdxToExtract.size() ; ++idxEx){
+            const int idLeaf = inLeavesIdxToExtract[idxEx];
+            totalSize += leafHeader[idLeaf].nbParticles*sizeof(FReal)*NbSymbAttributes;
+        }
+        return totalSize;
+    }
+
+    void extractData(const std::vector<int>& inLeavesIdxToExtract,
+                     unsigned char* outputBuffer, const size_t outputBufferSize) const {
+        size_t idxValue = 0;
+        for(size_t idxEx = 0 ; idxEx < inLeavesIdxToExtract.size() ; ++idxEx){
+            const int idLeaf = inLeavesIdxToExtract[idxEx];
+            for(unsigned idxAttr = 0 ; idxAttr < NbSymbAttributes ; ++idxAttr){
+                const FReal* ptrData = particlePosition[0] + leafHeader[idLeaf].offSet
+                        + blockHeader->positionsLeadingDim*idxAttr;
+                for(int idxPart = 0 ; idxPart < leafHeader[idLeaf].nbParticles ; ++idxPart){
+                    ((FReal*)outputBuffer)[idxValue++] = ptrData[idxPart];
+                }
+            }
+        }
+        FAssertLF(idxValue*sizeof(FReal) == outputBufferSize);
+    }
+
+    void restoreData(const std::vector<int>& inLeavesIdxToExtract,
+                     const unsigned char* intputBuffer, const size_t inputBufferSize){
+        size_t idxValue = 0;
+        for(size_t idxEx = 0 ; idxEx < inLeavesIdxToExtract.size() ; ++idxEx){
+            const int idLeaf = inLeavesIdxToExtract[idxEx];
+            for(unsigned idxAttr = 0 ; idxAttr < NbSymbAttributes ; ++idxAttr){
+                FReal* ptrData = particlePosition[0] + leafHeader[idLeaf].offSet
+                        + blockHeader->positionsLeadingDim*idxAttr;
+                for(int idxPart = 0 ; idxPart < leafHeader[idLeaf].nbParticles ; ++idxPart){
+                    ptrData[idxPart] = ((const FReal*)intputBuffer)[idxValue++];
+                }
+            }
+        }
+        FAssertLF(idxValue*sizeof(FReal) == inputBufferSize);
+    }
 };
 
 

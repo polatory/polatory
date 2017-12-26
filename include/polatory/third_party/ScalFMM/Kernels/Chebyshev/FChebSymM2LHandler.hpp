@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FCHEBSYMM2LHANDLER_HPP
 #define FCHEBSYMM2LHANDLER_HPP
 
@@ -28,6 +10,7 @@
 
 #include "FChebTensor.hpp"
 #include "../Interpolation/FInterpSymmetries.hpp"
+
 #include "FChebM2LHandler.hpp"
 
 #include "Utils/FAca.hpp"
@@ -175,7 +158,7 @@ static void precompute(const MatrixKernelClass *const MatrixKernel, const FReal 
                         stream << INFO;
                         throw std::runtime_error("SVD did not converge with " + stream.str());
                     }
-                    rank = getRank(S, aca_rank, Epsilon);
+                    rank = FSvd::getRank(S, aca_rank, Epsilon);
                 }                   
 
                 const unsigned int idx = (i+3)*7*7 + (j+3)*7 + (k+3);
@@ -238,7 +221,7 @@ static void precompute(const MatrixKernelClass *const MatrixKernel, const FReal 
                     stream << INFO;
                     throw std::runtime_error("SVD did not converge with " + stream.str());
                 }
-                const unsigned int rank = getRank<ORDER>(S, Epsilon);
+                const unsigned int rank = FSvd::getRank<ORDER>(S, Epsilon);
 
                 // store 
                 const unsigned int idx = (i+3)*7*7 + (j+3)*7 + (k+3);
@@ -440,7 +423,7 @@ public:
         FReal CellWidth = RootCellWidth / FReal(2.); // at level 1
         CellWidth /= FReal(2.);                      // at level 2
         for (unsigned int l=2; l<TreeHeight; ++l) {
-            precompute<FReal, ORDER>(MatrixKernel, CellWidth, Epsilon, K[l], LowRank[l]);
+            precompute<FReal,ORDER>(MatrixKernel, CellWidth, Epsilon, K[l], LowRank[l]);
             CellWidth /= FReal(2.);                    // at level l+1 
         }
     }

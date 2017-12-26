@@ -11,32 +11,42 @@
 
 /////////////////////////////////////////////////////
 
-#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 3) && defined(SCALFMM_STARPU_USE_COMMUTE)
+#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 2) && defined(SCALFMM_STARPU_USE_COMMUTE)
 #define STARPU_SUPPORT_COMMUTE
 #else
-#warning StarPU Commute is not supported
+#if defined(SCALFMM_STARPU_USE_COMMUTE)
+#error StarPU Commute is not supported
+#else
+#warning StarPU Commute is not enabled
+#endif
 #endif
 
-#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 3)
+#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 2)
 #define STARPU_SUPPORT_ARBITER
 #else
 #warning StarPU Arbiter is not supported
 #endif
 
-#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 3) && defined(SCALFMM_STARPU_USE_PRIO) && !defined(SCALFMM_STARPU_FORCE_NO_SCHEDULER)
+#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 2) && !defined(SCALFMM_STARPU_USE_PRIO)
+#warning Priorities is not supported
+#endif
+
+#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 2) && defined(SCALFMM_STARPU_USE_PRIO) && !defined(SCALFMM_STARPU_FORCE_NO_SCHEDULER)
 #define STARPU_SUPPORT_SCHEDULER
 #else
 #warning Scheduler is not supported
 #endif
 
-#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 3)
+#if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 2)
 #define STARPU_USE_TASK_NAME
+#else
+#warning Taskname is not supported
 #endif
 
 #ifdef SCALFMM_STARPU_USE_REDUX
 #define STARPU_USE_REDUX
 #else
-#warning Redux is not supported
+#warning Redux is not enabled
 #endif
 
 

@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FCHEBTENSORIALKERNEL_HPP
 #define FCHEBTENSORIALKERNEL_HPP
 
@@ -25,7 +7,6 @@
 #include "../../Utils/FSmartPointer.hpp"
 
 #include "./FAbstractChebKernel.hpp"
-//#include "./FChebM2LHandler.hpp"
 #include "./FChebTensorialM2LHandler.hpp" //PB: temporary version
 
 class FTreeCoordinate;
@@ -79,15 +60,13 @@ public:
                          const FReal inBoxWidth,
                          const FPoint<FReal>& inBoxCenter,
                          const MatrixKernelClass *const inMatrixKernel,
-                         const FReal inBoxWidthExtension, 
-                         const FReal Epsilon)
+                         const FReal inBoxWidthExtension)
     : FAbstractChebKernel< FReal, CellClass, ContainerClass, MatrixKernelClass, ORDER, NVALS>(inTreeHeight,inBoxWidth,inBoxCenter,inBoxWidthExtension),
       MatrixKernel(inMatrixKernel),
       M2LHandler(new M2LHandlerClass(MatrixKernel,
                                      inTreeHeight,
                                      inBoxWidth,
-                                     inBoxWidthExtension,
-                                     Epsilon))
+                                     inBoxWidthExtension))
     { }
 
 
@@ -99,19 +78,9 @@ public:
                                           + AbstractBaseClass::BoxWidthExtension);
 
         for(int idxV = 0 ; idxV < NVALS ; ++idxV){
-
-            // 1) apply Sy
+            // apply Sy
             AbstractBaseClass::Interpolator->applyP2M(LeafCellCenter, ExtendedLeafCellWidth,
                                                       LeafCell->getMultipole(idxV*nRhs), SourceParticles);
-
-            for(int idxRhs = 0 ; idxRhs < nRhs ; ++idxRhs){
-                // update multipole index
-                int idxMul = idxV*nRhs + idxRhs;
-
-                // 2) apply B (PB: Tensorial version is just a basic copy)
-                M2LHandler->applyB(LeafCell->getMultipole(idxMul), LeafCell->getMultipole(idxMul) + AbstractBaseClass::nnodes);
-
-            }
         }
     }
 
@@ -124,8 +93,6 @@ public:
             for(int idxRhs = 0 ; idxRhs < nRhs ; ++idxRhs){
                 // update multipole index
                 int idxMul = idxV*nRhs + idxRhs;
-
-                // 1) apply Sy
                 FBlas::scal(AbstractBaseClass::nnodes*2, FReal(0.), ParentCell->getMultipole(idxMul));
                 for (unsigned int ChildIndex=0; ChildIndex < 8; ++ChildIndex){
                     if (ChildCells[ChildIndex]){
@@ -135,9 +102,6 @@ public:
                                                                   TreeLevel/*Cell width extension specific*/);
                     }
                 }
-
-                // 2) apply B (PB: Tensorial version is just a basic copy)
-                M2LHandler->applyB(ParentCell->getMultipole(idxMul), ParentCell->getMultipole(idxMul) + AbstractBaseClass::nnodes);
 
             }
         }
@@ -155,7 +119,7 @@ public:
                 // update local index
                 const int idxLoc = idxV*nLhs + idxLhs;
 
-                FReal *const CompressedLocalExpansion = TargetCell->getLocal(idxLoc) + AbstractBaseClass::nnodes;
+                FReal *const localExpansion = TargetCell->getLocal(idxLoc);
 
                 // update idxRhs
                 const int idxRhs = idxLhs % nPv; 
@@ -168,8 +132,8 @@ public:
                 for(int idxExistingNeigh = 0 ; idxExistingNeigh < inSize ; ++idxExistingNeigh){
                     const int idx = neighborPositions[idxExistingNeigh];
                     M2LHandler->applyC(idx, TreeLevel, scale, d,
-                                       SourceCells[idxExistingNeigh]->getMultipole(idxMul) + AbstractBaseClass::nnodes,
-                                       CompressedLocalExpansion);
+                                       SourceCells[idxExistingNeigh]->getMultipole(idxMul),
+                                       localExpansion);
                 }
             }// NLHS=NPOT*NPV
         }// NVALS
@@ -183,17 +147,12 @@ public:
         for(int idxV = 0 ; idxV < NVALS ; ++idxV){
             for(int idxLhs = 0 ; idxLhs < nLhs ; ++idxLhs){
                 int idxLoc = idxV*nLhs + idxLhs;
-
-                // 1) apply U (PB: Tensorial version is just a basic copy)
-                M2LHandler->applyU(ParentCell->getLocal(idxLoc) + AbstractBaseClass::nnodes,
-                                   const_cast<CellClass*>(ParentCell)->getLocal(idxLoc));
-                // 2) apply Sx
                 for (unsigned int ChildIndex=0; ChildIndex < 8; ++ChildIndex){
                     if (ChildCells[ChildIndex]){
-                    AbstractBaseClass::Interpolator->applyL2L(ChildIndex, 
-                                                              ParentCell->getLocal(idxLoc), 
-                                                              ChildCells[ChildIndex]->getLocal(idxLoc), 
-                                                              TreeLevel/*Cell width extension specific*/);
+                      AbstractBaseClass::Interpolator->applyL2L(ChildIndex, 
+                                                                ParentCell->getLocal(idxLoc), 
+                                                                ChildCells[ChildIndex]->getLocal(idxLoc), 
+                                                                TreeLevel/*Cell width extension specific*/);
                     }
                 }
             }//NLHS
@@ -209,15 +168,6 @@ public:
                                           + AbstractBaseClass::BoxWidthExtension);
 
         for(int idxV = 0 ; idxV < NVALS ; ++idxV){
-            for(int idxLhs = 0 ; idxLhs < nLhs ; ++idxLhs){
-                int idxLoc = idxV*nLhs + idxLhs;
-
-                // 1) apply U (PB: Tensorial version is just a basic copy)
-                M2LHandler->applyU(LeafCell->getLocal(idxLoc) + AbstractBaseClass::nnodes, const_cast<CellClass*>(LeafCell)->getLocal(idxLoc));
-
-            }
-
-            // 2.c) apply Sx and Px (grad Sx)
             AbstractBaseClass::Interpolator->applyL2PTotal(LeafCellCenter, ExtendedLeafCellWidth,
                                                            LeafCell->getLocal(idxV*nLhs), TargetParticles);
         }

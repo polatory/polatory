@@ -6,8 +6,8 @@
  * the trace is print when a signal is caught.
  */
 
-#include "Utils/FGlobal.hpp"
-#include "Utils/FSignalHandler.h"
+#include <polatory/third_party/ScalFMM/Utils/FGlobal.hpp>
+#include <polatory/third_party/ScalFMM/Utils/FSignalHandler.h>
 
 
 //< Singleton/Controler of the signal system.
@@ -15,7 +15,7 @@ FSignalHandler FSignalHandler::controler;
 
 #ifdef SCALFMM_USE_SIGNALS
 
-#include "Utils/FLog.hpp"
+#include <polatory/third_party/ScalFMM/Utils/FLog.hpp>
 #include <iostream>
 #include <execinfo.h>
 #include <cstdio>

@@ -1,18 +1,5 @@
-// ===================================================================================
-// Copyright SCALFmm 2011 INRIA, Olivier Coulaud, Bérenger Bramas, Matthias Messner
-// olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
+
 #ifndef FP2PR_HPP
 #define FP2PR_HPP
 
@@ -56,7 +43,7 @@ inline void MutualParticles(const FReal targetX,const FReal targetY,const FReal 
 
 template <class FReal>
 inline void NonMutualParticles(const FReal targetX,const FReal targetY,const FReal targetZ, const FReal targetPhysicalValue,
-                               FReal* targetForceX, FReal* targetForceY, FReal* targetForceZ, FReal* targetPotential, 
+                               FReal* targetForceX, FReal* targetForceY, FReal* targetForceZ, FReal* targetPotential,
                                const FReal sourceX,const FReal sourceY,const FReal sourceZ, const FReal sourcePhysicalValue){
     FReal dx = targetX - sourceX;
     FReal dy = targetY - sourceY;

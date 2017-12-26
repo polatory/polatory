@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FCHEBM2LHANDLER_HPP
 #define FCHEBM2LHANDLER_HPP
 
@@ -32,6 +14,7 @@
 
 #include "FChebTensor.hpp"
 
+#include "Utils/FSvd.hpp"
 
 template <class FReal, int ORDER>
 unsigned int Compress(const FReal epsilon, const unsigned int ninteractions,
@@ -55,7 +38,7 @@ unsigned int Compress(const FReal epsilon, const unsigned int ninteractions,
  * size \f$\ell^3\times r\f$, and \f$316\f$ \f$C_t\f$, each of size \f$r\times
  * r\f$.
  *
- * PB: FChebM2LHandler does not seem to support non_homogeneous kernels!
+ * PB: FChebM2LHandler does not seem to support non-homogeneous kernels!
  * In fact nothing appears to handle this here (i.e. adapt scaling and storage 
  * to MatrixKernelClass::Type). Given the relatively important cost of the 
  * Chebyshev variant, it is probably a choice not to have implemented this 
@@ -114,8 +97,7 @@ public:
 		if (U||C||B) throw std::runtime_error("Compressed M2L operator already set");
 		rank = ComputeAndCompress(MatrixKernel, epsilon, U, C, B);
 
-    unsigned long sizeM2L = 343*rank*rank*sizeof(FReal);
-
+	    unsigned long sizeM2L = 343*rank*rank*sizeof(FReal);
 
 		// write info
 		std::cout << "Compressed and set M2L operators (" << long(sizeM2L) << " B) in "
@@ -184,21 +166,21 @@ public:
   void applyC(const int transfer[3], FReal CellWidth,
 							const FReal *const Y, FReal *const X) const
   {
-		const unsigned int idx
-			= (transfer[0]+3)*7*7 + (transfer[1]+3)*7 + (transfer[2]+3);
-		const FReal scale(MatrixKernel->getScaleFactor(CellWidth));
+	const unsigned int idx
+		= (transfer[0]+3)*7*7 + (transfer[1]+3)*7 + (transfer[2]+3);
+	const FReal scale(MatrixKernel->getScaleFactor(CellWidth));
     FBlas::gemva(rank, rank, scale, C + idx*rank*rank, const_cast<FReal*>(Y), X);
   }
   void applyC(const unsigned int idx, FReal CellWidth,
 							const FReal *const Y, FReal *const X) const
   {
-		const FReal scale(MatrixKernel->getScaleFactor(CellWidth));
+	const FReal scale(MatrixKernel->getScaleFactor(CellWidth));
     FBlas::gemva(rank, rank, scale, C + idx*rank*rank, const_cast<FReal*>(Y), X);
   }
   void applyC(FReal CellWidth,
 							const FReal *const Y, FReal *const X) const
   {
-		const FReal scale(MatrixKernel->getScaleFactor(CellWidth));
+	const FReal scale(MatrixKernel->getScaleFactor(CellWidth));
     FBlas::gemva(rank, rank * 343, scale, C, const_cast<FReal*>(Y), X);
   }
 
@@ -441,51 +423,6 @@ unsigned int ReadRankFromBinaryFile(const std::string& filename)
 //////////////////////////////////////////////////////////////////////
 
 /**
- * Computes the low-rank \f$k\f$ based on \f$\|K-U\Sigma_kV^\top\|_F \le
- * \epsilon \|K\|_F\f$, ie., the truncation rank of the singular value
- * decomposition. With the definition of the Frobenius norm \f$\|K\|_F =
- * \left(\sum_{i=1}^N \sigma_i^2\right)^{\frac{1}{2}}\f$ the determination of
- * the low-rank follows as \f$\|K-U\Sigma_kV^\top\|_F^2 = \sum_{i=k+1}^N
- * \sigma_i^2 \le \epsilon^2 \sum_{i=1}^N \sigma_i^2 = \epsilon^2
- * \|K\|_F^2\f$.
- *
- * @param[in] singular_values array of singular values ordered as \f$\sigma_1
- * \ge \sigma_2 \ge \dots \ge \sigma_N\f$
- * @param[in] eps accuracy \f$\epsilon\f$
- */ 
-template <class FReal, int ORDER>
-unsigned int getRank(const FReal singular_values[], const double eps)
-{
-	enum {nnodes = TensorTraits<ORDER>::nnodes};
-
-	FReal nrm2(0.);
-	for (unsigned int k=0; k<nnodes; ++k)
-		nrm2 += singular_values[k] * singular_values[k];
-
-	FReal nrm2k(0.);
-	for (unsigned int k=nnodes; k>0; --k) {
-		nrm2k += singular_values[k-1] * singular_values[k-1];
-		if (nrm2k > eps*eps * nrm2)	return k;
-	}
-	throw std::runtime_error("rank cannot be larger than nnodes");
-	return 0;
-}
-
-template <class FReal>
-unsigned int getRank(const FReal singular_values[], const unsigned int size, const double eps)
-{
-	const FReal nrm2 = FBlas::scpr(size, const_cast<FReal *>(singular_values), const_cast<FReal *>(singular_values));
-	FReal nrm2k(0.);
-	for (unsigned int k=size; k>0; --k) {
-		nrm2k += singular_values[k-1] * singular_values[k-1];
-		if (nrm2k > eps*eps * nrm2)	return k;
-	}
-	throw std::runtime_error("rank cannot be larger than size");
-	return 0;
-}
-
-
-/**
  * Compresses \f$[K_1,\dots,K_{316}]\f$ in \f$C\f$. Attention: the matrices
  * \f$U,B\f$ are not initialized, no memory is allocated as input, as output
  * they store the respective matrices. The matrix \f$C\f$ stores
@@ -528,7 +465,7 @@ unsigned int Compress(const FReal epsilon, const unsigned int ninteractions,
 		throw std::runtime_error("SVD did not converge with " + stream.str());
 	}
 	delete [] K_col;
-    const unsigned int k_col = getRank<FReal, ORDER>(S, epsilon);
+    const unsigned int k_col = FSvd::getRank<FReal, ORDER>(S, epsilon);
 
 	// Q' -> B 
 	B = new FReal [nnodes*k_col];
@@ -546,7 +483,7 @@ unsigned int Compress(const FReal epsilon, const unsigned int ninteractions,
 		stream << info_row;
 		throw std::runtime_error("SVD did not converge with " + stream.str());
 	}
-    const unsigned int k_row = getRank<FReal, ORDER>(S, epsilon);
+    const unsigned int k_row = FSvd::getRank<FReal, ORDER>(S, epsilon);
 	delete [] WORK;
 
 	// Q -> U

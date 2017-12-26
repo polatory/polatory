@@ -1,4 +1,4 @@
-#include "Utils/FAlgorithmTimers.hpp"
+#include <polatory/third_party/ScalFMM/Utils/FAlgorithmTimers.hpp>
 
 constexpr const char* FAlgorithmTimers::P2MTimer;
 constexpr const char* FAlgorithmTimers::M2MTimer;

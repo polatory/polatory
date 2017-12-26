@@ -1,16 +1,12 @@
+// See LICENCE file at project root
+
 #ifndef FSTARPUHETEOPRIO_HPP
 #define FSTARPUHETEOPRIO_HPP
 
-/* Heteroprio, Berenger Bramas (berenger.bramas@inria.fr), Copyright INRIA
- *  This software is governed by the CeCILL-C and LGPL licenses and
- *  abiding by the rules of distribution of free software.
+/**
+ * \brief Heteroprio
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public and CeCILL-C Licenses for more details.
- *  "http://www.cecill.info".
- *  "http://www.gnu.org/licenses".
+ * \author Berenger Bramas (berenger.bramas@inria.fr)
  *
  * Heteroprio is a scheduler wich support different priorities for the
  * different architectures and with a critical end management based on
@@ -706,7 +702,7 @@ static struct starpu_task *pop_task_heteroprio_policy(unsigned sched_ctx_id)
         if(child_sched_ctx != STARPU_NMAX_SCHED_CTXS){
             starpu_sched_ctx_revert_task_counters(sched_ctx_id, task->flops);
 #if (STARPU_MAJOR_VERSION >= 1) && (STARPU_MINOR_VERSION >= 3)
-            starpu_sched_ctx_move_task_to_ctx(task, child_sched_ctx, 1);
+            starpu_sched_ctx_move_task_to_ctx(task, child_sched_ctx, 1, 1);
 #else
             starpu_sched_ctx_move_task_to_ctx(task, child_sched_ctx);
 #endif
@@ -771,4 +767,3 @@ struct starpu_sched_policy _starpu_sched_heteroprio_policy = _starpu_sched_heter
 #endif
 
 #endif // FSTARPUHETEOPRIO_HPP
-

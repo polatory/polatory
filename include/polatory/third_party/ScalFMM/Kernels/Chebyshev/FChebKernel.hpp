@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FCHEBKERNEL_HPP
 #define FCHEBKERNEL_HPP
 
@@ -25,6 +7,7 @@
 #include "../../Utils/FSmartPointer.hpp"
 
 #include "./FAbstractChebKernel.hpp"
+
 #include "./FChebM2LHandler.hpp"
 
 class FTreeCoordinate;
@@ -82,9 +65,7 @@ public:
      */
     FChebKernel(const int inTreeHeight,  const FReal inBoxWidth, const FPoint<FReal>& inBoxCenter, const MatrixKernelClass *const inMatrixKernel,
                 const FReal Epsilon)
-    : FAbstractChebKernel< FReal, CellClass, ContainerClass, MatrixKernelClass, ORDER, NVALS>(inTreeHeight,
-                                                                                       inBoxWidth,
-                                                                                       inBoxCenter),
+    : FAbstractChebKernel< FReal, CellClass, ContainerClass, MatrixKernelClass, ORDER, NVALS>(inTreeHeight,inBoxWidth,inBoxCenter),
       MatrixKernel(inMatrixKernel),
       M2LHandler(new M2LHandlerClass(MatrixKernel,Epsilon))
     {
@@ -92,6 +73,8 @@ public:
         //M2LHandler->ReadFromBinaryFileAndSet();
         M2LHandler->ComputeAndCompressAndSet();
     }
+
+
     /**
      * The constructor initializes all constant attributes and it reads the
      * precomputed and compressed M2L operators from a binary file (an
@@ -159,7 +142,8 @@ public:
 //  }
 
     void M2L(CellClass* const FRestrict TargetCell, const CellClass* SourceCells[],
-             const int neighborPositions[], const int inSize, const int TreeLevel)  override {
+             const int neighborPositions[], const int inSize, const int TreeLevel)  override 
+    {
         for(int idxRhs = 0 ; idxRhs < NVALS ; ++idxRhs){
             FReal *const CompressedLocalExpansion = TargetCell->getLocal(idxRhs) + AbstractBaseClass::nnodes;
             const FReal CellWidth(AbstractBaseClass::BoxWidth / FReal(FMath::pow(2, TreeLevel)));
