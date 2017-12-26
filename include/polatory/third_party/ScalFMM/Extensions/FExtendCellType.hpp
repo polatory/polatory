@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FEXTENDCELLTYPE_HPP
 #define FEXTENDCELLTYPE_HPP
 
@@ -43,11 +25,8 @@ public:
     }
 
     /** Copy constructor */
-    FExtendCellType(const FExtendCellType& other)
-        : containsTargets(other.containsTargets)
-        ,containsSources(other.containsSources)
-        ,m2lDone(other.m2lDone)
-        ,l2lDone(other.l2lDone){
+    FExtendCellType(const FExtendCellType& other) : containsTargets(other.containsTargets),
+            containsSources(other.containsSources), m2lDone(other.m2lDone), l2lDone(other.l2lDone){
     }
 
     /** Copy operator */
@@ -79,25 +58,24 @@ public:
         containsTargets = true;
     }
 
-    void setTargetsChildFalse()
-    {
-       containsTargets = false;
+    void setTargetsChildFalse() {
+        containsTargets = false;
     }
 
     bool isM2LDone() const {
-       return m2lDone;
+        return m2lDone;
     }
 
     bool isL2LDone() const {
-       return l2lDone;
+        return l2lDone;
     }
 
     void setM2LDoneTrue() {
-       m2lDone = true;
+        m2lDone = true;
     }
 
     void setL2LDoneTrue() {
-       l2lDone = true;
+        l2lDone = true;
     }
 
 public:

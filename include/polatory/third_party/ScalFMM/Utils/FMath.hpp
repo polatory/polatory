@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FMATH_HPP
 #define FMATH_HPP
 
@@ -328,6 +310,24 @@ struct FMath{
         return 1.0/sqrt(inValue);
     }
 #ifdef SCALFMM_USE_SSE
+    static __m128 Exp(const __m128 inV){
+         float ptr[4];
+        _mm_storeu_ps(ptr, inV);
+        for(int idx = 0 ; idx < 4 ; ++idx){
+            ptr[idx] = std::exp(ptr[idx]);
+        }
+        return _mm_loadu_ps(ptr);
+    }
+
+    static __m128d Exp(const __m128d inV){
+         double ptr[2];
+        _mm_storeu_pd(ptr, inV);
+        for(int idx = 0 ; idx < 2 ; ++idx){
+            ptr[idx] = std::exp(ptr[idx]);
+        }
+        return _mm_loadu_pd(ptr);
+    }
+
     static __m128 Sqrt(const __m128 inV){
         return _mm_sqrt_ps(inV);
     }
@@ -345,6 +345,24 @@ struct FMath{
     }
 #endif
 #ifdef SCALFMM_USE_AVX
+    static __m256 Exp(const __m256 inV){
+         float ptr[8];
+        _mm256_storeu_ps(ptr, inV);
+        for(int idx = 0 ; idx < 8 ; ++idx){
+            ptr[idx] = std::exp(ptr[idx]);
+        }
+        return _mm256_loadu_ps(ptr);
+    }
+
+    static __m256d Exp(const __m256d inV){
+         double ptr[4];
+        _mm256_storeu_pd(ptr, inV);
+        for(int idx = 0 ; idx < 4 ; ++idx){
+            ptr[idx] = std::exp(ptr[idx]);
+        }
+        return _mm256_loadu_pd(ptr);
+    }
+
     static __m256 Sqrt(const __m256 inV){
         return _mm256_sqrt_ps(inV);
     }
@@ -363,6 +381,28 @@ struct FMath{
 #endif
 #ifdef SCALFMM_USE_AVX2
 #ifdef __MIC__
+    static __m512 Exp(const __m512 inV){
+         float ptr[16];
+        _mm512_storeu_ps(ptr, inV);
+        for(int idx = 0 ; idx < 16 ; ++idx){
+            ptr[idx] = std::exp(ptr[idx]);
+        }
+        return _mm512_loadu_ps(ptr);
+    }
+
+    static __m512d Exp(const __m512d inV){
+         double ptr[8];
+        _mm512_storeu_pd(ptr, inV);
+        for(int idx = 0 ; idx < 8 ; ++idx){
+            ptr[idx] = std::exp(ptr[idx]);
+        }
+        return _mm512_loadu_pd(ptr);
+    }
+
+    static __m512d Exp(const __m512d inV){
+        return _mm512_sqrt_pd(inV);
+    }
+
     static __m512 Sqrt(const __m512 inV){
         return _mm512_sqrt_ps(inV);
     }

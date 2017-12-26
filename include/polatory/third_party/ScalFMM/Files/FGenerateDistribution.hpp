@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FGENERATEDISTRIBUTION_HPP
 #define FGENERATEDISTRIBUTION_HPP
 
@@ -38,10 +20,21 @@
 
 /**
  * \brief Seed the random number generator using current time
+ *
+ * Seed for the random generator. If 0, time() is used as seed.
  */
+
+static long int seed = 0;   //:Seed for the random generator. If 0, time() is used as seed.
 void initRandom() {
-    srand48(static_cast<long int>(time(nullptr)));
-}
+        if(seed == 0)
+                srand48( static_cast<long int>(time(nullptr))) ;
+        else
+                srand48(seed);
+} ;
+void setSeed(long int new_seed) {
+        seed = new_seed;
+} ;
+
 
 /**
  * \brief Generate a random number
@@ -113,20 +106,78 @@ void unifRandomPointsInBall(const FSize N, const FReal R, FReal* points) {
  * \param points array of size 4*N and stores data as follow x,y,z,0,x,y,z,0....
  */
 template <class FReal>
-void nonunifRandomPointsOnElipsoid(const FSize N, const FReal& a, const FReal& b,
-                                   const FReal& c, FReal* points)
+void nonunifRandomPointsOnElipsoid(const FSize N, const FReal& a, const FReal& b, const FReal& c, FReal* points)
 {
+#ifdef  SCALFMM_OLD_ELLIPSOID
     FReal u, v, cosu;
     for (FSize i = 0, j = 0 ; i< N ; ++i, j+=4)  {
-        u = FMath::FPi<FReal>() * getRandom<FReal>() - FMath::FPiDiv2<FReal>();
+        u = FMath::FPi<FReal>()    * getRandom<FReal>() - FMath::FPiDiv2<FReal>();
         v = FMath::FTwoPi<FReal>() * getRandom<FReal>() - FMath::FPi<FReal>();
         cosu = FMath::Cos(u);
         points[j]   = a * cosu * FMath::Cos(v);
         points[j+1] = b * cosu * FMath::Sin(v);
         points[j+2] = c * FMath::Sin(u);
     }
+  #else
+    FReal rotationMatrix[3][3];
+    FReal alpha = FMath::FPi<FReal>()/8;
+    FReal omega = FMath::FPi<FReal>()/4;
+
+    FReal yrotation[3][3];
+    yrotation[0][0] = FMath::Cos(alpha); yrotation[0][1] = 0.0; yrotation[0][2] = FMath::Sin(alpha);
+    yrotation[1][0] = 0.0;               yrotation[1][1] = 1.0; yrotation[1][2] = 0.0;
+    yrotation[2][0] = -FMath::Sin(alpha); yrotation[2][1] = 0.0;   yrotation[2][2] = FMath::Cos(alpha);
+
+    FReal zrotation[3][3];
+    zrotation[0][0] = FMath::Cos(omega); zrotation[0][1] = -FMath::Sin(omega); zrotation[0][2] = 0.0;
+    zrotation[1][0] = FMath::Sin(omega); zrotation[1][1] = FMath::Cos(omega); zrotation[1][2] = 0.0;
+    zrotation[2][0] = 0.0; zrotation[2][1] = 0.0;   zrotation[2][2] = 1.0;
+
+    for(int i = 0 ; i < 3 ; ++i){
+        for(int j = 0 ; j < 3 ; ++j){
+            FReal sum = 0.0;
+            for(int k = 0 ; k < 3 ; ++k){
+                sum += zrotation[i][k] * yrotation[k][j];
+            }
+            rotationMatrix[i][j] = sum;
+        }
+    }
+    const FReal MaxDensity   = 10.0;
+    for (FSize i = 0, j = 0 ; i< N ; ++i, j+=4)  {
+            const FReal maxPerimeter = 2.0 * FMath::FPi<FReal>() * a ;
+
+            FReal px   = 0;
+            // rayon du cercle pour ce x
+            FReal subr = 0;
+            FReal coef = 1.0;
+
+            do {
+                    //px   = ( ((getRandom()*8.0+getRandom())/9.0) * a * 2) - a;
+                    px = (getRandom<FReal>() * a * 2.0) - a;
+                    coef = FMath::Abs(px) * MaxDensity/a + 1.0;
+                    subr = FMath::Sqrt( (1.0 - ((px*px)/(a*a))) * (b*b) );
+                } while( (getRandom<FReal>()*maxPerimeter) > subr * coef );
+
+            // on genere un angle
+             omega = getRandom<FReal>() * FMath::FTwoPi<FReal>() ;
+            // on recupere py et pz sur le cercle
+            const FReal py = FMath::Cos(omega) * subr;
+            const FReal pz = FMath::Sin(omega) * subr;
+
+            // inParticle.setPosition(px,py,pz);
+            points[j]   = px * rotationMatrix[0][0] + py * rotationMatrix[0][1]+ pz * rotationMatrix[0][2];
+            points[j+1] = px * rotationMatrix[1][0] + py * rotationMatrix[1][1]+ pz * rotationMatrix[1][2];
+            points[j+2] = px * rotationMatrix[2][0] + py * rotationMatrix[2][1]+ pz * rotationMatrix[2][2];
+        }
+
+#endif
 }
 
+
+template <class FReal>
+void nonunifRandomPointsOnElipsoid(const FSize N, const FReal& a, const FReal& b, FReal* points){
+    nonunifRandomPointsOnElipsoid(N, a, b, FReal(1), points);
+}
 
 /**
  * \brief Generate N points uniformly distributed on the ellipsoid of aspect ratio a:a:c
@@ -142,13 +193,17 @@ template <class FReal>
 void unifRandomPointsOnProlate(const FSize N, const FReal& a, const FReal& c,
                                FReal* points)
 {
-    FReal u, w, v, ksi;
+    FReal u, w, v;
     FReal e = (a*a*a*a)/(c*c*c*c);
-    bool isgood = false;
     FSize cpt = 0;
-
+    const int NN=20 ;
+    std::vector<int> bin(NN,0);
+    FReal h = 2*c/NN ;
+    //
+    bool isgood = false;
     for (FSize i = 0, j = 0 ; i< N ; ++i, j+=4)  {
         // Select a random point on the prolate
+
         do {
             ++cpt;
             u = 2.0 * getRandom<FReal>() - 1.0;
@@ -157,18 +212,44 @@ void unifRandomPointsOnProlate(const FSize N, const FReal& a, const FReal& c,
             points[j]	= a * w * FMath::Cos(v);
             points[j+1] = a * w * FMath::Sin(v);
             points[j+2] = c * u;
-            // Accept the position ?
-            ksi = a * getRandom<FReal>();
+            // Accept the position ? if x*x +y*y +e *z*z > a^2 kxi ( see hen and Glotzer)
+            FReal ksi =  getRandom<FReal>() / a;
             isgood = (points[j]*points[j]
                       + points[j+1]*points[j+1]
                       + e*points[j+2]*points[j+2]) < ksi*ksi;
         } while(isgood);
+      unsigned int k1 =    static_cast<unsigned int>((c +    points[j+2])/h );
+  //    std::cout <<  points[j+2] << " k " << k << " h " << h << "   " << c+ points[j+2]/h  << std::endl;
+//      if (k < NN){
+              bin[k1] += 1 ;
+//          }
+//      else {
+//              std::cout << "  ERROR ERROR  ERROR ERROR " <<std::endl;
+//          }
     }
     std::cout.precision(4);
     std::cout << "Total tested points: " << cpt
               << " % of rejected points: "
               << 100 * static_cast<FReal>(cpt-N) / static_cast<FReal>(cpt) << " %"
               << std::endl;
+    std::cout << " h " << h << std::endl;
+//    std::cout << " [ " ;
+//    for ( int k = 0 ; k < bin.size()-1; ++k) {
+//            std::cout  << bin[k]<< " , " ;
+//        }
+//    std::cout  << bin[bin.size() -1]<< " ] "<<  std::endl;
+    FReal x1 , x2, surf ;
+    // We approximate the arc of the ellipsoide by as straight line (Conical Frustum)
+    // see http://mathworld.wolfram.com/ConicalFrustum.html
+    std::cout << " z-density - bins: [ " ;
+    for ( unsigned int k = 0 ; k < bin.size(); ++k) {
+            x1 =-c+ k*h ; x2 = x1+h ;  // point position
+            x1 = a*FMath::Sqrt(1 - x1*x1/(c*c) ) ; x2 = a*FMath::Sqrt(1 - x2*x2/(c*c) ) ; //xm = a*FMath::Sqrt(1 - xm*xm/(c*c) ); // radius position
+            surf =  FMath::FPi<FReal>() * (x1+x2)*FMath::Sqrt((x1-x2)*(x1-x2) + h*h) ; //Conical Frustum
+            //   std::cout  << "  (" <<bin[k]<< " , " << x1 <<", "<< x2 <<", "<<surf <<", " << bin[k]/surf << " ) ";
+            std::cout  << bin[k]/surf  <<"  " ;
+        }
+    std::cout  <<  " ] "<<  std::endl;
 }
 
 

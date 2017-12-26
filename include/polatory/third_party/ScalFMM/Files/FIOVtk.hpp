@@ -1,14 +1,4 @@
-/*
- * VtkWrite.hpp
- *
- *  Created on: 6 juin 2013
- *      Author: Arnaud Etcheverry
- // ===================================================================================
- // Logiciel: OptiDis Version 0.1
- // Propriétaires : INRIA.
- // Copyright © 2011-2012, diffusé sous les termes et conditions d’une licence propriétaire.
- // ===================================================================================
- */
+// See LICENCE file at project root
 
 #ifndef FIOVTK_HPP
 #define FIOVTK_HPP

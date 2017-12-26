@@ -1,22 +1,4 @@
-// ===================================================================================
-// Copyright ScalFmm 2016 INRIA, Olivier Coulaud, Bérenger Bramas,
-// Matthias Messner olivier.coulaud@inria.fr, berenger.bramas@inria.fr
-// This software is a computer program whose purpose is to compute the
-// FMM.
-//
-// This software is governed by the CeCILL-C and LGPL licenses and
-// abiding by the rules of distribution of free software.
-// An extension to the license is given to allow static linking of scalfmm
-// inside a proprietary application (no matter its license).
-// See the main license file for more details.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public and CeCILL-C Licenses for more details.
-// "http://www.cecill.info".
-// "http://www.gnu.org/licenses".
-// ===================================================================================
+// See LICENCE file at project root
 #ifndef FFMMALGORITHMTHREADTSM_HPP
 #define FFMMALGORITHMTHREADTSM_HPP
 
@@ -70,11 +52,9 @@ public:
       * @param inKernels the kernels to call
       * An assert is launched if one of the arguments is null
       */
-    FFmmAlgorithmThreadTsm(OctreeClass* const inTree, KernelClass* const inKernels,
-                           const int inUserChunkSize = 10, const int inLeafLevelSeperationCriteria = 1)
+    FFmmAlgorithmThreadTsm(OctreeClass* const inTree, KernelClass* const inKernels, const int inUserChunkSize = 10, const int inLeafLevelSeperationCriteria = 1)
                       : tree(inTree) , kernels(nullptr), iterArray(nullptr),
-                      MaxThreads(FEnv::GetValue("SCALFMM_ALGO_NUM_THREADS",omp_get_max_threads())) , OctreeHeight(tree->getHeight()),
-                      userChunkSize(inUserChunkSize), leafLevelSeparationCriteria(inLeafLevelSeperationCriteria) {
+                      MaxThreads(FEnv::GetValue("SCALFMM_ALGO_NUM_THREADS",omp_get_max_threads())) , OctreeHeight(tree->getHeight()), userChunkSize(inUserChunkSize), leafLevelSeparationCriteria(inLeafLevelSeperationCriteria) {
 
         FAssertLF(tree, "tree cannot be null");
         FAssertLF(leafLevelSeparationCriteria < 3, "Separation criteria should be < 3");
@@ -104,92 +84,90 @@ public:
 
     void updateTargetCells()
     {
-       std::vector<typename OctreeClass::Iterator> iterArray;
-       typename OctreeClass::Iterator octreeIterator(tree);
+        std::vector<typename OctreeClass::Iterator> iterArray;
+        typename OctreeClass::Iterator octreeIterator(tree);
 
-       // Iterate on leafs
-       octreeIterator.gotoBottomLeft();
-       do {
-          iterArray.push_back(octreeIterator);
-       } while (octreeIterator.moveRight());
-       int numberOfLeafs = iterArray.size();
+        // Iterate on leafs
+        octreeIterator.gotoBottomLeft();
+        do {
+            iterArray.push_back(octreeIterator);
+        } while (octreeIterator.moveRight());
+        int numberOfLeafs = iterArray.size();
 
-       const int chunkSize = this->getChunkSize(numberOfLeafs);
-
-#pragma omp parallel num_threads(MaxThreads)
-       {
-#pragma omp for nowait schedule(dynamic, chunkSize)
-          for (int idxLeafs = 0; idxLeafs < numberOfLeafs; ++idxLeafs) {
-             // We need the current cell that represent the leaf
-             // and the list of particles
-             if (iterArray[idxLeafs].getCurrentListTargets()->getNbParticles()) {
-                iterArray[idxLeafs].getCurrentCell()->setTargetsChildTrue();
-             } else {
-                iterArray[idxLeafs].getCurrentCell()->setTargetsChildFalse();
-             }
-          }
-       }
-
-       // Start from leal level - 1
-       octreeIterator.gotoBottomLeft();
-       octreeIterator.moveUp();
-
-       for (int idxLevel = OctreeHeight - 2; idxLevel > FAbstractAlgorithm::lowerWorkingLevel - 1; --idxLevel) {
-          octreeIterator.moveUp();
-       }
-
-       typename OctreeClass::Iterator avoidGotoLeftIterator(octreeIterator);
-
-       // for each levels
-       for (int idxLevel = FMath::Min(OctreeHeight - 2, FAbstractAlgorithm::lowerWorkingLevel - 1); idxLevel >= FAbstractAlgorithm::upperWorkingLevel; --idxLevel) {
-          iterArray.clear();
-          // for each cells
-          do {
-             iterArray.push_back(octreeIterator);
-          } while (octreeIterator.moveRight());
-          int numberOfCells = iterArray.size();
-
-          avoidGotoLeftIterator.moveUp();
-          octreeIterator = avoidGotoLeftIterator;// equal octreeIterator.moveUp(); octreeIterator.gotoLeft();
-
-          const int chunkSize = this->getChunkSize(numberOfCells);
+        const int chunkSize = this->getChunkSize(numberOfLeafs);
 
 #pragma omp parallel num_threads(MaxThreads)
-          {
+        {
 #pragma omp for nowait schedule(dynamic, chunkSize)
-             for (int idxCell = 0; idxCell < numberOfCells; ++idxCell) {
-                // We need the current cell and the child
-                // child is an array (of 8 child) that may be null
-                CellClass** const realChild = iterArray[idxCell].getCurrentChild();
-                CellClass* const currentCell = iterArray[idxCell].getCurrentCell();
-                currentCell->setTargetsChildFalse();
-                for (int idxChild = 0; idxChild < 8; ++idxChild) {
-                   if (realChild[idxChild] && realChild[idxChild]->hasTargetsChild()) {
-                      currentCell->setTargetsChildTrue();
-                      break;
-                   }
+            for (int idxLeafs = 0; idxLeafs < numberOfLeafs; ++idxLeafs) {
+                // We need the current cell that represent the leaf
+                // and the list of particles
+                if (iterArray[idxLeafs].getCurrentListTargets()->getNbParticles()) {
+                    iterArray[idxLeafs].getCurrentCell()->setTargetsChildTrue();
+                } else {
+                    iterArray[idxLeafs].getCurrentCell()->setTargetsChildFalse();
                 }
-             }
-          }
-       }
+            }
+        }
+
+        // Start from leal level - 1
+        octreeIterator.gotoBottomLeft();
+        octreeIterator.moveUp();
+
+        for (int idxLevel = OctreeHeight - 2; idxLevel > FAbstractAlgorithm::lowerWorkingLevel - 1; --idxLevel) {
+            octreeIterator.moveUp();
+        }
+
+        typename OctreeClass::Iterator avoidGotoLeftIterator(octreeIterator);
+
+        // for each levels
+        for (int idxLevel = FMath::Min(OctreeHeight - 2, FAbstractAlgorithm::lowerWorkingLevel - 1); idxLevel >= FAbstractAlgorithm::upperWorkingLevel; --idxLevel) {
+            iterArray.clear();
+            // for each cells
+            do {
+                iterArray.push_back(octreeIterator);
+            } while (octreeIterator.moveRight());
+            int numberOfCells = iterArray.size();
+
+            avoidGotoLeftIterator.moveUp();
+            octreeIterator = avoidGotoLeftIterator;// equal octreeIterator.moveUp(); octreeIterator.gotoLeft();
+
+            const int chunkSize = this->getChunkSize(numberOfCells);
+
+#pragma omp parallel num_threads(MaxThreads)
+            {
+#pragma omp for nowait schedule(dynamic, chunkSize)
+                for (int idxCell = 0; idxCell < numberOfCells; ++idxCell) {
+                    // We need the current cell and the child
+                    // child is an array (of 8 child) that may be null
+                    CellClass** const realChild = iterArray[idxCell].getCurrentChild();
+                    CellClass* const currentCell = iterArray[idxCell].getCurrentCell();
+                    currentCell->setTargetsChildFalse();
+                    for (int idxChild = 0; idxChild < 8; ++idxChild) {
+                        if (realChild[idxChild] && realChild[idxChild]->hasTargetsChild()) {
+                            currentCell->setTargetsChildTrue();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     template <class NumType>
-    NumType getChunkSize(const NumType inSize) const
-    {
-       if (userChunkSize <= -1) {
-          return FMath::Max(NumType(1), NumType(double(inSize) / double(omp_get_max_threads())));
-       } else if (userChunkSize == 0) {
-          return FMath::Max(NumType(1), inSize / NumType(omp_get_max_threads()*omp_get_max_threads()));
-       } else {
-          return userChunkSize;
-       }
+    NumType getChunkSize(const NumType inSize) const {
+        if(userChunkSize <= -1){
+            return FMath::Max(NumType(1) , NumType(double(inSize)/double(omp_get_max_threads())) );
+        } else if(userChunkSize == 0){
+            return FMath::Max(NumType(1) , inSize/NumType(omp_get_max_threads()*omp_get_max_threads()));
+        } else {
+            return userChunkSize;
+        }
     }
 
     template <class NumType>
-    void setChunkSize(const NumType size)
-    {
-       userChunkSize = size;
+    void setChunkSize(const NumType size) {
+            userChunkSize = size;
     }
 
 protected:
@@ -261,7 +239,7 @@ protected:
         FLOG(computationCounter.tac());
 
         FLOG( counterTime.tac() );
-        FLOG( FLog::Controller << "\tFinished (@Bottom Pass (P2M) = "  << counterTime.elapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Bottom Pass (P2M) = "  << counterTime.elapsed() << " s)\n" );
         FLOG( FLog::Controller << "\t\t Computation : " << computationCounter.elapsed() << " s\n" );
 
     }
@@ -308,11 +286,12 @@ protected:
                     CellClass* potentialChild[8];
                     CellClass** const realChild = iterArray[idxCell].getCurrentChild();
                     CellClass* const currentCell = iterArray[idxCell].getCurrentCell();
+                    int nbChildWithSrc = 0;
                     for(int idxChild = 0 ; idxChild < 8 ; ++idxChild){
                         potentialChild[idxChild] = nullptr;
                         if(realChild[idxChild]){
                             if(realChild[idxChild]->hasSrcChild()){
-                                currentCell->setSrcChildTrue();
+                                nbChildWithSrc += 1;
                                 potentialChild[idxChild] = realChild[idxChild];
                             }
                             if(realChild[idxChild]->hasTargetsChild()){
@@ -320,15 +299,18 @@ protected:
                             }
                         }
                     }
-                    myThreadkernels->M2M( currentCell , potentialChild, idxLevel);
+                    if(nbChildWithSrc){
+                        currentCell->setSrcChildTrue();
+                        myThreadkernels->M2M( currentCell , potentialChild, idxLevel);
+                    }
                 }
             }
             FLOG(computationCounter.tac());
-            FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << "s\n" );
+            FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << " s\n" );
         }
 
         FLOG( counterTime.tac() );
-        FLOG( FLog::Controller << "\tFinished (@Upward Pass (M2M) = "  << counterTime.elapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Upward Pass (M2M) = "  << counterTime.elapsed() << " s)\n" );
         FLOG( FLog::Controller << "\t\t Computation : " << computationCounter.cumulated() << " s\n" );
 
     }
@@ -398,9 +380,9 @@ protected:
                     FLOG(computationCounter.tac());
                 }
                 FLOG(computationCounter.tac());
-                FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << "s\n" );
+                FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << " s\n" );
             }
-            FLOG( FLog::Controller << "\tFinished (@Downward Pass (M2L) = "  << counterTime.tacAndElapsed() << "s)\n" );
+            FLOG( FLog::Controller << "\tFinished (@Downward Pass (M2L) = "  << counterTime.tacAndElapsed() << " s)\n" );
             FLOG( FLog::Controller << "\t\t Computation : " << computationCounter.cumulated() << " s\n" );
         }
 
@@ -456,9 +438,9 @@ protected:
                     }
                 }
                 FLOG(computationCounter.tac());
-                FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << "s\n" );
+                FLOG( FLog::Controller << "\t\t>> Level " << idxLevel << " = "  << counterTimeLevel.tacAndElapsed() << " s\n" );
             }
-            FLOG( FLog::Controller << "\tFinished (@Downward Pass (L2L) = "  << counterTime.tacAndElapsed() << "s)\n" );
+            FLOG( FLog::Controller << "\tFinished (@Downward Pass (L2L) = "  << counterTime.tacAndElapsed() << " s)\n" );
             FLOG( FLog::Controller << "\t\t Computation : " << computationCounter.cumulated() << " s\n" );
         }
 
@@ -512,7 +494,7 @@ protected:
         FLOG(computationCounter.tac());
 
         FLOG( counterTime.tac() );
-        FLOG( FLog::Controller << "\tFinished (@Direct Pass (L2P + P2P) = "  << counterTime.tacAndElapsed() << "s)\n" );
+        FLOG( FLog::Controller << "\tFinished (@Direct Pass (L2P + P2P) = "  << counterTime.tacAndElapsed() << " s)\n" );
         FLOG( FLog::Controller << "\t\t Computation L2P + P2P : " << computationCounter.elapsed() << " s\n" );
 
     }
