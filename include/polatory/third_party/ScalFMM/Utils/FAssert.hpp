@@ -58,9 +58,9 @@ public:
 // Sp error activated
 //////////////////////////////////////////////////////////////
 
-#define FErrorAssertExit(TEST, args...) \
+#define FErrorAssertExit(TEST, ...) \
     if( !(TEST) ){ \
-        FError::Print( args ); \
+        FError::Print( __VA_ARGS__ ); \
 	std::exit(EXIT_FAILURE) ; /*throw std::exception();*/	\
     }
 
@@ -71,7 +71,7 @@ public:
 // Sp error desactivated
 //////////////////////////////////////////////////////////////
 
-#define FErrorAssertExit(TEST, args...) \
+#define FErrorAssertExit(TEST, ...) \
     if( !(TEST) ){}
 
 
@@ -86,7 +86,7 @@ public:
 
 #define FAssert FErrorAssertExit
 
-#define FAssertLF(args...) FAssert(args, SPARSETD_ERROR_LINE, SPARSETD_ERROR_FILE)
+#define FAssertLF(...) FAssert(__VA_ARGS__, SPARSETD_ERROR_LINE, SPARSETD_ERROR_FILE)
 
 #endif //FASSERT_HPP
 
