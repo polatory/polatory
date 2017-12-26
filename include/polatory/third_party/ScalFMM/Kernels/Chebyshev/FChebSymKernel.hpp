@@ -179,7 +179,7 @@ public:
 
 
     void P2M(CellClass* const LeafCell,
-             const ContainerClass* const SourceParticles/*, const int level = AbstractBaseClass::TreeHeight*/)
+             const ContainerClass* const SourceParticles/*, const int level = AbstractBaseClass::TreeHeight*/) override
     {
         // apply Sy
         const FPoint<FReal> LeafCellCenter(AbstractBaseClass::getLeafCellCenter(LeafCell->getCoordinate()));
@@ -191,7 +191,7 @@ public:
 
     void M2M(CellClass* const FRestrict ParentCell,
              const CellClass*const FRestrict *const FRestrict ChildCells,
-             const int /*TreeLevel*/)
+             const int /*TreeLevel*/) override
     {
         for(int idxRhs = 0 ; idxRhs < NVALS ; ++idxRhs){
             // Reset the Parent expansion to zero
@@ -415,7 +415,7 @@ public:
 
     void L2L(const CellClass* const FRestrict ParentCell,
              CellClass* FRestrict *const FRestrict ChildCells,
-             const int /*TreeLevel*/)
+             const int /*TreeLevel*/) override
     {
         for(int idxRhs = 0 ; idxRhs < NVALS ; ++idxRhs){
             // apply Sx
@@ -430,7 +430,7 @@ public:
 
 
     void L2P(const CellClass* const LeafCell,
-             ContainerClass* const TargetParticles)
+             ContainerClass* const TargetParticles) override
     {
         const FPoint<FReal> LeafCellCenter(AbstractBaseClass::getLeafCellCenter(LeafCell->getCoordinate()));
         //      // a) apply Sx
