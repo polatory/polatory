@@ -16,7 +16,7 @@ class normal_estimator {
 public:
   explicit normal_estimator(const geometry::points3d& points);
 
-  const normal_estimator& estimate_with_knn(int k, double plane_factor_threshold = 1.8);
+  const normal_estimator& estimate_with_knn(size_t k, double plane_factor_threshold = 1.8);
 
   const normal_estimator& estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
 

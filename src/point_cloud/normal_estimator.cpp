@@ -16,7 +16,7 @@ normal_estimator::normal_estimator(const geometry::points3d& points)
   , tree_(points, true) {
 }
 
-const normal_estimator& normal_estimator::estimate_with_knn(int k, double plane_factor_threshold) {
+const normal_estimator& normal_estimator::estimate_with_knn(size_t k, double plane_factor_threshold) {
   std::vector<size_t> nn_indices;
   std::vector<double> nn_distances;
 

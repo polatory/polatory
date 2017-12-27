@@ -16,7 +16,7 @@ public:
 
   ~kdtree();
 
-  void knn_search(const geometry::point3d& point, int k,
+  void knn_search(const geometry::point3d& point, size_t k,
                   std::vector<size_t>& indices, std::vector<double>& distances) const;
 
   void radius_search(const geometry::point3d& point, double radius,

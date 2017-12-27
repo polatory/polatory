@@ -23,7 +23,7 @@ TEST(kdtree, trivial) {
   const point3d center(0.0, 0.0, 0.0);
 
   const point3d query_point = center + vector3d(radius, 0.0, 0.0);
-  const int k = 10;
+  const size_t k = 10;
   const auto search_radius = 0.1;
 
   auto points = random_points(sphere3d(center, radius), n_points);
@@ -53,7 +53,7 @@ TEST(kdtree, trivial) {
 
 TEST(kdtree, zero_points) {
   const point3d query_point = point3d::Zero();
-  const int k = 10;
+  const size_t k = 10;
   const auto search_radius = 0.1;
 
   points3d points;

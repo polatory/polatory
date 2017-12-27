@@ -27,7 +27,7 @@ public:
     }
   }
 
-  void knn_search(const geometry::point3d& point, int k,
+  void knn_search(const geometry::point3d& point, size_t k,
                   std::vector<size_t>& indices, std::vector<double>& distances) const {
     flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);
     std::vector<std::vector<size_t>> indices_v;
@@ -71,9 +71,9 @@ kdtree::kdtree(const geometry::points3d& points, bool use_exact_search)
 
 kdtree::~kdtree() = default;
 
-void kdtree::knn_search(const geometry::point3d& point, int k,
+void kdtree::knn_search(const geometry::point3d& point, size_t k,
                         std::vector<size_t>& indices, std::vector<double>& distances) const {
-  if (k <= 0)
+  if (k == 0)
     throw common::invalid_argument("k > 0");
 
   if (!pimpl_) {
