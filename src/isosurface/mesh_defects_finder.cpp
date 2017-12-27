@@ -27,7 +27,7 @@ std::vector<face> mesh_defects_finder::intersecting_faces() const {
 
   std::vector<face> intersect_faces;
 
-  for (int vi = 0; vi < vertices_.size(); vi++) {
+  for (size_t vi = 0; vi < vertices_.size(); vi++) {
     auto vf_range = vf_map.equal_range(vi);
     for (auto vf_it1 = vf_range.first; vf_it1 != vf_range.second; ++vf_it1) {
       auto& f1 = vf_it1->second;
@@ -81,7 +81,7 @@ std::vector<mesh_defects_finder::edge> mesh_defects_finder::non_manifold_edges()
 std::vector<vertex_index> mesh_defects_finder::non_manifold_vertices() const {
   std::vector<face_index_bools> v_fi_bools(vertices_.size());
 
-  for (int fi = 0; fi < faces_.size(); fi++) {
+  for (size_t fi = 0; fi < faces_.size(); fi++) {
     auto& face = faces_[fi];
     v_fi_bools[face[0]].push_back(face_index_bool(fi, false));
     v_fi_bools[face[1]].push_back(face_index_bool(fi, false));
@@ -90,7 +90,7 @@ std::vector<vertex_index> mesh_defects_finder::non_manifold_vertices() const {
 
   std::vector<vertex_index> non_manif_vertices;
 
-  for (int vi = 0; vi < vertices_.size(); vi++) {
+  for (size_t vi = 0; vi < vertices_.size(); vi++) {
     face_index_bools& fi_bools = v_fi_bools[vi];
 
     if (fi_bools.size() == 0) {

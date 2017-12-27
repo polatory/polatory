@@ -16,7 +16,7 @@ using cell_index_difference = int64_t;
 
 using cell_vector = Eigen::Vector3i;
 
-using vertex_index = int;
+using vertex_index = size_t;
 
 using face = std::array<vertex_index, 3>;
 
