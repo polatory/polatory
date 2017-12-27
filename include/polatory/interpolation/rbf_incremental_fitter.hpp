@@ -27,9 +27,9 @@ namespace polatory {
 namespace interpolation {
 
 class rbf_incremental_fitter {
-  const size_t min_n_points_for_incremental_fitting = 10000;
-  const double initial_points_ratio = 0.01;
-  const double incremental_points_ratio = 0.1;
+  static constexpr size_t min_n_points_for_incremental_fitting = 10000;
+  static constexpr double initial_points_ratio = 0.01;
+  static constexpr double incremental_points_ratio = 0.1;
 
 public:
   rbf_incremental_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,

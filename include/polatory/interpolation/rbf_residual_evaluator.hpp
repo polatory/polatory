@@ -23,7 +23,7 @@ namespace polatory {
 namespace interpolation {
 
 class rbf_residual_evaluator {
-  const int chunk_size = 1024;
+  static constexpr int chunk_size = 1024;
 
 public:
   rbf_residual_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,

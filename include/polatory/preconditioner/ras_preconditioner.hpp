@@ -25,8 +25,8 @@ namespace preconditioner {
 
 class ras_preconditioner : public krylov::linear_operator {
   static constexpr int Order = 6;
-  static constexpr const double coarse_ratio = 0.125;
-  static constexpr const size_t n_coarsest_points = 1024;
+  static constexpr double coarse_ratio = 0.125;
+  static constexpr size_t n_coarsest_points = 1024;
 
 public:
   ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
