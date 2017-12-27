@@ -25,35 +25,39 @@ TEST(empirical_variogram, trivial) {
     d * point3d(-std::sqrt(3.0) / 6.0, -1.0 / 2.0, 0.0),
     d * point3d(0.0, 0.0, std::sqrt(6.0) / 3.0);
 
-  valuesd values(n_points);
-  values << 0.0, 1.0, 2.0, 3.0;
+  valuesd values = valuesd::Random(n_points);
+  valuesd centered = values.array() - values.mean();
+  double variance = centered.dot(centered) / static_cast<double>(n_points - 1);
 
-  int n_bins = 5;
   double bin_width = 0.2;
-  int filled_bin = std::floor(d / bin_width);
+  int n_bins = 5;
 
   empirical_variogram variog(points, values, bin_width, n_bins);
 
-  const auto bin_num_pairs = variog.bin_num_pairs();
-  for (int bin = 0; bin < n_bins; bin++) {
-    if (bin == filled_bin) {
-      ASSERT_EQ(6u, bin_num_pairs[bin]);
-    } else {
-      ASSERT_EQ(0u, bin_num_pairs[bin]);
-    }
-  }
-
   const auto bin_distance = variog.bin_distance();
-  ASSERT_DOUBLE_EQ(d, bin_distance[filled_bin]);
+  ASSERT_EQ(1u, bin_distance.size());
+  ASSERT_DOUBLE_EQ(d, bin_distance[0]);
 
-  const auto bin_variance = variog.bin_variance();
-  double variance_expected =
-    (std::pow(values(0) - values(1), 2.0) +
-     std::pow(values(0) - values(2), 2.0) +
-     std::pow(values(0) - values(3), 2.0) +
-     std::pow(values(1) - values(2), 2.0) +
-     std::pow(values(1) - values(3), 2.0) +
-     std::pow(values(2) - values(3), 2.0)
-    ) / (2.0 * 6.0);
-  ASSERT_DOUBLE_EQ(variance_expected, bin_variance[filled_bin]);
+  const auto bin_gamma = variog.bin_gamma();
+  ASSERT_EQ(1u, bin_gamma.size());
+  ASSERT_DOUBLE_EQ(variance, bin_gamma[0]);
+
+  const auto bin_num_pairs = variog.bin_num_pairs();
+  ASSERT_EQ(1u, bin_num_pairs.size());
+  ASSERT_EQ(6u, bin_num_pairs[0]);
+}
+
+TEST(empirical_variogram, zero_points) {
+  size_t n_points = 0;
+  points3d points(n_points, 3);
+  valuesd values(n_points);
+
+  double bin_width = 0.2;
+  int n_bins = 5;
+
+  empirical_variogram variog(points, values, bin_width, n_bins);
+
+  ASSERT_EQ(0u, variog.bin_distance().size());
+  ASSERT_EQ(0u, variog.bin_gamma().size());
+  ASSERT_EQ(0u, variog.bin_num_pairs().size());
 }

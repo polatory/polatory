@@ -16,17 +16,17 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
   auto n_params = cov.num_parameters();
   params_ = cov.parameters();
 
-  auto n_bins = emp_variog.num_bins();
   auto& bin_distance = emp_variog.bin_distance();
+  auto& bin_gamma = emp_variog.bin_gamma();
   auto& bin_num_pairs = emp_variog.bin_num_pairs();
-  auto& bin_variance = emp_variog.bin_variance();
+  auto n_bins = bin_num_pairs.size();
 
   ceres::Problem problem;
   for (size_t i = 0; i < n_bins; i++) {
     if (bin_num_pairs[i] == 0)
       continue;
 
-    auto cost_fn = cov.cost_function(bin_num_pairs[i], bin_distance[i], bin_variance[i], weight);
+    auto cost_fn = cov.cost_function(bin_num_pairs[i], bin_distance[i], bin_gamma[i], weight);
     problem.AddResidualBlock(cost_fn, nullptr, params_.data());
   }
 

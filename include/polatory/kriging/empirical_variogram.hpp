@@ -17,19 +17,14 @@ public:
 
   const std::vector<double>& bin_distance() const;
 
+  const std::vector<double>& bin_gamma() const;
+
   const std::vector<size_t>& bin_num_pairs() const;
 
-  const std::vector<double>& bin_variance() const;
-
-  size_t num_bins() const;
-
 private:
-  double bin_width_;
-  size_t n_bins_;
-
   std::vector<double> distance_;
+  std::vector<double> gamma_;
   std::vector<size_t> num_pairs_;
-  std::vector<double> variance_;
 };
 
 }  // namespace kriging
