@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <polatory/numeric/ftz_context.hpp>
+#include <polatory/numeric/scoped_ftz.hpp>
 
 namespace polatory {
 
 #ifdef POLATORY_FTZ
-const polatory::numeric::ftz_context program_wide_ftz_context;
+const numeric::scoped_ftz static_ftz;
 #endif
 
 }

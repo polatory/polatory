@@ -12,16 +12,16 @@
 namespace polatory {
 namespace numeric {
 
-class ftz_context : private boost::noncopyable {
+class scoped_ftz : private boost::noncopyable {
 public:
-  ftz_context()
+  scoped_ftz()
     : ftz_mode_backup_(_MM_GET_FLUSH_ZERO_MODE())
     , daz_mode_backup_(_MM_GET_DENORMALS_ZERO_MODE()) {
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
   }
 
-  ~ftz_context() {
+  ~scoped_ftz() {
     _MM_SET_FLUSH_ZERO_MODE(ftz_mode_backup_);
     _MM_SET_DENORMALS_ZERO_MODE(daz_mode_backup_);
   }
