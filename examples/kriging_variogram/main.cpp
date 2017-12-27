@@ -26,13 +26,13 @@ int main(int argc, const char *argv[]) {
 
     empirical_variogram emp_variog(points, values, opts.bin_width, opts.n_bins);
     const auto bin_distance = emp_variog.bin_distance();
+    const auto bin_gamma = emp_variog.bin_gamma();
     const auto bin_num_pairs = emp_variog.bin_num_pairs();
-    const auto bin_variance = emp_variog.bin_variance();
 
     std::cout << "Empirical variogram:" << std::endl
               << std::setw(12) << "n_pairs" << std::setw(12) << "distance" << std::setw(12) << "gamma" << std::endl;
-    for (size_t bin = 0; bin < bin_distance.size(); bin++) {
-      std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin] << std::setw(12) <<  bin_variance[bin] << std::endl;
+    for (size_t bin = 0; bin < bin_num_pairs.size(); bin++) {
+      std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin] << std::setw(12) <<  bin_gamma[bin] << std::endl;
     }
 
     cov_quasi_spherical9 variog({ opts.psill, opts.range, opts.nugget });

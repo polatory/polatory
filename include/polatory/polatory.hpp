@@ -16,6 +16,7 @@
 #include <polatory/kriging/cross_validation.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/kriging/weight_functions.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
