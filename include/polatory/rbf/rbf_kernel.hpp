@@ -62,7 +62,8 @@ public:
     throw common::not_supported("parameter_upper_bounds");
   }
 
-  virtual ceres::CostFunction *cost_function(size_t n, double h, double gamma, weight_function weight) const {
+  virtual ceres::CostFunction *cost_function(size_t n_pairs, double distance, double gamma,
+                                             weight_function weight_fn) const {
     throw common::not_supported("cost_function");
   }
 

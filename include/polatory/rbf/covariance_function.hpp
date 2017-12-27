@@ -56,31 +56,32 @@ public:
 
 #define POLATORY_DEFINE_COST_FUNCTION(RBF, NPARAMS)                           \
 struct residual {                                                             \
-  residual(size_t n, double h, double gamma, weight_function weight)          \
-    : n_(n)                                                                   \
-    , h_(h)                                                                   \
+  residual(size_t n_pairs, double distance, double gamma, weight_function weight_fn) \
+    : n_pairs_(n_pairs)                                                       \
+    , distance_(distance)                                                     \
     , gamma_(gamma)                                                           \
-    , weight_(weight) {}                                                      \
+    , weight_fn_(weight_fn) {}                                                \
                                                                               \
   template <class T>                                                          \
   bool operator()(const T *params, T *residual) const {                       \
     auto sill = params[0] + params[2];                                        \
-    auto model_gamma = sill - RBF::evaluate(h_, params);                      \
-    residual[0] = weight_(n_, h_, model_gamma) * (gamma_ - model_gamma);      \
+    auto model_gamma = sill - RBF::evaluate(distance_, params);               \
+    residual[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma); \
                                                                               \
     return true;                                                              \
   }                                                                           \
                                                                               \
 private:                                                                      \
-  const size_t n_;                                                            \
-  const double h_;                                                            \
+  const size_t n_pairs_;                                                      \
+  const double distance_;                                                     \
   const double gamma_;                                                        \
-  const weight_function weight_;                                              \
+  const weight_function weight_fn_;                                           \
 };                                                                            \
                                                                               \
-ceres::CostFunction *cost_function(size_t n, double h, double gamma, weight_function weight) const override { \
+ceres::CostFunction *cost_function(size_t n_pairs, double distance, double gamma, \
+                                   weight_function weight_fn) const override { \
   return new ceres::NumericDiffCostFunction<residual, ceres::CENTRAL, 1, NPARAMS>( \
-    new residual(n, h, gamma, weight)                                         \
+    new residual(n_pairs, distance, gamma, weight_fn)                         \
   );                                                                          \
 }
 

@@ -10,7 +10,7 @@ namespace polatory {
 namespace kriging {
 
 variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, const rbf::rbf& rbf,
-                                     rbf::weight_function weight) {
+                                     rbf::weight_function weight_fn) {
   auto& cov = rbf.get();
 
   auto n_params = cov.num_parameters();
@@ -26,7 +26,7 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
     if (bin_num_pairs[i] == 0)
       continue;
 
-    auto cost_fn = cov.cost_function(bin_num_pairs[i], bin_distance[i], bin_gamma[i], weight);
+    auto cost_fn = cov.cost_function(bin_num_pairs[i], bin_distance[i], bin_gamma[i], weight_fn);
     problem.AddResidualBlock(cost_fn, nullptr, params_.data());
   }
 
