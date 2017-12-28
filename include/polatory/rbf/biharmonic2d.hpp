@@ -18,6 +18,10 @@ public:
     return std::make_shared<biharmonic2d>(parameters());
   }
 
+  int cpd_order() const override {
+    return 2;
+  }
+
   static double evaluate(double r, const double *params) {
     auto slope = params[0];
 
@@ -49,10 +53,6 @@ public:
 
   double nugget() const override {
     return parameters()[1];
-  }
-
-  int order_of_cpd() const override {
-    return 2;
   }
 };
 

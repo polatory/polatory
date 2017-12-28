@@ -30,6 +30,9 @@ public:
 
   virtual std::shared_ptr<rbf_kernel> clone() const = 0;
 
+  // The order of conditional positive definiteness.
+  virtual int cpd_order() const = 0;
+
   virtual double evaluate(double r) const = 0;
 
   virtual void evaluate_gradient(
@@ -40,9 +43,6 @@ public:
   virtual double nugget() const {
     return 0.0;
   }
-
-  // The order of conditional positive definiteness.
-  virtual int order_of_cpd() const = 0;
 
   const std::vector<double>& parameters() const {
     return params_;

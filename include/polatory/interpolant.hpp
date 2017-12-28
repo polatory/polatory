@@ -28,8 +28,8 @@ public:
     : rbf_(rbf)
     , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree) {
-    if (poly_degree < rbf.get().order_of_cpd() - 1 || poly_degree > 2)
-      throw common::invalid_argument("rbf.get().order_of_cpd() - 1 <= poly_degree <= 2");
+    if (poly_degree < rbf.get().cpd_order() - 1 || poly_degree > 2)
+      throw common::invalid_argument("rbf.get().cpd_order() - 1 <= poly_degree <= 2");
   }
 
   const geometry::points3d& centers() const {

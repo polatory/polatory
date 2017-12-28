@@ -17,24 +17,12 @@ class covariance_function : public rbf_kernel {
 public:
   using rbf_kernel::rbf_kernel;
 
-  double nugget() const override {
-    return parameters()[2];
-  }
-
-  int order_of_cpd() const override {
+  int cpd_order() const override {
     return 0;
   }
 
-  double partial_sill() const {
-    return parameters()[0];
-  }
-
-  double range() const {
-    return parameters()[1];
-  }
-
-  double sill() const {
-    return partial_sill() + nugget();
+  double nugget() const override {
+    return parameters()[2];
   }
 
   size_t num_parameters() const override {
@@ -51,6 +39,18 @@ public:
                                                    std::numeric_limits<double>::infinity(),
                                                    std::numeric_limits<double>::infinity() };
     return upper_bounds;
+  }
+
+  double partial_sill() const {
+    return parameters()[0];
+  }
+
+  double range() const {
+    return parameters()[1];
+  }
+
+  double sill() const {
+    return partial_sill() + nugget();
   }
 };
 
