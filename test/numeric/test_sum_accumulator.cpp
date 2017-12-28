@@ -11,8 +11,8 @@ namespace {
 
 template <class Accumulator>
 void test_sum_accumulator() {
-  auto accum = Accumulator();
-  for (int i = 0; i < 1000000; i++) {
+  Accumulator accum;
+  for (size_t i = 0; i < 1000000; i++) {
     accum += 0.1;
   }
   ASSERT_DOUBLE_EQ(1e5, accum.get());
