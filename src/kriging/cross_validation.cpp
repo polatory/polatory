@@ -19,10 +19,13 @@ namespace kriging {
 common::valuesd k_fold_cross_validation(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                                         const geometry::points3d& points, const common::valuesd& values,
                                         double absolute_tolerance,
-                                        int k) {
-  auto n_points = points.rows();
-  if (k <= 0 || k > n_points)
-    throw common::invalid_argument("0 < k <= points.rows()");
+                                        size_t k) {
+  size_t n_points = points.rows();
+  if (n_points < 2)
+    throw common::invalid_argument("points.row() >= 2");
+
+  if (k < 2 || k > n_points)
+    throw common::invalid_argument("2 <= k <= points.rows()");
 
   std::random_device rd;
   std::mt19937 gen(rd());

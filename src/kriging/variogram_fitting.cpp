@@ -6,6 +6,8 @@
 
 #include <ceres/ceres.h>
 
+#include <polatory/common/exception.hpp>
+
 namespace polatory {
 namespace kriging {
 
@@ -20,6 +22,9 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
   auto& bin_gamma = emp_variog.bin_gamma();
   auto& bin_num_pairs = emp_variog.bin_num_pairs();
   auto n_bins = bin_num_pairs.size();
+
+  if (n_bins < n_params)
+    throw common::invalid_argument("n_bins >= n_params");
 
   ceres::Problem problem;
   for (size_t i = 0; i < n_bins; i++) {

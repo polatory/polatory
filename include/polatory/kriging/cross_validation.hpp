@@ -12,7 +12,7 @@ namespace kriging {
 common::valuesd k_fold_cross_validation(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
                                         const geometry::points3d& points, const common::valuesd& values,
                                         double absolute_tolerance,
-                                        int k);
+                                        size_t k);
 
 }  // namespace kriging
 }  // namespace polatory

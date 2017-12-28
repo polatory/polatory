@@ -24,7 +24,7 @@ sdf_data_generator::sdf_data_generator(
     throw common::invalid_argument("min_distance <= max_distance");
 
   if (multiplication <= 1.0 || multiplication > 3.0)
-    throw common::invalid_argument("ratio > 1.0 && ratio <= 3.0");
+    throw common::invalid_argument("1.0 < ratio <= 3.0");
 
   kdtree tree(points, true);
 
