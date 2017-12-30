@@ -5,7 +5,7 @@
 #include <climits>
 #include <sstream>
 
-#include "Utils/FBlas.hpp"
+#include "../../Utils/FBlas.hpp"
 
 
 #include "FChebTensor.hpp"
@@ -13,7 +13,7 @@
 
 #include "FChebM2LHandler.hpp"
 
-#include "Utils/FAca.hpp"
+#include "../../Utils/FAca.hpp"
 
 
 /**

@@ -5,10 +5,10 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "Utils/FPoint.hpp"
-#include "Utils/FNoCopyable.hpp"
-#include "Utils/FMath.hpp"
-#include "Utils/FGlobal.hpp"
+#include "../../Utils/FPoint.hpp"
+#include "../../Utils/FNoCopyable.hpp"
+#include "../../Utils/FMath.hpp"
+#include "../../Utils/FGlobal.hpp"
 
 
 // probably not extendable :)

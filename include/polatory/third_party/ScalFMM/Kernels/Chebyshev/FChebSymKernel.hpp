@@ -2,9 +2,9 @@
 #define FCHEBSYMKERNEL_HPP
 // See LICENCE file at project root
 
-#include "Utils/FGlobal.hpp"
+#include "../../Utils/FGlobal.hpp"
 
-#include "Utils/FSmartPointer.hpp"
+#include "../../Utils/FSmartPointer.hpp"
 
 #include "FAbstractChebKernel.hpp"
 #include "FChebInterpolator.hpp"

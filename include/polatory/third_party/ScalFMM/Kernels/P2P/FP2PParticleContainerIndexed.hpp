@@ -5,7 +5,7 @@
 #include "../../Containers/FVector.hpp"
 
 #include "FP2PParticleContainer.hpp"
-#include "Components/FParticleType.hpp"
+#include "../../Components/FParticleType.hpp"
 
 template<class FReal, int NRHS = 1, int NLHS = 1, int NVALS = 1>
 class FP2PParticleContainerIndexed : public FP2PParticleContainer<FReal, NRHS,NLHS,NVALS> {

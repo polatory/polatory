@@ -9,12 +9,12 @@
 #include <fstream>
 #include <typeinfo>
 
-#include "Utils/FBlas.hpp"
-#include "Utils/FTic.hpp"
+#include "../../Utils/FBlas.hpp"
+#include "../../Utils/FTic.hpp"
 
 #include "FChebTensor.hpp"
 
-#include "Utils/FSvd.hpp"
+#include "../../Utils/FSvd.hpp"
 
 template <class FReal, int ORDER>
 unsigned int Compress(const FReal epsilon, const unsigned int ninteractions,

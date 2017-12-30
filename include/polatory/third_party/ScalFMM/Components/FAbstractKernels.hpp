@@ -3,9 +3,9 @@
 #define FABSTRACTKERNELS_HPP
 
 
-#include "Utils/FGlobal.hpp"
-#include "Utils/FLog.hpp"
-#include "Containers/FTreeCoordinate.hpp"
+#include "../Utils/FGlobal.hpp"
+#include "../Utils/FLog.hpp"
+#include "../Containers/FTreeCoordinate.hpp"
 
 /**
 * @author Berenger Bramas (berenger.bramas@inria.fr)

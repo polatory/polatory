@@ -67,8 +67,6 @@ add_definitions(
 
 include_directories(
     include
-    include/polatory/third_party
-    include/polatory/third_party/ScalFMM
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_ROOT}/include

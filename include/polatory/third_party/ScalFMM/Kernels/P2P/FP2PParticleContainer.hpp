@@ -2,7 +2,7 @@
 #ifndef FP2PPARTICLECONTAINER_HPP
 #define FP2PPARTICLECONTAINER_HPP
 
-#include "Components/FBasicParticleContainer.hpp"
+#include "../../Components/FBasicParticleContainer.hpp"
 
 template<class FReal, int NRHS = 1, int NLHS = 1, int NVALS = 1>
 class FP2PParticleContainer : public FBasicParticleContainer<FReal, NVALS*(NRHS+4*NLHS), FReal> {

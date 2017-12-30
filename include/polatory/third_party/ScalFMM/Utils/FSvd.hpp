@@ -4,7 +4,7 @@
 
 #include "FGlobal.hpp"
 
-#include "Kernels/Chebyshev/FChebTensor.hpp" 
+#include "../Kernels/Chebyshev/FChebTensor.hpp"
 
 
 /**
