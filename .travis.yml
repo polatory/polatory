@@ -20,7 +20,7 @@ before_install:
 install:
 # Intel OpenMP (for building with Clang)
   - if [ "$CXX" == "clang++" ]; then
-      sudo apt-get install -y libiomp-dev
+      sudo apt-get install -y libiomp-dev;
     fi
 # Intel MKL
   - sudo apt-get install -y intel-mkl-64bit-2018.1-038
