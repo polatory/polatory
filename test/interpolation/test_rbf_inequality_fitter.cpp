@@ -12,15 +12,50 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
+#include <polatory/rbf/biharmonic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
+
+#include "sample_data.hpp"
 
 using polatory::common::take_rows;
 using polatory::common::valuesd;
-using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
+using polatory::rbf::biharmonic;
 using polatory::rbf::cov_exponential;
+
+TEST(rbf_inequality_fitter, inequality_only) {
+  const size_t n_points = 4096;
+  const int poly_dimension = 3;
+  const int poly_degree = 0;
+  const double absolute_tolerance = 1e-4;
+
+  points3d points;
+  valuesd values;
+  std::tie(points, values) = sample_numerical_data(n_points);
+
+  valuesd values_lb = values.array() - 0.5;
+  valuesd values_ub = values.array() + 0.5;
+  values = values.Constant(n_points, std::numeric_limits<double>::quiet_NaN());
+
+  biharmonic rbf({ 1.0, 0.0 });
+
+  std::vector<size_t> indices;
+  valuesd weights;
+
+  rbf_inequality_fitter fitter(rbf, poly_dimension, poly_degree, points);
+  std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
+
+  rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, take_rows(points, indices));
+  eval.set_weights(weights);
+  valuesd values_fit = eval.evaluate_points(points);
+
+  for (size_t i = 0; i < n_points; i++) {
+    ASSERT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
+    ASSERT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
+  }
+}
 
 // Example problem taken from
 //   Kostov, C. & Dubrule, O. Math Geol (1986) 18: 53. https://doi.org/10.1007/BF00897655
@@ -44,16 +79,16 @@ TEST(rbf_inequality_fitter, kostov86) {
     8, nan, nan, nan, 8,
     3, nan, nan, 6, nan;
 
-  valuesd values_lower(n_points);
-  values_lower <<
+  valuesd values_lb(n_points);
+  values_lb <<
     nan, 6, nan, 2, nan,
     2, 9, 4, 3, 3,
     nan, nan, 7, nan, 4,
     nan, nan, nan, 5, nan,
     nan, 9, 5, nan, nan;
 
-  valuesd values_upper(n_points);
-  values_upper <<
+  valuesd values_ub(n_points);
+  values_ub <<
     nan, nan, nan, 4, nan,
     4, nan, nan, nan, nan,
     nan, 1, nan, nan, nan,
@@ -66,7 +101,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   valuesd weights;
 
   rbf_inequality_fitter fitter(rbf, poly_dimension, poly_degree, points);
-  std::tie(indices, weights) = fitter.fit(values, values_lower, values_upper, absolute_tolerance);
+  std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
   rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, take_rows(points, indices));
   eval.set_weights(weights);
@@ -76,11 +111,11 @@ TEST(rbf_inequality_fitter, kostov86) {
     if (!std::isnan(values(i))) {
       ASSERT_LT(std::abs(values_fit(i) - values(i)), absolute_tolerance);
     } else {
-      if (!std::isnan(values_lower(i))) {
-        ASSERT_GT(values_fit(i), values_lower(i) - absolute_tolerance);
+      if (!std::isnan(values_lb(i))) {
+        ASSERT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
       }
-      if (!std::isnan(values_upper(i))) {
-        ASSERT_LT(values_fit(i), values_upper(i) + absolute_tolerance);
+      if (!std::isnan(values_ub(i))) {
+        ASSERT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
       }
     }
   }

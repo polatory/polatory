@@ -3,6 +3,7 @@
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <set>
@@ -53,6 +54,9 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
   common::valuesd center_weights;
 
   while (true) {
+    std::cout << "Active lower bounds: " << active_idcs_lb.size() << " / " << idcs_lb.size() << std::endl;
+    std::cout << "Active upper bounds: " << active_idcs_ub.size() << " / " << idcs_ub.size() << std::endl;
+
     std::vector<size_t> active_ineq_idcs;
     std::set_union(active_idcs_lb.begin(), active_idcs_lb.end(),
                    active_idcs_ub.begin(), active_idcs_ub.end(),
@@ -61,41 +65,46 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
     center_idcs.resize(n_eq);
     center_idcs.insert(center_idcs.end(), active_ineq_idcs.begin(), active_ineq_idcs.end());
 
-    auto tree_height = fmm::fmm_tree_height(center_idcs.size());
-    if (tree_height != last_tree_height) {
-      solver = std::make_unique<rbf_solver>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
-      res_eval = std::make_unique<rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
-      last_tree_height = tree_height;
-    }
-
-    auto center_points = common::take_rows(points_, center_idcs);
-
-    auto center_values = common::take_rows(values, center_idcs);
-    for (size_t i = n_eq; i < center_idcs.size(); i++) {
-      auto idx = center_idcs[i];
-      if (active_idcs_lb.count(idx)) {
-        center_values(i) = values_lb(idx);
-      } else {
-        center_values(i) = values_ub(idx);
+    common::valuesd values_fit;
+    if (center_idcs.size() > 0) {
+      auto tree_height = fmm::fmm_tree_height(center_idcs.size());
+      if (tree_height != last_tree_height) {
+        solver = std::make_unique<rbf_solver>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
+        res_eval = std::make_unique<rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
+        last_tree_height = tree_height;
       }
+
+      auto center_points = common::take_rows(points_, center_idcs);
+
+      auto center_values = common::take_rows(values, center_idcs);
+      for (size_t i = n_eq; i < center_idcs.size(); i++) {
+        auto idx = center_idcs[i];
+        if (active_idcs_lb.count(idx)) {
+          center_values(i) = values_lb(idx);
+        } else {
+          center_values(i) = values_ub(idx);
+        }
+      }
+
+      center_weights = common::take_rows(weights, center_idcs);
+      center_weights.conservativeResize(center_idcs.size() + n_poly_basis_);
+      center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
+
+      solver->set_points(center_points);
+      center_weights = solver->solve(center_values, absolute_tolerance, center_weights);
+
+      for (size_t i = 0; i < center_idcs.size(); i++) {
+        auto idx = center_idcs[i];
+        weights(idx) = center_weights(i);
+      }
+      weights.tail(n_poly_basis_) = center_weights.tail(n_poly_basis_);
+
+      res_eval->set_source_points(center_points);
+      res_eval->set_weights(center_weights);
+      values_fit = res_eval->evaluate_points(ineq_points);
+    } else {
+      values_fit = common::valuesd::Zero(ineq_idcs.size());
     }
-
-    center_weights = common::take_rows(weights, center_idcs);
-    center_weights.conservativeResize(center_idcs.size() + n_poly_basis_);
-    center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
-
-    solver->set_points(center_points);
-    center_weights = solver->solve(center_values, absolute_tolerance, center_weights);
-
-    for (size_t i = 0; i < center_idcs.size(); i++) {
-      auto idx = center_idcs[i];
-      weights(idx) = center_weights(i);
-    }
-    weights.tail(n_poly_basis_) = center_weights.tail(n_poly_basis_);
-
-    res_eval->set_source_points(center_points);
-    res_eval->set_weights(center_weights);
-    auto values_fit = res_eval->evaluate_points(ineq_points);
 
     size_t i = 0;
     bool active_set_changed = false;

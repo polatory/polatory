@@ -16,7 +16,7 @@
 #include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/biharmonic.hpp>
 
-#include "test_points_values.hpp"
+#include "sample_data.hpp"
 
 using polatory::common::take_rows;
 using polatory::common::valuesd;
@@ -31,7 +31,7 @@ namespace {
 void test_poly_degree(int poly_degree) {
   points3d points;
   valuesd values;
-  std::tie(points, values) = test_points_values(10000);
+  std::tie(points, values) = sample_sdf_data(10000);
 
   size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
   double absolute_tolerance = 1e-4;
