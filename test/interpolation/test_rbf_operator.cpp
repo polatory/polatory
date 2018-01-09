@@ -38,7 +38,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
   valuesd direct_op_weights = direct_eval.evaluate() + rbf.nugget() * weights.head(n_points);
   valuesd op_weights = op(weights);
 
-  ASSERT_EQ(n_points + n_poly_basis, op_weights.size());
+  EXPECT_EQ(n_points + n_poly_basis, op_weights.size());
 
   auto max_residual = (op_weights.head(n_points) - direct_op_weights).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);

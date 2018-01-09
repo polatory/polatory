@@ -36,25 +36,25 @@ TEST(domain_divider, trivial) {
     }
 
     for (size_t i = 0; i < n_poly_points; i++) {
-      ASSERT_EQ(poly_point_idcs[i], d.point_indices[i]);
+      EXPECT_EQ(poly_point_idcs[i], d.point_indices[i]);
     }
 
     auto domain_points = d.point_indices;
     std::sort(domain_points.begin(), domain_points.end());
-    ASSERT_EQ(domain_points.end(), std::unique(domain_points.begin(), domain_points.end()));
+    EXPECT_EQ(domain_points.end(), std::unique(domain_points.begin(), domain_points.end()));
   }
-  ASSERT_EQ(n_points, inner_points.size());
+  EXPECT_EQ(n_points, inner_points.size());
 
   std::sort(inner_points.begin(), inner_points.end());
-  ASSERT_EQ(inner_points.end(), std::unique(inner_points.begin(), inner_points.end()));
+  EXPECT_EQ(inner_points.end(), std::unique(inner_points.begin(), inner_points.end()));
 
   auto coarse_ratio = 0.1;
   auto coarse_point_idcs = divider.choose_coarse_points(coarse_ratio);
-  ASSERT_LE(0.95 * coarse_ratio * n_points, coarse_point_idcs.size());
-  ASSERT_GE(1.05 * coarse_ratio * n_points, coarse_point_idcs.size());
+  EXPECT_LE(0.95 * coarse_ratio * n_points, coarse_point_idcs.size());
+  EXPECT_GE(1.05 * coarse_ratio * n_points, coarse_point_idcs.size());
 
   for (size_t i = 0; i < n_poly_points; i++) {
-    ASSERT_EQ(poly_point_idcs[i], coarse_point_idcs[i]);
+    EXPECT_EQ(poly_point_idcs[i], coarse_point_idcs[i]);
   }
 
   // TODO(mizuno): Check at least one coarse point is chosen from each domain.

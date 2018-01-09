@@ -16,8 +16,8 @@ TEST(zip_sort, sort_by_first) {
 
   zip_sort(a.begin(), a.end(), b.begin(), b.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 
-  ASSERT_EQ(a_sorted, a);
-  ASSERT_EQ(b_sorted, b);
+  EXPECT_EQ(a_sorted, a);
+  EXPECT_EQ(b_sorted, b);
 }
 
 TEST(zip_sort, sort_by_second) {
@@ -28,6 +28,6 @@ TEST(zip_sort, sort_by_second) {
 
   zip_sort(a.begin(), a.end(), b.begin(), b.end(), [](const auto& a, const auto& b) { return a.second < b.second; });
 
-  ASSERT_EQ(a_sorted, a);
-  ASSERT_EQ(b_sorted, b);
+  EXPECT_EQ(a_sorted, a);
+  EXPECT_EQ(b_sorted, b);
 }

@@ -65,7 +65,7 @@ TEST(rmt, face_edges) {
     auto& v2 = NeighborVectors[e2];
 
     auto area = (v1 - v0).cross(v2 - v0).norm();
-    ASSERT_DOUBLE_EQ(2.0 * std::sqrt(2.0), area);
+    EXPECT_DOUBLE_EQ(2.0 * std::sqrt(2.0), area);
   }
 }
 
@@ -85,7 +85,7 @@ TEST(rmt, lattice) {
     auto cv = lat.cell_vector_from_index(ci);
     auto cp = lat.point_from_cell_vector(cv);
 
-    ASSERT_LT((p - cp).norm(), std::sqrt(2.0) * resolution);
+    EXPECT_LT((p - cp).norm(), std::sqrt(2.0) * resolution);
   }
 }
 
@@ -97,9 +97,9 @@ TEST(rmt, neighbor_edge_pairs) {
       auto& vb = NeighborVectors[pair.first];
       auto& vc = NeighborVectors[pair.second];
 
-      ASSERT_TRUE(va.dot(vb) > 0.0);
-      ASSERT_TRUE(va.dot(vc) > 0.0);
-      ASSERT_NEAR(0.0, vb.cross(va).cross(va.cross(vc)).norm(), 1e-15);
+      EXPECT_TRUE(va.dot(vb) > 0.0);
+      EXPECT_TRUE(va.dot(vc) > 0.0);
+      EXPECT_NEAR(0.0, vb.cross(va).cross(va.cross(vc)).norm(), 1e-15);
     }
   }
 }
@@ -108,7 +108,7 @@ TEST(rmt, neighbors) {
   for (size_t i = 0; i < NeighborMasks.size(); i++) {
     auto mask = NeighborMasks[i];
     auto count = bit_count(mask);
-    ASSERT_TRUE(count == 4 || count == 6);
+    EXPECT_TRUE(count == 4 || count == 6);
 
     auto vi = NeighborVectors[i];
     for (int k = 0; k < count; k++) {
@@ -116,9 +116,9 @@ TEST(rmt, neighbors) {
       auto vj = NeighborVectors[j];
       double vijsq = (vj - vi).squaredNorm();
       if (vijsq > 3.5) {
-        ASSERT_DOUBLE_EQ(4.0, vijsq);
+        EXPECT_DOUBLE_EQ(4.0, vijsq);
       } else {
-        ASSERT_DOUBLE_EQ(3.0, vijsq);
+        EXPECT_DOUBLE_EQ(3.0, vijsq);
       }
     }
   }
@@ -130,14 +130,14 @@ TEST(rmt, neighbors) {
       + PrimitiveVectors[2] * NeighborCellVectors[ei][2];
 
     for (int i = 0; i < 3; i++) {
-      ASSERT_NEAR(NeighborVectors[ei](i), computed(i), 1e-15);
+      EXPECT_NEAR(NeighborVectors[ei](i), computed(i), 1e-15);
     }
   }
 }
 
 TEST(rmt, opposite_edge) {
   for (edge_index ei = 0; ei < 14; ei++) {
-    ASSERT_EQ(-NeighborVectors[ei], NeighborVectors[OppositeEdge[ei]]);
+    EXPECT_EQ(-NeighborVectors[ei], NeighborVectors[OppositeEdge[ei]]);
   }
 }
 
@@ -146,9 +146,9 @@ TEST(rmt, primitive_vectors) {
     for (int j = 0; j < 3; j++) {
       auto dot = PrimitiveVectors[i].dot(ReciprocalPrimitiveVectors[j]);
       if (i == j) {
-        ASSERT_NEAR(1.0, dot, 1e-15);
+        EXPECT_NEAR(1.0, dot, 1e-15);
       } else {
-        ASSERT_NEAR(0.0, dot, 1e-15);
+        EXPECT_NEAR(0.0, dot, 1e-15);
       }
     }
   }

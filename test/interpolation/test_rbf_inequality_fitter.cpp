@@ -52,8 +52,8 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_fit = eval.evaluate_points(points);
 
   for (size_t i = 0; i < n_points; i++) {
-    ASSERT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
-    ASSERT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
+    EXPECT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
+    EXPECT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
   }
 }
 
@@ -109,13 +109,13 @@ TEST(rbf_inequality_fitter, kostov86) {
 
   for (size_t i = 0; i < n_points; i++) {
     if (!std::isnan(values(i))) {
-      ASSERT_LT(std::abs(values_fit(i) - values(i)), absolute_tolerance);
+      EXPECT_LT(std::abs(values_fit(i) - values(i)), absolute_tolerance);
     } else {
       if (!std::isnan(values_lb(i))) {
-        ASSERT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
+        EXPECT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
       }
       if (!std::isnan(values_ub(i))) {
-        ASSERT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
+        EXPECT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
       }
     }
   }

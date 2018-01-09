@@ -26,5 +26,5 @@ TEST(bbox3d, from_points) {
   point3d max = points.colwise().maxCoeff();
   auto bbox_expected = bbox3d(min, max);
 
-  ASSERT_EQ(bbox_expected, bbox);
+  EXPECT_EQ(bbox_expected, bbox);
 }

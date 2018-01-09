@@ -24,7 +24,7 @@ TEST(affine_transform3d, transform_point) {
   point3d p2_expected(18, 46, 74);
 
   auto p2 = affine.transform_point(p);
-  ASSERT_NEAR(0.0, (p2_expected - p2).lpNorm<Eigen::Infinity>(), 1e-15);
+  EXPECT_NEAR(0.0, (p2_expected - p2).lpNorm<Eigen::Infinity>(), 1e-15);
 }
 
 TEST(affine_transform3d, transform_vector) {
@@ -40,7 +40,7 @@ TEST(affine_transform3d, transform_vector) {
   point3d v2_expected(14, 38, 62);
 
   auto v2 = affine.transform_vector(v);
-  ASSERT_NEAR(0.0, (v2_expected - v2).lpNorm<Eigen::Infinity>(), 1e-15);
+  EXPECT_NEAR(0.0, (v2_expected - v2).lpNorm<Eigen::Infinity>(), 1e-15);
 }
 
 TEST(affine_transform3d, roll_pitch_yaw) {
@@ -54,7 +54,7 @@ TEST(affine_transform3d, roll_pitch_yaw) {
     0.11096623370094161, 0.6755683235405234, 0.7288991255358142, 0.0,
     0.0, 0.0, 0.0, 1.0;
 
-  ASSERT_NEAR(0.0, (m - m_actual).lpNorm<Eigen::Infinity>(), 1e-15);
+  EXPECT_NEAR(0.0, (m - m_actual).lpNorm<Eigen::Infinity>(), 1e-15);
 }
 
 TEST(affine_transform3d, scaling) {
@@ -68,7 +68,7 @@ TEST(affine_transform3d, scaling) {
     0.0, 0.0, 7.0, 0.0,
     0.0, 0.0, 0.0, 1.0;
 
-  ASSERT_EQ(0.0, (m - m_actual).lpNorm<Eigen::Infinity>());
+  EXPECT_EQ(0.0, (m - m_actual).lpNorm<Eigen::Infinity>());
 }
 
 TEST(affine_transform3d, translation) {
@@ -82,5 +82,5 @@ TEST(affine_transform3d, translation) {
     0.0, 0.0, 0.0, 7.0,
     0.0, 0.0, 0.0, 1.0;
 
-  ASSERT_EQ(0.0, (m - m_actual).lpNorm<Eigen::Infinity>());
+  EXPECT_EQ(0.0, (m - m_actual).lpNorm<Eigen::Infinity>());
 }

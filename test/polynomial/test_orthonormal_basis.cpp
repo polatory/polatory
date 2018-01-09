@@ -23,8 +23,8 @@ void test_degree(int dimension, int degree) {
   auto pt = basis.evaluate_points(points);
   auto size = basis.basis_size();
 
-  ASSERT_EQ(basis.basis_size(), pt.rows());
-  ASSERT_EQ(n_points, pt.cols());
+  EXPECT_EQ(basis.basis_size(), pt.rows());
+  EXPECT_EQ(n_points, pt.cols());
 
   for (size_t i = 0; i < size; i++) {
     for (size_t j = 0; j < size; j++) {

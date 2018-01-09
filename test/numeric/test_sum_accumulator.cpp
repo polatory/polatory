@@ -15,7 +15,7 @@ void test_sum_accumulator() {
   for (size_t i = 0; i < 1000000; i++) {
     accum += 0.1;
   }
-  ASSERT_DOUBLE_EQ(1e5, accum.get());
+  EXPECT_DOUBLE_EQ(1e5, accum.get());
 }
 
 }  // namespace

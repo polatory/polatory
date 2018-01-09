@@ -14,14 +14,14 @@ namespace {
 
 void test_n(size_t n) {
   auto seq = quasi_random_sequence(n);
-  ASSERT_EQ(n, seq.size());
+  EXPECT_EQ(n, seq.size());
 
   std::sort(seq.begin(), seq.end());
 
   std::vector<size_t> expected(n);
   std::iota(expected.begin(), expected.end(), 0);
 
-  ASSERT_EQ(expected, seq);
+  EXPECT_EQ(expected, seq);
 }
 
 }  // namespace

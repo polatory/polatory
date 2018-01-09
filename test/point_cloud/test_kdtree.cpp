@@ -34,21 +34,21 @@ TEST(kdtree, trivial) {
   std::vector<double> distances(42);
   tree.knn_search(query_point, k, indices, distances);
 
-  ASSERT_EQ(k, indices.size());
-  ASSERT_EQ(indices.size(), distances.size());
+  EXPECT_EQ(k, indices.size());
+  EXPECT_EQ(indices.size(), distances.size());
 
   std::sort(indices.begin(), indices.end());
-  ASSERT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
+  EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
 
   tree.radius_search(query_point, search_radius, indices, distances);
 
-  ASSERT_EQ(indices.size(), distances.size());
+  EXPECT_EQ(indices.size(), distances.size());
   for (auto distance : distances) {
-    ASSERT_LE(distance, search_radius);
+    EXPECT_LE(distance, search_radius);
   }
 
   std::sort(indices.begin(), indices.end());
-  ASSERT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
+  EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
 }
 
 TEST(kdtree, zero_points) {
@@ -64,11 +64,11 @@ TEST(kdtree, zero_points) {
   std::vector<double> distances(42);
   tree.knn_search(query_point, k, indices, distances);
 
-  ASSERT_EQ(0u, indices.size());
-  ASSERT_EQ(0u, distances.size());
+  EXPECT_EQ(0u, indices.size());
+  EXPECT_EQ(0u, distances.size());
 
   tree.radius_search(query_point, search_radius, indices, distances);
 
-  ASSERT_EQ(0u, indices.size());
-  ASSERT_EQ(0u, distances.size());
+  EXPECT_EQ(0u, indices.size());
+  EXPECT_EQ(0u, distances.size());
 }

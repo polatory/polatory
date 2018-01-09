@@ -30,7 +30,7 @@ TEST(sdf_data_generator, trivial) {
   points3d sdf_points = sdf_data.sdf_points();
   valuesd sdf_values = sdf_data.sdf_values();
 
-  ASSERT_EQ(sdf_points.rows(), sdf_values.rows());
+  EXPECT_EQ(sdf_points.rows(), sdf_values.rows());
 
   kdtree tree(points, true);
 
@@ -42,15 +42,15 @@ TEST(sdf_data_generator, trivial) {
     auto sdf_value = sdf_values(i);
 
     tree.knn_search(sdf_point, 1, indices, distances);
-    ASSERT_NEAR(distances[0], std::abs(sdf_value), 1e-15);
+    EXPECT_NEAR(distances[0], std::abs(sdf_value), 1e-15);
 
     if (sdf_values(i) != 0.0) {
       auto point = points.row(indices[0]);
       auto normal = normals.row(indices[0]);
 
-      ASSERT_GE(std::abs(sdf_value), min_distance);
-      ASSERT_LE(std::abs(sdf_value), max_distance);
-      ASSERT_GT(sdf_value * normal.dot(sdf_point - point), 0.0);
+      EXPECT_GE(std::abs(sdf_value), min_distance);
+      EXPECT_LE(std::abs(sdf_value), max_distance);
+      EXPECT_GT(sdf_value * normal.dot(sdf_point - point), 0.0);
     }
   }
 }

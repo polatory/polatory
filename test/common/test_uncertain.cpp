@@ -15,15 +15,15 @@ enum Result {
 void test(Result expected, uncertain<bool> actual) {
   switch (expected) {
   case False:
-    ASSERT_TRUE(actual.is_certain());
-    ASSERT_FALSE(actual.get());
+    EXPECT_TRUE(actual.is_certain());
+    EXPECT_FALSE(actual.get());
     break;
   case True:
-    ASSERT_TRUE(actual.is_certain());
-    ASSERT_TRUE(actual.get());
+    EXPECT_TRUE(actual.is_certain());
+    EXPECT_TRUE(actual.get());
     break;
   case Uncertain:
-    ASSERT_FALSE(actual.is_certain());
+    EXPECT_FALSE(actual.is_certain());
     break;
   }
 }
@@ -69,19 +69,19 @@ TEST(uncertain, predicates) {
   auto t = uncertain<bool>(true);
   auto u = uncertain<bool>();
 
-  ASSERT_FALSE(certainly(f));
-  ASSERT_TRUE(certainly(t));
-  ASSERT_FALSE(certainly(u));
+  EXPECT_FALSE(certainly(f));
+  EXPECT_TRUE(certainly(t));
+  EXPECT_FALSE(certainly(u));
 
-  ASSERT_TRUE(certainly_not(f));
-  ASSERT_FALSE(certainly_not(t));
-  ASSERT_FALSE(certainly_not(u));
+  EXPECT_TRUE(certainly_not(f));
+  EXPECT_FALSE(certainly_not(t));
+  EXPECT_FALSE(certainly_not(u));
 
-  ASSERT_FALSE(possibly(f));
-  ASSERT_TRUE(possibly(t));
-  ASSERT_TRUE(possibly(u));
+  EXPECT_FALSE(possibly(f));
+  EXPECT_TRUE(possibly(t));
+  EXPECT_TRUE(possibly(u));
 
-  ASSERT_TRUE(possibly_not(f));
-  ASSERT_FALSE(possibly_not(t));
-  ASSERT_TRUE(possibly_not(u));
+  EXPECT_TRUE(possibly_not(f));
+  EXPECT_FALSE(possibly_not(t));
+  EXPECT_TRUE(possibly_not(u));
 }

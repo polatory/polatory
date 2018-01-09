@@ -118,7 +118,7 @@ protected:
       }
 
       if (i > 0) {
-        ASSERT_LT(current_residual, last_residual);
+        EXPECT_LT(current_residual, last_residual);
       }
 
       last_residual = current_residual;

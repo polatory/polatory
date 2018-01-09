@@ -21,65 +21,65 @@ TEST(bsearch, trivial) {
 
 
   auto lt = bsearch_lt(v.begin(), v.end(), Zero);
-  ASSERT_EQ(v.end(), lt);
+  EXPECT_EQ(v.end(), lt);
 
   auto le = bsearch_le(v.begin(), v.end(), Zero);
-  ASSERT_EQ(v.end(), le);
+  EXPECT_EQ(v.end(), le);
 
   auto gt = bsearch_gt(v.begin(), v.end(), Zero);
-  ASSERT_EQ(v.begin(), gt);
+  EXPECT_EQ(v.begin(), gt);
 
   auto ge = bsearch_ge(v.begin(), v.end(), Zero);
-  ASSERT_EQ(v.begin(), ge);
+  EXPECT_EQ(v.begin(), ge);
 
   auto eq = bsearch_eq(v.begin(), v.end(), Zero);
-  ASSERT_EQ(v.end(), eq);
+  EXPECT_EQ(v.end(), eq);
 
 
   lt = bsearch_lt(v.begin(), v.end(), Three);
-  ASSERT_EQ(v.begin() + 2, lt);
+  EXPECT_EQ(v.begin() + 2, lt);
 
   le = bsearch_le(v.begin(), v.end(), Three);
-  ASSERT_EQ(v.begin() + 6, le);
+  EXPECT_EQ(v.begin() + 6, le);
 
   gt = bsearch_gt(v.begin(), v.end(), Three);
-  ASSERT_EQ(v.begin() + 7, gt);
+  EXPECT_EQ(v.begin() + 7, gt);
 
   ge = bsearch_ge(v.begin(), v.end(), Three);
-  ASSERT_EQ(v.begin() + 3, ge);
+  EXPECT_EQ(v.begin() + 3, ge);
 
   eq = bsearch_eq(v.begin(), v.end(), Three);
-  ASSERT_EQ(Three, *eq);
+  EXPECT_EQ(Three, *eq);
 
 
   lt = bsearch_lt(v.begin(), v.end(), Five);
-  ASSERT_EQ(v.begin() + 9, lt);
+  EXPECT_EQ(v.begin() + 9, lt);
 
   le = bsearch_le(v.begin(), v.end(), Five);
-  ASSERT_EQ(v.begin() + 9, le);
+  EXPECT_EQ(v.begin() + 9, le);
 
   gt = bsearch_gt(v.begin(), v.end(), Five);
-  ASSERT_EQ(v.begin() + 10, gt);
+  EXPECT_EQ(v.begin() + 10, gt);
 
   ge = bsearch_ge(v.begin(), v.end(), Five);
-  ASSERT_EQ(v.begin() + 10, ge);
+  EXPECT_EQ(v.begin() + 10, ge);
 
   eq = bsearch_eq(v.begin(), v.end(), Five);
-  ASSERT_EQ(v.end(), eq);
+  EXPECT_EQ(v.end(), eq);
 
 
   lt = bsearch_lt(v.begin(), v.end(), Seven);
-  ASSERT_EQ(v.begin() + 10, lt);
+  EXPECT_EQ(v.begin() + 10, lt);
 
   le = bsearch_le(v.begin(), v.end(), Seven);
-  ASSERT_EQ(v.begin() + 10, le);
+  EXPECT_EQ(v.begin() + 10, le);
 
   gt = bsearch_gt(v.begin(), v.end(), Seven);
-  ASSERT_EQ(v.end(), gt);
+  EXPECT_EQ(v.end(), gt);
 
   ge = bsearch_ge(v.begin(), v.end(), Seven);
-  ASSERT_EQ(v.end(), ge);
+  EXPECT_EQ(v.end(), ge);
 
   eq = bsearch_eq(v.begin(), v.end(), Seven);
-  ASSERT_EQ(v.end(), eq);
+  EXPECT_EQ(v.end(), eq);
 }

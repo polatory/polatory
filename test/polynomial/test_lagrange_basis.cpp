@@ -20,8 +20,8 @@ void test_degree(int dimension, int degree) {
   lagrange_basis basis(dimension, degree, points);
   auto pt = basis.evaluate_points(points);
 
-  ASSERT_EQ(basis.basis_size(), pt.rows());
-  ASSERT_EQ(n_points, pt.cols());
+  EXPECT_EQ(basis.basis_size(), pt.rows());
+  EXPECT_EQ(n_points, pt.cols());
 
   Eigen::MatrixXd diff = Eigen::MatrixXd::Identity(n_points, n_points) - pt;
 

@@ -26,11 +26,11 @@ TEST(plane_estimator, trivial) {
 
   auto estimator = plane_estimator(points);
 
-  ASSERT_DOUBLE_EQ(std::sqrt(28.0 / 6.0), estimator.point_error());
-  ASSERT_DOUBLE_EQ(std::sqrt(10.0 / 6.0), estimator.line_error());
-  ASSERT_DOUBLE_EQ(std::sqrt(2.0 / 6.0), estimator.plane_error());
+  EXPECT_DOUBLE_EQ(std::sqrt(28.0 / 6.0), estimator.point_error());
+  EXPECT_DOUBLE_EQ(std::sqrt(10.0 / 6.0), estimator.line_error());
+  EXPECT_DOUBLE_EQ(std::sqrt(2.0 / 6.0), estimator.plane_error());
 
   vector3d normal_expected(0.0, 0.0, 1.0);
   auto normal = estimator.plane_normal();
-  ASSERT_DOUBLE_EQ(1.0, std::abs(normal_expected.dot(normal)));
+  EXPECT_DOUBLE_EQ(1.0, std::abs(normal_expected.dot(normal)));
 }

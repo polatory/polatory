@@ -35,16 +35,16 @@ TEST(empirical_variogram, trivial) {
   empirical_variogram variog(points, values, bin_width, n_bins);
 
   const auto bin_distance = variog.bin_distance();
-  ASSERT_EQ(1u, bin_distance.size());
-  ASSERT_DOUBLE_EQ(d, bin_distance[0]);
+  EXPECT_EQ(1u, bin_distance.size());
+  EXPECT_DOUBLE_EQ(d, bin_distance[0]);
 
   const auto bin_gamma = variog.bin_gamma();
-  ASSERT_EQ(1u, bin_gamma.size());
-  ASSERT_DOUBLE_EQ(variance, bin_gamma[0]);
+  EXPECT_EQ(1u, bin_gamma.size());
+  EXPECT_DOUBLE_EQ(variance, bin_gamma[0]);
 
   const auto bin_num_pairs = variog.bin_num_pairs();
-  ASSERT_EQ(1u, bin_num_pairs.size());
-  ASSERT_EQ(6u, bin_num_pairs[0]);
+  EXPECT_EQ(1u, bin_num_pairs.size());
+  EXPECT_EQ(6u, bin_num_pairs[0]);
 }
 
 TEST(empirical_variogram, zero_points) {
@@ -57,7 +57,7 @@ TEST(empirical_variogram, zero_points) {
 
   empirical_variogram variog(points, values, bin_width, n_bins);
 
-  ASSERT_EQ(0u, variog.bin_distance().size());
-  ASSERT_EQ(0u, variog.bin_gamma().size());
-  ASSERT_EQ(0u, variog.bin_num_pairs().size());
+  EXPECT_EQ(0u, variog.bin_distance().size());
+  EXPECT_EQ(0u, variog.bin_gamma().size());
+  EXPECT_EQ(0u, variog.bin_num_pairs().size());
 }
