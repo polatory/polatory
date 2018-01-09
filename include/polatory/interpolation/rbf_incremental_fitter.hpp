@@ -16,7 +16,8 @@ namespace interpolation {
 class rbf_incremental_fitter {
   static constexpr size_t min_n_points_for_incremental_fitting = 4096;
   static constexpr double initial_points_ratio = 0.01;
-  static constexpr double incremental_points_ratio = 0.1;
+  static constexpr double point_adoption_ratio = 0.1;
+  static constexpr size_t max_n_points_to_add = 1024;
 
 public:
   rbf_incremental_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
@@ -26,9 +27,9 @@ public:
   fit(const common::valuesd& values, double absolute_tolerance) const;
 
 private:
-  std::pair<std::vector<size_t>, common::valuesd> initial_point_indices_and_weights() const;
+  std::vector<size_t> initial_indices() const;
 
-  std::vector<size_t> point_indices_complement(const std::vector<size_t>& point_indices) const;
+  std::vector<size_t> complement_indices(const std::vector<size_t>& indices) const;
 
   const rbf::rbf rbf_;
   const int poly_dimension_;
