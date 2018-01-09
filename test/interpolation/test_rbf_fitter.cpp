@@ -1,7 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
 #include <iostream>
-#include <memory>
 #include <tuple>
 
 #include <Eigen/Core>
@@ -24,28 +23,26 @@ using polatory::rbf::biharmonic;
 
 namespace {
 
-void test_poly_degree(int poly_degree, bool with_initial_solution) {
+void test_poly_degree(int poly_degree) {
+  const size_t n_surface_points = 10000;
+  const int poly_dimension = 3;
+  double absolute_tolerance = 1e-4;
+
   points3d points;
   valuesd values;
-  std::tie(points, values) = sample_sdf_data(30000);
+  std::tie(points, values) = sample_sdf_data(n_surface_points);
 
   size_t n_points = points.rows();
-  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
-  double absolute_tolerance = 1e-4;
 
   biharmonic rbf({ 1.0, 0.0 });
 
-  auto fitter = std::make_unique<rbf_fitter>(rbf, 3, poly_degree, points);
-  valuesd weights;
-  if (with_initial_solution) {
-    valuesd x0 = 1e-5 * valuesd::Random(n_points + n_poly_basis);
-    weights = fitter->fit(values, absolute_tolerance, x0);
-  } else {
-    weights = fitter->fit(values, absolute_tolerance);
-  }
-  fitter.reset();
+  rbf_fitter fitter(rbf, poly_dimension, poly_degree, points);
+  valuesd weights = fitter.fit(values, absolute_tolerance);
 
-  rbf_symmetric_evaluator<> eval(rbf, 3, poly_degree, points);
+  size_t n_poly_basis = basis_base::basis_size(poly_dimension, poly_degree);
+  EXPECT_EQ(weights.rows(), n_points + n_poly_basis);
+
+  rbf_symmetric_evaluator<> eval(rbf, poly_dimension, poly_degree, points);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate();
 
@@ -63,10 +60,7 @@ void test_poly_degree(int poly_degree, bool with_initial_solution) {
 }  // namespace
 
 TEST(rbf_fitter, trivial) {
-  test_poly_degree(0, false);
-  test_poly_degree(0, true);
-  test_poly_degree(1, false);
-  test_poly_degree(1, true);
-  test_poly_degree(2, false);
-  test_poly_degree(2, true);
+  test_poly_degree(0);
+  test_poly_degree(1);
+  test_poly_degree(2);
 }

@@ -21,8 +21,8 @@ public:
 
 class not_supported : public std::logic_error {
 public:
-  explicit not_supported(const std::string& name)
-    : std::logic_error(name + "is not supported.") {}
+  explicit not_supported(const std::string& what)
+    : std::logic_error(what + " is not supported.") {}
 };
 
 }  // namespace common

@@ -17,7 +17,7 @@ namespace polatory {
 namespace interpolation {
 
 rbf_inequality_fitter::rbf_inequality_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                      const geometry::points3d& points)
+                                             const geometry::points3d& points)
   : rbf_(rbf)
   , poly_dimension_(poly_dimension)
   , poly_degree_(poly_degree)

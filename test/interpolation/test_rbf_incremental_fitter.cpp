@@ -26,27 +26,28 @@ using polatory::interpolation::rbf_incremental_fitter;
 using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
 
-namespace {
+TEST(rbf_incremental_fitter, trivial) {
+  const size_t n_surface_points = 4096;
+  const int poly_dimension = 3;
+  const int poly_degree = 0;
+  double absolute_tolerance = 1e-4;
 
-void test_poly_degree(int poly_degree) {
   points3d points;
   valuesd values;
-  std::tie(points, values) = sample_sdf_data(10000);
-
-  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
-  double absolute_tolerance = 1e-4;
+  std::tie(points, values) = sample_sdf_data(n_surface_points);
 
   biharmonic rbf({ 1.0, 0.0 });
 
-  auto fitter = std::make_unique<rbf_incremental_fitter>(rbf, 3, poly_degree, points);
-  std::vector<size_t> point_indices;
+  std::vector<size_t> indices;
   valuesd weights;
 
-  std::tie(point_indices, weights) = fitter->fit(values, absolute_tolerance);
-  EXPECT_EQ(weights.rows(), point_indices.size() + n_poly_basis);
-  fitter.reset();
+  rbf_incremental_fitter fitter(rbf, poly_dimension, poly_degree, points);
+  std::tie(indices, weights) = fitter.fit(values, absolute_tolerance);
 
-  rbf_evaluator<> eval(rbf, 3, poly_degree, take_rows(points, point_indices));
+  size_t n_poly_basis = basis_base::basis_size(poly_dimension, poly_degree);
+  EXPECT_EQ(weights.rows(), indices.size() + n_poly_basis);
+
+  rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, take_rows(points, indices));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate_points(points);
 
@@ -55,10 +56,4 @@ void test_poly_degree(int poly_degree) {
             << "  " << max_residual << std::endl;
 
   EXPECT_LT(max_residual, absolute_tolerance);
-}
-
-}  // namespace
-
-TEST(rbf_incremental_fitter, trivial) {
-  test_poly_degree(0);
 }
