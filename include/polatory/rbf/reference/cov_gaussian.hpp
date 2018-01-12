@@ -9,22 +9,21 @@
 
 namespace polatory {
 namespace rbf {
+namespace reference {
 
-class cov_spherical : public covariance_function {
+class cov_gaussian : public covariance_function {
 public:
   using covariance_function::covariance_function;
 
   std::shared_ptr<rbf_kernel> clone() const override {
-    return std::make_shared<cov_spherical>(parameters());
+    return std::make_shared<cov_gaussian>(parameters());
   }
 
   static double evaluate(double r, const double *params) {
     auto psill = params[0];
     auto range = params[1];
 
-    return r < range
-           ? psill * (1.0 - 1.5 * r / range + 0.5 * std::pow(r / range, 3.0))
-           : 0.0;
+    return psill * std::exp(-r * r / (range * range));
   }
 
   double evaluate(double r) const override {
@@ -37,20 +36,15 @@ public:
     auto psill = parameters()[0];
     auto range = parameters()[1];
 
-    if (r < range) {
-      auto c = psill * 1.5 * (-1.0 / (range * r) + r / std::pow(range, 3.0));
-      gradx = c * x;
-      grady = c * y;
-      gradz = c * z;
-    } else {
-      gradx = 0.0;
-      grady = 0.0;
-      gradz = 0.0;
-    }
+    auto c = -2.0 * psill * std::exp(-r * r / (range * range)) / (range * range);
+    gradx = c * x;
+    grady = c * y;
+    gradz = c * z;
   }
 
-  POLATORY_DEFINE_COST_FUNCTION(cov_spherical, 3)
+  POLATORY_DEFINE_COST_FUNCTION(cov_gaussian, 3)
 };
 
+}  // namespace reference
 }  // namespace rbf
 }  // namespace polatory
