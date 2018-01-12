@@ -64,9 +64,9 @@ int main(int argc, const char *argv[]) {
 
     // Generate isosurface.
     polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
-    rbf_field_function field_f(interpolant);
+    rbf_field_function field_fn(interpolant);
 
-    isosurf.generate_from_seed_points(terrain_points, field_f)
+    isosurf.generate_from_seed_points(terrain_points, field_fn)
       .export_obj(opts.mesh_file);
 
     return 0;

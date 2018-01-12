@@ -32,7 +32,7 @@ public:
   }
 
   void evaluate_gradient(
-    double& gradx, double& grady, double& gradz,
+    double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto psill = parameters()[0];
     auto range = parameters()[1];
@@ -40,9 +40,9 @@ public:
     auto c = r < 0.2994221418316404 * range
              ? -psill * 1.4611477872802014 / (range * r)
              : -psill * 1.8580471834199928 * std::pow(0.7172289521523758 + std::pow(r / range, 2.0), -4.5) / (range * range);
-    gradx = c * x;
-    grady = c * y;
-    gradz = c * z;
+    *gradx = c * x;
+    *grady = c * y;
+    *gradz = c * z;
   }
 
   POLATORY_DEFINE_COST_FUNCTION(cov_quasi_spherical7, 3)

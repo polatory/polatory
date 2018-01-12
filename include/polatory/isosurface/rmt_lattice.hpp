@@ -107,7 +107,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   // Evaluates field values for each node in nodes_to_evaluate.
-  void evaluate_field(const field_function& field_func, double isovalue = 0.0) {
+  void evaluate_field(const field_function& field_fn, double isovalue = 0.0) {
     if (nodes_to_evaluate.empty())
       return;
 
@@ -122,7 +122,7 @@ class rmt_lattice : public rmt_primitive_lattice {
       *point_it++ = node_list.at(idx).position();
     }
 
-    auto values = field_func(points);
+    auto values = field_fn(points);
     values.array() -= isovalue;
 
     auto i = 0;
@@ -283,7 +283,7 @@ public:
   }
 
   // Add all nodes inside the boundary.
-  void add_all_nodes(const field_function& field_func, double isovalue = 0.0) {
+  void add_all_nodes(const field_function& field_fn, double isovalue = 0.0) {
     std::vector<cell_index> new_nodes;
     std::vector<cell_index> prev_nodes;
 
@@ -302,7 +302,7 @@ public:
       }
 
       if (m2 > cell_min(2)) {
-        evaluate_field(field_func, isovalue);
+        evaluate_field(field_fn, isovalue);
         generate_vertices(prev_nodes);
         remove_free_nodes(prev_nodes);
       }
@@ -316,10 +316,10 @@ public:
     update_neighbor_cache();
   }
 
-  void add_nodes_by_tracking(const field_function& field_func, double isovalue = 0.0) {
-    evaluate_field(field_func, isovalue);
+  void add_nodes_by_tracking(const field_function& field_fm, double isovalue = 0.0) {
+    evaluate_field(field_fm, isovalue);
     while (track_surface() > 0) {
-      evaluate_field(field_func, isovalue);
+      evaluate_field(field_fm, isovalue);
     }
 
     std::vector<cell_index> all_nodes;

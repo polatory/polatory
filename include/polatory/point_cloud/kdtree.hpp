@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include <polatory/geometry/point3d.hpp>
@@ -12,15 +13,15 @@ namespace point_cloud {
 
 class kdtree {
 public:
+  using indices_and_distances = std::pair<std::vector<size_t>, std::vector<double>>;
+
   kdtree(const geometry::points3d& points, bool use_exact_search);
 
   ~kdtree();
 
-  void knn_search(const geometry::point3d& point, size_t k,
-                  std::vector<size_t>& indices, std::vector<double>& distances) const;
+  indices_and_distances knn_search(const geometry::point3d& point, size_t k) const;
 
-  void radius_search(const geometry::point3d& point, double radius,
-                     std::vector<size_t>& indices, std::vector<double>& distances) const;
+  indices_and_distances radius_search(const geometry::point3d& point, double radius) const;
 
 private:
   class impl;

@@ -35,19 +35,19 @@ public:
   }
 
   void evaluate_gradient(
-    double& gradx, double& grady, double& gradz,
+    double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto slope = parameters()[0];
 
     if (r == 0.0) {
-      gradx = 0.0;
-      grady = 0.0;
-      gradz = 0.0;
+      *gradx = 0.0;
+      *grady = 0.0;
+      *gradz = 0.0;
     } else {
       auto c = slope * (1.0 + 2.0 * std::log(r));
-      gradx = c * x;
-      grady = c * y;
-      gradz = c * z;
+      *gradx = c * x;
+      *grady = c * y;
+      *gradz = c * z;
     }
   }
 

@@ -33,20 +33,20 @@ public:
   }
 
   void evaluate_gradient(
-    double& gradx, double& grady, double& gradz,
+    double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto psill = parameters()[0];
     auto range = parameters()[1];
 
     if (r < range) {
       auto c = psill * 1.5 * (-1.0 / (range * r) + r / std::pow(range, 3.0));
-      gradx = c * x;
-      grady = c * y;
-      gradz = c * z;
+      *gradx = c * x;
+      *grady = c * y;
+      *gradz = c * z;
     } else {
-      gradx = 0.0;
-      grady = 0.0;
-      gradz = 0.0;
+      *gradx = 0.0;
+      *grady = 0.0;
+      *gradz = 0.0;
     }
   }
 

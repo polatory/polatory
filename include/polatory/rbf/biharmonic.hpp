@@ -32,14 +32,14 @@ public:
   }
 
   void evaluate_gradient(
-    double& gradx, double& grady, double& gradz,
+    double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto slope = parameters()[0];
 
     auto c = -slope / r;
-    gradx = c * x;
-    grady = c * y;
-    gradz = c * z;
+    *gradx = c * x;
+    *grady = c * y;
+    *gradz = c * z;
   }
 
   double nugget() const override {

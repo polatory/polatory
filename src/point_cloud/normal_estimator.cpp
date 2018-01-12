@@ -3,6 +3,7 @@
 #include <polatory/point_cloud/normal_estimator.hpp>
 
 #include <stdexcept>
+#include <tuple>
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
@@ -22,7 +23,7 @@ const normal_estimator& normal_estimator::estimate_with_knn(size_t k, double pla
 
   normals_ = geometry::vectors3d(n_points_, 3);
   for (size_t i = 0; i < n_points_; i++) {
-    tree_.knn_search(points_.row(i), k, nn_indices, nn_distances);
+    std::tie(nn_indices, nn_distances) = tree_.knn_search(points_.row(i), k);
 
     normals_.row(i) = estimate_impl(nn_indices, plane_factor_threshold);
   }
@@ -36,7 +37,7 @@ const normal_estimator& normal_estimator::estimate_with_radius(double radius, do
 
   normals_ = geometry::vectors3d(n_points_, 3);
   for (size_t i = 0; i < n_points_; i++) {
-    tree_.radius_search(points_.row(i), radius, nn_indices, nn_distances);
+    std::tie(nn_indices, nn_distances) = tree_.radius_search(points_.row(i), radius);
 
     normals_.row(i) = estimate_impl(nn_indices, plane_factor_threshold);
   }

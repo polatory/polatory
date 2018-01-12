@@ -31,7 +31,7 @@ class col_iterator
 public:
   using iterator_category = std::input_iterator_tag;
 
-  col_iterator(Eigen::MatrixBase<Derived>& m, size_t index)
+  col_iterator(Eigen::MatrixBase<Derived>& m, size_t index)  // NOLINT(runtime/references)
     : m_ (std::addressof(m))
     , index_(index) {
   }
@@ -161,7 +161,7 @@ class row_iterator
 public:
   using iterator_category = std::input_iterator_tag;
 
-  row_iterator(Eigen::MatrixBase<Derived>& m, size_t index)
+  row_iterator(Eigen::MatrixBase<Derived>& m, size_t index)  // NOLINT(runtime/references)
     : m_ (std::addressof(m))
     , index_(index) {
   }
@@ -286,12 +286,12 @@ private:
 }  // namespace detail
 
 template <class Derived>
-auto col_begin(Eigen::MatrixBase<Derived>& m) {
+auto col_begin(Eigen::MatrixBase<Derived>& m) {  // NOLINT(runtime/references)
   return detail::col_iterator<Derived>(m, 0);
 }
 
 template <class Derived>
-auto col_end(Eigen::MatrixBase<Derived>& m) {
+auto col_end(Eigen::MatrixBase<Derived>& m) {  // NOLINT(runtime/references)
   return detail::col_iterator<Derived>(m, m.cols());
 }
 
@@ -306,12 +306,12 @@ auto col_end(const Eigen::MatrixBase<Derived>& m) {
 }
 
 template <class Derived>
-auto row_begin(Eigen::MatrixBase<Derived>& m) {
+auto row_begin(Eigen::MatrixBase<Derived>& m) {  // NOLINT(runtime/references)
   return detail::row_iterator<Derived>(m, 0);
 }
 
 template <class Derived>
-auto row_end(Eigen::MatrixBase<Derived>& m) {
+auto row_end(Eigen::MatrixBase<Derived>& m) {  // NOLINT(runtime/references)
   return detail::row_iterator<Derived>(m, m.rows());
 }
 
@@ -330,7 +330,7 @@ namespace detail {
 template <class Derived>
 class col_range_wrapper {
 public:
-  explicit col_range_wrapper(Eigen::MatrixBase<Derived>& m)
+  explicit col_range_wrapper(Eigen::MatrixBase<Derived>& m)  // NOLINT(runtime/references)
     : m_(m) {
   }
 
@@ -360,7 +360,7 @@ private:
 template <class Derived>
 class row_range_wrapper {
 public:
-  explicit row_range_wrapper(Eigen::MatrixBase<Derived>& m)
+  explicit row_range_wrapper(Eigen::MatrixBase<Derived>& m)  // NOLINT(runtime/references)
     : m_(m) {
   }
 
@@ -390,7 +390,7 @@ private:
 }  // namespace detail
 
 template <class Derived>
-auto col_range(Eigen::MatrixBase<Derived>& m) {
+auto col_range(Eigen::MatrixBase<Derived>& m) {  // NOLINT(runtime/references)
   return detail::col_range_wrapper<Derived>(m);
 }
 
@@ -400,7 +400,7 @@ auto col_range(const Eigen::MatrixBase<Derived>& m) {
 }
 
 template <class Derived>
-auto row_range(Eigen::MatrixBase<Derived>& m) {
+auto row_range(Eigen::MatrixBase<Derived>& m) {  // NOLINT(runtime/references)
   return detail::row_range_wrapper<Derived>(m);
 }
 
@@ -438,12 +438,14 @@ size_t common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
 }
 
 template <class ResultDerived, class Derived>
-void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m) {
+void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                           const Eigen::MatrixBase<Derived>& m) {
   result = m;
 }
 
 template <class ResultDerived, class Derived, class ...Args>
-void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                           const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   result.leftCols(m.cols()) = m;
 
   auto result_tail = result.rightCols(result.cols() - m.cols());
@@ -451,12 +453,14 @@ void concatenate_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen
 }
 
 template <class ResultDerived, class Derived>
-void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m) {
+void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                           const Eigen::MatrixBase<Derived>& m) {
   result = m;
 }
 
 template <class ResultDerived, class Derived, class ...Args>
-void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                           const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   result.topRows(m.rows()) = m;
 
   auto result_tail = result.bottomRows(result.rows() - m.rows());
@@ -464,12 +468,14 @@ void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen
 }
 
 template <class ResultDerived, class Derived>
-void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index) {
+void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                    const Eigen::MatrixBase<Derived>& m, size_t index) {
   result.col(0) = m.col(index);
 }
 
 template <class ResultDerived, class Derived, class... Ts>
-void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                    const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
   result.col(0) = m.col(index);
 
   auto result_tail = result.rightCols(result.cols() - 1);
@@ -477,12 +483,14 @@ void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::Matri
 }
 
 template <class ResultDerived, class Derived>
-void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index) {
+void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                    const Eigen::MatrixBase<Derived>& m, size_t index) {
   result.row(0) = m.row(index);
 }
 
 template <class ResultDerived, class Derived, class... Ts>
-void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
+                    const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
   result.row(0) = m.row(index);
 
   auto result_tail = result.bottomRows(result.rows() - 1);

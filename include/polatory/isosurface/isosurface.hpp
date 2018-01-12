@@ -22,21 +22,21 @@ public:
     : rmt_lattice_(bbox, resolution) {
   }
 
-  surface generate(field_function& field_func, double isovalue = 0.0) {
-    field_func.set_evaluation_bbox(rmt_lattice_.node_bounds());
+  surface generate(field_function& field_fn, double isovalue = 0.0) {  // NOLINT(runtime/references)
+    field_fn.set_evaluation_bbox(rmt_lattice_.node_bounds());
 
-    rmt_lattice_.add_all_nodes(field_func, isovalue);
+    rmt_lattice_.add_all_nodes(field_fn, isovalue);
 
     return generate_common();
   }
 
-  surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_func, double isovalue = 0.0) {
-    field_func.set_evaluation_bbox(rmt_lattice_.node_bounds());
+  surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn, double isovalue = 0.0) {  // NOLINT(runtime/references)
+    field_fn.set_evaluation_bbox(rmt_lattice_.node_bounds());
 
     for (auto p : common::row_range(seed_points)) {
       rmt_lattice_.add_cell_contains_point(p);
     }
-    rmt_lattice_.add_nodes_by_tracking(field_func, isovalue);
+    rmt_lattice_.add_nodes_by_tracking(field_fn, isovalue);
 
     return generate_common();
   }

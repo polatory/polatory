@@ -1,6 +1,7 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
 #include <algorithm>
+#include <tuple>
 #include <vector>
 
 #include <Eigen/Core>
@@ -30,9 +31,9 @@ TEST(kdtree, trivial) {
 
   kdtree tree(points, true);
 
-  std::vector<size_t> indices(42);
-  std::vector<double> distances(42);
-  tree.knn_search(query_point, k, indices, distances);
+  std::vector<size_t> indices;
+  std::vector<double> distances;
+  std::tie(indices, distances) = tree.knn_search(query_point, k);
 
   EXPECT_EQ(k, indices.size());
   EXPECT_EQ(indices.size(), distances.size());
@@ -40,7 +41,7 @@ TEST(kdtree, trivial) {
   std::sort(indices.begin(), indices.end());
   EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
 
-  tree.radius_search(query_point, search_radius, indices, distances);
+  std::tie(indices, distances) = tree.radius_search(query_point, search_radius);
 
   EXPECT_EQ(indices.size(), distances.size());
   for (auto distance : distances) {
@@ -60,14 +61,14 @@ TEST(kdtree, zero_points) {
 
   kdtree tree(points, true);
 
-  std::vector<size_t> indices(42);
-  std::vector<double> distances(42);
-  tree.knn_search(query_point, k, indices, distances);
+  std::vector<size_t> indices;
+  std::vector<double> distances;
+  std::tie(indices, distances) = tree.knn_search(query_point, k);
 
   EXPECT_EQ(0u, indices.size());
   EXPECT_EQ(0u, distances.size());
 
-  tree.radius_search(query_point, search_radius, indices, distances);
+  std::tie(indices, distances) = tree.radius_search(query_point, search_radius);
 
   EXPECT_EQ(0u, indices.size());
   EXPECT_EQ(0u, distances.size());

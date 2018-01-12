@@ -50,7 +50,7 @@ void test_gradient(const rbf_kernel& kernel) {
     auto r = hypot(x, y, z);
 
     double gradx, grady, gradz;
-    kernel.evaluate_gradient(gradx, grady, gradz, x, y, z, r);
+    kernel.evaluate_gradient(&gradx, &grady, &gradz, x, y, z, r);
 
     // First-order central difference.
 

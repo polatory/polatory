@@ -3,6 +3,7 @@
 #include <polatory/point_cloud/distance_filter.hpp>
 
 #include <set>
+#include <tuple>
 
 #include <polatory/point_cloud/kdtree.hpp>
 
@@ -25,7 +26,7 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
     if (indices_to_remove.find(i) != indices_to_remove.end())
       continue;
 
-    tree.radius_search(points.row(i), distance, nn_indices, nn_distances);
+    std::tie(nn_indices, nn_distances) = tree.radius_search(points.row(i), distance);
 
     for (auto j : nn_indices) {
       if (j != i) {

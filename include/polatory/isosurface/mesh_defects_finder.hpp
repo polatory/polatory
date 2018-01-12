@@ -30,7 +30,7 @@ public:
   std::vector<vertex_index> non_manifold_vertices() const;
 
 private:
-  face_index_bools::iterator halfedge_face(face_index_bools& fi_bools, halfedge he) const;
+  face_index_bools::iterator halfedge_face(face_index_bools& fi_bools, halfedge he) const;  // NOLINT(runtime/references)
 
   bool line_triangle_intersects(vertex_index s1, vertex_index s2, const face& f) const;
 

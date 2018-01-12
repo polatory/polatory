@@ -2,6 +2,8 @@
 
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 
+#include <tuple>
+
 #include <polatory/common/exception.hpp>
 #include <polatory/common/quasi_random_sequence.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
@@ -51,7 +53,7 @@ sdf_data_generator::sdf_data_generator(
     auto d = max_distance;
     geometry::point3d q = p + d * n;
 
-    tree.knn_search(q, 1, nn_indices, nn_distances);
+    std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
     auto i_nearest = nn_indices[0];
 
     while (i_nearest != i) {
@@ -63,7 +65,7 @@ sdf_data_generator::sdf_data_generator(
       if (d < min_distance)
         break;
 
-      tree.knn_search(q, 1, nn_indices, nn_distances);
+      std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
       i_nearest = nn_indices[0];
     }
 
@@ -85,7 +87,7 @@ sdf_data_generator::sdf_data_generator(
     auto d = max_distance;
     geometry::point3d q = p - d * n;
 
-    tree.knn_search(q, 1, nn_indices, nn_distances);
+    std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
     auto i_nearest = nn_indices[0];
 
     while (i_nearest != i) {
@@ -97,7 +99,7 @@ sdf_data_generator::sdf_data_generator(
       if (d < min_distance)
         break;
 
-      tree.knn_search(q, 1, nn_indices, nn_distances);
+      std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
       i_nearest = nn_indices[0];
     }
 

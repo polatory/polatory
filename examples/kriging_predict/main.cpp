@@ -39,10 +39,10 @@ int main(int argc, const char *argv[]) {
 
     // Generate isosurface of given values.
     isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
-    rbf_field_function field_f(interpolant);
+    rbf_field_function field_fn(interpolant);
 
     for (auto isovalue_name : opts.mesh_values_files) {
-      isosurf.generate(field_f, isovalue_name.first)
+      isosurf.generate(field_fn, isovalue_name.first)
         .export_obj(isovalue_name.second);
     }
 

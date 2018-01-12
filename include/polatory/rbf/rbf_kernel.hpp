@@ -36,7 +36,7 @@ public:
   virtual double evaluate(double r) const = 0;
 
   virtual void evaluate_gradient(
-    double& gradx, double& grady, double& gradz,
+    double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const = 0;
 
   // The effect of nugget parameter is also known as spline smoothing.
@@ -105,7 +105,7 @@ public:
     const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
 
     block[0] = evaluate(r);
-    evaluate_gradient(blockDerivative[0], blockDerivative[1], blockDerivative[2], diffx, diffy, diffz, r);
+    evaluate_gradient(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
   }
 
   double getScaleFactor(const double, const int) const override {

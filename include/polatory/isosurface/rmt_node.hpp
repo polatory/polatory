@@ -186,7 +186,7 @@ public:
   //   |         |  = 1 -> Simple surface
   //   |         .
   //   .
-  void cluster(std::vector<geometry::point3d>& vertices, std::map<vertex_index, vertex_index>& cluster_map) const {
+  void cluster(std::vector<geometry::point3d>& vertices, std::map<vertex_index, vertex_index>& cluster_map) const {  // NOLINT(runtime/references)
     auto surfaces = get_surfaces();
     auto holes = get_holes();
 

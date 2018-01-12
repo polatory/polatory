@@ -33,7 +33,7 @@ public:
   void setup(const geometry::points3d& points_full);
 
   template <class Derived>
-  void set_solution_to(Eigen::MatrixBase<Derived>& weights_full) const {
+  void set_solution_to(Eigen::MatrixBase<Derived>& weights_full) const {  // NOLINT(runtime/references)
     for (size_t i = 0; i < m_; i++) {
       weights_full(point_idcs_[i]) = lambda_c_(i);
     }

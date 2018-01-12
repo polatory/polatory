@@ -31,15 +31,15 @@ public:
   }
 
   void evaluate_gradient(
-    double& gradx, double& grady, double& gradz,
+    double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto psill = parameters()[0];
     auto range = parameters()[1];
 
     auto c = -2.0 * psill * std::exp(-r * r / (range * range)) / (range * range);
-    gradx = c * x;
-    grady = c * y;
-    gradz = c * z;
+    *gradx = c * x;
+    *grady = c * y;
+    *gradz = c * z;
   }
 
   POLATORY_DEFINE_COST_FUNCTION(cov_gaussian, 3)

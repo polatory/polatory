@@ -1,5 +1,7 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#include <tuple>
+
 #include <gtest/gtest.h>
 
 #include <polatory/common/types.hpp>
@@ -41,7 +43,7 @@ TEST(sdf_data_generator, trivial) {
     auto sdf_point = sdf_points.row(i);
     auto sdf_value = sdf_values(i);
 
-    tree.knn_search(sdf_point, 1, indices, distances);
+    std::tie(indices, distances) = tree.knn_search(sdf_point, 1);
     EXPECT_NEAR(distances[0], std::abs(sdf_value), 1e-15);
 
     if (sdf_values(i) != 0.0) {
