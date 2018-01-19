@@ -61,6 +61,7 @@ script:
   - make
   - ctest -VV
   - $TRAVIS_BUILD_DIR/tools/inspection/inspect
+  - sudo make install
 
 branches:
   only:
