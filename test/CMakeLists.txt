@@ -28,7 +28,7 @@ elseif(MSVC)
             ${dll}
             $<TARGET_FILE_DIR:${TARGET}>
         )
-    endforeach(dll)
+    endforeach()
 endif()
 
 add_test(

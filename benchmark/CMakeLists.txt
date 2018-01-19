@@ -11,7 +11,7 @@ foreach(dll ${DLLS})
         ${dll}
         $<TARGET_FILE_DIR:predict>
     )
-endforeach(dll)
+endforeach()
 
 set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/benchmark.sh
@@ -26,4 +26,4 @@ foreach(file ${FILES})
         ${file}
         $<TARGET_FILE_DIR:predict>
     )
-endforeach(file)
+endforeach()

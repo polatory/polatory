@@ -30,4 +30,4 @@ foreach(file ${FILES})
         ${file}
         $<TARGET_FILE_DIR:${TARGET}>
     )
-endforeach(file)
+endforeach()

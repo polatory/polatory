@@ -17,9 +17,11 @@ if(UNIX)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
     endif()
 elseif(MSVC)
-    set(MKL_ROOT "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/mkl")
-    set(MKL_DLL_DIR "C:/Program Files (x86)/IntelSWTools/compilers_and_libraries/windows/redist/intel64/mkl")
+    set(_PF86 "ProgramFiles(x86)")
+    file(TO_CMAKE_PATH "$ENV{${_PF86}}" _PROG_FILES_X86)
 
+    set(MKL_ROOT "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/mkl")
+    set(MKL_DLL_DIR "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/redist/intel64/mkl")
     set(VCPKG_ROOT "" CACHE STRING "Path to vcpkg/installed/x64-windows")
     set(DLLS
         ${MKL_DLL_DIR}/mkl_avx2.dll
