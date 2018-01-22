@@ -50,7 +50,7 @@ install:
   - tar xfj boost_1_65_1.tar.bz2
   - cd boost_1_65_1
   - ./bootstrap.sh
-  - ./b2 link=static --with-program_options install -d0 -j4 --prefix=.
+  - ./b2 link=shared --with-program_options install -d0 -j4 --prefix=.
 
 before_script:
   - cd $TRAVIS_BUILD_DIR
