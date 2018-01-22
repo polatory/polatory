@@ -4,6 +4,10 @@
 
 #include <cassert>
 #include <cmath>
+#include <fstream>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 #include <polatory/numeric/sum_accumulator.hpp>
 
@@ -64,6 +68,12 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points, const
   }
 }
 
+empirical_variogram::empirical_variogram(std::string filename) {
+  std::ifstream ifs(filename);
+  boost::archive::binary_iarchive ia(ifs);
+  ia >> *this;
+}
+
 const std::vector<double>& empirical_variogram::bin_distance() const {
   return distance_;
 }
@@ -74,6 +84,12 @@ const std::vector<double>& empirical_variogram::bin_gamma() const {
 
 const std::vector<size_t>& empirical_variogram::bin_num_pairs() const {
   return num_pairs_;
+}
+
+const void empirical_variogram::save(std::string filename) const {
+  std::ofstream ofs(filename);
+  boost::archive::binary_oarchive oa(ofs);
+  oa << *this;
 }
 
 }  // namespace kriging

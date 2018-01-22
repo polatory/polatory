@@ -1,3 +1,5 @@
+find_package(Boost 1.60 COMPONENTS filesystem system REQUIRED)
+
 set(TARGET Unittest)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
@@ -30,6 +32,11 @@ elseif(MSVC)
         )
     endforeach()
 endif()
+
+target_link_libraries(${TARGET}
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+)
 
 add_test(
     NAME ${TARGET}
