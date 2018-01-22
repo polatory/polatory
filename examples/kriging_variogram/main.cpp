@@ -12,8 +12,6 @@ using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::kriging::empirical_variogram;
-using polatory::kriging::variogram_fitting;
-using polatory::rbf::cov_quasi_spherical9;
 using polatory::read_table;
 
 int main(int argc, const char *argv[]) {
@@ -35,13 +33,9 @@ int main(int argc, const char *argv[]) {
       std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin] << std::setw(12) <<  bin_gamma[bin] << std::endl;
     }
 
-    cov_quasi_spherical9 variog({ opts.psill, opts.range, opts.nugget });
-    variogram_fitting fit(emp_variog, variog, opts.weight_fn);
-
-    auto params = fit.parameters();
-    std::cout << "Fitted parameters:" << std::endl
-              << std::setw(12) << "psill" << std::setw(12) << "range" << std::setw(12) << "nugget" << std::endl
-              << std::setw(12) << params[0] << std::setw(12) << params[1] << std::setw(12) << params[2] << std::endl;
+    if (!opts.out_file.empty()) {
+      emp_variog.save(opts.out_file);
+    }
 
     return 0;
   } catch (const std::exception& e) {
