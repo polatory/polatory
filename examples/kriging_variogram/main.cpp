@@ -36,7 +36,7 @@ int main(int argc, const char *argv[]) {
     }
 
     cov_quasi_spherical9 variog({ opts.psill, opts.range, opts.nugget });
-    variogram_fitting fit(emp_variog, variog);
+    variogram_fitting fit(emp_variog, variog, opts.weight_fn);
 
     auto params = fit.parameters();
     std::cout << "Fitted parameters:" << std::endl

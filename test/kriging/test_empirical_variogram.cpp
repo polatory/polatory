@@ -45,7 +45,7 @@ TEST(empirical_variogram, serialize) {
 }
 
 TEST(empirical_variogram, trivial) {
-  size_t n_points = 4;
+  const size_t n_points = 4;
 
   // Tetrahedron vertices separated from each other by a distance d.
   double d = 0.5;
@@ -79,7 +79,8 @@ TEST(empirical_variogram, trivial) {
 }
 
 TEST(empirical_variogram, zero_points) {
-  size_t n_points = 0;
+  const size_t n_points = 0;
+
   points3d points(n_points, 3);
   valuesd values(n_points);
 
