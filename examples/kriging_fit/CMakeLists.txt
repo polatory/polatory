@@ -10,24 +10,11 @@ target_link_libraries(${TARGET}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
 )
 
-if(MSVC)
-    if(CMAKE_BUILD_TYPE MATCHES Debug)
-        file(GLOB BOOST_DLLS "${VCPKG_ROOT}/debug/bin/boost_program_options-vc141-mt-*.dll")
-    else()
-        file(GLOB BOOST_DLLS "${VCPKG_ROOT}/bin/boost_program_options-vc141-mt-*.dll")
-    endif()
-endif()
-
-set(FILES
-    ${DLLS}
-    ${BOOST_DLLS}
-)
-
-foreach(file ${FILES})
+foreach(dll ${DLLS})
     add_custom_command(TARGET ${TARGET}
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${file}
+        ${dll}
         $<TARGET_FILE_DIR:${TARGET}>
     )
 endforeach()
