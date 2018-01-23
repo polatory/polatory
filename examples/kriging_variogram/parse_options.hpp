@@ -25,13 +25,13 @@ options parse_options(int argc, const char *argv[]) {
   po::options_description opts_desc("");
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required(),
-     "input file")
+     "Input file (x,y,z,value format)")
     ("bin-width", po::value<double>(&opts.bin_width)->required(),
-     "bin width of the empirical variogram")
+     "Bin width of the empirical variogram")
     ("n-bins", po::value<int>(&opts.n_bins)->default_value(15),
-     "number of bins in the empirical variogram")
+     "Number of bins in the empirical variogram")
     ("out", po::value<std::string>(&opts.out_file),
-     "output file (binary representation of the empirical variogram)");
+     "Output file for use in kriging_fit");
 
   po::variables_map vm;
   try {

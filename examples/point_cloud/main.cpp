@@ -38,7 +38,7 @@ int main(int argc, const char *argv[]) {
     valuesd values = sdf_data.sdf_values();
 
     // Remove very close points.
-    std::tie(points, values) = distance_filter(points, opts.filter_distance)
+    std::tie(points, values) = distance_filter(points, opts.min_distance)
       .filtered(points, values);
 
     // Output SDF data (optional).
@@ -47,7 +47,7 @@ int main(int argc, const char *argv[]) {
     }
 
     // Define model.
-    biharmonic rbf({ 1.0, opts.rho });
+    biharmonic rbf({ 1.0, opts.smooth });
     interpolant interpolant(rbf, opts.poly_dimension, opts.poly_degree);
 
     // Fit.
