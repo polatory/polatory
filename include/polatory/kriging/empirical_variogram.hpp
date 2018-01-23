@@ -33,8 +33,7 @@ private:
   friend class boost::serialization::access;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int)  // NOLINT(runtime/references)
-  {
+  void serialize(Archive& ar, const unsigned int) {  // NOLINT(runtime/references)
     ar & distance_;
     ar & gamma_;
     ar & num_pairs_;
