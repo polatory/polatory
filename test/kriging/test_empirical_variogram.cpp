@@ -27,7 +27,7 @@ TEST(empirical_variogram, serialize) {
   valuesd values = valuesd::Random(n_points);
 
   auto filename = (boost::filesystem::temp_directory_path() / boost::filesystem::unique_path())
-    .native();
+    .string();
 
   empirical_variogram v(points, values, 0.1, 10);
   v.save(filename);
