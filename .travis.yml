@@ -9,18 +9,14 @@ env:
   global:
     - MAKEFLAGS=-j5
     - OMP_NUM_THREADS=4
-
-matrix:
-  include:
-    - env:
-      - CXX=g++
-    - env:
-      - CXX=clang++
+  matrix:
+    - CXX=g++
+    - CXX=clang++
 
 before_install:
   - lscpu
   - sudo docker pull ubuntu:16.04
-  - sudo docker run -w /root --name test -d ubuntu:16.04 sleep infinity
+  - sudo docker run -w /root --name test -d -e CXX=${CXX} -e MAKEFLAGS=${MAKEFLAGS} -e OMP_NUM_THREADS=${OMP_NUM_THREADS} ubuntu:16.04 sleep infinity
   - sudo docker cp . test:/root/polatory
 
   - sudo docker exec test apt-get update -qq
