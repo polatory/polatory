@@ -1,6 +1,6 @@
 sudo: required
 dist: trusty
-language: cpp
+language: minimal
 
 services:
   - docker
