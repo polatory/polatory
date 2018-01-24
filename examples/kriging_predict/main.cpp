@@ -27,7 +27,7 @@ int main(int argc, const char *argv[]) {
     valuesd values = table.col(3);
 
     // Remove very close points.
-    std::tie(points, values) = distance_filter(points, opts.filter_distance)
+    std::tie(points, values) = distance_filter(points, opts.min_distance)
       .filtered(points, values);
 
     // Define model.

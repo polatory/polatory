@@ -24,33 +24,16 @@ elseif(MSVC)
     set(MKL_DLL_DIR "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/redist/intel64/mkl")
     set(VCPKG_ROOT "" CACHE STRING "Path to vcpkg/installed/x64-windows")
     set(DLLS
+        ${MKL_DLL_DIR}/mkl_avx.dll
         ${MKL_DLL_DIR}/mkl_avx2.dll
+        ${MKL_DLL_DIR}/mkl_avx512.dll
         ${MKL_DLL_DIR}/mkl_core.dll
         ${MKL_DLL_DIR}/mkl_def.dll
+        ${MKL_DLL_DIR}/mkl_mc.dll
+        ${MKL_DLL_DIR}/mkl_mc3.dll
         ${MKL_DLL_DIR}/mkl_sequential.dll
     )
-    if(CMAKE_BUILD_TYPE MATCHES Debug)
-        set(DLLS
-            ${DLLS}
-            ${VCPKG_ROOT}/debug/bin/ceres-debug.dll
-            ${VCPKG_ROOT}/debug/bin/flann_cpp-gd.dll
-            ${VCPKG_ROOT}/debug/bin/glog.dll
-            ${VCPKG_ROOT}/debug/bin/lapack.dll
-            ${VCPKG_ROOT}/debug/bin/metis.dll
-            ${VCPKG_ROOT}/debug/bin/openblas.dll
-        )
-    else()
-        set(DLLS
-            ${DLLS}
-            ${VCPKG_ROOT}/bin/ceres.dll
-            ${VCPKG_ROOT}/bin/flann_cpp.dll
-            ${VCPKG_ROOT}/bin/glog.dll
-            ${VCPKG_ROOT}/bin/lapack.dll
-            ${VCPKG_ROOT}/bin/metis.dll
-            ${VCPKG_ROOT}/bin/openblas.dll
-        )
-    endif()
-    
+
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
         set(CMAKE_CXX_FLAGS "/MP /EHsc /Qstd=c++14 /Qopenmp")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /QaxAVX /Qip")

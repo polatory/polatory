@@ -15,7 +15,7 @@
 
 struct options {
   std::string in_file;
-  double filter_distance;
+  double min_distance;
   double psill;
   double range;
   double nugget;
@@ -38,29 +38,29 @@ options parse_options(int argc, const char *argv[]) {
   po::options_description opts_desc("");
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required(),
-     "input file")
-    ("filter-dist", po::value<double>(&opts.filter_distance)->default_value(1e-10),
-     "filter distance threshold")
+     "Input file (x,y,z,value format)")
+    ("min-dist", po::value<double>(&opts.min_distance)->default_value(1e-10),
+     "Minimum distance for preserving close points")
     ("psill", po::value<double>(&opts.psill)->required(),
-     "partial sill of the variogram")
+     "Partial sill of the variogram")
     ("range", po::value<double>(&opts.range)->required(),
-     "range of the variogram")
+     "Range of the variogram")
     ("nugget", po::value<double>(&opts.nugget)->default_value(0),
-     "nugget of the variogram")
+     "Nugget of the variogram")
     ("dim", po::value<int>(&opts.poly_dimension)->default_value(3),
-     "dimension of the drift polynomial")
+     "Dimension of the drift polynomial")
     ("deg", po::value<int>(&opts.poly_degree)->default_value(0),
-     "degree of the drift polynomial")
+     "Degree of the drift polynomial")
     ("tol", po::value<double>(&opts.absolute_tolerance)->required(),
-     "absolute tolerance of fitting")
+     "Absolute tolerance of fitting")
     ("mesh-bbox", po::value<std::vector<double>>(&bbox_vec)->multitoken()->required(),
-     "output mesh bbox: xmin ymin zmin xmax ymax zmax")
+     "Output mesh bbox: xmin ymin zmin xmax ymax zmax")
     ("mesh-res", po::value<double>(&opts.mesh_resolution)->required(),
-     "output mesh resolution")
+     "Output mesh resolution")
     ("mesh-isoval", po::value<std::vector<double>>(&mesh_vals_vec)->multitoken()->required(),
-     "output mesh isovalues: value1 [value2 [...]]")
+     "Output mesh isovalues: value1 [value2 [...]]")
     ("mesh-out", po::value<std::vector<std::string>>(&mesh_files_vec)->multitoken()->required(),
-     "output mesh filenames: file1 [file2 [...]]");
+     "Output mesh files (OBJ format): file1 [file2 [...]]");
 
   po::variables_map vm;
   try {

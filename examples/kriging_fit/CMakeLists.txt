@@ -1,6 +1,6 @@
 find_package(Boost 1.60 COMPONENTS program_options REQUIRED)
 
-set(TARGET kriging_predict)
+set(TARGET kriging_fit)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
 add_executable(${TARGET} ${SOURCES})

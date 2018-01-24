@@ -2,7 +2,11 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
+
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/vector.hpp>
 
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -15,13 +19,26 @@ public:
   empirical_variogram(const geometry::points3d& points, const common::valuesd& values,
                       double bin_width, size_t n_bins);
 
+  explicit empirical_variogram(std::string filename);
+
   const std::vector<double>& bin_distance() const;
 
   const std::vector<double>& bin_gamma() const;
 
   const std::vector<size_t>& bin_num_pairs() const;
 
+  const void save(std::string filename) const;
+
 private:
+  friend class boost::serialization::access;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int) {  // NOLINT(runtime/references)
+    ar & distance_;
+    ar & gamma_;
+    ar & num_pairs_;
+  }
+
   std::vector<double> distance_;
   std::vector<double> gamma_;
   std::vector<size_t> num_pairs_;

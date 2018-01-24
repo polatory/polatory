@@ -1,4 +1,5 @@
 add_subdirectory(kriging_cross_validation)
+add_subdirectory(kriging_fit)
 add_subdirectory(kriging_predict)
 add_subdirectory(kriging_variogram)
 add_subdirectory(point_cloud)

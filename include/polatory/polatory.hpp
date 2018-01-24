@@ -27,4 +27,5 @@
 #include <polatory/rbf/cov_quasi_spherical5.hpp>
 #include <polatory/rbf/cov_quasi_spherical7.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
+#include <polatory/rbf/rbf_kernel.hpp>
 #include <polatory/table.hpp>

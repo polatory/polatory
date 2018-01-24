@@ -13,30 +13,25 @@ struct options {
   std::string in_file;
   double bin_width;
   int n_bins;
-  double psill;
-  double range;
-  double nugget;
+  std::string out_file;
 };
 
 options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 
   options opts;
+  int weights;
 
   po::options_description opts_desc("");
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required(),
-     "input file")
+     "Input file (x,y,z,value format)")
     ("bin-width", po::value<double>(&opts.bin_width)->required(),
-     "bin width of the empirical variogram")
+     "Bin width of the empirical variogram")
     ("n-bins", po::value<int>(&opts.n_bins)->default_value(15),
-     "number of bins in the empirical variogram")
-    ("psill", po::value<double>(&opts.psill)->required(),
-     "initial value for the partial sill")
-    ("range", po::value<double>(&opts.range)->required(),
-     "initial value for the range")
-    ("nugget", po::value<double>(&opts.nugget)->default_value(0),
-     "initial value for the nugget");
+     "Number of bins in the empirical variogram")
+    ("out", po::value<std::string>(&opts.out_file),
+     "Output file for use in kriging_fit");
 
   po::variables_map vm;
   try {
