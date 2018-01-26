@@ -13,18 +13,18 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 ## Features
 
 * Fast spline surface reconstruction from 2.5D/3D point cloud
-* Fast interpolation (global kriging prediction) of 1D/2D/3D scattered data
+* Fast interpolation of 1D/2D/3D scattered data (kriging prediction)
 * Meshing isosurfaces
 * Supports large number (millions) of input points
-* Supports globally supported RBFs
+* Supports inequality constraints
 
 ### [Benchmark](https://github.com/polatory/polatory/wiki/Benchmark)
 
 ### Kriging via RBF interpolation
 
-Polatory can perform global kriging prediction via RBF interpolation. Here is the correspondence between kriging prediction and RBF interpolation:
+Polatory can perform global kriging prediction via RBF interpolation. Although different terminology is used, both methods produce the same results. Here is the correspondence between kriging and RBF interpolation:
 
-| Kriging prediction  | RBF interpolation                          |
+| Kriging             | RBF interpolation                          |
 | ------------------- | ------------------------------------------ |
 | Prediction          | Interpolation (fitting + evaluation)       |
 | Covariance function | RBF                                        |
@@ -67,7 +67,7 @@ Visual Studio 2017 and Intel(R) Parallel Studio XE 2017
     ```
     If you use Clang, Intel(R) OpenMP is required.
     ```bash
-    sudo apt install clang-3.8 libiomp-dev
+    sudo apt install clang libiomp-dev
     ```
 
 1. Download and install [Intel(R) MKL](https://software.intel.com/mkl).
@@ -174,9 +174,9 @@ We welcome your contributions! You can contribute to this project in several way
 
 You can just click the ★Star button to show your interest.
 
-### <a href="https://github.com/polatory/polatory/issues">Create an Issue</a>
+### <a href="https://github.com/polatory/polatory/issues">File an Issue</a>
 
-Feel free to create an issue, if you have any questions, requests, or if you have found any issues (please include a minimal reproducible example).
+Feel free to file an issue, if you have any questions, feature requests, or if you have found any unexpected results (please include a minimal reproducible example).
 
 ### <a href="https://github.com/polatory/polatory/pulls">Create a Pull Request</a>
 
