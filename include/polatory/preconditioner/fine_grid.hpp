@@ -10,8 +10,8 @@
 
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/model.hpp>
+#include <polatory/polynomial/lagrange_basis.hpp>
 
 namespace polatory {
 namespace preconditioner {

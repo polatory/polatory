@@ -12,8 +12,8 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
 #include <polatory/geometry/affine_transform3d.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
@@ -72,7 +72,7 @@ public:
 
   void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
                          double absolute_tolerance) {
-    if (model_.nugget() > 0.0)
+    if (model_.rbf().nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
     auto min_n_points = model_.poly_basis_size() + 1;
@@ -100,7 +100,7 @@ public:
   void fit_inequality(const geometry::points3d& points, const common::valuesd& values,
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
                       double absolute_tolerance) {
-    if (model_.nugget() > 0.0)
+    if (model_.rbf().nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
     auto min_n_points = model_.poly_basis_size() + 1;

@@ -7,9 +7,9 @@
 namespace polatory {
 namespace polynomial {
 
-class basis_base {
+class polynomial_basis_base {
 public:
-  explicit basis_base(int dimension, int degree)
+  explicit polynomial_basis_base(int dimension, int degree)
     : dimension_(dimension)
     , degree_(degree)
     , basis_size_(basis_size(dimension, degree)) {
@@ -17,7 +17,7 @@ public:
     assert(degree >= 0);
   }
 
-  virtual ~basis_base() {}
+  virtual ~polynomial_basis_base() {}
 
   size_t basis_size() const {
     return basis_size(dimension_, degree_);

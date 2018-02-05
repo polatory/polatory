@@ -15,10 +15,10 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/krylov/linear_operator.hpp>
+#include <polatory/model.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
-#include <polatory/model.hpp>
 
 namespace polatory {
 namespace preconditioner {

@@ -8,13 +8,13 @@
 #include <Eigen/Core>
 
 #include <polatory/common/types.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
-#include <polatory/model.hpp>
 
 namespace polatory {
 namespace interpolation {

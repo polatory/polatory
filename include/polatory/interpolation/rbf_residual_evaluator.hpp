@@ -12,9 +12,9 @@
 
 #include <Eigen/Core>
 
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
 
@@ -49,7 +49,7 @@ public:
 
     evaluator_->set_weights(weights);
 
-    auto nugget = model_.nugget();
+    auto nugget = model_.rbf().nugget();
 
     double max_residual = 0.0;
     for (size_t i = 0; i < n_points_ / chunk_size + 1; i++) {

@@ -54,7 +54,7 @@ void test_coarse_grid(double nugget) {
   valuesd values_fit = eval.evaluate();
 
   valuesd residuals = (values - values_fit).cwiseAbs();
-  valuesd smoothing_error_bounds = model.nugget() * sol.head(n_points).cwiseAbs();
+  valuesd smoothing_error_bounds = model.rbf().nugget() * sol.head(n_points).cwiseAbs();
 
   for (size_t i = 0; i < n_points; i++) {
     EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));
