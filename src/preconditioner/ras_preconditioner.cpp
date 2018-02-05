@@ -59,7 +59,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, const geometry::poin
   auto ratio = 0 == n_fine_levels_ - 1
                ? static_cast<double>(n_coarsest_points) / static_cast<double>(points_.rows())
                : coarse_ratio;
-  upward_evaluator_.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points_, bbox));
+  upward_evaluator_.push_back(interpolation::rbf_evaluator<Order>(rbf.without_poly(), points_, bbox));
   point_idcs_.push_back(divider->choose_coarse_points(ratio));
   upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
 
@@ -84,7 +84,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, const geometry::poin
             ? static_cast<double>(n_coarsest_points) / static_cast<double>(point_idcs_.back().size())
             : coarse_ratio;
     upward_evaluator_.push_back(
-      interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::take_rows(points_, point_idcs_.back()), bbox));
+      interpolation::rbf_evaluator<Order>(rbf.without_poly(), common::take_rows(points_, point_idcs_.back()), bbox));
     point_idcs_.push_back(divider->choose_coarse_points(ratio));
     upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
   }
@@ -103,7 +103,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, const geometry::poin
     p_ = poly.evaluate_points(points_).transpose();
     ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
-    auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(rbf, -1, -1, points_);
+    auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(rbf.without_poly(), points_);
     for (size_t i = 0; i < p_.cols(); i++) {
       finest_evaluator.set_weights(p_.col(i));
       ap_.col(i) = finest_evaluator.evaluate();

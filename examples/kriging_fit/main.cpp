@@ -18,8 +18,8 @@ int main(int argc, const char *argv[]) {
 
     empirical_variogram emp_variog(opts.in_file);
 
-    cov_quasi_spherical9 variog({ opts.psill, opts.range, opts.nugget });
-    variogram_fitting fit(emp_variog, variog, opts.weight_fn);
+    cov_quasi_spherical9 cov({ opts.psill, opts.range, opts.nugget });
+    variogram_fitting fit(emp_variog, cov, opts.weight_fn);
 
     auto params = fit.parameters();
     std::cout << "Fitted parameters:" << std::endl

@@ -24,7 +24,7 @@ namespace polatory {
 
 class interpolant {
 public:
-  interpolant(const rbf::rbf& rbf)
+  explicit interpolant(const rbf::rbf& rbf)
     : rbf_(rbf) {
   }
 

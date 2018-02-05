@@ -51,7 +51,7 @@ int main(int argc, const char *argv[]) {
     }
 
     // Define model.
-    polatory::rbf::rbf rbf(biharmonic({ 1.0, opts.smooth }, opts.poly_dimension, opts.poly_degree);
+    polatory::rbf::rbf rbf(biharmonic({ 1.0, opts.smooth }), opts.poly_dimension, opts.poly_degree);
     interpolant interpolant(rbf);
 
     // Fit.

@@ -7,38 +7,35 @@
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/polynomial/basis_base.hpp>
-#include <polatory/rbf/biharmonic.hpp>
+#include <polatory/rbf/cov_exponential.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::interpolation::rbf_operator;
 using polatory::point_cloud::random_points;
-using polatory::polynomial::basis_base;
-using polatory::rbf::biharmonic;
+using polatory::rbf::cov_exponential;
 
 namespace {
 
 void test_poly_degree(int poly_degree, size_t n_points) {
-  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
-  double absolute_tolerance = 5e-7;
+  double absolute_tolerance = 1e-6;
 
-  biharmonic rbf({ 1.0, 0.2 });
+  polatory::rbf::rbf rbf(cov_exponential({ 1.0, 0.2, 0.0 }), 3, poly_degree);
 
   auto points = random_points(sphere3d(), n_points);
 
-  valuesd weights = valuesd::Random(n_points + n_poly_basis);
+  valuesd weights = valuesd::Random(n_points + rbf.poly_basis_size());
 
-  rbf_direct_symmetric_evaluator direct_eval(rbf, 3, poly_degree, points);
+  rbf_direct_symmetric_evaluator direct_eval(rbf, points);
   direct_eval.set_weights(weights);
 
-  rbf_operator<> op(rbf, 3, poly_degree, points);
+  rbf_operator<> op(rbf, points);
 
   valuesd direct_op_weights = direct_eval.evaluate() + rbf.nugget() * weights.head(n_points);
   valuesd op_weights = op(weights);
 
-  EXPECT_EQ(n_points + n_poly_basis, op_weights.size());
+  EXPECT_EQ(n_points + rbf.poly_basis_size(), op_weights.size());
 
   auto max_residual = (op_weights.head(n_points) - direct_op_weights).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);

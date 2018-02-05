@@ -1,11 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <polatory/common/types.hpp>
-#include <polatory/config.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolant.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/table.hpp>
+#include <polatory/polatory.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
@@ -22,14 +17,14 @@ int main(int argc, char *argv[]) {
 
   double absolute_tolerance = 1e-4;
 
-  cov_exponential cov({ 1.0, 0.02, 0.0 });
   const auto poly_dimension = 3;
   const auto poly_degree = 0;
+  polatory::rbf::rbf rbf(cov_exponential({ 1.0, 0.02, 0.0 }), poly_dimension, poly_degree);
 
-  interpolant ip(cov, poly_dimension, poly_degree);
+  interpolant interpolant(rbf);
 
-  ip.fit(points, values, absolute_tolerance);
-  auto prediction_values = ip.evaluate_points(prediction_points);
+  interpolant.fit(points, values, absolute_tolerance);
+  auto prediction_values = interpolant.evaluate_points(prediction_points);
 
   write_table(argv[4], prediction_values);
 

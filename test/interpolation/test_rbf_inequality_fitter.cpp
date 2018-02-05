@@ -12,7 +12,6 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/biharmonic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 
@@ -23,7 +22,6 @@ using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
-using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
 using polatory::rbf::cov_exponential;
 
@@ -41,18 +39,17 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.5;
   values = values.Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  biharmonic rbf({ 1.0, 0.0 });
+  polatory::rbf::rbf rbf(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;
 
-  rbf_inequality_fitter fitter(rbf, poly_dimension, poly_degree, points);
+  rbf_inequality_fitter fitter(rbf, points);
   std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
-  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
-  EXPECT_EQ(weights.rows(), indices.size() + n_poly_basis);
+  EXPECT_EQ(weights.rows(), indices.size() + rbf.poly_basis_size());
 
-  rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, take_rows(points, indices));
+  rbf_evaluator<> eval(rbf, take_rows(points, indices));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate_points(points);
 
@@ -100,15 +97,15 @@ TEST(rbf_inequality_fitter, kostov86) {
     nan, 4, 7, nan, nan,
     nan, nan, nan, nan, 3;
 
-  cov_exponential rbf({ 1.0, 3.0, 0.0 });
+  polatory::rbf::rbf rbf(cov_exponential({ 1.0, 3.0, 0.0 }), poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;
 
-  rbf_inequality_fitter fitter(rbf, poly_dimension, poly_degree, points);
+  rbf_inequality_fitter fitter(rbf, points);
   std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
-  rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, take_rows(points, indices));
+  rbf_evaluator<> eval(rbf, take_rows(points, indices));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate_points(points);
 

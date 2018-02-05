@@ -9,7 +9,6 @@
 #include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/biharmonic.hpp>
 
 #include "sample_data.hpp"
@@ -18,7 +17,6 @@ using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
-using polatory::polynomial::basis_base;
 using polatory::rbf::biharmonic;
 
 namespace {
@@ -34,15 +32,14 @@ void test_poly_degree(int poly_degree) {
 
   size_t n_points = points.rows();
 
-  biharmonic rbf({ 1.0, 0.0 });
+  polatory::rbf::rbf rbf(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
 
-  rbf_fitter fitter(rbf, poly_dimension, poly_degree, points);
+  rbf_fitter fitter(rbf, points);
   valuesd weights = fitter.fit(values, absolute_tolerance);
 
-  size_t n_poly_basis = basis_base::basis_size(poly_dimension, poly_degree);
-  EXPECT_EQ(weights.rows(), n_points + n_poly_basis);
+  EXPECT_EQ(weights.rows(), n_points + rbf.poly_basis_size());
 
-  rbf_symmetric_evaluator<> eval(rbf, poly_dimension, poly_degree, points);
+  rbf_symmetric_evaluator<> eval(rbf, points);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate();
 
