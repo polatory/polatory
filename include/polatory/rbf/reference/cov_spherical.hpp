@@ -5,17 +5,17 @@
 #include <cmath>
 #include <memory>
 
-#include <polatory/rbf/covariance_function.hpp>
+#include <polatory/rbf/covariance_function_base.hpp>
 
 namespace polatory {
 namespace rbf {
 namespace reference {
 
-class cov_spherical : public covariance_function {
+class cov_spherical : public covariance_function_base {
 public:
-  using covariance_function::covariance_function;
+  using covariance_function_base::covariance_function_base;
 
-  std::shared_ptr<rbf_kernel> clone() const override {
+  std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<cov_spherical>(parameters());
   }
 

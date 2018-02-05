@@ -9,15 +9,14 @@
 #include <Eigen/Core>
 
 #include <polatory/common/types.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/interpolation/rbf_residual_evaluator.hpp>
 #include <polatory/krylov/fgmres.hpp>
-#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/model.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
-#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -26,28 +25,22 @@ class rbf_solver {
   using Preconditioner = preconditioner::ras_preconditioner;
 
 public:
-  rbf_solver(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-             const geometry::points3d& points)
-    : rbf_(rbf)
-    , poly_dimension_(poly_dimension)
-    , poly_degree_(poly_degree)
-    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+  rbf_solver(const model& model, const geometry::points3d& points)
+    : model_(model)
+    , n_poly_basis_(model.poly_basis_size())
     , n_points_(points.rows()) {
-    op_ = std::make_unique<rbf_operator<>>(rbf, poly_dimension, poly_degree, points);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(rbf, poly_dimension, poly_degree, points);
+    op_ = std::make_unique<rbf_operator<>>(model, points);
+    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points);
 
     set_points(points);
   }
 
-  rbf_solver(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-             int tree_height, const geometry::bbox3d& bbox)
-    : rbf_(rbf)
-    , poly_dimension_(poly_dimension)
-    , poly_degree_(poly_degree)
-    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+  rbf_solver(const model& model, int tree_height, const geometry::bbox3d& bbox)
+    : model_(model)
+    , n_poly_basis_(model.poly_basis_size())
     , n_points_(0) {
-    op_ = std::make_unique<rbf_operator<>>(rbf, poly_dimension, poly_degree, tree_height, bbox);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(rbf, poly_dimension, poly_degree, tree_height, bbox);
+    op_ = std::make_unique<rbf_operator<>>(model, tree_height, bbox);
+    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, tree_height, bbox);
   }
 
   void set_points(const geometry::points3d& points) {
@@ -56,10 +49,10 @@ public:
     op_->set_points(points);
     res_eval_->set_points(points);
 
-    pc_ = std::make_unique<Preconditioner>(rbf_, poly_dimension_, poly_degree_, points);
+    pc_ = std::make_unique<Preconditioner>(model_, points);
 
     if (n_poly_basis_ > 0) {
-      polynomial::orthonormal_basis poly(poly_dimension_, poly_degree_, points);
+      polynomial::orthonormal_basis poly(model_.poly_dimension(), model_.poly_degree(), points);
       p_ = poly.evaluate_points(points).transpose();
     }
   }
@@ -130,9 +123,7 @@ private:
     return solution;
   }
 
-  const rbf::rbf rbf_;
-  const int poly_dimension_;
-  const int poly_degree_;
+  const model model_;
   const size_t n_poly_basis_;
 
   size_t n_points_;

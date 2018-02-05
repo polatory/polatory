@@ -11,8 +11,8 @@
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/rbf/rbf.hpp>
-#include <polatory/rbf/rbf_kernel.hpp>
+#include <polatory/model.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 #include <polatory/third_party/ScalFMM/Components/FTypedLeaf.hpp>
 #include <polatory/third_party/ScalFMM/Containers/FOctree.hpp>
 #include <polatory/third_party/ScalFMM/Core/FFmmAlgorithmThreadTsm.hpp>
@@ -29,21 +29,21 @@ class fmm_evaluator {
   using ParticleContainer = FP2PParticleContainerIndexed<double>;
   using Leaf = FTypedLeaf<double, ParticleContainer>;
   using Octree = FOctree<double, Cell, ParticleContainer, Leaf>;
-  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, rbf::rbf_kernel, Order>;
+  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, rbf::rbf_base, Order>;
   using Fmm = FFmmAlgorithmThreadTsm<Octree, Cell, ParticleContainer, InterpolatedKernel, Leaf>;
 
   static constexpr int FmmAlgorithmScheduleChunkSize = 1;
 
 public:
-  fmm_evaluator(const rbf::rbf& rbf, int tree_height, const geometry::bbox3d& bbox)
-    : rbf_(rbf)
+  fmm_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
+    : model_(model)
     , n_src_points_(0)
     , n_fld_points_(0) {
     auto bbox_width = (1.0 + 1.0 / 64.0) * bbox.size().maxCoeff();
     auto bbox_center = bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-      tree_height, bbox_width, FPoint<double>(bbox_center.data()), &rbf_.get());
+      tree_height, bbox_width, FPoint<double>(bbox_center.data()), &model_.rbf());
 
     tree_ = std::make_unique<Octree>(
       tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<double>(bbox_center.data()));
@@ -194,7 +194,7 @@ private:
     });
   }
 
-  const rbf::rbf rbf_;
+  const model model_;
 
   size_t n_src_points_;
   size_t n_fld_points_;

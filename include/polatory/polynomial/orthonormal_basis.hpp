@@ -6,16 +6,16 @@
 
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/polynomial/polynomial_basis_base.hpp>
 
 namespace polatory {
 namespace polynomial {
 
-class orthonormal_basis : public basis_base {
+class orthonormal_basis : public polynomial_basis_base {
 public:
   orthonormal_basis(int dimension, int degree, const geometry::points3d& points)
-    : basis_base(dimension, degree)
+    : polynomial_basis_base(dimension, degree)
     , mono_basis_(dimension, degree) {
     auto pt = mono_basis_.evaluate_points(points);
     auto u_hat = Eigen::MatrixXd(pt.rows(), pt.cols());

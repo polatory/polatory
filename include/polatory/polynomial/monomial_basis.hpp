@@ -7,15 +7,15 @@
 #include <Eigen/Core>
 
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/polynomial/polynomial_basis_base.hpp>
 
 namespace polatory {
 namespace polynomial {
 
-class monomial_basis : public basis_base {
+class monomial_basis : public polynomial_basis_base {
 public:
   explicit monomial_basis(int dimension, int degree)
-    : basis_base(dimension, degree) {
+    : polynomial_basis_base(dimension, degree) {
     assert(degree >= 0 && degree <= 2);
   }
 

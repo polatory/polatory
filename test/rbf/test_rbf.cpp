@@ -12,7 +12,7 @@
 #include <polatory/rbf/cov_quasi_spherical5.hpp>
 #include <polatory/rbf/cov_quasi_spherical7.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
-#include <polatory/rbf/rbf_kernel.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/cov_spherical.hpp>
 #include <polatory/rbf/reference/triharmonic.hpp>
@@ -24,7 +24,7 @@ using polatory::rbf::cov_quasi_spherical3;
 using polatory::rbf::cov_quasi_spherical5;
 using polatory::rbf::cov_quasi_spherical7;
 using polatory::rbf::cov_quasi_spherical9;
-using polatory::rbf::rbf_kernel;
+using polatory::rbf::rbf_base;
 using polatory::rbf::reference::cov_gaussian;
 using polatory::rbf::reference::cov_spherical;
 using polatory::rbf::reference::triharmonic;
@@ -35,7 +35,7 @@ double hypot(double x, double y, double z) {
   return std::sqrt(x * x + y * y + z * z);
 }
 
-void test_gradient(const rbf_kernel& kernel) {
+void test_gradient(const rbf_base& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-5;
 
@@ -50,7 +50,7 @@ void test_gradient(const rbf_kernel& kernel) {
     auto r = hypot(x, y, z);
 
     double gradx, grady, gradz;
-    kernel.evaluate_gradient(&gradx, &grady, &gradz, x, y, z, r);
+    rbf.evaluate_gradient(&gradx, &grady, &gradz, x, y, z, r);
 
     // First-order central difference.
 
@@ -62,9 +62,9 @@ void test_gradient(const rbf_kernel& kernel) {
     auto r_y2 = hypot(x, y + h, z);
     auto r_z2 = hypot(x, y, z + h);
 
-    auto gradx_approx = (kernel.evaluate(r_x2) - kernel.evaluate(r_x1)) / (2.0 * h);
-    auto grady_approx = (kernel.evaluate(r_y2) - kernel.evaluate(r_y1)) / (2.0 * h);
-    auto gradz_approx = (kernel.evaluate(r_z2) - kernel.evaluate(r_z1)) / (2.0 * h);
+    auto gradx_approx = (rbf.evaluate(r_x2) - rbf.evaluate(r_x1)) / (2.0 * h);
+    auto grady_approx = (rbf.evaluate(r_y2) - rbf.evaluate(r_y1)) / (2.0 * h);
+    auto gradz_approx = (rbf.evaluate(r_z2) - rbf.evaluate(r_z1)) / (2.0 * h);
 
     EXPECT_LE(std::abs(gradx_approx - gradx), tolerance);
     EXPECT_LE(std::abs(grady_approx - grady), tolerance);
@@ -74,7 +74,7 @@ void test_gradient(const rbf_kernel& kernel) {
 
 }  // namespace
 
-TEST(rbf_kernel, gradient) {
+TEST(rbf, gradient) {
   test_gradient(biharmonic({ 1.0, 0.0 }));
   test_gradient(biharmonic2d({ 1.0, 0.0 }));
   test_gradient(cov_exponential({ 1.0, 1.0, 0.0 }));

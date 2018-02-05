@@ -8,14 +8,22 @@
 
 #include <ceres/ceres.h>
 
-#include <polatory/rbf/rbf_kernel.hpp>
+#include <polatory/common/exception.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace rbf {
 
-class covariance_function : public rbf_kernel {
+using weight_function = std::function<double(size_t, double, double)>;
+
+class covariance_function_base : public rbf_base {
 public:
-  using rbf_kernel::rbf_kernel;
+  using rbf_base::rbf_base;
+
+  virtual ceres::CostFunction *cost_function(size_t n_pairs, double distance, double gamma,
+                                             weight_function weight_fn) const {
+    throw common::not_supported("cost_function");
+  }
 
   int cpd_order() const override {
     return 0;
@@ -25,16 +33,16 @@ public:
     return parameters()[2];
   }
 
-  size_t num_parameters() const override {
+  virtual size_t num_parameters() const {
     return 3;
   }
 
-  const std::vector<double>& parameter_lower_bounds() const override {
+  virtual const std::vector<double>& parameter_lower_bounds() const {
     static const std::vector<double> lower_bounds{ 0.0, 0.0, 0.0 };
     return lower_bounds;
   }
 
-  const std::vector<double>& parameter_upper_bounds() const override {
+  virtual const std::vector<double>& parameter_upper_bounds() const {
     static const std::vector<double> upper_bounds{ std::numeric_limits<double>::infinity(),
                                                    std::numeric_limits<double>::infinity(),
                                                    std::numeric_limits<double>::infinity() };

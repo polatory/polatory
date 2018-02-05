@@ -13,6 +13,7 @@
 using polatory::common::take_cols;
 using polatory::interpolant;
 using polatory::kriging::k_fold_cross_validation;
+using polatory::model;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::cov_quasi_spherical9;
 using polatory::read_table;
@@ -30,9 +31,8 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    cov_quasi_spherical9 rbf({ opts.psill, opts.range, opts.nugget });
-    auto residuals = k_fold_cross_validation(rbf, opts.poly_dimension, opts.poly_degree,
-                                             points, values, opts.absolute_tolerance, opts.k);
+    model model(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
+    auto residuals = k_fold_cross_validation(model, points, values, opts.absolute_tolerance, opts.k);
 
     std::cout << "Estimated mean absolute error: " << std::endl
               << std::setw(12) << residuals.lpNorm<1>() / points.rows() << std::endl

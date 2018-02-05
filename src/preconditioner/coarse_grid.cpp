@@ -11,10 +11,10 @@
 namespace polatory {
 namespace preconditioner {
 
-coarse_grid::coarse_grid(const rbf::rbf& rbf,
+coarse_grid::coarse_grid(const model& model,
                          std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
                          const std::vector<size_t>& point_indices)
-  : rbf_(rbf)
+  : model_(model)
   , lagrange_basis_(lagrange_basis)
   , point_idcs_(point_indices)
   , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
@@ -22,11 +22,11 @@ coarse_grid::coarse_grid(const rbf::rbf& rbf,
   assert(m_ > l_);
 }
 
-coarse_grid::coarse_grid(const rbf::rbf& rbf,
+coarse_grid::coarse_grid(const model& model,
                          std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
                          const std::vector<size_t>& point_indices,
                          const geometry::points3d& points_full)
-  : coarse_grid(rbf, lagrange_basis, point_indices) {
+  : coarse_grid(model, lagrange_basis, point_indices) {
   setup(points_full);
 }
 
@@ -41,14 +41,14 @@ void coarse_grid::clear() {
 void coarse_grid::setup(const geometry::points3d& points_full) {
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
-  auto& rbf_kern = rbf_.get();
-  auto diagonal = rbf_kern.evaluate(0.0) + rbf_kern.nugget();
+  auto& rbf = model_.rbf();
+  auto diagonal = rbf.evaluate(0.0) + rbf.nugget();
   for (size_t i = 0; i < m_; i++) {
     a(i, i) = diagonal;
   }
   for (size_t i = 0; i < m_ - 1; i++) {
     for (size_t j = i + 1; j < m_; j++) {
-      a(i, j) = rbf_kern.evaluate(points_full.row(point_idcs_[i]), points_full.row(point_idcs_[j]));
+      a(i, j) = rbf.evaluate(points_full.row(point_idcs_[i]), points_full.row(point_idcs_[j]));
       a(j, i) = a(i, j);
     }
   }

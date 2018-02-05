@@ -9,15 +9,14 @@
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/model.hpp>
 
 namespace polatory {
 namespace interpolation {
 
 class rbf_inequality_fitter {
 public:
-  rbf_inequality_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                        const geometry::points3d& points);
+  rbf_inequality_fitter(const model& model, const geometry::points3d& points);
 
   std::pair<std::vector<size_t>, common::valuesd>
   fit(const common::valuesd& values, const common::valuesd& values_lb, const common::valuesd& values_ub,
@@ -27,9 +26,7 @@ private:
   static std::vector<size_t> arg_where(const common::valuesd& v,
                                        std::function<bool(double)> predicate);
 
-  const rbf::rbf rbf_;
-  const int poly_dimension_;
-  const int poly_degree_;
+  const model model_;
   const geometry::points3d& points_;
 
   const size_t n_points_;

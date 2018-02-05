@@ -4,16 +4,16 @@
 
 #include <memory>
 
-#include <polatory/rbf/rbf_kernel.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace rbf {
 
-class biharmonic : public rbf_kernel {
+class biharmonic : public rbf_base {
 public:
-  using rbf_kernel::rbf_kernel;
+  using rbf_base::rbf_base;
 
-  std::shared_ptr<rbf_kernel> clone() const override {
+  std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<biharmonic>(parameters());
   }
 

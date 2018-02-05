@@ -11,19 +11,19 @@
 
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/model.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
-#include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 namespace preconditioner {
 
 class coarse_grid {
 public:
-  coarse_grid(const rbf::rbf& rbf,
+  coarse_grid(const model& model,
               std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
               const std::vector<size_t>& point_indices);
 
-  coarse_grid(const rbf::rbf& rbf,
+  coarse_grid(const model& model,
               std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
               const std::vector<size_t>& point_indices,
               const geometry::points3d& points_full);
@@ -70,7 +70,7 @@ public:
   }
 
 private:
-  const rbf::rbf rbf_;
+  const model model_;
   const std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
   const std::vector<size_t> point_idcs_;
 

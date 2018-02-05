@@ -8,7 +8,7 @@
 
 #include <polatory/common/bsearch.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/basis_base.hpp>
+#include <polatory/polynomial/polynomial_basis_base.hpp>
 
 namespace polatory {
 namespace polynomial {
@@ -20,7 +20,7 @@ public:
                        int dimension,
                        int degree)
     : n_points_(points.rows())
-    , n_poly_basis_(polynomial::basis_base::basis_size(dimension, degree))
+    , n_poly_basis_(polynomial::polynomial_basis_base::basis_size(dimension, degree))
     , point_idcs_(point_indices) {
     if (degree < 0) return;
 

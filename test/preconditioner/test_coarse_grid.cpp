@@ -9,16 +9,16 @@
 
 #include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
+#include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/rbf/biharmonic.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
+using polatory::model;
 using polatory::point_cloud::random_points;
-using polatory::polynomial::basis_base;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
 using polatory::rbf::biharmonic;
@@ -27,7 +27,6 @@ void test_coarse_grid(double nugget) {
   size_t n_points = 1024;
   int poly_dimension = 3;
   int poly_degree = 0;
-  size_t n_poly_basis = basis_base::basis_size(poly_dimension, poly_degree);
   double absolute_tolerance = 1e-10;
 
   auto points = random_points(sphere3d(), n_points);
@@ -39,24 +38,23 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(n_poly_basis));
+  model model(biharmonic({ 1.0, nugget }), poly_dimension, poly_degree);
+  auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
 
-  biharmonic rbf({ 1.0, nugget });
-
-  coarse_grid coarse(rbf, lagr_basis, point_indices, points);
+  coarse_grid coarse(model, lagr_basis, point_indices, points);
 
   valuesd values = valuesd::Random(n_points);
   coarse.solve(values);
 
-  valuesd sol = valuesd::Zero(n_points + n_poly_basis);
+  valuesd sol = valuesd::Zero(n_points + model.poly_basis_size());
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_symmetric_evaluator(rbf, poly_dimension, poly_degree, points);
+  auto eval = rbf_direct_symmetric_evaluator(model, points);
   eval.set_weights(sol);
   valuesd values_fit = eval.evaluate();
 
   valuesd residuals = (values - values_fit).cwiseAbs();
-  valuesd smoothing_error_bounds = rbf.nugget() * sol.head(n_points).cwiseAbs();
+  valuesd smoothing_error_bounds = model.rbf().nugget() * sol.head(n_points).cwiseAbs();
 
   for (size_t i = 0; i < n_points; i++) {
     EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));

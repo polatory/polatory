@@ -11,19 +11,15 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 
 namespace polatory {
 namespace interpolation {
 
-rbf_inequality_fitter::rbf_inequality_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                                             const geometry::points3d& points)
-  : rbf_(rbf)
-  , poly_dimension_(poly_dimension)
-  , poly_degree_(poly_degree)
+rbf_inequality_fitter::rbf_inequality_fitter(const model& model, const geometry::points3d& points)
+  : model_(model)
   , points_(points)
   , n_points_(points.rows())
-  , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+  , n_poly_basis_(model.poly_basis_size())
   , bbox_(geometry::bbox3d::from_points(points)) {
 }
 
@@ -69,8 +65,8 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
     if (centers.size() > 0) {
       auto tree_height = fmm::fmm_tree_height(centers.size());
       if (tree_height != last_tree_height) {
-        solver = std::make_unique<rbf_solver>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
-        res_eval = std::make_unique<rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, tree_height, bbox_);
+        solver = std::make_unique<rbf_solver>(model_, tree_height, bbox_);
+        res_eval = std::make_unique<rbf_evaluator<>>(model_, tree_height, bbox_);
         last_tree_height = tree_height;
       }
 

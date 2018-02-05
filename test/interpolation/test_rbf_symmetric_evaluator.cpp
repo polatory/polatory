@@ -7,37 +7,36 @@
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
+#include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/polynomial/basis_base.hpp>
-#include <polatory/rbf/biharmonic.hpp>
+#include <polatory/rbf/cov_exponential.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::interpolation::rbf_symmetric_evaluator;
+using polatory::model;
 using polatory::point_cloud::random_points;
-using polatory::polynomial::basis_base;
-using polatory::rbf::biharmonic;
+using polatory::rbf::cov_exponential;
 
 namespace {
 
 template <class Evaluator>
 void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
-  size_t n_poly_basis = basis_base::basis_size(3, poly_degree);
-  double absolute_tolerance = 5e-7;
+  double absolute_tolerance = 1e-6;
 
-  biharmonic rbf({ 1.0, 0.0 });
+  model model(cov_exponential({ 1.0, 0.2, 0.0 }), 3, poly_degree);
 
   auto points = random_points(sphere3d(), n_points);
 
-  valuesd weights = valuesd::Random(n_points + n_poly_basis);
+  valuesd weights = valuesd::Random(n_points + model.poly_basis_size());
 
-  rbf_direct_evaluator direct_eval(rbf, 3, poly_degree, points);
+  rbf_direct_evaluator direct_eval(model, points);
   direct_eval.set_weights(weights);
   direct_eval.set_field_points(points.topRows(n_eval_points));
 
-  Evaluator eval(rbf, 3, poly_degree, points);
+  Evaluator eval(model, points);
   eval.set_weights(weights);
 
   auto direct_values = direct_eval.evaluate();

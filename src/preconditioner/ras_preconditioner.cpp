@@ -6,7 +6,6 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
@@ -14,13 +13,12 @@
 namespace polatory {
 namespace preconditioner {
 
-ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                                       const geometry::points3d& in_points)
+ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& in_points)
   : points_(in_points)
   , n_points_(in_points.rows())
-  , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+  , n_poly_basis_(model.poly_basis_size())
 #if POLATORY_REPORT_RESIDUAL
-  , finest_evaluator_(rbf, poly_dimension, poly_degree, points_)
+  , finest_evaluator_(model, points_)
 #endif
 {
   point_idcs_.push_back(std::vector<size_t>(n_points_));
@@ -28,16 +26,16 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
 
   std::vector<size_t> poly_point_idcs;
   if (n_poly_basis_ > 0) {
-    polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), poly_dimension, poly_degree);
+    polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), model.poly_dimension(), model.poly_degree());
     point_idcs_.back() = ups.point_indices();
     poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_poly_basis_);
-    lagrange_basis_ = std::make_shared<polynomial::lagrange_basis>(poly_dimension, poly_degree, common::take_rows(points_, poly_point_idcs));
+    lagrange_basis_ = std::make_shared<polynomial::lagrange_basis>(model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
   }
 
   n_fine_levels_ = std::max(0, int(
     std::ceil(std::log(static_cast<double>(n_points_) / static_cast<double>(n_coarsest_points)) / log(1.0 / coarse_ratio))));
   if (n_fine_levels_ == 0) {
-    coarse_ = std::make_unique<coarse_grid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
+    coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_.back(), points_);
     return;
   }
 
@@ -46,7 +44,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
 
   fine_grids_.push_back(std::vector<fine_grid>());
   for (const auto& d : divider->domains()) {
-    fine_grids_.back().push_back(fine_grid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
+    fine_grids_.back().push_back(fine_grid(model, lagrange_basis_, d.point_indices, d.inner_point));
   }
 #if !POLATORY_RECOMPUTE_AND_CLEAR
 #pragma omp parallel for
@@ -61,7 +59,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
   auto ratio = 0 == n_fine_levels_ - 1
                ? static_cast<double>(n_coarsest_points) / static_cast<double>(points_.rows())
                : coarse_ratio;
-  upward_evaluator_.push_back(interpolation::rbf_evaluator<Order>(rbf, -1, -1, points_, bbox));
+  upward_evaluator_.push_back(interpolation::rbf_evaluator<Order>(model.without_poly(), points_, bbox));
   point_idcs_.push_back(divider->choose_coarse_points(ratio));
   upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
 
@@ -70,7 +68,7 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
 
     fine_grids_.push_back(std::vector<fine_grid>());
     for (const auto& d : divider->domains()) {
-      fine_grids_.back().push_back(fine_grid(rbf, lagrange_basis_, d.point_indices, d.inner_point));
+      fine_grids_.back().push_back(fine_grid(model, lagrange_basis_, d.point_indices, d.inner_point));
     }
 #if !POLATORY_RECOMPUTE_AND_CLEAR
 #pragma omp parallel for
@@ -86,26 +84,26 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
             ? static_cast<double>(n_coarsest_points) / static_cast<double>(point_idcs_.back().size())
             : coarse_ratio;
     upward_evaluator_.push_back(
-      interpolation::rbf_evaluator<Order>(rbf, -1, -1, common::take_rows(points_, point_idcs_.back()), bbox));
+      interpolation::rbf_evaluator<Order>(model.without_poly(), common::take_rows(points_, point_idcs_.back()), bbox));
     point_idcs_.push_back(divider->choose_coarse_points(ratio));
     upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
   }
 
   std::cout << "Number of points in coarse: " << point_idcs_.back().size() << std::endl;
-  coarse_ = std::make_unique<coarse_grid>(rbf, lagrange_basis_, point_idcs_.back(), points_);
+  coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_.back(), points_);
 
   for (int level = 1; level < n_fine_levels_; level++) {
     downward_evaluator_.push_back(
-      interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::take_rows(points_, point_idcs_.back()), bbox));
+      interpolation::rbf_evaluator<Order>(model, common::take_rows(points_, point_idcs_.back()), bbox));
     downward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_[level]));
   }
 
   if (n_poly_basis_ > 0) {
-    polynomial::orthonormal_basis poly(poly_dimension, poly_degree, points_);
+    polynomial::orthonormal_basis poly(model.poly_dimension(), model.poly_degree(), points_);
     p_ = poly.evaluate_points(points_).transpose();
     ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
-    auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(rbf, -1, -1, points_);
+    auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(model.without_poly(), points_);
     for (size_t i = 0; i < p_.cols(); i++) {
       finest_evaluator.set_weights(p_.col(i));
       ap_.col(i) = finest_evaluator.evaluate();

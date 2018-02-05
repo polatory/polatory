@@ -8,16 +8,16 @@
 #include <Eigen/LU>
 
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/polynomial/polynomial_basis_base.hpp>
 
 namespace polatory {
 namespace polynomial {
 
-class lagrange_basis : public basis_base {
+class lagrange_basis : public polynomial_basis_base {
 public:
   lagrange_basis(int dimension, int degree, const geometry::points3d& points)
-    : basis_base(dimension, degree)
+    : polynomial_basis_base(dimension, degree)
     , mono_basis_(dimension, degree) {
     assert(points.rows() == basis_size());
 

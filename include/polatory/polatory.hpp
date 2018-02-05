@@ -17,6 +17,7 @@
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
 #include <polatory/kriging/weight_functions.hpp>
+#include <polatory/model.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
@@ -27,5 +28,4 @@
 #include <polatory/rbf/cov_quasi_spherical5.hpp>
 #include <polatory/rbf/cov_quasi_spherical7.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
-#include <polatory/rbf/rbf_kernel.hpp>
 #include <polatory/table.hpp>
