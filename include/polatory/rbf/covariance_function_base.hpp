@@ -20,6 +20,11 @@ class covariance_function_base : public rbf_base {
 public:
   using rbf_base::rbf_base;
 
+  virtual ceres::CostFunction *cost_function(size_t n_pairs, double distance, double gamma,
+                                             weight_function weight_fn) const {
+    throw common::not_supported("cost_function");
+  }
+
   int cpd_order() const override {
     return 0;
   }
@@ -42,11 +47,6 @@ public:
                                                    std::numeric_limits<double>::infinity(),
                                                    std::numeric_limits<double>::infinity() };
     return upper_bounds;
-  }
-
-  virtual ceres::CostFunction *cost_function(size_t n_pairs, double distance, double gamma,
-                                             weight_function weight_fn) const {
-    throw common::not_supported("cost_function");
   }
 
   double partial_sill() const {
