@@ -6,7 +6,6 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
@@ -14,11 +13,10 @@
 namespace polatory {
 namespace preconditioner {
 
-ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                                       const geometry::points3d& in_points)
+ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, const geometry::points3d& in_points)
   : points_(in_points)
   , n_points_(in_points.rows())
-  , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+  , n_poly_basis_(rbf.poly_basis_size())
 #if POLATORY_REPORT_RESIDUAL
   , finest_evaluator_(rbf, poly_dimension, poly_degree, points_)
 #endif
@@ -28,10 +26,10 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
 
   std::vector<size_t> poly_point_idcs;
   if (n_poly_basis_ > 0) {
-    polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), poly_dimension, poly_degree);
+    polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), rbf.poly_dimension(), rbf.poly_degree());
     point_idcs_.back() = ups.point_indices();
     poly_point_idcs = std::vector<size_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_poly_basis_);
-    lagrange_basis_ = std::make_shared<polynomial::lagrange_basis>(poly_dimension, poly_degree, common::take_rows(points_, poly_point_idcs));
+    lagrange_basis_ = std::make_shared<polynomial::lagrange_basis>(rbf.poly_dimension(), rbf.poly_degree(), common::take_rows(points_, poly_point_idcs));
   }
 
   n_fine_levels_ = std::max(0, int(
@@ -96,12 +94,12 @@ ras_preconditioner::ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, 
 
   for (int level = 1; level < n_fine_levels_; level++) {
     downward_evaluator_.push_back(
-      interpolation::rbf_evaluator<Order>(rbf, poly_dimension, poly_degree, common::take_rows(points_, point_idcs_.back()), bbox));
+      interpolation::rbf_evaluator<Order>(rbf, common::take_rows(points_, point_idcs_.back()), bbox));
     downward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_[level]));
   }
 
   if (n_poly_basis_ > 0) {
-    polynomial::orthonormal_basis poly(poly_dimension, poly_degree, points_);
+    polynomial::orthonormal_basis poly(rbf.poly_dimension(), rbf.poly_degree(), points_);
     p_ = poly.evaluate_points(points_).transpose();
     ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 

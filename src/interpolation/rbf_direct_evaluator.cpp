@@ -7,14 +7,13 @@
 namespace polatory {
 namespace interpolation {
 
-rbf_direct_evaluator::rbf_direct_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                                           const geometry::points3d& source_points)
+rbf_direct_evaluator::rbf_direct_evaluator(const rbf::rbf& rbf, const geometry::points3d& source_points)
   : rbf_(rbf)
-  , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+  , n_poly_basis_(rbf.poly_basis_size())
   , n_src_points_(source_points.rows())
   , src_points_(source_points) {
   if (n_poly_basis_ > 0) {
-    p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
+    p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
   }
 }
 

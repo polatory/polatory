@@ -16,7 +16,6 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
@@ -26,21 +25,19 @@ class rbf_residual_evaluator {
   static constexpr int chunk_size = 1024;
 
 public:
-  rbf_residual_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                         const geometry::points3d& points)
+  rbf_residual_evaluator(const rbf::rbf& rbf, const geometry::points3d& points)
     : rbf_(rbf)
-    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_poly_basis_(rbf.poly_basis_size())
     , n_points_(points.rows())
     , points_(points) {
-    evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, points_);
+    evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, points_);
   }
 
-  rbf_residual_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                         int tree_height, const geometry::bbox3d& bbox)
+  rbf_residual_evaluator(const rbf::rbf& rbf, int tree_height, const geometry::bbox3d& bbox)
     : rbf_(rbf)
-    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_poly_basis_(rbf.poly_basis_size())
     , n_points_(0) {
-    evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, poly_dimension, poly_degree, tree_height, bbox);
+    evaluator_ = std::make_unique<rbf_evaluator<>>(rbf, tree_height, bbox);
   }
 
   template <class Derived, class Derived2>

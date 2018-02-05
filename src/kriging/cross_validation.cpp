@@ -16,7 +16,7 @@
 namespace polatory {
 namespace kriging {
 
-common::valuesd k_fold_cross_validation(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
+common::valuesd k_fold_cross_validation(const rbf::rbf& rbf,
                                         const geometry::points3d& points, const common::valuesd& values,
                                         double absolute_tolerance,
                                         size_t k) {
@@ -57,10 +57,10 @@ common::valuesd k_fold_cross_validation(const rbf::rbf& rbf, int poly_dimension,
     auto train_values = common::take_rows(values, train_set);
     auto test_values = common::take_rows(values, test_set);
 
-    interpolation::rbf_fitter fitter(rbf, poly_dimension, poly_degree, train_points);
+    interpolation::rbf_fitter fitter(rbf, train_points);
     auto weights = fitter.fit(train_values, absolute_tolerance);
 
-    interpolation::rbf_evaluator<> eval(rbf, poly_dimension, poly_degree, train_points, bbox);
+    interpolation::rbf_evaluator<> eval(rbf, train_points, bbox);
     eval.set_weights(weights);
     auto test_values_fit = eval.evaluate_points(test_points);
 

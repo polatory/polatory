@@ -8,7 +8,6 @@
 
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
 #include <polatory/rbf/rbf.hpp>
@@ -20,8 +19,7 @@ class rbf_direct_symmetric_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
 public:
-  rbf_direct_symmetric_evaluator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                                 const geometry::points3d& points);
+  rbf_direct_symmetric_evaluator(const rbf::rbf& rbf, const geometry::points3d& points);
 
   common::valuesd evaluate() const;
 

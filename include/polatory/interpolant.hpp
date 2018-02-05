@@ -18,19 +18,14 @@
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/rbf.hpp>
 
 namespace polatory {
 
 class interpolant {
 public:
-  interpolant(const rbf::rbf& rbf, int poly_dimension, int poly_degree)
-    : rbf_(rbf)
-    , poly_dimension_(poly_dimension)
-    , poly_degree_(poly_degree) {
-    if (poly_degree < rbf.get().cpd_order() - 1 || poly_degree > 2)
-      throw common::invalid_argument("rbf.get().cpd_order() - 1 <= poly_degree <= 2");
+  interpolant(const rbf::rbf& rbf)
+    : rbf_(rbf) {
   }
 
   const geometry::points3d& centers() const {
@@ -55,7 +50,7 @@ public:
 
   void fit(const geometry::points3d& points, const common::valuesd& values,
            double absolute_tolerance) {
-    auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
+    auto min_n_points = rbf_.poly_basis_size() + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -68,7 +63,7 @@ public:
     clear_centers();
 
     auto transformed = affine_transform_points(points);
-    interpolation::rbf_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
+    interpolation::rbf_fitter fitter(rbf_, transformed);
 
     centers_ = std::move(transformed);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
@@ -80,7 +75,7 @@ public:
     if (rbf_.get().nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
-    auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
+    auto min_n_points = rbf_.poly_basis_size() + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -93,7 +88,7 @@ public:
     clear_centers();
 
     auto transformed = affine_transform_points(points);
-    interpolation::rbf_incremental_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
+    interpolation::rbf_incremental_fitter fitter(rbf_, transformed);
 
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
@@ -108,7 +103,7 @@ public:
     if (rbf_.get().nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
-    auto min_n_points = polynomial::basis_base::basis_size(poly_dimension_, poly_degree_) + 1;
+    auto min_n_points = rbf_.poly_basis_size() + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -127,7 +122,7 @@ public:
     clear_centers();
 
     auto transformed = affine_transform_points(points);
-    interpolation::rbf_inequality_fitter fitter(rbf_, poly_dimension_, poly_degree_, transformed);
+    interpolation::rbf_inequality_fitter fitter(rbf_, transformed);
 
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
@@ -145,7 +140,7 @@ public:
       .transform(point_transform_)
       .union_hull(centers_bbox_);
 
-    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, poly_dimension_, poly_degree_, centers_, transformed_bbox);
+    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, centers_, transformed_bbox);
     evaluator_->set_weights(weights_);
   }
 
@@ -179,8 +174,6 @@ private:
   }
 
   const rbf::rbf rbf_;
-  const int poly_dimension_;
-  const int poly_degree_;
 
   geometry::affine_transform3d point_transform_;
 

@@ -16,8 +16,7 @@ namespace interpolation {
 
 class rbf_inequality_fitter {
 public:
-  rbf_inequality_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                        const geometry::points3d& points);
+  rbf_inequality_fitter(const rbf::rbf& rbf, const geometry::points3d& points);
 
   std::pair<std::vector<size_t>, common::valuesd>
   fit(const common::valuesd& values, const common::valuesd& values_lb, const common::valuesd& values_ub,
@@ -28,8 +27,6 @@ private:
                                        std::function<bool(double)> predicate);
 
   const rbf::rbf rbf_;
-  const int poly_dimension_;
-  const int poly_degree_;
   const geometry::points3d& points_;
 
   const size_t n_points_;

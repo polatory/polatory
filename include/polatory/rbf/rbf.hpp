@@ -4,6 +4,8 @@
 
 #include <memory>
 
+#include <polatory/common/exception.hpp>
+#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/rbf/rbf_kernel.hpp>
 
 namespace polatory {
@@ -14,8 +16,16 @@ public:
   rbf() {
   }
 
-  rbf(const rbf_kernel& kernel)  // NOLINT(runtime/explicit)
-    : kern_(kernel.clone()) {
+  rbf(const rbf_kernel& kernel, int poly_dimension, int poly_degree)
+    : kern_(kernel.clone())
+    , poly_dimension_(poly_dimension)
+    , poly_degree_(poly_degree) {
+    if (poly_degree < get().cpd_order() - 1 || poly_degree > 2)
+      throw common::invalid_argument("get().cpd_order() - 1 <= poly_degree <= 2");
+  }
+
+  int poly_basis_size() const {
+    return polynomial::basis_base::basis_size(poly_dimension_, poly_degree_);
   }
 
   const rbf_kernel& get() const {
@@ -26,8 +36,18 @@ public:
     return *kern_;
   }
 
+  int poly_degree() const {
+    return poly_degree_;
+  }
+
+  int poly_dimension() const {
+    return poly_dimension_;
+  }
+
 private:
   std::shared_ptr<rbf_kernel> kern_;
+  int poly_dimension_;
+  int poly_degree_;
 };
 
 }  // namespace rbf

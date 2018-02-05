@@ -29,8 +29,7 @@ class ras_preconditioner : public krylov::linear_operator {
   static constexpr size_t n_coarsest_points = 1024;
 
 public:
-  ras_preconditioner(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                     const geometry::points3d& in_points);
+  ras_preconditioner(const rbf::rbf& rbf, const geometry::points3d& in_points);
 
   common::valuesd operator()(const common::valuesd& v) const override;
 

@@ -12,7 +12,6 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/polynomial_matrix.hpp>
 #include <polatory/krylov/linear_operator.hpp>
-#include <polatory/polynomial/basis_base.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/rbf/rbf.hpp>
 
@@ -25,30 +24,28 @@ private:
   using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis>;
 
 public:
-  rbf_operator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-               const geometry::points3d& points)
+  rbf_operator(const rbf::rbf& rbf, const geometry::points3d& points)
     : rbf_(rbf)
-    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree)) {
+    , n_poly_basis_(rbf.poly_basis_size()) {
     auto bbox = geometry::bbox3d::from_points(points);
 
     a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::fmm_tree_height(points.rows()), bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
+      p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
     }
 
     set_points(points);
   }
 
-  rbf_operator(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-               int tree_height, const geometry::bbox3d& bbox)
+  rbf_operator(const rbf::rbf& rbf, int tree_height, const geometry::bbox3d& bbox)
     : rbf_(rbf)
-    , n_poly_basis_(polynomial::basis_base::basis_size(poly_dimension, poly_degree))
+    , n_poly_basis_(rbf.poly_basis_size())
     , n_points_(0) {
     a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, tree_height, bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(poly_dimension, poly_degree);
+      p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
     }
   }
 

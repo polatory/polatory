@@ -20,8 +20,7 @@ class rbf_incremental_fitter {
   static constexpr size_t max_n_points_to_add = 1024;
 
 public:
-  rbf_incremental_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-                         const geometry::points3d& points);
+  rbf_incremental_fitter(const rbf::rbf& rbf, const geometry::points3d& points);
 
   std::pair<std::vector<size_t>, common::valuesd>
   fit(const common::valuesd& values, double absolute_tolerance) const;
@@ -32,8 +31,6 @@ private:
   std::vector<size_t> complement_indices(const std::vector<size_t>& indices) const;
 
   const rbf::rbf rbf_;
-  const int poly_dimension_;
-  const int poly_degree_;
   const geometry::points3d& points_;
 
   const size_t n_points_;

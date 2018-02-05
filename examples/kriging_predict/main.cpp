@@ -31,8 +31,8 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    cov_quasi_spherical9 rbf({ opts.psill, opts.range, opts.nugget });
-    interpolant interpolant(rbf, opts.poly_dimension, opts.poly_degree);
+    polatory::rbf::rbf rbf(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
+    interpolant interpolant(rbf);
 
     // Fit.
     interpolant.fit(points, values, opts.absolute_tolerance);

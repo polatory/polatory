@@ -14,15 +14,12 @@ namespace interpolation {
 
 class rbf_fitter {
 public:
-  rbf_fitter(const rbf::rbf& rbf, int poly_dimension, int poly_degree,
-             const geometry::points3d& points);
+  rbf_fitter(const rbf::rbf& rbf, const geometry::points3d& points);
 
   common::valuesd fit(const common::valuesd& values, double absolute_tolerance) const;
 
 private:
   const rbf::rbf rbf_;
-  const int poly_dimension_;
-  const int poly_degree_;
   const geometry::points3d& points_;
 };
 
