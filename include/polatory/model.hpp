@@ -19,8 +19,8 @@ public:
     : rbf_(rbf.clone())
     , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree) {
-    if (poly_degree < rbf_->cpd_order() - 1 || poly_degree > 2)
-      throw common::invalid_argument("rbf_->cpd_order() - 1 <= poly_degree <= 2");
+    if (poly_degree < rbf.cpd_order() - 1 || poly_degree > 2)
+      throw common::invalid_argument("rbf.cpd_order() - 1 <= poly_degree <= 2");
   }
 
   int poly_basis_size() const {
