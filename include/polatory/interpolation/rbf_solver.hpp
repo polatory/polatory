@@ -16,7 +16,7 @@
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/model.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -25,22 +25,22 @@ class rbf_solver {
   using Preconditioner = preconditioner::ras_preconditioner;
 
 public:
-  rbf_solver(const rbf::rbf& rbf, const geometry::points3d& points)
-    : rbf_(rbf)
-    , n_poly_basis_(rbf.poly_basis_size())
+  rbf_solver(const model& model, const geometry::points3d& points)
+    : model_(model)
+    , n_poly_basis_(model.poly_basis_size())
     , n_points_(points.rows()) {
-    op_ = std::make_unique<rbf_operator<>>(rbf, points);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(rbf, points);
+    op_ = std::make_unique<rbf_operator<>>(model, points);
+    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points);
 
     set_points(points);
   }
 
-  rbf_solver(const rbf::rbf& rbf, int tree_height, const geometry::bbox3d& bbox)
-    : rbf_(rbf)
-    , n_poly_basis_(rbf.poly_basis_size())
+  rbf_solver(const model& model, int tree_height, const geometry::bbox3d& bbox)
+    : model_(model)
+    , n_poly_basis_(model.poly_basis_size())
     , n_points_(0) {
-    op_ = std::make_unique<rbf_operator<>>(rbf, tree_height, bbox);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(rbf, tree_height, bbox);
+    op_ = std::make_unique<rbf_operator<>>(model, tree_height, bbox);
+    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, tree_height, bbox);
   }
 
   void set_points(const geometry::points3d& points) {
@@ -49,10 +49,10 @@ public:
     op_->set_points(points);
     res_eval_->set_points(points);
 
-    pc_ = std::make_unique<Preconditioner>(rbf_, points);
+    pc_ = std::make_unique<Preconditioner>(model_, points);
 
     if (n_poly_basis_ > 0) {
-      polynomial::orthonormal_basis poly(rbf_.poly_dimension(), rbf_.poly_degree(), points);
+      polynomial::orthonormal_basis poly(model_.poly_dimension(), model_.poly_degree(), points);
       p_ = poly.evaluate_points(points).transpose();
     }
   }
@@ -123,7 +123,7 @@ private:
     return solution;
   }
 
-  const rbf::rbf rbf_;
+  const model model_;
   const size_t n_poly_basis_;
 
   size_t n_points_;

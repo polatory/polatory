@@ -11,7 +11,7 @@
 namespace polatory {
 namespace kriging {
 
-variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, const rbf::rbf_kernel& cov,
+variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, const rbf::covariance_function_base& cov,
                                      rbf::weight_function weight_fn) {
   auto n_params = cov.num_parameters();
   params_ = cov.parameters();

@@ -30,8 +30,8 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    polatory::rbf::rbf rbf(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
-    auto residuals = k_fold_cross_validation(rbf, points, values, opts.absolute_tolerance, opts.k);
+    polatory::model model(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
+    auto residuals = k_fold_cross_validation(model, points, values, opts.absolute_tolerance, opts.k);
 
     std::cout << "Estimated mean absolute error: " << std::endl
               << std::setw(12) << residuals.lpNorm<1>() / points.rows() << std::endl

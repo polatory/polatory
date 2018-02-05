@@ -14,6 +14,7 @@ using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
+using polatory::model;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::cov_quasi_spherical9;
 using polatory::read_table;
@@ -31,8 +32,8 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    polatory::rbf::rbf rbf(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
-    interpolant interpolant(rbf);
+    model model(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
+    interpolant interpolant(model);
 
     // Fit.
     interpolant.fit(points, values, opts.absolute_tolerance);

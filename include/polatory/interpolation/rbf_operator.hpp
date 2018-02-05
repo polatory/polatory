@@ -13,7 +13,7 @@
 #include <polatory/interpolation/polynomial_matrix.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/model.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -24,28 +24,28 @@ private:
   using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis>;
 
 public:
-  rbf_operator(const rbf::rbf& rbf, const geometry::points3d& points)
-    : rbf_(rbf)
-    , n_poly_basis_(rbf.poly_basis_size()) {
+  rbf_operator(const model& model, const geometry::points3d& points)
+    : model_(model)
+    , n_poly_basis_(model.poly_basis_size()) {
     auto bbox = geometry::bbox3d::from_points(points);
 
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, fmm::fmm_tree_height(points.rows()), bbox);
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(model, fmm::fmm_tree_height(points.rows()), bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
     }
 
     set_points(points);
   }
 
-  rbf_operator(const rbf::rbf& rbf, int tree_height, const geometry::bbox3d& bbox)
-    : rbf_(rbf)
-    , n_poly_basis_(rbf.poly_basis_size())
+  rbf_operator(const model& model, int tree_height, const geometry::bbox3d& bbox)
+    : model_(model)
+    , n_poly_basis_(model.poly_basis_size())
     , n_points_(0) {
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(rbf, tree_height, bbox);
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(model, tree_height, bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
     }
   }
 
@@ -54,8 +54,8 @@ public:
 
     common::valuesd y = common::valuesd::Zero(size());
 
-    auto& rbf_kern = rbf_.get();
-    auto diagonal = rbf_kern.evaluate(0.0) + rbf_kern.nugget();
+    auto& rbf = model_.rbf();
+    auto diagonal = rbf.evaluate(0.0) + rbf.nugget();
     y.head(n_points_) = diagonal * weights.head(n_points_);
 
     a_->set_weights(weights.head(n_points_));
@@ -84,7 +84,7 @@ public:
   }
 
 private:
-  const rbf::rbf rbf_;
+  const model model_;
   const size_t n_poly_basis_;
 
   size_t n_points_;

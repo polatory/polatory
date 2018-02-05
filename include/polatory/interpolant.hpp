@@ -18,14 +18,14 @@
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/model.hpp>
 
 namespace polatory {
 
 class interpolant {
 public:
-  explicit interpolant(const rbf::rbf& rbf)
-    : rbf_(rbf) {
+  explicit interpolant(const model& model)
+    : model_(model) {
   }
 
   const geometry::points3d& centers() const {
@@ -50,7 +50,7 @@ public:
 
   void fit(const geometry::points3d& points, const common::valuesd& values,
            double absolute_tolerance) {
-    auto min_n_points = rbf_.poly_basis_size() + 1;
+    auto min_n_points = model_.poly_basis_size() + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -63,7 +63,7 @@ public:
     clear_centers();
 
     auto transformed = affine_transform_points(points);
-    interpolation::rbf_fitter fitter(rbf_, transformed);
+    interpolation::rbf_fitter fitter(model_, transformed);
 
     centers_ = std::move(transformed);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
@@ -72,10 +72,10 @@ public:
 
   void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
                          double absolute_tolerance) {
-    if (rbf_.get().nugget() > 0.0)
+    if (model_.nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
-    auto min_n_points = rbf_.poly_basis_size() + 1;
+    auto min_n_points = model_.poly_basis_size() + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -88,7 +88,7 @@ public:
     clear_centers();
 
     auto transformed = affine_transform_points(points);
-    interpolation::rbf_incremental_fitter fitter(rbf_, transformed);
+    interpolation::rbf_incremental_fitter fitter(model_, transformed);
 
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
@@ -100,10 +100,10 @@ public:
   void fit_inequality(const geometry::points3d& points, const common::valuesd& values,
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
                       double absolute_tolerance) {
-    if (rbf_.get().nugget() > 0.0)
+    if (model_.nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
-    auto min_n_points = rbf_.poly_basis_size() + 1;
+    auto min_n_points = model_.poly_basis_size() + 1;
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -122,7 +122,7 @@ public:
     clear_centers();
 
     auto transformed = affine_transform_points(points);
-    interpolation::rbf_inequality_fitter fitter(rbf_, transformed);
+    interpolation::rbf_inequality_fitter fitter(model_, transformed);
 
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
@@ -140,7 +140,7 @@ public:
       .transform(point_transform_)
       .union_hull(centers_bbox_);
 
-    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(rbf_, centers_, transformed_bbox);
+    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(model_, centers_, transformed_bbox);
     evaluator_->set_weights(weights_);
   }
 
@@ -173,7 +173,7 @@ private:
     weights_ = common::valuesd();
   }
 
-  const rbf::rbf rbf_;
+  const model model_;
 
   geometry::affine_transform3d point_transform_;
 

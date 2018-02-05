@@ -6,6 +6,7 @@
 #include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
+#include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 
@@ -13,6 +14,7 @@ using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
+using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::rbf::cov_exponential;
 
@@ -21,17 +23,17 @@ namespace {
 void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   double absolute_tolerance = 1e-6;
 
-  polatory::rbf::rbf rbf(cov_exponential({ 1.0, 0.2, 0.0 }), 3, poly_degree);
+  model model(cov_exponential({ 1.0, 0.2, 0.0 }), 3, poly_degree);
 
   auto points = random_points(sphere3d(), n_points);
 
-  valuesd weights = valuesd::Random(n_points + rbf.poly_basis_size());
+  valuesd weights = valuesd::Random(n_points + model.poly_basis_size());
 
-  rbf_direct_evaluator direct_eval(rbf, points);
+  rbf_direct_evaluator direct_eval(model, points);
   direct_eval.set_weights(weights);
   direct_eval.set_field_points(points.topRows(n_eval_points));
 
-  rbf_evaluator<> eval(rbf, points);
+  rbf_evaluator<> eval(model, points);
   eval.set_weights(weights);
   eval.set_field_points(points);
 

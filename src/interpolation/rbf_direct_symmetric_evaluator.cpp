@@ -7,13 +7,13 @@
 namespace polatory {
 namespace interpolation {
 
-rbf_direct_symmetric_evaluator::rbf_direct_symmetric_evaluator(const rbf::rbf& rbf, const geometry::points3d& points)
-  : rbf_(rbf)
+rbf_direct_symmetric_evaluator::rbf_direct_symmetric_evaluator(const model& model, const geometry::points3d& points)
+  : model_(model)
   , n_points_(points.rows())
-  , n_poly_basis_(rbf.poly_basis_size())
+  , n_poly_basis_(model.poly_basis_size())
   , points_(points) {
   if (n_poly_basis_ > 0) {
-    p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
+    p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
     p_->set_field_points(points);
   }
 }
@@ -21,14 +21,14 @@ rbf_direct_symmetric_evaluator::rbf_direct_symmetric_evaluator(const rbf::rbf& r
 common::valuesd rbf_direct_symmetric_evaluator::evaluate() const {
   auto y_accum = std::vector<numeric::kahan_sum_accumulator<double>>(n_points_);
 
-  auto& rbf_kern = rbf_.get();
-  auto rbf_at_zero = rbf_kern.evaluate(0.0);
+  auto& rbf = model_.rbf();
+  auto rbf_at_zero = rbf.evaluate(0.0);
   for (size_t i = 0; i < n_points_; i++) {
     y_accum[i] += weights_(i) * rbf_at_zero;
   }
   for (size_t i = 0; i < n_points_ - 1; i++) {
     for (size_t j = i + 1; j < n_points_; j++) {
-      auto a_ij = rbf_kern.evaluate(points_.row(i), points_.row(j));
+      auto a_ij = rbf.evaluate(points_.row(i), points_.row(j));
       y_accum[i] += weights_(j) * a_ij;
       y_accum[j] += weights_(i) * a_ij;
     }

@@ -9,6 +9,7 @@
 
 #include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
+#include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/rbf/biharmonic.hpp>
@@ -16,6 +17,7 @@
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_symmetric_evaluator;
+using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
@@ -36,23 +38,23 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  polatory::rbf::rbf rbf(biharmonic({ 1.0, nugget }), poly_dimension, poly_degree);
-  auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(rbf.poly_basis_size()));
+  model model(biharmonic({ 1.0, nugget }), poly_dimension, poly_degree);
+  auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
 
-  coarse_grid coarse(rbf, lagr_basis, point_indices, points);
+  coarse_grid coarse(model, lagr_basis, point_indices, points);
 
   valuesd values = valuesd::Random(n_points);
   coarse.solve(values);
 
-  valuesd sol = valuesd::Zero(n_points + rbf.poly_basis_size());
+  valuesd sol = valuesd::Zero(n_points + model.poly_basis_size());
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_symmetric_evaluator(rbf, points);
+  auto eval = rbf_direct_symmetric_evaluator(model, points);
   eval.set_weights(sol);
   valuesd values_fit = eval.evaluate();
 
   valuesd residuals = (values - values_fit).cwiseAbs();
-  valuesd smoothing_error_bounds = rbf.nugget() * sol.head(n_points).cwiseAbs();
+  valuesd smoothing_error_bounds = model.nugget() * sol.head(n_points).cwiseAbs();
 
   for (size_t i = 0; i < n_points; i++) {
     EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));

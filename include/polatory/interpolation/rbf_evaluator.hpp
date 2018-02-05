@@ -14,7 +14,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/model.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -24,37 +24,37 @@ class rbf_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
 public:
-  rbf_evaluator(const rbf::rbf& rbf, const geometry::points3d& source_points)
-    : n_poly_basis_(rbf.poly_basis_size()) {
+  rbf_evaluator(const model& model, const geometry::points3d& source_points)
+    : n_poly_basis_(model.poly_basis_size()) {
     auto bbox = geometry::bbox3d::from_points(source_points);
 
-    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::fmm_tree_height(source_points.rows()), bbox);
+    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(source_points.rows()), bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
     }
 
     set_source_points(source_points);
   }
 
-  rbf_evaluator(const rbf::rbf& rbf, const geometry::points3d& source_points, const geometry::bbox3d& bbox)
-    : n_poly_basis_(rbf.poly_basis_size()) {
-    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, fmm::fmm_tree_height(source_points.rows()), bbox);
+  rbf_evaluator(const model& model, const geometry::points3d& source_points, const geometry::bbox3d& bbox)
+    : n_poly_basis_(model.poly_basis_size()) {
+    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(source_points.rows()), bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
     }
 
     set_source_points(source_points);
   }
 
-  rbf_evaluator(const rbf::rbf& rbf, int tree_height, const geometry::bbox3d& bbox)
-    : n_poly_basis_(rbf.poly_basis_size())
+  rbf_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
+    : n_poly_basis_(model.poly_basis_size())
     , n_src_points_(0) {
-    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(rbf, tree_height, bbox);
+    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, tree_height, bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(rbf.poly_dimension(), rbf.poly_degree());
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
     }
   }
 

@@ -12,7 +12,7 @@
 #include <polatory/rbf/cov_quasi_spherical5.hpp>
 #include <polatory/rbf/cov_quasi_spherical7.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
-#include <polatory/rbf/rbf_kernel.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/cov_spherical.hpp>
 #include <polatory/rbf/reference/triharmonic.hpp>
@@ -24,7 +24,7 @@ using polatory::rbf::cov_quasi_spherical3;
 using polatory::rbf::cov_quasi_spherical5;
 using polatory::rbf::cov_quasi_spherical7;
 using polatory::rbf::cov_quasi_spherical9;
-using polatory::rbf::rbf_kernel;
+using polatory::rbf::rbf_base;
 using polatory::rbf::reference::cov_gaussian;
 using polatory::rbf::reference::cov_spherical;
 using polatory::rbf::reference::triharmonic;
@@ -35,7 +35,7 @@ double hypot(double x, double y, double z) {
   return std::sqrt(x * x + y * y + z * z);
 }
 
-void test_gradient(const rbf_kernel& kernel) {
+void test_gradient(const rbf_base& kernel) {
   const auto h = 1e-8;
   const auto tolerance = 1e-5;
 

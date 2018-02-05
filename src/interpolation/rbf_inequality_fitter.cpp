@@ -15,11 +15,11 @@
 namespace polatory {
 namespace interpolation {
 
-rbf_inequality_fitter::rbf_inequality_fitter(const rbf::rbf& rbf, const geometry::points3d& points)
-  : rbf_(rbf)
+rbf_inequality_fitter::rbf_inequality_fitter(const model& model, const geometry::points3d& points)
+  : model_(model)
   , points_(points)
   , n_points_(points.rows())
-  , n_poly_basis_(rbf.poly_basis_size())
+  , n_poly_basis_(model.poly_basis_size())
   , bbox_(geometry::bbox3d::from_points(points)) {
 }
 
@@ -65,8 +65,8 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
     if (centers.size() > 0) {
       auto tree_height = fmm::fmm_tree_height(centers.size());
       if (tree_height != last_tree_height) {
-        solver = std::make_unique<rbf_solver>(rbf_, tree_height, bbox_);
-        res_eval = std::make_unique<rbf_evaluator<>>(rbf_, tree_height, bbox_);
+        solver = std::make_unique<rbf_solver>(model_, tree_height, bbox_);
+        res_eval = std::make_unique<rbf_evaluator<>>(model_, tree_height, bbox_);
         last_tree_height = tree_height;
       }
 

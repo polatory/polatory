@@ -12,6 +12,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
+#include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 
@@ -22,6 +23,7 @@ using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
+using polatory::model;
 using polatory::rbf::biharmonic;
 using polatory::rbf::cov_exponential;
 
@@ -39,17 +41,17 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.5;
   values = values.Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  polatory::rbf::rbf rbf(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
+  model model(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;
 
-  rbf_inequality_fitter fitter(rbf, points);
+  rbf_inequality_fitter fitter(model, points);
   std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
-  EXPECT_EQ(weights.rows(), indices.size() + rbf.poly_basis_size());
+  EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<> eval(rbf, take_rows(points, indices));
+  rbf_evaluator<> eval(model, take_rows(points, indices));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate_points(points);
 
@@ -97,15 +99,15 @@ TEST(rbf_inequality_fitter, kostov86) {
     nan, 4, 7, nan, nan,
     nan, nan, nan, nan, 3;
 
-  polatory::rbf::rbf rbf(cov_exponential({ 1.0, 3.0, 0.0 }), poly_dimension, poly_degree);
+  model model(cov_exponential({ 1.0, 3.0, 0.0 }), poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;
 
-  rbf_inequality_fitter fitter(rbf, points);
+  rbf_inequality_fitter fitter(model, points);
   std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
-  rbf_evaluator<> eval(rbf, take_rows(points, indices));
+  rbf_evaluator<> eval(model, take_rows(points, indices));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate_points(points);
 

@@ -5,6 +5,7 @@
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolant;
+using polatory::model;
 using polatory::polynomial::basis_base;
 using polatory::rbf::cov_exponential;
 using polatory::read_table;
@@ -19,9 +20,9 @@ int main(int argc, char *argv[]) {
 
   const auto poly_dimension = 3;
   const auto poly_degree = 0;
-  polatory::rbf::rbf rbf(cov_exponential({ 1.0, 0.02, 0.0 }), poly_dimension, poly_degree);
+  model model(cov_exponential({ 1.0, 0.02, 0.0 }), poly_dimension, poly_degree);
 
-  interpolant interpolant(rbf);
+  interpolant interpolant(model);
 
   interpolant.fit(points, values, absolute_tolerance);
   auto prediction_values = interpolant.evaluate_points(prediction_points);

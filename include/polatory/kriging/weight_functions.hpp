@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/rbf/covariance_function_base.hpp>
 
 namespace polatory {
 namespace kriging {
