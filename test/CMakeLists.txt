@@ -15,7 +15,7 @@ elseif(MSVC)
     )
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         target_link_libraries(${TARGET}
-            ${VCPKG_ROOT}/debug/lib/manual-link/gtest.lib
+            ${VCPKG_ROOT}/debug/lib/manual-link/gtestd.lib
         )
     else()
         target_link_libraries(${TARGET}
