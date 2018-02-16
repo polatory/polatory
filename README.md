@@ -18,9 +18,7 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 * Supports large number (millions) of input points
 * Supports inequality constraints
 
-### [Benchmark](https://github.com/polatory/polatory/wiki/Benchmark)
-
-### Kriging via RBF interpolation
+### Kriging via RBF interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
 
 Polatory can perform global kriging prediction via RBF interpolation. Although different terminology is used, both methods produce the same results. Here is the correspondence between kriging and RBF interpolation:
 
@@ -35,7 +33,7 @@ Polatory can perform global kriging prediction via RBF interpolation. Although d
 | Weights             | (Not computed)                             |
 | Standard errors     | (Not computed)                             |
 
-**Rapidly decaying covariance functions are not supported in the current release, such as the spherical model and the Gaussian model.** These RBFs are included for reference purposes. The spherical model can be substituted by its approximate function `cov_quasi_spherical9`.
+Rapidly decaying covariance functions are not supported in the current version, such as the spherical and the Gaussian models. The spherical model can be substituted by a similar one named `cov_quasi_spherical9`.
 
 ## License
 
