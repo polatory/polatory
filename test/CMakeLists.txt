@@ -13,7 +13,7 @@ elseif(MSVC)
     target_link_libraries(${TARGET}
         ${PROJECT_NAME}
     )
-    if(CMAKE_BUILD_TYPE MATCHES Debug)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_link_libraries(${TARGET}
             ${VCPKG_ROOT}/debug/lib/manual-link/gtestd.lib
         )

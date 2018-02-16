@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 project(polatory CXX)
 
@@ -11,10 +11,14 @@ option(COVERAGE "Compile with --coverage option" OFF)
 if(UNIX)
     set(MKL_ROOT /opt/intel/mkl)
 
-    set(CMAKE_CXX_FLAGS "-std=c++14 -fopenmp")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG -mavx")
-    if(COVERAGE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
+        set(CMAKE_CXX_FLAGS "-std=c++14 -fopenmp")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+        if(COVERAGE)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+        endif()
+    else()
+        message(FATAL_ERROR "Not supported compiler.")
     endif()
 elseif(MSVC)
     set(_PF86 "ProgramFiles(x86)")
@@ -34,13 +38,14 @@ elseif(MSVC)
         ${MKL_DLL_DIR}/mkl_sequential.dll
     )
 
-    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-        set(CMAKE_CXX_FLAGS "/MP /EHsc /Qstd=c++14 /Qopenmp")
-        set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /QaxAVX /Qip")
-    else()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS "/MP /EHsc /std:c++14 /openmp")
-        set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /arch:AVX /GL")
+        set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /GL")
+    else()
+        message(FATAL_ERROR "Not supported compiler.")
     endif()
+else()
+    message(FATAL_ERROR "Not supported system.")
 endif()
 
 add_definitions(
@@ -72,7 +77,7 @@ elseif(MSVC)
     link_libraries(
         ${MKL_ROOT}/lib/intel64/mkl_intel_lp64_dll.lib ${MKL_ROOT}/lib/intel64/mkl_sequential_dll.lib ${MKL_ROOT}/lib/intel64/mkl_core_dll.lib
     )
-    if(CMAKE_BUILD_TYPE MATCHES Debug)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         link_libraries(
             ${VCPKG_ROOT}/debug/lib/ceres-debug.lib
             ${VCPKG_ROOT}/debug/lib/flann_cpp-gd.lib
