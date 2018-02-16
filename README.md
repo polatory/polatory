@@ -46,7 +46,7 @@ Polatory is available under two different licenses:
 
 ## Platforms
 
-Polatory runs on x86 processors with AVX instructions (Sandy Bridge or newer). It is available for following operating systems and toolchains.
+Polatory runs on x86-64 processors and is available for following operating systems and toolchains.
 
 ### Ubuntu 16.04 LTS
 
@@ -54,7 +54,7 @@ GCC 5.4 and Clang 3.8
 
 ### Windows
 
-Visual Studio 2017 and Intel(R) Parallel Studio XE 2017
+Visual Studio 2017
 
 ## Building
 
