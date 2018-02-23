@@ -26,7 +26,8 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
     if (indices_to_remove.find(i) != indices_to_remove.end())
       continue;
 
-    std::tie(nn_indices, nn_distances) = tree.radius_search(points.row(i), distance);
+    geometry::point3d p = points.row(i);
+    std::tie(nn_indices, nn_distances) = tree.radius_search(p, distance);
 
     for (auto j : nn_indices) {
       if (j != i) {

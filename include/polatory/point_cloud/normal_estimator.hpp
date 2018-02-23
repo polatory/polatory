@@ -16,11 +16,11 @@ class normal_estimator {
 public:
   explicit normal_estimator(const geometry::points3d& points);
 
-  const normal_estimator& estimate_with_knn(size_t k, double plane_factor_threshold = 1.8);
+  normal_estimator& estimate_with_knn(size_t k, double plane_factor_threshold = 1.8);
 
-  const normal_estimator& estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
+  normal_estimator& estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
 
-  geometry::vectors3d orient_by_outward_vector(const geometry::vector3d& v) const;
+  geometry::vectors3d orient_by_outward_vector(const geometry::vector3d& v);
 
 private:
   geometry::vector3d estimate_impl(const std::vector<size_t>& nn_indices, double plane_factor_threshold) const;

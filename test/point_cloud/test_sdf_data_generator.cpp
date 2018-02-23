@@ -40,7 +40,7 @@ TEST(sdf_data_generator, trivial) {
   std::vector<double> distances;
 
   for (size_t i = 0; i < sdf_points.rows(); i++) {
-    auto sdf_point = sdf_points.row(i);
+    point3d sdf_point = sdf_points.row(i);
     auto sdf_value = sdf_values(i);
 
     std::tie(indices, distances) = tree.knn_search(sdf_point, 1);
