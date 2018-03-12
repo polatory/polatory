@@ -13,6 +13,10 @@
           "value": "${configurationType}"
         },
         {
+          "name": "CMAKE_INSTALL_PREFIX",
+          "value": "C:/Program Files/polatory"
+        },
+        {
           "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
         },
@@ -33,6 +37,10 @@
         {
           "name": "CMAKE_BUILD_TYPE",
           "value": "${configurationType}"
+        },
+        {
+          "name": "CMAKE_INSTALL_PREFIX",
+          "value": "C:/Program Files/polatory"
         },
         {
           "name": "CMAKE_TOOLCHAIN_FILE",

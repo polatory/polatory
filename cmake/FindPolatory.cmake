@@ -7,7 +7,7 @@ if(NOT POLATORY_FOUND)
         )
     elseif(MSVC)
         set(SEARCH_PATHS
-            "$ENV{ProgramFiles}/polatory"
+            "$ENV{ProgramW6432}/polatory"
         )
     endif()
     set(SEARCH_PATHS
