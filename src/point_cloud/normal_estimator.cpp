@@ -25,7 +25,7 @@ normal_estimator& normal_estimator::estimate_with_knn(size_t k, double plane_fac
     std::vector<size_t> nn_indices;
     std::vector<double> nn_distances;
 #pragma omp for
-    for (size_t i = 0; i < n_points_; i++) {
+    for (ptrdiff_t i = 0; i < n_points_; i++) {
       geometry::point3d p = points_.row(i);
       std::tie(nn_indices, nn_distances) = tree_.knn_search(p, k);
 
@@ -44,7 +44,7 @@ normal_estimator& normal_estimator::estimate_with_radius(double radius, double p
     std::vector<size_t> nn_indices;
     std::vector<double> nn_distances;
 #pragma omp for
-    for (size_t i = 0; i < n_points_; i++) {
+    for (ptrdiff_t i = 0; i < n_points_; i++) {
       geometry::point3d p = points_.row(i);
       std::tie(nn_indices, nn_distances) = tree_.radius_search(p, radius);
 
@@ -60,7 +60,7 @@ geometry::vectors3d normal_estimator::orient_by_outward_vector(const geometry::v
     throw std::runtime_error("Normals have not been estimated yet.");
 
 #pragma omp parallel for
-  for (size_t i = 0; i < n_points_; i++) {
+  for (ptrdiff_t i = 0; i < n_points_; i++) {
     auto n = normals_.row(i);
     if (n.dot(v) < 0.0) {
       n = -n;
