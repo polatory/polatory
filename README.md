@@ -147,7 +147,19 @@ Visual Studio 2017
     cd /d C:\
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
+    bootstrap-vcpkg.bat
     vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
+    ```
+
+    To update vcpkg and installed libraries, run the following commands:
+
+    ```bat
+    cd /d C:\vcpkg
+    git pull
+    bootstrap-vcpkg.bat
+    vcpkg update
+    vcpkg upgrade
+    vcpkg upgrade --no-dry-run
     ```
 
 1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
