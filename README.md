@@ -5,6 +5,7 @@
 ----
 
 [![Build Status](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fpolatory%2Fpolatory.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fpolatory%2Fpolatory?ref=badge_shield)
 
 Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
@@ -41,6 +42,9 @@ Polatory is available under two different licenses:
 
 * <a href="https://opensource.org/licenses/gpl-3.0.html">GNU General Public License version 3</a> for **non-commercial** use
 * Commercial license (please contact at mizuno(at)gsinet.co.jp)
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fpolatory%2Fpolatory.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fpolatory%2Fpolatory?ref=badge_large)
 
 ## Platforms
 
