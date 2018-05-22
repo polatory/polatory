@@ -17,7 +17,7 @@ namespace polatory {
 
 using tabled = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-inline auto read_table(const std::string& filename) {
+inline auto read_table(const std::string& filename, const char *delimiters = " \t,") {
   tabled table;
 
   std::ifstream ifs(filename);
@@ -33,7 +33,7 @@ inline auto read_table(const std::string& filename) {
       continue;
 
     std::vector<std::string> row;
-    boost::split(row, line, boost::is_any_of(" \t,"));
+    boost::split(row, line, boost::is_any_of(delimiters));
     if (n_cols == 0) {
       n_cols = row.size();
     } else if (row.size() != n_cols) {
@@ -54,7 +54,8 @@ inline auto read_table(const std::string& filename) {
 
 template <class Derived>
 inline void write_table(const std::string& filename,
-                        const Eigen::MatrixBase<Derived>& table) {
+                        const Eigen::MatrixBase<Derived>& table,
+                        char delimiter = ' ') {
   std::ofstream ofs(filename);
   if (!ofs)
     throw common::io_error("Could not open file '" + filename + "'.");
@@ -64,7 +65,7 @@ inline void write_table(const std::string& filename,
     for (size_t i = 0; i < n_cols; i++) {
       ofs << numeric::to_string(row(i));
       if (i != n_cols - 1)
-        ofs << ' ';
+        ofs << delimiter;
     }
     ofs << std::endl;
   }
