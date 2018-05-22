@@ -9,34 +9,34 @@ namespace common {
 
 template <class T>
 class uncertain {
-  T value;
-  bool certain;
-
 public:
   uncertain()
-    : value()
-    , certain(false) {
+    : certain_(false) {
   }
 
   uncertain(T value)  // NOLINT(runtime/explicit)
-    : value(value)
-    , certain(true) {
-  }
-
-  bool is_certain() const {
-    return certain;
+    : certain_(true)
+    , value_(value) {
   }
 
   T get() const {
     assert(is_certain());
-    return value;
+    return value_;
   }
+
+  bool is_certain() const {
+    return certain_;
+  }
+
+private:
+  bool certain_;
+  T value_;
 };
 
 inline
 uncertain<bool> operator!(uncertain<bool> a) {
   if (a.is_certain()) return !a.get();
-  return uncertain<bool>();
+  return {};
 }
 
 inline
@@ -44,15 +44,15 @@ uncertain<bool> operator&&(uncertain<bool> a, uncertain<bool> b) {
   if (a.is_certain()) {
     if (b.is_certain()) {
       return a.get() && b.get();
-    } else if (a.get() == false) {
+    } else if (!a.get()) {
       return false;
     }
   } else if (b.is_certain()) {
-    if (b.get() == false) {
+    if (!b.get()) {
       return false;
     }
   }
-  return uncertain<bool>();
+  return {};
 }
 
 inline
@@ -60,35 +60,35 @@ uncertain<bool> operator||(uncertain<bool> a, uncertain<bool> b) {
   if (a.is_certain()) {
     if (b.is_certain()) {
       return a.get() || b.get();
-    } else if (a.get() == true) {
+    } else if (a.get()) {
       return true;
     }
   } else if (b.is_certain()) {
-    if (b.get() == true) {
+    if (b.get()) {
       return true;
     }
   }
-  return uncertain<bool>();
+  return {};
 }
 
 inline
 bool certainly(uncertain<bool> a) {
-  return a.is_certain() && a.get() == true;
+  return a.is_certain() && a.get();
 }
 
 inline
 bool certainly_not(uncertain<bool> a) {
-  return a.is_certain() && a.get() == false;
+  return a.is_certain() && !a.get();
 }
 
 inline
 bool possibly(uncertain<bool> a) {
-  return !a.is_certain() || a.get() == true;
+  return !a.is_certain() || a.get();
 }
 
 inline
 bool possibly_not(uncertain<bool> a) {
-  return !a.is_certain() || a.get() == false;
+  return !a.is_certain() || !a.get();
 }
 
 }  // namespace common
