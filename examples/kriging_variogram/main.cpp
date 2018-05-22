@@ -23,9 +23,9 @@ int main(int argc, const char *argv[]) {
     valuesd values = table.col(3);
 
     empirical_variogram emp_variog(points, values, opts.bin_width, opts.n_bins);
-    const auto bin_distance = emp_variog.bin_distance();
-    const auto bin_gamma = emp_variog.bin_gamma();
-    const auto bin_num_pairs = emp_variog.bin_num_pairs();
+    const auto& bin_distance = emp_variog.bin_distance();
+    const auto& bin_gamma = emp_variog.bin_gamma();
+    const auto& bin_num_pairs = emp_variog.bin_num_pairs();
 
     std::cout << "Empirical variogram:" << std::endl
               << std::setw(12) << "n_pairs" << std::setw(12) << "distance" << std::setw(12) << "gamma" << std::endl;

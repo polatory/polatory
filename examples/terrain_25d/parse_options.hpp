@@ -14,8 +14,6 @@
 
 struct options {
   std::string in_file;
-  double min_sdf_distance;
-  double max_sdf_distance;
   double min_distance;
   double smooth;
   int poly_dimension;
@@ -27,6 +25,7 @@ struct options {
   std::string mesh_file;
 };
 
+inline
 options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 

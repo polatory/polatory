@@ -39,7 +39,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
 
   EXPECT_EQ(n_points + model.poly_basis_size(), op_weights.size());
 
-  auto max_residual = (op_weights.head(n_points) - direct_op_weights).template lpNorm<Eigen::Infinity>();
+  auto max_residual = (op_weights.head(n_points) - direct_op_weights).lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
 
   // TODO(mizuno): Test the polynomial part.

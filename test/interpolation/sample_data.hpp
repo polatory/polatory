@@ -5,8 +5,6 @@
 #include <tuple>
 #include <utility>
 
-#include <gtest/gtest.h>
-
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>

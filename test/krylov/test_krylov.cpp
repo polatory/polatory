@@ -65,7 +65,7 @@ struct preconditioner : linear_operator {
 
 class krylov_test : public ::testing::Test {
 protected:
-  size_t n;
+  static constexpr size_t n = 100;
 
   std::unique_ptr<random_symmetric> op;
   std::unique_ptr<preconditioner> pc;
@@ -76,8 +76,6 @@ protected:
   valuesd x0;
 
   void SetUp() override {
-    n = 100;
-
     op = std::make_unique<random_symmetric>(n);
     pc = std::make_unique<preconditioner>(*op);
 

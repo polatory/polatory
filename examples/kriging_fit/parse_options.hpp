@@ -19,6 +19,7 @@ struct options {
   polatory::rbf::weight_function weight_fn;
 };
 
+inline
 options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 

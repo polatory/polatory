@@ -39,7 +39,7 @@ int main(int argc, const char *argv[]) {
     interpolant.fit(points, values, opts.absolute_tolerance);
 
     // Generate isosurface of given values.
-    isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
+    polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 
     for (auto isovalue_name : opts.mesh_values_files) {

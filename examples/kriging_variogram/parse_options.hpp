@@ -16,11 +16,11 @@ struct options {
   std::string out_file;
 };
 
+inline
 options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 
   options opts;
-  int weights;
 
   po::options_description opts_desc("");
   opts_desc.add_options()

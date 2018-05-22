@@ -2,10 +2,9 @@
 
 #include <string>
 
-#include <polatory/config.hpp>
-#include <polatory/point_cloud/distance_filter.hpp>
+#include <polatory/geometry/sphere3d.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/table.hpp>
+#include <polatory/polatory.hpp>
 
 using polatory::geometry::sphere3d;
 using polatory::point_cloud::distance_filter;

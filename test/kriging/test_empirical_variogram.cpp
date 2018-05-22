@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdio>
 
 #include <boost/filesystem.hpp>
 #include <gtest/gtest.h>
@@ -65,15 +64,15 @@ TEST(empirical_variogram, trivial) {
 
   empirical_variogram variog(points, values, bin_width, n_bins);
 
-  const auto bin_distance = variog.bin_distance();
+  const auto& bin_distance = variog.bin_distance();
   EXPECT_EQ(1u, bin_distance.size());
   EXPECT_DOUBLE_EQ(d, bin_distance[0]);
 
-  const auto bin_gamma = variog.bin_gamma();
+  const auto& bin_gamma = variog.bin_gamma();
   EXPECT_EQ(1u, bin_gamma.size());
   EXPECT_DOUBLE_EQ(variance, bin_gamma[0]);
 
-  const auto bin_num_pairs = variog.bin_num_pairs();
+  const auto& bin_num_pairs = variog.bin_num_pairs();
   EXPECT_EQ(1u, bin_num_pairs.size());
   EXPECT_EQ(6u, bin_num_pairs[0]);
 }

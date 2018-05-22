@@ -1,7 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
 #include <iostream>
-#include <memory>
 #include <tuple>
 #include <vector>
 

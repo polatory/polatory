@@ -27,6 +27,7 @@ struct options {
   std::vector<std::pair<double, std::string>> mesh_values_files;
 };
 
+inline
 options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 

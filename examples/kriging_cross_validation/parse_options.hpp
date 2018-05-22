@@ -21,6 +21,7 @@ struct options {
   int k;
 };
 
+inline
 options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 

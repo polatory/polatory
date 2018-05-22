@@ -39,7 +39,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   valuesd values_lb = values.array() - 0.5;
   valuesd values_ub = values.array() + 0.5;
-  values = values.Constant(n_points, std::numeric_limits<double>::quiet_NaN());
+  values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
   model model(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
 
