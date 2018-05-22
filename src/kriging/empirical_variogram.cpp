@@ -86,7 +86,7 @@ const std::vector<size_t>& empirical_variogram::bin_num_pairs() const {
   return num_pairs_;
 }
 
-const void empirical_variogram::save(std::string filename) const {
+void empirical_variogram::save(std::string filename) const {
   std::ofstream ofs(filename);
   boost::archive::binary_oarchive oa(ofs);
   oa << *this;

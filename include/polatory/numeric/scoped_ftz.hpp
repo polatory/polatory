@@ -12,7 +12,7 @@
 namespace polatory {
 namespace numeric {
 
-class scoped_ftz : private boost::noncopyable {
+class scoped_ftz : boost::noncopyable {
 public:
   scoped_ftz()
     : ftz_mode_backup_(_MM_GET_FLUSH_ZERO_MODE())

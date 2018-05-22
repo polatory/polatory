@@ -10,7 +10,7 @@ namespace polatory {
 namespace isosurface {
 
 struct field_function {
-  virtual ~field_function() {}
+  virtual ~field_function() = default;
 
   virtual common::valuesd operator()(const geometry::points3d& points) const = 0;
 

@@ -39,10 +39,10 @@ public:
       return ret;
 
     auto it = points_begin;
-    auto pt = *it;
-    ret.min_(0) = ret.max_(0) = pt(0);
-    ret.min_(1) = ret.max_(1) = pt(1);
-    ret.min_(2) = ret.max_(2) = pt(2);
+    auto first_pt = *it;
+    ret.min_(0) = ret.max_(0) = first_pt(0);
+    ret.min_(1) = ret.max_(1) = first_pt(1);
+    ret.min_(2) = ret.max_(2) = first_pt(2);
     ++it;
 
     for (; it != points_end; ++it) {

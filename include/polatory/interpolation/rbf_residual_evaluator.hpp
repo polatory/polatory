@@ -5,14 +5,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <iostream>
 #include <memory>
 #include <utility>
-#include <vector>
 
 #include <Eigen/Core>
 
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>

@@ -116,13 +116,13 @@ gmres_base::gmres_base(const linear_operator& op, const common::valuesd& rhs, in
   , converged_(false) {
 }
 
-common::valuesd gmres_base::left_preconditioned(const common::valuesd x) const {
+common::valuesd gmres_base::left_preconditioned(const common::valuesd& x) const {
   return left_pc_ != nullptr
          ? (*left_pc_)(x)
          : x;
 }
 
-common::valuesd gmres_base::right_preconditioned(const common::valuesd x) const {
+common::valuesd gmres_base::right_preconditioned(const common::valuesd& x) const {
   return right_pc_ != nullptr
          ? (*right_pc_)(x)
          : x;

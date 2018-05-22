@@ -5,7 +5,6 @@
 #include <vector>
 
 #include <polatory/kriging/empirical_variogram.hpp>
-#include <polatory/kriging/weight_functions.hpp>
 #include <polatory/rbf/covariance_function_base.hpp>
 
 namespace polatory {

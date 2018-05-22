@@ -63,14 +63,14 @@ bbox3d bbox3d::transform(const affine_transform3d& affine) const {
   point3d min = c + vertices.colwise().minCoeff();
   point3d max = c + vertices.colwise().maxCoeff();
 
-  return bbox3d(min, max);
+  return { min, max };
 }
 
 bbox3d bbox3d::union_hull(const bbox3d& other) const {
-  return bbox3d(
+  return {
     min().cwiseMin(other.min()),
     max().cwiseMax(other.max())
-  );
+  };
 }
 
 bbox3d bbox3d::from_points(const points3d& points) {

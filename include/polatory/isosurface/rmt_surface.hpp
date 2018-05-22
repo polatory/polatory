@@ -70,7 +70,7 @@ class rmt_tetrahedron {
     if (opp_node.has_intersection(opp_edge_idx))
       return opp_node.vertex_on_edge(opp_edge_idx);
 
-    return common::uncertain<vertex_index>();
+    return {};
   }
 
   const rmt_node& node;

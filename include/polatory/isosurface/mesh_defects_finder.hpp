@@ -38,9 +38,9 @@ private:
 
   bool segment_crosses_the_plane(vertex_index s1, vertex_index s2, const face& f) const;
 
-  halfedge vertex_incoming_halfedge(face_index fi, const vertex_index vi) const;
+  halfedge vertex_incoming_halfedge(face_index fi, vertex_index vi) const;
 
-  halfedge vertex_outgoing_halfedge(face_index fi, const vertex_index vi) const;
+  halfedge vertex_outgoing_halfedge(face_index fi, vertex_index vi) const;
 
   const std::vector<geometry::point3d>& vertices_;
   const std::vector<face>& faces_;

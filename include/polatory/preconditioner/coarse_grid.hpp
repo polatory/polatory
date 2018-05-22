@@ -38,7 +38,7 @@ public:
       weights_full(point_idcs_[i]) = lambda_c_(i);
     }
 
-    weights_full.tail(l_) = lambda_c_.tail(l_).template cast<double>();
+    weights_full.tail(l_) = lambda_c_.tail(l_).cast<double>();
   }
 
   template <class Derived>

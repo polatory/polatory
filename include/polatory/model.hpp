@@ -12,7 +12,9 @@ namespace polatory {
 
 class model {
 public:
-  model() {
+  model()
+    : poly_dimension_(-1)
+    , poly_degree_(-1) {
   }
 
   model(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)

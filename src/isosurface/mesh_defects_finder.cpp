@@ -83,9 +83,9 @@ std::vector<vertex_index> mesh_defects_finder::non_manifold_vertices() const {
 
   for (size_t fi = 0; fi < faces_.size(); fi++) {
     auto& face = faces_[fi];
-    v_fi_bools[face[0]].push_back(face_index_bool(fi, false));
-    v_fi_bools[face[1]].push_back(face_index_bool(fi, false));
-    v_fi_bools[face[2]].push_back(face_index_bool(fi, false));
+    v_fi_bools[face[0]].emplace_back(fi, false);
+    v_fi_bools[face[1]].emplace_back(fi, false);
+    v_fi_bools[face[2]].emplace_back(fi, false);
   }
 
   std::vector<vertex_index> non_manif_vertices;
@@ -93,7 +93,7 @@ std::vector<vertex_index> mesh_defects_finder::non_manifold_vertices() const {
   for (size_t vi = 0; vi < vertices_.size(); vi++) {
     face_index_bools& fi_bools = v_fi_bools[vi];
 
-    if (fi_bools.size() == 0) {
+    if (fi_bools.empty()) {
       // Unreferrenced vertex
       continue;
     }
@@ -184,7 +184,7 @@ bool mesh_defects_finder::segment_crosses_the_plane(vertex_index s1, vertex_inde
   return sign1 * sign2 < 0.0;
 }
 
-mesh_defects_finder::halfedge mesh_defects_finder::vertex_incoming_halfedge(face_index fi, const vertex_index vi) const {
+mesh_defects_finder::halfedge mesh_defects_finder::vertex_incoming_halfedge(face_index fi, vertex_index vi) const {
   const face& face = faces_[fi];
   if (face[0] == vi) return std::make_pair(face[2], vi);
   if (face[1] == vi) return std::make_pair(face[0], vi);
@@ -192,7 +192,7 @@ mesh_defects_finder::halfedge mesh_defects_finder::vertex_incoming_halfedge(face
   return std::make_pair(face[1], vi);
 }
 
-mesh_defects_finder::halfedge mesh_defects_finder::vertex_outgoing_halfedge(face_index fi, const vertex_index vi) const {
+mesh_defects_finder::halfedge mesh_defects_finder::vertex_outgoing_halfedge(face_index fi, vertex_index vi) const {
   const face& face = faces_[fi];
   if (face[0] == vi) return std::make_pair(vi, face[1]);
   if (face[1] == vi) return std::make_pair(vi, face[2]);

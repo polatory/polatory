@@ -5,7 +5,6 @@
 #include <array>
 #include <cmath>
 #include <stdexcept>
-#include <vector>
 
 #include <polatory/common/pi.hpp>
 #include <polatory/geometry/affine_transform3d.hpp>
@@ -139,7 +138,7 @@ public:
     int m1 = static_cast<int>((cell_idx >> shift1) & mask) + cell_min(1);
     int m2 = static_cast<int>((cell_idx >> shift2) & mask) + cell_min(2);
 
-    return cell_vector(m0, m1, m2);
+    return { m0, m1, m2 };
   }
 
   bool is_inside_bounds(const geometry::point3d& point) const {

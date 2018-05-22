@@ -44,13 +44,13 @@ public:
 protected:
   gmres_base(const linear_operator& op, const common::valuesd& rhs, int max_iter);
 
-  virtual ~gmres_base() {}
+  virtual ~gmres_base() = default;
 
   virtual void add_preconditioned_krylov_basis(const common::valuesd& z) {}
 
-  common::valuesd left_preconditioned(const common::valuesd x) const;
+  common::valuesd left_preconditioned(const common::valuesd& x) const;
 
-  common::valuesd right_preconditioned(const common::valuesd x) const;
+  common::valuesd right_preconditioned(const common::valuesd& x) const;
 
   const linear_operator& op_;
 

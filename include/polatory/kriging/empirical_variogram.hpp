@@ -27,7 +27,7 @@ public:
 
   const std::vector<size_t>& bin_num_pairs() const;
 
-  const void save(std::string filename) const;
+  void save(std::string filename) const;
 
 private:
   friend class boost::serialization::access;

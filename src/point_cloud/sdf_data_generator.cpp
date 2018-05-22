@@ -3,6 +3,7 @@
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 
 #include <tuple>
+#include <vector>
 
 #include <polatory/common/exception.hpp>
 #include <polatory/common/quasi_random_sequence.hpp>

@@ -42,7 +42,7 @@ int main(int argc, const char *argv[]) {
     interpolant.fit_inequality(points, values, values_lb, values_ub, opts.absolute_tolerance);
     std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
 
-  	// Generate isosurface.
+    // Generate isosurface.
     isosurface_2d isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 

@@ -62,7 +62,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
     centers.insert(centers.end(), active_ineq_idcs.begin(), active_ineq_idcs.end());
 
     common::valuesd values_fit;
-    if (centers.size() > 0) {
+    if (!centers.empty()) {
       auto tree_height = fmm::fmm_tree_height(centers.size());
       if (tree_height != last_tree_height) {
         solver = std::make_unique<rbf_solver>(model_, tree_height, bbox_);

@@ -219,7 +219,7 @@ public:
       vertices.push_back(clustered);
 
       for (auto vi : *vis) {
-        cluster_map.insert({ vi, new_vi });
+        cluster_map.emplace(vi, new_vi);
       }
     } else if (surfaces.size() >= 2 && holes.size() == 1) {
       // multiple surfaces
@@ -253,7 +253,7 @@ public:
         vertices.push_back(clustered);
 
         for (auto edge_idx : edge_idcs) {
-          cluster_map.insert({ vertex_on_edge(edge_idx), new_vi });
+          cluster_map.emplace(vertex_on_edge(edge_idx), new_vi);
         }
       }
     }
@@ -261,7 +261,7 @@ public:
 
   common::uncertain<double> clustering_weight(edge_index edge_idx) const {
     if (neighbor_cache[edge_idx] == nullptr)
-      return common::uncertain<double>();
+      return {};
 
     auto& a_node = *neighbor_cache[edge_idx];
     geometry::vector3d oa = a_node.pos - pos;
@@ -274,7 +274,7 @@ public:
     for (auto neigh_pair : NeighborEdgePairs[edge_idx]) {
       if (neighbor_cache[neigh_pair.first] == nullptr ||
           neighbor_cache[neigh_pair.second] == nullptr)
-        return common::uncertain<double>();
+        return {};
 
       auto& b_node = *neighbor_cache[neigh_pair.first];
       auto& c_node = *neighbor_cache[neigh_pair.second];

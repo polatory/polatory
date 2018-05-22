@@ -21,7 +21,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   , finest_evaluator_(model, points_)
 #endif
 {
-  point_idcs_.push_back(std::vector<size_t>(n_points_));
+  point_idcs_.emplace_back(n_points_);
   std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
 
   std::vector<size_t> poly_point_idcs;
@@ -42,9 +42,9 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   auto bbox = geometry::bbox3d::from_points(points_);
   auto divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
 
-  fine_grids_.push_back(std::vector<fine_grid>());
+  fine_grids_.emplace_back();
   for (const auto& d : divider->domains()) {
-    fine_grids_.back().push_back(fine_grid(model, lagrange_basis_, d.point_indices, d.inner_point));
+    fine_grids_.back().emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
   }
 #if !POLATORY_RECOMPUTE_AND_CLEAR
 #pragma omp parallel for
@@ -59,16 +59,16 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   auto ratio = 0 == n_fine_levels_ - 1
                ? static_cast<double>(n_coarsest_points) / static_cast<double>(points_.rows())
                : coarse_ratio;
-  upward_evaluator_.push_back(interpolation::rbf_evaluator<Order>(model.without_poly(), points_, bbox));
+  upward_evaluator_.emplace_back(model.without_poly(), points_, bbox);
   point_idcs_.push_back(divider->choose_coarse_points(ratio));
   upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
 
   for (int level = 1; level < n_fine_levels_; level++) {
     divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
 
-    fine_grids_.push_back(std::vector<fine_grid>());
+    fine_grids_.emplace_back();
     for (const auto& d : divider->domains()) {
-      fine_grids_.back().push_back(fine_grid(model, lagrange_basis_, d.point_indices, d.inner_point));
+      fine_grids_.back().emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
     }
 #if !POLATORY_RECOMPUTE_AND_CLEAR
 #pragma omp parallel for
@@ -83,8 +83,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     ratio = level == n_fine_levels_ - 1
             ? static_cast<double>(n_coarsest_points) / static_cast<double>(point_idcs_.back().size())
             : coarse_ratio;
-    upward_evaluator_.push_back(
-      interpolation::rbf_evaluator<Order>(model.without_poly(), common::take_rows(points_, point_idcs_.back()), bbox));
+    upward_evaluator_.emplace_back(model.without_poly(), common::take_rows(points_, point_idcs_.back()), bbox);
     point_idcs_.push_back(divider->choose_coarse_points(ratio));
     upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
   }
@@ -93,8 +92,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_.back(), points_);
 
   for (int level = 1; level < n_fine_levels_; level++) {
-    downward_evaluator_.push_back(
-      interpolation::rbf_evaluator<Order>(model, common::take_rows(points_, point_idcs_.back()), bbox));
+    downward_evaluator_.emplace_back(model, common::take_rows(points_, point_idcs_.back()), bbox);
     downward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_[level]));
   }
 

@@ -9,7 +9,7 @@ namespace krylov {
 
 class linear_operator {
 public:
-  virtual ~linear_operator() {}
+  virtual ~linear_operator() = default;
 
   virtual common::valuesd operator()(const common::valuesd& v) const = 0;
 

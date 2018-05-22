@@ -17,7 +17,7 @@ public:
     assert(degree >= 0);
   }
 
-  virtual ~polynomial_basis_base() {}
+  virtual ~polynomial_basis_base() = default;
 
   size_t basis_size() const {
     return basis_size(dimension_, degree_);

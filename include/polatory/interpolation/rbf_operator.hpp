@@ -26,7 +26,8 @@ private:
 public:
   rbf_operator(const model& model, const geometry::points3d& points)
     : model_(model)
-    , n_poly_basis_(model.poly_basis_size()) {
+    , n_poly_basis_(model.poly_basis_size())
+    , n_points_(0) {
     auto bbox = geometry::bbox3d::from_points(points);
 
     a_ = std::make_unique<fmm::fmm_operator<Order>>(model, fmm::fmm_tree_height(points.rows()), bbox);

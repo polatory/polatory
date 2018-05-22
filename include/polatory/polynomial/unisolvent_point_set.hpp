@@ -43,7 +43,7 @@ public:
     assert(point_idcs_.size() == point_indices.size());
   }
 
-  const std::vector<size_t> point_indices() const {
+  const std::vector<size_t>& point_indices() const {
     return point_idcs_;
   }
 

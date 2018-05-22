@@ -25,7 +25,8 @@ class rbf_evaluator {
 
 public:
   rbf_evaluator(const model& model, const geometry::points3d& source_points)
-    : n_poly_basis_(model.poly_basis_size()) {
+    : n_poly_basis_(model.poly_basis_size())
+    , n_src_points_(0) {
     auto bbox = geometry::bbox3d::from_points(source_points);
 
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(source_points.rows()), bbox);
@@ -38,7 +39,8 @@ public:
   }
 
   rbf_evaluator(const model& model, const geometry::points3d& source_points, const geometry::bbox3d& bbox)
-    : n_poly_basis_(model.poly_basis_size()) {
+    : n_poly_basis_(model.poly_basis_size())
+    , n_src_points_(0) {
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(source_points.rows()), bbox);
 
     if (n_poly_basis_ > 0) {

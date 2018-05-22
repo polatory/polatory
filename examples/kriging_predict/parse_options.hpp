@@ -79,7 +79,7 @@ options parse_options(int argc, const char *argv[]) {
   );
 
   for (size_t i = 0; i < mesh_vals_vec.size(); i++) {
-    opts.mesh_values_files.push_back(std::make_pair(mesh_vals_vec[i], mesh_files_vec[i]));
+    opts.mesh_values_files.emplace_back(mesh_vals_vec[i], mesh_files_vec[i]);
   }
 
   return opts;

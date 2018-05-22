@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 

@@ -66,7 +66,7 @@ std::string to_string(Floating arg) {
     return std::signbit(arg) ? "-inf" : "inf";
 
   std::snprintf(str, str_size, detail::format<Floating>::shorthand(), arg);
-  Floating arg_rep = boost::lexical_cast<Floating>(str);
+  auto arg_rep = boost::lexical_cast<Floating>(str);
   if (arg == arg_rep)
     return str;
 
