@@ -124,6 +124,8 @@ protected:
   }
 };
 
+constexpr size_t krylov_test::n;
+
 }  // namespace
 
 TEST_F(krylov_test, fgmres) {
