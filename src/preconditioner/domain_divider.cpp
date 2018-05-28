@@ -55,8 +55,8 @@ domain_divider::domain_divider(const geometry::points3d& points,
                                const std::vector<size_t>& point_indices,
                                const std::vector<size_t>& poly_point_indices)
   : points_(points)
-  , poly_point_idcs_(poly_point_indices)
-  , size_of_root_(point_indices.size()) {
+  , size_of_root_(point_indices.size())
+  , poly_point_idcs_(poly_point_indices) {
   auto root = domain();
 
   root.point_indices = point_indices;
@@ -108,12 +108,12 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
   auto& d = *it;
 
   size_t split_axis;
-  d.bbox_.size().maxCoeff(&split_axis);
+  (void)d.bbox_.size().maxCoeff(&split_axis);
 
   common::zip_sort(
     d.point_indices.begin(), d.point_indices.end(),
     d.inner_point.begin(), d.inner_point.end(),
-    [this, &d, split_axis](const auto& a, const auto& b) {
+    [this, split_axis](const auto& a, const auto& b) {
       return points_(a.first, split_axis) < points_(b.first, split_axis);
     });
 

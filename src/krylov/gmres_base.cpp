@@ -62,7 +62,7 @@ void gmres_base::setup() {
     r0 = left_preconditioned(rhs_ - op_(x0_));
   }
   g_(0) = r0.norm();
-  vs_.push_back(r0 / g_(0));
+  vs_.emplace_back(r0 / g_(0));
 
   r_ = Eigen::MatrixXd::Zero(max_iter_ + 1, max_iter_);
 }

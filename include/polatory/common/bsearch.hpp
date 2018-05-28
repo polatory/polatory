@@ -38,13 +38,11 @@ auto bsearch_ge(BidirectionalIterator begin, BidirectionalIterator end,
 template <class BidirectionalIterator, class T, class Compare = std::less<T>, class Compare2 = std::less<T>>
 auto bsearch_eq(BidirectionalIterator begin, BidirectionalIterator end,
                 const T& val, Compare comp = Compare(), Compare2 comp2 = Compare2()) {
-  BidirectionalIterator it;
-  typename std::iterator_traits<BidirectionalIterator>::difference_type count, step;
-  count = std::distance(begin, end);
+  auto count = std::distance(begin, end);
 
   while (count > 0) {
-    it = begin;
-    step = count / 2;
+    auto it = begin;
+    auto step = count / 2;
     std::advance(it, step);
     if (comp(*it, val)) {
       begin = ++it;

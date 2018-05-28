@@ -34,7 +34,7 @@ public:
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
-    flann_index_->knnSearch(point_mat, indices_v, distances_v, k, params_knn_);
+    (void)flann_index_->knnSearch(point_mat, indices_v, distances_v, k, params_knn_);
 
     for (auto& d : distances_v[0]) {
       d = std::sqrt(d);
@@ -48,7 +48,7 @@ public:
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
-    flann_index_->radiusSearch(point_mat, indices_v, distances_v, radius * radius, params_radius_);
+    (void)flann_index_->radiusSearch(point_mat, indices_v, distances_v, radius * radius, params_radius_);
 
     for (auto& d : distances_v[0]) {
       d = std::sqrt(d);

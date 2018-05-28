@@ -68,7 +68,7 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points, const
   }
 }
 
-empirical_variogram::empirical_variogram(std::string filename) {
+empirical_variogram::empirical_variogram(const std::string& filename) {
   std::ifstream ifs(filename);
   boost::archive::binary_iarchive ia(ifs);
   ia >> *this;
@@ -86,7 +86,7 @@ const std::vector<size_t>& empirical_variogram::bin_num_pairs() const {
   return num_pairs_;
 }
 
-void empirical_variogram::save(std::string filename) const {
+void empirical_variogram::save(const std::string& filename) const {
   std::ofstream ofs(filename);
   boost::archive::binary_oarchive oa(ofs);
   oa << *this;

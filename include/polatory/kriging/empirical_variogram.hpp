@@ -19,7 +19,7 @@ public:
   empirical_variogram(const geometry::points3d& points, const common::valuesd& values,
                       double bin_width, size_t n_bins);
 
-  explicit empirical_variogram(std::string filename);
+  explicit empirical_variogram(const std::string& filename);
 
   const std::vector<double>& bin_distance() const;
 
@@ -27,7 +27,7 @@ public:
 
   const std::vector<size_t>& bin_num_pairs() const;
 
-  void save(std::string filename) const;
+  void save(const std::string& filename) const;
 
 private:
   friend class boost::serialization::access;
