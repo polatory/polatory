@@ -6,8 +6,9 @@ services:
   - docker
 
 env:
-  - MAKEFLAGS=-j5
-  - OMP_NUM_THREADS=4
+  global:
+    - MAKEFLAGS=-j5
+    - OMP_NUM_THREADS=4
 
 matrix:
   include:
