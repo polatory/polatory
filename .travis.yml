@@ -32,9 +32,9 @@ before_install:
   - docker cp . test:/root/polatory
 
   - docker exec test apt-get update -qq
-  - docker exec test apt-get install -qq apt-transport-https cmake git python wget
+  - docker exec test apt-get install -qq apt-transport-https cmake git gnupg python wget
 
-  - docker exec test sh -c 'wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB  -O - | apt-key add -'
+  - docker exec test sh -c 'wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | apt-key add -'
   - docker exec test sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
   - docker exec test apt-get update -qq
 
