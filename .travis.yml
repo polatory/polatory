@@ -26,13 +26,12 @@ matrix:
       - UBUNTU_VERSION=18.04
 
 before_install:
-  - lscpu
   - docker pull ubuntu:${UBUNTU_VERSION}
   - docker run -w /root --name test -d -e CXX=${CXX} -e MAKEFLAGS=${MAKEFLAGS} -e OMP_NUM_THREADS=${OMP_NUM_THREADS} ubuntu:${UBUNTU_VERSION} sleep infinity
   - docker cp . test:/root/polatory
 
   - docker exec test apt-get update -qq
-  - docker exec test apt-get install -qq apt-transport-https cmake git gnupg python wget
+  - docker exec test apt-get install -qq apt-transport-https cmake git gnupg lsb-release python wget
 
   - docker exec test sh -c 'wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | apt-key add -'
   - docker exec test sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
@@ -62,6 +61,9 @@ install:
   - docker exec test sh -c 'cd boost_1_65_1 && ./bootstrap.sh && ./b2 link=shared --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j5 --prefix=.'
 
 before_script:
+  - lscpu
+  - docker exec test lsb_release -a
+  - docker exec test ${CXX} --version
   - docker exec test sh -c 'cd polatory && mkdir build'
 
 script:
