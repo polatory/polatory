@@ -44,11 +44,15 @@ Polatory is available under two different licenses:
 
 ## Platforms
 
-Polatory runs on x86-64 processors and is available for following operating systems and toolchains.
+Polatory runs on x86-64 processors and tested on the following operating systems and toolchains.
 
 ### Ubuntu 16.04 LTS
 
 GCC 5.4 and Clang 3.8
+
+### Ubuntu 18.04 LTS
+
+GCC 7.3 and Clang 6.0
 
 ### Windows
 
