@@ -1,4 +1,4 @@
-find_package(Boost 1.60 COMPONENTS program_options REQUIRED)
+find_package(Boost 1.67.0 COMPONENTS program_options REQUIRED)
 
 set(TARGET kriging_fit)
 
@@ -7,14 +7,10 @@ add_executable(${TARGET} ${SOURCES})
 
 target_link_libraries(${TARGET}
     ${PROJECT_NAME}
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${Boost_LIBRARIES}
 )
 
-foreach(dll ${DLLS})
-    add_custom_command(TARGET ${TARGET}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${dll}
-        $<TARGET_FILE_DIR:${TARGET}>
-    )
-endforeach()
+if(MSVC)
+    polatory_get_boost_dlls(BOOST_DLLS)
+    polatory_target_contents(${TARGET} ${POLATORY_DLLS} ${BOOST_DLLS})
+endif()

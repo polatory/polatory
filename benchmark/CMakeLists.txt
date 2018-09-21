@@ -4,14 +4,10 @@ target_link_libraries(points ${PROJECT_NAME})
 add_executable(predict predict.cpp)
 target_link_libraries(predict ${PROJECT_NAME})
 
-foreach(dll ${DLLS})
-    add_custom_command(TARGET predict
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${dll}
-        $<TARGET_FILE_DIR:predict>
-    )
-endforeach()
+if(MSVC)
+    polatory_get_boost_dlls(BOOST_DLLS)
+    polatory_target_contents(predict ${POLATORY_DLLS} ${BOOST_DLLS})
+endif()
 
 set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/benchmark.sh
@@ -19,11 +15,4 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/simulate.R
 )
 
-foreach(file ${FILES})
-    add_custom_command(TARGET predict
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${file}
-        $<TARGET_FILE_DIR:predict>
-    )
-endforeach()
+polatory_target_contents(predict ${FILES})

@@ -25,8 +25,14 @@ TEST(empirical_variogram, serialize) {
   points3d points = random_points(cuboid3d(), n_points);
   valuesd values = valuesd::Random(n_points);
 
+#ifdef POLATORY_APPVEYOR
+  // The other code fails with the following message:
+  // unknown file: error: C++ exception with description "input stream error" thrown in the test body.
+  std::string filename("vario.gram");
+#else
   auto filename = (boost::filesystem::temp_directory_path() / boost::filesystem::unique_path())
     .string();
+#endif
 
   empirical_variogram v(points, values, 0.1, 10);
   v.save(filename);
