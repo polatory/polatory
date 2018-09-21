@@ -6,8 +6,8 @@
 #include <cmath>
 #include <fstream>
 
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 
 #include <polatory/numeric/sum_accumulator.hpp>
 
@@ -70,7 +70,7 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points, const
 
 empirical_variogram::empirical_variogram(const std::string& filename) {
   std::ifstream ifs(filename);
-  boost::archive::binary_iarchive ia(ifs);
+  boost::archive::text_iarchive ia(ifs);
   ia >> *this;
 }
 
@@ -88,7 +88,7 @@ const std::vector<size_t>& empirical_variogram::bin_num_pairs() const {
 
 void empirical_variogram::save(const std::string& filename) const {
   std::ofstream ofs(filename);
-  boost::archive::binary_oarchive oa(ofs);
+  boost::archive::text_oarchive oa(ofs);
   oa << *this;
 }
 

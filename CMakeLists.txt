@@ -34,8 +34,6 @@ elseif(MSVC)
         set(MKL_DLL_DIR "${MKL_ROOT}/bin")
         set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
         set(MKL_LIB_DIR "${MKL_ROOT}/lib")
-        
-        add_definitions(-DPOLATORY_APPVEYOR)
     else()
         set(MKL_ROOT "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/mkl" CACHE PATH "Path to mkl")
         set(MKL_DLL_DIR "${MKL_ROOT}/../redist/intel64/mkl")
