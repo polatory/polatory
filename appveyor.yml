@@ -1,5 +1,3 @@
-platform: x64
-
 branches:
   only:
     - master
@@ -7,7 +5,6 @@ branches:
 image: Visual Studio 2017
 
 environment:
-  APPVEYOR_SAVE_CACHE_ON_ERROR: true
   CONDA_DIR: C:\Miniconda-x64
   VCPKG_DIR: C:\Tools\vcpkg
 
@@ -36,7 +33,7 @@ before_build:
   - cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_67_0 -DVCPKG_ROOT=%VCPKG_DIR%\installed\x64-windows
 
 build_script:
-  - msbuild polatory.sln /m:2 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild polatory.sln /m /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 test_script:
   - test\Release\Unittest.exe
