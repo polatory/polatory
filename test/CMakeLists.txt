@@ -1,4 +1,4 @@
-find_package(Boost 1.60 COMPONENTS filesystem system REQUIRED)
+find_package(Boost 1.67.0 COMPONENTS filesystem system REQUIRED)
 
 set(TARGET Unittest)
 
@@ -23,19 +23,12 @@ elseif(MSVC)
         )
     endif()
 
-    foreach(dll ${DLLS})
-        add_custom_command(TARGET ${TARGET}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${dll}
-            $<TARGET_FILE_DIR:${TARGET}>
-        )
-    endforeach()
+    polatory_get_boost_dlls(BOOST_DLLS)
+    polatory_target_contents(${TARGET} ${POLATORY_DLLS} ${BOOST_DLLS})
 endif()
 
 target_link_libraries(${TARGET}
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_LIBRARIES}
 )
 
 add_test(

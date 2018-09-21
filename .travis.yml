@@ -25,10 +25,14 @@ matrix:
       - CXX=clang++
       - UBUNTU_VERSION=18.04
 
+cache:
+  directories:
+    - $HOME/ceres-solver
+
 before_install:
   - docker pull ubuntu:${UBUNTU_VERSION}
   - docker run -w /root --name test -d -e CXX=${CXX} -e MAKEFLAGS=${MAKEFLAGS} -e OMP_NUM_THREADS=${OMP_NUM_THREADS} ubuntu:${UBUNTU_VERSION} sleep infinity
-  - docker cp . test:/root/polatory
+  - docker cp $TRAVIS_BUILD_DIR test:/root
 
   - docker exec test apt-get update -qq
   - docker exec test apt-get install -qq apt-transport-https cmake git gnupg lsb-release python wget
@@ -43,22 +47,28 @@ install:
       docker exec test apt-get install -qq clang libiomp-dev;
     fi
 # Intel MKL
-  - docker exec test apt-get install -qq intel-mkl-64bit-2018.1-038
+  - docker exec test apt-get install -qq intel-mkl-64bit-2018.3-051
 # Eigen
   - docker exec test apt-get install -qq libeigen3-dev
 # Google Test
   - docker exec test apt-get install -qq libgtest-dev
   - docker exec test sh -c 'mkdir gtest-build && cd gtest-build && cmake /usr/src/gtest/ && make && cp *.a /usr/local/lib/'
 # Ceres Solver
-  - docker exec test apt-get install -qq libgoogle-glog-dev
-  - docker exec test git clone --depth=1 https://ceres-solver.googlesource.com/ceres-solver
-  - docker exec test sh -c 'cd ceres-solver && mkdir build && cd build && cmake .. -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DCXSPARSE=OFF -DEIGENSPARSE=OFF -DGFLAGS=OFF -DSCHUR_SPECIALIZATIONS=OFF -DSUITESPARSE=OFF && make && make install'
+  - docker exec test apt-get install -qq libgoogle-glog-dev;
+  - if [ -n "$(ls $HOME/ceres-solver)" ]; then
+      docker cp $HOME/ceres-solver test:/root;
+      docker exec test sh -c 'cd ceres-solver/build && make install';
+    else
+      docker exec test git clone --depth=1 https://ceres-solver.googlesource.com/ceres-solver;
+      docker exec test sh -c 'cd ceres-solver && mkdir build && cd build && cmake .. -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DCXSPARSE=OFF -DEIGENSPARSE=OFF -DGFLAGS=OFF -DSCHUR_SPECIALIZATIONS=OFF -DSUITESPARSE=OFF && make && make install';
+      docker cp test:/root/ceres-solver $HOME;
+    fi
 # FLANN
   - docker exec test apt-get install -qq libflann-dev
 # Boost
-  - docker exec test wget -q https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
-  - docker exec test tar xfj boost_1_65_1.tar.bz2
-  - docker exec test sh -c 'cd boost_1_65_1 && ./bootstrap.sh && ./b2 link=shared --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j5 --prefix=.'
+  - docker exec test wget -q https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
+  - docker exec test tar xfj boost_1_67_0.tar.bz2
+  - docker exec test sh -c 'cd boost_1_67_0 && ./bootstrap.sh && ./b2 link=shared --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j5 --prefix=.'
 
 before_script:
   - lscpu
@@ -67,7 +77,7 @@ before_script:
   - docker exec test sh -c 'cd polatory && mkdir build'
 
 script:
-  - docker exec test sh -c 'cd polatory/build && cmake .. -DBOOST_ROOT=~/boost_1_65_1 -DCMAKE_BUILD_TYPE=Release'
+  - docker exec test sh -c 'cd polatory/build && cmake .. -DBOOST_ROOT=~/boost_1_67_0 -DCMAKE_BUILD_TYPE=Release'
   - docker exec test sh -c 'cd polatory/build && make'
   - docker exec test sh -c 'cd polatory/build && ctest -VV'
   - docker exec test sh -c 'cd polatory && tools/inspection/inspect'

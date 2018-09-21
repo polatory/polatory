@@ -3,13 +3,18 @@ cmake_minimum_required(VERSION 3.1)
 project(polatory CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-find_package(Boost 1.65.1 REQUIRED)
+include(polatory_get_boost_dlls)
+include(polatory_target_contents)
+
+find_package(Boost 1.67.0 REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 option(COVERAGE "Compile with --coverage option" OFF)
 
 if(UNIX)
-    set(MKL_ROOT /opt/intel/mkl)
+    set(MKL_ROOT /opt/intel/mkl CACHE PATH "Path to mkl")
+    set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
+    set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
         set(CMAKE_CXX_FLAGS "-std=c++14 -fopenmp")
@@ -24,10 +29,21 @@ elseif(MSVC)
     set(_PF86 "ProgramFiles(x86)")
     file(TO_CMAKE_PATH "$ENV{${_PF86}}" _PROG_FILES_X86)
 
-    set(MKL_ROOT "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/mkl")
-    set(MKL_DLL_DIR "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/redist/intel64/mkl")
-    set(VCPKG_ROOT "" CACHE STRING "Path to vcpkg/installed/x64-windows")
-    set(DLLS
+    if("$ENV{APPVEYOR}" STREQUAL "True")
+        set(MKL_ROOT "$ENV{CONDA_DIR}/Library")
+        set(MKL_DLL_DIR "${MKL_ROOT}/bin")
+        set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
+        set(MKL_LIB_DIR "${MKL_ROOT}/lib")
+        
+        add_definitions(-DPOLATORY_APPVEYOR)
+    else()
+        set(MKL_ROOT "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/mkl" CACHE PATH "Path to mkl")
+        set(MKL_DLL_DIR "${MKL_ROOT}/../redist/intel64/mkl")
+        set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
+        set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
+    endif()
+    set(VCPKG_ROOT "" CACHE PATH "Path to vcpkg/installed/x64-windows")
+    set(POLATORY_DLLS
         ${MKL_DLL_DIR}/mkl_avx.dll
         ${MKL_DLL_DIR}/mkl_avx2.dll
         ${MKL_DLL_DIR}/mkl_avx512.dll
@@ -44,6 +60,11 @@ elseif(MSVC)
     else()
         message(FATAL_ERROR "Not supported compiler.")
     endif()
+    
+    add_definitions(
+        -DBOOST_ALL_DYN_LINK
+        -DBOOST_ALL_NO_LIB
+    )
 else()
     message(FATAL_ERROR "Not supported system.")
 endif()
@@ -59,23 +80,20 @@ include_directories(
     include
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
-    ${MKL_ROOT}/include
+    ${MKL_INCLUDE_DIR}
     ${VCPKG_ROOT}/include
 )
 
 if(UNIX)
     link_libraries(
         "-Wl,--start-group"
-        ${MKL_ROOT}/lib/intel64/libmkl_intel_lp64.a ${MKL_ROOT}/lib/intel64/libmkl_sequential.a ${MKL_ROOT}/lib/intel64/libmkl_core.a pthread m dl
+        ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
         ceres flann_cpp glog
         "-Wl,--end-group"
     )
 elseif(MSVC)
-    include_directories(
-        ${MKL_ROOT}/include
-    )
     link_libraries(
-        ${MKL_ROOT}/lib/intel64/mkl_intel_lp64_dll.lib ${MKL_ROOT}/lib/intel64/mkl_sequential_dll.lib ${MKL_ROOT}/lib/intel64/mkl_core_dll.lib
+        ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
     )
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         link_libraries(

@@ -4,7 +4,8 @@
 
 ----
 
-[![Build Status](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
+[![Travis CI](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/andjvgjr58axrbe0/branch/master?svg=true)](https://ci.appveyor.com/project/mizuno-gsinet/polatory/branch/master)
 
 Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
 
@@ -82,7 +83,7 @@ Visual Studio 2017
     sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
     sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
     sudo apt update
-    sudo apt install intel-mkl-64bit-2018.1-038
+    sudo apt install intel-mkl-64bit-2018.3-051
     ```
 
 1. Install [Eigen](http://eigen.tuxfamily.org/)
@@ -125,9 +126,9 @@ Visual Studio 2017
 
     ```bash
     cd
-    wget https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.bz2
-    tar xvfj boost_1_65_1.tar.bz2
-    cd boost_1_65_1
+    wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
+    tar xvfj boost_1_67_0.tar.bz2
+    cd boost_1_67_0
     ./bootstrap.sh
     ./b2 install -j8 --prefix=.
     ```
@@ -139,7 +140,7 @@ Visual Studio 2017
     git clone https://github.com/polatory/polatory.git
     cd polatory
     mkdir build; cd build
-    cmake .. -DBOOST_ROOT=~/boost_1_65_1 -DCMAKE_BUILD_TYPE=Release
+    cmake .. -DBOOST_ROOT=~/boost_1_67_0 -DCMAKE_BUILD_TYPE=Release
     make -j8
     ```
 
@@ -152,7 +153,7 @@ Visual Studio 2017
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
     bootstrap-vcpkg.bat
-    vcpkg install boost:x64-windows ceres:x64-windows flann:x64-windows eigen3:x64-windows gtest:x64-windows
+    vcpkg install boost ceres flann eigen3 gtest --triplet x64-windows
     ```
 
     To update vcpkg and installed libraries, run the following commands:
