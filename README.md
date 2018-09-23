@@ -177,8 +177,8 @@ Visual Studio 2017
     cd polatory
     mkdir build
     cd build
-    cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_ROOT=C:/vcpkg/installed/x64-windows
-    msbuild polatory.sln /m:8
+    cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+    msbuild polatory.sln /m
     ```
 
 ## Contribution
