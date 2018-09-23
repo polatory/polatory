@@ -7,7 +7,8 @@ add_executable(${TARGET} ${SOURCES})
 
 if(UNIX)
     target_link_libraries(${TARGET}
-        ${PROJECT_NAME} gtest pthread
+        ${PROJECT_NAME}
+        gtest pthread
     )
 elseif(MSVC)
     target_link_libraries(${TARGET}
