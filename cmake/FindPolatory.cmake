@@ -1,6 +1,6 @@
 if(NOT POLATORY_FOUND)
     if(UNIX)
-        set(SEARCH_PATS
+        set(SEARCH_PATHS
             $ENV{HOME}/.local
             /usr/local
             /usr
