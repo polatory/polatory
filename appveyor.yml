@@ -30,7 +30,7 @@ install:
 
 before_build:
   - mkdir build && cd build
-  - cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_67_0 -DVCPKG_ROOT=%VCPKG_DIR%\installed\x64-windows
+  - cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_67_0
 
 build_script:
   - msbuild polatory.sln /m /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"

@@ -40,7 +40,11 @@ elseif(MSVC)
         set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
         set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
     endif()
-    set(VCPKG_ROOT "" CACHE PATH "Path to vcpkg/installed/x64-windows")
+
+    set(VCPKG_ROOT "${_VCPKG_INSTALLED_DIR}/x64-windows")
+    set(VCPKG_LIB_DIR "${VCPKG_ROOT}$<$<CONFIG:Debug>:/debug>/lib")
+    set(VCPKG_INCLUDE_DIR "${VCPKG_ROOT}/include")
+
     set(POLATORY_DLLS
         ${MKL_DLL_DIR}/mkl_avx.dll
         ${MKL_DLL_DIR}/mkl_avx2.dll
@@ -58,7 +62,7 @@ elseif(MSVC)
     else()
         message(FATAL_ERROR "Not supported compiler.")
     endif()
-    
+
     add_definitions(
         -DBOOST_ALL_DYN_LINK
         -DBOOST_ALL_NO_LIB
@@ -79,34 +83,8 @@ include_directories(
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR}
-    ${VCPKG_ROOT}/include
+    ${VCPKG_INCLUDE_DIR}
 )
-
-if(UNIX)
-    link_libraries(
-        "-Wl,--start-group"
-        ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
-        ceres flann_cpp glog
-        "-Wl,--end-group"
-    )
-elseif(MSVC)
-    link_libraries(
-        ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
-    )
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        link_libraries(
-            ${VCPKG_ROOT}/debug/lib/ceres-debug.lib
-            ${VCPKG_ROOT}/debug/lib/flann_cpp-gd.lib
-            ${VCPKG_ROOT}/debug/lib/glog.lib
-        )
-    else()
-        link_libraries(
-            ${VCPKG_ROOT}/lib/ceres.lib
-            ${VCPKG_ROOT}/lib/flann_cpp.lib
-            ${VCPKG_ROOT}/lib/glog.lib
-        )
-    endif()
-endif()
 
 add_subdirectory(benchmark)
 add_subdirectory(examples)
