@@ -172,14 +172,16 @@ Visual Studio 2017
 
 1. Build polatory
 
+    Open **Start** > **Visual Studio 2017** > **x64 Native Tools Command Prompt for VS 2017**.
+
     ```bat
     cd /d %userprofile%
     git clone https://github.com/polatory/polatory.git
     cd polatory
     mkdir build
     cd build
-    cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
-    msbuild polatory.sln /m
+    cmake .. -GNinja -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+    ninja
     ```
 
 ## Contribution
