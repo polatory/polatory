@@ -33,7 +33,7 @@ before_build:
   - mkdir build && cd build
 
 build_script:
-  - cmake .. -GNinja -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_67_0 -DUSE_PREBUILT_BOOST=ON
+  - cmake .. -GNinja -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_67_0 -DUSE_PREBUILT_BOOST=ON
   - ninja
 
 test_script:
