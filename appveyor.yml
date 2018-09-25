@@ -24,14 +24,7 @@ cache:
   - C:\Tools\vcpkg\installed
 
 install:
-  # Ninja
-  - appveyor DownloadFile https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip
-  - 7z x ninja-win.zip -oC:\ninja > nul
-  - set PATH=C:\ninja;%PATH%
-  - ninja --version
-  # Intel MKL
   - C:\Miniconda-x64\Scripts\conda install mkl-devel=2018.0 -y -c intel
-  # Other libraries
   - echo set(VCPKG_BUILD_TYPE release) >> %VCPKG_DIR%\triplets\x64-windows.cmake
   - vcpkg install ceres flann eigen3 gtest --triplet x64-windows
 
