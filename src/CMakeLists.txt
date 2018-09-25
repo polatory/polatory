@@ -1,9 +1,42 @@
 find_package(Boost 1.67.0 COMPONENTS serialization REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(OpenMP REQUIRED)
 
 set(TARGET polatory)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
 add_library(${TARGET} STATIC ${SOURCES})
+
+if(UNIX)
+    target_compile_options(${TARGET} PUBLIC -std=c++14 ${OpenMP_CXX_FLAGS})
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_options(${TARGET} PUBLIC -O2)
+    endif()
+elseif(MSVC)
+    target_compile_options(${TARGET} PUBLIC /std:c++14 ${OpenMP_CXX_FLAGS})
+endif()
+
+target_compile_definitions(${TARGET} PUBLIC
+    -DEIGEN_DONT_PARALLELIZE
+    -DEIGEN_MPL2_ONLY
+    -DEIGEN_USE_MKL_ALL
+    -DPOLATORY_FTZ
+)
+
+if("$ENV{APPVEYOR}" STREQUAL "True")
+    target_compile_definitions(${TARGET} PUBLIC
+        -DBOOST_ALL_DYN_LINK
+        -DBOOST_ALL_NO_LIB
+    )
+endif()
+
+target_include_directories(${TARGET} PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${Boost_INCLUDE_DIR}
+    ${EIGEN3_INCLUDE_DIR}
+    ${MKL_INCLUDE_DIR}
+    ${VCPKG_INCLUDE_DIR}
+)
 
 if(UNIX)
     target_link_libraries(${TARGET}
@@ -23,10 +56,11 @@ endif()
 
 target_link_libraries(${TARGET}
     ${Boost_LIBRARIES}
+    ${OpenMP_CXX_LIBRARIES}
 )
 
 if(MSVC)
-    polatory_get_boost_dlls(BOOST_DLLS)
+    polatory_get_prebuilt_boost_dlls(BOOST_DLLS)
     list(APPEND POLATORY_DLLS ${BOOST_DLLS})
     set(POLATORY_DLLS ${POLATORY_DLLS} PARENT_SCOPE)
 endif()

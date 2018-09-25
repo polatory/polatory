@@ -1,31 +1,27 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 
-project(polatory CXX)
+project(Polatory CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-include(polatory_get_boost_dlls)
-include(polatory_target_contents)
+include(polatory_common_functions)
 
 find_package(Boost 1.67.0 REQUIRED)
-find_package(Eigen3 REQUIRED)
 
-option(COVERAGE "Compile with --coverage option" OFF)
+option(USE_PREBUILT_BOOST "Use prebuilt Boost libraries specified manually. This option takes effect only on MSVC.")
 
 if(UNIX)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
+        message(FATAL_ERROR "Not supported compiler.")
+    endif()
+
     set(MKL_ROOT /opt/intel/mkl CACHE PATH "Path to mkl")
     set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
     set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
-        set(CMAKE_CXX_FLAGS "-std=c++14 -fopenmp")
-        set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
-        if(COVERAGE)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
-        endif()
-    else()
+elseif(MSVC)
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         message(FATAL_ERROR "Not supported compiler.")
     endif()
-elseif(MSVC)
+
     set(_PF86 "ProgramFiles(x86)")
     file(TO_CMAKE_PATH "$ENV{${_PF86}}" _PROG_FILES_X86)
 
@@ -41,9 +37,15 @@ elseif(MSVC)
         set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
     endif()
 
-    set(VCPKG_ROOT "${_VCPKG_INSTALLED_DIR}/x64-windows")
+    set(VCPKG_ROOT "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
     set(VCPKG_LIB_DIR "${VCPKG_ROOT}$<$<CONFIG:Debug>:/debug>/lib")
     set(VCPKG_INCLUDE_DIR "${VCPKG_ROOT}/include")
+
+    if(USE_PREBUILT_BOOST)
+        if("${Boost_INCLUDE_DIR}" STREQUAL "${VCPKG_INCLUDE_DIR}")
+            message(FATAL_ERROR "Boost libraries from vcpkg are detected. Turn off USE_PREBUILT_BOOST.")
+        endif()
+    endif()
 
     set(POLATORY_DLLS
         ${MKL_DLL_DIR}/mkl_avx.dll
@@ -55,36 +57,9 @@ elseif(MSVC)
         ${MKL_DLL_DIR}/mkl_mc3.dll
         ${MKL_DLL_DIR}/mkl_sequential.dll
     )
-
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        set(CMAKE_CXX_FLAGS "/MP /EHsc /std:c++14 /openmp")
-        set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /GL")
-    else()
-        message(FATAL_ERROR "Not supported compiler.")
-    endif()
-
-    add_definitions(
-        -DBOOST_ALL_DYN_LINK
-        -DBOOST_ALL_NO_LIB
-    )
 else()
     message(FATAL_ERROR "Not supported system.")
 endif()
-
-add_definitions(
-    -DEIGEN_DONT_PARALLELIZE
-    -DEIGEN_MPL2_ONLY
-    -DEIGEN_USE_MKL_ALL
-    -DPOLATORY_FTZ
-)
-
-include_directories(
-    include
-    ${Boost_INCLUDE_DIR}
-    ${EIGEN3_INCLUDE_DIR}
-    ${MKL_INCLUDE_DIR}
-    ${VCPKG_INCLUDE_DIR}
-)
 
 add_subdirectory(benchmark)
 add_subdirectory(examples)

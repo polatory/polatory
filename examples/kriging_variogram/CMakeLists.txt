@@ -6,11 +6,13 @@ file(GLOB_RECURSE SOURCES "*.cpp")
 add_executable(${TARGET} ${SOURCES})
 
 target_link_libraries(${TARGET}
-    ${PROJECT_NAME}
     ${Boost_LIBRARIES}
+    polatory
 )
 
+polatory_enable_ipo(${TARGET})
+
 if(MSVC)
-    polatory_get_boost_dlls(BOOST_DLLS)
+    polatory_get_prebuilt_boost_dlls(BOOST_DLLS)
     polatory_target_contents(${TARGET} ${POLATORY_DLLS} ${BOOST_DLLS})
 endif()
