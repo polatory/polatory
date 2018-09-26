@@ -23,7 +23,7 @@ target_compile_definitions(${TARGET} PUBLIC
     -DPOLATORY_FTZ
 )
 
-if("$ENV{APPVEYOR}" STREQUAL "True")
+if(USE_PREBUILT_BOOST)
     target_compile_definitions(${TARGET} PUBLIC
         -DBOOST_ALL_DYN_LINK
         -DBOOST_ALL_NO_LIB
@@ -39,14 +39,14 @@ target_include_directories(${TARGET} PUBLIC
 )
 
 if(UNIX)
-    target_link_libraries(${TARGET}
+    target_link_libraries(${TARGET} INTERFACE
         "-Wl,--start-group"
         ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
         ceres flann_cpp glog
         "-Wl,--end-group"
     )
 elseif(MSVC)
-    target_link_libraries(${TARGET}
+    target_link_libraries(${TARGET} INTERFACE
         ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
         debug ${VCPKG_LIB_DIR}/ceres-debug.lib optimized ${VCPKG_LIB_DIR}/ceres.lib
         debug ${VCPKG_LIB_DIR}/flann_cpp-gd.lib optimized ${VCPKG_LIB_DIR}/flann_cpp.lib
@@ -54,10 +54,12 @@ elseif(MSVC)
     )
 endif()
 
-target_link_libraries(${TARGET}
+target_link_libraries(${TARGET} INTERFACE
     ${Boost_LIBRARIES}
     ${OpenMP_CXX_LIBRARIES}
 )
+
+polatory_enable_ipo(${TARGET})
 
 if(MSVC)
     polatory_get_prebuilt_boost_dlls(BOOST_DLLS)

@@ -1,9 +1,9 @@
 add_executable(points points.cpp)
-target_link_libraries(points polatory)
+target_link_libraries(points PRIVATE polatory)
 polatory_enable_ipo(points)
 
 add_executable(predict predict.cpp)
-target_link_libraries(predict polatory)
+target_link_libraries(predict PRIVATE polatory)
 polatory_enable_ipo(predict)
 
 if(MSVC)
