@@ -92,7 +92,7 @@ before_script:
   - docker exec test sh -c "cd polatory && mkdir build"
 
 script:
-  - docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_67_0 -DCMAKE_BUILD_TYPE=Release"
+  - docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_67_0"
   - docker exec test sh -c "cd polatory/build && ninja"
   - docker exec test sh -c "cd polatory/build && $CTEST -VV"
   - docker exec test sh -c "cd polatory && tools/inspection/inspect"

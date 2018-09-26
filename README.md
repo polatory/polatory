@@ -68,7 +68,7 @@ Visual Studio 2017
     On Ubuntu 16.04 LTS, CMake >= 3.9 must be installed manually.
 
     ```bash
-    sudo apt install build-essential cmake git
+    sudo apt install build-essential cmake git ninja-build
     ```
     If you use Clang, Intel(R) OpenMP is required.
     ```bash
@@ -99,9 +99,9 @@ Visual Studio 2017
     git clone https://github.com/google/googletest.git
     cd googletest
     mkdir build && cd build
-    cmake ..
-    make -j8
-    sudo make install
+    cmake .. -GNinja
+    ninja
+    sudo ninja install
     ```
 
 1. Install [Ceres Solver](http://ceres-solver.org/)
@@ -112,9 +112,9 @@ Visual Studio 2017
     git clone https://ceres-solver.googlesource.com/ceres-solver
     cd ceres-solver
     mkdir build && cd build/
-    cmake .. -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
-    make -j8
-    sudo make install
+    cmake .. -GNinja -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
+    ninja
+    sudo ninja install
     ```
 
 1. Install [FLANN](http://www.cs.ubc.ca/research/flann/)
@@ -141,8 +141,8 @@ Visual Studio 2017
     git clone https://github.com/polatory/polatory.git
     cd polatory
     mkdir build && cd build
-    cmake .. -DBOOST_ROOT=~/boost_1_67_0 -DCMAKE_BUILD_TYPE=Release
-    make -j8
+    cmake .. -GNinja -DBOOST_ROOT=~/boost_1_67_0
+    ninja
     ```
 
 ### On Windows
@@ -180,7 +180,7 @@ Visual Studio 2017
     cd polatory
     mkdir build
     cd build
-    cmake .. -GNinja -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
     ninja
     ```
 

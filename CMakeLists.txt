@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.9)
 
+if(NOT CMAKE_BUILD_TYPE)
+    message("-- CMAKE_BUILD_TYPE is not set. Defaulting to Release.")
+endif()
+# Must be set before a toolchain file is loaded by project() command.
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type: Debug or Release." FORCE)
+
 project(Polatory CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
