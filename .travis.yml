@@ -55,30 +55,31 @@ before_install:
   - docker exec test apt-get update -qq
 
 install:
-# Intel OpenMP (for building with Clang)
+  # Intel OpenMP (for building with Clang)
   - if [ "$CXX" == "clang++" ]; then
       docker exec test apt-get install -qq clang libiomp-dev;
     fi
-# Intel MKL
+  # Intel MKL
   - docker exec test apt-get install -qq intel-mkl-64bit-2018.3-051
-# Eigen
+  # Eigen
   - docker exec test apt-get install -qq libeigen3-dev
-# Google Test
-  - docker exec test git clone --depth=1 https://github.com/google/googletest.git
+  # Google Test
+  # Checkout stable release until https://github.com/google/googletest/issues/1865 is fixed.
+  - docker exec test git clone -b release-1.8.1 --depth 1 https://github.com/google/googletest.git
   - docker exec test sh -c "cd googletest && mkdir build && cd build && $CMAKE .. -GNinja && ninja && ninja install"
-# Ceres Solver
+  # Ceres Solver
   - docker exec test apt-get install -qq libgoogle-glog-dev;
   - if [ -n "$(ls $HOME/ceres-solver)" ]; then
       docker cp $HOME/ceres-solver test:/root;
       docker exec test sh -c "cd ceres-solver/build && ninja install";
     else
-      docker exec test git clone --depth=1 https://ceres-solver.googlesource.com/ceres-solver;
+      docker exec test git clone --depth 1 https://ceres-solver.googlesource.com/ceres-solver;
       docker exec test sh -c "cd ceres-solver && mkdir build && cd build && $CMAKE .. -GNinja -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DCXSPARSE=OFF -DEIGENSPARSE=OFF -DGFLAGS=OFF -DSCHUR_SPECIALIZATIONS=OFF -DSUITESPARSE=OFF && ninja && ninja install";
       docker cp test:/root/ceres-solver $HOME;
     fi
-# FLANN
+  # FLANN
   - docker exec test apt-get install -qq libflann-dev
-# Boost
+  # Boost
   - docker exec test wget -nv https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
   - docker exec test tar xjf boost_1_67_0.tar.bz2
   - docker exec test sh -c "cd boost_1_67_0 && ./bootstrap.sh && ./b2 link=shared --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j5 --prefix=."
