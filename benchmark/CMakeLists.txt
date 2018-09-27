@@ -1,12 +1,13 @@
 add_executable(points points.cpp)
-target_link_libraries(points ${PROJECT_NAME})
+target_link_libraries(points PRIVATE polatory)
+polatory_enable_ipo(points)
 
 add_executable(predict predict.cpp)
-target_link_libraries(predict ${PROJECT_NAME})
+target_link_libraries(predict PRIVATE polatory)
+polatory_enable_ipo(predict)
 
 if(MSVC)
-    polatory_get_boost_dlls(BOOST_DLLS)
-    polatory_target_contents(predict ${POLATORY_DLLS} ${BOOST_DLLS})
+    polatory_target_contents(predict ${POLATORY_DLLS})
 endif()
 
 set(FILES

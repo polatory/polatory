@@ -1,10 +1,8 @@
-## # polatory_get_boost_dlls
+## # polatory_get_prebuilt_boost_dlls
 ## 
 ## Returns paths of DLLs which correspond to ${Boost_LIBRARIES}.
-## If Boost is provided from vcpkg, the result will be empty
-## as vcpkg copies those dlls after build.
-function(polatory_get_boost_dlls BOOST_DLLS)
-    if("${Boost_INCLUDE_DIR}" STREQUAL "${VCPKG_INCLUDE_DIR}")
+function(polatory_get_prebuilt_boost_dlls BOOST_DLLS)
+    if(NOT USE_PREBUILT_BOOST)
         set(${BOOST_DLLS} "" PARENT_SCOPE)
         return()
     endif()

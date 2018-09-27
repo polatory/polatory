@@ -29,14 +29,15 @@ install:
   - vcpkg install ceres flann eigen3 gtest --triplet x64-windows
 
 before_build:
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
   - mkdir build && cd build
-  - cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_67_0
 
 build_script:
-  - msbuild polatory.sln /m /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_67_0 -DUSE_PREBUILT_BOOST=ON
+  - ninja
 
 test_script:
-  - test\Release\Unittest.exe
+  - test\Unittest.exe
 
 notifications:
   - provider: Slack

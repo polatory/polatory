@@ -61,16 +61,18 @@ Visual Studio 2017
 
 ## Building
 
-### On Ubuntu 16.04 LTS
+### On Ubuntu
 
 1. Install build tools
 
+    On Ubuntu 16.04 LTS, CMake >= 3.9 must be installed manually.
+
     ```bash
-    sudo apt install build-essential cmake git
+    sudo apt install build-essential cmake git ninja-build
     ```
-    If you use Clang, Intel(R) OpenMP is required.
+    If you use Clang, `libomp-dev` is required.
     ```bash
-    sudo apt install clang libiomp-dev
+    sudo apt install clang libomp-dev
     ```
 
 1. Download and install [Intel(R) MKL](https://software.intel.com/mkl).
@@ -79,8 +81,7 @@ Visual Studio 2017
 
     ```bash
     cd
-    wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
-    sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+    wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | sudo apt-key add -
     sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
     sudo apt update
     sudo apt install intel-mkl-64bit-2018.3-051
@@ -95,12 +96,12 @@ Visual Studio 2017
 1. Install [Google Test](https://github.com/google/googletest)
 
     ```bash
-    sudo apt install libgtest-dev
-    cd
-    mkdir gtest-build; cd gtest-build/
-    cmake /usr/src/gtest/
-    make
-    sudo cp *.a /usr/local/lib/
+    git clone https://github.com/google/googletest.git
+    cd googletest
+    mkdir build && cd build
+    cmake .. -GNinja
+    ninja
+    sudo ninja install
     ```
 
 1. Install [Ceres Solver](http://ceres-solver.org/)
@@ -110,10 +111,10 @@ Visual Studio 2017
     cd
     git clone https://ceres-solver.googlesource.com/ceres-solver
     cd ceres-solver
-    mkdir build; cd build/
-    cmake .. -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
-    make -j8
-    sudo make install
+    mkdir build && cd build/
+    cmake .. -GNinja -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
+    ninja
+    sudo ninja install
     ```
 
 1. Install [FLANN](http://www.cs.ubc.ca/research/flann/)
@@ -127,7 +128,7 @@ Visual Studio 2017
     ```bash
     cd
     wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
-    tar xvfj boost_1_67_0.tar.bz2
+    tar xjf boost_1_67_0.tar.bz2
     cd boost_1_67_0
     ./bootstrap.sh
     ./b2 install -j8 --prefix=.
@@ -139,16 +140,16 @@ Visual Studio 2017
     cd
     git clone https://github.com/polatory/polatory.git
     cd polatory
-    mkdir build; cd build
-    cmake .. -DBOOST_ROOT=~/boost_1_67_0 -DCMAKE_BUILD_TYPE=Release
-    make -j8
+    mkdir build && cd build
+    cmake .. -GNinja -DBOOST_ROOT=~/boost_1_67_0
+    ninja
     ```
 
 ### On Windows
 
 1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
 
-    ```
+    ```bat
     cd /d C:\
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
@@ -171,14 +172,16 @@ Visual Studio 2017
 
 1. Build polatory
 
-    ```
+    Open **Start** > **Visual Studio 2017** > **x64 Native Tools Command Prompt for VS 2017**.
+
+    ```bat
     cd /d %userprofile%
     git clone https://github.com/polatory/polatory.git
     cd polatory
     mkdir build
     cd build
-    cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-    msbuild polatory.sln /m
+    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+    ninja
     ```
 
 ## Contribution
