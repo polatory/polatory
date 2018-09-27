@@ -70,9 +70,9 @@ Visual Studio 2017
     ```bash
     sudo apt install build-essential cmake git ninja-build
     ```
-    If you use Clang, Intel(R) OpenMP is required.
+    If you use Clang, `libomp-dev` is required.
     ```bash
-    sudo apt install clang libiomp-dev
+    sudo apt install clang libomp-dev
     ```
 
 1. Download and install [Intel(R) MKL](https://software.intel.com/mkl).
