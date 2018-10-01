@@ -30,6 +30,9 @@ install:
 
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  - cmake --version
+  - ninja --version
+  - cl /Bv || cmd /c exit 0
   - mkdir build && cd build
 
 build_script:
