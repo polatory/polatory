@@ -8,12 +8,12 @@ file(GLOB_RECURSE SOURCES "*.cpp")
 add_library(${TARGET} STATIC ${SOURCES})
 
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -std=c++14 ${OpenMP_CXX_FLAGS})
+    target_compile_options(${TARGET} PUBLIC ${OpenMP_CXX_FLAGS})
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
 elseif(MSVC)
-    target_compile_options(${TARGET} PUBLIC /std:c++14 ${OpenMP_CXX_FLAGS})
+    target_compile_options(${TARGET} PUBLIC ${OpenMP_CXX_FLAGS})
 endif()
 
 target_compile_definitions(${TARGET} PUBLIC

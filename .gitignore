@@ -3,8 +3,9 @@
 \#*\#
 
 # Build output
-build*/
+build/
 cmake-build-*/
+install/
 
 # CLion settings
 .idea/*
