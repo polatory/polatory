@@ -37,7 +37,7 @@ build_script:
   - ninja
 
 test_script:
-  - test\Unittest.exe
+  - ctest -VV
 
 notifications:
   - provider: Slack

@@ -6,6 +6,12 @@ endif()
 # Must be set before a toolchain file is loaded by project() command.
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type: Debug or Release." FORCE)
 
+set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard version (must be 14 or later)." FORCE)
+if(CMAKE_CXX_STANDARD MATCHES "^(98|11)$")
+    message(FATAL_ERROR "CMAKE_CXX_STANDARD Must be 14 or later.")
+endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(Polatory CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
