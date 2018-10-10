@@ -2,13 +2,15 @@ cmake_minimum_required(VERSION 3.9)
 
 if(NOT CMAKE_BUILD_TYPE)
     message("-- CMAKE_BUILD_TYPE is not set. Defaulting to Release.")
+    # Must be set before a toolchain file is loaded by project() command.
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type: Debug or Release." FORCE)
 endif()
-# Must be set before a toolchain file is loaded by project() command.
-set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type: Debug or Release." FORCE)
 
-set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard version (must be 14 or later)." FORCE)
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard version (must be 14 or later)." FORCE)
+endif()
 if(CMAKE_CXX_STANDARD MATCHES "^(98|11)$")
-    message(FATAL_ERROR "CMAKE_CXX_STANDARD Must be 14 or later.")
+    message(FATAL_ERROR "CMAKE_CXX_STANDARD must be 14 or later.")
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

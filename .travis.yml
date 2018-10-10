@@ -63,8 +63,7 @@ install:
   # Eigen
   - docker exec test apt-get install -qq libeigen3-dev
   # Google Test
-  # Checkout stable release until https://github.com/google/googletest/issues/1865 is fixed.
-  - docker exec test git clone -b release-1.8.1 --depth 1 https://github.com/google/googletest.git
+  - docker exec test git clone --depth 1 https://github.com/google/googletest.git
   - docker exec test sh -c "cd googletest && mkdir build && cd build && $CMAKE .. -GNinja && ninja && ninja install"
   # Ceres Solver
   - docker exec test apt-get install -qq libgoogle-glog-dev;
