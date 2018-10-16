@@ -147,6 +147,18 @@ Visual Studio 2017
 
 ### On Windows
 
+1. Install Visual Studio Community 2017
+
+    https://www.visualstudio.com/
+
+    From the **Workloads** tab, select the following item.
+
+    - Desktop development with C++
+
+    From the **Individual components** tab, select the following item.
+
+    - Code tools > Git for Windows
+
 1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
 
     ```bat
