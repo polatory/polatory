@@ -11,6 +11,8 @@ Polatory is a fast and memory-efficient framework for RBF (radial basis function
 
 NOTE: This is a pre-release version. APIs subject to change without notice.
 
+[Features](#features) | [License](#license) | [Building](#building) | [Contribution](#contribution) | [Module Index](#module-index) | [Acknowledgements](#acknowledgements)
+
 ## Features
 
 * Fast spline surface reconstruction from 2.5D/3D point cloud
@@ -19,7 +21,17 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 * Supports large number (millions) of input points
 * Supports inequality constraints
 
-### Kriging via RBF interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
+### Platforms
+
+Polatory runs on x86-64 processors and continuously tested on the following platforms.
+
+| OS               | Toolchain             |
+| ---------------- | --------------------- |
+| Ubuntu 16.04 LTS | GCC 5.4 and Clang 3.8 |
+| Ubuntu 16.04 LTS | GCC 7.3 and Clang 6.0 |
+| Windows          | Visual Studio 2017    |
+
+### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
 
 Polatory can perform global kriging prediction via RBF interpolation. Although different terminology is used, both methods produce the same results. Here is the correspondence between kriging and RBF interpolation:
 
@@ -42,22 +54,6 @@ Polatory is available under two different licenses:
 
 * <a href="https://opensource.org/licenses/gpl-3.0.html">GNU General Public License version 3</a> for **non-commercial** use
 * Commercial license (please contact at mizuno(at)gsinet.co.jp)
-
-## Platforms
-
-Polatory runs on x86-64 processors and tested on the following operating systems and toolchains.
-
-### Ubuntu 16.04 LTS
-
-GCC 5.4 and Clang 3.8
-
-### Ubuntu 18.04 LTS
-
-GCC 7.3 and Clang 6.0
-
-### Windows
-
-Visual Studio 2017
 
 ## Building
 
@@ -200,7 +196,7 @@ Visual Studio 2017
 
 We welcome your contributions! You can contribute to this project in several ways:
 
-### Star this Project
+### Add a Star
 
 You can just click the ★Star button to show your interest.
 
@@ -212,7 +208,7 @@ Feel free to file an issue, if you have any questions, feature requests, or if y
 
 You can fork the source tree and make some improvements to it. Then feel free to create a PR. When sending a PR for the first time, please <a href="https://cla-assistant.io/polatory/polatory">review and sign the Individual Contributor License Agreement</a>.
 
-## Module index
+## Module Index
 
 | Module                 | Description                                      |
 | ---------------------- | ------------------------------------------------ |
