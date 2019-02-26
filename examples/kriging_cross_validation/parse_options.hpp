@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -56,7 +55,7 @@ options parse_options(int argc, const char *argv[]) {
     std::cout << e.what() << std::endl
               << "Usage: " << argv[0] << " [OPTION]..." << std::endl
               << opts_desc;
-    std::exit(1);
+    throw;
   }
 
   return opts;
