@@ -5,7 +5,6 @@
 #include <memory>
 #include <string>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 #include <polatory/common/types.hpp>
@@ -62,10 +61,10 @@ public:
 
     clear_centers();
 
-    auto transformed = affine_transform_points(points);
-    interpolation::rbf_fitter fitter(model_, transformed);
+    centers_ = affine_transform_points(points);
 
-    centers_ = std::move(transformed);
+    interpolation::rbf_fitter fitter(model_, centers_);
+
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
     weights_ = fitter.fit(values, absolute_tolerance);
   }
