@@ -28,7 +28,7 @@ Polatory runs on x86-64 processors and continuously tested on the following plat
 | OS               | Toolchain             |
 | ---------------- | --------------------- |
 | Ubuntu 16.04 LTS | GCC 5.4 and Clang 3.8 |
-| Ubuntu 16.04 LTS | GCC 7.3 and Clang 6.0 |
+| Ubuntu 18.04 LTS | GCC 7.3 and Clang 6.0 |
 | Windows          | Visual Studio 2017    |
 
 ### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
