@@ -78,9 +78,9 @@ install:
   # FLANN
   - docker exec test apt-get install -qq libflann-dev
   # Boost
-  - docker exec test wget -nv https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
-  - docker exec test tar xjf boost_1_67_0.tar.bz2
-  - docker exec test sh -c "cd boost_1_67_0 && ./bootstrap.sh && ./b2 link=shared --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j5 --prefix=."
+  - docker exec test wget -nv https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.bz2
+  - docker exec test tar xjf boost_1_69_0.tar.bz2
+  - docker exec test sh -c "cd boost_1_69_0 && ./bootstrap.sh && ./b2 link=static --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j5 --prefix=."
 
 before_script:
   - lscpu
@@ -91,7 +91,7 @@ before_script:
   - docker exec test sh -c "cd polatory && mkdir build"
 
 script:
-  - docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_67_0"
+  - docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0"
   - docker exec test sh -c "cd polatory/build && ninja"
   - docker exec test sh -c "cd polatory/build && $CTEST -VV"
   - docker exec test sh -c "cd polatory && tools/inspection/inspect"

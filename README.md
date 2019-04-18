@@ -123,9 +123,9 @@ Polatory is available under two different licenses:
 
     ```bash
     cd
-    wget https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2
-    tar xjf boost_1_67_0.tar.bz2
-    cd boost_1_67_0
+    wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.bz2
+    tar xjf boost_1_69_0.tar.bz2
+    cd boost_1_69_0
     ./bootstrap.sh
     ./b2 install -j8 --prefix=.
     ```
@@ -137,7 +137,7 @@ Polatory is available under two different licenses:
     git clone https://github.com/polatory/polatory.git
     cd polatory
     mkdir build && cd build
-    cmake .. -GNinja -DBOOST_ROOT=~/boost_1_67_0
+    cmake .. -GNinja -DBOOST_ROOT=~/boost_1_69_0
     ninja
     ```
 
