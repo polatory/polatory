@@ -19,6 +19,9 @@ project(Polatory CXX)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(polatory_common_functions)
 
+if(UNIX)
+    set(Boost_USE_STATIC_LIBS ON)
+endif()
 find_package(Boost 1.67.0 REQUIRED)
 
 option(USE_PREBUILT_BOOST "Use prebuilt Boost libraries specified manually. This option takes effect only on MSVC.")
