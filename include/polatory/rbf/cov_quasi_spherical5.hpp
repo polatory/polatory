@@ -19,10 +19,6 @@ public:
     set_parameters(params);
   }
 
-  cov_quasi_spherical5(const cov_quasi_spherical5& other) {
-    set_parameters(other.parameters());
-  }
-
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<cov_quasi_spherical5>(parameters());
   }

@@ -19,10 +19,6 @@ public:
     set_parameters(params);
   }
 
-  biharmonic2d(const biharmonic2d& other) {
-    set_parameters(other.parameters());
-  }
-
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<biharmonic2d>(parameters());
   }

@@ -19,10 +19,6 @@ public:
     set_parameters(params);
   }
 
-  triharmonic(const triharmonic& other) {
-    set_parameters(other.parameters());
-  }
-
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<triharmonic>(parameters());
   }

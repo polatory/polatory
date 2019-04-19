@@ -16,8 +16,6 @@ namespace rbf {
 
 class rbf_base : FInterpAbstractMatrixKernel<double> {
 public:
-  rbf_base() = default;
-
   virtual std::shared_ptr<rbf_base> clone() const = 0;
 
   // The order of conditional positive definiteness.
@@ -105,6 +103,9 @@ public:
   double evaluate(const geometry::point3d& p1, const geometry::point3d& p2) const {
     return evaluate(p1.data(), p2.data());
   }
+
+protected:
+  rbf_base() = default;
 
 private:
   std::vector<double> params_;

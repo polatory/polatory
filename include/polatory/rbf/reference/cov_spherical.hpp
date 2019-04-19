@@ -20,10 +20,6 @@ public:
     set_parameters(params);
   }
 
-  cov_spherical(const cov_spherical& other) {
-    set_parameters(other.parameters());
-  }
-
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<cov_spherical>(parameters());
   }

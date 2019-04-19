@@ -20,10 +20,6 @@ public:
     set_parameters(params);
   }
 
-  cov_gaussian(const cov_gaussian& other) {
-    set_parameters(other.parameters());
-  }
-
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<cov_gaussian>(parameters());
   }

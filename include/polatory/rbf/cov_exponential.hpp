@@ -19,10 +19,6 @@ public:
     set_parameters(params);
   }
 
-  cov_exponential(const cov_exponential& other) {
-    set_parameters(other.parameters());
-  }
-
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<cov_exponential>(parameters());
   }
