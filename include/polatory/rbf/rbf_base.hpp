@@ -42,6 +42,10 @@ public:
     return params_;
   }
 
+  void set_parameters(const std::vector<double>& params) {
+    params_ = params;
+  }
+
   // The following definitions are used in ScalFMM.
 
   static const KERNEL_FUNCTION_TYPE Type = NON_HOMOGENEOUS;
@@ -102,7 +106,7 @@ public:
   }
 
 private:
-  const std::vector<double> params_;
+  std::vector<double> params_;
 };
 
 }  // namespace rbf

@@ -49,8 +49,6 @@ public:
       *gradz = 0.0;
     }
   }
-
-  POLATORY_DEFINE_COST_FUNCTION(cov_spherical, 3)
 };
 
 }  // namespace reference

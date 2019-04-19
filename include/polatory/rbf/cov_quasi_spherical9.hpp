@@ -44,8 +44,6 @@ public:
     *grady = c * y;
     *gradz = c * z;
   }
-
-  POLATORY_DEFINE_COST_FUNCTION(cov_quasi_spherical9, 3)
 };
 
 }  // namespace rbf

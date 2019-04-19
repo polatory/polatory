@@ -15,7 +15,7 @@ struct options {
   double psill;
   double range;
   double nugget;
-  polatory::rbf::weight_function weight_fn;
+  polatory::kriging::weight_function weight_fn;
 };
 
 inline

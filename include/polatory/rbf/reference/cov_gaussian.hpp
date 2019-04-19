@@ -41,8 +41,6 @@ public:
     *grady = c * y;
     *gradz = c * z;
   }
-
-  POLATORY_DEFINE_COST_FUNCTION(cov_gaussian, 3)
 };
 
 }  // namespace reference
