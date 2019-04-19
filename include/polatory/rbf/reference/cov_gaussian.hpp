@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <memory>
+#include <vector>
 
 #include <polatory/rbf/covariance_function_base.hpp>
 
@@ -11,9 +12,17 @@ namespace polatory {
 namespace rbf {
 namespace reference {
 
-class cov_gaussian : public covariance_function_base {
+class cov_gaussian final : public covariance_function_base {
 public:
   using covariance_function_base::covariance_function_base;
+
+  explicit cov_gaussian(const std::vector<double>& params) {
+    set_parameters(params);
+  }
+
+  cov_gaussian(const cov_gaussian& other) {
+    set_parameters(other.parameters());
+  }
 
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<cov_gaussian>(parameters());

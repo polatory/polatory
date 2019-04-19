@@ -4,8 +4,10 @@
 
 #include <cmath>
 #include <memory>
+#include <string>
 #include <vector>
 
+#include <polatory/common/exception.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/third_party/ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
 
@@ -14,13 +16,7 @@ namespace rbf {
 
 class rbf_base : FInterpAbstractMatrixKernel<double> {
 public:
-  explicit rbf_base(const std::vector<double>& params)
-    : params_(params) {
-  }
-
-  rbf_base(const rbf_base& other)
-    : params_(other.params_) {
-  }
+  rbf_base() = default;
 
   virtual std::shared_ptr<rbf_base> clone() const = 0;
 
@@ -38,11 +34,16 @@ public:
     return 0.0;
   }
 
+  virtual size_t num_parameters() const = 0;
+
   const std::vector<double>& parameters() const {
     return params_;
   }
 
   void set_parameters(const std::vector<double>& params) {
+    if (params.size() != num_parameters())
+      throw common::invalid_argument("params.size() == " + std::to_string(num_parameters()));
+
     params_ = params;
   }
 

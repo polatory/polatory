@@ -4,15 +4,24 @@
 
 #include <cmath>
 #include <memory>
+#include <vector>
 
 #include <polatory/rbf/covariance_function_base.hpp>
 
 namespace polatory {
 namespace rbf {
 
-class cov_quasi_spherical5 : public covariance_function_base {
+class cov_quasi_spherical5 final : public covariance_function_base {
 public:
   using covariance_function_base::covariance_function_base;
+
+  explicit cov_quasi_spherical5(const std::vector<double>& params) {
+    set_parameters(params);
+  }
+
+  cov_quasi_spherical5(const cov_quasi_spherical5& other) {
+    set_parameters(other.parameters());
+  }
 
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<cov_quasi_spherical5>(parameters());

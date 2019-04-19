@@ -22,7 +22,7 @@ public:
     return parameters()[2];
   }
 
-  virtual size_t num_parameters() const {
+  size_t num_parameters() const override {
     return 3;
   }
 
