@@ -23,12 +23,12 @@ struct residual {
     , gamma_(gamma)
     , weight_fn_(weight_fn) {}
 
-  bool operator()(const double *const *param_blocks, double *residual) const {
+  bool operator()(const double *const *param_blocks, double *residuals) const {
     auto params = param_blocks[0];
     auto sill = params[0] + params[2];
     cov_->set_parameters(std::vector<double>(params, params + cov_->num_parameters()));
     auto model_gamma = sill - cov_->evaluate(distance_);
-    residual[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
+    residuals[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
 
     return true;
   }
@@ -83,8 +83,8 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog,
   }
 
   ceres::Solver::Options options;
-  options.max_num_iterations = 32;
   options.linear_solver_type = ceres::DENSE_QR;
+  options.max_num_iterations = 32;
 
   ceres::Solver::Summary summary;
   Solve(options, &problem, &summary);
