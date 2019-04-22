@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <polatory/rbf/rbf_base.hpp>
 
@@ -10,9 +11,13 @@ namespace polatory {
 namespace rbf {
 namespace reference {
 
-class triharmonic : public rbf_base {
+class triharmonic final : public rbf_base {
 public:
   using rbf_base::rbf_base;
+
+  explicit triharmonic(const std::vector<double>& params) {
+    set_parameters(params);
+  }
 
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<triharmonic>(parameters());
@@ -45,6 +50,10 @@ public:
 
   double nugget() const override {
     return parameters()[1];
+  }
+
+  size_t num_parameters() const override {
+    return 2;
   }
 };
 

@@ -4,15 +4,20 @@
 
 #include <cmath>
 #include <memory>
+#include <vector>
 
 #include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
 namespace rbf {
 
-class biharmonic2d : public rbf_base {
+class biharmonic2d final : public rbf_base {
 public:
   using rbf_base::rbf_base;
+
+  explicit biharmonic2d(const std::vector<double>& params) {
+    set_parameters(params);
+  }
 
   std::shared_ptr<rbf_base> clone() const override {
     return std::make_shared<biharmonic2d>(parameters());
@@ -53,6 +58,10 @@ public:
 
   double nugget() const override {
     return parameters()[1];
+  }
+
+  size_t num_parameters() const override {
+    return 2;
   }
 };
 
