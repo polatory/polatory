@@ -1,7 +1,6 @@
 <div align="center">
   <img src="https://polatory.github.io/images/polatory_logo.png" width="400" alt="Polatory">
 </div>
-
 ----
 
 [![Travis CI](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
@@ -43,8 +42,8 @@ Polatory can perform global kriging prediction via RBF interpolation. Although d
 | Simple kriging      | Interpolant with no polynomial             |
 | Ordinary kriging    | Interpolant with polynomial of degree 0    |
 | Universal kriging   | Interpolant with polynomial of degree >= 1 |
-| Weights             | (Not computed)                             |
-| Standard errors     | (Not computed)                             |
+| Weights             | (Not computed) Cardinal basis functions    |
+| Kriging variance    | (Not computed)                             |
 
 Rapidly decaying covariance functions are not supported in the current version, such as the spherical and the Gaussian models. The spherical model can be substituted by a similar one named `cov_quasi_spherical9`.
 
