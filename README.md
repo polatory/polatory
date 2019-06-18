@@ -1,6 +1,7 @@
 <div align="center">
   <img src="https://polatory.github.io/images/polatory_logo.png" width="400" alt="Polatory">
 </div>
+
 ----
 
 [![Travis CI](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
