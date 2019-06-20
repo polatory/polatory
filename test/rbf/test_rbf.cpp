@@ -5,8 +5,8 @@
 
 #include <gtest/gtest.h>
 
-#include <polatory/rbf/biharmonic.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
+#include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_quasi_spherical3.hpp>
 #include <polatory/rbf/cov_quasi_spherical5.hpp>
@@ -17,8 +17,8 @@
 #include <polatory/rbf/reference/cov_spherical.hpp>
 #include <polatory/rbf/reference/triharmonic.hpp>
 
-using polatory::rbf::biharmonic;
 using polatory::rbf::biharmonic2d;
+using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
 using polatory::rbf::cov_quasi_spherical3;
 using polatory::rbf::cov_quasi_spherical5;
@@ -75,8 +75,8 @@ void test_gradient(const rbf_base& rbf) {
 }  // namespace
 
 TEST(rbf, gradient) {
-  test_gradient(biharmonic({ 1.0, 0.0 }));
   test_gradient(biharmonic2d({ 1.0, 0.0 }));
+  test_gradient(biharmonic3d({ 1.0, 0.0 }));
   test_gradient(cov_exponential({ 1.0, 1.0, 0.0 }));
   test_gradient(cov_quasi_spherical3({ 1.0, 1.0, 0.0 }));
   test_gradient(cov_quasi_spherical5({ 1.0, 1.0, 0.0 }));

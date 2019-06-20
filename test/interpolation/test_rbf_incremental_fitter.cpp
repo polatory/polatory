@@ -13,7 +13,7 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/model.hpp>
-#include <polatory/rbf/biharmonic.hpp>
+#include <polatory/rbf/biharmonic3d.hpp>
 
 #include "sample_data.hpp"
 
@@ -23,7 +23,7 @@ using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_incremental_fitter;
 using polatory::model;
-using polatory::rbf::biharmonic;
+using polatory::rbf::biharmonic3d;
 
 TEST(rbf_incremental_fitter, trivial) {
   const size_t n_surface_points = 4096;
@@ -35,7 +35,7 @@ TEST(rbf_incremental_fitter, trivial) {
   valuesd values;
   std::tie(points, values) = sample_sdf_data(n_surface_points);
 
-  model model(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
+  model model(biharmonic3d({ 1.0, 0.0 }), poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;

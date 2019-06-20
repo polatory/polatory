@@ -13,7 +13,7 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/model.hpp>
-#include <polatory/rbf/biharmonic.hpp>
+#include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 
 #include "sample_data.hpp"
@@ -24,7 +24,7 @@ using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
 using polatory::model;
-using polatory::rbf::biharmonic;
+using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
 
 TEST(rbf_inequality_fitter, inequality_only) {
@@ -41,7 +41,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.5;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  model model(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
+  model model(biharmonic3d({ 1.0, 0.0 }), poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;

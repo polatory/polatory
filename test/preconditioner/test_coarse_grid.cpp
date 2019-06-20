@@ -12,7 +12,7 @@
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
-#include <polatory/rbf/biharmonic.hpp>
+#include <polatory/rbf/biharmonic3d.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
@@ -21,7 +21,7 @@ using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
-using polatory::rbf::biharmonic;
+using polatory::rbf::biharmonic3d;
 
 void test_coarse_grid(double nugget) {
   size_t n_points = 1024;
@@ -38,7 +38,7 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  model model(biharmonic({ 1.0, nugget }), poly_dimension, poly_degree);
+  model model(biharmonic3d({ 1.0, nugget }), poly_dimension, poly_degree);
   auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
 
   coarse_grid coarse(model, lagr_basis, point_indices, points);

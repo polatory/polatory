@@ -22,8 +22,8 @@
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
-#include <polatory/rbf/biharmonic.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
+#include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_quasi_spherical3.hpp>
 #include <polatory/rbf/cov_quasi_spherical5.hpp>

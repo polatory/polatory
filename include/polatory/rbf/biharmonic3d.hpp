@@ -10,16 +10,16 @@
 namespace polatory {
 namespace rbf {
 
-class biharmonic final : public rbf_base {
+class biharmonic3d final : public rbf_base {
 public:
   using rbf_base::rbf_base;
 
-  explicit biharmonic(const std::vector<double>& params) {
+  explicit biharmonic3d(const std::vector<double>& params) {
     set_parameters(params);
   }
 
   std::shared_ptr<rbf_base> clone() const override {
-    return std::make_shared<biharmonic>(parameters());
+    return std::make_shared<biharmonic3d>(parameters());
   }
 
   int cpd_order() const override {
