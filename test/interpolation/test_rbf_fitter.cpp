@@ -10,7 +10,7 @@
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/rbf/biharmonic.hpp>
+#include <polatory/rbf/biharmonic3d.hpp>
 
 #include "sample_data.hpp"
 
@@ -19,7 +19,7 @@ using polatory::geometry::points3d;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::model;
-using polatory::rbf::biharmonic;
+using polatory::rbf::biharmonic3d;
 
 namespace {
 
@@ -34,7 +34,7 @@ void test_poly_degree(int poly_degree) {
 
   size_t n_points = points.rows();
 
-  model model(biharmonic({ 1.0, 0.0 }), poly_dimension, poly_degree);
+  model model(biharmonic3d({ 1.0, 0.0 }), poly_dimension, poly_degree);
 
   rbf_fitter fitter(model, points);
   valuesd weights = fitter.fit(values, absolute_tolerance);

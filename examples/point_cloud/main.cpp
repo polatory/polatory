@@ -20,7 +20,7 @@ using polatory::isosurface::rbf_field_function;
 using polatory::model;
 using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::sdf_data_generator;
-using polatory::rbf::biharmonic;
+using polatory::rbf::biharmonic3d;
 using polatory::read_table;
 using polatory::write_table;
 
@@ -48,7 +48,7 @@ int main(int argc, const char *argv[]) {
     }
 
     // Define model.
-    model model(biharmonic({ 1.0, opts.smooth }), opts.poly_dimension, opts.poly_degree);
+    model model(biharmonic3d({ 1.0, opts.smooth }), opts.poly_dimension, opts.poly_degree);
     interpolant interpolant(model);
 
     // Fit.
