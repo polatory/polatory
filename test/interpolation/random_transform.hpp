@@ -1,5 +1,7 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
+#pragma once
+
 #include <cmath>
 #include <random>
 

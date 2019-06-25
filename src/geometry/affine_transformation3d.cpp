@@ -17,6 +17,14 @@ affine_transformation3d::affine_transformation3d(const Eigen::Matrix4d& m)
   assert(m.row(3) == Eigen::RowVector4d(0, 0, 0, 1));
 }
 
+affine_transformation3d affine_transformation3d::inverse() const {
+  Eigen::Matrix3d ai = m_.topLeftCorner<3, 3>().inverse();
+  Eigen::Matrix4d mi = Eigen::Matrix4d::Identity();
+  mi.topLeftCorner<3, 3>() = ai;
+  mi.topRightCorner<3, 1>() = -ai * m_.topRightCorner<3, 1>();
+  return affine_transformation3d(mi);
+}
+
 bool affine_transformation3d::is_identity() const {
   return m_ == Eigen::Matrix4d::Identity();
 }

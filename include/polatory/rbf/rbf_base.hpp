@@ -32,8 +32,8 @@ public:
   virtual int cpd_order() const = 0;
 
   double evaluate(const geometry::vectors3d& v) const {
-    auto it_v = it_.transform_vector(v);
-    return evaluate_untransformed(it_v.norm());
+    auto ti_v = ti_.transform_vector(v);
+    return evaluate_untransformed(ti_v.norm());
   }
 
   virtual void evaluate_gradient_untransformed(
@@ -43,7 +43,7 @@ public:
   virtual double evaluate_untransformed(double r) const = 0;
 
   const geometry::affine_transformation3d& inverse_affine_transformation() const {
-    return it_;
+    return ti_;
   }
 
   // The effect of nugget parameter is also known as spline smoothing.
@@ -59,7 +59,7 @@ public:
 
   void set_affine_transformation(const geometry::affine_transformation3d& t) {
     t_ = t;
-    it_ = geometry::affine_transformation3d(t.matrix().inverse());
+    ti_ = t.inverse();
   }
 
   void set_parameters(const std::vector<double>& params) {
@@ -75,7 +75,7 @@ protected:
 private:
   std::vector<double> params_;
   geometry::affine_transformation3d t_;
-  geometry::affine_transformation3d it_;
+  geometry::affine_transformation3d ti_;
 };
 
 }  // namespace rbf

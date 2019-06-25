@@ -17,6 +17,8 @@ public:
 
   explicit affine_transformation3d(const Eigen::Matrix4d& m);
 
+  affine_transformation3d inverse() const;
+
   bool is_identity() const;
 
   const Eigen::Matrix4d& matrix() const;
