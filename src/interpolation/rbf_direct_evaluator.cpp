@@ -24,7 +24,7 @@ common::valuesd rbf_direct_evaluator::evaluate() const {
   auto& rbf = model_.rbf();
   for (size_t i = 0; i < n_src_points_; i++) {
     for (size_t j = 0; j < n_fld_points_; j++) {
-      auto a_ij = rbf.evaluate(src_points_.row(i), fld_points_.row(j));
+      auto a_ij = rbf.evaluate(src_points_.row(i) - fld_points_.row(j));
       y_accum[j] += weights_(i) * a_ij;
     }
   }

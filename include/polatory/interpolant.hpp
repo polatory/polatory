@@ -10,7 +10,6 @@
 #include <polatory/common/types.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
-#include <polatory/geometry/affine_transform3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -37,14 +36,11 @@ public:
 
   common::valuesd evaluate_points(const geometry::points3d& points) {
     set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
-
     return evaluate_points_impl(points);
   }
 
   common::valuesd evaluate_points_impl(const geometry::points3d& points) const {
-    auto transformed = affine_transform_points(points);
-
-    return evaluator_->evaluate_points(transformed);
+    return evaluator_->evaluate_points(points);
   }
 
   void fit(const geometry::points3d& points, const common::valuesd& values,
@@ -61,10 +57,9 @@ public:
 
     clear_centers();
 
-    centers_ = affine_transform_points(points);
+    interpolation::rbf_fitter fitter(model_, points);
 
-    interpolation::rbf_fitter fitter(model_, centers_);
-
+    centers_ = points;
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
     weights_ = fitter.fit(values, absolute_tolerance);
   }
@@ -86,13 +81,12 @@ public:
 
     clear_centers();
 
-    auto transformed = affine_transform_points(points);
-    interpolation::rbf_incremental_fitter fitter(model_, transformed);
+    interpolation::rbf_incremental_fitter fitter(model_, points);
 
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
 
-    centers_ = common::take_rows(transformed, center_indices);
+    centers_ = common::take_rows(points, center_indices);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
   }
 
@@ -120,31 +114,20 @@ public:
 
     clear_centers();
 
-    auto transformed = affine_transform_points(points);
-    interpolation::rbf_inequality_fitter fitter(model_, transformed);
+    interpolation::rbf_inequality_fitter fitter(model_, points);
 
     std::vector<size_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
-    centers_ = common::take_rows(transformed, center_indices);
+    centers_ = common::take_rows(points, center_indices);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
   }
 
-  geometry::affine_transform3d point_transform() const {
-    return point_transform_;
-  }
-
   void set_evaluation_bbox_impl(const geometry::bbox3d& bbox) {
-    auto transformed_bbox = bbox
-      .transform(point_transform_)
-      .union_hull(centers_bbox_);
+    auto union_bbox = bbox.union_hull(centers_bbox_);
 
-    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(model_, centers_, transformed_bbox);
+    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(model_, centers_, union_bbox);
     evaluator_->set_weights(weights_);
-  }
-
-  void set_point_transform(const geometry::affine_transform3d& affine) {
-    point_transform_ = affine;
   }
 
   const common::valuesd& weights() const {
@@ -152,20 +135,6 @@ public:
   }
 
 private:
-  geometry::points3d affine_transform_points(const geometry::points3d& points) const {
-    if (point_transform_.is_identity())
-      return points;
-
-    geometry::points3d transformed(points.rows(), 3);
-
-    auto transformed_it = common::row_begin(transformed);
-    for (auto p : common::row_range(points)) {
-      *transformed_it++ = point_transform_.transform_point(p);
-    }
-
-    return transformed;
-  }
-
   void clear_centers() {
     centers_ = geometry::points3d();
     centers_bbox_ = geometry::bbox3d();
@@ -173,8 +142,6 @@ private:
   }
 
   const model model_;
-
-  geometry::affine_transform3d point_transform_;
 
   geometry::points3d centers_;
   geometry::bbox3d centers_bbox_;

@@ -4,11 +4,11 @@
 #include <gtest/gtest.h>
 
 #include <polatory/common/pi.hpp>
-#include <polatory/geometry/affine_transform3d.hpp>
+#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 using polatory::common::pi;
-using polatory::geometry::affine_transform3d;
+using polatory::geometry::affine_transformation3d;
 using polatory::geometry::point3d;
 
 TEST(affine_transform3d, transform_point) {
@@ -18,7 +18,7 @@ TEST(affine_transform3d, transform_point) {
     5, 6, 7, 8,
     9, 10, 11, 12,
     0, 0, 0, 1;
-  affine_transform3d affine(m);
+  affine_transformation3d affine(m);
 
   point3d p(1, 2, 3);
   point3d p2_expected(18, 46, 74);
@@ -34,7 +34,7 @@ TEST(affine_transform3d, transform_vector) {
     5, 6, 7, 8,
     9, 10, 11, 12,
     0, 0, 0, 1;
-  affine_transform3d affine(m);
+  affine_transformation3d affine(m);
 
   point3d v(1, 2, 3);
   point3d v2_expected(14, 38, 62);
@@ -44,7 +44,7 @@ TEST(affine_transform3d, transform_vector) {
 }
 
 TEST(affine_transform3d, roll_pitch_yaw) {
-  auto m_actual = affine_transform3d::roll_pitch_yaw(Eigen::Vector3d(pi<double>() / 3.0, pi<double>() / 5.0, pi<double>() / 7.0))
+  auto m_actual = affine_transformation3d::roll_pitch_yaw(Eigen::Vector3d(pi<double>() / 3.0, pi<double>() / 5.0, pi<double>() / 7.0))
     .matrix();
 
   Eigen::Matrix4d m;
@@ -58,7 +58,7 @@ TEST(affine_transform3d, roll_pitch_yaw) {
 }
 
 TEST(affine_transform3d, scaling) {
-  auto m_actual = affine_transform3d::scaling({ 3.0, 5.0, 7.0 })
+  auto m_actual = affine_transformation3d::scaling({ 3.0, 5.0, 7.0 })
     .matrix();
 
   Eigen::Matrix4d m;
@@ -72,7 +72,7 @@ TEST(affine_transform3d, scaling) {
 }
 
 TEST(affine_transform3d, translation) {
-  auto m_actual = affine_transform3d::translation({ 3.0, 5.0, 7.0 })
+  auto m_actual = affine_transformation3d::translation({ 3.0, 5.0, 7.0 })
     .matrix();
 
   Eigen::Matrix4d m;

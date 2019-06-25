@@ -16,6 +16,7 @@
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 
+#include "random_transform.hpp"
 #include "sample_data.hpp"
 
 using polatory::common::take_rows;
@@ -41,7 +42,10 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.5;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  model model(biharmonic3d({ 1.0, 0.0 }), poly_dimension, poly_degree);
+  biharmonic3d rbf({ 1.0, 0.0 });
+  rbf.set_affine_transformation(random_transform());
+
+  model model(rbf, poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;

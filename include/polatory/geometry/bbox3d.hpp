@@ -3,7 +3,7 @@
 #pragma once
 
 #include <polatory/common/likely.hpp>
-#include <polatory/geometry/affine_transform3d.hpp>
+#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -25,7 +25,7 @@ public:
 
   vector3d size() const;
 
-  bbox3d transform(const affine_transform3d& affine) const;  // NOLINT(build/include_what_you_use)
+  bbox3d transform(const affine_transformation3d& affine) const;  // NOLINT(build/include_what_you_use)
 
   bbox3d union_hull(const bbox3d& other) const;
 

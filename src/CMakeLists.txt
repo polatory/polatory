@@ -14,6 +14,9 @@ if(UNIX)
     endif()
 elseif(MSVC)
     target_compile_options(${TARGET} PUBLIC ${OpenMP_CXX_FLAGS})
+    target_compile_definitions(${TARGET} PUBLIC
+        -D_ENABLE_EXTENDED_ALIGNED_STORAGE
+    )
 endif()
 
 target_compile_definitions(${TARGET} PUBLIC

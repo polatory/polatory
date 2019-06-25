@@ -12,6 +12,7 @@
 #include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 
+#include "random_transform.hpp"
 #include "sample_data.hpp"
 
 using polatory::common::valuesd;
@@ -34,7 +35,10 @@ void test_poly_degree(int poly_degree) {
 
   size_t n_points = points.rows();
 
-  model model(biharmonic3d({ 1.0, 0.0 }), poly_dimension, poly_degree);
+  biharmonic3d rbf({ 1.0, 0.0 });
+  rbf.set_affine_transformation(random_transform());
+
+  model model(rbf, poly_dimension, poly_degree);
 
   rbf_fitter fitter(model, points);
   valuesd weights = fitter.fit(values, absolute_tolerance);

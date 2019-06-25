@@ -6,7 +6,7 @@
 #include <polatory/common/pi.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/config.hpp>
-#include <polatory/geometry/affine_transform3d.hpp>
+#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>

@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 
 #include <polatory/common/types.hpp>
+#include <polatory/fmm/fmm_rbf_kernel.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -29,7 +30,7 @@ class fmm_operator {
   using ParticleContainer = FP2PParticleContainerIndexed<double>;
   using Leaf = FSimpleLeaf<double, ParticleContainer>;
   using Octree = FOctree<double, Cell, ParticleContainer, Leaf>;
-  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, rbf::rbf_base, Order>;
+  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, fmm_rbf_kernel, Order>;
   using Fmm = FFmmAlgorithmThread<Octree, Cell, ParticleContainer, InterpolatedKernel, Leaf>;
 
   static constexpr int FmmAlgorithmScheduleChunkSize = 1;
@@ -37,15 +38,17 @@ class fmm_operator {
 public:
   fmm_operator(const model& model, int tree_height, const geometry::bbox3d& bbox)
     : model_(model)
+    , rbf_kernel_(model.rbf())
     , n_points_(0) {
-    auto bbox_width = (1.0 + 1.0 / 64.0) * bbox.size().maxCoeff();
-    auto bbox_center = bbox.center();
+    auto t_bbox = bbox.transform(model.rbf().affine_transformation());
+    auto t_bbox_width = (1.0 + 1.0 / 64.0) * t_bbox.size().maxCoeff();
+    auto t_bbox_center = t_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-      tree_height, bbox_width, FPoint<double>(bbox_center.data()), &model_.rbf());
+      tree_height, t_bbox_width, FPoint<double>(t_bbox_center.data()), &rbf_kernel_);
 
     tree_ = std::make_unique<Octree>(
-      tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<double>(bbox_center.data()));
+      tree_height, std::max(1, tree_height - 4), t_bbox_width, FPoint<double>(t_bbox_center.data()));
 
     fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), static_cast<int>(FmmAlgorithmScheduleChunkSize));
   }
@@ -68,8 +71,10 @@ public:
     });
 
     // Insert points.
+    auto t = model_.rbf().affine_transformation();
     for (size_t idx = 0; idx < n_points_; idx++) {
-      tree_->insert(FPoint<double>(points.row(idx).data()), idx, 0.0);
+      auto t_p = t.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(t_p.data()), idx, 0.0);
     }
 
     update_weight_ptrs();
@@ -147,6 +152,7 @@ private:
   }
 
   const model model_;
+  const fmm_rbf_kernel rbf_kernel_;
 
   size_t n_points_;
 

@@ -15,7 +15,7 @@
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/cov_spherical.hpp>
-#include <polatory/rbf/reference/triharmonic.hpp>
+#include <polatory/rbf/reference/triharmonic3d.hpp>
 
 using polatory::rbf::biharmonic2d;
 using polatory::rbf::biharmonic3d;
@@ -27,7 +27,7 @@ using polatory::rbf::cov_quasi_spherical9;
 using polatory::rbf::rbf_base;
 using polatory::rbf::reference::cov_gaussian;
 using polatory::rbf::reference::cov_spherical;
-using polatory::rbf::reference::triharmonic;
+using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
@@ -50,7 +50,7 @@ void test_gradient(const rbf_base& rbf) {
     auto r = hypot(x, y, z);
 
     double gradx, grady, gradz;
-    rbf.evaluate_gradient(&gradx, &grady, &gradz, x, y, z, r);
+    rbf.evaluate_gradient_transformed(&gradx, &grady, &gradz, x, y, z, r);
 
     // First-order central difference.
 
@@ -62,9 +62,9 @@ void test_gradient(const rbf_base& rbf) {
     auto r_y2 = hypot(x, y + h, z);
     auto r_z2 = hypot(x, y, z + h);
 
-    auto gradx_approx = (rbf.evaluate(r_x2) - rbf.evaluate(r_x1)) / (2.0 * h);
-    auto grady_approx = (rbf.evaluate(r_y2) - rbf.evaluate(r_y1)) / (2.0 * h);
-    auto gradz_approx = (rbf.evaluate(r_z2) - rbf.evaluate(r_z1)) / (2.0 * h);
+    auto gradx_approx = (rbf.evaluate_transformed(r_x2) - rbf.evaluate_transformed(r_x1)) / (2.0 * h);
+    auto grady_approx = (rbf.evaluate_transformed(r_y2) - rbf.evaluate_transformed(r_y1)) / (2.0 * h);
+    auto gradz_approx = (rbf.evaluate_transformed(r_z2) - rbf.evaluate_transformed(r_z1)) / (2.0 * h);
 
     EXPECT_LE(std::abs(gradx_approx - gradx), tolerance);
     EXPECT_LE(std::abs(grady_approx - grady), tolerance);
@@ -85,5 +85,5 @@ TEST(rbf, gradient) {
 
   test_gradient(cov_gaussian({ 1.0, 1.0, 0.0 }));
   test_gradient(cov_spherical({ 1.0, 1.0, 0.0 }));
-  test_gradient(triharmonic({ 1.0, 0.0 }));
+  test_gradient(triharmonic3d({ 1.0, 0.0 }));
 }

@@ -42,13 +42,13 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
   auto& rbf = model_.rbf();
-  auto diagonal = rbf.evaluate(0.0) + rbf.nugget();
+  auto diagonal = rbf.evaluate_transformed(0.0) + rbf.nugget();
   for (size_t i = 0; i < m_; i++) {
     a(i, i) = diagonal;
   }
   for (size_t i = 0; i < m_ - 1; i++) {
     for (size_t j = i + 1; j < m_; j++) {
-      a(i, j) = rbf.evaluate(points_full.row(point_idcs_[i]), points_full.row(point_idcs_[j]));
+      a(i, j) = rbf.evaluate(points_full.row(point_idcs_[i]) - points_full.row(point_idcs_[j]));
       a(j, i) = a(i, j);
     }
   }
