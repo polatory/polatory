@@ -40,15 +40,15 @@ public:
     : model_(model)
     , rbf_kernel_(model.rbf())
     , n_points_(0) {
-    auto t_bbox = bbox.transform(model.rbf().affine_transformation());
-    auto t_bbox_width = (1.0 + 1.0 / 64.0) * t_bbox.size().maxCoeff();
-    auto t_bbox_center = t_bbox.center();
+    auto it_bbox = bbox.transform(model.rbf().inverse_affine_transformation());
+    auto it_bbox_width = (1.0 + 1.0 / 64.0) * it_bbox.size().maxCoeff();
+    auto it_bbox_center = it_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-      tree_height, t_bbox_width, FPoint<double>(t_bbox_center.data()), &rbf_kernel_);
+      tree_height, it_bbox_width, FPoint<double>(it_bbox_center.data()), &rbf_kernel_);
 
     tree_ = std::make_unique<Octree>(
-      tree_height, std::max(1, tree_height - 4), t_bbox_width, FPoint<double>(t_bbox_center.data()));
+      tree_height, std::max(1, tree_height - 4), it_bbox_width, FPoint<double>(it_bbox_center.data()));
 
     fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), static_cast<int>(FmmAlgorithmScheduleChunkSize));
   }
