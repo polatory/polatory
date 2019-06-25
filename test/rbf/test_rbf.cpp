@@ -50,7 +50,7 @@ void test_gradient(const rbf_base& rbf) {
     auto r = hypot(x, y, z);
 
     double gradx, grady, gradz;
-    rbf.evaluate_gradient_transformed(&gradx, &grady, &gradz, x, y, z, r);
+    rbf.evaluate_gradient_untransformed(&gradx, &grady, &gradz, x, y, z, r);
 
     // First-order central difference.
 
@@ -62,9 +62,9 @@ void test_gradient(const rbf_base& rbf) {
     auto r_y2 = hypot(x, y + h, z);
     auto r_z2 = hypot(x, y, z + h);
 
-    auto gradx_approx = (rbf.evaluate_transformed(r_x2) - rbf.evaluate_transformed(r_x1)) / (2.0 * h);
-    auto grady_approx = (rbf.evaluate_transformed(r_y2) - rbf.evaluate_transformed(r_y1)) / (2.0 * h);
-    auto gradz_approx = (rbf.evaluate_transformed(r_z2) - rbf.evaluate_transformed(r_z1)) / (2.0 * h);
+    auto gradx_approx = (rbf.evaluate_untransformed(r_x2) - rbf.evaluate_untransformed(r_x1)) / (2.0 * h);
+    auto grady_approx = (rbf.evaluate_untransformed(r_y2) - rbf.evaluate_untransformed(r_y1)) / (2.0 * h);
+    auto gradz_approx = (rbf.evaluate_untransformed(r_z2) - rbf.evaluate_untransformed(r_z1)) / (2.0 * h);
 
     EXPECT_LE(std::abs(gradx_approx - gradx), tolerance);
     EXPECT_LE(std::abs(grady_approx - grady), tolerance);

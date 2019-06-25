@@ -39,7 +39,7 @@ public:
     const auto diffz = p1[2] - p2[2];
     const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
 
-    return rbf_.evaluate_transformed(r);
+    return rbf_.evaluate_untransformed(r);
   }
 
   // evaluate interaction and derivative (blockwise)
@@ -51,8 +51,8 @@ public:
     const auto diffz = (z1 - z2);
     const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
 
-    block[0] = rbf_.evaluate_transformed(r);
-    rbf_.evaluate_gradient_transformed(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
+    block[0] = rbf_.evaluate_untransformed(r);
+    rbf_.evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
   }
 
   double getScaleFactor(const double, const int) const override {

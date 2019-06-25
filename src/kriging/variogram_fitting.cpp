@@ -27,7 +27,7 @@ struct residual {
     auto params = param_blocks[0];
     auto sill = params[0] + params[2];
     cov_->set_parameters(std::vector<double>(params, params + cov_->num_parameters()));
-    auto model_gamma = sill - cov_->evaluate_transformed(distance_);
+    auto model_gamma = sill - cov_->evaluate_untransformed(distance_);
     residuals[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
 
     return true;

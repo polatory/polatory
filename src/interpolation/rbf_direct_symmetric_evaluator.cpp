@@ -22,7 +22,7 @@ common::valuesd rbf_direct_symmetric_evaluator::evaluate() const {
   auto y_accum = std::vector<numeric::kahan_sum_accumulator<double>>(n_points_);
 
   auto& rbf = model_.rbf();
-  auto rbf_at_zero = rbf.evaluate_transformed(0.0);
+  auto rbf_at_zero = rbf.evaluate_untransformed(0.0);
   for (size_t i = 0; i < n_points_; i++) {
     y_accum[i] += weights_(i) * rbf_at_zero;
   }

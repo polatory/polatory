@@ -71,10 +71,10 @@ public:
     });
 
     // Insert points.
-    auto t = model_.rbf().affine_transformation();
+    auto it = model_.rbf().inverse_affine_transformation();
     for (size_t idx = 0; idx < n_points_; idx++) {
-      auto t_p = t.transform_point(points.row(idx));
-      tree_->insert(FPoint<double>(t_p.data()), idx, 0.0);
+      auto it_p = it.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(it_p.data()), idx, 0.0);
     }
 
     update_weight_ptrs();

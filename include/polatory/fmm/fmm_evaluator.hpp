@@ -75,10 +75,10 @@ public:
     });
 
     // Insert source particles.
-    auto t = model_.rbf().affine_transformation();
+    auto it = model_.rbf().inverse_affine_transformation();
     for (size_t idx = 0; idx < n_src_points_; idx++) {
-      auto t_p = t.transform_point(points.row(idx));
-      tree_->insert(FPoint<double>(t_p.data()), FParticleType::FParticleTypeSource, idx, 0.0);
+      auto it_p = it.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(it_p.data()), FParticleType::FParticleTypeSource, idx, 0.0);
     }
 
     update_weight_ptrs();
@@ -97,10 +97,10 @@ public:
     });
 
     // Insert source particles.
-    auto t = model_.rbf().affine_transformation();
+    auto it = model_.rbf().inverse_affine_transformation();
     for (size_t idx = 0; idx < n_src_points_; idx++) {
-      auto t_p = t.transform_point(points.row(idx));
-      tree_->insert(FPoint<double>(t_p.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
+      auto it_p = it.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(it_p.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
     }
 
     tree_->forEachCell([&](Cell *cell) {
@@ -122,10 +122,10 @@ public:
     });
 
     // Insert target particles.
-    auto t = model_.rbf().affine_transformation();
+    auto it = model_.rbf().inverse_affine_transformation();
     for (size_t idx = 0; idx < n_fld_points_; idx++) {
-      auto t_p = t.transform_point(points.row(idx));
-      tree_->insert(FPoint<double>(t_p.data()), FParticleType::FParticleTypeTarget, idx, 0.0);
+      auto it_p = it.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(it_p.data()), FParticleType::FParticleTypeTarget, idx, 0.0);
     }
 
     fmm_->updateTargetCells();

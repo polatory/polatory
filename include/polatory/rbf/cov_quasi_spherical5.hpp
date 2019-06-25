@@ -32,11 +32,11 @@ public:
            : psill * 0.09531872195083474 * std::pow(0.415296027624872 + std::pow(r / range, 2.0), -2.5);
   }
 
-  double evaluate_transformed(double r) const override {
+  double evaluate_untransformed(double r) const override {
     return evaluate_transformed(r, parameters().data());
   }
 
-  void evaluate_gradient_transformed(
+  void evaluate_gradient_untransformed(
     double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto psill = parameters()[0];
