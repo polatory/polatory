@@ -10,18 +10,17 @@
 namespace polatory {
 namespace fmm {
 
-class fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
-public:
-  fmm_rbf_kernel(const rbf::rbf_base& rbf)
+struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
+  static const KERNEL_FUNCTION_TYPE Type = NON_HOMOGENEOUS;
+  static const unsigned int NCMP = 1;  // Number of components.
+  static const unsigned int NPV = 1;   // Dimension of physical values.
+  static const unsigned int NPOT = 1;  // Dimension of potentials.
+  static const unsigned int NRHS = 1;  // Dimension of multipole expansions.
+  static const unsigned int NLHS = 1;  // Dimension of local expansions.
+
+  explicit fmm_rbf_kernel(const rbf::rbf_base& rbf)
     : rbf_(rbf) {
   }
-
-  static const KERNEL_FUNCTION_TYPE Type = NON_HOMOGENEOUS;
-  static const unsigned int NCMP = 1;    // Number of components.
-  static const unsigned int NPV = 1;     // Dimension of physical values.
-  static const unsigned int NPOT = 1;    // Dimension of potentials.
-  static const unsigned int NRHS = 1;    // Dimension of multipole expansions.
-  static const unsigned int NLHS = 1;    // Dimension of local expansions.
 
   // returns position in reduced storage
   int getPosition(const unsigned int) const {
