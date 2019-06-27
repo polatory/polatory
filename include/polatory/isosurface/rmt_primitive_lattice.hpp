@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 #include <polatory/common/pi.hpp>
-#include <polatory/geometry/affine_transform3d.hpp>
+#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -17,8 +17,8 @@ namespace isosurface {
 
 // RotationMatrix[-Pi/2, {0, 0, 1}].RotationMatrix[-Pi/4, {0, 1, 0}]
 inline
-geometry::affine_transform3d rotation() {
-  return geometry::affine_transform3d::roll_pitch_yaw({ -common::pi<double>() / 2.0, 0.0, -common::pi<double>() / 4.0 });
+geometry::affine_transformation3d rotation() {
+  return geometry::affine_transformation3d::roll_pitch_yaw({ -common::pi<double>() / 2.0, 0.0, -common::pi<double>() / 4.0 });
 }
 
 // Primitive vectors of body-centered cubic.

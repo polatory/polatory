@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 
 #include <polatory/common/types.hpp>
+#include <polatory/fmm/fmm_rbf_kernel.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -29,7 +30,7 @@ class fmm_evaluator {
   using ParticleContainer = FP2PParticleContainerIndexed<double>;
   using Leaf = FTypedLeaf<double, ParticleContainer>;
   using Octree = FOctree<double, Cell, ParticleContainer, Leaf>;
-  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, rbf::rbf_base, Order>;
+  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, fmm_rbf_kernel, Order>;
   using Fmm = FFmmAlgorithmThreadTsm<Octree, Cell, ParticleContainer, InterpolatedKernel, Leaf>;
 
   static constexpr int FmmAlgorithmScheduleChunkSize = 1;
@@ -37,16 +38,18 @@ class fmm_evaluator {
 public:
   fmm_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
     : model_(model)
+    , rbf_kernel_(model.rbf())
     , n_src_points_(0)
     , n_fld_points_(0) {
-    auto bbox_width = (1.0 + 1.0 / 64.0) * bbox.size().maxCoeff();
-    auto bbox_center = bbox.center();
+    auto ti_bbox = bbox.transform(model.rbf().inverse_transformation());
+    auto width = (1.0 + 1.0 / 64.0) * ti_bbox.size().maxCoeff();
+    auto center = ti_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-      tree_height, bbox_width, FPoint<double>(bbox_center.data()), &model_.rbf());
+      tree_height, width, FPoint<double>(center.data()), &rbf_kernel_);
 
     tree_ = std::make_unique<Octree>(
-      tree_height, std::max(1, tree_height - 4), bbox_width, FPoint<double>(bbox_center.data()));
+      tree_height, std::max(1, tree_height - 4), width, FPoint<double>(center.data()));
 
     fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), static_cast<int>(FmmAlgorithmScheduleChunkSize));
   }
@@ -72,8 +75,10 @@ public:
     });
 
     // Insert source particles.
+    auto ti = model_.rbf().inverse_transformation();
     for (size_t idx = 0; idx < n_src_points_; idx++) {
-      tree_->insert(FPoint<double>(points.row(idx).data()), FParticleType::FParticleTypeSource, idx, 0.0);
+      auto ti_p = ti.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeSource, idx, 0.0);
     }
 
     update_weight_ptrs();
@@ -92,8 +97,10 @@ public:
     });
 
     // Insert source particles.
+    auto ti = model_.rbf().inverse_transformation();
     for (size_t idx = 0; idx < n_src_points_; idx++) {
-      tree_->insert(FPoint<double>(points.row(idx).data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
+      auto ti_p = ti.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
     }
 
     tree_->forEachCell([&](Cell *cell) {
@@ -115,8 +122,10 @@ public:
     });
 
     // Insert target particles.
+    auto ti = model_.rbf().inverse_transformation();
     for (size_t idx = 0; idx < n_fld_points_; idx++) {
-      tree_->insert(FPoint<double>(points.row(idx).data()), FParticleType::FParticleTypeTarget, idx, 0.0);
+      auto ti_p = ti.transform_point(points.row(idx));
+      tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeTarget, idx, 0.0);
     }
 
     fmm_->updateTargetCells();
@@ -195,6 +204,7 @@ private:
   }
 
   const model model_;
+  const fmm_rbf_kernel rbf_kernel_;
 
   size_t n_src_points_;
   size_t n_fld_points_;

@@ -40,7 +40,7 @@ public:
   }
 
   common::valuesd evaluate() const {
-    auto rbf_at_zero = model_.rbf().evaluate(0.0);
+    auto rbf_at_zero = model_.rbf().evaluate_untransformed(0.0);
     common::valuesd y = weights_.head(n_points_) * rbf_at_zero;
 
     y += a_->evaluate();

@@ -11,11 +11,13 @@
 namespace polatory {
 namespace geometry {
 
-class affine_transform3d {
+class affine_transformation3d {
 public:
-  affine_transform3d();
+  affine_transformation3d();
 
-  explicit affine_transform3d(const Eigen::Matrix4d& m);
+  explicit affine_transformation3d(const Eigen::Matrix4d& m);
+
+  affine_transformation3d inverse() const;
 
   bool is_identity() const;
 
@@ -25,13 +27,13 @@ public:
 
   vector3d transform_vector(const vector3d& v) const;
 
-  affine_transform3d operator*(const affine_transform3d& rhs) const;
+  affine_transformation3d operator*(const affine_transformation3d& rhs) const;
 
-  static affine_transform3d roll_pitch_yaw(const vector3d& angles, const std::array<int, 3>& axes = { 2, 1, 0 });
+  static affine_transformation3d roll_pitch_yaw(const vector3d& angles, const std::array<int, 3>& axes = { 2, 1, 0 });
 
-  static affine_transform3d scaling(const vector3d& scales);
+  static affine_transformation3d scaling(const vector3d& scales);
 
-  static affine_transform3d translation(const vector3d& shifts);
+  static affine_transformation3d translation(const vector3d& shifts);
 
 private:
   static Eigen::Matrix4d rotation_matrix(double angle, int axis);

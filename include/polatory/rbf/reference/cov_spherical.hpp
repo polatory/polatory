@@ -24,7 +24,7 @@ public:
     return std::make_shared<cov_spherical>(parameters());
   }
 
-  static double evaluate(double r, const double *params) {
+  static double evaluate_transformed(double r, const double *params) {
     auto psill = params[0];
     auto range = params[1];
 
@@ -33,11 +33,11 @@ public:
            : 0.0;
   }
 
-  double evaluate(double r) const override {
-    return evaluate(r, parameters().data());
+  double evaluate_untransformed(double r) const override {
+    return evaluate_transformed(r, parameters().data());
   }
 
-  void evaluate_gradient(
+  void evaluate_gradient_untransformed(
     double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto psill = parameters()[0];

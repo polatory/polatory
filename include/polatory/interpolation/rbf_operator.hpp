@@ -56,7 +56,7 @@ public:
     common::valuesd y = common::valuesd::Zero(size());
 
     auto& rbf = model_.rbf();
-    auto diagonal = rbf.evaluate(0.0) + rbf.nugget();
+    auto diagonal = rbf.evaluate_untransformed(0.0) + rbf.nugget();
     y.head(n_points_) = diagonal * weights.head(n_points_);
 
     a_->set_weights(weights.head(n_points_));

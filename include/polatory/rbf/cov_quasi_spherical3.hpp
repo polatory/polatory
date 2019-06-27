@@ -23,7 +23,7 @@ public:
     return std::make_shared<cov_quasi_spherical3>(parameters());
   }
 
-  static double evaluate(double r, const double *params) {
+  static double evaluate_transformed(double r, const double *params) {
     auto psill = params[0];
     auto range = params[1];
 
@@ -32,11 +32,11 @@ public:
            : psill * 0.04912304321996779 * std::pow(0.14678899082568805 + std::pow(r / range, 2.0), -1.5);
   }
 
-  double evaluate(double r) const override {
-    return evaluate(r, parameters().data());
+  double evaluate_untransformed(double r) const override {
+    return evaluate_transformed(r, parameters().data());
   }
 
-  void evaluate_gradient(
+  void evaluate_gradient_untransformed(
     double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto psill = parameters()[0];
