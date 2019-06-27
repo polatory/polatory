@@ -15,7 +15,7 @@
 #include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 
-#include "random_transform.hpp"
+#include "random_transformation.hpp"
 #include "sample_data.hpp"
 
 using polatory::common::take_rows;
@@ -37,7 +37,7 @@ TEST(rbf_incremental_fitter, trivial) {
   std::tie(points, values) = sample_sdf_data(n_surface_points);
 
   biharmonic3d rbf({ 1.0, 0.0 });
-  rbf.set_affine_transformation(random_transform());
+  rbf.set_transformation(random_transformation());
 
   model model(rbf, poly_dimension, poly_degree);
 

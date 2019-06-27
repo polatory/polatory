@@ -102,9 +102,10 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       values_fit = common::valuesd::Zero(ineq_idcs.size());
     }
 
-    size_t i = 0;
-    bool active_set_changed = false;
-    for (auto idx : ineq_idcs) {
+    auto active_set_changed = false;
+    for (size_t i = 0; i < ineq_idcs.size(); i++) {
+      auto idx = ineq_idcs[i];
+
       if (std::find(idcs_lb.begin(), idcs_lb.end(), idx) != idcs_lb.end()) {
         if (active_idcs_lb.count(idx)) {
           if (weights(idx) <= 0.0) {
@@ -131,7 +132,6 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
           }
         }
       }
-      i++;
     }
 
     if (!active_set_changed)

@@ -10,7 +10,7 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 
-#include "random_transform.hpp"
+#include "random_transformation.hpp"
 
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
@@ -26,7 +26,7 @@ void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   double absolute_tolerance = 1e-6;
 
   cov_exponential rbf({ 1.0, 0.2, 0.0 });
-  rbf.set_affine_transformation(random_transform());
+  rbf.set_transformation(random_transformation());
 
   model model(rbf, 3, poly_degree);
 

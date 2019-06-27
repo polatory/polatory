@@ -40,7 +40,7 @@ public:
     : model_(model)
     , rbf_kernel_(model.rbf())
     , n_points_(0) {
-    auto ti_bbox = bbox.transform(model.rbf().inverse_affine_transformation());
+    auto ti_bbox = bbox.transform(model.rbf().inverse_transformation());
     auto width = (1.0 + 1.0 / 1024.0) * ti_bbox.size().maxCoeff();
     auto center = ti_bbox.center();
 
@@ -71,7 +71,7 @@ public:
     });
 
     // Insert points.
-    auto ti = model_.rbf().inverse_affine_transformation();
+    auto ti = model_.rbf().inverse_transformation();
     for (size_t idx = 0; idx < n_points_; idx++) {
       auto ti_p = ti.transform_point(points.row(idx));
       tree_->insert(FPoint<double>(ti_p.data()), idx, 0.0);

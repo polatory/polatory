@@ -22,10 +22,6 @@ public:
   rbf_base& operator=(const rbf_base&) = delete;
   rbf_base& operator=(rbf_base&&) = delete;
 
-  const geometry::affine_transformation3d& affine_transformation() const {
-    return t_;
-  }
-
   virtual std::shared_ptr<rbf_base> clone() const = 0;
 
   // The order of conditional positive definiteness.
@@ -42,7 +38,7 @@ public:
 
   virtual double evaluate_untransformed(double r) const = 0;
 
-  const geometry::affine_transformation3d& inverse_affine_transformation() const {
+  const geometry::affine_transformation3d& inverse_transformation() const {
     return ti_;
   }
 
@@ -57,16 +53,20 @@ public:
     return params_;
   }
 
-  void set_affine_transformation(const geometry::affine_transformation3d& t) {
-    t_ = t;
-    ti_ = t.inverse();
-  }
-
   void set_parameters(const std::vector<double>& params) {
     if (params.size() != num_parameters())
       throw common::invalid_argument("params.size() == " + std::to_string(num_parameters()));
 
     params_ = params;
+  }
+
+  void set_transformation(const geometry::affine_transformation3d& t) {
+    t_ = t;
+    ti_ = t.inverse();
+  }
+
+  const geometry::affine_transformation3d& transformation() const {
+    return t_;
   }
 
 protected:
