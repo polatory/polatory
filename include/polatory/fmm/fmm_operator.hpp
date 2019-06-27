@@ -41,7 +41,7 @@ public:
     , rbf_kernel_(model.rbf())
     , n_points_(0) {
     auto ti_bbox = bbox.transform(model.rbf().inverse_transformation());
-    auto width = (1.0 + 1.0 / 1024.0) * ti_bbox.size().maxCoeff();
+    auto width = (1.0 + 1.0 / 64.0) * ti_bbox.size().maxCoeff();
     auto center = ti_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
