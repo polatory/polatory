@@ -34,7 +34,8 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    model model(biharmonic3d({ 1.0, opts.smooth }), opts.poly_dimension, opts.poly_degree);
+    model model(biharmonic3d({ 1.0 }), opts.poly_dimension, opts.poly_degree);
+    model.set_nugget(opts.smooth);
     interpolant interpolant(model);
 
     // Fit.

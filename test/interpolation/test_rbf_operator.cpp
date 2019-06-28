@@ -25,7 +25,7 @@ namespace {
 void test_poly_degree(int poly_degree, size_t n_points) {
   double absolute_tolerance = 1e-6;
 
-  cov_exponential rbf({ 1.0, 0.2, 0.0 });
+  cov_exponential rbf({ 1.0, 0.2 });
   rbf.set_transformation(random_transformation());
 
   model model(rbf, 3, poly_degree);
@@ -39,7 +39,7 @@ void test_poly_degree(int poly_degree, size_t n_points) {
 
   rbf_operator<> op(model, points);
 
-  valuesd direct_op_weights = direct_eval.evaluate() + model.rbf().nugget() * weights.head(n_points);
+  valuesd direct_op_weights = direct_eval.evaluate() + model.nugget() * weights.head(n_points);
   valuesd op_weights = op(weights);
 
   EXPECT_EQ(n_points + model.poly_basis_size(), op_weights.size());

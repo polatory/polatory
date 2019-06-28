@@ -42,7 +42,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.5;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  biharmonic3d rbf({ 1.0, 0.0 });
+  biharmonic3d rbf({ 1.0 });
   rbf.set_transformation(random_transformation());
 
   model model(rbf, poly_dimension, poly_degree);
@@ -102,7 +102,7 @@ TEST(rbf_inequality_fitter, kostov86) {
     nan, 4, 7, nan, nan,
     nan, nan, nan, nan, 3;
 
-  model model(cov_exponential({ 1.0, 3.0, 0.0 }), poly_dimension, poly_degree);
+  model model(cov_exponential({ 1.0, 3.0 }), poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;

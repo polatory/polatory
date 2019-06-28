@@ -38,7 +38,8 @@ void test_coarse_grid(double nugget) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  model model(biharmonic3d({ 1.0, nugget }), poly_dimension, poly_degree);
+  model model(biharmonic3d({ 1.0 }), poly_dimension, poly_degree);
+  model.set_nugget(nugget);
   auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
 
   coarse_grid coarse(model, lagr_basis, point_indices, points);
@@ -54,7 +55,7 @@ void test_coarse_grid(double nugget) {
   valuesd values_fit = eval.evaluate();
 
   valuesd residuals = (values - values_fit).cwiseAbs();
-  valuesd smoothing_error_bounds = model.rbf().nugget() * sol.head(n_points).cwiseAbs();
+  valuesd smoothing_error_bounds = model.nugget() * sol.head(n_points).cwiseAbs();
 
   for (size_t i = 0; i < n_points; i++) {
     EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));

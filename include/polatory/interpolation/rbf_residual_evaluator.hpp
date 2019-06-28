@@ -46,7 +46,7 @@ public:
 
     evaluator_->set_weights(weights);
 
-    auto nugget = model_.rbf().nugget();
+    auto nugget = model_.nugget();
 
     double max_residual = 0.0;
     for (size_t i = 0; i < n_points_ / chunk_size + 1; i++) {

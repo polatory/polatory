@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 
   const auto poly_dimension = 3;
   const auto poly_degree = 0;
-  model model(cov_exponential({ 1.0, 0.02, 0.0 }), poly_dimension, poly_degree);
+  model model(cov_exponential({ 1.0, 0.02 }), poly_dimension, poly_degree);
 
   interpolant interpolant(model);
 

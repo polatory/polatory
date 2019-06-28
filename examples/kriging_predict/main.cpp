@@ -32,7 +32,8 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    model model(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
+    model model(cov_quasi_spherical9({ opts.psill, opts.range }), opts.poly_dimension, opts.poly_degree);
+    model.set_nugget(opts.nugget);
     interpolant interpolant(model);
 
     // Fit.

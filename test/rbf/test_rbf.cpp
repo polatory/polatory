@@ -75,15 +75,15 @@ void test_gradient(const rbf_base& rbf) {
 }  // namespace
 
 TEST(rbf, gradient) {
-  test_gradient(biharmonic2d({ 1.0, 0.0 }));
-  test_gradient(biharmonic3d({ 1.0, 0.0 }));
-  test_gradient(cov_exponential({ 1.0, 1.0, 0.0 }));
-  test_gradient(cov_quasi_spherical3({ 1.0, 1.0, 0.0 }));
-  test_gradient(cov_quasi_spherical5({ 1.0, 1.0, 0.0 }));
-  test_gradient(cov_quasi_spherical7({ 1.0, 1.0, 0.0 }));
-  test_gradient(cov_quasi_spherical9({ 1.0, 1.0, 0.0 }));
+  test_gradient(biharmonic2d({ 1.0 }));
+  test_gradient(biharmonic3d({ 1.0 }));
+  test_gradient(cov_exponential({ 1.0, 1.0 }));
+  test_gradient(cov_quasi_spherical3({ 1.0, 1.0 }));
+  test_gradient(cov_quasi_spherical5({ 1.0, 1.0 }));
+  test_gradient(cov_quasi_spherical7({ 1.0, 1.0 }));
+  test_gradient(cov_quasi_spherical9({ 1.0, 1.0 }));
 
-  test_gradient(cov_gaussian({ 1.0, 1.0, 0.0 }));
-  test_gradient(cov_spherical({ 1.0, 1.0, 0.0 }));
-  test_gradient(triharmonic3d({ 1.0, 0.0 }));
+  test_gradient(cov_gaussian({ 1.0, 1.0 }));
+  test_gradient(cov_spherical({ 1.0, 1.0 }));
+  test_gradient(triharmonic3d({ 1.0 }));
 }

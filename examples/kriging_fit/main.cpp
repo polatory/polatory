@@ -10,6 +10,7 @@
 
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
+using polatory::model;
 using polatory::rbf::cov_quasi_spherical9;
 
 int main(int argc, const char *argv[]) {
@@ -18,8 +19,10 @@ int main(int argc, const char *argv[]) {
 
     empirical_variogram emp_variog(opts.in_file);
 
-    cov_quasi_spherical9 cov({ opts.psill, opts.range, opts.nugget });
-    variogram_fitting fit(emp_variog, cov, opts.weight_fn);
+    model model(cov_quasi_spherical9({ opts.psill, opts.range }), -1, -1);
+    model.set_nugget(opts.nugget);
+
+    variogram_fitting fit(emp_variog, model, opts.weight_fn);
 
     auto params = fit.parameters();
     std::cout << "Fitted parameters:" << std::endl

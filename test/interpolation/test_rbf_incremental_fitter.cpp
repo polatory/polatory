@@ -36,7 +36,7 @@ TEST(rbf_incremental_fitter, trivial) {
   valuesd values;
   std::tie(points, values) = sample_sdf_data(n_surface_points);
 
-  biharmonic3d rbf({ 1.0, 0.0 });
+  biharmonic3d rbf({ 1.0 });
   rbf.set_transformation(random_transformation());
 
   model model(rbf, poly_dimension, poly_degree);

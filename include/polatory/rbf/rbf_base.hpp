@@ -42,12 +42,11 @@ public:
     return ti_;
   }
 
-  // The effect of nugget parameter is also known as spline smoothing.
-  virtual double nugget() const {
-    return 0.0;
-  }
-
   virtual size_t num_parameters() const = 0;
+
+  virtual const std::vector<double>& parameter_lower_bounds() const = 0;
+
+  virtual const std::vector<double>& parameter_upper_bounds() const = 0;
 
   const std::vector<double>& parameters() const {
     return params_;

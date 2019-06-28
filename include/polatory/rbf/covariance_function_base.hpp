@@ -18,20 +18,16 @@ public:
     return 0;
   }
 
-  double nugget() const override {
-    return parameters()[2];
-  }
-
   size_t num_parameters() const override {
-    return 3;
+    return 2;
   }
 
-  virtual const std::vector<double>& parameter_lower_bounds() const {
+  const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{ 0.0, 0.0, 0.0 };
     return lower_bounds;
   }
 
-  virtual const std::vector<double>& parameter_upper_bounds() const {
+  const std::vector<double>& parameter_upper_bounds() const override  {
     static const std::vector<double> upper_bounds{ std::numeric_limits<double>::infinity(),
                                                    std::numeric_limits<double>::infinity(),
                                                    std::numeric_limits<double>::infinity() };
@@ -44,10 +40,6 @@ public:
 
   double range() const {
     return parameters()[1];
-  }
-
-  double sill() const {
-    return partial_sill() + nugget();
   }
 };
 

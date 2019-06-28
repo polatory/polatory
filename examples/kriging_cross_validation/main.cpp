@@ -31,7 +31,8 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    model model(cov_quasi_spherical9({ opts.psill, opts.range, opts.nugget }), opts.poly_dimension, opts.poly_degree);
+    model model(cov_quasi_spherical9({ opts.psill, opts.range }), opts.poly_dimension, opts.poly_degree);
+    model.set_nugget(opts.nugget);
     auto residuals = k_fold_cross_validation(model, points, values, opts.absolute_tolerance, opts.k);
 
     std::cout << "Estimated mean absolute error: " << std::endl
