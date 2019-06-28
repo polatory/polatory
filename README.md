@@ -29,7 +29,7 @@ Polatory runs on x86-64 processors and continuously tested on the following plat
 | ---------------- | --------------------- |
 | Ubuntu 16.04 LTS | GCC 5.4 and Clang 3.8 |
 | Ubuntu 18.04 LTS | GCC 7.3 and Clang 6.0 |
-| Windows          | Visual Studio 2017    |
+| Windows          | Visual Studio 2019    |
 
 ### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
 
@@ -143,15 +143,15 @@ Polatory is available under two different licenses:
 
 ### On Windows
 
-1. Install Visual Studio Community 2017
+1. Install Visual Studio Community 2019
 
     https://www.visualstudio.com/
 
-    From the **Workloads** tab, select the following item.
+    Under the **Workloads** tab, select the following item.
 
     - Desktop development with C++
 
-    From the **Individual components** tab, select the following item.
+    Under the **Individual components** tab, select the following item.
 
     - Code tools > Git for Windows
 
@@ -180,7 +180,7 @@ Polatory is available under two different licenses:
 
 1. Build polatory
 
-    Open **Start** > **Visual Studio 2017** > **x64 Native Tools Command Prompt for VS 2017**.
+    Open **Start** > **Visual Studio 2019** > **x64 Native Tools Command Prompt for VS 2019**.
 
     ```bat
     cd /d %userprofile%
