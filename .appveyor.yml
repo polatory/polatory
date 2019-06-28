@@ -29,7 +29,7 @@ install:
   - vcpkg install ceres flann eigen3 gtest --triplet x64-windows
 
 before_build:
-  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
   - cmake --version
   - ninja --version
   - cl /Bv || cmd /c exit 0
