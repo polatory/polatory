@@ -26,7 +26,7 @@ int main(int argc, const char *argv[]) {
 
     auto params = fit.parameters();
     std::cout << "Fitted parameters:" << std::endl
-              << std::setw(12) << "psill" << std::setw(12) << "range" << std::setw(12) << "nugget" << std::endl
+              << std::setw(12) << "nugget" << std::setw(12) << "psill" << std::setw(12) << "range" << std::endl
               << std::setw(12) << params[0] << std::setw(12) << params[1] << std::setw(12) << params[2] << std::endl;
 
     return 0;
