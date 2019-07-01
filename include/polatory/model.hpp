@@ -14,12 +14,6 @@ namespace polatory {
 
 class model {
 public:
-  model()
-    : poly_dimension_(-1)
-    , poly_degree_(-1)
-    , nugget_(0.0) {
-  }
-
   model(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)
     : rbf_(rbf.clone())
     , poly_dimension_(poly_dimension)
@@ -95,6 +89,9 @@ public:
 
   // Experimental function.
   void set_parameters(const std::vector<double>& params) {
+    if (params.size() != num_parameters())
+      throw common::invalid_argument("params.size() == " + std::to_string(num_parameters()));
+
     set_nugget(params[0]);
     rbf_->set_parameters(std::vector<double>(params.begin() + 1, params.end()));
   }
