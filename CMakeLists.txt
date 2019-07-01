@@ -78,8 +78,8 @@ else()
     message(FATAL_ERROR "Not supported system.")
 endif()
 
-#add_subdirectory(benchmark)
-#add_subdirectory(examples)
+add_subdirectory(benchmark)
+add_subdirectory(examples)
 add_subdirectory(src)
 
 enable_testing()

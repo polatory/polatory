@@ -27,14 +27,14 @@ public:
     return 1;
   }
 
-  static double evaluate_transformed(double r, const double *params) {
+  static double evaluate_untransformed(double r, const double *params) {
     auto slope = params[0];
 
     return -slope * r;
   }
 
   double evaluate_untransformed(double r) const override {
-    return evaluate_transformed(r, parameters().data());
+    return evaluate_untransformed(r, parameters().data());
   }
 
   void evaluate_gradient_untransformed(

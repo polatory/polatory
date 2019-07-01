@@ -23,7 +23,7 @@ public:
     return std::make_unique<cov_quasi_spherical3>(parameters());
   }
 
-  static double evaluate_transformed(double r, const double *params) {
+  static double evaluate_untransformed(double r, const double *params) {
     auto psill = params[0];
     auto range = params[1];
 
@@ -33,7 +33,7 @@ public:
   }
 
   double evaluate_untransformed(double r) const override {
-    return evaluate_transformed(r, parameters().data());
+    return evaluate_untransformed(r, parameters().data());
   }
 
   void evaluate_gradient_untransformed(
