@@ -4,7 +4,7 @@
 
 #include <limits>
 #include <memory>
-#include <utility>
+#include <vector>
 
 #include <polatory/common/exception.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
@@ -38,12 +38,7 @@ public:
     , nugget_(model.nugget_) {
   }
 
-  model(model&& model) noexcept
-    : rbf_(std::move(model.rbf_))
-    , poly_dimension_(model.poly_dimension_)
-    , poly_degree_(model.poly_degree_)
-    , nugget_(model.nugget_) {
-  }
+  model(model&& model) = default;
 
   model& operator=(const model&) = delete;
   model& operator=(model&&) = delete;
@@ -117,7 +112,7 @@ private:
     , nugget_(0.0) {
   }
 
-  std::shared_ptr<rbf::rbf_base> rbf_;
+  std::unique_ptr<rbf::rbf_base> rbf_;
   int poly_dimension_;
   int poly_degree_;
   double nugget_;

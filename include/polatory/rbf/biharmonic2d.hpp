@@ -20,8 +20,8 @@ public:
     set_parameters(params);
   }
 
-  std::shared_ptr<rbf_base> clone() const override {
-    return std::make_shared<biharmonic2d>(parameters());
+  std::unique_ptr<rbf_base> clone() const override {
+    return std::make_unique<biharmonic2d>(parameters());
   }
 
   int cpd_order() const override {

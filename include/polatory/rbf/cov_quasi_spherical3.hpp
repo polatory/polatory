@@ -19,8 +19,8 @@ public:
     set_parameters(params);
   }
 
-  std::shared_ptr<rbf_base> clone() const override {
-    return std::make_shared<cov_quasi_spherical3>(parameters());
+  std::unique_ptr<rbf_base> clone() const override {
+    return std::make_unique<cov_quasi_spherical3>(parameters());
   }
 
   static double evaluate_transformed(double r, const double *params) {

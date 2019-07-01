@@ -22,7 +22,7 @@ public:
   rbf_base& operator=(const rbf_base&) = delete;
   rbf_base& operator=(rbf_base&&) = delete;
 
-  virtual std::shared_ptr<rbf_base> clone() const = 0;
+  virtual std::unique_ptr<rbf_base> clone() const = 0;
 
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;
