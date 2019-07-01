@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cmath>
+#include <memory>
 
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/third_party/ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
@@ -19,7 +20,7 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
   static const unsigned int NLHS = 1;  // Dimension of local expansions.
 
   explicit fmm_rbf_kernel(const rbf::rbf_base& rbf)
-    : rbf_(rbf) {
+    : rbf_(rbf.clone()) {
   }
 
   // returns position in reduced storage
@@ -38,7 +39,7 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
     const auto diffz = p1[2] - p2[2];
     const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
 
-    return rbf_.evaluate_untransformed(r);
+    return rbf_->evaluate_untransformed(r);
   }
 
   // evaluate interaction and derivative (blockwise)
@@ -50,8 +51,8 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
     const auto diffz = (z1 - z2);
     const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
 
-    block[0] = rbf_.evaluate_untransformed(r);
-    rbf_.evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
+    block[0] = rbf_->evaluate_untransformed(r);
+    rbf_->evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
   }
 
   double getScaleFactor(const double, const int) const override {
@@ -69,7 +70,7 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
   }
 
 private:
-  const rbf::rbf_base& rbf_;
+  const std::unique_ptr<rbf::rbf_base> rbf_;
 };
 
 }  // namespace fmm

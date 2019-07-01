@@ -22,7 +22,7 @@ public:
   rbf_base& operator=(const rbf_base&) = delete;
   rbf_base& operator=(rbf_base&&) = delete;
 
-  virtual std::shared_ptr<rbf_base> clone() const = 0;
+  virtual std::unique_ptr<rbf_base> clone() const = 0;
 
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;
@@ -42,12 +42,11 @@ public:
     return ti_;
   }
 
-  // The effect of nugget parameter is also known as spline smoothing.
-  virtual double nugget() const {
-    return 0.0;
-  }
-
   virtual size_t num_parameters() const = 0;
+
+  virtual const std::vector<double>& parameter_lower_bounds() const = 0;
+
+  virtual const std::vector<double>& parameter_upper_bounds() const = 0;
 
   const std::vector<double>& parameters() const {
     return params_;

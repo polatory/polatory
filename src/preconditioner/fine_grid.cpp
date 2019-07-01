@@ -41,7 +41,7 @@ void fine_grid::setup(const geometry::points3d& points_full) {
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
   auto& rbf = model_.rbf();
-  auto diagonal = rbf.evaluate_untransformed(0.0) + rbf.nugget();
+  auto diagonal = rbf.evaluate_untransformed(0.0) + model_.nugget();
   for (size_t i = 0; i < m_; i++) {
     a(i, i) = diagonal;
   }

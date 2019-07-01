@@ -6,15 +6,15 @@
 
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/weight_function.hpp>
-#include <polatory/rbf/covariance_function_base.hpp>
+#include <polatory/model.hpp>
 
 namespace polatory {
 namespace kriging {
 
 class variogram_fitting {
 public:
-  variogram_fitting(const empirical_variogram& emp_variog, const rbf::covariance_function_base& cov,
-                    weight_function weight_fn);
+  variogram_fitting(const empirical_variogram& emp_variog, const model& model,
+    weight_function weight_fn);
 
   const std::vector<double>& parameters() const;
 

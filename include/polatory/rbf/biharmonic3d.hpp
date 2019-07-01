@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -18,22 +19,22 @@ public:
     set_parameters(params);
   }
 
-  std::shared_ptr<rbf_base> clone() const override {
-    return std::make_shared<biharmonic3d>(parameters());
+  std::unique_ptr<rbf_base> clone() const override {
+    return std::make_unique<biharmonic3d>(parameters());
   }
 
   int cpd_order() const override {
     return 1;
   }
 
-  static double evaluate_transformed(double r, const double *params) {
+  static double evaluate_untransformed(double r, const double *params) {
     auto slope = params[0];
 
     return -slope * r;
   }
 
   double evaluate_untransformed(double r) const override {
-    return evaluate_transformed(r, parameters().data());
+    return evaluate_untransformed(r, parameters().data());
   }
 
   void evaluate_gradient_untransformed(
@@ -47,12 +48,18 @@ public:
     *gradz = c * z;
   }
 
-  double nugget() const override {
-    return parameters()[1];
+  size_t num_parameters() const override {
+    return 1;
   }
 
-  size_t num_parameters() const override {
-    return 2;
+  const std::vector<double>& parameter_lower_bounds() const override {
+    static const std::vector<double> lower_bounds{ 0.0 };
+    return lower_bounds;
+  }
+
+  const std::vector<double>& parameter_upper_bounds() const override {
+    static const std::vector<double> upper_bounds{ std::numeric_limits<double>::infinity() };
+    return upper_bounds;
   }
 };
 

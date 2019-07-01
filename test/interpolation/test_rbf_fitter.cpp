@@ -35,7 +35,7 @@ void test_poly_degree(int poly_degree) {
 
   size_t n_points = points.rows();
 
-  biharmonic3d rbf({ 1.0, 0.0 });
+  biharmonic3d rbf({ 1.0 });
   rbf.set_transformation(random_transformation());
 
   model model(rbf, poly_dimension, poly_degree);
@@ -50,7 +50,7 @@ void test_poly_degree(int poly_degree) {
   valuesd values_fit = eval.evaluate();
 
   valuesd residuals = (values - values_fit).cwiseAbs();
-  valuesd smoothing_error_bounds = model.rbf().nugget() * weights.head(n_points).cwiseAbs();
+  valuesd smoothing_error_bounds = model.nugget() * weights.head(n_points).cwiseAbs();
 
   std::cout << "Maximum residual:" << std::endl
             << "  " << residuals.lpNorm<Eigen::Infinity>() << std::endl;
