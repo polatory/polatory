@@ -75,7 +75,7 @@ public:
     update_potential_ptrs();
   }
 
-  void set_weights(const common::valuesd& weights) {
+  void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     assert(weights.rows() == n_points_);
 
     // Update weights.
@@ -172,7 +172,7 @@ void fmm_operator<Order>::set_points(const geometry::points3d& points) {
 }
 
 template <int Order>
-void fmm_operator<Order>::set_weights(const common::valuesd& weights) {
+void fmm_operator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_weights(weights);
 }
 

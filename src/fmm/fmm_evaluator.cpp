@@ -99,7 +99,7 @@ public:
     update_weight_ptrs();
   }
 
-  void set_source_points_and_weights(const geometry::points3d& points, const common::valuesd& weights) {
+  void set_source_points_and_weights(const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
     assert(weights.rows() == points.rows());
 
     n_src_points_ = points.rows();
@@ -126,7 +126,7 @@ public:
     weight_ptrs_.clear();
   }
 
-  void set_weights(const common::valuesd& weights) {
+  void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     assert(weights.size() == n_src_points_);
 
     if (n_src_points_ == 0)
@@ -229,12 +229,12 @@ void fmm_evaluator<Order>::set_source_points(const geometry::points3d& points) {
 }
 
 template <int Order>
-void fmm_evaluator<Order>::set_source_points_and_weights(const geometry::points3d& points, const common::valuesd& weights) {
+void fmm_evaluator<Order>::set_source_points_and_weights(const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_source_points_and_weights(points, weights);
 }
 
 template <int Order>
-void fmm_evaluator<Order>::set_weights(const common::valuesd& weights) {
+void fmm_evaluator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_weights(weights);
 }
 

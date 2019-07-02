@@ -4,6 +4,8 @@
 
 #include <memory>
 
+#include <Eigen/Core>
+
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -28,7 +30,7 @@ public:
 
   void set_points(const geometry::points3d& points);
 
-  void set_weights(const common::valuesd& weights);
+  void set_weights(const Eigen::Ref<const common::valuesd>& weights);
 
 private:
   class impl;
