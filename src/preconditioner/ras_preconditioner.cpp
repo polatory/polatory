@@ -2,6 +2,9 @@
 
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 
+#include <algorithm>
+#include <cmath>
+#include <iostream>
 #include <numeric>
 
 #include <polatory/common/eigen_utility.hpp>
