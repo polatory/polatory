@@ -76,5 +76,40 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
   }
 }
 
+void coarse_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
+  for (size_t i = 0; i < m_; i++) {
+    weights_full(point_idcs_[i]) = lambda_c_(i);
+  }
+
+  weights_full.tail(l_) = lambda_c_.tail(l_).cast<double>();
+}
+
+void coarse_grid::solve(const Eigen::Ref<const common::valuesd>& values_full) {
+  common::valuesd values(m_);
+  for (size_t i = 0; i < m_; i++) {
+    values(i) = values_full(point_idcs_[i]);
+  }
+
+  if (l_ > 0) {
+    // Compute Q^T d.
+    common::valuesd qtd = me_.transpose() * values.head(l_)
+                          + values.tail(m_ - l_);
+
+    // Solve Q^T A Q gamma = Q^T d for gamma.
+    common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
+
+    // Compute lambda = Q gamma.
+    lambda_c_ = common::valuesd(m_ + l_);
+    lambda_c_.head(l_) = me_ * gamma;
+    lambda_c_.segment(l_, m_ - l_) = gamma;
+
+    // Solve P c = d - A lambda for c at poly_points.
+    common::valuesd a_top_lambda = a_top_ * lambda_c_.head(m_);
+    lambda_c_.tail(l_) = lu_of_p_top_.solve(values.head(l_) - a_top_lambda);
+  } else {
+    lambda_c_ = ldlt_of_qtaq_.solve(values);
+  }
+}
+
 }  // namespace preconditioner
 }  // namespace polatory

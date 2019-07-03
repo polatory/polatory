@@ -33,37 +33,9 @@ public:
 
   void setup(const geometry::points3d& points_full);
 
-  template <class Derived>
-  void set_solution_to(Eigen::MatrixBase<Derived>& weights_full) const {  // NOLINT(runtime/references)
-    for (size_t i = 0; i < m_; i++) {
-      if (inner_point_[i])
-        weights_full(point_idcs_[i]) = lambda_(i);
-    }
-  }
+  void set_solution_to(Eigen::Ref<common::valuesd> weights_full) const;
 
-  template <class Derived>
-  void solve(const Eigen::MatrixBase<Derived>& values_full) {
-    common::valuesd values(m_);
-    for (size_t i = 0; i < m_; i++) {
-      values(i) = values_full(point_idcs_[i]);
-    }
-
-    if (l_ > 0) {
-      // Compute Q^T d.
-      common::valuesd qtd = me_.transpose() * values.head(l_)
-                     + values.tail(m_ - l_);
-
-      // Solve Q^T A Q gamma = Q^T d for gamma.
-      common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
-
-      // Compute lambda = Q gamma.
-      lambda_ = common::valuesd(m_);
-      lambda_.head(l_) = me_ * gamma;
-      lambda_.tail(m_ - l_) = gamma;
-    } else {
-      lambda_ = ldlt_of_qtaq_.solve(values);
-    }
-  }
+  void solve(const Eigen::Ref<const common::valuesd>& values_full);
 
 private:
   const model model_;
