@@ -38,7 +38,7 @@ Polatory can perform global kriging prediction via RBF interpolation. Although d
 | Kriging             | RBF interpolation                          |
 | ------------------- | ------------------------------------------ |
 | Prediction          | Interpolation (fitting + evaluation)       |
-| Covariance function | RBF                                        |
+| Covariance function | Positive definite RBF                      |
 | Nugget effect       | Spline smoothing                           |
 | Simple kriging      | Interpolant with no polynomial             |
 | Ordinary kriging    | Interpolant with polynomial of degree 0    |
