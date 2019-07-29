@@ -11,5 +11,8 @@ install/
 .idea/*
 !.idea/codeStyleSettings.xml
 
+# Jupyter Notebook
+.ipynb_checkpoints
+
 # Visual Studio
 .vs/
