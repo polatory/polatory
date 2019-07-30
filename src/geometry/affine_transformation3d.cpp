@@ -56,7 +56,7 @@ affine_transformation3d affine_transformation3d::roll_pitch_yaw(const vector3d& 
 }
 
 affine_transformation3d affine_transformation3d::scaling(const vector3d& scales) {
-  Eigen::Matrix4d m = Eigen::Matrix4d::Zero();
+  Eigen::Matrix4d m = Eigen::Matrix4d::Identity();
 
   m.diagonal() << scales(0), scales(1), scales(2), 1.0;
 
@@ -64,7 +64,7 @@ affine_transformation3d affine_transformation3d::scaling(const vector3d& scales)
 }
 
 affine_transformation3d affine_transformation3d::translation(const vector3d& shifts) {
-  Eigen::Matrix4d m = Eigen::Matrix4d::Zero();
+  Eigen::Matrix4d m = Eigen::Matrix4d::Identity();
 
   m.col(3) << shifts(0), shifts(1), shifts(2), 1.0;
 

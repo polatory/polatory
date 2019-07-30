@@ -17,7 +17,6 @@ class rbf_base {
 public:
   virtual ~rbf_base() = default;
 
-  rbf_base(const rbf_base&) = delete;
   rbf_base(rbf_base&&) = delete;
   rbf_base& operator=(const rbf_base&) = delete;
   rbf_base& operator=(rbf_base&&) = delete;
@@ -70,6 +69,7 @@ public:
 
 protected:
   rbf_base() = default;
+  rbf_base(const rbf_base&) = default;
 
 private:
   std::vector<double> params_;
