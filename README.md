@@ -20,6 +20,7 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 * Meshing isosurfaces
 * Supports large number (millions) of input points
 * Supports inequality constraints
+* [List of available RBFs](docs/rbf.ipynb)
 
 ### Platforms
 
