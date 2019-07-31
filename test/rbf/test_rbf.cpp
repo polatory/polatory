@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
@@ -17,6 +18,7 @@
 #include <polatory/rbf/reference/cov_spherical.hpp>
 #include <polatory/rbf/reference/triharmonic3d.hpp>
 
+using polatory::geometry::affine_transformation3d;
 using polatory::rbf::biharmonic2d;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
@@ -33,6 +35,17 @@ namespace {
 
 double hypot(double x, double y, double z) {
   return std::sqrt(x * x + y * y + z * z);
+}
+
+template <class T>
+void test_clone(const std::vector<double>& params) {
+  T rbf(params);
+  rbf.set_transformation(affine_transformation3d::scaling({ 1.0, 2.0, 3.0 }));
+
+  auto cloned = rbf.clone();
+
+  ASSERT_EQ(rbf.parameters(), cloned->parameters());
+  ASSERT_EQ(rbf.transformation(), cloned->transformation());
 }
 
 void test_gradient(const rbf_base& rbf) {
@@ -73,6 +86,20 @@ void test_gradient(const rbf_base& rbf) {
 }
 
 }  // namespace
+
+TEST(rbf, clone) {
+  test_clone<biharmonic2d>({ 1.0 });
+  test_clone<biharmonic3d>({ 1.0 });
+  test_clone<cov_exponential>({ 1.0, 1.0 });
+  test_clone<cov_quasi_spherical3>({ 1.0, 1.0 });
+  test_clone<cov_quasi_spherical5>({ 1.0, 1.0 });
+  test_clone<cov_quasi_spherical7>({ 1.0, 1.0 });
+  test_clone<cov_quasi_spherical9>({ 1.0, 1.0 });
+
+  test_clone<cov_gaussian>({ 1.0, 1.0 });
+  test_clone<cov_spherical>({ 1.0, 1.0 });
+  test_clone<triharmonic3d>({ 1.0 });
+}
 
 TEST(rbf, gradient) {
   test_gradient(biharmonic2d({ 1.0 }));

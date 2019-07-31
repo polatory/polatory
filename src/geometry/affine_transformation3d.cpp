@@ -36,16 +36,24 @@ const Eigen::Matrix4d& affine_transformation3d::matrix() const {
   return m_;
 }
 
+bool affine_transformation3d::operator==(const affine_transformation3d& rhs) const {
+  return m_ == rhs.m_;
+}
+
+bool affine_transformation3d::operator!=(const affine_transformation3d& rhs) const {
+  return !(*this == rhs);
+}
+
+affine_transformation3d affine_transformation3d::operator*(const affine_transformation3d& rhs) const {
+  return affine_transformation3d(m_ * rhs.m_);
+}
+
 point3d affine_transformation3d::transform_point(const point3d& p) const {
   return m_.topLeftCorner(3, 4) * p.homogeneous().transpose();
 }
 
 vector3d affine_transformation3d::transform_vector(const vector3d& v) const {
   return m_.topLeftCorner(3, 3) * v.transpose();
-}
-
-affine_transformation3d affine_transformation3d::operator*(const affine_transformation3d& rhs) const {
-  return affine_transformation3d(m_ * rhs.m_);
 }
 
 affine_transformation3d affine_transformation3d::roll_pitch_yaw(const vector3d& angles, const std::array<int, 3>& axes) {
