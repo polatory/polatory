@@ -90,9 +90,9 @@ TEST(affine_transformation3d, translation) {
 
   Eigen::Matrix4d m;
   m <<
-    0.0, 0.0, 0.0, 3.0,
-    0.0, 0.0, 0.0, 5.0,
-    0.0, 0.0, 0.0, 7.0,
+    1.0, 0.0, 0.0, 3.0,
+    0.0, 1.0, 0.0, 5.0,
+    0.0, 0.0, 1.0, 7.0,
     0.0, 0.0, 0.0, 1.0;
 
   EXPECT_EQ(0.0, (m - m_actual).lpNorm<Eigen::Infinity>());

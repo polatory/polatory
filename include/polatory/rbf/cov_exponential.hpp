@@ -20,7 +20,7 @@ public:
   }
 
   std::unique_ptr<rbf_base> clone() const override {
-    return std::make_unique<cov_exponential>(parameters());
+    return std::make_unique<cov_exponential>(*this);
   }
 
   static double evaluate_untransformed(double r, const double *params) {

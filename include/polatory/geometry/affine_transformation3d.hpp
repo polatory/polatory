@@ -23,11 +23,15 @@ public:
 
   const Eigen::Matrix4d& matrix() const;
 
+  bool operator==(const affine_transformation3d& rhs) const;
+
+  bool operator!=(const affine_transformation3d& rhs) const;
+
+  affine_transformation3d operator*(const affine_transformation3d& rhs) const;
+
   point3d transform_point(const point3d& p) const;
 
   vector3d transform_vector(const vector3d& v) const;
-
-  affine_transformation3d operator*(const affine_transformation3d& rhs) const;
 
   static affine_transformation3d roll_pitch_yaw(const vector3d& angles, const std::array<int, 3>& axes = { 2, 1, 0 });
 
