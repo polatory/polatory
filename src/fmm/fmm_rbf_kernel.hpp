@@ -12,6 +12,8 @@ namespace polatory {
 namespace fmm {
 
 struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
+  static constexpr bool kEvaluateGradient = false;
+
   static const KERNEL_FUNCTION_TYPE Type = NON_HOMOGENEOUS;
   static const unsigned int NCMP = 1;  // Number of components.
   static const unsigned int NPV = 1;   // Dimension of physical values.
@@ -52,7 +54,14 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
     const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
 
     block[0] = rbf_->evaluate_untransformed(r);
-    rbf_->evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
+
+    if (kEvaluateGradient) {
+      rbf_->evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
+    } else {
+      blockDerivative[0] = 0.0;
+      blockDerivative[1] = 0.0;
+      blockDerivative[2] = 0.0;
+    }
   }
 
   double getScaleFactor(const double, const int) const override {
