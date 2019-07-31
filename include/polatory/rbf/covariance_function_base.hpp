@@ -19,17 +19,16 @@ public:
   }
 
   size_t num_parameters() const override {
-    return 2;
+    return 1;
   }
 
   const std::vector<double>& parameter_lower_bounds() const override {
-    static const std::vector<double> lower_bounds{ 0.0, 0.0 };
+    static const std::vector<double> lower_bounds{ 0.0 };
     return lower_bounds;
   }
 
   const std::vector<double>& parameter_upper_bounds() const override  {
-    static const std::vector<double> upper_bounds{ std::numeric_limits<double>::infinity(),
-                                                   std::numeric_limits<double>::infinity() };
+    static const std::vector<double> upper_bounds{ std::numeric_limits<double>::infinity() };
     return upper_bounds;
   }
 
@@ -37,8 +36,8 @@ public:
     return parameters()[0];
   }
 
-  double range() const {
-    return parameters()[1];
+  void set_isotropic_range(double range) {
+    set_transformation(geometry::affine_transformation3d::scaling({range, range, range}));
   }
 };
 

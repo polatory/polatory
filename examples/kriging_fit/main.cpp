@@ -19,7 +19,9 @@ int main(int argc, const char *argv[]) {
 
     empirical_variogram emp_variog(opts.in_file);
 
-    model model(cov_quasi_spherical9({ opts.psill, opts.range }), -1, -1);
+    cov_quasi_spherical9 cov({ opts.psill });
+    cov.set_isotropic_range(opts.range);
+    model model(cov, -1, -1);
     model.set_nugget(opts.nugget);
 
     variogram_fitting fit(emp_variog, model, opts.weight_fn);

@@ -102,7 +102,9 @@ TEST(rbf_inequality_fitter, kostov86) {
     nan, 4, 7, nan, nan,
     nan, nan, nan, nan, 3;
 
-  model model(cov_exponential({ 1.0, 3.0 }), poly_dimension, poly_degree);
+  cov_exponential cov({ 1.0 });
+  cov.set_isotropic_range(3.0);
+  model model(cov, poly_dimension, poly_degree);
 
   std::vector<size_t> indices;
   valuesd weights;

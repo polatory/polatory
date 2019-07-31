@@ -32,7 +32,9 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define model.
-    model model(cov_quasi_spherical9({ opts.psill, opts.range }), opts.poly_dimension, opts.poly_degree);
+    cov_quasi_spherical9 cov({ opts.psill });
+    cov.set_isotropic_range(opts.range);
+    model model(cov, opts.poly_dimension, opts.poly_degree);
     model.set_nugget(opts.nugget);
     interpolant interpolant(model);
 
@@ -40,7 +42,7 @@ int main(int argc, const char *argv[]) {
     interpolant.fit(points, values, opts.absolute_tolerance);
 
     // Generate isosurface of given values.
-    polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
+    isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 
     for (auto isovalue_name : opts.mesh_values_files) {

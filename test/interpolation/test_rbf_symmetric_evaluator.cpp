@@ -28,7 +28,7 @@ template <class Evaluator>
 void test_poly_degree(int poly_degree, size_t n_points, size_t n_eval_points) {
   double absolute_tolerance = 2e-6;
 
-  cov_exponential rbf({ 1.0, 0.2 });
+  cov_exponential rbf({ 1.0 });
   rbf.set_transformation(random_transformation());
 
   model model(rbf, 3, poly_degree);

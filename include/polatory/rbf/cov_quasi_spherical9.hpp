@@ -25,11 +25,10 @@ public:
 
   static double evaluate_untransformed(double r, const double *params) {
     auto psill = params[0];
-    auto range = params[1];
 
-    return r < 0.3211688011376158 * range
-           ? psill * (1.0 - 1.4011323590773752 * r / range)
-           : psill * 0.9710239190254878 * std::pow(1.031493988241734 + std::pow(r / range, 2.0), -4.5);
+    return r < 0.3211688011376158
+           ? psill * (1.0 - 1.4011323590773752 * r)
+           : psill * 0.9710239190254878 * std::pow(1.031493988241734 + std::pow(r, 2.0), -4.5);
   }
 
   double evaluate_untransformed(double r) const override {
@@ -40,11 +39,10 @@ public:
     double *gradx, double *grady, double *gradz,
     double x, double y, double z, double r) const override {
     auto psill = parameters()[0];
-    auto range = parameters()[1];
 
-    auto c = r < 0.3211688011376158 * range
-             ? -psill * 1.4011323590773752 / (range * r)
-             : -psill * 8.73921527122939 * std::pow(1.031493988241734 + std::pow(r / range, 2.0), -5.5) / (range * range);
+    auto c = r < 0.3211688011376158
+             ? -psill * 1.4011323590773752 / r
+             : -psill * 8.73921527122939 * std::pow(1.031493988241734 + std::pow(r, 2.0), -5.5);
     *gradx = c * x;
     *grady = c * y;
     *gradz = c * z;
