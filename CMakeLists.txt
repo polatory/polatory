@@ -21,6 +21,9 @@ include(polatory_common_functions)
 
 if(UNIX)
     set(Boost_USE_STATIC_LIBS ON)
+    if(POLATORY_CLANG_TIDY)
+        polatory_enable_clang_tidy()
+    endif()
 endif()
 find_package(Boost 1.67.0 REQUIRED)
 

@@ -54,7 +54,9 @@ public:
       particles.resetForcesAndPotential();
     });
 
-    fmm_->execute(FFmmM2L | FFmmL2L | FFmmL2P | FFmmP2P);
+    // clang-tidy complains for some reason if these executions are merged.
+    fmm_->execute(FFmmM2L | FFmmL2L | FFmmL2P);
+    fmm_->execute(FFmmP2P);
 
     return potentials();
   }

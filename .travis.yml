@@ -94,7 +94,7 @@ script:
   - docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0"
   - docker exec test sh -c "cd polatory/build && ninja"
   - docker exec test sh -c "cd polatory/build && $CTEST -VV"
-  - docker exec test sh -c "cd polatory && tools/inspection/inspect"
+  - docker exec test sh -c "cd polatory && tools/run-cpplint"
   - docker exec test sh -c "cd polatory/build && ninja install"
 
 branches:

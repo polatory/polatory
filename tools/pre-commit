@@ -2,4 +2,4 @@
 
 # Copy this file to .git/hooks/ when you have cloned the repo.
 
-tools/inspection/inspect
+tools/run-cpplint
