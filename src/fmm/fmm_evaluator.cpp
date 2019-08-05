@@ -6,12 +6,12 @@
 #include <cassert>
 #include <vector>
 
-#include <polatory/third_party/ScalFMM/Components/FTypedLeaf.hpp>
-#include <polatory/third_party/ScalFMM/Containers/FOctree.hpp>
-#include <polatory/third_party/ScalFMM/Core/FFmmAlgorithmThreadTsm.hpp>
-#include <polatory/third_party/ScalFMM/Kernels/Chebyshev/FChebCell.hpp>
-#include <polatory/third_party/ScalFMM/Kernels/Chebyshev/FChebSymKernel.hpp>
-#include <polatory/third_party/ScalFMM/Kernels/P2P/FP2PParticleContainerIndexed.hpp>
+#include <ScalFMM/Components/FTypedLeaf.hpp>
+#include <ScalFMM/Containers/FOctree.hpp>
+#include <ScalFMM/Core/FFmmAlgorithmThreadTsm.hpp>
+#include <ScalFMM/Kernels/Chebyshev/FChebCell.hpp>
+#include <ScalFMM/Kernels/Chebyshev/FChebSymKernel.hpp>
+#include <ScalFMM/Kernels/P2P/FP2PParticleContainerIndexed.hpp>
 
 #include "fmm_rbf_kernel.hpp"
 

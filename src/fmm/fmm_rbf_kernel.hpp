@@ -5,8 +5,9 @@
 #include <cmath>
 #include <memory>
 
+#include <ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
+
 #include <polatory/rbf/rbf_base.hpp>
-#include <polatory/third_party/ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
 
 namespace polatory {
 namespace fmm {

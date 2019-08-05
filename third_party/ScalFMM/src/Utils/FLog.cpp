@@ -1,6 +1,6 @@
 // See LICENCE file at project root
 
-#include <polatory/third_party/ScalFMM/Utils/FLog.hpp>
+#include <ScalFMM/Utils/FLog.hpp>
 
 #ifdef SCALFMM_USE_LOG
 
