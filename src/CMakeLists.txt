@@ -4,7 +4,10 @@ find_package(OpenMP REQUIRED)
 
 set(TARGET polatory)
 
-file(GLOB_RECURSE SOURCES "*.cpp")
+file(GLOB_RECURSE SOURCES
+    "*.cpp"
+    "${PROJECT_SOURCE_DIR}/third_party/ScalFMM/src/*.cpp"
+)
 add_library(${TARGET} STATIC ${SOURCES})
 
 if(UNIX)
@@ -39,6 +42,9 @@ target_include_directories(${TARGET} PUBLIC
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR}
     ${VCPKG_INCLUDE_DIR}
+)
+target_include_directories(${TARGET} PRIVATE
+    ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
 
 if(UNIX)

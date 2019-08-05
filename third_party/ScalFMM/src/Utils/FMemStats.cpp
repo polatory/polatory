@@ -1,5 +1,5 @@
 // See LICENCE file at project root
-#include <polatory/third_party/ScalFMM/Utils/FMemStats.h>
+#include <ScalFMM/Utils/FMemStats.h>
 
 FMemStats FMemStats::controler;
 

@@ -225,7 +225,6 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | polynomial             | Polynomial part of RBF interpolant.              |
 | preconditioner         | The preconditioner used with Krylov subspace methods. |
 | rbf                    | Definition of RBFs/covariance functions.         |
-| third_party            | Third party libraries.                           |
 
 ## Acknowledgements
 
