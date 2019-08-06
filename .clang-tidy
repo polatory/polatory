@@ -5,6 +5,7 @@ Checks: '-*
   ,clang-analyzer-*
   ,cppcoreguidelines-*
   ,-cppcoreguidelines-pro-bounds-pointer-arithmetic
+  ,google-*
   ,misc-*
   ,modernize-*
   ,-modernize-use-auto
