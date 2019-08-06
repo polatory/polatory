@@ -107,7 +107,7 @@ script:
       docker exec test sh -c "cd polatory/build && $CTEST -V";
       docker exec test sh -c "cd polatory/build && ninja install";
     fi
-  - if [ "TRAVIS_BUILD_TYPE" == "static-analysis" ]; then
+  - if [ "$TRAVIS_BUILD_TYPE" == "static-analysis" ]; then
       docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0 -DCLANG_TIDY=ON";
       docker exec test sh -c "cd polatory/build && ninja clang-tidy";
       docker exec test sh -c "cd polatory && tools/run-cpplint";
