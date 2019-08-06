@@ -7,7 +7,7 @@ services:
 
 env:
   global:
-    - MAKE_JOBS=$(($(nproc)+1))
+    - MAKE_JOBS="$(($(nproc) + 1))"
     - MAKEFLAGS=-j$MAKE_JOBS
     - OMP_NUM_THREADS=$(nproc)
 
