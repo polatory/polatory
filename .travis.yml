@@ -17,21 +17,31 @@ matrix:
       - UBUNTU_VERSION=16.04
       - CMAKE=/root/cmake-3.9.6-Linux-x86_64/bin/cmake
       - CTEST=/root/cmake-3.9.6-Linux-x86_64/bin/ctest
+      - TRAVIS_BUILD_TYPE=test
     - env:
       - CXX=clang++
       - UBUNTU_VERSION=16.04
       - CMAKE=/root/cmake-3.9.6-Linux-x86_64/bin/cmake
       - CTEST=/root/cmake-3.9.6-Linux-x86_64/bin/ctest
+      - TRAVIS_BUILD_TYPE=test
     - env:
       - CXX=g++
       - UBUNTU_VERSION=18.04
       - CMAKE=cmake
       - CTEST=ctest
+      - TRAVIS_BUILD_TYPE=test
     - env:
       - CXX=clang++
       - UBUNTU_VERSION=18.04
       - CMAKE=cmake
       - CTEST=ctest
+      - TRAVIS_BUILD_TYPE=test
+    - name: "Static analysis"
+      env:
+      - CXX=clang++
+      - UBUNTU_VERSION=18.04
+      - CMAKE=cmake
+      - TRAVIS_BUILD_TYPE=static-analysis
 
 cache:
   directories:
@@ -91,11 +101,17 @@ before_script:
   - docker exec test sh -c "cd polatory && mkdir build"
 
 script:
-  - docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0"
-  - docker exec test sh -c "cd polatory/build && ninja"
-  - docker exec test sh -c "cd polatory/build && $CTEST -VV"
-  - docker exec test sh -c "cd polatory && tools/run-cpplint"
-  - docker exec test sh -c "cd polatory/build && ninja install"
+  - if [ "$TRAVIS_BUILD_TYPE" == "test" ]; then
+      docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0";
+      docker exec test sh -c "cd polatory/build && ninja";
+      docker exec test sh -c "cd polatory/build && $CTEST -V";
+      docker exec test sh -c "cd polatory/build && ninja install";
+    fi
+  - if [ "TRAVIS_BUILD_TYPE" == "static-analysis" ]; then
+      docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0 -DCLANG_TIDY=ON";
+      docker exec test sh -c "cd polatory/build && ninja clang-tidy";
+      docker exec test sh -c "cd polatory && tools/run-cpplint";
+    fi
 
 branches:
   only:

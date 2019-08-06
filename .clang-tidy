@@ -6,7 +6,6 @@ Checks: '-*
   ,cppcoreguidelines-*
   ,-cppcoreguidelines-pro-bounds-pointer-arithmetic
   ,misc-*
-  ,-misc-unused-parameters
   ,modernize-*
   ,-modernize-use-auto
   ,performance-*

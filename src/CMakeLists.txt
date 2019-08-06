@@ -10,7 +10,7 @@ file(GLOB_RECURSE SOURCES
 )
 add_library(${TARGET} STATIC ${SOURCES})
 
-if(NOT POLATORY_CLANG_TIDY)
+if(NOT CLANG_TIDY)
     # clang-tidy 6 does not work well with OpenMP pragmas.
     target_compile_options(${TARGET} PUBLIC ${OpenMP_CXX_FLAGS})
 endif()
