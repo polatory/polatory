@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+cd $(dirname $0)/..
+
+find benchmark/ examples/ include/ src/ test/ '(' \
+    -name '*.cpp' -or \
+    -name '*.hpp' \
+  ')' -type f -print0 \
+  | xargs -0 -n4 -P"$(nproc)" python tools/cpplint/cpplint.py --quiet --filter=-whitespace/braces,-whitespace/indent,-whitespace/line_length,-whitespace/parens

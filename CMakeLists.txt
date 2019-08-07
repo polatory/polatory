@@ -26,6 +26,8 @@ find_package(Boost 1.67.0 REQUIRED)
 
 option(USE_PREBUILT_BOOST "Use prebuilt Boost libraries specified manually. This option takes effect only on MSVC.")
 
+option(ENABLE_CLANG_TIDY "Enable clang-tidy target. This option should not be used for code generation because it disables OpenMP.")
+
 if(UNIX)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
         message(FATAL_ERROR "Not supported compiler.")
@@ -76,6 +78,10 @@ elseif(MSVC)
     )
 else()
     message(FATAL_ERROR "Not supported system.")
+endif()
+
+if(ENABLE_CLANG_TIDY)
+    polatory_enable_clang_tidy()
 endif()
 
 add_subdirectory(benchmark)

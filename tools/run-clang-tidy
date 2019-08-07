@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+# https://github.com/chainer/chainer/blob/master/chainerx_cc/scripts/run-clang-tidy.sh
+
+source_dir="$(dirname $0)/.."
+build_dir="$(realpath $PWD)"
+rel_source_dir="$(python -c 'import os; print(os.path.relpath("'$source_dir'", "'$build_dir'"))')"
+
+if [ ! -f "compile_commands.json" ]; then
+  echo "compile_commands.json is not found in the current directory." >&2;
+  exit 1;
+fi
+
+find "$rel_source_dir"/benchmark/ "$rel_source_dir"/examples/ "$rel_source_dir"/src/ "$rel_source_dir"/test/ '(' \
+    -name '*.cpp' \
+  ')' -type f -print0 \
+  | xargs -0 -n1 -P"$(nproc)" clang-tidy -quiet

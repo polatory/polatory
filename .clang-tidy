@@ -1,0 +1,17 @@
+Checks: '-*
+  ,boost-*
+  ,bugprone-*
+  ,cert-*
+  ,clang-analyzer-*
+  ,cppcoreguidelines-*
+  ,-cppcoreguidelines-pro-bounds-pointer-arithmetic
+  ,google-*
+  ,misc-*
+  ,modernize-*
+  ,-modernize-use-auto
+  ,performance-*
+  ,readability-*
+  ,-readability-braces-around-statements
+  '
+HeaderFilterRegex: 'include/polatory/'
+WarningsAsErrors: '*'

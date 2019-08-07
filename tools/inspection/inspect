@@ -1,9 +1,0 @@
-#!/bin/sh
-
-cd $(dirname $0)/../..
-
-find benchmark/ examples/ include/ src/ test/ '(' \
-    -name '*.cpp' -or \
-    -name '*.hpp' \
-  ')' -type f -print0 \
-  | xargs -0 python tools/inspection/cpplint/cpplint.py --quiet --filter=-whitespace/braces,-whitespace/indent,-whitespace/line_length,-whitespace/parens

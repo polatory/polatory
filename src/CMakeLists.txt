@@ -10,13 +10,16 @@ file(GLOB_RECURSE SOURCES
 )
 add_library(${TARGET} STATIC ${SOURCES})
 
-if(UNIX)
+if(NOT ENABLE_CLANG_TIDY)
+    # clang-tidy 6 does not work well with OpenMP pragmas.
     target_compile_options(${TARGET} PUBLIC ${OpenMP_CXX_FLAGS})
+endif()
+
+if(UNIX)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
 elseif(MSVC)
-    target_compile_options(${TARGET} PUBLIC ${OpenMP_CXX_FLAGS})
     target_compile_definitions(${TARGET} PUBLIC
         -D_ENABLE_EXTENDED_ALIGNED_STORAGE
     )
