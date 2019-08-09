@@ -11,11 +11,9 @@ function(polatory_enable_ipo TARGET)
     #   https://gitlab.kitware.com/cmake/cmake/merge_requests/1721
     # However, it was broken in CMake 3.14 and fixed in 3.15.
     #   https://gitlab.kitware.com/cmake/cmake/issues/19571
-    if(CMAKE_VERSION VERSION_LESS 3.15)
-        if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-            target_compile_options(${TARGET} PRIVATE /GL)
-            target_link_libraries(${TARGET} PRIVATE -LTCG)
-        endif()
+    if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") AND (CMAKE_VERSION VERSION_LESS 3.15))
+        target_compile_options(${TARGET} PRIVATE /GL)
+        target_link_libraries(${TARGET} PRIVATE -LTCG)
     else()
         include(CheckIPOSupported)
         check_ipo_supported(RESULT ipo_supported OUTPUT output)
