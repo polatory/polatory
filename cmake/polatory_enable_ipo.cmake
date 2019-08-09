@@ -6,19 +6,21 @@ function(polatory_enable_ipo TARGET)
         return()
     endif()
 
-    # See https://gitlab.kitware.com/cmake/cmake/merge_requests/1721
-    if(CMAKE_VERSION VERSION_LESS 3.12)
+    # IPO support for MSVC was added in CMake 3.12.
+    #   https://gitlab.kitware.com/cmake/cmake/issues/18189
+    #   https://gitlab.kitware.com/cmake/cmake/merge_requests/1721
+    # However, it was broken in CMake 3.14 and fixed in 3.15.
+    #   https://gitlab.kitware.com/cmake/cmake/issues/19571
+    if(CMAKE_VERSION VERSION_LESS 3.15)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
             target_compile_options(${TARGET} PRIVATE /GL)
             target_link_libraries(${TARGET} PRIVATE -LTCG)
-            # NB: This variable also affects other targets in the same directory.
-            set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG" PARENT_SCOPE)
         endif()
     else()
         include(CheckIPOSupported)
         check_ipo_supported(RESULT ipo_supported OUTPUT output)
         if(ipo_supported)
-            set_property(TARGET ${TARGET} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+            set_property(TARGET ${TARGET} PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
         else()
             message(WARNING "${output}")
         endif()
