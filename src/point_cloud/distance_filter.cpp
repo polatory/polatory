@@ -11,18 +11,18 @@ namespace polatory {
 namespace point_cloud {
 
 distance_filter::distance_filter(const geometry::points3d& points, double distance)
-  : n_points_(points.rows()) {
+  : n_points_(static_cast<index_t>(points.rows())) {
   if (distance <= 0.0)
     throw common::invalid_argument("distance > 0.0");
 
   kdtree tree(points, true);
 
-  std::vector<size_t> nn_indices;
+  std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
 
-  std::set<size_t> indices_to_remove;
+  std::set<index_t> indices_to_remove;
 
-  for (size_t i = 0; i < n_points_; i++) {
+  for (index_t i = 0; i < n_points_; i++) {
     if (indices_to_remove.find(i) != indices_to_remove.end())
       continue;
 
@@ -36,7 +36,7 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
     }
   }
 
-  for (size_t i = 0; i < n_points_; i++) {
+  for (index_t i = 0; i < n_points_; i++) {
     if (indices_to_remove.find(i) == indices_to_remove.end()) {
       filtered_indices_.push_back(i);
     }

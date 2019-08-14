@@ -16,7 +16,7 @@ namespace {
 
 struct residual {
   residual(model *model,
-    size_t n_pairs, double distance, double gamma, weight_function weight_fn)
+    index_t n_pairs, double distance, double gamma, weight_function weight_fn)
     : model_(model)
     , n_pairs_(n_pairs)
     , distance_(distance)
@@ -35,14 +35,14 @@ struct residual {
 
 private:
   model *model_;
-  const size_t n_pairs_;
+  const index_t n_pairs_;
   const double distance_;
   const double gamma_;
   const weight_function weight_fn_;
 };
 
 ceres::CostFunction* create_cost_function(model *model,
-  size_t n_pairs, double distance, double gamma, weight_function weight_fn) {
+  index_t n_pairs, double distance, double gamma, weight_function weight_fn) {
   auto cost_fn = new ceres::DynamicNumericDiffCostFunction<residual>(
     new residual(model, n_pairs, distance, gamma, weight_fn));
   cost_fn->AddParameterBlock(model->num_parameters());
@@ -62,13 +62,13 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
   auto& bin_distance = emp_variog.bin_distance();
   auto& bin_gamma = emp_variog.bin_gamma();
   auto& bin_num_pairs = emp_variog.bin_num_pairs();
-  auto n_bins = bin_num_pairs.size();
+  auto n_bins = static_cast<index_t>(bin_num_pairs.size());
 
   if (n_bins < n_params)
     throw common::invalid_argument("n_bins >= n_params");
 
   ceres::Problem problem;
-  for (size_t i = 0; i < n_bins; i++) {
+  for (index_t i = 0; i < n_bins; i++) {
     if (bin_num_pairs[i] == 0)
       continue;
 
@@ -78,7 +78,7 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
 
   auto lower_bounds = model2->parameter_lower_bounds();
   auto upper_bounds = model2->parameter_upper_bounds();
-  for (size_t i = 0; i < n_params; i++) {
+  for (auto i = 0; i < n_params; i++) {
     problem.SetParameterLowerBound(params_.data(), i, lower_bounds[i]);
     problem.SetParameterUpperBound(params_.data(), i, upper_bounds[i]);
   }

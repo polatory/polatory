@@ -8,6 +8,7 @@
 
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace polynomial {
@@ -20,7 +21,7 @@ public:
   }
 
   Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {
-    size_t n_points = points.rows();
+    auto n_points = static_cast<index_t>(points.rows());
 
     Eigen::MatrixXd result(basis_size(), n_points);
 
@@ -29,13 +30,13 @@ public:
       switch (degree()) {
       case 0:
         // 1
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           result(0, i) = 1.0;
         }
         break;
       case 1:
         // 1, x
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           auto p = points.row(i);
           result(0, i) = 1.0;
           result(1, i) = p(0);
@@ -43,7 +44,7 @@ public:
         break;
       case 2:
         // 1, x, x^2
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           auto p = points.row(i);
           result(0, i) = 1.0;
           result(1, i) = p(0);
@@ -60,13 +61,13 @@ public:
       switch (degree()) {
       case 0:
         // 1
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           result(0, i) = 1.0;
         }
         break;
       case 1:
         // 1, x, y
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           auto p = points.row(i);
           result(0, i) = 1.0;
           result(1, i) = p(0);
@@ -75,7 +76,7 @@ public:
         break;
       case 2:
         // 1, x, y, x^2, xy, y^2
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           auto p = points.row(i);
           result(0, i) = 1.0;
           result(1, i) = p(0);
@@ -95,13 +96,13 @@ public:
       switch (degree()) {
       case 0:
         // 1
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           result(0, i) = 1.0;
         }
         break;
       case 1:
         // 1, x, y, z
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           auto p = points.row(i);
           result(0, i) = 1.0;
           result(1, i) = p(0);
@@ -111,7 +112,7 @@ public:
         break;
       case 2:
         // 1, x, y, z, x^2, xy, xz, y^2, yz, z^2
-        for (size_t i = 0; i < n_points; i++) {
+        for (index_t i = 0; i < n_points; i++) {
           auto p = points.row(i);
           result(0, i) = 1.0;
           result(1, i) = p(0);

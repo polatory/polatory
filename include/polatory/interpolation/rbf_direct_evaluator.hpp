@@ -4,11 +4,11 @@
 
 #include <memory>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -36,13 +36,13 @@ public:
 
 private:
   const model model_;
-  const size_t n_poly_basis_;
-  const size_t n_src_points_;
+  const index_t n_poly_basis_;
+  const index_t n_src_points_;
   const geometry::points3d src_points_;
 
   std::unique_ptr<PolynomialEvaluator> p_;
 
-  size_t n_fld_points_;
+  index_t n_fld_points_;
   geometry::points3d fld_points_;
   common::valuesd weights_;
 };

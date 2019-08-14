@@ -4,6 +4,8 @@
 
 #include <cassert>
 
+#include <polatory/types.hpp>
+
 namespace polatory {
 namespace polynomial {
 
@@ -19,7 +21,7 @@ public:
 
   virtual ~polynomial_basis_base() = default;
 
-  size_t basis_size() const {
+  index_t basis_size() const {
     return basis_size(dimension_, degree_);
   }
 
@@ -31,11 +33,11 @@ public:
     return dimension_;
   }
 
-  static size_t basis_size(int dimension, int degree) {
+  static index_t basis_size(int dimension, int degree) {
     if (degree < 0) return 0;
     assert(dimension >= 1 && dimension <= 3);
 
-    size_t k = degree + 1;
+    auto k = static_cast<index_t>(degree) + 1;
     switch (dimension) {
     case 1:
       return k;
@@ -54,7 +56,7 @@ public:
 private:
   const int dimension_;
   const int degree_;
-  const size_t basis_size_;
+  const index_t basis_size_;
 };
 
 }  // namespace polynomial

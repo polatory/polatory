@@ -8,22 +8,22 @@ namespace polatory {
 namespace kriging {
 
 const weight_function weight_functions::n_pairs =
-  [](size_t np, double d, double model_g) { return std::sqrt(np); };
+  [](index_t np, double, double) { return std::sqrt(np); };
 
 const weight_function weight_functions::n_pairs_over_distance_squared =
-  [](size_t np, double d, double model_g) { return std::sqrt(np) / std::abs(d); };
+  [](index_t np, double d, double) { return std::sqrt(np) / std::abs(d); };
 
 const weight_function weight_functions::n_pairs_over_model_gamma_squared =
-  [](size_t np, double d, double model_g) { return std::sqrt(np) / std::abs(model_g); };
+  [](index_t np, double, double model_g) { return std::sqrt(np) / std::abs(model_g); };
 
 const weight_function weight_functions::one =
-  [](size_t np, double d, double model_g) { return 1.0; };
+  [](index_t, double, double) { return 1.0; };
 
 const weight_function weight_functions::one_over_distance_squared =
-  [](size_t np, double d, double model_g) { return 1.0 / std::abs(d); };
+  [](index_t, double d, double) { return 1.0 / std::abs(d); };
 
 const weight_function weight_functions::one_over_model_gamma_squared =
-  [](size_t np, double d, double model_g) { return 1.0 / std::abs(model_g); };
+  [](index_t, double, double model_g) { return 1.0 / std::abs(model_g); };
 
 }  // namespace kriging
 }  // namespace polatory

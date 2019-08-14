@@ -16,10 +16,13 @@ if(NOT ENABLE_CLANG_TIDY)
 endif()
 
 if(UNIX)
+    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Werror)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
 elseif(MSVC)
+    # C4702(unreachable code) is disabled as it is reported in library code.
+    target_compile_options(${TARGET} PUBLIC /W4 /wd4702 /WX)
     target_compile_definitions(${TARGET} PUBLIC
         -D_ENABLE_EXTENDED_ALIGNED_STORAGE
     )
@@ -49,6 +52,31 @@ target_include_directories(${TARGET} PUBLIC
 target_include_directories(${TARGET} PRIVATE
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
+
+# TODO(mizuno): clean up.
+if(UNIX)
+    target_compile_options(${TARGET} PUBLIC
+        "-isystem \"${Boost_INCLUDE_DIR}\""
+        "-isystem \"${EIGEN3_INCLUDE_DIR}\""
+        "-isystem \"${MKL_INCLUDE_DIR}\""
+        "-isystem \"${VCPKG_INCLUDE_DIR}\""
+    )
+    target_compile_options(${TARGET} PRIVATE
+        "-isystem \"${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include\""
+    )
+elseif(MSVC)
+    target_compile_options(${TARGET} PUBLIC
+        /experimental:external
+        "SHELL:/external:I \"${Boost_INCLUDE_DIR}\""
+        "SHELL:/external:I \"${EIGEN3_INCLUDE_DIR}\""
+        "SHELL:/external:I \"${MKL_INCLUDE_DIR}\""
+        "SHELL:/external:I \"${VCPKG_INCLUDE_DIR}\""
+        /external:W0
+    )
+    target_compile_options(${TARGET} PRIVATE
+        "SHELL:/external:I \"${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include\""
+    )
+endif()
 
 if(UNIX)
     target_link_libraries(${TARGET} INTERFACE

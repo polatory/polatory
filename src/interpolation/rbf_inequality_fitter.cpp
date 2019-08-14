@@ -18,25 +18,25 @@ namespace interpolation {
 rbf_inequality_fitter::rbf_inequality_fitter(const model& model, const geometry::points3d& points)
   : model_(model)
   , points_(points)
-  , n_points_(points.rows())
+  , n_points_(static_cast<index_t>(points.rows()))
   , n_poly_basis_(model.poly_basis_size())
   , bbox_(geometry::bbox3d::from_points(points)) {
 }
 
-std::pair<std::vector<size_t>, common::valuesd>
+std::pair<std::vector<index_t>, common::valuesd>
 rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd& values_lb, const common::valuesd& values_ub,
                            double absolute_tolerance) const {
   auto not_nan = [](double d) { return !std::isnan(d); };
 
   auto centers = arg_where(values, not_nan);
-  auto n_eq = centers.size();
+  auto n_eq = static_cast<index_t>(centers.size());
 
   auto idcs_lb = arg_where(values_lb, not_nan);
   auto idcs_ub = arg_where(values_ub, not_nan);
-  std::set<size_t> active_idcs_lb;
-  std::set<size_t> active_idcs_ub;
+  std::set<index_t> active_idcs_lb;
+  std::set<index_t> active_idcs_ub;
 
-  std::vector<size_t> ineq_idcs;
+  std::vector<index_t> ineq_idcs;
   std::set_union(idcs_lb.begin(), idcs_lb.end(),
                  idcs_ub.begin(), idcs_ub.end(),
                  std::back_inserter(ineq_idcs));
@@ -53,7 +53,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
     std::cout << "Active lower bounds: " << active_idcs_lb.size() << " / " << idcs_lb.size() << std::endl;
     std::cout << "Active upper bounds: " << active_idcs_ub.size() << " / " << idcs_ub.size() << std::endl;
 
-    std::vector<size_t> active_ineq_idcs;
+    std::vector<index_t> active_ineq_idcs;
     std::set_union(active_idcs_lb.begin(), active_idcs_lb.end(),
                    active_idcs_ub.begin(), active_idcs_ub.end(),
                    std::back_inserter(active_ineq_idcs));
@@ -63,7 +63,9 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
 
     common::valuesd values_fit;
     if (!centers.empty()) {
-      auto tree_height = fmm::fmm_tree_height(centers.size());
+      auto n_centers = static_cast<index_t>(centers.size());
+
+      auto tree_height = fmm::fmm_tree_height(n_centers);
       if (tree_height != last_tree_height) {
         solver = std::make_unique<rbf_solver>(model_, tree_height, bbox_);
         res_eval = std::make_unique<rbf_evaluator<>>(model_, tree_height, bbox_);
@@ -73,7 +75,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       auto center_points = common::take_rows(points_, centers);
 
       auto center_values = common::take_rows(values, centers);
-      for (size_t i = n_eq; i < centers.size(); i++) {
+      for (index_t i = n_eq; i < n_centers; i++) {
         auto idx = centers[i];
         if (active_idcs_lb.count(idx)) {
           center_values(i) = values_lb(idx);
@@ -83,13 +85,13 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       }
 
       center_weights = common::take_rows(weights, centers);
-      center_weights.conservativeResize(centers.size() + n_poly_basis_);
+      center_weights.conservativeResize(n_centers + n_poly_basis_);
       center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
 
       solver->set_points(center_points);
       center_weights = solver->solve(center_values, absolute_tolerance, center_weights);
 
-      for (size_t i = 0; i < centers.size(); i++) {
+      for (index_t i = 0; i < n_centers; i++) {
         auto idx = centers[i];
         weights(idx) = center_weights(i);
       }
@@ -102,8 +104,9 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       values_fit = common::valuesd::Zero(ineq_idcs.size());
     }
 
+    auto n_ineq = static_cast<index_t>(ineq_idcs.size());
     auto active_set_changed = false;
-    for (size_t i = 0; i < ineq_idcs.size(); i++) {
+    for (index_t i = 0; i < n_ineq; i++) {
       auto idx = ineq_idcs[i];
 
       if (std::find(idcs_lb.begin(), idcs_lb.end(), idx) != idcs_lb.end()) {
@@ -141,11 +144,13 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
   return std::make_pair(std::move(centers), std::move(center_weights));
 }
 
-std::vector<size_t> rbf_inequality_fitter::arg_where(const common::valuesd& v,
-                                                     std::function<bool(double)> predicate) {
-  std::vector<size_t> idcs;
+std::vector<index_t> rbf_inequality_fitter::arg_where(
+    const common::valuesd& v,
+    std::function<bool(double)> predicate) {
+  std::vector<index_t> idcs;
 
-  for (size_t i = 0; i < v.size(); i++) {
+  auto size = static_cast<index_t>(v.size());
+  for (index_t i = 0; i < size; i++) {
     if (predicate(v(i)))
       idcs.push_back(i);
   }

@@ -16,11 +16,12 @@
 namespace polatory {
 namespace kriging {
 
-common::valuesd k_fold_cross_validation(const model& model,
-                                        const geometry::points3d& points, const common::valuesd& values,
-                                        double absolute_tolerance,
-                                        size_t k) {
-  size_t n_points = points.rows();
+common::valuesd k_fold_cross_validation(
+    const model& model,
+    const geometry::points3d& points, const common::valuesd& values,
+    double absolute_tolerance,
+    index_t k) {
+  auto n_points = static_cast<index_t>(points.rows());
   if (n_points < 2)
     throw common::invalid_argument("points.row() >= 2");
 
@@ -30,22 +31,22 @@ common::valuesd k_fold_cross_validation(const model& model,
   std::random_device rd;
   std::mt19937 gen(rd());
 
-  std::vector<size_t> indices(n_points);
+  std::vector<index_t> indices(n_points);
   std::iota(indices.begin(), indices.end(), 0);
   std::shuffle(indices.begin(), indices.end(), gen);
 
   auto bbox = geometry::bbox3d::from_points(points);
   common::valuesd residuals(n_points);
 
-  double n_k = static_cast<double>(n_points) / k;
-  for (size_t i = 0; i < k; i++) {
-    size_t a = std::round(i * n_k);
-    size_t b = std::round((i + 1) * n_k);
-    size_t test_set_size = b - a;
-    size_t train_set_size = n_points - test_set_size;
+  auto n_k = static_cast<double>(n_points) / k;
+  for (index_t i = 0; i < k; i++) {
+    auto a = static_cast<index_t>(std::round(i * n_k));
+    auto b = static_cast<index_t>(std::round((i + 1) * n_k));
+    auto test_set_size = b - a;
+    auto train_set_size = n_points - test_set_size;
 
-    std::vector<size_t> train_set(train_set_size);
-    std::vector<size_t> test_set(test_set_size);
+    std::vector<index_t> train_set(train_set_size);
+    std::vector<index_t> test_set(test_set_size);
 
     std::copy(indices.begin(), indices.begin() + a, train_set.begin());
     std::copy(indices.begin() + a, indices.begin() + b, test_set.begin());
@@ -64,7 +65,7 @@ common::valuesd k_fold_cross_validation(const model& model,
     eval.set_weights(weights);
     auto test_values_fit = eval.evaluate_points(test_points);
 
-    for (size_t j = 0; j < test_set_size; j++) {
+    for (index_t j = 0; j < test_set_size; j++) {
       residuals(test_set[j]) = test_values(j) - test_values_fit(j);
     }
   }

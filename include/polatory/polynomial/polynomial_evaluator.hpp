@@ -6,8 +6,8 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace polynomial {
@@ -36,7 +36,7 @@ public:
     weights_ = weights;
   }
 
-  size_t size() const {
+  index_t size() const {
     return basis_.basis_size();
   }
 

@@ -16,12 +16,12 @@
 namespace polatory {
 namespace preconditioner {
 
-size_t domain::size() const {
-  return point_indices.size();
+index_t domain::size() const {
+  return static_cast<index_t>(point_indices.size());
 }
 
-void domain::merge_poly_points(const std::vector<size_t>& poly_point_idcs) {
-  std::vector<size_t> new_point_indices(poly_point_idcs.begin(), poly_point_idcs.end());
+void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
+  std::vector<index_t> new_point_indices(poly_point_idcs.begin(), poly_point_idcs.end());
   std::vector<bool> new_inner_point(new_point_indices.size());
 
   common::zip_sort(
@@ -30,7 +30,8 @@ void domain::merge_poly_points(const std::vector<size_t>& poly_point_idcs) {
     [](const auto& a, const auto& b) { return a.first < b.first; }
   );
 
-  for (size_t i = 0; i < poly_point_idcs.size(); i++) {
+  auto n_poly_points = static_cast<index_t>(poly_point_idcs.size());
+  for (index_t i = 0; i < n_poly_points; i++) {
     auto it = common::bsearch_eq(point_indices.begin(), point_indices.end(), poly_point_idcs[i]);
     if (it == point_indices.end())
       continue;
@@ -52,10 +53,10 @@ void domain::merge_poly_points(const std::vector<size_t>& poly_point_idcs) {
 }
 
 domain_divider::domain_divider(const geometry::points3d& points,
-                               const std::vector<size_t>& point_indices,
-                               const std::vector<size_t>& poly_point_indices)
+                               const std::vector<index_t>& point_indices,
+                               const std::vector<index_t>& poly_point_indices)
   : points_(points)
-  , size_of_root_(point_indices.size())
+  , size_of_root_(static_cast<index_t>(point_indices.size()))
   , poly_point_idcs_(poly_point_indices) {
   auto root = domain();
 
@@ -71,21 +72,24 @@ domain_divider::domain_divider(const geometry::points3d& points,
   divide_domains();
 }
 
-std::vector<size_t> domain_divider::choose_coarse_points(double ratio) const {
-  std::vector<size_t> coarse_idcs(poly_point_idcs_.begin(), poly_point_idcs_.end());
+std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
+  std::vector<index_t> coarse_idcs(poly_point_idcs_.begin(), poly_point_idcs_.end());
 
   std::random_device rd;
   std::mt19937 gen(rd());
 
+  auto n_poly_points = static_cast<index_t>(poly_point_idcs_.size());
   for (const auto& d : domains_) {
-    std::vector<size_t> shuffled(d.size() - poly_point_idcs_.size());
-    std::iota(shuffled.begin(), shuffled.end(), poly_point_idcs_.size());
+    std::vector<index_t> shuffled(d.size() - n_poly_points);
+    std::iota(shuffled.begin(), shuffled.end(), n_poly_points);
     std::shuffle(shuffled.begin(), shuffled.end(), gen);
 
     auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true);
-    auto n_coarse = std::max(size_t(1), static_cast<size_t>(round_half_to_even(ratio * n_inner_pts)));
+    auto n_coarse = std::max(
+        index_t{ 1 },
+        static_cast<index_t>(round_half_to_even(ratio * n_inner_pts)));
 
-    size_t count = 0;
+    auto count = index_t{ 0 };
     for (auto i : shuffled) {
       if (count == n_coarse)
         break;
@@ -107,7 +111,7 @@ const std::list<domain>& domain_divider::domains() const {
 void domain_divider::divide_domain(std::list<domain>::iterator it) {
   auto& d = *it;
 
-  size_t split_axis;
+  auto split_axis = index_t{ 0 };
   (void)d.bbox_.size().maxCoeff(&split_axis);
 
   common::zip_sort(
@@ -123,15 +127,15 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
     overlap_quota;
   q = std::min(0.5, q);
 
-  auto n_pts = d.size();
-  auto n_overlap_pts = static_cast<size_t>(round_half_to_even(q * n_pts));
-  auto n_subdomain_pts = static_cast<size_t>(std::ceil((n_pts + n_overlap_pts) / 2.0));
+  auto n_pts = static_cast<index_t>(d.size());
+  auto n_overlap_pts = static_cast<index_t>(round_half_to_even(q * n_pts));
+  auto n_subdomain_pts = static_cast<index_t>(std::ceil((n_pts + n_overlap_pts) / 2.0));
   auto left_partition = n_pts - n_subdomain_pts;
   auto right_partition = n_subdomain_pts;
-  auto mid = static_cast<size_t>(round_half_to_even((left_partition + right_partition) / 2.0));
+  auto mid = static_cast<index_t>(round_half_to_even((left_partition + right_partition) / 2.0));
 
   domain left;
-  left.point_indices = std::vector<size_t>(
+  left.point_indices = std::vector<index_t>(
     d.point_indices.begin(),
     d.point_indices.begin() + right_partition);
 
@@ -143,7 +147,7 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
   left.bbox_ = domain_bbox(left);
 
   domain right;
-  right.point_indices = std::vector<size_t>(
+  right.point_indices = std::vector<index_t>(
     d.point_indices.begin() + left_partition,
     d.point_indices.end());
 

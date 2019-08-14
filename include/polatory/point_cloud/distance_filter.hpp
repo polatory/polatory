@@ -12,6 +12,7 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace point_cloud {
@@ -34,9 +35,9 @@ public:
   }
 
 private:
-  const size_t n_points_;
+  const index_t n_points_;
 
-  std::vector<size_t> filtered_indices_;
+  std::vector<index_t> filtered_indices_;
 };
 
 }  // namespace point_cloud

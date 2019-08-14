@@ -1,12 +1,10 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <vector>
-
 #include <gtest/gtest.h>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
+#include <polatory/types.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::point3d;

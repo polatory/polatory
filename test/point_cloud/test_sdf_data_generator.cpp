@@ -4,11 +4,11 @@
 
 #include <gtest/gtest.h>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
+#include <polatory/types.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::point3d;
@@ -18,11 +18,12 @@ using polatory::geometry::vectors3d;
 using polatory::point_cloud::kdtree;
 using polatory::point_cloud::random_points;
 using polatory::point_cloud::sdf_data_generator;
+using polatory::index_t;
 
 TEST(sdf_data_generator, trivial) {
-  size_t n_points = 512;
-  auto min_distance = 1e-2;
-  auto max_distance = 5e-1;
+  const auto n_points = index_t{ 512 };
+  const auto min_distance = 1e-2;
+  const auto max_distance = 5e-1;
 
   points3d points = random_points(sphere3d(), n_points);
   vectors3d normals = (points + random_points(sphere3d(point3d::Zero(), 0.1), n_points))
@@ -36,10 +37,11 @@ TEST(sdf_data_generator, trivial) {
 
   kdtree tree(points, true);
 
-  std::vector<size_t> indices;
+  std::vector<index_t> indices;
   std::vector<double> distances;
 
-  for (size_t i = 0; i < sdf_points.rows(); i++) {
+  auto n_sdf_points = static_cast<index_t>(sdf_points.rows());
+  for (index_t i = 0; i < n_sdf_points; i++) {
     point3d sdf_point = sdf_points.row(i);
     auto sdf_value = sdf_values(i);
 

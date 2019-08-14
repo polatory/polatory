@@ -18,7 +18,7 @@ public:
     return 0;
   }
 
-  size_t num_parameters() const override {
+  int num_parameters() const override {
     return 2;
   }
 

@@ -9,6 +9,7 @@
 #include <polatory/common/exception.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/rbf/rbf_base.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 
@@ -42,7 +43,7 @@ public:
   }
 
   // Experimental function.
-  size_t num_parameters() const {
+  int num_parameters() const {
     return 1 + rbf_->num_parameters();
   }
 
@@ -67,7 +68,7 @@ public:
     return params;
   }
 
-  int poly_basis_size() const {
+  index_t poly_basis_size() const {
     return polynomial::polynomial_basis_base::basis_size(poly_dimension_, poly_degree_);
   }
 

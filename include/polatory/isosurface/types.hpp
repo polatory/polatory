@@ -10,13 +10,11 @@
 namespace polatory {
 namespace isosurface {
 
-using cell_index = uint64_t;
-
-using cell_index_difference = int64_t;
+using cell_index = int64_t;
 
 using cell_vector = Eigen::Vector3i;
 
-using vertex_index = size_t;
+using vertex_index = int64_t;
 
 using face = std::array<vertex_index, 3>;
 

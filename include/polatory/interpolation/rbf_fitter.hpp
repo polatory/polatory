@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace interpolation {

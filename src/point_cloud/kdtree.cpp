@@ -15,7 +15,7 @@ class kdtree::impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
 
 public:
-  using indices_and_distances = std::pair<std::vector<size_t>, std::vector<double>>;
+  using indices_and_distances = std::pair<std::vector<index_t>, std::vector<double>>;
 
   impl(const geometry::points3d& points, bool use_exact_search) {
     flann::Matrix<double> points_mat(const_cast<double *>(points.data()), points.rows(), 3);
@@ -29,18 +29,25 @@ public:
     }
   }
 
-  indices_and_distances knn_search(const geometry::point3d& point, size_t k) const {
+  indices_and_distances knn_search(const geometry::point3d& point, index_t k) const {
     flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
     (void)flann_index_->knnSearch(point_mat, indices_v, distances_v, k, params_knn_);
 
+    std::vector<index_t> indices;
+    indices.reserve(indices_v[0].size());
+
+    for (auto i : indices_v[0]) {
+      indices.push_back(static_cast<index_t>(i));
+    }
+
     for (auto& d : distances_v[0]) {
       d = std::sqrt(d);
     }
 
-    return std::make_pair(std::move(indices_v[0]), std::move(distances_v[0]));
+    return std::make_pair(std::move(indices), std::move(distances_v[0]));
   }
 
   indices_and_distances radius_search(const geometry::point3d& point, double radius) const {
@@ -48,13 +55,21 @@ public:
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
-    (void)flann_index_->radiusSearch(point_mat, indices_v, distances_v, radius * radius, params_radius_);
+    auto radius_sq = static_cast<float>(radius * radius);
+    (void)flann_index_->radiusSearch(point_mat, indices_v, distances_v, radius_sq, params_radius_);
+
+    std::vector<index_t> indices;
+    indices.reserve(indices_v[0].size());
+
+    for (auto i : indices_v[0]) {
+      indices.push_back(static_cast<index_t>(i));
+    }
 
     for (auto& d : distances_v[0]) {
       d = std::sqrt(d);
     }
 
-    return std::make_pair(std::move(indices_v[0]), std::move(distances_v[0]));
+    return std::make_pair(std::move(indices), std::move(distances_v[0]));
   }
 
 private:
@@ -69,7 +84,7 @@ kdtree::kdtree(const geometry::points3d& points, bool use_exact_search)
 
 kdtree::~kdtree() = default;
 
-kdtree::indices_and_distances kdtree::knn_search(const geometry::point3d& point, size_t k) const {
+kdtree::indices_and_distances kdtree::knn_search(const geometry::point3d& point, index_t k) const {
   if (k == 0)
     throw common::invalid_argument("k > 0");
 

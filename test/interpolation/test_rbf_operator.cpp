@@ -3,12 +3,12 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/types.hpp>
 
 #include "random_transformation.hpp"
 
@@ -19,11 +19,12 @@ using polatory::interpolation::rbf_operator;
 using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::rbf::cov_exponential;
+using polatory::index_t;
 
 namespace {
 
-void test_poly_degree(int poly_degree, size_t n_points) {
-  double absolute_tolerance = 1e-6;
+void test_poly_degree(int poly_degree, index_t n_points) {
+  auto absolute_tolerance = 1e-6;
 
   cov_exponential rbf({ 1.0, 0.2 });
   rbf.set_transformation(random_transformation());

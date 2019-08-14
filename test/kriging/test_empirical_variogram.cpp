@@ -6,11 +6,11 @@
 #include <boost/filesystem.hpp>
 #include <gtest/gtest.h>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/cuboid3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/point_cloud/random_points.hpp>
+#include <polatory/types.hpp>
 
 using polatory::common::valuesd;
 using polatory::geometry::cuboid3d;
@@ -18,9 +18,10 @@ using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::kriging::empirical_variogram;
 using polatory::point_cloud::random_points;
+using polatory::index_t;
 
 TEST(empirical_variogram, serialize) {
-  const size_t n_points = 100;
+  const auto n_points = index_t{ 100 };
 
   points3d points = random_points(cuboid3d(), n_points);
   valuesd values = valuesd::Random(n_points);
@@ -44,10 +45,10 @@ TEST(empirical_variogram, serialize) {
 }
 
 TEST(empirical_variogram, trivial) {
-  const size_t n_points = 4;
+  const auto n_points = index_t{ 4 };
 
   // Tetrahedron vertices separated from each other by a distance d.
-  double d = 0.5;
+  auto d = 0.5;
   points3d points(n_points, 3);
   points <<
     d * point3d(std::sqrt(3.0) / 3.0, 0.0, 0.0),
@@ -57,10 +58,10 @@ TEST(empirical_variogram, trivial) {
 
   valuesd values = valuesd::Random(n_points);
   valuesd centered = values.array() - values.mean();
-  double variance = centered.dot(centered) / static_cast<double>(n_points - 1);
+  auto variance = centered.dot(centered) / static_cast<double>(n_points - 1);
 
-  double bin_width = 0.2;
-  int n_bins = 5;
+  auto bin_width = 0.2;
+  auto n_bins = index_t{ 5 };
 
   empirical_variogram variog(points, values, bin_width, n_bins);
 
@@ -78,13 +79,13 @@ TEST(empirical_variogram, trivial) {
 }
 
 TEST(empirical_variogram, zero_points) {
-  const size_t n_points = 0;
+  const auto n_points = index_t{ 0 };
 
   points3d points(n_points, 3);
   valuesd values(n_points);
 
-  double bin_width = 0.2;
-  int n_bins = 5;
+  auto bin_width = 0.2;
+  auto n_bins = index_t{ 5 };
 
   empirical_variogram variog(points, values, bin_width, n_bins);
 

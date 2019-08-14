@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <polatory/common/exception.hpp>
-#include <polatory/common/quasi_random_sequence.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 
 namespace polatory {
@@ -31,14 +30,13 @@ sdf_data_generator::sdf_data_generator(
 
   kdtree tree(points, true);
 
-  std::vector<size_t> nn_indices;
+  std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
 
-  auto reduced_indices = common::quasi_random_sequence(((multiplication - 1.0) / 2.0) * points.rows());
-
-  size_t n_points = points.rows();
-  size_t n_max_sdf_points = n_points + 2 * reduced_indices.size();
-  size_t n_sdf_points = n_points;
+  auto n_points = static_cast<index_t>(points.rows());
+  auto n_reduced_points = static_cast<index_t>(((multiplication - 1.0) / 2.0) * n_points);
+  auto n_max_sdf_points = n_points + 2 * n_reduced_points;
+  auto n_sdf_points = n_points;
 
   sdf_points_ = geometry::points3d(n_max_sdf_points, 3);
   sdf_points_.topRows(n_points) = points_;
@@ -47,7 +45,7 @@ sdf_data_generator::sdf_data_generator(
   if (n_points == 0)
     return;
 
-  for (auto i : reduced_indices) {
+  for (index_t i = 0; i < n_reduced_points; i++) {
     auto p = points.row(i);
     auto n = normals.row(i);
 
@@ -81,7 +79,7 @@ sdf_data_generator::sdf_data_generator(
     n_sdf_points++;
   }
 
-  for (auto i : reduced_indices) {
+  for (index_t i = 0; i < n_reduced_points; i++) {
     auto p = points.row(i);
     auto n = normals.row(i);
 

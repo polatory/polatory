@@ -11,6 +11,7 @@
 using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
+using polatory::index_t;
 using polatory::kriging::empirical_variogram;
 using polatory::read_table;
 
@@ -29,7 +30,8 @@ int main(int argc, const char *argv[]) {
 
     std::cout << "Empirical variogram:" << std::endl
               << std::setw(12) << "n_pairs" << std::setw(12) << "distance" << std::setw(12) << "gamma" << std::endl;
-    for (size_t bin = 0; bin < bin_num_pairs.size(); bin++) {
+    auto n_bins = static_cast<index_t>(bin_num_pairs.size());
+    for (index_t bin = 0; bin < n_bins; bin++) {
       std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin] << std::setw(12) <<  bin_gamma[bin] << std::endl;
     }
 

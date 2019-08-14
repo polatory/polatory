@@ -8,12 +8,12 @@
 #include <gtest/gtest.h>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
+#include <polatory/types.hpp>
 
 #include "random_transformation.hpp"
 #include "sample_data.hpp"
@@ -25,12 +25,13 @@ using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_incremental_fitter;
 using polatory::model;
 using polatory::rbf::biharmonic3d;
+using polatory::index_t;
 
 TEST(rbf_incremental_fitter, trivial) {
-  const size_t n_surface_points = 4096;
-  const int poly_dimension = 3;
-  const int poly_degree = 0;
-  double absolute_tolerance = 1e-4;
+  const auto n_surface_points = index_t{ 4096 };
+  const auto poly_dimension = 3;
+  const auto poly_degree = 0;
+  const auto absolute_tolerance = 1e-4;
 
   points3d points;
   valuesd values;
@@ -41,7 +42,7 @@ TEST(rbf_incremental_fitter, trivial) {
 
   model model(rbf, poly_dimension, poly_degree);
 
-  std::vector<size_t> indices;
+  std::vector<index_t> indices;
   valuesd weights;
 
   rbf_incremental_fitter fitter(model, points);

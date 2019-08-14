@@ -9,7 +9,7 @@ namespace interpolation {
 
 rbf_direct_symmetric_evaluator::rbf_direct_symmetric_evaluator(const model& model, const geometry::points3d& points)
   : model_(model)
-  , n_points_(points.rows())
+  , n_points_(static_cast<index_t>(points.rows()))
   , n_poly_basis_(model.poly_basis_size())
   , points_(points) {
   if (n_poly_basis_ > 0) {
@@ -23,11 +23,11 @@ common::valuesd rbf_direct_symmetric_evaluator::evaluate() const {
 
   auto& rbf = model_.rbf();
   auto rbf_at_zero = rbf.evaluate_untransformed(0.0);
-  for (size_t i = 0; i < n_points_; i++) {
+  for (index_t i = 0; i < n_points_; i++) {
     y_accum[i] += weights_(i) * rbf_at_zero;
   }
-  for (size_t i = 0; i < n_points_ - 1; i++) {
-    for (size_t j = i + 1; j < n_points_; j++) {
+  for (index_t i = 0; i < n_points_ - 1; i++) {
+    for (index_t j = i + 1; j < n_points_; j++) {
       auto a_ij = rbf.evaluate(points_.row(i) - points_.row(j));
       y_accum[i] += weights_(j) * a_ij;
       y_accum[j] += weights_(i) * a_ij;
@@ -37,13 +37,13 @@ common::valuesd rbf_direct_symmetric_evaluator::evaluate() const {
   if (n_poly_basis_ > 0) {
     // Add polynomial terms.
     auto poly_val = p_->evaluate();
-    for (size_t i = 0; i < n_points_; i++) {
+    for (index_t i = 0; i < n_points_; i++) {
       y_accum[i] += poly_val(i);
     }
   }
 
   common::valuesd y(n_points_);
-  for (size_t i = 0; i < n_points_; i++) {
+  for (index_t i = 0; i < n_points_; i++) {
     y(i) = y_accum[i].get();
   }
 

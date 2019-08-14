@@ -4,10 +4,12 @@
 
 #include <functional>
 
+#include <polatory/types.hpp>
+
 namespace polatory {
 namespace kriging {
 
-using weight_function = std::function<double(size_t, double, double)>;
+using weight_function = std::function<double(index_t, double, double)>;
 
 struct weight_functions {
   static const weight_function n_pairs;

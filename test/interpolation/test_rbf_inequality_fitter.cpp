@@ -8,13 +8,13 @@
 #include <gtest/gtest.h>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/types.hpp>
 
 #include "random_transformation.hpp"
 #include "sample_data.hpp"
@@ -27,12 +27,13 @@ using polatory::interpolation::rbf_inequality_fitter;
 using polatory::model;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
+using polatory::index_t;
 
 TEST(rbf_inequality_fitter, inequality_only) {
-  const size_t n_points = 4096;
-  const int poly_dimension = 3;
-  const int poly_degree = 0;
-  const double absolute_tolerance = 1e-4;
+  const auto n_points = index_t{ 4096 };
+  const auto poly_dimension = 3;
+  const auto poly_degree = 0;
+  const auto absolute_tolerance = 1e-4;
 
   points3d points;
   valuesd values;
@@ -47,7 +48,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   model model(rbf, poly_dimension, poly_degree);
 
-  std::vector<size_t> indices;
+  std::vector<index_t> indices;
   valuesd weights;
 
   rbf_inequality_fitter fitter(model, points);
@@ -59,7 +60,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate_points(points);
 
-  for (size_t i = 0; i < n_points; i++) {
+  for (index_t i = 0; i < n_points; i++) {
     EXPECT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
     EXPECT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
   }
@@ -67,14 +68,14 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {
-  const size_t n_points = 25;
-  const int poly_dimension = 1;
-  const int poly_degree = -1;
-  const double absolute_tolerance = 1e-5;
+  const auto n_points = index_t{ 25 };
+  const auto poly_dimension = 1;
+  const auto poly_degree = -1;
+  const auto absolute_tolerance = 1e-5;
 
   points3d points = points3d::Zero(n_points, 3);
-  for (size_t i = 0; i < n_points; i++) {
-    points(i, 0) = i;
+  for (index_t i = 0; i < n_points; i++) {
+    points(i, 0) = static_cast<double>(i);
   }
 
   auto nan = std::numeric_limits<double>::quiet_NaN();
@@ -104,7 +105,7 @@ TEST(rbf_inequality_fitter, kostov86) {
 
   model model(cov_exponential({ 1.0, 3.0 }), poly_dimension, poly_degree);
 
-  std::vector<size_t> indices;
+  std::vector<index_t> indices;
   valuesd weights;
 
   rbf_inequality_fitter fitter(model, points);
@@ -114,7 +115,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate_points(points);
 
-  for (size_t i = 0; i < n_points; i++) {
+  for (index_t i = 0; i < n_points; i++) {
     if (!std::isnan(values(i))) {
       EXPECT_LT(std::abs(values_fit(i) - values(i)), absolute_tolerance);
     } else {

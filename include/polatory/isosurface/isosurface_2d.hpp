@@ -29,12 +29,12 @@ public:
     auto ymin = resolution_ * (std::floor(bbox_.min()(1) / resolution_) - 1.0);
     auto xmax = resolution_ * (std::ceil(bbox_.max()(0) / resolution_) + 1.0);
     auto ymax = resolution_ * (std::ceil(bbox_.max()(1) / resolution_) + 1.0);
-    size_t nx = std::round((xmax - xmin) / resolution_) + 1;
-    size_t ny = std::round((ymax - ymin) / resolution_) + 1;
+    auto nx = static_cast<vertex_index>(std::round((xmax - xmin) / resolution_)) + 1;
+    auto ny = static_cast<vertex_index>(std::round((ymax - ymin) / resolution_)) + 1;
 
     geometry::points3d points(ny * nx, 3);
-    for (size_t iy = 0; iy < ny; iy++) {
-      for (size_t ix = 0; ix < nx; ix++) {
+    for (vertex_index iy = 0; iy < ny; iy++) {
+      for (vertex_index ix = 0; ix < nx; ix++) {
         points(iy * nx + ix, 0) = xmin + ix * resolution_;
         points(iy * nx + ix, 1) = ymin + iy * resolution_;
         points(iy * nx + ix, 2) = 0.0;
@@ -43,13 +43,13 @@ public:
     points.rightCols(1) = field_fn(points);
 
     std::vector<geometry::point3d> vertices;
-    for (size_t i = 0; i < points.rows(); i++) {
+    for (vertex_index i = 0; i < points.rows(); i++) {
       vertices.push_back(points.row(i));
     }
 
     std::vector<face> faces;
-    for (size_t iy = 0; iy < ny - 1; iy++) {
-      for (size_t ix = 0; ix < nx - 1; ix++) {
+    for (vertex_index iy = 0; iy < ny - 1; iy++) {
+      for (vertex_index ix = 0; ix < nx - 1; ix++) {
         auto i0 = iy * nx + ix;
         auto i1 = iy * nx + (ix + 1);
         auto i2 = (iy + 1) * nx + ix;

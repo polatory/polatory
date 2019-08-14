@@ -25,13 +25,13 @@ namespace detail {
 
 template <class Derived>
 class col_iterator
-  : public boost::random_access_iterator_helper<col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ColXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::ColXpr> {
+  : public boost::random_access_iterator_helper<col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ColXpr, Eigen::Index, void, typename Eigen::MatrixBase<Derived>::ColXpr> {
   using self_type = col_iterator;
 
 public:
   using iterator_category = std::input_iterator_tag;
 
-  col_iterator(Eigen::MatrixBase<Derived>& m, size_t index)  // NOLINT(runtime/references)
+  col_iterator(Eigen::MatrixBase<Derived>& m, Eigen::Index index)  // NOLINT(runtime/references)
     : m_ (std::addressof(m))
     , index_(index) {
   }
@@ -57,10 +57,7 @@ public:
     return m_->col(index_);
   }
 
-  typename self_type::pointer operator->() const {
-    assert(false);
-    return;
-  }
+  typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
     assert(m_ == other.m_);
@@ -85,18 +82,18 @@ public:
 
 private:
   Eigen::MatrixBase<Derived> *m_;
-  size_t index_;
+  Eigen::Index index_;
 };
 
 template <class Derived>
 class const_col_iterator
-  : public boost::random_access_iterator_helper<const_col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstColXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::ConstColXpr> {
+  : public boost::random_access_iterator_helper<const_col_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstColXpr, Eigen::Index, void, typename Eigen::MatrixBase<Derived>::ConstColXpr> {
   using self_type = const_col_iterator;
 
 public:
   using iterator_category = std::input_iterator_tag;
 
-  const_col_iterator(const Eigen::MatrixBase<Derived>& m, size_t index)
+  const_col_iterator(const Eigen::MatrixBase<Derived>& m, Eigen::Index index)
     : m_(std::addressof(m))
     , index_(index) {
   }
@@ -122,10 +119,7 @@ public:
     return m_->col(index_);
   }
 
-  typename self_type::pointer operator->() const {
-    assert(false);
-    return;
-  }
+  typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
     assert(m_ == other.m_);
@@ -150,18 +144,18 @@ public:
 
 private:
   const Eigen::MatrixBase<Derived> *m_;
-  size_t index_;
+  Eigen::Index index_;
 };
 
 template <class Derived>
 class row_iterator
-  : public boost::random_access_iterator_helper<row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::RowXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::RowXpr> {
+  : public boost::random_access_iterator_helper<row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::RowXpr, Eigen::Index, void, typename Eigen::MatrixBase<Derived>::RowXpr> {
   using self_type = row_iterator;
 
 public:
   using iterator_category = std::input_iterator_tag;
 
-  row_iterator(Eigen::MatrixBase<Derived>& m, size_t index)  // NOLINT(runtime/references)
+  row_iterator(Eigen::MatrixBase<Derived>& m, Eigen::Index index)  // NOLINT(runtime/references)
     : m_ (std::addressof(m))
     , index_(index) {
   }
@@ -187,10 +181,7 @@ public:
     return m_->row(index_);
   }
 
-  typename self_type::pointer operator->() const {
-    assert(false);
-    return;
-  }
+  typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
     assert(m_ == other.m_);
@@ -215,18 +206,18 @@ public:
 
 private:
   Eigen::MatrixBase<Derived> *m_;
-  size_t index_;
+  Eigen::Index index_;
 };
 
 template <class Derived>
 class const_row_iterator
-  : public boost::random_access_iterator_helper<const_row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstRowXpr, std::ptrdiff_t, void, typename Eigen::MatrixBase<Derived>::ConstRowXpr> {
+  : public boost::random_access_iterator_helper<const_row_iterator<Derived>, typename Eigen::MatrixBase<Derived>::ConstRowXpr, Eigen::Index, void, typename Eigen::MatrixBase<Derived>::ConstRowXpr> {
   using self_type = const_row_iterator;
 
 public:
   using iterator_category = std::input_iterator_tag;
 
-  const_row_iterator(const Eigen::MatrixBase<Derived>& m, size_t index)
+  const_row_iterator(const Eigen::MatrixBase<Derived>& m, Eigen::Index index)
     : m_(std::addressof(m))
     , index_(index) {
   }
@@ -252,10 +243,7 @@ public:
     return m_->row(index_);
   }
 
-  typename self_type::pointer operator->() const {
-    assert(false);
-    return;
-  }
+  typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
     assert(m_ == other.m_);
@@ -280,7 +268,7 @@ public:
 
 private:
   const Eigen::MatrixBase<Derived> *m_;
-  size_t index_;
+  Eigen::Index index_;
 };
 
 }  // namespace detail
@@ -412,12 +400,12 @@ auto row_range(const Eigen::MatrixBase<Derived>& m) {
 namespace detail {
 
 template <class Derived>
-size_t common_cols(const Eigen::MatrixBase<Derived>& m) {
+Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m) {
   return m.cols();
 }
 
 template <class Derived, class ...Args>
-size_t common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   if (m.cols() == common_cols(std::forward<Args>(args)...))
     return m.cols();
   else
@@ -425,12 +413,12 @@ size_t common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
 }
 
 template <class Derived>
-size_t common_rows(const Eigen::MatrixBase<Derived>& m) {
+Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m) {
   return m.rows();
 }
 
 template <class Derived, class ...Args>
-size_t common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
+Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   if (m.rows() == common_rows(std::forward<Args>(args)...))
     return m.rows();
   else
@@ -469,13 +457,13 @@ void concatenate_rows_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(
 
 template <class ResultDerived, class Derived>
 void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
-                    const Eigen::MatrixBase<Derived>& m, size_t index) {
+                    const Eigen::MatrixBase<Derived>& m, Eigen::Index index) {
   result.col(0) = m.col(index);
 }
 
 template <class ResultDerived, class Derived, class... Ts>
 void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
-                    const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+                    const Eigen::MatrixBase<Derived>& m, Eigen::Index index, Ts... indices) {
   result.col(0) = m.col(index);
 
   auto result_tail = result.rightCols(result.cols() - 1);
@@ -484,13 +472,13 @@ void take_cols_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime
 
 template <class ResultDerived, class Derived>
 void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
-                    const Eigen::MatrixBase<Derived>& m, size_t index) {
+                    const Eigen::MatrixBase<Derived>& m, Eigen::Index index) {
   result.row(0) = m.row(index);
 }
 
 template <class ResultDerived, class Derived, class... Ts>
 void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result,  // NOLINT(runtime/references)
-                    const Eigen::MatrixBase<Derived>& m, size_t index, Ts... indices) {
+                    const Eigen::MatrixBase<Derived>& m, Eigen::Index index, Ts... indices) {
   result.row(0) = m.row(index);
 
   auto result_tail = result.bottomRows(result.rows() - 1);
@@ -539,7 +527,7 @@ auto take_cols(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
 
 template <class Derived, class ForwardRange>
 auto take_cols(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
-  size_t n_cols = std::distance(indices.begin(), indices.end());
+  Eigen::Index n_cols = std::distance(indices.begin(), indices.end());
 
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
@@ -549,7 +537,7 @@ auto take_cols(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
   > result(m.rows(), n_cols);
 
   auto it = indices.begin();
-  for (size_t i = 0; i < n_cols; i++) {
+  for (Eigen::Index i = 0; i < n_cols; i++) {
     result.col(i) = m.col(*it++);
   }
 
@@ -557,7 +545,7 @@ auto take_cols(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
 }
 
 template <class Derived>
-auto take_cols(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& indices) {
+auto take_cols(const Eigen::MatrixBase<Derived>& m, const std::vector<Eigen::Index>& indices) {
   return take_cols(m, make_range(indices.begin(), indices.end()));
 }
 
@@ -577,7 +565,7 @@ auto take_rows(const Eigen::MatrixBase<Derived>& m, Ts... indices) {
 
 template <class Derived, class ForwardRange>
 auto take_rows(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
-  size_t n_rows = std::distance(indices.begin(), indices.end());
+  Eigen::Index n_rows = std::distance(indices.begin(), indices.end());
 
   Eigen::Matrix<
     typename Eigen::MatrixBase<Derived>::Scalar,
@@ -587,7 +575,7 @@ auto take_rows(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
   > result(n_rows, m.cols());
 
   auto it = indices.begin();
-  for (size_t i = 0; i < n_rows; i++) {
+  for (Eigen::Index i = 0; i < n_rows; i++) {
     result.row(i) = m.row(*it++);
   }
 
@@ -595,7 +583,7 @@ auto take_rows(const Eigen::MatrixBase<Derived>& m, ForwardRange indices) {
 }
 
 template <class Derived>
-auto take_rows(const Eigen::MatrixBase<Derived>& m, const std::vector<size_t>& indices) {
+auto take_rows(const Eigen::MatrixBase<Derived>& m, const std::vector<Eigen::Index>& indices) {
   return take_rows(m, make_range(indices.begin(), indices.end()));
 }
 

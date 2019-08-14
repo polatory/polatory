@@ -12,20 +12,20 @@ namespace polatory {
 namespace point_cloud {
 
 normal_estimator::normal_estimator(const geometry::points3d& points)
-  : n_points_(points.rows())
+  : n_points_(static_cast<index_t>(points.rows()))
   , points_(points)
   , tree_(points, true) {
 }
 
-normal_estimator& normal_estimator::estimate_with_knn(size_t k, double plane_factor_threshold) {
+normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_factor_threshold) {
   normals_ = geometry::vectors3d(n_points_, 3);
 
 #pragma omp parallel
   {
-    std::vector<size_t> nn_indices;
+    std::vector<index_t> nn_indices;
     std::vector<double> nn_distances;
 #pragma omp for
-    for (ptrdiff_t i = 0; i < n_points_; i++) {
+    for (index_t i = 0; i < n_points_; i++) {
       geometry::point3d p = points_.row(i);
       std::tie(nn_indices, nn_distances) = tree_.knn_search(p, k);
 
@@ -41,10 +41,10 @@ normal_estimator& normal_estimator::estimate_with_radius(double radius, double p
 
 #pragma omp parallel
   {
-    std::vector<size_t> nn_indices;
+    std::vector<index_t> nn_indices;
     std::vector<double> nn_distances;
 #pragma omp for
-    for (ptrdiff_t i = 0; i < n_points_; i++) {
+    for (index_t i = 0; i < n_points_; i++) {
       geometry::point3d p = points_.row(i);
       std::tie(nn_indices, nn_distances) = tree_.radius_search(p, radius);
 
@@ -60,7 +60,7 @@ geometry::vectors3d normal_estimator::orient_by_outward_vector(const geometry::v
     throw std::runtime_error("Normals have not been estimated yet.");
 
 #pragma omp parallel for
-  for (ptrdiff_t i = 0; i < n_points_; i++) {
+  for (index_t i = 0; i < n_points_; i++) {
     auto n = normals_.row(i);
     if (n.dot(v) < 0.0) {
       n = -n;
@@ -70,7 +70,7 @@ geometry::vectors3d normal_estimator::orient_by_outward_vector(const geometry::v
   return normals_;
 }
 
-geometry::vector3d normal_estimator::estimate_impl(const std::vector<size_t>& nn_indices, double plane_factor_threshold) const {
+geometry::vector3d normal_estimator::estimate_impl(const std::vector<index_t>& nn_indices, double plane_factor_threshold) const {
   if (nn_indices.size() < 3)
     return geometry::vector3d::Zero();
 

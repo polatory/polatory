@@ -62,7 +62,7 @@ public:
   }
 
   void set_field_points(const geometry::points3d& points) {
-    n_fld_points_ = points.rows();
+    n_fld_points_ = static_cast<index_t>(points.rows());
 
     // Remove all target particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -72,7 +72,7 @@ public:
 
     // Insert target particles.
     auto ti = model_.rbf().inverse_transformation();
-    for (size_t idx = 0; idx < n_fld_points_; idx++) {
+    for (index_t idx = 0; idx < n_fld_points_; idx++) {
       auto ti_p = ti.transform_point(points.row(idx));
       tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeTarget, idx, 0.0);
     }
@@ -83,7 +83,7 @@ public:
   }
 
   void set_source_points(const geometry::points3d& points) {
-    n_src_points_ = points.rows();
+    n_src_points_ = static_cast<index_t>(points.rows());
 
     // Remove all source particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -93,7 +93,7 @@ public:
 
     // Insert source particles.
     auto ti = model_.rbf().inverse_transformation();
-    for (size_t idx = 0; idx < n_src_points_; idx++) {
+    for (index_t idx = 0; idx < n_src_points_; idx++) {
       auto ti_p = ti.transform_point(points.row(idx));
       tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeSource, idx, 0.0);
     }
@@ -104,7 +104,7 @@ public:
   void set_source_points_and_weights(const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
     assert(weights.rows() == points.rows());
 
-    n_src_points_ = points.rows();
+    n_src_points_ = static_cast<index_t>(points.rows());
 
     // Remove all source particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -114,7 +114,7 @@ public:
 
     // Insert source particles.
     auto ti = model_.rbf().inverse_transformation();
-    for (size_t idx = 0; idx < n_src_points_; idx++) {
+    for (index_t idx = 0; idx < n_src_points_; idx++) {
       auto ti_p = ti.transform_point(points.row(idx));
       tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
     }
@@ -137,7 +137,7 @@ public:
     if (weight_ptrs_.empty())
       update_weight_ptrs();
 
-    for (size_t idx = 0; idx < n_src_points_; idx++) {
+    for (index_t idx = 0; idx < n_src_points_; idx++) {
       *weight_ptrs_[idx] = weights[idx];
     }
 
@@ -152,7 +152,7 @@ private:
   common::valuesd potentials() const {
     common::valuesd phi = common::valuesd::Zero(n_fld_points_);
 
-    for (size_t i = 0; i < n_fld_points_; i++) {
+    for (index_t i = 0; i < n_fld_points_; i++) {
       phi[i] = *potential_ptrs_[i];
     }
 
@@ -167,9 +167,9 @@ private:
       const auto& indices = particles.getIndexes();
       const double* potentials = particles.getPotentials();
 
-      const size_t n_particles = particles.getNbParticles();
-      for (size_t i = 0; i < n_particles; i++) {
-        const size_t idx = indices[i];
+      auto n_particles = static_cast<index_t>(particles.getNbParticles());
+      for (index_t i = 0; i < n_particles; i++) {
+        auto idx = static_cast<index_t>(indices[i]);
 
         potential_ptrs_[idx] = &potentials[i];
       }
@@ -184,9 +184,9 @@ private:
       const auto& indices = particles.getIndexes();
       double* weights = particles.getPhysicalValues();
 
-      const size_t n_particles = particles.getNbParticles();
-      for (size_t i = 0; i < n_particles; i++) {
-        const size_t idx = indices[i];
+      auto n_particles = static_cast<index_t>(particles.getNbParticles());
+      for (index_t i = 0; i < n_particles; i++) {
+        auto idx = static_cast<index_t>(indices[i]);
 
         weight_ptrs_[idx] = &weights[i];
       }
@@ -196,8 +196,8 @@ private:
   const model model_;
   const fmm_rbf_kernel rbf_kernel_;
 
-  size_t n_src_points_;
-  size_t n_fld_points_;
+  index_t n_src_points_;
+  index_t n_fld_points_;
 
   std::unique_ptr<Fmm> fmm_;
   std::unique_ptr<InterpolatedKernel> interpolated_kernel_;

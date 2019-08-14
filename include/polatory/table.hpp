@@ -12,14 +12,15 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
 #include <polatory/numeric/roundtrip_string.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 
 using tabled = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-inline auto read_table(const std::string& filename, const char *delimiters = " \t,") {
-  tabled table;
-
+inline auto read_table(
+    const std::string& filename,
+    const char *delimiters = " \t,") {
   std::ifstream ifs(filename);
   if (!ifs)
     throw common::io_error("Could not open file '" + filename + "'.");
@@ -27,7 +28,7 @@ inline auto read_table(const std::string& filename, const char *delimiters = " \
   std::vector<double> buffer;
 
   std::string line;
-  size_t n_cols = 0;
+  auto n_cols = index_t{ 0 };
   while (std::getline(ifs, line)) {
     if (boost::starts_with(line, "#"))
       continue;
@@ -35,9 +36,7 @@ inline auto read_table(const std::string& filename, const char *delimiters = " \
     std::vector<std::string> row;
     boost::split(row, line, boost::is_any_of(delimiters));
     if (n_cols == 0) {
-      n_cols = row.size();
-    } else if (row.size() != n_cols) {
-      continue;
+      n_cols = static_cast<index_t>(row.size());
     }
 
     for (const auto& cell : row) {
@@ -47,22 +46,21 @@ inline auto read_table(const std::string& filename, const char *delimiters = " \
     }
   }
 
-  table = tabled::Map(buffer.data(), buffer.size() / n_cols, n_cols);
-
-  return table;
+  return tabled::Map(buffer.data(), buffer.size() / n_cols, n_cols);
 }
 
 template <class Derived>
-inline void write_table(const std::string& filename,
-                        const Eigen::MatrixBase<Derived>& table,
-                        char delimiter = ' ') {
+void write_table(
+    const std::string& filename,
+    const Eigen::MatrixBase<Derived>& table,
+    char delimiter = ' ') {
   std::ofstream ofs(filename);
   if (!ofs)
     throw common::io_error("Could not open file '" + filename + "'.");
 
-  size_t n_cols = table.cols();
+  auto n_cols = static_cast<index_t>(table.cols());
   for (auto row : common::row_range(table)) {
-    for (size_t i = 0; i < n_cols; i++) {
+    for (index_t i = 0; i < n_cols; i++) {
       ofs << numeric::to_string(row(i));
       if (i != n_cols - 1)
         ofs << delimiter;

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -14,7 +15,7 @@ namespace isosurface {
 class mesh_defects_finder {
   using halfedge = std::pair<vertex_index, vertex_index>;
 
-  using face_index = int;
+  using face_index = int64_t;
   using face_index_bool = std::pair<face_index, bool>;
   using face_index_bools = std::vector<face_index_bool>;
 

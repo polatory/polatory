@@ -6,11 +6,11 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
-#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
+#include <polatory/types.hpp>
 
 #include "random_transformation.hpp"
 #include "sample_data.hpp"
@@ -21,19 +21,20 @@ using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::model;
 using polatory::rbf::biharmonic3d;
+using polatory::index_t;
 
 namespace {
 
 void test_poly_degree(int poly_degree) {
-  const size_t n_surface_points = 10000;
-  const int poly_dimension = 3;
-  double absolute_tolerance = 1e-4;
+  const auto n_surface_points = index_t{ 10000 };
+  const auto poly_dimension = 3;
+  auto absolute_tolerance = 1e-4;
 
   points3d points;
   valuesd values;
   std::tie(points, values) = sample_sdf_data(n_surface_points);
 
-  size_t n_points = points.rows();
+  auto n_points = static_cast<index_t>(points.rows());
 
   biharmonic3d rbf({ 1.0 });
   rbf.set_transformation(random_transformation());
@@ -55,7 +56,7 @@ void test_poly_degree(int poly_degree) {
   std::cout << "Maximum residual:" << std::endl
             << "  " << residuals.lpNorm<Eigen::Infinity>() << std::endl;
 
-  for (size_t i = 0; i < n_points; i++) {
+  for (index_t i = 0; i < n_points; i++) {
     EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));
   }
 }

@@ -11,7 +11,7 @@ using polatory::rbf::cov_exponential;
 using polatory::read_table;
 using polatory::write_table;
 
-int main(int argc, char *argv[]) {
+int main(int /*argc*/, char *argv[]) {
   points3d points = read_table(argv[1]);
   valuesd values = read_table(argv[2]);
   points3d prediction_points = read_table(argv[3]);

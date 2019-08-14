@@ -41,7 +41,7 @@ public:
     return ti_;
   }
 
-  virtual size_t num_parameters() const = 0;
+  virtual int num_parameters() const = 0;
 
   virtual const std::vector<double>& parameter_lower_bounds() const = 0;
 
