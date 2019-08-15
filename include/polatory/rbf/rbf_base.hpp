@@ -52,7 +52,7 @@ public:
   }
 
   void set_parameters(const std::vector<double>& params) {
-    if (params.size() != num_parameters())
+    if (static_cast<int>(params.size()) != num_parameters())
       throw common::invalid_argument("params.size() == " + std::to_string(num_parameters()));
 
     params_ = params;

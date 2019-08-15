@@ -21,8 +21,8 @@ if(UNIX)
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
 elseif(MSVC)
-    # C4702(unreachable code) is disabled as it is reported in library code.
-    target_compile_options(${TARGET} PUBLIC /W4 /wd4702 /WX)
+    # C4702(unreachable code) is disabled as it is reported in third-party code.
+    target_compile_options(${TARGET} PUBLIC /W4 /wd4702 /WX /experimental:external /external:W0)
     target_compile_definitions(${TARGET} PUBLIC
         -D_ENABLE_EXTENDED_ALIGNED_STORAGE
     )
@@ -42,40 +42,38 @@ if(USE_PREBUILT_BOOST)
     )
 endif()
 
-target_include_directories(${TARGET} PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
+set(SYSTEM_PUBLIC_INCLUDE_DIRECTORIES
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR}
     ${VCPKG_INCLUDE_DIR}
 )
-target_include_directories(${TARGET} PRIVATE
+set(SYSTEM_PRIVATE_INCLUDE_DIRECTORIES
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
 
-# TODO(mizuno): clean up.
-if(UNIX)
-    target_compile_options(${TARGET} PUBLIC
-        "-isystem \"${Boost_INCLUDE_DIR}\""
-        "-isystem \"${EIGEN3_INCLUDE_DIR}\""
-        "-isystem \"${MKL_INCLUDE_DIR}\""
-        "-isystem \"${VCPKG_INCLUDE_DIR}\""
-    )
-    target_compile_options(${TARGET} PRIVATE
-        "-isystem \"${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include\""
-    )
-elseif(MSVC)
-    target_compile_options(${TARGET} PUBLIC
-        /experimental:external
-        "SHELL:/external:I \"${Boost_INCLUDE_DIR}\""
-        "SHELL:/external:I \"${EIGEN3_INCLUDE_DIR}\""
-        "SHELL:/external:I \"${MKL_INCLUDE_DIR}\""
-        "SHELL:/external:I \"${VCPKG_INCLUDE_DIR}\""
-        /external:W0
-    )
-    target_compile_options(${TARGET} PRIVATE
-        "SHELL:/external:I \"${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include\""
-    )
+target_include_directories(${TARGET} PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+target_include_directories(${TARGET} SYSTEM PUBLIC
+    ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES}
+)
+target_include_directories(${TARGET} SYSTEM PRIVATE
+    ${SYSTEM_PRIVATE_INCLUDE_DIRECTORIES}
+)
+
+if(MSVC)
+	foreach(DIR ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES})
+        target_compile_options(${TARGET} PUBLIC
+            "SHELL:/external:I \"${DIR}\""
+        )
+    endforeach()
+	foreach(DIR ${SYSTEM_PRIVATE_INCLUDE_DIRECTORIES})
+        target_compile_options(${TARGET} PRIVATE
+            "SHELL:/external:I \"${DIR}\""
+        )
+    endforeach()
 endif()
 
 if(UNIX)
