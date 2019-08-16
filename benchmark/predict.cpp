@@ -6,7 +6,6 @@ using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::model;
-using polatory::polynomial::polynomial_basis_base;
 using polatory::rbf::cov_exponential;
 using polatory::read_table;
 using polatory::write_table;

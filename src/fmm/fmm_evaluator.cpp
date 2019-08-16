@@ -54,10 +54,9 @@ public:
       particles.resetForcesAndPotential();
     });
 
-    // clang-tidy reports clang-analyzer-core.CallAndMessage if these executions are merged.
+    // clang-tidy 6 reports clang-analyzer-core.CallAndMessage if these executions are merged.
     fmm_->execute(FFmmM2L | FFmmL2L | FFmmL2P);
     fmm_->execute(FFmmP2P);
-
     return potentials();
   }
 

@@ -16,13 +16,13 @@ if(NOT ENABLE_CLANG_TIDY)
 endif()
 
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Werror)
+    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Wno-missing-braces -Werror)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
 elseif(MSVC)
-    # C4702(unreachable code) is disabled as it is reported in third-party code.
-    target_compile_options(${TARGET} PUBLIC /W4 /wd4702 /WX /experimental:external /external:W0)
+    # C4702(unreachable code) is disabled as it is reported by link.exe in third-party code.
+    target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702 /experimental:external /external:W0)
     target_compile_definitions(${TARGET} PUBLIC
         -D_ENABLE_EXTENDED_ALIGNED_STORAGE
     )
@@ -55,7 +55,6 @@ set(SYSTEM_PRIVATE_INCLUDE_DIRECTORIES
 target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
-
 target_include_directories(${TARGET} SYSTEM PUBLIC
     ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES}
 )
@@ -64,12 +63,14 @@ target_include_directories(${TARGET} SYSTEM PRIVATE
 )
 
 if(MSVC)
-	foreach(DIR ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES})
+    foreach(DIR ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES})
+        message("Adding ${DIR} to public hoge.")
         target_compile_options(${TARGET} PUBLIC
             "SHELL:/external:I \"${DIR}\""
         )
     endforeach()
-	foreach(DIR ${SYSTEM_PRIVATE_INCLUDE_DIRECTORIES})
+    foreach(DIR ${SYSTEM_PRIVATE_INCLUDE_DIRECTORIES})
+        message("Adding ${DIR} to private hoge.")
         target_compile_options(${TARGET} PRIVATE
             "SHELL:/external:I \"${DIR}\""
         )

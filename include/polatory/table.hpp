@@ -46,6 +46,9 @@ inline auto read_table(
     }
   }
 
+  if (n_cols == 0)
+    throw common::io_error("File '" + filename + " is empty'.");
+
   return tabled::Map(buffer.data(), buffer.size() / n_cols, n_cols);
 }
 
