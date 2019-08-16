@@ -42,13 +42,13 @@ if(USE_PREBUILT_BOOST)
     )
 endif()
 
-set(SYSTEM_PUBLIC_INCLUDE_DIRECTORIES
+set(THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR}
     ${VCPKG_INCLUDE_DIR}
 )
-set(SYSTEM_PRIVATE_INCLUDE_DIRECTORIES
+set(THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
 
@@ -56,19 +56,19 @@ target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
 target_include_directories(${TARGET} SYSTEM PUBLIC
-    ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES}
+    ${THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES}
 )
 target_include_directories(${TARGET} SYSTEM PRIVATE
-    ${SYSTEM_PRIVATE_INCLUDE_DIRECTORIES}
+    ${THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES}
 )
 
 if(MSVC)
-    foreach(DIR ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES})
+    foreach(DIR ${THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES})
         target_compile_options(${TARGET} PUBLIC
             "SHELL:/external:I \"${DIR}\""
         )
     endforeach()
-    foreach(DIR ${SYSTEM_PRIVATE_INCLUDE_DIRECTORIES})
+    foreach(DIR ${THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES})
         target_compile_options(${TARGET} PRIVATE
             "SHELL:/external:I \"${DIR}\""
         )

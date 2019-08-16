@@ -42,9 +42,6 @@ sdf_data_generator::sdf_data_generator(
   sdf_points_.topRows(n_points) = points_;
   sdf_values_ = common::valuesd::Zero(n_max_sdf_points);
 
-  if (n_points == 0)
-    return;
-
   for (index_t i = 0; i < n_reduced_points; i++) {
     auto p = points.row(i);
     auto n = normals.row(i);

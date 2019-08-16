@@ -114,6 +114,7 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
   auto split_axis = index_t{ 0 };
   (void)d.bbox_.size().maxCoeff(&split_axis);
 
+  // TODO(mizuno): Sort all points along each axis and cache the result as a permutation.
   common::zip_sort(
     d.point_indices.begin(), d.point_indices.end(),
     d.inner_point.begin(), d.inner_point.end(),

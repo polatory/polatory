@@ -89,16 +89,13 @@ protected:
   }
 
   template <class Solver>
-  void test_solver(
-    bool with_initial_solution,
-    bool with_right_conditioning,
-    bool with_left_preconditioning) {
+  void test_solver(bool with_initial_solution, bool with_right_pc, bool with_left_pc) {
     auto solver = Solver(*op, rhs, n);
     if (with_initial_solution)
       solver.set_initial_solution(x0);
-    if (with_right_conditioning)
+    if (with_right_pc)
       solver.set_right_preconditioner(*pc);
-    if (with_left_preconditioning)
+    if (with_left_pc)
       solver.set_left_preconditioner(*pc);
     solver.setup();
 
@@ -108,7 +105,7 @@ protected:
       auto approx_solution = solver.solution_vector();
       auto current_residual = solver.relative_residual();
 
-      if (!with_left_preconditioning) {
+      if (!with_left_pc) {
         EXPECT_NEAR(
           (rhs - (*op)(approx_solution)).norm() / rhs.norm(),
           current_residual,
