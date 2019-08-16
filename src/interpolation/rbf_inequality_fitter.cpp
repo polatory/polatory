@@ -77,7 +77,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       auto center_values = common::take_rows(values, centers);
       for (index_t i = n_eq; i < n_centers; i++) {
         auto idx = centers[i];
-        if (active_idcs_lb.count(idx)) {
+        if (active_idcs_lb.count(idx) != 0) {
           center_values(i) = values_lb(idx);
         } else {
           center_values(i) = values_ub(idx);
@@ -110,7 +110,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       auto idx = ineq_idcs[i];
 
       if (std::find(idcs_lb.begin(), idcs_lb.end(), idx) != idcs_lb.end()) {
-        if (active_idcs_lb.count(idx)) {
+        if (active_idcs_lb.count(idx) != 0) {
           if (weights(idx) <= 0.0) {
             active_idcs_lb.erase(idx);
             active_set_changed = true;
@@ -123,7 +123,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
         }
       }
       if (std::find(idcs_ub.begin(), idcs_ub.end(), idx) != idcs_ub.end()) {
-        if (active_idcs_ub.count(idx)) {
+        if (active_idcs_ub.count(idx) != 0) {
           if (weights(idx) >= 0.0) {
             active_idcs_ub.erase(idx);
             active_set_changed = true;

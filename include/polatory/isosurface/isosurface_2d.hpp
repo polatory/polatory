@@ -44,7 +44,7 @@ public:
 
     std::vector<geometry::point3d> vertices;
     for (vertex_index i = 0; i < points.rows(); i++) {
-      vertices.push_back(points.row(i));
+      vertices.emplace_back(points.row(i));
     }
 
     std::vector<face> faces;

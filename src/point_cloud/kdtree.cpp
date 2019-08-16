@@ -88,22 +88,20 @@ kdtree::indices_and_distances kdtree::knn_search(const geometry::point3d& point,
   if (k == 0)
     throw common::invalid_argument("k > 0");
 
-  if (!pimpl_) {
+  if (!pimpl_)
     return {};
-  } else {
-    return pimpl_->knn_search(point, k);
-  }
+
+  return pimpl_->knn_search(point, k);
 }
 
 kdtree::indices_and_distances kdtree::radius_search(const geometry::point3d& point, double radius) const {
   if (radius <= 0.0)
     throw common::invalid_argument("radius > 0.0");
 
-  if (!pimpl_) {
+  if (!pimpl_)
     return {};
-  } else {
-    return pimpl_->radius_search(point, radius);
-  }
+
+  return pimpl_->radius_search(point, radius);
 }
 
 }  // namespace point_cloud

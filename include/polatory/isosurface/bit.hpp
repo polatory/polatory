@@ -15,7 +15,7 @@ namespace detail {
 inline
 int naive_ctz(int x) {
   int count = 0;
-  while (!(x & 1)) {
+  while ((x & 1) == 0) {
     x >>= 1;
     count++;
   }
@@ -25,7 +25,7 @@ int naive_ctz(int x) {
 inline
 int naive_popcnt(int x) {
   int count = 0;
-  while (x) {
+  while (x != 0) {
     x &= x - 1;
     count++;
   }

@@ -8,7 +8,7 @@ namespace polatory {
 namespace common {
 
 template <class BinaryFunction, class T>
-auto fold_left(BinaryFunction, const T& x) {
+auto fold_left(BinaryFunction /*f*/, const T& x) {
   return x;
 }
 
@@ -18,7 +18,7 @@ auto fold_left(BinaryFunction f, T1&& x1, T2&& x2, Ts&&... xs) {
 }
 
 template <class BinaryFunction, class T>
-auto fold_right(BinaryFunction, const T& x) {
+auto fold_right(BinaryFunction /*f*/, const T& x) {
   return x;
 }
 

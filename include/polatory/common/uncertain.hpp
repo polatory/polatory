@@ -44,7 +44,8 @@ uncertain<bool> operator&&(uncertain<bool> a, uncertain<bool> b) {
   if (a.is_certain()) {
     if (b.is_certain()) {
       return a.get() && b.get();
-    } else if (!a.get()) {
+    }
+    if (!a.get()) {
       return false;
     }
   } else if (b.is_certain()) {
@@ -60,7 +61,8 @@ uncertain<bool> operator||(uncertain<bool> a, uncertain<bool> b) {
   if (a.is_certain()) {
     if (b.is_certain()) {
       return a.get() || b.get();
-    } else if (a.get()) {
+    }
+    if (a.get()) {
       return true;
     }
   } else if (b.is_certain()) {

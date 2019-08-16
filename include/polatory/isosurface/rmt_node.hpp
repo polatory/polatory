@@ -199,7 +199,7 @@ public:
       if (bit_count(surface) == 1) {
         weights.push_back(1.0);
       } else {
-        while (surface) {
+        while (surface != 0) {
           auto edge_idx = bit_pop(&surface);
           auto weight = clustering_weight(edge_idx);
           if (!weight.is_certain()) return;
@@ -231,7 +231,7 @@ public:
           weights.push_back(1.0);
           edge_idcs.push_back(bit_pop(&surface));
         } else {
-          while (surface) {
+          while (surface != 0) {
             auto edge_idx = bit_pop(&surface);
             auto weight = clustering_weight(edge_idx);
             if (!weight.is_certain()) return;
@@ -336,7 +336,9 @@ public:
       auto cos_aob = oa.dot(ob) / (dist_oa * dist_ob);
       auto sin_aob = std::sqrt(1.0 - cos_aob * cos_aob);
       return std::atan(sin_aob / ((d_o - d_b) * dist_oa / ((d_o - d_a) * dist_ob) - cos_aob));
-    } else {
+    }
+    // else
+    {
       // intersection on edge ab
       auto ab = b_node.pos - a_node.pos;
       auto dist_ab = ab.norm();
@@ -350,7 +352,7 @@ public:
     edge_bitset face_bits = 0;
     for (face_index fi = 0; fi < 24; fi++) {
       auto face_edges = FaceEdges[fi];
-      int face_bit = (intersections & face_edges) == face_edges;
+      auto face_bit = static_cast<int>((intersections & face_edges) == face_edges);
       face_bits |= face_bit << fi;
     }
     return face_bits;
@@ -377,7 +379,7 @@ public:
   void insert_vertex(vertex_index vi, edge_index edge_idx) {
     assert(!has_intersection(edge_idx));
 
-    if (!vis) vis.reset(new std::vector<vertex_index>);
+    if (!vis) vis = std::make_unique<std::vector<vertex_index>>();
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;

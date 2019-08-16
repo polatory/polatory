@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
@@ -57,7 +58,7 @@ float to_float(const std::string& str) {
 template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>
 std::string to_string(Floating arg) {
   static constexpr size_t str_size = 32;
-  char str[str_size];  // NOLINT(runtime/arrays)
+  std::array<char, str_size> str{};
 
   if (std::isnan(arg))
     return "nan";
@@ -65,13 +66,13 @@ std::string to_string(Floating arg) {
   if (std::isinf(arg))
     return std::signbit(arg) ? "-inf" : "inf";
 
-  std::snprintf(str, str_size, detail::format<Floating>::shorthand(), arg);  // NOLINT(cppcoreguidelines-pro-type-vararg)
+  std::snprintf(str.data(), str_size, detail::format<Floating>::shorthand(), arg);  // NOLINT(cppcoreguidelines-pro-type-vararg)
   auto arg_rep = boost::lexical_cast<Floating>(str);
   if (arg == arg_rep)
-    return str;
+    return str.data();
 
-  std::snprintf(str, str_size, detail::format<Floating>::complete(), arg);  // NOLINT(cppcoreguidelines-pro-type-vararg)
-  return str;
+  std::snprintf(str.data(), str_size, detail::format<Floating>::complete(), arg);  // NOLINT(cppcoreguidelines-pro-type-vararg)
+  return str.data();
 }
 
 }  // namespace numeric

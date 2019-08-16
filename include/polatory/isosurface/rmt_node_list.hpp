@@ -18,7 +18,7 @@ extern const std::array<cell_vector, 14> NeighborCellVectors;
 class rmt_node_list : std::map<cell_index, rmt_node> {
   using base_type = std::map<cell_index, rmt_node>;
 
-  std::array<cell_index, 14> NeighborCellIndexDeltas;
+  std::array<cell_index, 14> NeighborCellIndexDeltas{};
 
 public:
   using iterator = base_type::iterator;

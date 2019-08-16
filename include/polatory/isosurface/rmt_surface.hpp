@@ -221,13 +221,10 @@ public:
   }
 
   self_type::reference operator*() const {
-    return rmt_tetrahedron(node, index);
+    return { node, index };
   }
 
-  self_type::pointer operator->() const {
-    assert(false);
-    return;
-  }
+  self_type::pointer operator->() const = delete;
 
   bool is_valid() const {
     return index < number_of_tetrahedra;
