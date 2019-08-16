@@ -5,7 +5,6 @@
 #include <cassert>
 #include <memory>
 
-#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -14,6 +13,7 @@
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -28,9 +28,9 @@ public:
     : model_(model)
     , n_poly_basis_(model.poly_basis_size())
     , n_points_(0) {
+    auto n_points = static_cast<index_t>(points.rows());
     auto bbox = geometry::bbox3d::from_points(points);
-
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(model, fmm::fmm_tree_height(points.rows()), bbox);
+    a_ = std::make_unique<fmm::fmm_operator<Order>>(model, fmm::fmm_tree_height(n_points), bbox);
 
     if (n_poly_basis_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
@@ -51,7 +51,7 @@ public:
   }
 
   common::valuesd operator()(const common::valuesd& weights) const override {
-    assert(weights.rows() == size());
+    assert(static_cast<index_t>(weights.rows()) == size());
 
     common::valuesd y = common::valuesd::Zero(size());
 
@@ -71,7 +71,7 @@ public:
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = points.rows();
+    n_points_ = static_cast<index_t>(points.rows());
 
     a_->set_points(points);
 
@@ -80,15 +80,15 @@ public:
     }
   }
 
-  size_t size() const override {
+  index_t size() const override {
     return n_points_ + n_poly_basis_;
   }
 
 private:
   const model model_;
-  const size_t n_poly_basis_;
+  const index_t n_poly_basis_;
 
-  size_t n_points_;
+  index_t n_points_;
   std::unique_ptr<fmm::fmm_operator<Order>> a_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };

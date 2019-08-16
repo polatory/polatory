@@ -7,6 +7,7 @@
 
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -15,29 +16,29 @@ class domain_divider;
 
 class domain {
 public:
-  std::vector<size_t> point_indices;
+  std::vector<index_t> point_indices;
   std::vector<bool> inner_point;
 
-  size_t size() const;
+  index_t size() const;
 
 private:
   friend class domain_divider;
 
-  void merge_poly_points(const std::vector<size_t>& poly_point_idcs);
+  void merge_poly_points(const std::vector<index_t>& poly_point_idcs);
 
   geometry::bbox3d bbox_;
 };
 
 class domain_divider {
   static constexpr double overlap_quota = 0.75;
-  static constexpr size_t max_leaf_size = 256;
+  static constexpr index_t max_leaf_size = 256;
 
 public:
   domain_divider(const geometry::points3d& points,
-                 const std::vector<size_t>& point_indices,
-                 const std::vector<size_t>& poly_point_indices);
+                 const std::vector<index_t>& point_indices,
+                 const std::vector<index_t>& poly_point_indices);
 
-  std::vector<size_t> choose_coarse_points(double ratio) const;
+  std::vector<index_t> choose_coarse_points(double ratio) const;
 
   const std::list<domain>& domains() const;
 
@@ -52,9 +53,9 @@ private:
 
   const geometry::points3d& points_;
 
-  size_t size_of_root_;
+  index_t size_of_root_;
   double longest_side_length_of_root_;
-  std::vector<size_t> poly_point_idcs_;
+  std::vector<index_t> poly_point_idcs_;
   std::list<domain> domains_;
 };
 

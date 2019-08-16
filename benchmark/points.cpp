@@ -11,7 +11,7 @@ using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::random_points;
 using polatory::write_table;
 
-int main(int argc, char *argv[]) {
+int main(int /*argc*/, char *argv[]) {
   auto n_points = std::stoi(argv[1]);
   auto seed = std::stoi(argv[2]);
 

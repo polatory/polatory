@@ -10,7 +10,6 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
@@ -19,6 +18,7 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -26,26 +26,26 @@ namespace preconditioner {
 class ras_preconditioner : public krylov::linear_operator {
   static constexpr int Order = 6;
   static constexpr double coarse_ratio = 0.125;
-  static constexpr size_t n_coarsest_points = 1024;
+  static constexpr index_t n_coarsest_points = 1024;
 
 public:
   ras_preconditioner(const model& model, const geometry::points3d& in_points);
 
   common::valuesd operator()(const common::valuesd& v) const override;
 
-  size_t size() const override;
+  index_t size() const override;
 
 private:
   const geometry::points3d points_;
-  const size_t n_points_;
-  const size_t n_poly_basis_;
+  const index_t n_points_;
+  const index_t n_poly_basis_;
   int n_fine_levels_;
 
 #if POLATORY_REPORT_RESIDUAL
   mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator_;
 #endif
 
-  std::vector<std::vector<size_t>> point_idcs_;
+  std::vector<std::vector<index_t>> point_idcs_;
   mutable std::vector<std::vector<fine_grid>> fine_grids_;
   std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
   std::unique_ptr<coarse_grid> coarse_;

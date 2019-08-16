@@ -5,17 +5,17 @@
 #include <vector>
 
 #include <polatory/common/exception.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/krylov/gmres.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace krylov {
 
 class fgmres : public gmres {
 public:
-  fgmres(const linear_operator& op, const common::valuesd& rhs, int max_iter);
+  fgmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
 
-  void set_left_preconditioner(const linear_operator& left_preconditioner) override {
+  void set_left_preconditioner(const linear_operator& /*left_preconditioner*/) override {
     throw common::not_supported("set_left_preconditioner");
   }
 

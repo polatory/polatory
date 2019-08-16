@@ -11,7 +11,6 @@
 #include "parse_options.hpp"
 
 using polatory::common::take_cols;
-using polatory::interpolant;
 using polatory::kriging::k_fold_cross_validation;
 using polatory::model;
 using polatory::point_cloud::distance_filter;

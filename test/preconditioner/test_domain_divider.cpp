@@ -9,33 +9,35 @@
 
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
+#include <polatory/types.hpp>
 
 using polatory::geometry::sphere3d;
 using polatory::point_cloud::random_points;
 using polatory::preconditioner::domain_divider;
+using polatory::index_t;
 
 TEST(domain_divider, trivial) {
-  size_t n_points = 10000;
-  size_t n_poly_points = 10;
+  auto n_points = index_t{ 10000 };
+  auto n_poly_points = index_t{ 10 };
 
   auto points = random_points(sphere3d(), n_points);
-  std::vector<size_t> point_idcs(n_points);
+  std::vector<index_t> point_idcs(n_points);
   std::iota(point_idcs.begin(), point_idcs.end(), 0);
 
-  std::vector<size_t> poly_point_idcs(point_idcs.begin(), point_idcs.begin() + n_poly_points);
+  std::vector<index_t> poly_point_idcs(point_idcs.begin(), point_idcs.begin() + n_poly_points);
 
   domain_divider divider(points, point_idcs, poly_point_idcs);
 
-  std::vector<size_t> inner_points;
+  std::vector<index_t> inner_points;
   inner_points.reserve(n_points);
   for (const auto& d : divider.domains()) {
-    for (size_t i = 0; i < d.size(); i++) {
+    for (index_t i = 0; i < d.size(); i++) {
       if (d.inner_point[i]) {
         inner_points.push_back(d.point_indices[i]);
       }
     }
 
-    for (size_t i = 0; i < n_poly_points; i++) {
+    for (index_t i = 0; i < n_poly_points; i++) {
       EXPECT_EQ(poly_point_idcs[i], d.point_indices[i]);
     }
 
@@ -53,7 +55,7 @@ TEST(domain_divider, trivial) {
   EXPECT_LE(0.95 * coarse_ratio * n_points, coarse_point_idcs.size());
   EXPECT_GE(1.05 * coarse_ratio * n_points, coarse_point_idcs.size());
 
-  for (size_t i = 0; i < n_poly_points; i++) {
+  for (index_t i = 0; i < n_poly_points; i++) {
     EXPECT_EQ(poly_point_idcs[i], coarse_point_idcs[i]);
   }
 

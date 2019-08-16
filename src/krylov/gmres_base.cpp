@@ -19,11 +19,11 @@ bool gmres_base::converged() const {
   return converged_;
 }
 
-int gmres_base::iteration_count() const {
+index_t gmres_base::iteration_count() const {
   return iter_;
 }
 
-int gmres_base::max_iterations() const {
+index_t gmres_base::max_iterations() const {
   return max_iter_;
 }
 
@@ -38,7 +38,7 @@ void gmres_base::set_left_preconditioner(const linear_operator& left_preconditio
 }
 
 void gmres_base::set_initial_solution(const common::valuesd& x0) {
-  assert(x0.rows() == m_);
+  assert(static_cast<index_t>(x0.rows()) == m_);
 
   x0_ = x0;
 }
@@ -71,16 +71,16 @@ common::valuesd gmres_base::solution_vector() const {
   // r is an upper triangular matrix.
   // Perform backward substitution to solve r y == g for y.
   common::valuesd y = common::valuesd::Zero(iter_);
-  for (int j = iter_ - 1; j >= 0; j--) {
+  for (index_t j = iter_ - 1; j >= 0; j--) {
     y(j) = g_(j);
-    for (int i = j + 1; i <= iter_ - 1; i++) {
+    for (index_t i = j + 1; i <= iter_ - 1; i++) {
       y(j) -= r_(j, i) * y(i);
     }
     y(j) /= r_(j, j);
   }
 
   common::valuesd x = common::valuesd::Zero(m_);
-  for (int i = 0; i < iter_; i++) {
+  for (index_t i = 0; i < iter_; i++) {
     x += y(i) * vs_[i];
   }
   x = right_preconditioned(x);
@@ -103,9 +103,9 @@ void gmres_base::solve(double tolerance) {
     std::cout << iter_ << ": \t" << relative_residual() << std::endl;
 }
 
-gmres_base::gmres_base(const linear_operator& op, const common::valuesd& rhs, int max_iter)
+gmres_base::gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
   : op_(op)
-  , m_(rhs.rows())
+  , m_(static_cast<index_t>(rhs.rows()))
   , max_iter_(max_iter)
   , x0_(common::valuesd::Zero(m_))
   , left_pc_(nullptr)

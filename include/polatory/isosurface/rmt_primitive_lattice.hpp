@@ -54,7 +54,7 @@ protected:
   cell_vector cell_max;
   const unsigned int shift1 = 21;
   const unsigned int shift2 = 42;
-  const cell_index mask = (cell_index{ 1 } << 21) - 1;
+  const cell_index mask = (cell_index{ 1 } << shift1) - 1;
 
 private:
   // TODO(mizuno): Make sure we have some additional margins so that

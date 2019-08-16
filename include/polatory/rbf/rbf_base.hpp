@@ -41,7 +41,7 @@ public:
     return ti_;
   }
 
-  virtual size_t num_parameters() const = 0;
+  virtual int num_parameters() const = 0;
 
   virtual const std::vector<double>& parameter_lower_bounds() const = 0;
 
@@ -52,7 +52,7 @@ public:
   }
 
   void set_parameters(const std::vector<double>& params) {
-    if (params.size() != num_parameters())
+    if (static_cast<int>(params.size()) != num_parameters())
       throw common::invalid_argument("params.size() == " + std::to_string(num_parameters()));
 
     params_ = params;

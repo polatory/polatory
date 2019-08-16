@@ -11,8 +11,8 @@ namespace polatory {
 namespace point_cloud {
 
 geometry::points3d random_points(const geometry::cuboid3d& cuboid,
-                                 size_t n,
-                                 seed_type seed) {
+    index_t n,
+    seed_type seed) {
   auto size = cuboid.max() - cuboid.min();
   if (size.minCoeff() <= 0.0)
     throw common::invalid_argument("cuboid must be a valid region");
@@ -36,8 +36,8 @@ geometry::points3d random_points(const geometry::cuboid3d& cuboid,
 // See Marsaglia (1972) at:
 // http://mathworld.wolfram.com/SpherePointPicking.html
 geometry::points3d random_points(const geometry::sphere3d& sphere,
-                                 size_t n,
-                                 seed_type seed) {
+    index_t n,
+    seed_type seed) {
   if (sphere.radius() <= 0.0)
     throw common::invalid_argument("sphere must be a valid region");
 

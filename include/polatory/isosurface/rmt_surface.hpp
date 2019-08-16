@@ -11,7 +11,6 @@
 #include <polatory/common/uncertain.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
-#include <polatory/isosurface/rmt_node_list.hpp>
 #include <polatory/isosurface/types.hpp>
 
 namespace polatory {
@@ -74,13 +73,11 @@ class rmt_tetrahedron {
   }
 
   const rmt_node& node;
-  const rmt_node_list& node_list;
   const int index;
 
 public:
-  rmt_tetrahedron(const rmt_node& node, const rmt_node_list& node_list, int index)
+  rmt_tetrahedron(const rmt_node& node, int index)
     : node(node)
-    , node_list(node_list)
     , index(index) {
   }
 
@@ -197,9 +194,8 @@ class rmt_tetrahedron_iterator
   static constexpr int number_of_tetrahedra = 6;
 
 public:
-  rmt_tetrahedron_iterator(const rmt_node& node, const rmt_node_list& node_list)
+  explicit rmt_tetrahedron_iterator(const rmt_node& node)
     : node(node)
-    , node_list(node_list)
     , index(0) {
     while (is_valid() && !tetrahedron_exists()) {
       // Some of the tetrahedron nodes do not exist.
@@ -225,7 +221,7 @@ public:
   }
 
   self_type::reference operator*() const {
-    return rmt_tetrahedron(node, node_list, index);
+    return rmt_tetrahedron(node, index);
   }
 
   self_type::pointer operator->() const {
@@ -239,7 +235,6 @@ public:
 
 private:
   const rmt_node& node;
-  const rmt_node_list& node_list;
   int index;
 
   // Returns if all tetrahedron nodes exist.
@@ -282,7 +277,7 @@ public:
     for (const auto& nodei : lattice.node_list) {
       auto& node = nodei.second;
 
-      for (detail::rmt_tetrahedron_iterator it(node, lattice.node_list); it.is_valid(); ++it) {
+      for (detail::rmt_tetrahedron_iterator it(node); it.is_valid(); ++it) {
         auto tetra = *it;
 
         for (const auto& face : tetra.get_faces()) {

@@ -4,7 +4,6 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/pi.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/config.hpp>
 #include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -30,3 +29,4 @@
 #include <polatory/rbf/cov_quasi_spherical7.hpp>
 #include <polatory/rbf/cov_quasi_spherical9.hpp>
 #include <polatory/table.hpp>
+#include <polatory/types.hpp>

@@ -14,12 +14,15 @@
 namespace polatory {
 namespace kriging {
 
-empirical_variogram::empirical_variogram(const geometry::points3d& points, const common::valuesd& values,
-                                         double bin_width, size_t n_bins) {
-  size_t n_points = points.rows();
-  if (n_points == 0) return;
+empirical_variogram::empirical_variogram(
+    const geometry::points3d& points,
+    const common::valuesd& values,
+    double bin_width,
+    index_t n_bins) {
+  assert(values.size() == points.rows());
 
-  assert(values.size() == n_points);
+  auto n_points = static_cast<index_t>(points.rows());
+  if (n_points == 0) return;
 
   distance_.resize(n_bins);
   gamma_.resize(n_bins);
@@ -27,15 +30,15 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points, const
   std::vector<numeric::kahan_sum_accumulator<double>> dist_sum(n_bins);
   std::vector<numeric::kahan_sum_accumulator<double>> gamma_sum(n_bins);
 
-  for (size_t i = 0; i < n_points - 1; i++) {
-    for (size_t j = i + 1; j < n_points; j++) {
+  for (index_t i = 0; i < n_points - 1; i++) {
+    for (index_t j = i + 1; j < n_points; j++) {
       auto dist = (points.row(i) - points.row(j)).norm();
       // gstat's convention (to include more pairs in the first bin?):
       //   https://github.com/edzer/gstat/blob/32003307b11d6354340b653ab67c2d85d7304824/src/sem.c#L734-L738
       auto frac = dist / bin_width;
-      size_t bin = dist > 0.0 && frac == std::floor(frac)
-                   ? static_cast<size_t>(std::floor(frac) - 1)
-                   : static_cast<size_t>(std::floor(frac));
+      auto bin = dist > 0.0 && frac == std::floor(frac)
+        ? static_cast<index_t>(std::floor(frac)) - 1
+        : static_cast<index_t>(std::floor(frac));
       if (bin >= n_bins) continue;
 
       dist_sum[bin] += dist;
@@ -44,7 +47,7 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points, const
     }
   }
 
-  for (size_t i = 0; i < n_bins; i++) {
+  for (index_t i = 0; i < n_bins; i++) {
     if (num_pairs_[i] == 0) continue;
 
     distance_[i] = dist_sum[i].get() / num_pairs_[i];
@@ -82,7 +85,7 @@ const std::vector<double>& empirical_variogram::bin_gamma() const {
   return gamma_;
 }
 
-const std::vector<size_t>& empirical_variogram::bin_num_pairs() const {
+const std::vector<index_t>& empirical_variogram::bin_num_pairs() const {
   return num_pairs_;
 }
 

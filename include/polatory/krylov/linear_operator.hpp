@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <polatory/common/types.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace krylov {
@@ -13,7 +13,7 @@ public:
 
   virtual common::valuesd operator()(const common::valuesd& v) const = 0;
 
-  virtual size_t size() const = 0;
+  virtual index_t size() const = 0;
 };
 
 }  // namespace krylov

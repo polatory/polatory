@@ -44,7 +44,7 @@ public:
     tree_ = std::make_unique<Octree>(
       tree_height, std::max(1, tree_height - 4), width, FPoint<double>(center.data()));
 
-    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), static_cast<int>(FmmAlgorithmScheduleChunkSize));
+    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int{ FmmAlgorithmScheduleChunkSize });
   }
 
   common::valuesd evaluate() const {
@@ -56,7 +56,7 @@ public:
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = points.rows();
+    n_points_ = static_cast<index_t>(points.rows());
 
     // Remove all source particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -66,7 +66,7 @@ public:
 
     // Insert points.
     auto ti = model_.rbf().inverse_transformation();
-    for (size_t idx = 0; idx < n_points_; idx++) {
+    for (index_t idx = 0; idx < n_points_; idx++) {
       auto ti_p = ti.transform_point(points.row(idx));
       tree_->insert(FPoint<double>(ti_p.data()), idx, 0.0);
     }
@@ -76,10 +76,10 @@ public:
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    assert(weights.rows() == n_points_);
+    assert(static_cast<index_t>(weights.rows()) == n_points_);
 
     // Update weights.
-    for (size_t idx = 0; idx < n_points_; idx++) {
+    for (index_t idx = 0; idx < n_points_; idx++) {
       *weight_ptrs_[idx] = weights[idx];
     }
   }
@@ -88,7 +88,7 @@ private:
   common::valuesd potentials() const {
     common::valuesd phi = common::valuesd::Zero(n_points_);
 
-    for (size_t i = 0; i < n_points_; i++) {
+    for (index_t i = 0; i < n_points_; i++) {
       phi[i] = *potential_ptrs_[i];
     }
 
@@ -114,9 +114,9 @@ private:
       const auto& indices = particles.getIndexes();
       const double* potentials = particles.getPotentials();
 
-      const size_t n_particles = particles.getNbParticles();
-      for (size_t i = 0; i < n_particles; i++) {
-        const size_t idx = indices[i];
+      auto n_particles = static_cast<index_t>(particles.getNbParticles());
+      for (index_t i = 0; i < n_particles; i++) {
+        auto idx = static_cast<index_t>(indices[i]);
 
         potential_ptrs_[idx] = &potentials[i];
       }
@@ -131,9 +131,9 @@ private:
       const auto& indices = particles.getIndexes();
       double* weights = particles.getPhysicalValues();
 
-      const size_t n_particles = particles.getNbParticles();
-      for (size_t i = 0; i < n_particles; i++) {
-        const size_t idx = indices[i];
+      auto n_particles = static_cast<index_t>(particles.getNbParticles());
+      for (index_t i = 0; i < n_particles; i++) {
+        auto idx = static_cast<index_t>(indices[i]);
 
         weight_ptrs_[idx] = &weights[i];
       }
@@ -143,7 +143,7 @@ private:
   const model model_;
   const fmm_rbf_kernel rbf_kernel_;
 
-  size_t n_points_;
+  index_t n_points_;
 
   std::unique_ptr<Fmm> fmm_;
   std::unique_ptr<InterpolatedKernel> interpolated_kernel_;

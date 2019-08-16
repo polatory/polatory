@@ -16,10 +16,13 @@ if(NOT ENABLE_CLANG_TIDY)
 endif()
 
 if(UNIX)
+    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Wno-missing-braces -Werror)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
 elseif(MSVC)
+    # C4702(unreachable code) is disabled as it is reported by link.exe in third-party code.
+    target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702 /experimental:external /external:W0)
     target_compile_definitions(${TARGET} PUBLIC
         -D_ENABLE_EXTENDED_ALIGNED_STORAGE
     )
@@ -39,16 +42,38 @@ if(USE_PREBUILT_BOOST)
     )
 endif()
 
-target_include_directories(${TARGET} PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
+set(THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR}
     ${VCPKG_INCLUDE_DIR}
 )
-target_include_directories(${TARGET} PRIVATE
+set(THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
+
+target_include_directories(${TARGET} PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+)
+target_include_directories(${TARGET} SYSTEM PUBLIC
+    ${THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES}
+)
+target_include_directories(${TARGET} SYSTEM PRIVATE
+    ${THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES}
+)
+
+if(MSVC)
+    foreach(DIR ${THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES})
+        target_compile_options(${TARGET} PUBLIC
+            "SHELL:/external:I \"${DIR}\""
+        )
+    endforeach()
+    foreach(DIR ${THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES})
+        target_compile_options(${TARGET} PRIVATE
+            "SHELL:/external:I \"${DIR}\""
+        )
+    endforeach()
+endif()
 
 if(UNIX)
     target_link_libraries(${TARGET} INTERFACE

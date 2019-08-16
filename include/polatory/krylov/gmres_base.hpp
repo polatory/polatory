@@ -6,8 +6,8 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace krylov {
@@ -22,9 +22,9 @@ public:
 
   virtual void iterate_process() = 0;
 
-  int iteration_count() const;
+  index_t iteration_count() const;
 
-  int max_iterations() const;
+  index_t max_iterations() const;
 
   double relative_residual() const;
 
@@ -42,11 +42,11 @@ public:
   void solve(double tolerance);
 
 protected:
-  gmres_base(const linear_operator& op, const common::valuesd& rhs, int max_iter);
+  gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
 
   virtual ~gmres_base() = default;
 
-  virtual void add_preconditioned_krylov_basis(const common::valuesd& z) {}
+  virtual void add_preconditioned_krylov_basis(const common::valuesd& /*z*/) {}
 
   common::valuesd left_preconditioned(const common::valuesd& x) const;
 
@@ -55,10 +55,10 @@ protected:
   const linear_operator& op_;
 
   // Dimension.
-  const size_t m_;
+  const index_t m_;
 
   // Maximum # of iteration.
-  const int max_iter_;
+  const index_t max_iter_;
 
   // Initial solution.
   common::valuesd x0_;
@@ -70,7 +70,7 @@ protected:
   const linear_operator *right_pc_;
 
   // Current # of iteration.
-  int iter_;
+  index_t iter_;
 
   // Constant (right-hand side) vector.
   const common::valuesd rhs_;

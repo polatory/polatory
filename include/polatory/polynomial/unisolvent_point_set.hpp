@@ -9,28 +9,30 @@
 #include <polatory/common/bsearch.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace polynomial {
 
 class unisolvent_point_set {
 public:
-  unisolvent_point_set(const geometry::vectors3d& points,
-                       const std::vector<size_t>& point_indices,
+  unisolvent_point_set(const geometry::vectors3d& /*points*/,
+                       const std::vector<index_t>& point_indices,
                        int dimension,
                        int degree)
-    : n_points_(points.rows())
-    , n_poly_basis_(polynomial::polynomial_basis_base::basis_size(dimension, degree))
-    , point_idcs_(point_indices) {
+    : point_idcs_(point_indices) {
     if (degree < 0) return;
+
+    auto n_points = static_cast<index_t>(point_indices.size());
+    auto n_poly_basis = polynomial_basis_base::basis_size(dimension, degree);
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dist(0, point_indices.size() - 1);
-    std::set<size_t> set;
+    std::uniform_int_distribution<index_t> dist(index_t{ 0 }, n_points - 1);
+    std::set<index_t> set;
 
-    while (set.size() < n_poly_basis_) {
-      size_t point_idx = point_idcs_[dist(gen)];
+    while (static_cast<index_t>(set.size()) < n_poly_basis) {
+      auto point_idx = point_idcs_[dist(gen)];
       if (!set.insert(point_idx).second)
         continue;
 
@@ -43,15 +45,12 @@ public:
     assert(point_idcs_.size() == point_indices.size());
   }
 
-  const std::vector<size_t>& point_indices() const {
+  const std::vector<index_t>& point_indices() const {
     return point_idcs_;
   }
 
 private:
-  const size_t n_points_;
-  const size_t n_poly_basis_;
-
-  std::vector<size_t> point_idcs_;
+  std::vector<index_t> point_idcs_;
 };
 
 }  // namespace polynomial

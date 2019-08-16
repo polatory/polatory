@@ -7,7 +7,6 @@
 #include <tuple>
 #include <vector>
 
-#include <polatory/common/types.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/exception.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -17,6 +16,7 @@
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/model.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 
@@ -83,7 +83,7 @@ public:
 
     interpolation::rbf_incremental_fitter fitter(model_, points);
 
-    std::vector<size_t> center_indices;
+    std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
 
     centers_ = common::take_rows(points, center_indices);
@@ -116,7 +116,7 @@ public:
 
     interpolation::rbf_inequality_fitter fitter(model_, points);
 
-    std::vector<size_t> center_indices;
+    std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
     centers_ = common::take_rows(points, center_indices);

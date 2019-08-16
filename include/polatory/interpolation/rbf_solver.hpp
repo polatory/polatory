@@ -8,7 +8,6 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
@@ -17,6 +16,7 @@
 #include <polatory/model.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -28,7 +28,7 @@ public:
   rbf_solver(const model& model, const geometry::points3d& points)
     : model_(model)
     , n_poly_basis_(model.poly_basis_size())
-    , n_points_(points.rows()) {
+    , n_points_(static_cast<index_t>(points.rows())) {
     op_ = std::make_unique<rbf_operator<>>(model, points);
     res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points);
 
@@ -44,7 +44,7 @@ public:
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = points.rows();
+    n_points_ = static_cast<index_t>(points.rows());
 
     op_->set_points(points);
     res_eval_->set_points(points);
@@ -59,7 +59,7 @@ public:
 
   template <class Derived>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
-    assert(values.rows() == n_points_);
+    assert(static_cast<index_t>(values.rows()) == n_points_);
 
     return solve_impl(values, absolute_tolerance);
   }
@@ -67,14 +67,15 @@ public:
   template <class Derived, class Derived2>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         const Eigen::MatrixBase<Derived2>& initial_solution) const {
-    assert(values.rows() == n_points_);
-    assert(initial_solution.rows() == n_points_ + n_poly_basis_);
+    assert(static_cast<index_t>(values.rows()) == n_points_);
+    assert(static_cast<index_t>(initial_solution.rows()) == n_points_ + n_poly_basis_);
 
     common::valuesd ini_sol = initial_solution;
 
     if (n_poly_basis_ > 0) {
       // Orthogonalize weights against P.
-      for (size_t i = 0; i < p_.cols(); i++) {
+      auto n_cols = static_cast<index_t>(p_.cols());
+      for (index_t i = 0; i < n_cols; i++) {
         ini_sol.head(n_points_) -= p_.col(i).dot(ini_sol.head(n_points_)) * p_.col(i);
       }
     }
@@ -124,9 +125,9 @@ private:
   }
 
   const model model_;
-  const size_t n_poly_basis_;
+  const index_t n_poly_basis_;
 
-  size_t n_points_;
+  index_t n_points_;
   std::unique_ptr<rbf_operator<>> op_;
   std::unique_ptr<Preconditioner> pc_;
   std::unique_ptr<rbf_residual_evaluator> res_eval_;

@@ -4,29 +4,29 @@
 
 #include <cassert>
 
-#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace krylov {
 
 class identity_operator : public linear_operator {
 public:
-  explicit identity_operator(size_t n)
+  explicit identity_operator(index_t n)
     : n_(n) {
   }
 
   common::valuesd operator()(const common::valuesd& v) const override {
-    assert(v.rows() == n_);
+    assert(static_cast<int>(v.rows()) == n_);
     return v;
   }
 
-  size_t size() const override {
+  index_t size() const override {
     return n_;
   }
 
 private:
-  const size_t n_;
+  const index_t n_;
 };
 
 }  // namespace krylov

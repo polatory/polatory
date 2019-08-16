@@ -6,11 +6,11 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace interpolation {
@@ -25,7 +25,7 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.rows() == n_points_ + n_poly_basis_);
+    assert(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
 
     weights_ = weights;
 
@@ -36,8 +36,8 @@ public:
 
 private:
   const model model_;
-  const size_t n_points_;
-  const size_t n_poly_basis_;
+  const index_t n_points_;
+  const index_t n_poly_basis_;
 
   std::unique_ptr<PolynomialEvaluator> p_;
 

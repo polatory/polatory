@@ -6,8 +6,8 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace polynomial {
@@ -31,12 +31,12 @@ public:
   }
 
   void set_weights(const common::valuesd& weights) {
-    assert(weights.rows() == basis_.basis_size());
+    assert(static_cast<index_t>(weights.rows()) == basis_.basis_size());
 
     weights_ = weights;
   }
 
-  size_t size() const {
+  index_t size() const {
     return basis_.basis_size();
   }
 

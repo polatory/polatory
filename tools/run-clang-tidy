@@ -12,7 +12,7 @@ if [ ! -f "compile_commands.json" ]; then
   exit 1;
 fi
 
-find "$rel_source_dir"/benchmark/ "$rel_source_dir"/examples/ "$rel_source_dir"/src/ "$rel_source_dir"/test/ '(' \
+find "$rel_source_dir"/benchmark/ "$rel_source_dir"/examples/ "$rel_source_dir"/src/ '(' \
     -name '*.cpp' \
   ')' -type f -print0 \
   | xargs -0 -n1 -P"$(nproc)" clang-tidy -quiet

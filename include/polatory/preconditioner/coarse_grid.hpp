@@ -9,10 +9,10 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -21,11 +21,11 @@ class coarse_grid {
 public:
   coarse_grid(const model& model,
               std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
-              const std::vector<size_t>& point_indices);
+              const std::vector<index_t>& point_indices);
 
   coarse_grid(const model& model,
               std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
-              const std::vector<size_t>& point_indices,
+              const std::vector<index_t>& point_indices,
               const geometry::points3d& points_full);
 
   void clear();
@@ -39,10 +39,10 @@ public:
 private:
   const model model_;
   const std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
-  const std::vector<size_t> point_idcs_;
+  const std::vector<index_t> point_idcs_;
 
-  const size_t l_;
-  const size_t m_;
+  const index_t l_;
+  const index_t m_;
 
   // Matrix -E.
   Eigen::MatrixXd me_;

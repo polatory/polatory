@@ -25,7 +25,7 @@ using edge_bitset = uint16_t;
 // Encodes 0 or 1 on 24 faces for each node.
 using face_bitset = uint32_t;
 
-static constexpr int FaceSetMask = 0xffffff;
+static constexpr face_bitset FaceSetMask = 0xffffff;
 
 // Edge index per node: 0 - 13
 using edge_index = int;

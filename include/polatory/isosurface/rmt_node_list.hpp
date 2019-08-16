@@ -18,7 +18,7 @@ extern const std::array<cell_vector, 14> NeighborCellVectors;
 class rmt_node_list : std::map<cell_index, rmt_node> {
   using base_type = std::map<cell_index, rmt_node>;
 
-  std::array<cell_index_difference, 14> NeighborCellIndexDeltas;
+  std::array<cell_index, 14> NeighborCellIndexDeltas;
 
 public:
   using iterator = base_type::iterator;
@@ -38,7 +38,7 @@ public:
     return it != end() ? &it->second : nullptr;
   }
 
-  void init_strides(cell_index_difference stride1, cell_index_difference stride2) {
+  void init_strides(cell_index stride1, cell_index stride2) {
     for (edge_index ei = 0; ei < 14; ei++) {
       auto delta_m = NeighborCellVectors[ei];
       NeighborCellIndexDeltas[ei] =
@@ -47,7 +47,7 @@ public:
   }
 
   cell_index neighbor_cell_index(cell_index cell_index, edge_index ei) const {
-    return static_cast<cell_index_difference>(cell_index) + NeighborCellIndexDeltas[ei];
+    return cell_index + NeighborCellIndexDeltas[ei];
   }
 
   iterator find_neighbor_node(cell_index cell_index, edge_index ei) {

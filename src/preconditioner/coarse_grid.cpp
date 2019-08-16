@@ -13,18 +13,18 @@ namespace preconditioner {
 
 coarse_grid::coarse_grid(const model& model,
                          std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
-                         const std::vector<size_t>& point_indices)
+                         const std::vector<index_t>& point_indices)
   : model_(model)
   , lagrange_basis_(lagrange_basis)
   , point_idcs_(point_indices)
   , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
-  , m_(point_indices.size()) {
+  , m_(static_cast<index_t>(point_indices.size())) {
   assert(m_ > l_);
 }
 
 coarse_grid::coarse_grid(const model& model,
                          std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
-                         const std::vector<size_t>& point_indices,
+                         const std::vector<index_t>& point_indices,
                          const geometry::points3d& points_full)
   : coarse_grid(model, lagrange_basis, point_indices) {
   setup(points_full);
@@ -43,11 +43,11 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
   Eigen::MatrixXd a(m_, m_);
   auto& rbf = model_.rbf();
   auto diagonal = rbf.evaluate_untransformed(0.0) + model_.nugget();
-  for (size_t i = 0; i < m_; i++) {
+  for (index_t i = 0; i < m_; i++) {
     a(i, i) = diagonal;
   }
-  for (size_t i = 0; i < m_ - 1; i++) {
-    for (size_t j = i + 1; j < m_; j++) {
+  for (index_t i = 0; i < m_ - 1; i++) {
+    for (index_t j = i + 1; j < m_; j++) {
       a(i, j) = rbf.evaluate(points_full.row(point_idcs_[i]) - points_full.row(point_idcs_[j]));
       a(j, i) = a(i, j);
     }
@@ -77,7 +77,7 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
 }
 
 void coarse_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
-  for (size_t i = 0; i < m_; i++) {
+  for (index_t i = 0; i < m_; i++) {
     weights_full(point_idcs_[i]) = lambda_c_(i);
   }
 
@@ -86,7 +86,7 @@ void coarse_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) cons
 
 void coarse_grid::solve(const Eigen::Ref<const common::valuesd>& values_full) {
   common::valuesd values(m_);
-  for (size_t i = 0; i < m_; i++) {
+  for (index_t i = 0; i < m_; i++) {
     values(i) = values_full(point_idcs_[i]);
   }
 

@@ -4,46 +4,44 @@
 
 #include <cmath>
 
-#include <polatory/common/types.hpp>
-
 namespace polatory {
 namespace krylov {
 
-gmres::gmres(const linear_operator& op, const common::valuesd& rhs, int max_iter)
+gmres::gmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
   : gmres_base(op, rhs, max_iter) {
 }
 
 void gmres::iterate_process() {
   if (iter_ == max_iter_) return;
 
-  int j = iter_;
+  auto j = iter_;
 
   // Arnoldi process
   auto z = right_preconditioned(vs_[j]);
   add_preconditioned_krylov_basis(z);
   vs_.push_back(left_preconditioned(op_(z)));
 #pragma omp parallel for
-  for (int i = 0; i <= j; i++) {
+  for (index_t i = 0; i <= j; i++) {
     r_(i, j) = vs_[i].dot(vs_[j + 1]);
   }
-  for (int i = 0; i <= j; i++) {
+  for (index_t i = 0; i <= j; i++) {
     vs_[j + 1] -= r_(i, j) * vs_[i];
   }
   r_(j + 1, j) = vs_[j + 1].norm();
   vs_[j + 1] /= r_(j + 1, j);
 
   // Update matrix R by Givens rotation
-  for (int i = 0; i < j; i++) {
-    double x = r_(i, j);
-    double y = r_(i + 1, j);
-    double tmp1 = c_(i) * x + s_(i) * y;
-    double tmp2 = -s_(i) * x + c_(i) * y;
+  for (index_t i = 0; i < j; i++) {
+    auto x = r_(i, j);
+    auto y = r_(i + 1, j);
+    auto tmp1 = c_(i) * x + s_(i) * y;
+    auto tmp2 = -s_(i) * x + c_(i) * y;
     r_(i, j) = tmp1;
     r_(i + 1, j) = tmp2;
   }
-  double x = r_(j, j);
-  double y = r_(j + 1, j);
-  double den = std::hypot(x, y);
+  auto x = r_(j, j);
+  auto y = r_(j + 1, j);
+  auto den = std::hypot(x, y);
   c_(j) = x / den;
   s_(j) = y / den;
 

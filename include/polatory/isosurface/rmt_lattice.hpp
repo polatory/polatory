@@ -149,7 +149,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   // Returns the number of cells added.
-  int track_surface() {
+  cell_index track_surface() {
     std::set<cell_index> cells_to_add;
 
     // Check 12 edges of each cell and add neighbor cells adjacent to an edge
@@ -253,7 +253,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
     cells_to_visit.clear();
 
-    int count = 0;
+    auto count = cell_index{ 0 };
     for (auto cell_idx : cells_to_add) {
       if (add_cell(cell_idx))
         count++;
@@ -269,7 +269,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
       node.neighbor_cache.reset(new rmt_node *[14]);
 
-      for (int ei = 0; ei < 14; ei++) {
+      for (edge_index ei = 0; ei < 14; ei++) {
         node.neighbor_cache[ei] = node_list.neighbor_node_ptr(cell_idx, ei);
       }
     }
@@ -287,14 +287,14 @@ public:
     std::vector<cell_index> new_nodes;
     std::vector<cell_index> prev_nodes;
 
-    for (int m2 = cell_min(2); m2 <= cell_max(2); m2++) {
-      cell_index offset2 = static_cast<cell_index>(m2 - cell_min(2)) << shift2;
+    for (auto m2 = cell_min(2); m2 <= cell_max(2); m2++) {
+      auto offset2 = static_cast<cell_index>(m2 - cell_min(2)) << shift2;
 
-      for (int m1 = cell_min(1); m1 <= cell_max(1); m1++) {
-        cell_index offset21 = offset2 | (static_cast<cell_index>(m1 - cell_min(1)) << shift1);
+      for (auto m1 = cell_min(1); m1 <= cell_max(1); m1++) {
+        auto offset21 = offset2 | (static_cast<cell_index>(m1 - cell_min(1)) << shift1);
 
-        for (int m0 = cell_min(0); m0 <= cell_max(0); m0++) {
-          cell_index cell_idx = offset21 | static_cast<cell_index>(m0 - cell_min(0));
+        for (auto m0 = cell_min(0); m0 <= cell_max(0); m0++) {
+          auto cell_idx = offset21 | static_cast<cell_index>(m0 - cell_min(0));
 
           if (add_node(cell_idx, cell_vector(m0, m1, m2)))
             new_nodes.push_back(cell_idx);
@@ -360,8 +360,8 @@ public:
 
 #pragma omp parallel
     {
-      size_t thread_count = omp_get_num_threads();
-      size_t thread_num = omp_get_thread_num();
+      auto thread_count = static_cast<size_t>(omp_get_num_threads());
+      auto thread_num = static_cast<size_t>(omp_get_thread_num());
       auto map_size = nodes.size();
       auto map_it = nodes.begin();
       if (thread_num < map_size)
@@ -419,11 +419,12 @@ public:
 
   // This method should be called right after calling uncluster_vertices().
   void remove_unreferenced_vertices() {
-    std::vector<vertex_index> vimap(vertices.size());
+    auto n_vertices = static_cast<vertex_index>(vertices.size());
+    std::vector<vertex_index> vimap(n_vertices);
     std::vector<geometry::point3d> reduced_vertices;
-    reduced_vertices.reserve(vertices.size() / 3);
+    reduced_vertices.reserve(n_vertices / 3);
 
-    for (vertex_index vi = 0; vi < vertices.size(); vi++) {
+    for (vertex_index vi = 0; vi < n_vertices; vi++) {
       if (cluster_map.count(vi) != 0) {
         // The vertex is clustered and no longer used.
         vimap[vi] = -1;
