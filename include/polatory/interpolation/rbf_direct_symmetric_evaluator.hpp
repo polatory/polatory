@@ -25,7 +25,7 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(weights.rows() == n_points_ + n_poly_basis_);
+    assert(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
 
     weights_ = weights;
 

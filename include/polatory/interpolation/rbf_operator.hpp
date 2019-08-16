@@ -51,7 +51,7 @@ public:
   }
 
   common::valuesd operator()(const common::valuesd& weights) const override {
-    assert(weights.rows() == size());
+    assert(static_cast<index_t>(weights.rows()) == size());
 
     common::valuesd y = common::valuesd::Zero(size());
 

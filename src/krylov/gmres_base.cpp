@@ -38,7 +38,7 @@ void gmres_base::set_left_preconditioner(const linear_operator& left_preconditio
 }
 
 void gmres_base::set_initial_solution(const common::valuesd& x0) {
-  assert(x0.rows() == m_);
+  assert(static_cast<index_t>(x0.rows()) == m_);
 
   x0_ = x0;
 }

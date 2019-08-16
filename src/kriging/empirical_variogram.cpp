@@ -19,10 +19,10 @@ empirical_variogram::empirical_variogram(
     const common::valuesd& values,
     double bin_width,
     index_t n_bins) {
+  assert(values.size() == points.rows());
+
   auto n_points = static_cast<index_t>(points.rows());
   if (n_points == 0) return;
-
-  assert(values.size() == n_points);
 
   distance_.resize(n_bins);
   gamma_.resize(n_bins);

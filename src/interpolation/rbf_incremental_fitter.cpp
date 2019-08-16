@@ -89,7 +89,7 @@ rbf_incremental_fitter::fit(const common::valuesd& values, double absolute_toler
     auto n_last_centers = n_centers;
     auto n_centers_to_add =
       std::min(n_points_need_fitting, std::max(
-          max_n_points_to_add,
+          index_t{ max_n_points_to_add },
           static_cast<index_t>(point_adoption_ratio * n_points_need_fitting)));
 
     centers.insert(centers.end(), c_centers.end() - n_centers_to_add, c_centers.end());

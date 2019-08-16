@@ -45,7 +45,7 @@ public:
     tree_ = std::make_unique<Octree>(
       tree_height, std::max(1, tree_height - 4), width, FPoint<double>(center.data()));
 
-    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), static_cast<int>(FmmAlgorithmScheduleChunkSize));
+    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int{ FmmAlgorithmScheduleChunkSize });
   }
 
   common::valuesd evaluate() const {
@@ -128,7 +128,7 @@ public:
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    assert(weights.size() == n_src_points_);
+    assert(static_cast<index_t>(weights.size()) == n_src_points_);
 
     if (n_src_points_ == 0)
       return;

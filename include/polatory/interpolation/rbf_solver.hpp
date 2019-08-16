@@ -59,7 +59,7 @@ public:
 
   template <class Derived>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
-    assert(values.rows() == n_points_);
+    assert(static_cast<index_t>(values.rows()) == n_points_);
 
     return solve_impl(values, absolute_tolerance);
   }
@@ -67,8 +67,8 @@ public:
   template <class Derived, class Derived2>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         const Eigen::MatrixBase<Derived2>& initial_solution) const {
-    assert(values.rows() == n_points_);
-    assert(initial_solution.rows() == n_points_ + n_poly_basis_);
+    assert(static_cast<index_t>(values.rows()) == n_points_);
+    assert(static_cast<index_t>(initial_solution.rows()) == n_points_ + n_poly_basis_);
 
     common::valuesd ini_sol = initial_solution;
 

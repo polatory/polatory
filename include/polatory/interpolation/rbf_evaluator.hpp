@@ -93,7 +93,7 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) const {
-    assert(weights.size() == n_src_points_ + n_poly_basis_);
+    assert(static_cast<index_t>(weights.size()) == n_src_points_ + n_poly_basis_);
 
     a_->set_weights(weights.head(n_src_points_));
 

@@ -17,7 +17,7 @@ public:
   }
 
   common::valuesd operator()(const common::valuesd& v) const override {
-    assert(v.rows() == n_);
+    assert(static_cast<int>(v.rows()) == n_);
     return v;
   }
 

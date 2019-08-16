@@ -119,7 +119,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 }
 
 common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
-  assert(v.rows() == size());
+  assert(static_cast<index_t>(v.rows()) == size());
 
   common::valuesd residuals = v.head(n_points_);
   common::valuesd weights_total = common::valuesd::Zero(size());

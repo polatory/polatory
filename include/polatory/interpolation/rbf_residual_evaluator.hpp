@@ -42,8 +42,8 @@ public:
   std::pair<bool, double> converged(const Eigen::MatrixBase<Derived>& values,
                                     const Eigen::MatrixBase<Derived2>& weights,
                                     double absolute_tolerance) const {
-    assert(values.rows() == n_points_);
-    assert(weights.rows() == n_points_ + n_poly_basis_);
+    assert(static_cast<index_t>(values.rows()) == n_points_);
+    assert(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
 
     evaluator_->set_weights(weights);
 

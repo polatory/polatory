@@ -31,7 +31,7 @@ public:
   }
 
   void set_weights(const common::valuesd& weights) {
-    assert(weights.rows() == basis_.basis_size());
+    assert(static_cast<index_t>(weights.rows()) == basis_.basis_size());
 
     weights_ = weights;
   }
