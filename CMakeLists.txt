@@ -45,7 +45,9 @@ elseif(MSVC)
     file(TO_CMAKE_PATH "$ENV{${_PF86}}" _PROG_FILES_X86)
 
     if("$ENV{APPVEYOR}" STREQUAL "True")
-        set(MKL_ROOT "$ENV{CONDA_DIR}/Library")
+        file(TO_CMAKE_PATH "$ENV{CONDA_DIR}" CONDA_DIR)
+
+        set(MKL_ROOT "${CONDA_DIR}/Library")
         set(MKL_DLL_DIR "${MKL_ROOT}/bin")
         set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
         set(MKL_LIB_DIR "${MKL_ROOT}/lib")

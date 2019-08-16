@@ -194,7 +194,7 @@ class rmt_tetrahedron_iterator
   static constexpr int number_of_tetrahedra = 6;
 
 public:
-  rmt_tetrahedron_iterator(const rmt_node& node)
+  explicit rmt_tetrahedron_iterator(const rmt_node& node)
     : node(node)
     , index(0) {
     while (is_valid() && !tetrahedron_exists()) {
