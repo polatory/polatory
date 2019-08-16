@@ -64,13 +64,11 @@ target_include_directories(${TARGET} SYSTEM PRIVATE
 
 if(MSVC)
     foreach(DIR ${SYSTEM_PUBLIC_INCLUDE_DIRECTORIES})
-        message("Adding ${DIR} to public hoge.")
         target_compile_options(${TARGET} PUBLIC
             "SHELL:/external:I \"${DIR}\""
         )
     endforeach()
     foreach(DIR ${SYSTEM_PRIVATE_INCLUDE_DIRECTORIES})
-        message("Adding ${DIR} to private hoge.")
         target_compile_options(${TARGET} PRIVATE
             "SHELL:/external:I \"${DIR}\""
         )
