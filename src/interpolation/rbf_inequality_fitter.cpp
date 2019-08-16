@@ -144,19 +144,5 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
   return std::make_pair(std::move(centers), std::move(center_weights));
 }
 
-std::vector<index_t> rbf_inequality_fitter::arg_where(
-    const common::valuesd& v,
-    std::function<bool(double)> predicate) {
-  std::vector<index_t> idcs;
-
-  auto size = static_cast<index_t>(v.size());
-  for (index_t i = 0; i < size; i++) {
-    if (predicate(v(i)))
-      idcs.push_back(i);
-  }
-
-  return idcs;
-}
-
 }  // namespace interpolation
 }  // namespace polatory

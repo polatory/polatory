@@ -65,12 +65,12 @@ std::string to_string(Floating arg) {
   if (std::isinf(arg))
     return std::signbit(arg) ? "-inf" : "inf";
 
-  std::snprintf(str, str_size, detail::format<Floating>::shorthand(), arg);
+  std::snprintf(str, str_size, detail::format<Floating>::shorthand(), arg);  // NOLINT(cppcoreguidelines-pro-type-vararg)
   auto arg_rep = boost::lexical_cast<Floating>(str);
   if (arg == arg_rep)
     return str;
 
-  std::snprintf(str, str_size, detail::format<Floating>::complete(), arg);
+  std::snprintf(str, str_size, detail::format<Floating>::complete(), arg);  // NOLINT(cppcoreguidelines-pro-type-vararg)
   return str;
 }
 

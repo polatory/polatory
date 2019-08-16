@@ -11,7 +11,7 @@ namespace polatory {
 namespace preconditioner {
 
 fine_grid::fine_grid(const model& model,
-                     std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
+                     const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
                      const std::vector<index_t>& point_indices,
                      const std::vector<bool>& inner_point)
   : model_(model)
@@ -24,7 +24,7 @@ fine_grid::fine_grid(const model& model,
 }
 
 fine_grid::fine_grid(const model& model,
-                     std::shared_ptr<polynomial::lagrange_basis> lagrange_basis,
+                     const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
                      const std::vector<index_t>& point_indices,
                      const std::vector<bool>& inner_point,
                      const geometry::points3d& points_full)

@@ -109,17 +109,13 @@ before_script:
   - docker exec test sh -c "cd polatory && mkdir build"
 
 script:
-  - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then
-      docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0";
-      docker exec test sh -c "cd polatory/build && ninja";
-      docker exec test sh -c "cd polatory/build && $CTEST -V";
-      docker exec test sh -c "cd polatory/build && ninja install";
-    fi
-  - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then
-      docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0 -DENABLE_CLANG_TIDY=ON";
-      docker exec test sh -c "cd polatory/build && ninja clang-tidy";
-      docker exec test sh -c "cd polatory && tools/run-cpplint";
-    fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && ninja"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && $CTEST -V"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && ninja install"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0 -DENABLE_CLANG_TIDY=ON"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory/build && ninja clang-tidy"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory && tools/run-cpplint"; fi
 
 branches:
   only:

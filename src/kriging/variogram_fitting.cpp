@@ -16,7 +16,7 @@ namespace {
 
 struct residual {
   residual(model *model,
-    index_t n_pairs, double distance, double gamma, weight_function weight_fn)
+    index_t n_pairs, double distance, double gamma, const weight_function& weight_fn)
     : model_(model)
     , n_pairs_(n_pairs)
     , distance_(distance)
@@ -38,11 +38,11 @@ private:
   const index_t n_pairs_;
   const double distance_;
   const double gamma_;
-  const weight_function weight_fn_;
+  const weight_function& weight_fn_;
 };
 
 ceres::CostFunction* create_cost_function(model *model,
-  index_t n_pairs, double distance, double gamma, weight_function weight_fn) {
+  index_t n_pairs, double distance, double gamma, const weight_function& weight_fn) {
   auto cost_fn = new ceres::DynamicNumericDiffCostFunction<residual>(
     new residual(model, n_pairs, distance, gamma, weight_fn));
   cost_fn->AddParameterBlock(model->num_parameters());
@@ -53,7 +53,7 @@ ceres::CostFunction* create_cost_function(model *model,
 }  // namespace
 
 variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, const model& model,
-  weight_function weight_fn) {
+  const weight_function& weight_fn) {
   auto model2 = std::make_unique<polatory::model>(model);
 
   auto n_params = model2->num_parameters();

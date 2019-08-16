@@ -14,7 +14,7 @@ namespace kriging {
 class variogram_fitting {
 public:
   variogram_fitting(const empirical_variogram& emp_variog, const model& model,
-    weight_function weight_fn);
+    const weight_function& weight_fn);
 
   const std::vector<double>& parameters() const;
 
