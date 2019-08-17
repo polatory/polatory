@@ -20,6 +20,11 @@ public:
 
   ~kdtree();
 
+  kdtree(const kdtree&) = delete;
+  kdtree(kdtree&&) = delete;
+  kdtree& operator=(const kdtree&) = delete;
+  kdtree& operator=(kdtree&&) = delete;
+
   indices_and_distances knn_search(const geometry::point3d& point, index_t k) const;
 
   indices_and_distances radius_search(const geometry::point3d& point, double radius) const;

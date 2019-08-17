@@ -16,6 +16,13 @@ class gmres_base {
 public:
   static bool print_progress;
 
+  virtual ~gmres_base() = default;
+
+  gmres_base(const gmres_base&) = delete;
+  gmres_base(gmres_base&&) = delete;
+  gmres_base& operator=(const gmres_base&) = delete;
+  gmres_base& operator=(gmres_base&&) = delete;
+
   double absolute_residual() const;
 
   bool converged() const;
@@ -43,8 +50,6 @@ public:
 
 protected:
   gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
-
-  virtual ~gmres_base() = default;
 
   virtual void add_preconditioned_krylov_basis(const common::valuesd& /*z*/) {}
 

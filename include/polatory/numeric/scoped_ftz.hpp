@@ -7,12 +7,10 @@
 #include <cmath>
 #include <limits>
 
-#include <boost/core/noncopyable.hpp>
-
 namespace polatory {
 namespace numeric {
 
-class scoped_ftz : boost::noncopyable {
+class scoped_ftz {
 public:
   scoped_ftz()
     : ftz_mode_backup_(_MM_GET_FLUSH_ZERO_MODE())
@@ -25,6 +23,11 @@ public:
     _MM_SET_FLUSH_ZERO_MODE(ftz_mode_backup_);
     _MM_SET_DENORMALS_ZERO_MODE(daz_mode_backup_);
   }
+
+  scoped_ftz(const scoped_ftz&) = delete;
+  scoped_ftz(scoped_ftz&&) = delete;
+  scoped_ftz& operator=(const scoped_ftz&) = delete;
+  scoped_ftz& operator=(scoped_ftz&&) = delete;
 
   static bool daz_is_active() {
     volatile double double_denorm_min = std::numeric_limits<double>::denorm_min();

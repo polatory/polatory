@@ -10,9 +10,7 @@ namespace common {
 template <class T>
 class uncertain {
 public:
-  uncertain()
-    : certain_(false) {
-  }
+  uncertain() = default;
 
   uncertain(T value)  // NOLINT(runtime/explicit)
     : certain_(true)
@@ -29,8 +27,8 @@ public:
   }
 
 private:
-  bool certain_;
-  T value_;
+  bool certain_{false};
+  T value_{};
 };
 
 inline

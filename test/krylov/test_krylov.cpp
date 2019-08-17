@@ -21,46 +21,54 @@ using polatory::index_t;
 
 namespace {
 
-struct random_symmetric : linear_operator {
-  const index_t n;
-  Eigen::MatrixXd m;
-
+class random_symmetric : public linear_operator {
+public:
   explicit random_symmetric(index_t n)
-    : n(n) {
-    m = (Eigen::MatrixXd::Random(n, n) + Eigen::MatrixXd::Ones(n, n)) / 2.0;
+    : n_(n) {
+    m_ = (Eigen::MatrixXd::Random(n, n) + Eigen::MatrixXd::Ones(n, n)) / 2.0;
     for (index_t i = 1; i < n; i++) {
       for (index_t j = 0; j < i; j++) {
-        m(i, j) = m(j, i);
+        m_(i, j) = m_(j, i);
       }
     }
   }
 
+  const Eigen::MatrixXd& matrix() const {
+    return m_;
+  }
+
   valuesd operator()(const valuesd& v) const override {
-    return m * v;
+    return m_ * v;
   }
 
   index_t size() const override {
-    return n;
+    return n_;
   }
+
+private:
+  const index_t n_;
+  Eigen::MatrixXd m_;
 };
 
-struct preconditioner : linear_operator {
-  const index_t n;
-  Eigen::MatrixXd m;
-
-  explicit preconditioner(random_symmetric op)
-    : n(op.size()) {
-    Eigen::MatrixXd perturbation = 0.1 * valuesd::Random(n).asDiagonal();
-    m = op.m.inverse() + perturbation;
+class preconditioner : public linear_operator {
+public:
+  explicit preconditioner(const random_symmetric& op)
+    : n_(op.size()) {
+    Eigen::MatrixXd perturbation = 0.1 * valuesd::Random(n_).asDiagonal();
+    m_ = op.matrix().inverse() + perturbation;
   }
 
   valuesd operator()(const valuesd& v) const override {
-    return m * v;
+    return m_ * v;
   }
 
   index_t size() const override {
-    return n;
+    return n_;
   }
+
+private:
+  const index_t n_;
+  Eigen::MatrixXd m_;
 };
 
 class krylov_test : public ::testing::Test {
@@ -90,7 +98,7 @@ protected:
 
   template <class Solver>
   void test_solver(bool with_initial_solution, bool with_right_pc, bool with_left_pc) {
-    auto solver = Solver(*op, rhs, n);
+    Solver solver(*op, rhs, n);
     if (with_initial_solution)
       solver.set_initial_solution(x0);
     if (with_right_pc)

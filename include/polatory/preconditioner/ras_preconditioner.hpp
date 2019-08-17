@@ -2,9 +2,6 @@
 
 #pragma once
 
-#define POLATORY_REPORT_RESIDUAL 0
-#define POLATORY_RECOMPUTE_AND_CLEAR 1
-
 #include <memory>
 #include <vector>
 
@@ -24,6 +21,8 @@ namespace polatory {
 namespace preconditioner {
 
 class ras_preconditioner : public krylov::linear_operator {
+  static constexpr bool kRecomputeAndClear = true;
+  static constexpr bool kReportResidual = false;
   static constexpr int Order = 6;
   static constexpr double coarse_ratio = 0.125;
   static constexpr index_t n_coarsest_points = 1024;
@@ -39,12 +38,9 @@ private:
   const geometry::points3d points_;
   const index_t n_points_;
   const index_t n_poly_basis_;
+  const std::unique_ptr<interpolation::rbf_symmetric_evaluator<Order>> finest_evaluator_;
+
   int n_fine_levels_;
-
-#if POLATORY_REPORT_RESIDUAL
-  mutable interpolation::rbf_symmetric_evaluator<Order> finest_evaluator_;
-#endif
-
   std::vector<std::vector<index_t>> point_idcs_;
   mutable std::vector<std::vector<fine_grid>> fine_grids_;
   std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;

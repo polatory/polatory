@@ -21,6 +21,11 @@ public:
 
   virtual ~polynomial_basis_base() = default;
 
+  polynomial_basis_base(const polynomial_basis_base&) = delete;
+  polynomial_basis_base(polynomial_basis_base&&) = delete;
+  polynomial_basis_base& operator=(const polynomial_basis_base&) = delete;
+  polynomial_basis_base& operator=(polynomial_basis_base&&) = delete;
+
   index_t basis_size() const {
     return basis_size(dimension_, degree_);
   }

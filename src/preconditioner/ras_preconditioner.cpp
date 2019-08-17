@@ -20,9 +20,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   : points_(in_points)
   , n_points_(static_cast<index_t>(in_points.rows()))
   , n_poly_basis_(model.poly_basis_size())
-#if POLATORY_REPORT_RESIDUAL
-  , finest_evaluator_(model, points_)
-#endif
+  , finest_evaluator_(kReportResidual ? std::make_unique<interpolation::rbf_symmetric_evaluator<Order>>(model, points_) : nullptr)
 {
   point_idcs_.emplace_back(n_points_);
   std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
@@ -51,13 +49,13 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   }
   auto n_points = static_cast<index_t>(points_.rows());
   auto n_fine_grids = static_cast<index_t>(fine_grids_.back().size());
-#if !POLATORY_RECOMPUTE_AND_CLEAR
+  if (!kRecomputeAndClear) {
 #pragma omp parallel for
-  for (index_t i = 0; i < n_fine_grids; i++) {
-     auto& fine = fine_grids_.back()[i];
-     fine.setup(points_);
+    for (index_t i = 0; i < n_fine_grids; i++) {
+      auto& fine = fine_grids_.back()[i];
+      fine.setup(points_);
+    }
   }
-#endif
   std::cout << "Number of points in level 0: " << n_points << std::endl;
   std::cout << "Number of domains in level 0: " << n_fine_grids << std::endl;
 
@@ -77,13 +75,13 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     }
     n_points = static_cast<index_t>(point_idcs_.back().size());
     n_fine_grids = static_cast<index_t>(fine_grids_.back().size());
-#if !POLATORY_RECOMPUTE_AND_CLEAR
+    if (!kRecomputeAndClear) {
 #pragma omp parallel for
-    for (index_t i = 0; i < n_fine_grids; i++) {
-       auto& fine = fine_grids_.back()[i];
-       fine.setup(points_);
+      for (index_t i = 0; i < n_fine_grids; i++) {
+        auto& fine = fine_grids_.back()[i];
+        fine.setup(points_);
+      }
     }
-#endif
     std::cout << "Number of points in level " << level << ": " << n_points << std::endl;
     std::cout << "Number of domains in level " << level << ": " << n_fine_grids << std::endl;
 
@@ -129,9 +127,9 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
     return weights_total;
   }
 
-#if POLATORY_REPORT_RESIDUAL
-  std::cout << "Initial residual: " << residuals.norm() << std::endl;
-#endif
+  if (kReportResidual) {
+    std::cout << "Initial residual: " << residuals.norm() << std::endl;
+  }
 
   for (auto level = 0; level < n_fine_levels_; level++) {
     {
@@ -142,14 +140,14 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 #pragma omp parallel for schedule(guided)
       for (index_t i = 0; i < n_fine_grids; i++) {
         auto& fine = fine_grids_[level][i];
-#if POLATORY_RECOMPUTE_AND_CLEAR
-        fine.setup(points_);
-#endif
+        if (kRecomputeAndClear) {
+          fine.setup(points_);
+        }
         fine.solve(residuals);
         fine.set_solution_to(weights);
-#if POLATORY_RECOMPUTE_AND_CLEAR
-        fine.clear();
-#endif
+        if (kRecomputeAndClear) {
+          fine.clear();
+        }
       }
 
       // Evaluate residuals at coarse points.
@@ -184,14 +182,12 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       weights_total.head(n_points_) += weights;
 
-#if POLATORY_REPORT_RESIDUAL
-      {
+      if (kReportResidual) {
          // Test residual
-         finest_evaluator_.set_weights(weights_total);
-         common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
+         finest_evaluator_->set_weights(weights_total);
+         common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
          std::cout << "Residual after level " << level << ": " << test_residuals.norm() << std::endl;
       }
-#endif
     }
 
     {
@@ -222,14 +218,12 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       weights_total += weights;
 
-#if POLATORY_REPORT_RESIDUAL
-      {
+      if (kReportResidual) {
          // Test residual
-         finest_evaluator_.set_weights(weights_total);
-         common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_.evaluate();
+         finest_evaluator_->set_weights(weights_total);
+         common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
          std::cout << "Residual after coarse correction: " << test_residuals.norm() << std::endl;
       }
-#endif
     }
   }
 

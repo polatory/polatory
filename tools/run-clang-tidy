@@ -15,4 +15,5 @@ fi
 find "$rel_source_dir"/benchmark/ "$rel_source_dir"/examples/ "$rel_source_dir"/src/ '(' \
     -name '*.cpp' \
   ')' -type f -print0 \
-  | xargs -0 -n1 -P"$(nproc)" clang-tidy -quiet
+  | xargs -0 -n1 -P"$(nproc)" clang-tidy -quiet 2>&1 \
+  | (! grep -v ' warnings generated.$')
