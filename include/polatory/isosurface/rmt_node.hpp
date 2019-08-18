@@ -68,9 +68,9 @@ public:
 
   std::unique_ptr<std::vector<vertex_index>> vis;
 
-  mutable std::unique_ptr<rmt_node *[]> neighbor_cache;
-
 private:
+  std::unique_ptr<std::array<rmt_node*, 14>> neighbors_;
+
   static std::vector<face_bitset> get_holes_impl(face_bitset face_set) {
     std::vector<face_bitset> holes;
 
@@ -260,10 +260,10 @@ public:
   }
 
   common::uncertain<double> clustering_weight(edge_index edge_idx) const {
-    if (neighbor_cache[edge_idx] == nullptr)
+    if (!has_neighbor(edge_idx))
       return {};
 
-    auto& a_node = *neighbor_cache[edge_idx];
+    auto& a_node = neighbor(edge_idx);
     geometry::vector3d oa = a_node.pos - pos;
 
     std::vector<double> alphas;
@@ -272,12 +272,12 @@ public:
     // Calculate alphas and accumulate normals per plane.
 
     for (auto neigh_pair : NeighborEdgePairs[edge_idx]) {
-      if (neighbor_cache[neigh_pair.first] == nullptr ||
-          neighbor_cache[neigh_pair.second] == nullptr)
+      if (!has_neighbor(neigh_pair.first) ||
+          !has_neighbor(neigh_pair.second))
         return {};
 
-      auto& b_node = *neighbor_cache[neigh_pair.first];
-      auto& c_node = *neighbor_cache[neigh_pair.second];
+      auto& b_node = neighbor(neigh_pair.first);
+      auto& c_node = neighbor(neigh_pair.second);
 
       auto theta_b = clustering_weight_theta(*this, a_node, b_node);
       auto theta_c = clustering_weight_theta(*this, a_node, c_node);
@@ -304,7 +304,7 @@ public:
 
     for (size_t i = 0; i < alphas.size(); i++) {
       auto neigh_pair = NeighborEdgePairs[edge_idx][i];
-      auto& b_node = *neighbor_cache[neigh_pair.first];
+      auto& b_node = neighbor(neigh_pair.first);
 
       geometry::vector3d ob = b_node.pos - pos;
 
@@ -376,6 +376,8 @@ public:
     return (intersections & edge_bit) != 0;
   }
 
+  bool has_neighbor(edge_index edge) const;
+
   void insert_vertex(vertex_index vi, edge_index edge_idx) {
     assert(!has_intersection(edge_idx));
 
@@ -392,6 +394,10 @@ public:
     assert(vertex_on_edge(edge_idx) == vi);
   }
 
+  rmt_node& neighbor(edge_index edge);
+
+  const rmt_node& neighbor(edge_index edge) const;
+
   const geometry::point3d& position() const {
     return pos;
   }
@@ -400,6 +406,10 @@ public:
     edge_bitset edge_bit = 1 << edge_idx;
 
     all_intersections |= edge_bit;
+  }
+
+  void set_neighbors(std::unique_ptr<std::array<rmt_node*, 14>> neighbors) {
+    neighbors_.swap(neighbors);
   }
 
   void set_value(double value) {

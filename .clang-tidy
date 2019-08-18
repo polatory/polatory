@@ -7,7 +7,6 @@ Checks: "-*                                                    \
   ,-clang-analyzer-optin.portability.UnixAPI                   \
   ,-clang-analyzer-unix.*                                      \
   ,cppcoreguidelines-*                                         \
-  ,-cppcoreguidelines-avoid-c-arrays                           \
   ,-cppcoreguidelines-avoid-magic-numbers                      \
   ,-cppcoreguidelines-non-private-member-variables-in-classes  \
   ,-cppcoreguidelines-pro-bounds-constant-array-index          \

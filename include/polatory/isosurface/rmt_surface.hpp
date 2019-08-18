@@ -91,9 +91,9 @@ public:
     auto oei1 = OuterEdgeIndices[index][1];
     auto oei2 = OuterEdgeIndices[index][2];
 
-    const auto& node0 = *node.neighbor_cache[ei0];
-    const auto& node1 = *node.neighbor_cache[ei1];
-    const auto& node2 = *node.neighbor_cache[ei2];
+    const auto& node0 = node.neighbor(ei0);
+    const auto& node1 = node.neighbor(ei1);
+    const auto& node2 = node.neighbor(ei2);
 
     // Check six edges to obtain vertices
 
@@ -237,9 +237,9 @@ private:
   // Returns if all tetrahedron nodes exist.
   bool tetrahedron_exists() const {
     return
-      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][0]] != nullptr &&
-      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][1]] != nullptr &&
-      node.neighbor_cache[rmt_tetrahedron::EdgeIndices[index][2]] != nullptr;
+      node.has_neighbor(rmt_tetrahedron::EdgeIndices[index][0]) &&
+      node.has_neighbor(rmt_tetrahedron::EdgeIndices[index][1]) &&
+      node.has_neighbor(rmt_tetrahedron::EdgeIndices[index][2]);
   }
 };
 

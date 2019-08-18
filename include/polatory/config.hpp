@@ -6,7 +6,7 @@
 
 namespace polatory {
 
-#ifdef POLATORY_FTZ
+#ifdef POLATORY_ENABLE_FTZ
 const numeric::scoped_ftz static_ftz;
 #endif
 

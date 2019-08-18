@@ -230,12 +230,21 @@ You can fork the source tree and make some improvements to it. Then feel free to
 
 Polatory utilizes the following libraries:
 
-| Library                                                | License                    | Used                  |
-| ------------------------------------------------------ | -------------------------- | --------------------- |
-| [Boost](http://www.boost.org/)                         | Boost Software License 1.0 | In several modules    |
-| [Ceres Solver](http://ceres-solver.org/)               | The 3-clause BSD license   | In kriging module     |
-| [Eigen](http://eigen.tuxfamily.org/)                   | Mozilla Public License 2.0 | In almost all modules |
-| [FLANN](http://www.cs.ubc.ca/research/flann/)          | The 2-clause BSD license   | In point_cloud module |
-| [Google Test](https://github.com/google/googletest)    | The 3-clause BSD license   | For unit testing      |
-| [Intel(R) MKL](https://software.intel.com/mkl)         | <a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a> | As a backend for Ceres Solver, Eigen and ScalFMM |
-| [ScalFMM](https://gitlab.inria.fr/solverstack/ScalFMM) | <a href="http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html">The CeCILL-C license</a> | In fmm module |
+<dl>
+  <dt><a href="http://www.boost.org/">Boost</a></dt>
+  <dd>Boost Software License 1.0</dd>
+  <dt><a href="http://ceres-solver.org/">Ceres Solver</a></dt>
+  <dd>The 3-Clause BSD License</dd>
+  <dt><a href="http://eigen.tuxfamily.org/">Eigen</a></dt>
+  <dd>Mozilla Public License 2.0</dd>
+  <dt><a href="https://github.com/martinmoene/gsl-lite">gsl-lite</a></dt>
+  <dd>The MIT License</dd>
+  <dt><a href="http://www.cs.ubc.ca/research/flann/">FLANN</a></dt>
+  <dd>The 2-Clause BSD License</dd>
+  <dt><a href="https://github.com/google/googletest">Google Test</a></dt>
+  <dd>The 3-Clause BSD License</dd>
+  <dt><a href="https://software.intel.com/mkl">Intel(R) MKL</a></dt>
+  <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
+  <dt><a href="https://gitlab.inria.fr/solverstack/ScalFMM">ScalFMM</a></dt>
+  <dd><a href="http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html">The CeCILL-C License</a></dd>
+</dl>
