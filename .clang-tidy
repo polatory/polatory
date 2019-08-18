@@ -21,7 +21,6 @@ Checks: "-*                                                    \
   ,-modernize-use-auto                                         \
   ,performance-*                                               \
   ,readability-*                                               \
-  ,-readability-const-return-type                              \
   ,-readability-braces-around-statements                       \
   ,-readability-magic-numbers                                  \
   "

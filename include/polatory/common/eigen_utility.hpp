@@ -115,7 +115,7 @@ public:
     return *this;
   }
 
-  typename self_type::reference operator*() const {
+  typename self_type::reference operator*() const {  // NOLINT(readability-const-return-type)
     return m_->col(index_);
   }
 
@@ -239,7 +239,7 @@ public:
     return *this;
   }
 
-  typename self_type::reference operator*() const {
+  typename self_type::reference operator*() const {  // NOLINT(readability-const-return-type)
     return m_->row(index_);
   }
 
