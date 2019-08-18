@@ -32,7 +32,6 @@ target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
     -DEIGEN_USE_MKL_ALL
-    -DPOLATORY_ENABLE_FTZ
 )
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${TARGET} PRIVATE

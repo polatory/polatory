@@ -2,8 +2,6 @@
 
 #include <gtest/gtest.h>
 
-#include <polatory/config.hpp>
-
 int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);
 

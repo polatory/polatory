@@ -20,6 +20,17 @@
 namespace polatory {
 namespace isosurface {
 
+namespace detail {
+
+class neighbor_edge_pairs : public std::array<std::vector<std::pair<int, int>>, 14> {
+  using base = std::array<std::vector<std::pair<int, int>>, 14>;
+
+public:
+  neighbor_edge_pairs() noexcept;
+};
+
+}  // namespace detail
+
 // Encodes 0 or 1 on 14 outgoing halfedges for each node.
 using edge_bitset = uint16_t;
 // Encodes 0 or 1 on 24 faces for each node.
@@ -44,7 +55,7 @@ extern const std::array<face_bitset, 24> NeighborFaces;
 // List of pairs of edges for each edge.
 // e.g. { 1, 9 } for edge 0: edge 1 and 9 are adjacent to edge 0
 // and all three edges are coplanar.
-extern const std::array<std::vector<std::pair<int, int>>, 14> NeighborEdgePairs;
+extern const detail::neighbor_edge_pairs NeighborEdgePairs;
 
 enum binary_sign {
   Pos = 0, Neg = 1
