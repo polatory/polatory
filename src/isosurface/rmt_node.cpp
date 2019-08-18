@@ -11,6 +11,10 @@ namespace isosurface {
 
 namespace detail {
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4297)  // 'function' : function assumed not to throw an exception but does
+#endif
 neighbor_edge_pairs::neighbor_edge_pairs() noexcept try : base{ {
   {
     { 1, 9 },
@@ -76,10 +80,13 @@ neighbor_edge_pairs::neighbor_edge_pairs() noexcept try : base{ {
     { 1, 11 },
     { 2, 12 }
   }
-  } } {
+} } {
 } catch (const std::exception&) {
   std::terminate();
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 }  // namespace detail
 
