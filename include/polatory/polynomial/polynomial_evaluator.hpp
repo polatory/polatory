@@ -36,10 +36,6 @@ public:
     weights_ = weights;
   }
 
-  index_t size() const {
-    return basis_.basis_size();
-  }
-
 private:
   const Basis basis_;
 

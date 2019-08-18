@@ -13,8 +13,7 @@ class polynomial_basis_base {
 public:
   explicit polynomial_basis_base(int dimension, int degree)
     : dimension_(dimension)
-    , degree_(degree)
-    , basis_size_(basis_size(dimension, degree)) {
+    , degree_(degree) {
     assert(dimension >= 1 && dimension <= 3);
     assert(degree >= 0);
   }
@@ -61,7 +60,6 @@ public:
 private:
   const int dimension_;
   const int degree_;
-  const index_t basis_size_;
 };
 
 }  // namespace polynomial
