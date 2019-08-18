@@ -11,9 +11,20 @@
 namespace polatory {
 namespace isosurface {
 
+namespace detail {
+
+class neighbor_cell_vectors : public std::array<cell_vector, 14> {
+  using base = std::array<cell_vector, 14>;
+
+public:
+  neighbor_cell_vectors() noexcept;
+};
+
+}  // namespace detail
+
 // Coefficients for the three primitive vectors
 // to reproduce each NeighborVectors.
-extern const std::array<cell_vector, 14> NeighborCellVectors;
+extern const detail::neighbor_cell_vectors NeighborCellVectors;
 
 class rmt_node_list : std::map<cell_index, rmt_node> {
   using base_type = std::map<cell_index, rmt_node>;

@@ -2,7 +2,6 @@ Checks: "-*                                                    \
   ,boost-*                                                     \
   ,bugprone-*                                                  \
   ,cert-*                                                      \
-  ,-cert-err58-cpp                                             \
   ,clang-analyzer-*                                            \
   ,-clang-analyzer-optin.portability.UnixAPI                   \
   ,-clang-analyzer-unix.*                                      \
