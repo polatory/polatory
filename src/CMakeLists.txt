@@ -32,8 +32,13 @@ target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
     -DEIGEN_USE_MKL_ALL
-    -DPOLATORY_FTZ
+    -DPOLATORY_ENABLE_FTZ
 )
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(${TARGET} PRIVATE
+        -DGSL_UNENFORCED_ON_CONTRACT_VIOLATION
+    )
+endif()
 
 if(USE_PREBUILT_BOOST)
     target_compile_definitions(${TARGET} PUBLIC
@@ -50,6 +55,7 @@ set(THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
 )
 set(THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
+    ${PROJECT_SOURCE_DIR}/third_party/gsl-lite-0.34.0/include
 )
 
 target_include_directories(${TARGET} PUBLIC

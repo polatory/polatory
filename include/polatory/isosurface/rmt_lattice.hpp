@@ -268,11 +268,13 @@ class rmt_lattice : public rmt_primitive_lattice {
       auto cell_idx = nodei.first;
       auto& node = nodei.second;
 
-      node.neighbor_cache = std::make_unique<rmt_node *[]>(14);
+      auto neighbors = std::make_unique<std::array<rmt_node*, 14>>();
 
       for (edge_index ei = 0; ei < 14; ei++) {
-        node.neighbor_cache[ei] = node_list.neighbor_node_ptr(cell_idx, ei);
+        neighbors->at(ei) = node_list.neighbor_node_ptr(cell_idx, ei);
       }
+
+      node.set_neighbors(std::move(neighbors));
     }
   }
 

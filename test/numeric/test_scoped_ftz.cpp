@@ -7,7 +7,7 @@
 using polatory::numeric::scoped_ftz;
 
 TEST(scoped_ftz, trivial) {
-#ifdef POLATORY_FTZ
+#ifdef POLATORY_ENABLE_FTZ
   EXPECT_TRUE(scoped_ftz::daz_is_active());
   EXPECT_TRUE(scoped_ftz::ftz_is_active());
 #else

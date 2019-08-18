@@ -114,7 +114,7 @@ script:
   - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && $CTEST -V"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && ninja install"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0 -DENABLE_CLANG_TIDY=ON"; fi
-  - travis_wait if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory/build && ninja clang-tidy"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then travis_wait docker exec test sh -c "cd polatory/build && ninja clang-tidy"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory && tools/run-cpplint"; fi
 
 branches:

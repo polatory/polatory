@@ -2,6 +2,8 @@
 
 #include <polatory/isosurface/rmt_node.hpp>
 
+#include <gsl/gsl>
+
 namespace polatory {
 namespace isosurface {
 
@@ -94,6 +96,20 @@ const std::array<std::vector<std::pair<int, int>>, 14> NeighborEdgePairs
        { 2, 12 }
      }
    }};
+
+bool rmt_node::has_neighbor(edge_index edge) const {
+  return gsl::at(*neighbors_, edge) != nullptr;
+}
+
+rmt_node& rmt_node::neighbor(edge_index edge) {
+  assert(has_neighbor(edge));
+  return *gsl::at(*neighbors_, edge);
+}
+
+const rmt_node& rmt_node::neighbor(edge_index edge) const {
+  assert(has_neighbor(edge));
+  return *gsl::at(*neighbors_, edge);
+}
 
 }  // namespace isosurface
 }  // namespace polatory
