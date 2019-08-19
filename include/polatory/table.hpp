@@ -3,6 +3,7 @@
 #pragma once
 
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -18,7 +19,7 @@ namespace polatory {
 
 using tabled = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-inline auto read_table(
+inline tabled read_table(
     const std::string& filename,
     const char *delimiters = " \t,") {
   std::ifstream ifs(filename);
@@ -29,14 +30,22 @@ inline auto read_table(
 
   std::string line;
   auto n_cols = index_t{ 0 };
+  auto line_no = 0;
   while (std::getline(ifs, line)) {
+    line_no++;
+
     if (boost::starts_with(line, "#"))
       continue;
 
     std::vector<std::string> row;
     boost::split(row, line, boost::is_any_of(delimiters));
+
+    auto row_size = static_cast<index_t>(row.size());
     if (n_cols == 0) {
-      n_cols = static_cast<index_t>(row.size());
+      n_cols = row_size;
+    } else if (row_size != n_cols) {
+      std::cerr << "Skipping line " << line_no << " with a different number of columns." << std::endl;
+      continue;
     }
 
     for (const auto& cell : row) {
