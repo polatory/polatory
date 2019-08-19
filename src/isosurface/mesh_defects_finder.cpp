@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/common/utility.hpp>
 
 namespace polatory {
@@ -191,7 +192,7 @@ mesh_defects_finder::halfedge mesh_defects_finder::vertex_incoming_halfedge(face
   const face& face = faces_[fi];
   if (face[0] == vi) return std::make_pair(face[2], vi);
   if (face[1] == vi) return std::make_pair(face[0], vi);
-  assert(face[2] == vi);
+  POLATORY_ASSERT(face[2] == vi);
   return std::make_pair(face[1], vi);
 }
 
@@ -199,7 +200,7 @@ mesh_defects_finder::halfedge mesh_defects_finder::vertex_outgoing_halfedge(face
   const face& face = faces_[fi];
   if (face[0] == vi) return std::make_pair(vi, face[1]);
   if (face[1] == vi) return std::make_pair(vi, face[2]);
-  assert(face[2] == vi);
+  POLATORY_ASSERT(face[2] == vi);
   return std::make_pair(vi, face[0]);
 }
 

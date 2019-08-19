@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include <polatory/common/likely.hpp>
+#include <polatory/common/macros.hpp>
 
 TEST(likely, trivial) {
   EXPECT_FALSE(POLATORY_LIKELY(false));

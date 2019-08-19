@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <polatory/common/bsearch.hpp>
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/types.hpp>
@@ -42,7 +43,7 @@ public:
 
     point_idcs_.insert(point_idcs_.begin(), set.begin(), set.end());
 
-    assert(point_idcs_.size() == point_indices.size());
+    POLATORY_ASSERT(point_idcs_.size() == point_indices.size());
   }
 
   const std::vector<index_t>& point_indices() const {

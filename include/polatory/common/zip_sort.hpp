@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include <polatory/common/macros.hpp>
+
 // TODO(mizuno): Should be replaced by ranges.
 
 namespace polatory {
@@ -52,7 +54,7 @@ void zip_sort(RandomAccessIterator1 begin1, RandomAccessIterator1 end1,
   static_assert(std::is_same<D1, D2>::value,
                 "RandomAccessIterator1 and RandomAccessIterator2 must have the same difference_type.");
 
-  assert(std::distance(begin1, end1) == std::distance(begin2, end2));
+  POLATORY_ASSERT(std::distance(begin1, end1) == std::distance(begin2, end2));
 
   auto size = std::distance(begin1, end1);
 

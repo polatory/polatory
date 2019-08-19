@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -15,6 +14,7 @@
 #include <polatory/common/exception.hpp>
 #include <polatory/common/fold.hpp>
 #include <polatory/common/iterator_range.hpp>
+#include <polatory/common/macros.hpp>
 
 namespace polatory {
 namespace common {
@@ -37,18 +37,18 @@ public:
   }
 
   bool operator==(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ == other.index_;
   }
 
   self_type& operator++() {
-    assert(index_ < m_->cols());
+    POLATORY_ASSERT(index_ < m_->cols());
     index_++;
     return *this;
   }
 
   self_type& operator--() {
-    assert(index_ > 0);
+    POLATORY_ASSERT(index_ > 0);
     index_--;
     return *this;
   }
@@ -60,7 +60,7 @@ public:
   typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ < other.index_;
   }
 
@@ -76,7 +76,7 @@ public:
 
   friend typename self_type::difference_type
   operator-(const self_type& lhs, const self_type& rhs) {
-    assert(lhs.m_ == rhs.m_);
+    POLATORY_ASSERT(lhs.m_ == rhs.m_);
     return lhs.index_ - rhs.index_;
   }
 
@@ -99,18 +99,18 @@ public:
   }
 
   bool operator==(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ == other.index_;
   }
 
   self_type& operator++() {
-    assert(index_ < m_->cols());
+    POLATORY_ASSERT(index_ < m_->cols());
     index_++;
     return *this;
   }
 
   self_type& operator--() {
-    assert(index_ > 0);
+    POLATORY_ASSERT(index_ > 0);
     index_--;
     return *this;
   }
@@ -122,7 +122,7 @@ public:
   typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ < other.index_;
   }
 
@@ -138,7 +138,7 @@ public:
 
   friend typename self_type::difference_type
   operator-(const self_type& lhs, const self_type& rhs) {
-    assert(lhs.m_ == rhs.m_);
+    POLATORY_ASSERT(lhs.m_ == rhs.m_);
     return lhs.index_ - rhs.index_;
   }
 
@@ -161,18 +161,18 @@ public:
   }
 
   bool operator==(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ == other.index_;
   }
 
   self_type& operator++() {
-    assert(index_ < m_->rows());
+    POLATORY_ASSERT(index_ < m_->rows());
     index_++;
     return *this;
   }
 
   self_type& operator--() {
-    assert(index_ > 0);
+    POLATORY_ASSERT(index_ > 0);
     index_--;
     return *this;
   }
@@ -184,7 +184,7 @@ public:
   typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ < other.index_;
   }
 
@@ -200,7 +200,7 @@ public:
 
   friend typename self_type::difference_type
   operator-(const self_type& lhs, const self_type& rhs) {
-    assert(lhs.m_ == rhs.m_);
+    POLATORY_ASSERT(lhs.m_ == rhs.m_);
     return lhs.index_ - rhs.index_;
   }
 
@@ -223,18 +223,18 @@ public:
   }
 
   bool operator==(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ == other.index_;
   }
 
   self_type& operator++() {
-    assert(index_ < m_->rows());
+    POLATORY_ASSERT(index_ < m_->rows());
     index_++;
     return *this;
   }
 
   self_type& operator--() {
-    assert(index_ > 0);
+    POLATORY_ASSERT(index_ > 0);
     index_--;
     return *this;
   }
@@ -246,7 +246,7 @@ public:
   typename self_type::pointer operator->() const = delete;
 
   bool operator<(const self_type& other) const {
-    assert(m_ == other.m_);
+    POLATORY_ASSERT(m_ == other.m_);
     return index_ < other.index_;
   }
 
@@ -262,7 +262,7 @@ public:
 
   friend typename self_type::difference_type
   operator-(const self_type& lhs, const self_type& rhs) {
-    assert(lhs.m_ == rhs.m_);
+    POLATORY_ASSERT(lhs.m_ == rhs.m_);
     return lhs.index_ - rhs.index_;
   }
 

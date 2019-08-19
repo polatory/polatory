@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <cassert>
 #include <memory>
 
 #include <Eigen/Core>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -54,7 +54,7 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
+    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
 
     weights_ = weights;
 

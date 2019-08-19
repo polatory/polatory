@@ -2,10 +2,9 @@
 
 #include <polatory/preconditioner/fine_grid.hpp>
 
-#include <cassert>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/iterator_range.hpp>
+#include <polatory/common/macros.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -20,7 +19,7 @@ fine_grid::fine_grid(const model& model,
   , inner_point_(inner_point)
   , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
   , m_(static_cast<index_t>(point_indices.size())) {
-  assert(m_ > l_);
+  POLATORY_ASSERT(m_ > l_);
 }
 
 fine_grid::fine_grid(const model& model,
@@ -34,7 +33,7 @@ fine_grid::fine_grid(const model& model,
 
 void fine_grid::clear() {
   me_ = Eigen::MatrixXd();
-  ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
+  ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
 }
 
 void fine_grid::setup(const geometry::points3d& points_full) {

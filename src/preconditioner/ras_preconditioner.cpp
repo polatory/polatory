@@ -8,6 +8,7 @@
 #include <numeric>
 
 #include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
@@ -117,7 +118,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 }
 
 common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
-  assert(static_cast<index_t>(v.rows()) == size());
+  POLATORY_ASSERT(static_cast<index_t>(v.rows()) == size());
 
   common::valuesd residuals = v.head(n_points_);
   common::valuesd weights_total = common::valuesd::Zero(size());

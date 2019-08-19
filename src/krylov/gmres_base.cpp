@@ -2,9 +2,10 @@
 
 #include <polatory/krylov/gmres_base.hpp>
 
-#include <cassert>
 #include <cmath>
 #include <iostream>
+
+#include <polatory/common/macros.hpp>
 
 namespace polatory {
 namespace krylov {
@@ -32,19 +33,19 @@ double gmres_base::relative_residual() const {
 }
 
 void gmres_base::set_left_preconditioner(const linear_operator& left_preconditioner) {
-  assert(left_preconditioner.size() == m_);
+  POLATORY_ASSERT(left_preconditioner.size() == m_);
 
   left_pc_ = &left_preconditioner;
 }
 
 void gmres_base::set_initial_solution(const common::valuesd& x0) {
-  assert(static_cast<index_t>(x0.rows()) == m_);
+  POLATORY_ASSERT(static_cast<index_t>(x0.rows()) == m_);
 
   x0_ = x0;
 }
 
 void gmres_base::set_right_preconditioner(const linear_operator& right_preconditioner) {
-  assert(right_preconditioner.size() == m_);
+  POLATORY_ASSERT(right_preconditioner.size() == m_);
 
   right_pc_ = &right_preconditioner;
 }

@@ -3,7 +3,6 @@
 #pragma once
 
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <map>
@@ -12,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/common/uncertain.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
@@ -218,7 +218,7 @@ public:
         }
       }
       auto weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-      assert(weights_sum > 0.0);
+      POLATORY_ASSERT(weights_sum > 0.0);
 
       geometry::point3d clustered = geometry::point3d::Zero();
       for (size_t i = 0; i < weights.size(); i++) {
@@ -251,7 +251,7 @@ public:
           }
         }
         auto weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-        assert(weights_sum > 0.0);
+        POLATORY_ASSERT(weights_sum > 0.0);
 
         geometry::point3d clustered = geometry::point3d::Zero();
         for (size_t i = 0; i < weights.size(); i++) {
@@ -390,7 +390,7 @@ public:
   bool has_neighbor(edge_index edge) const;
 
   void insert_vertex(vertex_index vi, edge_index edge_idx) {
-    assert(!has_intersection(edge_idx));
+    POLATORY_ASSERT(!has_intersection(edge_idx));
 
     if (!vis) vis = std::make_unique<std::vector<vertex_index>>();
 
@@ -402,7 +402,7 @@ public:
     auto it = vis->begin() + bit_count(intersections & edge_count_mask);
     vis->insert(it, vi);
 
-    assert(vertex_on_edge(edge_idx) == vi);
+    POLATORY_ASSERT(vertex_on_edge(edge_idx) == vi);
   }
 
   rmt_node& neighbor(edge_index edge);
@@ -424,13 +424,13 @@ public:
   }
 
   void set_value(double value) {
-    assert(!evaluated);
+    POLATORY_ASSERT(!evaluated);
     this->val = value;
     evaluated = true;
   }
 
   double value() const {
-    assert(evaluated);
+    POLATORY_ASSERT(evaluated);
     return val;
   }
 
@@ -439,7 +439,7 @@ public:
   }
 
   vertex_index vertex_on_edge(edge_index edge_idx) const {
-    assert(has_intersection(edge_idx));
+    POLATORY_ASSERT(has_intersection(edge_idx));
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;

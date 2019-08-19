@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <cassert>
 #include <memory>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_operator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -51,7 +51,7 @@ public:
   }
 
   common::valuesd operator()(const common::valuesd& weights) const override {
-    assert(static_cast<index_t>(weights.rows()) == size());
+    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == size());
 
     common::valuesd y = common::valuesd::Zero(size());
 

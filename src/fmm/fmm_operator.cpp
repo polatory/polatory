@@ -3,7 +3,6 @@
 #include <polatory/fmm/fmm_operator.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <vector>
 
 #include <ScalFMM/Components/FSimpleLeaf.hpp>
@@ -13,6 +12,7 @@
 #include <ScalFMM/Kernels/Chebyshev/FChebSymKernel.hpp>
 #include <ScalFMM/Kernels/P2P/FP2PParticleContainerIndexed.hpp>
 
+#include <polatory/common/macros.hpp>
 #include "fmm_rbf_kernel.hpp"
 
 namespace polatory {
@@ -76,7 +76,7 @@ public:
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    assert(static_cast<index_t>(weights.rows()) == n_points_);
+    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == n_points_);
 
     // Update weights.
     for (index_t idx = 0; idx < n_points_; idx++) {

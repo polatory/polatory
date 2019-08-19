@@ -3,11 +3,12 @@
 #pragma once
 
 #include <array>
-#include <cassert>
+#include <memory>
 #include <vector>
 
 #include <boost/operators.hpp>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/common/uncertain.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
@@ -178,7 +179,7 @@ public:
       faces.push_back({ v5.get(), v4.get(), v1.get() });
       break;
     default:
-      assert(false);
+      POLATORY_NEVER_REACH();
       break;
     }
 
@@ -204,14 +205,13 @@ public:
   }
 
   bool operator==(const self_type& other) const {
+    POLATORY_ASSERT(std::addressof(node) == std::addressof(other.node));
+
     return index == other.index;
   }
 
   self_type& operator++() {
-    if (!is_valid()) {
-      assert(false);
-      return *this;
-    }
+    POLATORY_ASSERT(is_valid());
 
     do {
       index++;
@@ -221,6 +221,8 @@ public:
   }
 
   self_type::reference operator*() const {
+    POLATORY_ASSERT(is_valid());
+
     return { node, index };
   }
 

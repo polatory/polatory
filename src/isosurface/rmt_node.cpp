@@ -116,12 +116,12 @@ bool rmt_node::has_neighbor(edge_index edge) const {
 }
 
 rmt_node& rmt_node::neighbor(edge_index edge) {
-  assert(has_neighbor(edge));
+  POLATORY_ASSERT(has_neighbor(edge));
   return *gsl::at(*neighbors_, edge);
 }
 
 const rmt_node& rmt_node::neighbor(edge_index edge) const {
-  assert(has_neighbor(edge));
+  POLATORY_ASSERT(has_neighbor(edge));
   return *gsl::at(*neighbors_, edge);
 }
 

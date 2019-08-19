@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <cassert>
-
 #include <Eigen/Core>
 #include <Eigen/LU>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
@@ -20,7 +19,7 @@ public:
   lagrange_basis(int dimension, int degree, const geometry::points3d& points)
     : polynomial_basis_base(dimension, degree)
     , mono_basis_(dimension, degree) {
-    assert(static_cast<index_t>(points.rows()) == basis_size());
+    POLATORY_ASSERT(static_cast<index_t>(points.rows()) == basis_size());
 
     auto pt = mono_basis_.evaluate_points(points);
 
