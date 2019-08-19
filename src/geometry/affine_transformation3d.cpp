@@ -2,10 +2,10 @@
 
 #include <polatory/geometry/affine_transformation3d.hpp>
 
-#include <cassert>
 #include <cmath>
 
 #include <polatory/common/exception.hpp>
+#include <polatory/common/macros.hpp>
 
 namespace polatory {
 namespace geometry {
@@ -80,7 +80,7 @@ affine_transformation3d affine_transformation3d::translation(const vector3d& shi
 }
 
 Eigen::Matrix4d affine_transformation3d::rotation_matrix(double angle, int axis) {
-  assert(axis >= 0 && axis <= 2);
+  POLATORY_ASSERT(axis >= 0 && axis <= 2);
 
   auto c = std::cos(angle);
   auto s = std::sin(angle);
@@ -109,7 +109,8 @@ Eigen::Matrix4d affine_transformation3d::rotation_matrix(double angle, int axis)
       0, 0, 0, 1;
     break;
   default:
-    assert(false);
+    POLATORY_NEVER_REACH();
+    break;
   }
 
   return m;

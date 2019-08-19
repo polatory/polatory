@@ -2,15 +2,16 @@
 
 #include <polatory/point_cloud/plane_estimator.hpp>
 
-#include <cassert>
 #include <cmath>
 #include <limits>
+
+#include <polatory/common/macros.hpp>
 
 namespace polatory {
 namespace point_cloud {
 
 plane_estimator::plane_estimator(const geometry::points3d& points) {
-  assert(points.rows() >= 3);
+  POLATORY_ASSERT(points.rows() >= 3);
 
   auto svd = pca_svd(points);
 

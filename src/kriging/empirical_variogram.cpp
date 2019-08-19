@@ -2,13 +2,13 @@
 
 #include <polatory/kriging/empirical_variogram.hpp>
 
-#include <cassert>
 #include <cmath>
 #include <fstream>
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/numeric/sum_accumulator.hpp>
 
 namespace polatory {
@@ -19,7 +19,7 @@ empirical_variogram::empirical_variogram(
     const common::valuesd& values,
     double bin_width,
     index_t n_bins) {
-  assert(values.size() == points.rows());
+  POLATORY_ASSERT(values.size() == points.rows());
 
   auto n_points = static_cast<index_t>(points.rows());
   if (n_points == 0) return;

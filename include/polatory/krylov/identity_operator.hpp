@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <cassert>
-
+#include <polatory/common/macros.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
 
@@ -17,7 +16,7 @@ public:
   }
 
   common::valuesd operator()(const common::valuesd& v) const override {
-    assert(static_cast<int>(v.rows()) == n_);
+    POLATORY_ASSERT(static_cast<int>(v.rows()) == n_);
     return v;
   }
 

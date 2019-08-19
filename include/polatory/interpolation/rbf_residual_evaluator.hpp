@@ -3,13 +3,13 @@
 #pragma once
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <memory>
 #include <utility>
 
 #include <Eigen/Core>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -42,8 +42,8 @@ public:
   std::pair<bool, double> converged(const Eigen::MatrixBase<Derived>& values,
                                     const Eigen::MatrixBase<Derived2>& weights,
                                     double absolute_tolerance) const {
-    assert(static_cast<index_t>(values.rows()) == n_points_);
-    assert(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
+    POLATORY_ASSERT(static_cast<index_t>(values.rows()) == n_points_);
+    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
 
     evaluator_->set_weights(weights);
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <polatory/common/likely.hpp>
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 

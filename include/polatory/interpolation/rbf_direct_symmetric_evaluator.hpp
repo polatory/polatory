@@ -6,6 +6,7 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -25,7 +26,7 @@ public:
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    assert(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
+    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
 
     weights_ = weights;
 

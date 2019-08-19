@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <cassert>
-
 #include <Eigen/Core>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
@@ -31,7 +30,7 @@ public:
   }
 
   void set_weights(const common::valuesd& weights) {
-    assert(static_cast<index_t>(weights.rows()) == basis_.basis_size());
+    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == basis_.basis_size());
 
     weights_ = weights;
   }

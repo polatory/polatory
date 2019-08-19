@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <cassert>
-
 #include <Eigen/Core>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/types.hpp>
@@ -17,7 +16,7 @@ class monomial_basis : public polynomial_basis_base {
 public:
   explicit monomial_basis(int dimension, int degree)
     : polynomial_basis_base(dimension, degree) {
-    assert(degree >= 0 && degree <= 2);
+    POLATORY_ASSERT(degree >= 0 && degree <= 2);
   }
 
   Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {
@@ -52,7 +51,7 @@ public:
         }
         break;
       default:
-        assert(false);
+        POLATORY_NEVER_REACH();
         break;
       }
       break;
@@ -87,7 +86,7 @@ public:
         }
         break;
       default:
-        assert(false);
+        POLATORY_NEVER_REACH();
         break;
       }
       break;
@@ -127,13 +126,13 @@ public:
         }
         break;
       default:
-        assert(false);
+        POLATORY_NEVER_REACH();
         break;
       }
       break;
 
     default:
-      assert(false);
+      POLATORY_NEVER_REACH();
       break;
     }
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <cassert>
+#include <polatory/common/macros.hpp>
 
 namespace polatory {
 namespace common {
@@ -18,7 +18,7 @@ public:
   }
 
   T get() const {
-    assert(is_certain());
+    POLATORY_ASSERT(is_certain());
     return value_;
   }
 

@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <cassert>
-
 #include <Eigen/Core>
 
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
@@ -35,7 +34,7 @@ public:
     auto l = pt_.rows();
     auto m = pt_.cols();
 
-    assert(lambda_c.rows() == m + l);
+    POLATORY_ASSERT(lambda_c.rows() == m + l);
 
     common::valuesd output(m + l);
 

@@ -5,7 +5,6 @@
 #include <omp.h>
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <iterator>
 #include <map>
@@ -17,6 +16,7 @@
 
 #include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/macros.hpp>
 #include <polatory/common/uncertain.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -91,11 +91,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
     auto new_node = rmt_node(pos);
     auto it_bool = node_list.insert(std::make_pair(cell_idx, std::move(new_node)));
-    if (!it_bool.second) {
-      // Insertion failed (the node already exists).
-      assert(false);
-      return false;
-    }
+    POLATORY_ASSERT(it_bool.second);
 
     nodes_to_evaluate.push_back(cell_idx);
     return true;

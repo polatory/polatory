@@ -2,10 +2,9 @@
 
 #include <polatory/preconditioner/coarse_grid.hpp>
 
-#include <cassert>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/iterator_range.hpp>
+#include <polatory/common/macros.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 
 namespace polatory {
@@ -19,7 +18,7 @@ coarse_grid::coarse_grid(const model& model,
   , point_idcs_(point_indices)
   , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
   , m_(static_cast<index_t>(point_indices.size())) {
-  assert(m_ > l_);
+  POLATORY_ASSERT(m_ > l_);
 }
 
 coarse_grid::coarse_grid(const model& model,
@@ -32,10 +31,10 @@ coarse_grid::coarse_grid(const model& model,
 
 void coarse_grid::clear() {
   me_ = Eigen::MatrixXd();
-  ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
+  ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
 
   a_top_ = Eigen::MatrixXd();
-  lu_of_p_top_ = Eigen::FullPivLU<Eigen::MatrixXd>();
+  lu_of_p_top_ = Eigen::FullPivLU<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
 }
 
 void coarse_grid::setup(const geometry::points3d& points_full) {
