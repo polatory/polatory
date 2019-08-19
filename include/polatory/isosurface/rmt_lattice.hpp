@@ -91,6 +91,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
     auto new_node = rmt_node(pos);
     auto it_bool = node_list.insert(std::make_pair(cell_idx, std::move(new_node)));
+    (void)it_bool;
     POLATORY_ASSERT(it_bool.second);
 
     nodes_to_evaluate.push_back(cell_idx);
