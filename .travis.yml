@@ -59,7 +59,7 @@ before_install:
   - docker cp $TRAVIS_BUILD_DIR test:/root
 
   - docker exec test apt-get update -qq
-  - docker exec test apt-get install -qq apt-transport-https git gnupg lsb-release ninja-build python wget
+  - docker exec test apt-get install -qq apt-transport-https build-essential cmake git gnupg lsb-release ninja-build python wget
   - if [ "$UBUNTU_VERSION" = "16.04" ]; then
       docker exec test wget -nv https://cmake.org/files/v3.9/cmake-3.9.6-Linux-x86_64.tar.gz;
       docker exec test tar xzf cmake-3.9.6-Linux-x86_64.tar.gz;
