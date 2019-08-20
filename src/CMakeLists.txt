@@ -1,8 +1,8 @@
 find_package(Boost 1.67.0 REQUIRED COMPONENTS serialization)
-find_package(Ceres REQUIRED)
-find_package(Eigen3 REQUIRED)
-find_package(flann REQUIRED)
-find_package(glog REQUIRED)
+find_package(Ceres CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(flann CONFIG REQUIRED)
+find_package(glog CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 
 set(TARGET polatory)
@@ -82,26 +82,23 @@ if(MSVC)
     endforeach()
 endif()
 
+target_link_libraries(${TARGET} INTERFACE
+    ${Boost_LIBRARIES}
+    ceres flann::flann_cpp glog::glog
+    ${OpenMP_CXX_LIBRARIES}
+)
+
 if(UNIX)
     target_link_libraries(${TARGET} INTERFACE
         "-Wl,--start-group"
         ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
-        ceres flann::flann_cpp glog::glog
         "-Wl,--end-group"
     )
 elseif(MSVC)
     target_link_libraries(${TARGET} INTERFACE
         ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
-        debug ${VCPKG_LIB_DIR}/ceres-debug.lib optimized ${VCPKG_LIB_DIR}/ceres.lib
-        debug ${VCPKG_LIB_DIR}/flann_cpp-gd.lib optimized ${VCPKG_LIB_DIR}/flann_cpp.lib
-        ${VCPKG_LIB_DIR}/glog.lib
     )
 endif()
-
-target_link_libraries(${TARGET} INTERFACE
-    ${Boost_LIBRARIES}
-    ${OpenMP_CXX_LIBRARIES}
-)
 
 polatory_enable_ipo(${TARGET})
 

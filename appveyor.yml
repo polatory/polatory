@@ -12,7 +12,6 @@ environment:
 init:
   - ps: Get-WmiObject Win32_OperatingSystem
   - ps: Get-WmiObject Win32_Processor
-  - vcpkg version
 
 clone_folder: C:\projects\polatory
 
@@ -33,7 +32,6 @@ install:
   - echo set(VCPKG_BUILD_TYPE release) >> triplets\x64-windows.cmake
   - vcpkg remove --outdated --recurse
   - vcpkg install abseil ceres eigen3 flann gsl-lite gtest --triplet x64-windows
-  - vcpkg upgrade --no-dry-run
 
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
