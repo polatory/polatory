@@ -4,7 +4,7 @@
 
 #include <exception>
 
-#include <gsl/gsl>
+#include <gsl-lite.hpp>
 
 namespace polatory {
 namespace isosurface {

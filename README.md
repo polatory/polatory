@@ -84,61 +84,32 @@ Polatory is available under two different licenses:
     sudo apt install intel-mkl-64bit-2018.3-051
     ```
 
-1. Install [Eigen](http://eigen.tuxfamily.org/)
-
-    ```bash
-    sudo apt install libeigen3-dev
-    ```
-
-1. Install [Google Test](https://github.com/google/googletest)
-
-    ```bash
-    git clone https://github.com/google/googletest.git
-    cd googletest
-    mkdir build && cd build
-    cmake .. -GNinja
-    ninja
-    sudo ninja install
-    ```
-
-1. Install [Ceres Solver](http://ceres-solver.org/)
-
-    ```bash
-    sudo apt install libgoogle-glog-dev
-    cd
-    git clone https://ceres-solver.googlesource.com/ceres-solver
-    cd ceres-solver
-    mkdir build && cd build/
-    cmake .. -GNinja -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
-    ninja
-    sudo ninja install
-    ```
-
-1. Install [FLANN](http://www.cs.ubc.ca/research/flann/)
-
-    ```bash
-    sudo apt install libflann-dev
-    ```
-
-1. Download and build [Boost](http://www.boost.org/)
-
-    ```bash
-    cd
-    wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.bz2
-    tar xjf boost_1_69_0.tar.bz2
-    cd boost_1_69_0
-    ./bootstrap.sh
-    ./b2 install -j8 --prefix=.
-    ```
-
-1. Build polatory
+1. Clone polatory
 
     ```bash
     cd
     git clone https://github.com/polatory/polatory.git
     cd polatory
-    mkdir build && cd build
-    cmake .. -GNinja -DBOOST_ROOT=~/boost_1_69_0
+    mkdir build
+    ```
+
+1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
+
+    ```bash
+    cd ~/polatory/build
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres eigen3 flann gsl-lite gtest --triplet x64-linux
+    ```
+
+    See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
+
+1. Build polatory
+
+    ```bash
+    cd ~/polatory/build
+    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
     ninja
     ```
 
@@ -156,30 +127,9 @@ Polatory is available under two different licenses:
 
     - Code tools > Git for Windows
 
-1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
-
-    ```bat
-    cd /d C:\
-    git clone https://github.com/Microsoft/vcpkg.git
-    cd vcpkg
-    bootstrap-vcpkg.bat
-    vcpkg install boost ceres flann eigen3 gtest --triplet x64-windows
-    ```
-
-    To update vcpkg and installed libraries, run the following commands:
-
-    ```bat
-    cd /d C:\vcpkg
-    git pull
-    bootstrap-vcpkg.bat
-    vcpkg update
-    vcpkg upgrade
-    vcpkg upgrade --no-dry-run
-    ```
-
 1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
 
-1. Build polatory
+1. Clone polatory
 
     Open **Start** > **Visual Studio 2017** > **x64 Native Tools Command Prompt for VS 2017**.
 
@@ -188,8 +138,25 @@ Polatory is available under two different licenses:
     git clone https://github.com/polatory/polatory.git
     cd polatory
     mkdir build
-    cd build
-    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+    ```
+
+1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
+
+    ```bat
+    cd /d %userprofile%\polatory\build
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    bootstrap-vcpkg.bat
+    vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres eigen3 flann gsl-lite gtest --triplet x64-windows
+    ```
+
+    See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
+
+1. Build polatory
+
+    ```bat
+    cd /d %userprofile%\polatory\build
+    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
     ninja
     ```
 
@@ -231,18 +198,20 @@ You can fork the source tree and make some improvements to it. Then feel free to
 Polatory utilizes the following libraries:
 
 <dl>
+  <dt><a href="https://abseil.io/">Abseil</a></dt>
+  <dd>Apache License 2.0</dd>
   <dt><a href="http://www.boost.org/">Boost</a></dt>
   <dd>Boost Software License 1.0</dd>
   <dt><a href="http://ceres-solver.org/">Ceres Solver</a></dt>
   <dd>The 3-Clause BSD License</dd>
   <dt><a href="http://eigen.tuxfamily.org/">Eigen</a></dt>
   <dd>Mozilla Public License 2.0</dd>
-  <dt><a href="https://github.com/martinmoene/gsl-lite">gsl-lite</a></dt>
-  <dd>The MIT License</dd>
   <dt><a href="http://www.cs.ubc.ca/research/flann/">FLANN</a></dt>
   <dd>The 2-Clause BSD License</dd>
   <dt><a href="https://github.com/google/googletest">Google Test</a></dt>
   <dd>The 3-Clause BSD License</dd>
+  <dt><a href="https://github.com/martinmoene/gsl-lite">gsl-lite</a></dt>
+  <dd>The MIT License</dd>
   <dt><a href="https://software.intel.com/mkl">Intel(R) MKL</a></dt>
   <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
   <dt><a href="https://gitlab.inria.fr/solverstack/ScalFMM">ScalFMM</a></dt>

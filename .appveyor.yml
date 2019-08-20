@@ -26,7 +26,7 @@ cache:
 install:
   - C:\Miniconda-x64\Scripts\conda install mkl-devel=2018.0 -y -c intel
   - echo set(VCPKG_BUILD_TYPE release) >> %VCPKG_DIR%\triplets\x64-windows.cmake
-  - vcpkg install ceres flann eigen3 gtest --triplet x64-windows
+  - vcpkg install abseil ceres eigen3 flann gsl-lite gtest --triplet x64-windows
 
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"

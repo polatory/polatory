@@ -9,6 +9,7 @@ env:
     - MAKE_JOBS="$(($(nproc) + 1))"
     - MAKEFLAGS=-j$MAKE_JOBS
     - OMP_NUM_THREADS=$(nproc)
+    - VCPKG_VERSION=2019.07
 
 matrix:
   include:
@@ -50,7 +51,7 @@ matrix:
 
 cache:
   directories:
-    - $HOME/ceres-solver
+    - $HOME/vcpkg-installed
 
 before_install:
   - docker pull ubuntu:${UBUNTU_VERSION}
@@ -78,27 +79,19 @@ before_install:
 install:
   # Intel MKL
   - docker exec test apt-get install -qq intel-mkl-64bit-2018.3-051
-  # Eigen
-  - docker exec test apt-get install -qq libeigen3-dev
-  # Google Test
-  - docker exec test git clone --depth 1 https://github.com/google/googletest.git
-  - docker exec test sh -c "cd googletest && mkdir build && cd build && $CMAKE .. -GNinja && ninja && ninja install"
-  # Ceres Solver
-  - docker exec test apt-get install -qq libgoogle-glog-dev;
-  - if [ -n "$(ls $HOME/ceres-solver)" ]; then
-      docker cp $HOME/ceres-solver test:/root;
-      docker exec test sh -c "cd ceres-solver/build && ninja install";
-    else
-      docker exec test git clone --depth 1 https://ceres-solver.googlesource.com/ceres-solver;
-      docker exec test sh -c "cd ceres-solver && mkdir build && cd build && $CMAKE .. -GNinja -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DCXSPARSE=OFF -DEIGENSPARSE=OFF -DGFLAGS=OFF -DSCHUR_SPECIALIZATIONS=OFF -DSUITESPARSE=OFF && ninja && ninja install";
-      docker cp test:/root/ceres-solver $HOME;
-    fi
-  # FLANN
-  - docker exec test apt-get install -qq libflann-dev
   # Boost
   - docker exec test wget -nv https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.bz2
   - docker exec test tar xjf boost_1_69_0.tar.bz2
   - docker exec test sh -c "cd boost_1_69_0 && ./bootstrap.sh && ./b2 link=static --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j$MAKE_JOBS --prefix=."
+  # Other libraries
+  - docker exec test git clone -b ${VCPKG_VERSION} --depth 1 https://github.com/Microsoft/vcpkg.git
+  - if [ -n "$(ls $HOME/vcpkg-installed)" ]; then
+      docker cp $HOME/vcpkg-installed/. test:/root/vcpkg/installed;
+    fi
+  - docker exec test sh -c "cd vcpkg && ./bootstrap-vcpkg.sh"
+  - docker exec test sh -c "cd vcpkg && ./vcpkg install abseil ceres eigen3 flann gsl-lite gtest --triplet x64-linux"
+  - docker exec test.sh -c "cd vcpkg && ./vcpkg upgrade --no-dry-run"
+  - docker cp test:/root/vcpkg/installed/. $HOME/vcpkg-installed
 
 before_script:
   - lscpu
@@ -106,14 +99,14 @@ before_script:
   - docker exec test $CMAKE --version
   - docker exec test ninja --version
   - docker exec test $CXX --version
-  - docker exec test sh -c "cd polatory && mkdir build"
 
 script:
-  - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0"; fi
+  - docker exec test sh -c "cd polatory && mkdir build"
+  - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake -DBOOST_ROOT=~/boost_1_69_0"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && ninja"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && $CTEST -V"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "test" ]; then docker exec test sh -c "cd polatory/build && ninja install"; fi
-  - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DBOOST_ROOT=~/boost_1_69_0 -DENABLE_CLANG_TIDY=ON"; fi
+  - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory/build && $CMAKE .. -GNinja -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake -DBOOST_ROOT=~/boost_1_69_0 -DENABLE_CLANG_TIDY=ON"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then travis_wait docker exec test sh -c "cd polatory/build && ninja clang-tidy"; fi
   - if [ "$TRAVIS_BUILD_TYPE" = "static-analysis" ]; then docker exec test sh -c "cd polatory && tools/run-cpplint"; fi
 
