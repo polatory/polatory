@@ -6,7 +6,8 @@ image: Visual Studio 2017
 
 environment:
   CONDA_DIR: C:\Miniconda-x64
-  VCPKG_DIR: C:\Tools\vcpkg
+  VCPKG_DIR: C:\projects\vcpkg
+  VCPKG_VERSION: 2019.07
 
 init:
   - ps: Get-WmiObject Win32_OperatingSystem
@@ -21,21 +22,28 @@ matrix:
   fast_finish: true
 
 cache:
-  - C:\Tools\vcpkg\installed
+  - C:\projects\vcpkg\installed
 
 install:
   - C:\Miniconda-x64\Scripts\conda install mkl-devel=2018.0 -y -c intel
-  - echo set(VCPKG_BUILD_TYPE release) >> %VCPKG_DIR%\triplets\x64-windows.cmake
+  - cd %VCPKG_DIR%\..
+  - git clone -b %VCPKG_VERSION% --depth 1 https://github.com/microsoft/vcpkg.git
+  - cd vcpkg
+  - bootstrap-vcpkg.bat
+  - echo set(VCPKG_BUILD_TYPE release) >> triplets\x64-windows.cmake
+  - vcpkg remove --outdated --recurse
   - vcpkg install abseil ceres eigen3 flann gsl-lite gtest --triplet x64-windows
+  - vcpkg upgrade --no-dry-run
 
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
   - cmake --version
   - ninja --version
   - cl /Bv || cmd /c exit 0
-  - mkdir build && cd build
 
 build_script:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - mkdir build && cd build
   - cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=%VCPKG_DIR%\scripts\buildsystems\vcpkg.cmake -DBOOST_ROOT=C:\Libraries\boost_1_69_0 -DUSE_PREBUILT_BOOST=ON
   - ninja
 
