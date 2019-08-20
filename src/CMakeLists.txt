@@ -19,7 +19,7 @@ if(NOT ENABLE_CLANG_TIDY)
 endif()
 
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Wno-missing-braces -Werror)
+    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Werror)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()

@@ -28,8 +28,7 @@ Polatory runs on x86-64 processors and continuously tested on the following plat
 
 | OS               | Toolchain             |
 | ---------------- | --------------------- |
-| Ubuntu 16.04 LTS | GCC 5.4 and Clang 3.8 |
-| Ubuntu 18.04 LTS | GCC 7.3 and Clang 6.0 |
+| Ubuntu 18.04 LTS | GCC 7.4 and Clang 6.0 |
 | Windows          | Visual Studio 2017    |
 
 ### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
@@ -62,12 +61,12 @@ Polatory is available under two different licenses:
 
 1. Install build tools
 
-    On Ubuntu 16.04 LTS, CMake >= 3.9 must be installed manually.
-
     ```bash
     sudo apt install build-essential cmake curl git ninja-build unzip
     ```
+
     If you use Clang, `libomp-dev` is required.
+
     ```bash
     sudo apt install clang libomp-dev
     ```
