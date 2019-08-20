@@ -65,7 +65,7 @@ Polatory is available under two different licenses:
     On Ubuntu 16.04 LTS, CMake >= 3.9 must be installed manually.
 
     ```bash
-    sudo apt install build-essential cmake git ninja-build
+    sudo apt install build-essential cmake curl git ninja-build unzip
     ```
     If you use Clang, `libomp-dev` is required.
     ```bash

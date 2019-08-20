@@ -1,8 +1,8 @@
 find_package(Boost 1.67.0 REQUIRED COMPONENTS serialization)
-find_package(Ceres CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(flann CONFIG REQUIRED)
-find_package(glog CONFIG REQUIRED)
+find_package(Ceres REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(flann REQUIRED)
+find_package(glog REQUIRED)
 find_package(OpenMP REQUIRED)
 
 set(TARGET polatory)
