@@ -15,36 +15,41 @@ matrix:
   include:
     - name: "Ubuntu 16.04 - GCC"
       env:
-      - CXX=g++
       - UBUNTU_VERSION=16.04
+      - CC=gcc-7
+      - CXX=g++-7
       - CMAKE=/root/cmake-3.9.6-Linux-x86_64/bin/cmake
       - CTEST=/root/cmake-3.9.6-Linux-x86_64/bin/ctest
       - TRAVIS_BUILD_TYPE=test
     - name: "Ubuntu 16.04 - Clang"
       env:
-      - CXX=clang++
       - UBUNTU_VERSION=16.04
+      - CC=clang
+      - CXX=clang++
       - CMAKE=/root/cmake-3.9.6-Linux-x86_64/bin/cmake
       - CTEST=/root/cmake-3.9.6-Linux-x86_64/bin/ctest
       - TRAVIS_BUILD_TYPE=test
     - name: "Ubuntu 18.04 - GCC"
       env:
-      - CXX=g++
       - UBUNTU_VERSION=18.04
+      - CC=gcc
+      - CXX=g++
       - CMAKE=cmake
       - CTEST=ctest
       - TRAVIS_BUILD_TYPE=test
     - name: "Ubuntu 18.04 - Clang"
       env:
-      - CXX=clang++
       - UBUNTU_VERSION=18.04
+      - CC=clang
+      - CXX=clang++
       - CMAKE=cmake
       - CTEST=ctest
       - TRAVIS_BUILD_TYPE=test
     - name: "Static Analysis"
       env:
-      - CXX=clang++
       - UBUNTU_VERSION=18.04
+      - CC=clang
+      - CXX=clang++
       - CMAKE=cmake
       - TRAVIS_BUILD_TYPE=static-analysis
       if: type IN (push, pull_request)
@@ -55,14 +60,16 @@ cache:
 
 before_install:
   - docker pull ubuntu:${UBUNTU_VERSION}
-  - docker run -w /root --name test -d -e CXX=${CXX} -e MAKEFLAGS=${MAKEFLAGS} -e OMP_NUM_THREADS=${OMP_NUM_THREADS} ubuntu:${UBUNTU_VERSION} sleep infinity
+  - docker run -w /root --name test -d -e CC=${CC} -e CXX=${CXX} -e MAKEFLAGS=${MAKEFLAGS} -e OMP_NUM_THREADS=${OMP_NUM_THREADS} ubuntu:${UBUNTU_VERSION} sleep infinity
   - docker cp $TRAVIS_BUILD_DIR test:/root
-
   - docker exec test apt-get update -qq
   - docker exec test apt-get install -qq apt-transport-https build-essential cmake curl git gnupg lsb-release ninja-build python unzip wget
   - if [ "$UBUNTU_VERSION" = "16.04" ]; then
       docker exec test wget -nv https://cmake.org/files/v3.9/cmake-3.9.6-Linux-x86_64.tar.gz;
       docker exec test tar xzf cmake-3.9.6-Linux-x86_64.tar.gz;
+      docker exec test add-apt-repository -y ppa:ubuntu-toolchain-r/test;
+      docker exec test apt-get update -qq;
+      docker exec test apt-get install -qq gcc-7 g++-7;
     else
       docker exec test apt-get install -qq cmake;
     fi
@@ -90,7 +97,7 @@ install:
     fi
   - docker exec test sh -c "cd vcpkg && ./bootstrap-vcpkg.sh"
   - docker exec test sh -c "cd vcpkg && ./vcpkg install abseil ceres eigen3 flann gsl-lite gtest --triplet x64-linux"
-  - docker exec test.sh -c "cd vcpkg && ./vcpkg upgrade --no-dry-run"
+  - docker exec test sh -c "cd vcpkg && ./vcpkg upgrade --no-dry-run"
   - docker cp test:/root/vcpkg/installed/. $HOME/vcpkg-installed
 
 before_script:
