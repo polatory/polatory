@@ -28,6 +28,11 @@ option(USE_PREBUILT_BOOST "Use prebuilt Boost libraries specified manually. This
 
 option(ENABLE_CLANG_TIDY "Enable clang-tidy target. This option should not be used for code generation because it disables OpenMP.")
 
+# vcpkg
+set(VCPKG_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+set(VCPKG_LIB_DIR "${VCPKG_DIR}$<$<CONFIG:Debug>:/debug>/lib")
+set(VCPKG_INCLUDE_DIR "${VCPKG_DIR}/include")
+
 if(UNIX)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
         message(FATAL_ERROR "Not supported compiler.")
@@ -57,10 +62,6 @@ elseif(MSVC)
         set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
         set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
     endif()
-
-    set(VCPKG_ROOT "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
-    set(VCPKG_LIB_DIR "${VCPKG_ROOT}$<$<CONFIG:Debug>:/debug>/lib")
-    set(VCPKG_INCLUDE_DIR "${VCPKG_ROOT}/include")
 
     if(USE_PREBUILT_BOOST)
         if("${Boost_INCLUDE_DIR}" STREQUAL "${VCPKG_INCLUDE_DIR}")

@@ -28,8 +28,7 @@ Polatory runs on x86-64 processors and continuously tested on the following plat
 
 | OS               | Toolchain             |
 | ---------------- | --------------------- |
-| Ubuntu 16.04 LTS | GCC 5.4 and Clang 3.8 |
-| Ubuntu 18.04 LTS | GCC 7.3 and Clang 6.0 |
+| Ubuntu 18.04 LTS | GCC 7.4 and Clang 6.0 |
 | Windows          | Visual Studio 2017    |
 
 ### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
@@ -62,12 +61,12 @@ Polatory is available under two different licenses:
 
 1. Install build tools
 
-    On Ubuntu 16.04 LTS, CMake >= 3.9 must be installed manually.
-
     ```bash
-    sudo apt install build-essential cmake git ninja-build
+    sudo apt install build-essential cmake curl git ninja-build unzip
     ```
+
     If you use Clang, `libomp-dev` is required.
+
     ```bash
     sudo apt install clang libomp-dev
     ```
@@ -77,59 +76,23 @@ Polatory is available under two different licenses:
     See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
 
     ```bash
-    cd
     wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | sudo apt-key add -
     sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
     sudo apt update
     sudo apt install intel-mkl-64bit-2018.3-051
     ```
 
-1. Install [Eigen](http://eigen.tuxfamily.org/)
-
-    ```bash
-    sudo apt install libeigen3-dev
-    ```
-
-1. Install [Google Test](https://github.com/google/googletest)
-
-    ```bash
-    git clone https://github.com/google/googletest.git
-    cd googletest
-    mkdir build && cd build
-    cmake .. -GNinja
-    ninja
-    sudo ninja install
-    ```
-
-1. Install [Ceres Solver](http://ceres-solver.org/)
-
-    ```bash
-    sudo apt install libgoogle-glog-dev
-    cd
-    git clone https://ceres-solver.googlesource.com/ceres-solver
-    cd ceres-solver
-    mkdir build && cd build/
-    cmake .. -GNinja -DCMAKE_LIBRARY_PATH=/opt/intel/mkl/lib/intel64 -DGFLAGS=OFF -DLAPACK=ON
-    ninja
-    sudo ninja install
-    ```
-
-1. Install [FLANN](http://www.cs.ubc.ca/research/flann/)
-
-    ```bash
-    sudo apt install libflann-dev
-    ```
-
-1. Download and build [Boost](http://www.boost.org/)
+1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
 
     ```bash
     cd
-    wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.bz2
-    tar xjf boost_1_69_0.tar.bz2
-    cd boost_1_69_0
-    ./bootstrap.sh
-    ./b2 install -j8 --prefix=.
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres eigen3 flann gsl-lite gtest --triplet x64-linux
     ```
+
+    See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
 
 1. Build polatory
 
@@ -138,7 +101,7 @@ Polatory is available under two different licenses:
     git clone https://github.com/polatory/polatory.git
     cd polatory
     mkdir build && cd build
-    cmake .. -GNinja -DBOOST_ROOT=~/boost_1_69_0
+    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake
     ninja
     ```
 
@@ -156,6 +119,8 @@ Polatory is available under two different licenses:
 
     - Code tools > Git for Windows
 
+1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
+
 1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
 
     ```bat
@@ -163,21 +128,10 @@ Polatory is available under two different licenses:
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
     bootstrap-vcpkg.bat
-    vcpkg install boost ceres flann eigen3 gtest --triplet x64-windows
+    vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres eigen3 flann gsl-lite gtest --triplet x64-windows
     ```
 
-    To update vcpkg and installed libraries, run the following commands:
-
-    ```bat
-    cd /d C:\vcpkg
-    git pull
-    bootstrap-vcpkg.bat
-    vcpkg update
-    vcpkg upgrade
-    vcpkg upgrade --no-dry-run
-    ```
-
-1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
+    See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
 
 1. Build polatory
 
@@ -228,23 +182,25 @@ You can fork the source tree and make some improvements to it. Then feel free to
 
 ## Acknowledgements
 
-Polatory utilizes the following libraries:
+Polatory is built upon the following libraries. Each library may have other dependencies.
 
 <dl>
+  <dt><a href="https://abseil.io/">Abseil</a></dt>
+  <dd>Apache License 2.0</dd>
   <dt><a href="http://www.boost.org/">Boost</a></dt>
   <dd>Boost Software License 1.0</dd>
   <dt><a href="http://ceres-solver.org/">Ceres Solver</a></dt>
-  <dd>The 3-Clause BSD License</dd>
+  <dd>BSD 3-Clause License</dd>
   <dt><a href="http://eigen.tuxfamily.org/">Eigen</a></dt>
   <dd>Mozilla Public License 2.0</dd>
-  <dt><a href="https://github.com/martinmoene/gsl-lite">gsl-lite</a></dt>
-  <dd>The MIT License</dd>
   <dt><a href="http://www.cs.ubc.ca/research/flann/">FLANN</a></dt>
-  <dd>The 2-Clause BSD License</dd>
+  <dd>BSD 2-Clause License</dd>
   <dt><a href="https://github.com/google/googletest">Google Test</a></dt>
-  <dd>The 3-Clause BSD License</dd>
+  <dd>BSD 3-Clause License</dd>
+  <dt><a href="https://github.com/martinmoene/gsl-lite">gsl-lite</a></dt>
+  <dd>MIT License</dd>
   <dt><a href="https://software.intel.com/mkl">Intel(R) MKL</a></dt>
   <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
   <dt><a href="https://gitlab.inria.fr/solverstack/ScalFMM">ScalFMM</a></dt>
-  <dd><a href="http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html">The CeCILL-C License</a></dd>
+  <dd><a href="http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html">CeCILL-C License 1.0</a></dd>
 </dl>

@@ -1,4 +1,4 @@
-find_package(Boost 1.67.0 COMPONENTS program_options REQUIRED)
+find_package(Boost 1.67.0 REQUIRED COMPONENTS program_options)
 
 set(TARGET kriging_fit)
 

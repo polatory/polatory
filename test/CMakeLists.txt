@@ -1,4 +1,4 @@
-find_package(Boost 1.67.0 COMPONENTS filesystem system REQUIRED)
+find_package(Boost 1.67.0 REQUIRED COMPONENTS filesystem system)
 find_package(GTest REQUIRED)
 
 set(TARGET Unittest)
