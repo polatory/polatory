@@ -36,7 +36,7 @@ private:
     return idcs;
   }
 
-  const model model_;
+  const model& model_;
   const geometry::points3d& points_;
 
   const index_t n_points_;

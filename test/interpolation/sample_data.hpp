@@ -25,7 +25,7 @@ std::pair<polatory::geometry::points3d, polatory::common::valuesd> sample_numeri
   std::tie(points, values) = distance_filter(points, 1e-4)
     .filtered(points, values);
 
-  return std::make_pair(std::move(points), std::move(values));
+  return { std::move(points), std::move(values) };
 }
 
 inline
@@ -46,5 +46,5 @@ std::pair<polatory::geometry::points3d, polatory::common::valuesd> sample_sdf_da
   std::tie(points, values) = distance_filter(points, 1e-4)
     .filtered(points, values);
 
-  return std::make_pair(std::move(points), std::move(values));
+  return { std::move(points), std::move(values) };
 }

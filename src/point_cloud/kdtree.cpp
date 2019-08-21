@@ -47,7 +47,7 @@ public:
       d = std::sqrt(d);
     }
 
-    return std::make_pair(std::move(indices), std::move(distances_v[0]));
+    return { std::move(indices), std::move(distances_v[0]) };
   }
 
   indices_and_distances radius_search(const geometry::point3d& point, double radius) const {
@@ -69,7 +69,7 @@ public:
       d = std::sqrt(d);
     }
 
-    return std::make_pair(std::move(indices), std::move(distances_v[0]));
+    return { std::move(indices), std::move(distances_v[0]) };
   }
 
 private:

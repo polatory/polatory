@@ -3,7 +3,6 @@
 #include <polatory/kriging/variogram_fitting.hpp>
 
 #include <iostream>
-#include <memory>
 
 #include <ceres/ceres.h>
 
@@ -54,10 +53,10 @@ ceres::CostFunction* create_cost_function(model *model,
 
 variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, const model& model,
   const weight_function& weight_fn) {
-  auto model2 = std::make_unique<polatory::model>(model);
+  polatory::model model2(model);
 
-  auto n_params = model2->num_parameters();
-  params_ = model2->parameters();
+  auto n_params = model2.num_parameters();
+  params_ = model2.parameters();
 
   auto& bin_distance = emp_variog.bin_distance();
   auto& bin_gamma = emp_variog.bin_gamma();
@@ -72,12 +71,12 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
     if (bin_num_pairs[i] == 0)
       continue;
 
-    auto cost_fn = create_cost_function(model2.get(), bin_num_pairs[i], bin_distance[i], bin_gamma[i], weight_fn);
+    auto cost_fn = create_cost_function(&model2, bin_num_pairs[i], bin_distance[i], bin_gamma[i], weight_fn);
     problem.AddResidualBlock(cost_fn, nullptr, params_.data());
   }
 
-  auto lower_bounds = model2->parameter_lower_bounds();
-  auto upper_bounds = model2->parameter_upper_bounds();
+  auto lower_bounds = model2.parameter_lower_bounds();
+  auto upper_bounds = model2.parameter_upper_bounds();
   for (auto i = 0; i < n_params; i++) {
     problem.SetParameterLowerBound(params_.data(), i, lower_bounds[i]);
     problem.SetParameterUpperBound(params_.data(), i, upper_bounds[i]);

@@ -41,7 +41,7 @@ void test_coarse_grid(double nugget) {
 
   model model(biharmonic3d({ 1.0 }), poly_dimension, poly_degree);
   model.set_nugget(nugget);
-  auto lagr_basis = std::make_shared<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
+  auto lagr_basis = std::make_unique<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
 
   coarse_grid coarse(model, lagr_basis, point_indices, points);
 

@@ -11,7 +11,7 @@ namespace polatory {
 namespace preconditioner {
 
 coarse_grid::coarse_grid(const model& model,
-                         const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
+                         const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
                          const std::vector<index_t>& point_indices)
   : model_(model)
   , lagrange_basis_(lagrange_basis)
@@ -22,7 +22,7 @@ coarse_grid::coarse_grid(const model& model,
 }
 
 coarse_grid::coarse_grid(const model& model,
-                         const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
+                         const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
                          const std::vector<index_t>& point_indices,
                          const geometry::points3d& points_full)
   : coarse_grid(model, lagrange_basis, point_indices) {

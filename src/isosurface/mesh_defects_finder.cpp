@@ -175,7 +175,7 @@ bool mesh_defects_finder::line_triangle_intersects(vertex_index s1, vertex_index
 }
 
 mesh_defects_finder::halfedge mesh_defects_finder::opposite_halfedge(halfedge e) {
-  return std::make_pair(e.second, e.first);
+  return { e.second, e.first };
 }
 
 bool mesh_defects_finder::segment_crosses_the_plane(vertex_index s1, vertex_index s2, const face& f) const {
@@ -190,18 +190,18 @@ bool mesh_defects_finder::segment_crosses_the_plane(vertex_index s1, vertex_inde
 
 mesh_defects_finder::halfedge mesh_defects_finder::vertex_incoming_halfedge(face_index fi, vertex_index vi) const {
   const face& face = faces_[fi];
-  if (face[0] == vi) return std::make_pair(face[2], vi);
-  if (face[1] == vi) return std::make_pair(face[0], vi);
+  if (face[0] == vi) return { face[2], vi };
+  if (face[1] == vi) return { face[0], vi };
   POLATORY_ASSERT(face[2] == vi);
-  return std::make_pair(face[1], vi);
+  return { face[1], vi };
 }
 
 mesh_defects_finder::halfedge mesh_defects_finder::vertex_outgoing_halfedge(face_index fi, vertex_index vi) const {
   const face& face = faces_[fi];
-  if (face[0] == vi) return std::make_pair(vi, face[1]);
-  if (face[1] == vi) return std::make_pair(vi, face[2]);
+  if (face[0] == vi) return { vi, face[1] };
+  if (face[1] == vi) return { vi, face[2] };
   POLATORY_ASSERT(face[2] == vi);
-  return std::make_pair(vi, face[0]);
+  return { vi, face[0] };
 }
 
 }  // namespace isosurface

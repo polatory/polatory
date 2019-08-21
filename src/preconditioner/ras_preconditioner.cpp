@@ -18,7 +18,8 @@ namespace polatory {
 namespace preconditioner {
 
 ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& in_points)
-  : points_(in_points)
+  : model_without_poly_(model.without_poly())
+  , points_(in_points)
   , n_points_(static_cast<index_t>(in_points.rows()))
   , n_poly_basis_(model.poly_basis_size())
   , finest_evaluator_(kReportResidual ? std::make_unique<interpolation::rbf_symmetric_evaluator<Order>>(model, points_) : nullptr)
@@ -31,7 +32,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), model.poly_dimension(), model.poly_degree());
     point_idcs_.back() = ups.point_indices();
     poly_point_idcs = std::vector<index_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_poly_basis_);
-    lagrange_basis_ = std::make_shared<polynomial::lagrange_basis>(model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
+    lagrange_basis_ = std::make_unique<polynomial::lagrange_basis>(model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
   }
 
   n_fine_levels_ = std::max(0, static_cast<int>(
@@ -63,7 +64,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   auto ratio = 0 == n_fine_levels_ - 1
                ? static_cast<double>(n_coarsest_points) / static_cast<double>(n_points)
                : coarse_ratio;
-  upward_evaluator_.emplace_back(model.without_poly(), points_, bbox);
+  upward_evaluator_.emplace_back(model_without_poly_, points_, bbox);
   point_idcs_.push_back(divider->choose_coarse_points(ratio));
   upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
 
@@ -89,7 +90,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     ratio = level == n_fine_levels_ - 1
             ? static_cast<double>(n_coarsest_points) / static_cast<double>(n_points)
             : coarse_ratio;
-    upward_evaluator_.emplace_back(model.without_poly(), common::take_rows(points_, point_idcs_.back()), bbox);
+    upward_evaluator_.emplace_back(model_without_poly_, common::take_rows(points_, point_idcs_.back()), bbox);
     point_idcs_.push_back(divider->choose_coarse_points(ratio));
     upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
   }
@@ -108,7 +109,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     p_ = poly.evaluate_points(points_).transpose();
     ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
-    auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(model.without_poly(), points_);
+    auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(model_without_poly_, points_);
     auto n_cols = static_cast<index_t>(p_.cols());
     for (index_t i = 0; i < n_cols; i++) {
       finest_evaluator.set_weights(p_.col(i));

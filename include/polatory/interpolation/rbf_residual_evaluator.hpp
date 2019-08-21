@@ -61,13 +61,13 @@ public:
       for (index_t j = 0; j < end - begin; j++) {
         auto res = std::abs(values(begin + j) - fit(j));
         if (res >= absolute_tolerance + std::abs(nugget * weights(begin + j)))
-          return std::make_pair(false, 0.0);
+          return { false, 0.0 };
 
         max_residual = std::max(max_residual, res);
       }
     }
 
-    return std::make_pair(true, max_residual);
+    return { true, max_residual };
   }
 
   void set_points(const geometry::points3d& points) {
@@ -78,7 +78,7 @@ public:
   }
 
 private:
-  const model model_;
+  const model& model_;
   const index_t n_poly_basis_;
 
   index_t n_points_;

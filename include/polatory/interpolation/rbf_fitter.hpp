@@ -16,7 +16,7 @@ public:
   common::valuesd fit(const common::valuesd& values, double absolute_tolerance) const;
 
 private:
-  const model model_;
+  const model& model_;
   const geometry::points3d& points_;
 };
 

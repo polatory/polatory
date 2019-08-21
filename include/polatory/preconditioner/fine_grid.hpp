@@ -19,12 +19,12 @@ namespace preconditioner {
 class fine_grid {
 public:
   fine_grid(const model& model,
-            const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
+            const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
             const std::vector<index_t>& point_indices,
             const std::vector<bool>& inner_point);
 
   fine_grid(const model& model,
-            const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
+            const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
             const std::vector<index_t>& point_indices,
             const std::vector<bool>& inner_point,
             const geometry::points3d& points_full);
@@ -38,8 +38,8 @@ public:
   void solve(const Eigen::Ref<const common::valuesd>& values_full);
 
 private:
-  const model model_;
-  const std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
+  const model& model_;
+  const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis_;
   const std::vector<index_t> point_idcs_;
   const std::vector<bool> inner_point_;
 

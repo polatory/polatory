@@ -85,7 +85,7 @@ public:
   }
 
 private:
-  const model model_;
+  const model& model_;
   const index_t n_poly_basis_;
 
   index_t n_points_;

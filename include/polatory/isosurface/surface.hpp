@@ -20,9 +20,9 @@ public:
   using vertices_type = std::vector<geometry::point3d>;
   using faces_type = std::vector<face>;
 
-  surface(vertices_type&& vertices, faces_type&& faces)
-    : vertices_(std::forward<vertices_type>(vertices))
-    , faces_(std::forward<faces_type>(faces)) {
+  surface(vertices_type vertices, faces_type faces)
+    : vertices_(std::move(vertices))
+    , faces_(std::move(faces)) {
   }
 
   bool export_obj(const std::string& filename) {
@@ -53,8 +53,8 @@ public:
   }
 
 private:
-  vertices_type vertices_;
-  faces_type faces_;
+  const vertices_type vertices_;
+  const faces_type faces_;
 };
 
 }  // namespace isosurface

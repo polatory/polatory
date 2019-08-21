@@ -193,7 +193,7 @@ private:
     });
   }
 
-  const model model_;
+  const model& model_;
   const fmm_rbf_kernel rbf_kernel_;
 
   index_t n_src_points_;

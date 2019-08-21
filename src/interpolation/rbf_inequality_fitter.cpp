@@ -141,7 +141,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       break;
   }
 
-  return std::make_pair(std::move(centers), std::move(center_weights));
+  return { std::move(centers), std::move(center_weights) };
 }
 
 }  // namespace interpolation

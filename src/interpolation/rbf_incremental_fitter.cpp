@@ -101,7 +101,7 @@ rbf_incremental_fitter::fit(const common::valuesd& values, double absolute_toler
     center_weights.tail(n_poly_basis_) = last_center_weights.tail(n_poly_basis_);
   }
 
-  return std::make_pair(std::move(centers), std::move(center_weights));
+  return { std::move(centers), std::move(center_weights) };
 }
 
 std::vector<index_t> rbf_incremental_fitter::initial_indices() const {

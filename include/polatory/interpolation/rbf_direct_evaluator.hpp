@@ -36,7 +36,7 @@ public:
   }
 
 private:
-  const model model_;
+  const model& model_;
   const index_t n_poly_basis_;
   const index_t n_src_points_;
   const geometry::points3d src_points_;

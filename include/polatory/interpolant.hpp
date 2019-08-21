@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include <polatory/common/eigen_utility.hpp>
@@ -22,8 +23,8 @@ namespace polatory {
 
 class interpolant {
 public:
-  explicit interpolant(const model& model)
-    : model_(model) {
+  explicit interpolant(model model)
+    : model_(std::move(model)) {
   }
 
   const geometry::points3d& centers() const {

@@ -20,11 +20,11 @@ namespace preconditioner {
 class coarse_grid {
 public:
   coarse_grid(const model& model,
-              const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
+              const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
               const std::vector<index_t>& point_indices);
 
   coarse_grid(const model& model,
-              const std::shared_ptr<polynomial::lagrange_basis>& lagrange_basis,
+              const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
               const std::vector<index_t>& point_indices,
               const geometry::points3d& points_full);
 
@@ -37,8 +37,8 @@ public:
   void solve(const Eigen::Ref<const common::valuesd>& values_full);
 
 private:
-  const model model_;
-  const std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
+  const model& model_;
+  const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis_;
   const std::vector<index_t> point_idcs_;
 
   const index_t l_;

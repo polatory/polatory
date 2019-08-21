@@ -30,7 +30,7 @@ private:
 
   std::vector<index_t> complement_indices(const std::vector<index_t>& indices) const;
 
-  const model model_;
+  const model& model_;
   const geometry::points3d& points_;
 
   const index_t n_points_;

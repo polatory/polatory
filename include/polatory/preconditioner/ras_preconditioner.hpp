@@ -35,15 +35,16 @@ public:
   index_t size() const override;
 
 private:
+  const model model_without_poly_;
   const geometry::points3d points_;
   const index_t n_points_;
   const index_t n_poly_basis_;
   const std::unique_ptr<interpolation::rbf_symmetric_evaluator<Order>> finest_evaluator_;
 
+  std::unique_ptr<polynomial::lagrange_basis> lagrange_basis_;
   int n_fine_levels_;
   std::vector<std::vector<index_t>> point_idcs_;
   mutable std::vector<std::vector<fine_grid>> fine_grids_;
-  std::shared_ptr<polynomial::lagrange_basis> lagrange_basis_;
   std::unique_ptr<coarse_grid> coarse_;
   std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator_;
   std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator_;

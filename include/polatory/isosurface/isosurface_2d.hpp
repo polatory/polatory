@@ -59,7 +59,7 @@ public:
       }
     }
 
-    return surface(std::move(vertices), std::move(faces));
+    return { std::move(vertices), std::move(faces) };
   }
 
 private:
