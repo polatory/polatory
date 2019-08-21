@@ -76,26 +76,16 @@ Polatory is available under two different licenses:
     See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
 
     ```bash
-    cd
     wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | sudo apt-key add -
     sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
     sudo apt update
     sudo apt install intel-mkl-64bit-2018.3-051
     ```
 
-1. Clone polatory
-
-    ```bash
-    cd
-    git clone https://github.com/polatory/polatory.git
-    cd polatory
-    mkdir build
-    ```
-
 1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
 
     ```bash
-    cd ~/polatory/build
+    cd
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
     ./bootstrap-vcpkg.sh
@@ -107,8 +97,11 @@ Polatory is available under two different licenses:
 1. Build polatory
 
     ```bash
-    cd ~/polatory/build
-    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
+    cd
+    git clone https://github.com/polatory/polatory.git
+    cd polatory
+    mkdir build && cd build
+    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake
     ninja
     ```
 
@@ -128,21 +121,10 @@ Polatory is available under two different licenses:
 
 1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
 
-1. Clone polatory
-
-    Open **Start** > **Visual Studio 2017** > **x64 Native Tools Command Prompt for VS 2017**.
-
-    ```bat
-    cd /d %userprofile%
-    git clone https://github.com/polatory/polatory.git
-    cd polatory
-    mkdir build
-    ```
-
 1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
 
     ```bat
-    cd /d %userprofile%\polatory\build
+    cd /d C:\
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
     bootstrap-vcpkg.bat
@@ -153,9 +135,15 @@ Polatory is available under two different licenses:
 
 1. Build polatory
 
+    Open **Start** > **Visual Studio 2017** > **x64 Native Tools Command Prompt for VS 2017**.
+
     ```bat
-    cd /d %userprofile%\polatory\build
-    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
+    cd /d %userprofile%
+    git clone https://github.com/polatory/polatory.git
+    cd polatory
+    mkdir build
+    cd build
+    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
     ninja
     ```
 
@@ -194,7 +182,7 @@ You can fork the source tree and make some improvements to it. Then feel free to
 
 ## Acknowledgements
 
-Polatory utilizes the following libraries:
+Polatory is built upon the following libraries. Each library may have other dependencies.
 
 <dl>
   <dt><a href="https://abseil.io/">Abseil</a></dt>
@@ -202,17 +190,17 @@ Polatory utilizes the following libraries:
   <dt><a href="http://www.boost.org/">Boost</a></dt>
   <dd>Boost Software License 1.0</dd>
   <dt><a href="http://ceres-solver.org/">Ceres Solver</a></dt>
-  <dd>The 3-Clause BSD License</dd>
+  <dd>BSD 3-Clause License</dd>
   <dt><a href="http://eigen.tuxfamily.org/">Eigen</a></dt>
   <dd>Mozilla Public License 2.0</dd>
   <dt><a href="http://www.cs.ubc.ca/research/flann/">FLANN</a></dt>
-  <dd>The 2-Clause BSD License</dd>
+  <dd>BSD 2-Clause License</dd>
   <dt><a href="https://github.com/google/googletest">Google Test</a></dt>
-  <dd>The 3-Clause BSD License</dd>
+  <dd>BSD 3-Clause License</dd>
   <dt><a href="https://github.com/martinmoene/gsl-lite">gsl-lite</a></dt>
-  <dd>The MIT License</dd>
+  <dd>MIT License</dd>
   <dt><a href="https://software.intel.com/mkl">Intel(R) MKL</a></dt>
   <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
   <dt><a href="https://gitlab.inria.fr/solverstack/ScalFMM">ScalFMM</a></dt>
-  <dd><a href="http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html">The CeCILL-C License</a></dd>
+  <dd><a href="http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html">CeCILL-C License 1.0</a></dd>
 </dl>
