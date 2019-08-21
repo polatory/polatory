@@ -4,10 +4,13 @@ branches:
 
 image: Visual Studio 2017
 
+clone_depth: 1
+
 environment:
   CONDA_DIR: C:\Miniconda-x64
   VCPKG_DIR: C:\projects\vcpkg
   VCPKG_VERSION: 2019.07
+  VCPKG_INSTALLED_CACHE_DIR: C:\projects\vcpkg-installed
 
 init:
   - ps: Get-WmiObject Win32_OperatingSystem
@@ -21,13 +24,13 @@ matrix:
   fast_finish: true
 
 cache:
-  - C:\projects\vcpkg\installed
+  - '%VCPKG_INSTALLED_CACHE_DIR%'
 
 install:
-  - C:\Miniconda-x64\Scripts\conda install mkl-devel=2018.0 -y -c intel
-  - cd %VCPKG_DIR%\..
-  - git clone -b %VCPKG_VERSION% --depth 1 https://github.com/microsoft/vcpkg.git
-  - cd vcpkg
+  - '%CONDA_DIR%\Scripts\conda install mkl-devel=2018.0 -y -c intel'
+  - git clone -b %VCPKG_VERSION% --depth 1 https://github.com/microsoft/vcpkg.git %VCPKG_DIR%
+  - move %VCPKG_INSTALLED_CACHE_DIR% %VCPKG_DIR%\installed
+  - cd %VCPKG_DIR%
   - bootstrap-vcpkg.bat
   - echo set(VCPKG_BUILD_TYPE release) >> triplets\x64-windows.cmake
   - vcpkg remove --outdated --recurse
@@ -47,6 +50,9 @@ build_script:
 
 test_script:
   - ctest -V
+
+after_test:
+  - move %VCPKG_DIR%\installed %VCPKG_INSTALLED_CACHE_DIR%
 
 notifications:
   - provider: Slack
