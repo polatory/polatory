@@ -46,7 +46,7 @@ build_script:
   - ninja
 
 test_script:
-  - ctest -VV
+  - ctest -V
 
 notifications:
   - provider: Slack
