@@ -6,10 +6,10 @@
 #include <memory>
 #include <vector>
 
+#include <absl/types/optional.h>
 #include <boost/operators.hpp>
 
 #include <polatory/common/macros.hpp>
-#include <polatory/common/uncertain.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -61,7 +61,7 @@ class rmt_tetrahedron {
     return (s2 << 3) | (s1 << 2) | (s0 << 1) | s;
   }
 
-  static common::uncertain<vertex_index>
+  static absl::optional<vertex_index>
   vertex_on_edge(const rmt_node& node, edge_index edge_idx, const rmt_node& opp_node) {
     if (node.has_intersection(edge_idx))
       return node.vertex_on_edge(edge_idx);
@@ -110,73 +110,73 @@ public:
     std::vector<face> faces;
 
     switch (tetra) {
-    case tetrahedron_type<Pos, Pos, Pos, Pos>() :
+    case tetrahedron_type<Pos, Pos, Pos, Pos>():
       // no faces.
       break;
-    case tetrahedron_type<Neg, Neg, Neg, Neg>() :
+    case tetrahedron_type<Neg, Neg, Neg, Neg>():
       // no faces.
       break;
-    case tetrahedron_type<Neg, Pos, Pos, Pos>() :
+    case tetrahedron_type<Neg, Pos, Pos, Pos>():
       // v0-v1-v2
-      faces.push_back({ v0.get(), v1.get(), v2.get() });
+      faces.push_back({ *v0, *v1, *v2 });
       break;
-    case tetrahedron_type<Pos, Neg, Neg, Neg>() :
+    case tetrahedron_type<Pos, Neg, Neg, Neg>():
       // v0-v2-v1
-      faces.push_back({ v0.get(), v2.get(), v1.get() });
+      faces.push_back({ *v0, *v2, *v1 });
       break;
-    case tetrahedron_type<Pos, Neg, Pos, Pos>() :
+    case tetrahedron_type<Pos, Neg, Pos, Pos>():
       // v0-v5-v3
-      faces.push_back({ v0.get(), v5.get(), v3.get() });
+      faces.push_back({ *v0, *v5, *v3 });
       break;
-    case tetrahedron_type<Neg, Pos, Neg, Neg>() :
+    case tetrahedron_type<Neg, Pos, Neg, Neg>():
       // v0-v3-v5
-      faces.push_back({ v0.get(), v3.get(), v5.get() });
+      faces.push_back({ *v0, *v3, *v5 });
       break;
-    case tetrahedron_type<Pos, Pos, Neg, Pos>() :
+    case tetrahedron_type<Pos, Pos, Neg, Pos>():
       // v1-v3-v4
-      faces.push_back({ v1.get(), v3.get(), v4.get() });
+      faces.push_back({ *v1, *v3, *v4 });
       break;
-    case tetrahedron_type<Neg, Neg, Pos, Neg>() :
+    case tetrahedron_type<Neg, Neg, Pos, Neg>():
       // v1-v4-v3
-      faces.push_back({ v1.get(), v4.get(), v3.get() });
+      faces.push_back({ *v1, *v4, *v3 });
       break;
-    case tetrahedron_type<Pos, Pos, Pos, Neg>() :
+    case tetrahedron_type<Pos, Pos, Pos, Neg>():
       // v2-v4-v5
-      faces.push_back({ v2.get(), v4.get(), v5.get() });
+      faces.push_back({ *v2, *v4, *v5 });
       break;
-    case tetrahedron_type<Neg, Neg, Neg, Pos>() :
+    case tetrahedron_type<Neg, Neg, Neg, Pos>():
       // v2-v5-v4
-      faces.push_back({ v2.get(), v5.get(), v4.get() });
+      faces.push_back({ *v2, *v5, *v4 });
       break;
-    case tetrahedron_type<Neg, Neg, Pos, Pos>() :
+    case tetrahedron_type<Neg, Neg, Pos, Pos>():
       // v5-v3-v1, v5-v1-v2
-      faces.push_back({ v5.get(), v3.get(), v1.get() });
-      faces.push_back({ v5.get(), v1.get(), v2.get() });
+      faces.push_back({ *v5, *v3, *v1 });
+      faces.push_back({ *v5, *v1, *v2 });
       break;
-    case tetrahedron_type<Pos, Pos, Neg, Neg>() :
+    case tetrahedron_type<Pos, Pos, Neg, Neg>():
       // v5-v1-v3, v5-v2-v1
-      faces.push_back({ v5.get(), v1.get(), v3.get() });
-      faces.push_back({ v5.get(), v2.get(), v1.get() });
+      faces.push_back({ *v5, *v1, *v3 });
+      faces.push_back({ *v5, *v2, *v1 });
       break;
-    case tetrahedron_type<Neg, Pos, Neg, Pos>() :
+    case tetrahedron_type<Neg, Pos, Neg, Pos>():
       // v0-v3-v4, v0-v4-v2
-      faces.push_back({ v0.get(), v3.get(), v4.get() });
-      faces.push_back({ v0.get(), v4.get(), v2.get() });
+      faces.push_back({ *v0, *v3, *v4 });
+      faces.push_back({ *v0, *v4, *v2 });
       break;
-    case tetrahedron_type<Pos, Neg, Pos, Neg>() :
+    case tetrahedron_type<Pos, Neg, Pos, Neg>():
       // v0-v4-v3, v0-v2-v4
-      faces.push_back({ v0.get(), v4.get(), v3.get() });
-      faces.push_back({ v0.get(), v2.get(), v4.get() });
+      faces.push_back({ *v0, *v4, *v3 });
+      faces.push_back({ *v0, *v2, *v4 });
       break;
-    case tetrahedron_type<Neg, Pos, Pos, Neg>() :
+    case tetrahedron_type<Neg, Pos, Pos, Neg>():
       // v5-v0-v1, v5-v1-v4
-      faces.push_back({ v5.get(), v0.get(), v1.get() });
-      faces.push_back({ v5.get(), v1.get(), v4.get() });
+      faces.push_back({ *v5, *v0, *v1 });
+      faces.push_back({ *v5, *v1, *v4 });
       break;
-    case tetrahedron_type<Pos, Neg, Neg, Pos>() :
+    case tetrahedron_type<Pos, Neg, Neg, Pos>():
       // v5-v1-v0, v5-v4-v1
-      faces.push_back({ v5.get(), v1.get(), v0.get() });
-      faces.push_back({ v5.get(), v4.get(), v1.get() });
+      faces.push_back({ *v5, *v1, *v0 });
+      faces.push_back({ *v5, *v4, *v1 });
       break;
     default:
       POLATORY_NEVER_REACH();

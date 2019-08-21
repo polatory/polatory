@@ -1,3 +1,6 @@
+# Workaround for https://github.com/microsoft/vcpkg/issues/7706
+list(APPEND CMAKE_PREFIX_PATH "${VCPKG_DIR}/share/abseil")
+find_package(absl CONFIG REQUIRED)
 find_package(Boost 1.67.0 REQUIRED COMPONENTS serialization)
 find_package(Ceres CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
@@ -83,6 +86,7 @@ if(MSVC)
 endif()
 
 target_link_libraries(${TARGET} INTERFACE
+    absl::optional
     ${Boost_LIBRARIES}
     ceres flann::flann_cpp glog::glog
     ${OpenMP_CXX_LIBRARIES}

@@ -17,7 +17,6 @@
 #include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/uncertain.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
@@ -44,6 +43,10 @@ class rmt_lattice : public rmt_primitive_lattice {
   vertex_index clustered_vertices_begin;
   std::map<vertex_index, vertex_index> cluster_map;
   std::vector<vertex_index> unclustered_vis;
+
+  static bool has_intersection(const rmt_node *a, const rmt_node *b) {
+    return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
+  }
 
   // Add missing nodes of the eight vertices of the cell.
   // Returns false if the cell is already checked.
@@ -171,76 +174,67 @@ class rmt_lattice : public rmt_primitive_lattice {
       const auto bba = node_list.node_ptr(ibba);
       const auto bbb = node_list.node_ptr(ibbb);
 
-      const auto saaa = aaa != nullptr ? aaa->value_sign() : common::uncertain<binary_sign>();
-      const auto saab = aab != nullptr ? aab->value_sign() : common::uncertain<binary_sign>();
-      const auto saba = aba != nullptr ? aba->value_sign() : common::uncertain<binary_sign>();
-      const auto sabb = abb != nullptr ? abb->value_sign() : common::uncertain<binary_sign>();
-      const auto sbaa = baa != nullptr ? baa->value_sign() : common::uncertain<binary_sign>();
-      const auto sbab = bab != nullptr ? bab->value_sign() : common::uncertain<binary_sign>();
-      const auto sbba = bba != nullptr ? bba->value_sign() : common::uncertain<binary_sign>();
-      const auto sbbb = bbb != nullptr ? bbb->value_sign() : common::uncertain<binary_sign>();
-
       // __a and __b
-      if (aaa != nullptr && aab != nullptr && saaa.get() != saab.get()) {  // o -> 4
+      if (has_intersection(aaa, aab)) {  // o -> 4
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 2));
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 5));
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 6));
       }
-      if (aba != nullptr && abb != nullptr && saba.get() != sabb.get()) {  // 9 -> 3
+      if (has_intersection(aba, abb)) {  // 9 -> 3
         cells_to_add.insert(iaba);
         cells_to_add.insert(node_list.neighbor_cell_index(iaba, 5));
         cells_to_add.insert(node_list.neighbor_cell_index(iaba, 6));
       }
-      if (baa != nullptr && bab != nullptr && sbaa.get() != sbab.get()) {  // 13 -> 1
+      if (has_intersection(baa, bab)) {  // 13 -> 1
         cells_to_add.insert(ibaa);
         cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 2));
         cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 5));
       }
-      if (bba != nullptr && bbb != nullptr && sbba.get() != sbbb.get()) {  // 12 -> 0
+      if (has_intersection(bba, bbb)) {  // 12 -> 0
         cells_to_add.insert(ibba);
         cells_to_add.insert(node_list.neighbor_cell_index(ibba, 2));
         cells_to_add.insert(node_list.neighbor_cell_index(ibba, 6));
       }
 
       // _a_ and _b_
-      if (aaa != nullptr && aba != nullptr && saaa.get() != saba.get()) {  // o -> 9
+      if (has_intersection(aaa, aba)) {  // o -> 9
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 6));
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 8));
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 11));
       }
-      if (aab != nullptr && abb != nullptr && saab.get() != sabb.get()) {  // 4 -> 3
+      if (has_intersection(aab, abb)) {  // 4 -> 3
         cells_to_add.insert(iaab);
         cells_to_add.insert(node_list.neighbor_cell_index(iaab, 6));
         cells_to_add.insert(node_list.neighbor_cell_index(iaab, 8));
       }
-      if (baa != nullptr && bba != nullptr && sbaa.get() != sbba.get()) {  // 13 -> 12
+      if (has_intersection(baa, bba)) {  // 13 -> 12
         cells_to_add.insert(ibaa);
         cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 8));
         cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 11));
       }
-      if (bab != nullptr && bbb != nullptr && sbab.get() != sbbb.get()) {  // 1 -> 0
+      if (has_intersection(bab, bbb)) {  // 1 -> 0
         cells_to_add.insert(ibab);
         cells_to_add.insert(node_list.neighbor_cell_index(ibab, 6));
         cells_to_add.insert(node_list.neighbor_cell_index(ibab, 11));
       }
 
       // a__ and b__
-      if (aaa != nullptr && baa != nullptr && saaa.get() != sbaa.get()) {  // o -> 13
+      if (has_intersection(aaa, baa)) {  // o -> 13
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 2));
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 10));
         cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 11));
       }
-      if (aab != nullptr && bab != nullptr && saab.get() != sbab.get()) {  // 4 -> 1
+      if (has_intersection(aab, bab)) {  // 4 -> 1
         cells_to_add.insert(iaab);
         cells_to_add.insert(node_list.neighbor_cell_index(iaab, 2));
         cells_to_add.insert(node_list.neighbor_cell_index(iaab, 10));
       }
-      if (aba != nullptr && bba != nullptr && saba.get() != sbba.get()) {  // 9 -> 12
+      if (has_intersection(aba, bba)) {  // 9 -> 12
         cells_to_add.insert(iaba);
         cells_to_add.insert(node_list.neighbor_cell_index(iaba, 10));
         cells_to_add.insert(node_list.neighbor_cell_index(iaba, 11));
       }
-      if (abb != nullptr && bbb != nullptr && sabb.get() != sbbb.get()) {  // 3 -> 0
+      if (has_intersection(abb, bbb)) {  // 3 -> 0
         cells_to_add.insert(iabb);
         cells_to_add.insert(node_list.neighbor_cell_index(iabb, 2));
         cells_to_add.insert(node_list.neighbor_cell_index(iabb, 11));

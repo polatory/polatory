@@ -11,8 +11,9 @@
 #include <utility>
 #include <vector>
 
+#include <absl/types/optional.h>
+
 #include <polatory/common/macros.hpp>
-#include <polatory/common/uncertain.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -213,8 +214,8 @@ public:
         while (surface != 0) {
           auto edge_idx = bit_pop(&surface);
           auto weight = clustering_weight(edge_idx);
-          if (!weight.is_certain()) return;
-          weights.push_back(weight.get());
+          if (!weight.has_value()) return;
+          weights.push_back(weight.value());
         }
       }
       auto weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
@@ -245,8 +246,8 @@ public:
           while (surface != 0) {
             auto edge_idx = bit_pop(&surface);
             auto weight = clustering_weight(edge_idx);
-            if (!weight.is_certain()) return;
-            weights.push_back(weight.get());
+            if (!weight.has_value()) return;
+            weights.push_back(weight.value());
             edge_idcs.push_back(edge_idx);
           }
         }
@@ -270,7 +271,7 @@ public:
     }
   }
 
-  common::uncertain<double> clustering_weight(edge_index edge_idx) const {
+  absl::optional<double> clustering_weight(edge_index edge_idx) const {
     if (!has_neighbor(edge_idx))
       return {};
 
