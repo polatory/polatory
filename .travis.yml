@@ -67,7 +67,7 @@ install:
   - docker exec test sh -c "cd boost_1_69_0 && ./bootstrap.sh && ./b2 link=static --with-filesystem --with-program_options --with-serialization --with-system install -d0 -j$MAKE_JOBS --prefix=."
   # Other libraries
   - docker exec test git clone -b ${VCPKG_VERSION} --depth 1 https://github.com/Microsoft/vcpkg.git
-  - if [ -n "$(ls $HOME/vcpkg-installed)" ]; then
+  - if [ -d "$HOME/vcpkg-installed" ]; then
       docker cp $HOME/vcpkg-installed/. test:/root/vcpkg/installed;
     fi
   - docker exec test sh -c "cd vcpkg && ./bootstrap-vcpkg.sh"
