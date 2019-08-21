@@ -83,6 +83,10 @@ else()
     message(FATAL_ERROR "Not supported system.")
 endif()
 
+if(MSVC)
+    string(REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+endif()
+
 if(ENABLE_CLANG_TIDY)
     polatory_enable_clang_tidy()
 endif()
