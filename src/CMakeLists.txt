@@ -104,8 +104,6 @@ elseif(MSVC)
     )
 endif()
 
-polatory_enable_ipo(${TARGET})
-
 if(MSVC)
     polatory_get_prebuilt_boost_dlls(BOOST_DLLS)
     list(APPEND POLATORY_DLLS ${BOOST_DLLS})
