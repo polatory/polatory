@@ -7,10 +7,10 @@
 #include <array>
 #include <cmath>
 #include <iterator>
-#include <map>
 #include <memory>
 #include <random>
 #include <set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -33,7 +33,7 @@ extern const std::array<edge_index, 14> OppositeEdge;
 class rmt_lattice : public rmt_primitive_lattice {
   friend class rmt_surface;
 
-  using base_type = rmt_primitive_lattice;
+  using base = rmt_primitive_lattice;
 
   rmt_node_list node_list;
   std::vector<cell_index> nodes_to_evaluate;
@@ -41,7 +41,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   std::vector<geometry::point3d> vertices;
   vertex_index clustered_vertices_begin;
-  std::map<vertex_index, vertex_index> cluster_map;
+  std::unordered_map<vertex_index, vertex_index> cluster_map;
   std::vector<vertex_index> unclustered_vis;
 
   static bool has_intersection(const rmt_node *a, const rmt_node *b) {
@@ -50,41 +50,41 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   // Add missing nodes of the eight vertices of the cell.
   // Returns false if the cell is already checked.
-  bool add_cell(cell_index cell_idx) {
-    auto it = node_list.find(cell_idx);
+  bool add_cell(cell_index ci) {
+    auto it = node_list.find(ci);
     if (it != node_list.end()) {
       if (it->second.cell_is_visited)
         return false;
 
-      cells_to_visit.push_back(cell_idx);
+      cells_to_visit.push_back(ci);
     }
 
-    bool aaa_is_added = add_node(cell_idx);
-    add_node(node_list.neighbor_cell_index(cell_idx, 4));
-    add_node(node_list.neighbor_cell_index(cell_idx, 9));
-    add_node(node_list.neighbor_cell_index(cell_idx, 3));
-    add_node(node_list.neighbor_cell_index(cell_idx, 13));
-    add_node(node_list.neighbor_cell_index(cell_idx, 1));
-    add_node(node_list.neighbor_cell_index(cell_idx, 12));
-    add_node(node_list.neighbor_cell_index(cell_idx, 0));
+    bool aaa_is_added = add_node(ci);
+    add_node(node_list.neighbor_cell_index(ci, 4));
+    add_node(node_list.neighbor_cell_index(ci, 9));
+    add_node(node_list.neighbor_cell_index(ci, 3));
+    add_node(node_list.neighbor_cell_index(ci, 13));
+    add_node(node_list.neighbor_cell_index(ci, 1));
+    add_node(node_list.neighbor_cell_index(ci, 12));
+    add_node(node_list.neighbor_cell_index(ci, 0));
 
     if (aaa_is_added) {
-      cells_to_visit.push_back(cell_idx);
+      cells_to_visit.push_back(ci);
     }
 
     return true;
   }
 
-  bool add_node(cell_index cell_idx) {
-    if (node_list.count(cell_idx) != 0)
+  bool add_node(cell_index ci) {
+    if (node_list.count(ci) != 0)
       return false;
 
-    return add_node(cell_idx, cell_vector_from_index(cell_idx));
+    return add_node(ci, cell_vector_from_index(ci));
   }
 
   // Adds a node at cell_idx to node_list and nodes_to_evaluate
   // if the node is within the boundary.
-  bool add_node(cell_index cell_idx, const cell_vector& cv) {
+  bool add_node(cell_index ci, const cell_vector& cv) {
     geometry::point3d pos = point_from_cell_vector(cv);
 
     if (!is_inside_bounds(pos)) {
@@ -93,11 +93,11 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
 
     auto new_node = rmt_node(pos);
-    auto it_bool = node_list.insert(std::make_pair(cell_idx, std::move(new_node)));
+    auto it_bool = node_list.insert(std::make_pair(ci, std::move(new_node)));
     (void)it_bool;
     POLATORY_ASSERT(it_bool.second);
 
-    nodes_to_evaluate.push_back(cell_idx);
+    nodes_to_evaluate.push_back(ci);
     return true;
   }
 
@@ -128,7 +128,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
     auto i = 0;
     for (auto idx : nodes_to_evaluate) {
-      auto value = values(i);
+      auto value = 0.0 * values(i);
       while (value == 0.0) {
         value = dis(gen);
       }
@@ -271,7 +271,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
 public:
   rmt_lattice(const geometry::bbox3d& bbox, double resolution)
-    : base_type(bbox, resolution)
+    : base(bbox, resolution)
     , clustered_vertices_begin(0) {
     node_list.init_strides(cell_index{ 1 } << shift1, cell_index{ 1 } << shift2);
   }
@@ -281,21 +281,21 @@ public:
     std::vector<cell_index> new_nodes;
     std::vector<cell_index> prev_nodes;
 
-    for (auto m2 = cell_min(2); m2 <= cell_max(2); m2++) {
-      auto offset2 = static_cast<cell_index>(m2 - cell_min(2)) << shift2;
+    for (auto cv2 = cv_min(2); cv2 <= cv_max(2); cv2++) {
+      auto offset2 = static_cast<cell_index>(cv2 - cv_min(2)) << shift2;
 
-      for (auto m1 = cell_min(1); m1 <= cell_max(1); m1++) {
-        auto offset21 = offset2 | (static_cast<cell_index>(m1 - cell_min(1)) << shift1);
+      for (auto cv1 = cv_min(1); cv1 <= cv_max(1); cv1++) {
+        auto offset21 = offset2 | (static_cast<cell_index>(cv1 - cv_min(1)) << shift1);
 
-        for (auto m0 = cell_min(0); m0 <= cell_max(0); m0++) {
-          auto cell_idx = offset21 | static_cast<cell_index>(m0 - cell_min(0));
+        for (auto cv0 = cv_min(0); cv0 <= cv_max(0); cv0++) {
+          auto cell_idx = offset21 | static_cast<cell_index>(cv0 - cv_min(0));
 
-          if (add_node(cell_idx, cell_vector(m0, m1, m2)))
+          if (add_node(cell_idx, cell_vector(cv0, cv1, cv2)))
             new_nodes.push_back(cell_idx);
         }
       }
 
-      if (m2 > cell_min(2)) {
+      if (cv2 > cv_min(2)) {
         evaluate_field(field_fn, isovalue);
         generate_vertices(prev_nodes);
         remove_free_nodes(prev_nodes);

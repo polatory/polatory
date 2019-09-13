@@ -22,15 +22,15 @@ using polatory::geometry::point3d;
 using polatory::geometry::vector3d;
 using polatory::isosurface::bit_count;
 using polatory::isosurface::bit_pop;
+using polatory::isosurface::DualLatticeVectors;
 using polatory::isosurface::edge_bitset;
 using polatory::isosurface::edge_index;
 using polatory::isosurface::FaceEdges;
+using polatory::isosurface::LatticeVectors;
 using polatory::isosurface::NeighborCellVectors;
 using polatory::isosurface::NeighborEdgePairs;
 using polatory::isosurface::NeighborMasks;
 using polatory::isosurface::OppositeEdge;
-using polatory::isosurface::PrimitiveVectors;
-using polatory::isosurface::ReciprocalPrimitiveVectors;
 using polatory::isosurface::rmt_primitive_lattice;
 using polatory::isosurface::rotation;
 using polatory::point_cloud::random_points;
@@ -89,6 +89,19 @@ TEST(rmt, lattice) {
   }
 }
 
+TEST(rmt, lattice_vectors) {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      auto dot = LatticeVectors[i].dot(DualLatticeVectors[j]);
+      if (i == j) {
+        EXPECT_NEAR(1.0, dot, 1e-15);
+      } else {
+        EXPECT_NEAR(0.0, dot, 1e-15);
+      }
+    }
+  }
+}
+
 TEST(rmt, neighbor_edge_pairs) {
   for (edge_index ei = 0; ei < 14; ei++) {
     auto& va = NeighborVectors[ei];
@@ -125,9 +138,9 @@ TEST(rmt, neighbors) {
 
   for (edge_index ei = 0; ei < 14; ei++) {
     vector3d computed =
-      PrimitiveVectors[0] * NeighborCellVectors[ei][0]
-      + PrimitiveVectors[1] * NeighborCellVectors[ei][1]
-      + PrimitiveVectors[2] * NeighborCellVectors[ei][2];
+      LatticeVectors[0] * NeighborCellVectors[ei][0]
+      + LatticeVectors[1] * NeighborCellVectors[ei][1]
+      + LatticeVectors[2] * NeighborCellVectors[ei][2];
 
     for (int i = 0; i < 3; i++) {
       EXPECT_NEAR(NeighborVectors[ei](i), computed(i), 1e-15);
@@ -138,18 +151,5 @@ TEST(rmt, neighbors) {
 TEST(rmt, opposite_edge) {
   for (edge_index ei = 0; ei < 14; ei++) {
     EXPECT_EQ(-NeighborVectors[ei], NeighborVectors[OppositeEdge[ei]]);
-  }
-}
-
-TEST(rmt, primitive_vectors) {
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      auto dot = PrimitiveVectors[i].dot(ReciprocalPrimitiveVectors[j]);
-      if (i == j) {
-        EXPECT_NEAR(1.0, dot, 1e-15);
-      } else {
-        EXPECT_NEAR(0.0, dot, 1e-15);
-      }
-    }
   }
 }

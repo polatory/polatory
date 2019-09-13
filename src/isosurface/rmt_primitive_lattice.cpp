@@ -13,19 +13,19 @@ namespace detail {
 #pragma warning(push)
 #pragma warning(disable : 4297)  // 'function' : function assumed not to throw an exception but does
 #endif
-primitive_vectors::primitive_vectors() noexcept try : base{ {
-  rotation().transform_vector({ +1., +1., -1. }),
-  rotation().transform_vector({ +1., -1., +1. }),
-  rotation().transform_vector({ -1., +1., +1. })
+lattice_vectors::lattice_vectors() noexcept try : base{ {
+  rotation().transform_vector({ 1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0), -1.0 / std::sqrt(2.0) }),
+  rotation().transform_vector({ 1.0 / std::sqrt(2.0), -1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0) }),
+  rotation().transform_vector({ -1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0) })
 } } {
 } catch (const std::exception&) {
   std::terminate();
 }
 
-reciprocal_primitive_vectors::reciprocal_primitive_vectors() noexcept try : base{ {
-  rotation().transform_vector({ 1. / 2., 1. / 2., 0. }),
-  rotation().transform_vector({ 1. / 2., 0., 1. / 2. }),
-  rotation().transform_vector({ 0., 1. / 2., 1. / 2. })
+dusl_lattice_vectors::dusl_lattice_vectors() noexcept try : base{ {
+  rotation().transform_vector({ 1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0), 0. }),
+  rotation().transform_vector({ 1.0 / std::sqrt(2.0), 0., 1.0 / std::sqrt(2.0) }),
+  rotation().transform_vector({ 0., 1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0) })
 } } {
 } catch (const std::exception&) {
   std::terminate();
@@ -36,9 +36,9 @@ reciprocal_primitive_vectors::reciprocal_primitive_vectors() noexcept try : base
 
 }  // namespace detail
 
-const detail::primitive_vectors PrimitiveVectors;
+const detail::lattice_vectors LatticeVectors;
 
-const detail::reciprocal_primitive_vectors ReciprocalPrimitiveVectors;
+const detail::dusl_lattice_vectors DualLatticeVectors;
 
 }  // namespace isosurface
 }  // namespace polatory

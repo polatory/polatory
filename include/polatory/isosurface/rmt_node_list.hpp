@@ -3,7 +3,7 @@
 #pragma once
 
 #include <array>
-#include <map>
+#include <unordered_map>
 
 #include <polatory/isosurface/rmt_node.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -26,26 +26,26 @@ public:
 // to reproduce each NeighborVectors.
 extern const detail::neighbor_cell_vectors NeighborCellVectors;
 
-class rmt_node_list : std::map<cell_index, rmt_node> {
-  using base_type = std::map<cell_index, rmt_node>;
+class rmt_node_list : std::unordered_map<cell_index, rmt_node> {
+  using base = std::unordered_map<cell_index, rmt_node>;
 
   std::array<cell_index, 14> NeighborCellIndexDeltas{};
 
 public:
-  using iterator = base_type::iterator;
+  using base::iterator;
 
-  using base_type::at;
-  using base_type::begin;
-  using base_type::clear;
-  using base_type::count;
-  using base_type::end;
-  using base_type::erase;
-  using base_type::find;
-  using base_type::insert;
-  using base_type::size;
+  using base::at;
+  using base::begin;
+  using base::clear;
+  using base::count;
+  using base::end;
+  using base::erase;
+  using base::find;
+  using base::insert;
+  using base::size;
 
-  rmt_node *node_ptr(cell_index cell_index) {
-    auto it = find(cell_index);
+  rmt_node *node_ptr(cell_index ci) {
+    auto it = find(ci);
     return it != end() ? &it->second : nullptr;
   }
 
@@ -57,16 +57,16 @@ public:
     }
   }
 
-  cell_index neighbor_cell_index(cell_index cell_index, edge_index ei) const {
-    return cell_index + NeighborCellIndexDeltas[ei];
+  cell_index neighbor_cell_index(cell_index ci, edge_index ei) const {
+    return ci + NeighborCellIndexDeltas[ei];
   }
 
-  iterator find_neighbor_node(cell_index cell_index, edge_index ei) {
-    return find(neighbor_cell_index(cell_index, ei));
+  iterator find_neighbor_node(cell_index ci, edge_index ei) {
+    return find(neighbor_cell_index(ci, ei));
   }
 
-  rmt_node *neighbor_node_ptr(cell_index cell_index, edge_index ei) {
-    return node_ptr(neighbor_cell_index(cell_index, ei));
+  rmt_node *neighbor_node_ptr(cell_index ci, edge_index ei) {
+    return node_ptr(neighbor_cell_index(ci, ei));
   }
 };
 

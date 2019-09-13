@@ -5,9 +5,9 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <numeric>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -198,7 +198,7 @@ public:
   //   |         |  = 1 -> Simple surface
   //   |         .
   //   .
-  void cluster(std::vector<geometry::point3d>& vertices, std::map<vertex_index, vertex_index>& cluster_map) const {  // NOLINT(runtime/references)
+  void cluster(std::vector<geometry::point3d>& vertices, std::unordered_map<vertex_index, vertex_index>& cluster_map) const {  // NOLINT(runtime/references)
     auto surfaces = get_surfaces();
     auto holes = get_holes();
 
