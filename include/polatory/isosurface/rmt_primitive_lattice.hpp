@@ -73,7 +73,7 @@ public:
 
     // Bounds of all cells which nodes are inside the extended bbox.
     cv_min = cvs.colwise().minCoeff().array() + 1;
-    cv_max = cvs.colwise().maxCoeff().array();
+    cv_max = cvs.colwise().maxCoeff();
 
     if (static_cast<cell_index>(cv_max(0) - cv_min(0)) > mask ||
       static_cast<cell_index>(cv_max(1) - cv_min(1)) > mask ||
