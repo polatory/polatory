@@ -17,18 +17,18 @@ namespace isosurface {
 
 namespace detail {
 
-class primitive_vectors : public std::array<geometry::vector3d, 3> {
+class lattice_vectors : public std::array<geometry::vector3d, 3> {
   using base = std::array<geometry::vector3d, 3>;
 
 public:
-  primitive_vectors() noexcept;
+  lattice_vectors() noexcept;
 };
 
-class reciprocal_primitive_vectors : public std::array<geometry::vector3d, 3> {
+class dual_lattice_vectors : public std::array<geometry::vector3d, 3> {
   using base = std::array<geometry::vector3d, 3>;
 
 public:
-  reciprocal_primitive_vectors() noexcept;
+  dual_lattice_vectors() noexcept;
 };
 
 }  // namespace detail
@@ -39,140 +39,106 @@ geometry::affine_transformation3d rotation() {
   return geometry::affine_transformation3d::roll_pitch_yaw({ -common::pi<double>() / 2.0, 0.0, -common::pi<double>() / 4.0 });
 }
 
-// Primitive vectors of body-centered cubic.
-extern const detail::primitive_vectors PrimitiveVectors;
+// Primitive vectors of the body-centered cubic lattice.
+extern const detail::lattice_vectors LatticeVectors;
 
-// Reciprocal primitive vectors of body-centered cubic.
-extern const detail::reciprocal_primitive_vectors ReciprocalPrimitiveVectors;
+// Reciprocal primitive vectors of the body-centered cubic lattice.
+extern const detail::dual_lattice_vectors DualLatticeVectors;
 
 class rmt_primitive_lattice {
-protected:
-  // Original bbox
-  geometry::bbox3d bbox;
-
-  // Extended bbox
-  geometry::bbox3d ext_bbox;
-
-  // Lattice constant
-  double lc;
-  // Reciprocal lattice constant
-  double rlc;
-
-  // Primitive vectors scaled by `lc`.
-  geometry::vector3d a0;
-  geometry::vector3d a1;
-  geometry::vector3d a2;
-
-  // Reciprocal primitive vectors scaled by `rlc`.
-  geometry::vector3d b0;
-  geometry::vector3d b1;
-  geometry::vector3d b2;
-
-  cell_vector cell_min;
-  cell_vector cell_max;
-  const unsigned int shift1 = 21;
-  const unsigned int shift2 = 42;
-  const cell_index mask = (cell_index{ 1 } << shift1) - 1;
-
-private:
-  // TODO(mizuno): Make sure we have some additional margins so that
-  // neighbor_cell_index() will never return unintended cell index
-  // when an index of a boundary cell is passed.
-  void initialize() {
-    a0 = lc * PrimitiveVectors[0];
-    a1 = lc * PrimitiveVectors[1];
-    a2 = lc * PrimitiveVectors[2];
-
-    b0 = rlc * ReciprocalPrimitiveVectors[0];
-    b1 = rlc * ReciprocalPrimitiveVectors[1];
-    b2 = rlc * ReciprocalPrimitiveVectors[2];
-
-    auto sqrt2 = std::sqrt(2.0);
-    geometry::vector3d cell_hull = lc * geometry::vector3d(3.0, 2.0 * sqrt2, sqrt2);
-
-    // Extend each side of bbox by a primitive cell
-    // to ensure all required nodes are inside the extended bbox.
-    geometry::vector3d ext = cell_hull * (1.0 + std::pow(2.0, -5.0));
-    ext_bbox = geometry::bbox3d(bbox.min() - ext, bbox.max() + ext);
-
+public:
+  rmt_primitive_lattice(const geometry::bbox3d& bbox, double resolution)
+    : a0_(resolution * LatticeVectors[0])
+    , a1_(resolution * LatticeVectors[1])
+    , a2_(resolution * LatticeVectors[2])
+    , b0_(DualLatticeVectors[0] / resolution)
+    , b1_(DualLatticeVectors[1] / resolution)
+    , b2_(DualLatticeVectors[2] / resolution)
+    , ext_bbox_(compute_extended_bbox(bbox, resolution)) {
     geometry::points3d ext_bbox_vertices(8, 3);
     ext_bbox_vertices <<
-      ext_bbox.min()(0), ext_bbox.min()(1), ext_bbox.min()(2),
-      ext_bbox.max()(0), ext_bbox.min()(1), ext_bbox.min()(2),
-      ext_bbox.min()(0), ext_bbox.max()(1), ext_bbox.min()(2),
-      ext_bbox.min()(0), ext_bbox.min()(1), ext_bbox.max()(2),
-      ext_bbox.min()(0), ext_bbox.max()(1), ext_bbox.max()(2),
-      ext_bbox.max()(0), ext_bbox.min()(1), ext_bbox.max()(2),
-      ext_bbox.max()(0), ext_bbox.max()(1), ext_bbox.min()(2),
-      ext_bbox.max()(0), ext_bbox.max()(1), ext_bbox.max()(2);
+      ext_bbox_.min()(0), ext_bbox_.min()(1), ext_bbox_.min()(2),
+      ext_bbox_.max()(0), ext_bbox_.min()(1), ext_bbox_.min()(2),
+      ext_bbox_.min()(0), ext_bbox_.max()(1), ext_bbox_.min()(2),
+      ext_bbox_.min()(0), ext_bbox_.min()(1), ext_bbox_.max()(2),
+      ext_bbox_.min()(0), ext_bbox_.max()(1), ext_bbox_.max()(2),
+      ext_bbox_.max()(0), ext_bbox_.min()(1), ext_bbox_.max()(2),
+      ext_bbox_.max()(0), ext_bbox_.max()(1), ext_bbox_.min()(2),
+      ext_bbox_.max()(0), ext_bbox_.max()(1), ext_bbox_.max()(2);
 
-    geometry::vectors3d cell_vecsd(8, 3);
-
-    for (size_t i = 0; i < 8; i++) {
-      auto v = ext_bbox_vertices.row(i);
-      cell_vecsd.row(i) = geometry::vector3d(v.dot(b0),  v.dot(b1),  v.dot(b2));
+    cell_vectors cvs(8, 3);
+    for (auto i = 0; i < 8; i++) {
+      cvs.row(i) = cell_vector_from_point(ext_bbox_vertices.row(i));
     }
 
-    geometry::vector3d cell_mind = cell_vecsd.colwise().minCoeff();
-    geometry::vector3d cell_maxd = cell_vecsd.colwise().maxCoeff();
+    // Bounds of all cells which nodes are inside the extended bbox.
+    cv_min = cvs.colwise().minCoeff().array() + 1;
+    cv_max = cvs.colwise().maxCoeff().array();
 
-    cell_min = cell_vector(
-      static_cast<int>(std::floor(cell_mind(0))),
-      static_cast<int>(std::floor(cell_mind(1))),
-      static_cast<int>(std::floor(cell_mind(2)))
-    );
-    cell_max = cell_vector(
-      static_cast<int>(std::ceil(cell_maxd(0))),
-      static_cast<int>(std::ceil(cell_maxd(1))),
-      static_cast<int>(std::ceil(cell_maxd(2)))
-    );
-
-    if (static_cast<cell_index>(cell_max(0) - cell_min(0)) > mask ||
-        static_cast<cell_index>(cell_max(1) - cell_min(1)) > mask ||
-        static_cast<cell_index>(cell_max(2) - cell_min(2)) > mask)
+    if (static_cast<cell_index>(cv_max(0) - cv_min(0)) > mask ||
+      static_cast<cell_index>(cv_max(1) - cv_min(1)) > mask ||
+      static_cast<cell_index>(cv_max(2) - cv_min(2)) > mask)
       throw std::range_error("Bounds are too large or resolution is too small.");
   }
 
-public:
-  rmt_primitive_lattice(const geometry::bbox3d& bbox, double resolution)
-    : bbox(bbox)
-    , lc(resolution / std::sqrt(2.0))
-    , rlc(std::sqrt(2.0) / resolution) {
-    initialize();
+  cell_index cell_index_from_point(const geometry::point3d& p) const {
+    return to_cell_index(cell_vector_from_point(p));
   }
 
-  cell_index cell_contains_point(const geometry::point3d& p) const {
-    auto m0 = static_cast<int>(std::floor(p.dot(b0)));
-    auto m1 = static_cast<int>(std::floor(p.dot(b1)));
-    auto m2 = static_cast<int>(std::floor(p.dot(b2)));
-
-    cell_index offset2 = static_cast<cell_index>(m2 - cell_min(2)) << shift2;
-    cell_index offset21 = offset2 | (static_cast<cell_index>(m1 - cell_min(1)) << shift1);
-    return offset21 | static_cast<cell_index>(m0 - cell_min(0));
+  geometry::point3d cell_node_point(const cell_vector& cv) const {
+    return cv(0) * a0_ + cv(1) * a1_ + cv(2) * a2_;
   }
 
-  cell_vector cell_vector_from_index(cell_index cell_idx) const {
-    int m0 = static_cast<int>(cell_idx & mask) + cell_min(0);
-    int m1 = static_cast<int>((cell_idx >> shift1) & mask) + cell_min(1);
-    int m2 = static_cast<int>((cell_idx >> shift2) & mask) + cell_min(2);
-
-    return { m0, m1, m2 };
+  cell_vector cell_vector_from_point(const geometry::point3d& p) const {
+    return {
+      static_cast<int>(std::floor(p.dot(b0_))),
+      static_cast<int>(std::floor(p.dot(b1_))),
+      static_cast<int>(std::floor(p.dot(b2_)))
+    };
   }
 
-  bool is_inside_bounds(const geometry::point3d& point) const {
+  // All nodes in the extended bbox must be evaluated
+  // to ensure that the isosurface does not have boundary in the bbox.
+  geometry::bbox3d extended_bbox() const {
+    return ext_bbox_;
+  }
+
+  cell_index to_cell_index(const cell_vector& cv) const {
     return
-      point(0) >= ext_bbox.min()(0) && point(0) <= ext_bbox.max()(0) &&
-      point(1) >= ext_bbox.min()(1) && point(1) <= ext_bbox.max()(1) &&
-      point(2) >= ext_bbox.min()(2) && point(2) <= ext_bbox.max()(2);
+      (static_cast<cell_index>(cv(2) - cv_min(2)) << shift2) |
+      (static_cast<cell_index>(cv(1) - cv_min(1)) << shift1) |
+      static_cast<cell_index>(cv(0) - cv_min(0));
   }
 
-  geometry::bbox3d node_bounds() const {
-    return ext_bbox;
+  cell_vector to_cell_vector(cell_index ci) const {
+    return {
+      static_cast<int>(ci & mask) + cv_min(0),
+      static_cast<int>((ci >> shift1) & mask) + cv_min(1),
+      static_cast<int>((ci >> shift2) & mask) + cv_min(2)
+    };
   }
 
-  geometry::point3d point_from_cell_vector(const cell_vector& cv) const {
-    return cv(0) * a0 + cv(1) * a1 + cv(2) * a2;
+protected:
+  static constexpr unsigned int shift1 = 21;
+  static constexpr unsigned int shift2 = 42;
+  static constexpr cell_index mask = (cell_index{ 1 } << shift1) - 1;
+  cell_vector cv_min;
+  cell_vector cv_max;
+
+private:
+  static geometry::bbox3d compute_extended_bbox(const geometry::bbox3d& bbox, double resolution) {
+    geometry::vector3d cell_bbox_size = resolution * geometry::vector3d(3.0 / std::sqrt(2.0), 2.0, 1.0);
+    geometry::vector3d ext = cell_bbox_size * (1.0 + 1.0 / 64.0);
+    return { bbox.min() - ext, bbox.max() + ext };
   }
+
+  const geometry::vector3d a0_;
+  const geometry::vector3d a1_;
+  const geometry::vector3d a2_;
+  const geometry::vector3d b0_;
+  const geometry::vector3d b1_;
+  const geometry::vector3d b2_;
+  const geometry::bbox3d ext_bbox_;
 };
 
 }  // namespace isosurface

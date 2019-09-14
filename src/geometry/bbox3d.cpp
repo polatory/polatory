@@ -27,6 +27,13 @@ point3d bbox3d::center() const {
   return min_ + size() / 2.0;
 }
 
+bool bbox3d::contains(const point3d& p) const {
+  return
+    p(0) >= min_(0) && p(0) <= max_(0) &&
+    p(1) >= min_(1) && p(1) <= max_(1) &&
+    p(2) >= min_(2) && p(2) <= max_(2);
+}
+
 const point3d& bbox3d::max() const {
   return max_;
 }
