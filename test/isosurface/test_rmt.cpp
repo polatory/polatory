@@ -38,20 +38,20 @@ using polatory::point_cloud::random_points;
 // Relative positions of neighbor nodes connected by each edge.
 std::array<vector3d, 14> NeighborVectors
   {
-    rotation().transform_vector({ +1., +1., +1. }),
-    rotation().transform_vector({ +2., +0., +0. }),
-    rotation().transform_vector({ +1., -1., -1. }),
-    rotation().transform_vector({ +0., +2., +0. }),
-    rotation().transform_vector({ +1., +1., -1. }),
-    rotation().transform_vector({ +0., +0., -2. }),
-    rotation().transform_vector({ -1., +1., -1. }),
-    rotation().transform_vector({ -1., -1., -1. }),
-    rotation().transform_vector({ -2., +0., +0. }),
-    rotation().transform_vector({ -1., +1., +1. }),
-    rotation().transform_vector({ +0., -2., +0. }),
-    rotation().transform_vector({ -1., -1., +1. }),
-    rotation().transform_vector({ +0., +0., +2. }),
-    rotation().transform_vector({ +1., -1., +1. })
+    rotation().transform_vector({ 1.0, 1.0, 1.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 2.0, 0.0, 0.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 1.0, -1.0, -1.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 0.0, 2.0, 0.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 1.0, 1.0, -1.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 0.0, 0.0, -2.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ -1.0, +1.0, -1.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ -1.0, -1.0, -1.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ -2.0, 0.0, 0.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ -1.0, 1.0, 1.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 0.0, -2.0, 0.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ -1.0, -1.0, 1.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 0.0, 0.0, 2.0 }) / std::sqrt(2.0),
+    rotation().transform_vector({ 1.0, -1.0, 1.0 }) / std::sqrt(2.0)
   };
 
 TEST(rmt, face_edges) {
@@ -65,7 +65,7 @@ TEST(rmt, face_edges) {
     auto& v2 = NeighborVectors[e2];
 
     auto area = (v1 - v0).cross(v2 - v0).norm();
-    EXPECT_DOUBLE_EQ(2.0 * std::sqrt(2.0), area);
+    EXPECT_DOUBLE_EQ(std::sqrt(2.0), area);
   }
 }
 
@@ -81,17 +81,17 @@ TEST(rmt, lattice) {
   auto points = random_points(cuboid3d(min, max), 100);
 
   for (auto p : row_range(points)) {
-    auto ci = lat.cell_contains_point(p);
-    auto cv = lat.cell_vector_from_index(ci);
-    auto cp = lat.point_from_cell_vector(cv);
+    auto ci = lat.cell_index_from_point(p);
+    auto cv = lat.to_cell_vector(ci);
+    auto cp = lat.cell_node_point(cv);
 
     EXPECT_LT((p - cp).norm(), std::sqrt(2.0) * resolution);
   }
 }
 
 TEST(rmt, lattice_vectors) {
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
+  for (auto i = 0; i < 3; i++) {
+    for (auto j = 0; j < 3; j++) {
       auto dot = LatticeVectors[i].dot(DualLatticeVectors[j]);
       if (i == j) {
         EXPECT_NEAR(1.0, dot, 1e-15);
@@ -124,14 +124,14 @@ TEST(rmt, neighbors) {
     EXPECT_TRUE(count == 4 || count == 6);
 
     auto vi = NeighborVectors[i];
-    for (int k = 0; k < count; k++) {
+    for (auto k = 0; k < count; k++) {
       auto j = bit_pop(&mask);
       auto vj = NeighborVectors[j];
-      double vijsq = (vj - vi).squaredNorm();
-      if (vijsq > 3.5) {
-        EXPECT_DOUBLE_EQ(4.0, vijsq);
+      auto vijsq = (vj - vi).squaredNorm();
+      if (vijsq > 1.75) {
+        EXPECT_DOUBLE_EQ(2.0, vijsq);
       } else {
-        EXPECT_DOUBLE_EQ(3.0, vijsq);
+        EXPECT_DOUBLE_EQ(1.5, vijsq);
       }
     }
   }
@@ -142,7 +142,7 @@ TEST(rmt, neighbors) {
       + LatticeVectors[1] * NeighborCellVectors[ei][1]
       + LatticeVectors[2] * NeighborCellVectors[ei][2];
 
-    for (int i = 0; i < 3; i++) {
+    for (auto i = 0; i < 3; i++) {
       EXPECT_NEAR(NeighborVectors[ei](i), computed(i), 1e-15);
     }
   }

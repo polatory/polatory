@@ -23,7 +23,7 @@ public:
   }
 
   surface generate(field_function& field_fn, double isovalue = 0.0) {  // NOLINT(runtime/references)
-    field_fn.set_evaluation_bbox(rmt_lattice_.node_bounds());
+    field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     rmt_lattice_.add_all_nodes(field_fn, isovalue);
 
@@ -31,7 +31,7 @@ public:
   }
 
   surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn, double isovalue = 0.0) {  // NOLINT(runtime/references)
-    field_fn.set_evaluation_bbox(rmt_lattice_.node_bounds());
+    field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     for (auto p : common::row_range(seed_points)) {
       rmt_lattice_.add_cell_contains_point(p);

@@ -19,6 +19,8 @@ public:
 
   point3d center() const;
 
+  bool contains(const point3d& p) const;
+
   const point3d& max() const;
 
   const point3d& min() const;

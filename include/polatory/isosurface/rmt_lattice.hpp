@@ -24,6 +24,7 @@
 #include <polatory/isosurface/rmt_node_list.hpp>
 #include <polatory/isosurface/rmt_primitive_lattice.hpp>
 #include <polatory/isosurface/types.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory {
 namespace isosurface {
@@ -79,15 +80,15 @@ class rmt_lattice : public rmt_primitive_lattice {
     if (node_list.count(ci) != 0)
       return false;
 
-    return add_node(ci, cell_vector_from_index(ci));
+    return add_node(ci, to_cell_vector(ci));
   }
 
   // Adds a node at cell_idx to node_list and nodes_to_evaluate
   // if the node is within the boundary.
   bool add_node(cell_index ci, const cell_vector& cv) {
-    geometry::point3d pos = point_from_cell_vector(cv);
+    geometry::point3d pos = cell_node_point(cv);
 
-    if (!is_inside_bounds(pos)) {
+    if (!extended_bbox().contains(pos)) {
       // Do not insert a node outside the boundary.
       return false;
     }
@@ -123,12 +124,11 @@ class rmt_lattice : public rmt_primitive_lattice {
       *point_it++ = node_list.at(idx).position();
     }
 
-    auto values = field_fn(points);
-    values.array() -= isovalue;
+    common::valuesd values = field_fn(points).array() - isovalue;
 
     auto i = 0;
     for (auto idx : nodes_to_evaluate) {
-      auto value = 0.0 * values(i);
+      auto value = values(i);
       while (value == 0.0) {
         value = dis(gen);
       }
@@ -328,7 +328,7 @@ public:
 
   // TODO(mizuno): Perform gradient search to find a right cell where the isosurface passes.
   bool add_cell_contains_point(const geometry::point3d& p) {
-    auto cell_idx = cell_contains_point(p);
+    auto cell_idx = cell_index_from_point(p);
     return add_cell(cell_idx);
   }
 
