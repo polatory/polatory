@@ -129,7 +129,7 @@ private:
   static geometry::bbox3d compute_extended_bbox(const geometry::bbox3d& bbox, double resolution) {
     geometry::vector3d cell_bbox_size = resolution * geometry::vector3d(3.0 / std::sqrt(2.0), 2.0, 1.0);
     geometry::vector3d ext = cell_bbox_size * (1.0 + 1.0 / 64.0);
-    return geometry::bbox3d(bbox.min() - ext, bbox.max() + ext);
+    return { bbox.min() - ext, bbox.max() + ext };
   }
 
   const geometry::vector3d a0_;
