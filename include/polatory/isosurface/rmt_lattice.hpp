@@ -52,6 +52,10 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   // Add nodes corresponding to eight vertices of the cell.
   void add_cell(cell_index ci) {
+    if (added_cells.count(ci) != 0) {
+      return;
+    }
+
     add_node(ci);
     add_node(node_list.neighbor_cell_index(ci, 4));
     add_node(node_list.neighbor_cell_index(ci, 9));
@@ -74,14 +78,14 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   bool add_node_unchecked(cell_index ci, const cell_vector& cv) {
-    auto pos = cell_node_point(cv);
+    auto p = cell_node_point(cv);
 
-    if (!extended_bbox().contains(pos)) {
+    if (!extended_bbox().contains(p)) {
       return false;
     }
 
-    rmt_node new_node(pos);
-    node_list.insert(std::make_pair(ci, std::move(new_node)));
+    rmt_node node(p);
+    node_list.insert(std::make_pair(ci, std::move(node)));
 
     nodes_to_evaluate.push_back(ci);
     return true;
@@ -94,9 +98,10 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   // Evaluates field values for each node in nodes_to_evaluate.
-  void evaluate_field(const field_function& field_fn, double isovalue = 0.0) {
-    if (nodes_to_evaluate.empty())
+  void evaluate_field(const field_function& field_fn, double isovalue) {
+    if (nodes_to_evaluate.empty()) {
       return;
+    }
 
     std::random_device rd;
     std::minstd_rand gen(rd());
@@ -259,7 +264,7 @@ public:
   }
 
   // Add all nodes inside the boundary.
-  void add_all_nodes(const field_function& field_fn, double isovalue = 0.0) {
+  void add_all_nodes(const field_function& field_fn, double isovalue) {
     std::vector<cell_index> new_nodes;
     std::vector<cell_index> prev_nodes;
 
@@ -293,7 +298,7 @@ public:
     update_neighbor_cache();
   }
 
-  void add_nodes_by_tracking(const field_function& field_fm, double isovalue = 0.0) {
+  void add_nodes_by_tracking(const field_function& field_fm, double isovalue) {
     evaluate_field(field_fm, isovalue);
     while (!last_added_cells.empty()) {
       track_surface();
@@ -301,8 +306,9 @@ public:
     }
 
     std::vector<cell_index> all_nodes;
-    for (auto const& node_map : node_list)
+    for (auto const& node_map : node_list) {
       all_nodes.push_back(node_map.first);
+    }
 
     generate_vertices(all_nodes);
     remove_free_nodes(all_nodes);
