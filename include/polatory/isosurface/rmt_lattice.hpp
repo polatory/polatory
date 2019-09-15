@@ -11,12 +11,12 @@
 #include <random>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
@@ -38,7 +38,8 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   rmt_node_list node_list;
   std::vector<cell_index> nodes_to_evaluate;
-  std::vector<cell_index> cells_to_visit;
+  std::unordered_set<cell_index> added_cells;
+  std::vector<cell_index> last_added_cells;
 
   std::vector<geometry::point3d> vertices;
   vertex_index clustered_vertices_begin;
@@ -49,18 +50,9 @@ class rmt_lattice : public rmt_primitive_lattice {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
   }
 
-  // Add missing nodes of the eight vertices of the cell.
-  // Returns false if the cell is already checked.
-  bool add_cell(cell_index ci) {
-    auto it = node_list.find(ci);
-    if (it != node_list.end()) {
-      if (it->second.cell_is_visited)
-        return false;
-
-      cells_to_visit.push_back(ci);
-    }
-
-    bool aaa_is_added = add_node(ci);
+  // Add nodes corresponding to eight vertices of the cell.
+  void add_cell(cell_index ci) {
+    add_node(ci);
     add_node(node_list.neighbor_cell_index(ci, 4));
     add_node(node_list.neighbor_cell_index(ci, 9));
     add_node(node_list.neighbor_cell_index(ci, 3));
@@ -69,34 +61,27 @@ class rmt_lattice : public rmt_primitive_lattice {
     add_node(node_list.neighbor_cell_index(ci, 12));
     add_node(node_list.neighbor_cell_index(ci, 0));
 
-    if (aaa_is_added) {
-      cells_to_visit.push_back(ci);
-    }
-
-    return true;
+    added_cells.insert(ci);
+    last_added_cells.push_back(ci);
   }
 
   bool add_node(cell_index ci) {
-    if (node_list.count(ci) != 0)
-      return false;
-
-    return add_node(ci, to_cell_vector(ci));
-  }
-
-  // Adds a node at cell_idx to node_list and nodes_to_evaluate
-  // if the node is within the boundary.
-  bool add_node(cell_index ci, const cell_vector& cv) {
-    geometry::point3d pos = cell_node_point(cv);
-
-    if (!extended_bbox().contains(pos)) {
-      // Do not insert a node outside the boundary.
+    if (node_list.count(ci) != 0) {
       return false;
     }
 
-    auto new_node = rmt_node(pos);
-    auto it_bool = node_list.insert(std::make_pair(ci, std::move(new_node)));
-    (void)it_bool;
-    POLATORY_ASSERT(it_bool.second);
+    return add_node_unchecked(ci, to_cell_vector(ci));
+  }
+
+  bool add_node_unchecked(cell_index ci, const cell_vector& cv) {
+    auto pos = cell_node_point(cv);
+
+    if (!extended_bbox().contains(pos)) {
+      return false;
+    }
+
+    rmt_node new_node(pos);
+    node_list.insert(std::make_pair(ci, std::move(new_node)));
 
     nodes_to_evaluate.push_back(ci);
     return true;
@@ -149,21 +134,20 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
   }
 
-  // Returns the number of cells added.
-  cell_index track_surface() {
+  void track_surface() {
     std::set<cell_index> cells_to_add;
 
     // Check 12 edges of each cell and add neighbor cells adjacent to an edge
     // at which ends the field values take opposite signs.
-    for (auto cell_idx : cells_to_visit) {
-      const auto iaaa = cell_idx;
-      const auto iaab = node_list.neighbor_cell_index(cell_idx, 4);
-      const auto iaba = node_list.neighbor_cell_index(cell_idx, 9);
-      const auto iabb = node_list.neighbor_cell_index(cell_idx, 3);
-      const auto ibaa = node_list.neighbor_cell_index(cell_idx, 13);
-      const auto ibab = node_list.neighbor_cell_index(cell_idx, 1);
-      const auto ibba = node_list.neighbor_cell_index(cell_idx, 12);
-      const auto ibbb = node_list.neighbor_cell_index(cell_idx, 0);
+    for (auto ci : last_added_cells) {
+      const auto iaaa = ci;
+      const auto iaab = node_list.neighbor_cell_index(ci, 4);
+      const auto iaba = node_list.neighbor_cell_index(ci, 9);
+      const auto iabb = node_list.neighbor_cell_index(ci, 3);
+      const auto ibaa = node_list.neighbor_cell_index(ci, 13);
+      const auto ibab = node_list.neighbor_cell_index(ci, 1);
+      const auto ibba = node_list.neighbor_cell_index(ci, 12);
+      const auto ibbb = node_list.neighbor_cell_index(ci, 0);
 
       const auto aaa = node_list.node_ptr(iaaa);
       const auto aab = node_list.node_ptr(iaab);
@@ -239,19 +223,17 @@ class rmt_lattice : public rmt_primitive_lattice {
         cells_to_add.insert(node_list.neighbor_cell_index(iabb, 2));
         cells_to_add.insert(node_list.neighbor_cell_index(iabb, 11));
       }
-
-      aaa->cell_is_visited = true;
     }
 
-    cells_to_visit.clear();
+    last_added_cells.clear();
 
-    auto count = cell_index{ 0 };
-    for (auto cell_idx : cells_to_add) {
-      if (add_cell(cell_idx))
-        count++;
+    for (auto ci : cells_to_add) {
+      if (added_cells.count(ci) != 0) {
+        continue;
+      }
+
+      add_cell(ci);
     }
-
-    return count;
   }
 
   void update_neighbor_cache() {
@@ -282,16 +264,17 @@ public:
     std::vector<cell_index> prev_nodes;
 
     for (auto cv2 = cv_min(2); cv2 <= cv_max(2); cv2++) {
-      auto offset2 = static_cast<cell_index>(cv2 - cv_min(2)) << shift2;
+      auto offset2 = static_cast<cell_index>(cv2 - cv_offset(2)) << shift2;
 
       for (auto cv1 = cv_min(1); cv1 <= cv_max(1); cv1++) {
-        auto offset21 = offset2 | (static_cast<cell_index>(cv1 - cv_min(1)) << shift1);
+        auto offset21 = offset2 | (static_cast<cell_index>(cv1 - cv_offset(1)) << shift1);
 
         for (auto cv0 = cv_min(0); cv0 <= cv_max(0); cv0++) {
-          auto cell_idx = offset21 | static_cast<cell_index>(cv0 - cv_min(0));
+          auto ci = offset21 | static_cast<cell_index>(cv0 - cv_offset(0));
 
-          if (add_node(cell_idx, cell_vector(cv0, cv1, cv2)))
-            new_nodes.push_back(cell_idx);
+          if (add_node_unchecked(ci, cell_vector(cv0, cv1, cv2))) {
+            new_nodes.push_back(ci);
+          }
         }
       }
 
@@ -312,7 +295,8 @@ public:
 
   void add_nodes_by_tracking(const field_function& field_fm, double isovalue = 0.0) {
     evaluate_field(field_fm, isovalue);
-    while (track_surface() > 0) {
+    while (!last_added_cells.empty()) {
+      track_surface();
       evaluate_field(field_fm, isovalue);
     }
 
@@ -326,10 +310,12 @@ public:
     update_neighbor_cache();
   }
 
-  // TODO(mizuno): Perform gradient search to find a right cell where the isosurface passes.
-  bool add_cell_contains_point(const geometry::point3d& p) {
-    auto cell_idx = cell_index_from_point(p);
-    return add_cell(cell_idx);
+  void add_cell_contains_point(const geometry::point3d& p) {
+    if (!extended_bbox().contains(p)) {
+      return;
+    }
+
+    add_cell(cell_index_from_point(p));
   }
 
   void clear() {

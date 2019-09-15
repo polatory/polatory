@@ -71,13 +71,19 @@ public:
       cvs.row(i) = cell_vector_from_point(ext_bbox_vertices.row(i));
     }
 
-    // Bounds of all cells which nodes are inside the extended bbox.
+    // Bounds of cell vectors for enumerating all nodes in the extended bbox.
     cv_min = cvs.colwise().minCoeff().array() + 1;
     cv_max = cvs.colwise().maxCoeff();
 
-    if (static_cast<cell_index>(cv_max(0) - cv_min(0)) > mask ||
-      static_cast<cell_index>(cv_max(1) - cv_min(1)) > mask ||
-      static_cast<cell_index>(cv_max(2) - cv_min(2)) > mask)
+    // The offset for calculating cell indices.
+    // We need some margin around the bounds
+    // so that cell indices are defined for neighbor nodes of boundary nodes.
+    cv_offset = cv_min.array() - 8;
+    auto dim = (cv_max - cv_min).array() + 16;
+
+    if (static_cast<cell_index>(dim(0)) > mask ||
+      static_cast<cell_index>(dim(1)) > mask ||
+      static_cast<cell_index>(dim(2)) > mask)
       throw std::range_error("Bounds are too large or resolution is too small.");
   }
 
@@ -105,16 +111,16 @@ public:
 
   cell_index to_cell_index(const cell_vector& cv) const {
     return
-      (static_cast<cell_index>(cv(2) - cv_min(2)) << shift2) |
-      (static_cast<cell_index>(cv(1) - cv_min(1)) << shift1) |
-      static_cast<cell_index>(cv(0) - cv_min(0));
+      (static_cast<cell_index>(cv(2) - cv_offset(2)) << shift2) |
+      (static_cast<cell_index>(cv(1) - cv_offset(1)) << shift1) |
+      static_cast<cell_index>(cv(0) - cv_offset(0));
   }
 
   cell_vector to_cell_vector(cell_index ci) const {
     return {
-      static_cast<int>(ci & mask) + cv_min(0),
-      static_cast<int>((ci >> shift1) & mask) + cv_min(1),
-      static_cast<int>((ci >> shift2) & mask) + cv_min(2)
+      static_cast<int>(ci & mask) + cv_offset(0),
+      static_cast<int>((ci >> shift1) & mask) + cv_offset(1),
+      static_cast<int>((ci >> shift2) & mask) + cv_offset(2)
     };
   }
 
@@ -124,6 +130,7 @@ protected:
   static constexpr cell_index mask = (cell_index{ 1 } << shift1) - 1;
   cell_vector cv_min;
   cell_vector cv_max;
+  cell_vector cv_offset;
 
 private:
   static geometry::bbox3d compute_extended_bbox(const geometry::bbox3d& bbox, double resolution) {
