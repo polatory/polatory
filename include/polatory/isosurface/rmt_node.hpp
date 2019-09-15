@@ -67,7 +67,6 @@ class rmt_node {
   double val;
 
 public:
-  bool cell_is_visited;
   bool evaluated;
 
   // The corresponding bit is set if an edge crosses the isosurface
@@ -176,7 +175,6 @@ public:
   explicit rmt_node(const geometry::point3d& position)
     : pos(position)
     , val(0.0)
-    , cell_is_visited(false)
     , evaluated(false)
     , intersections(0)
     , all_intersections(0) {
