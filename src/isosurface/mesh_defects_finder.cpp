@@ -11,7 +11,6 @@ namespace isosurface {
 
 mesh_defects_finder::mesh_defects_finder(const std::vector<geometry::point3d>& vertices, const std::vector<face>& faces)
   : vertices_(vertices)
-  , faces_(faces)
   , vf_map_(vertices_.size()) {
   for (auto& f : faces) {
     vf_map_[f[0]].push_back({ f[0], f[1], f[2] });
