@@ -14,8 +14,6 @@ namespace isosurface {
 
 class dense_undirected_graph {
 public:
-  dense_undirected_graph() = default;
-
   explicit dense_undirected_graph(int order)
     : m_(Eigen::MatrixXi::Zero(order, order)) {
   }
