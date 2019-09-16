@@ -27,7 +27,6 @@ private:
   bool segment_triangle_intersect(vertex_index s1, vertex_index s2, const face& f) const;
 
   const std::vector<geometry::point3d>& vertices_;
-  const std::vector<face>& faces_;
   std::vector<std::vector<face>> vf_map_;
 };
 
