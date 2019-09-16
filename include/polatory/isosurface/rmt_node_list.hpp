@@ -51,9 +51,9 @@ public:
 
   void init_strides(cell_index stride1, cell_index stride2) {
     for (edge_index ei = 0; ei < 14; ei++) {
-      auto delta_m = NeighborCellVectors[ei];
+      auto delta_cv = NeighborCellVectors[ei];
       NeighborCellIndexDeltas[ei] =
-        delta_m(2) * stride2 + delta_m(1) * stride1 + delta_m(0);
+        delta_cv(2) * stride2 + delta_cv(1) * stride1 + delta_cv(0);
     }
   }
 
