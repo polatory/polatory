@@ -2,154 +2,110 @@
 
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 
-#include <algorithm>
 #include <map>
-#include <set>
 
-#include <polatory/common/macros.hpp>
-#include <polatory/common/utility.hpp>
+#include <polatory/isosurface/dense_undirected_graph.hpp>
 
 namespace polatory {
 namespace isosurface {
 
 mesh_defects_finder::mesh_defects_finder(const std::vector<geometry::point3d>& vertices, const std::vector<face>& faces)
   : vertices_(vertices)
-  , faces_(faces) {
+  , vf_map_(vertices_.size()) {
+  for (auto& f : faces) {
+    vf_map_[f[0]].push_back({ f[0], f[1], f[2] });
+    vf_map_[f[1]].push_back({ f[1], f[2], f[0] });
+    vf_map_[f[2]].push_back({ f[2], f[0], f[1] });
+  }
 }
 
-std::vector<face> mesh_defects_finder::intersecting_faces() const {
-  std::multimap<vertex_index, face> vf_map;
-
-  for (auto& face : faces_) {
-    vf_map.insert({ face[0], { face[0], face[1], face[2] }});
-    vf_map.insert({ face[1], { face[1], face[2], face[0] }});
-    vf_map.insert({ face[2], { face[2], face[0], face[1] }});
-  }
-
-  std::vector<face> intersect_faces;
+// At this moment, self-intersection only between faces
+// which share a single vertex is checked.
+std::set<face> mesh_defects_finder::intersecting_faces() const {
+  std::set<face> result;
 
   auto n_vertices = static_cast<vertex_index>(vertices_.size());
   for (vertex_index vi = 0; vi < n_vertices; vi++) {
-    auto vf_range = vf_map.equal_range(vi);
-    for (auto vf_it1 = vf_range.first; vf_it1 != vf_range.second; ++vf_it1) {
-      auto& f1 = vf_it1->second;
+    auto& faces = vf_map_[vi];
 
-      for (auto vf_it2 = vf_range.first; vf_it2 != vf_range.second; ++vf_it2) {
-        auto& f2 = vf_it2->second;
+    auto n_faces = static_cast<int>(faces.size());
+    for (auto i = 0; i < n_faces - 1; i++) {
+      auto& f1 = faces[i];
+      for (auto j = i + 1; j < n_faces; j++) {
+        auto& f2 = faces[j];
 
-        if (f1[1] == f2[1] || f1[1] == f2[2] || f1[2] == f2[1]) {
-          // Skip self pair and edge-sharing pairs.
+        if (f1[1] == f2[2] || f1[2] == f2[1]) {
+          // Skip the pair of adjacent faces.
+          // As faces are oriented, we don't need to check other combinations.
           continue;
         }
 
-        // Check if two faces are intersecting.
-        if (segment_crosses_the_plane(f1[1], f1[2], f2) &&
-            segment_crosses_the_plane(f2[1], f2[2], f1) &&
-            (line_triangle_intersects(f1[1], f1[2], f2) ||
-             line_triangle_intersects(f2[1], f2[2], f1))) {
-          intersect_faces.push_back(f1);
-          intersect_faces.push_back(f2);
+        if (segment_triangle_intersect(f1[1], f1[2], f2) ||
+          segment_triangle_intersect(f2[1], f2[2], f1)) {
+          result.insert(f1);
+          result.insert(f2);
         }
       }
     }
   }
 
-  return intersect_faces;
+  return result;
 }
 
-std::vector<mesh_defects_finder::edge> mesh_defects_finder::non_manifold_edges() const {
-  std::multiset<edge> edges;
-  std::set<edge> non_manif_edges;
-
-  for (auto& face : faces_) {
-    auto edge = common::make_sorted_pair(face[0], face[1]);
-    edges.insert(edge);
-    if (edges.count(edge) > 2) non_manif_edges.insert(edge);
-
-    edge = common::make_sorted_pair(face[1], face[2]);
-    edges.insert(edge);
-    if (edges.count(edge) > 2) non_manif_edges.insert(edge);
-
-    edge = common::make_sorted_pair(face[2], face[0]);
-    edges.insert(edge);
-    if (edges.count(edge) > 2) non_manif_edges.insert(edge);
-  }
-
-  std::vector<edge> ret(non_manif_edges.begin(), non_manif_edges.end());
-
-  return ret;
-}
-
-std::vector<vertex_index> mesh_defects_finder::non_manifold_vertices() const {
-  std::vector<face_index_bools> v_fi_bools(vertices_.size());
-
-  auto n_faces = static_cast<face_index>(faces_.size());
-  for (face_index fi = 0; fi < n_faces; fi++) {
-    auto& face = faces_[fi];
-    v_fi_bools[face[0]].emplace_back(fi, false);
-    v_fi_bools[face[1]].emplace_back(fi, false);
-    v_fi_bools[face[2]].emplace_back(fi, false);
-  }
-
-  std::vector<vertex_index> non_manif_vertices;
+std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
+  std::set<vertex_index> result;
 
   auto n_vertices = static_cast<vertex_index>(vertices_.size());
+#pragma omp parallel for schedule(guided, 32)
   for (vertex_index vi = 0; vi < n_vertices; vi++) {
-    face_index_bools& fi_bools = v_fi_bools[vi];
+    auto& faces = vf_map_[vi];
 
-    if (fi_bools.empty()) {
-      // Unreferrenced vertex
+    if (faces.empty()) {
       continue;
     }
 
-    face_index_bool& fi_bool = fi_bools[0];
-    fi_bool.second = true;
-
-    halfedge he = vertex_outgoing_halfedge(fi_bool.first, vi);
-    while (true) {
-      auto opp = opposite_halfedge(he);
-      auto it = halfedge_face(fi_bools, opp);
-      if (it == fi_bools.end() || it->second) {
-        break;
-      }
-      face_index_bool& adj_fi_bool = *it;
-      adj_fi_bool.second = true;
-      he = vertex_outgoing_halfedge(adj_fi_bool.first, vi);
+    std::map<vertex_index, int> vi_to_index;
+    for (auto& f : faces) {
+      vi_to_index[f[1]] = -1;
+      vi_to_index[f[2]] = -1;
     }
 
-    he = vertex_incoming_halfedge(fi_bool.first, vi);
-    while (true) {
-      auto opp = opposite_halfedge(he);
-      auto it = halfedge_face(fi_bools, opp);
-      if (it == fi_bools.end() || it->second) {
-        break;
-      }
-      face_index_bool& adj_fi_bools = *it;
-      adj_fi_bools.second = true;
-      he = vertex_incoming_halfedge(adj_fi_bools.first, vi);
+    auto order = static_cast<int>(vi_to_index.size());
+
+    std::vector<vertex_index> vis;
+    vis.reserve(order);
+    for (auto& vi_index : vi_to_index) {
+      vi_index.second = static_cast<int>(vis.size());
+      vis.push_back(vi_index.first);
     }
 
-    // Check if all faces are marked
-    bool is_manif = std::all_of(fi_bools.begin(), fi_bools.end(), [](const face_index_bool& fi_bool) {
-      return fi_bool.second;
-    });
-    if (!is_manif) non_manif_vertices.push_back(vi);
+    // A graph represents the link (in the sense of simplicial complex) of the vertex.
+    dense_undirected_graph g(order);
+
+    for (auto& f : faces) {
+      g.add_edge(vi_to_index[f[1]], vi_to_index[f[2]]);
+    }
+
+    for (auto i = 0; i < order; i++) {
+      if (g.degree(i) > 2) {
+#pragma omp critical
+        {
+          result.insert(vi);
+          result.insert(vis[i]);
+        }
+      }
+    }
+
+    if (!g.is_connected()) {
+#pragma omp critical
+      result.insert(vi);
+    }
   }
 
-  return non_manif_vertices;
+  return result;
 }
 
-mesh_defects_finder::face_index_bools::iterator mesh_defects_finder::halfedge_face(face_index_bools& fi_bools, halfedge he) const {
-  for (auto it = fi_bools.begin(), end = fi_bools.end(); it != end; ++it) {
-    const face& face = faces_[it->first];
-    if (face[0] == he.first && face[1] == he.second) return it;
-    if (face[1] == he.first && face[2] == he.second) return it;
-    if (face[2] == he.first && face[0] == he.second) return it;
-  }
-  return fi_bools.end();
-}
-
-bool mesh_defects_finder::line_triangle_intersects(vertex_index s1, vertex_index s2, const face& f) const {
+bool mesh_defects_finder::line_triangle_intersect(vertex_index s1, vertex_index s2, const face& f) const {
   const auto e1 = vertices_[f[1]] - vertices_[f[0]];
   const auto e2 = vertices_[f[2]] - vertices_[f[0]];
 
@@ -174,11 +130,7 @@ bool mesh_defects_finder::line_triangle_intersects(vertex_index s1, vertex_index
   return true;
 }
 
-mesh_defects_finder::halfedge mesh_defects_finder::opposite_halfedge(halfedge e) {
-  return { e.second, e.first };
-}
-
-bool mesh_defects_finder::segment_crosses_the_plane(vertex_index s1, vertex_index s2, const face& f) const {
+bool mesh_defects_finder::segment_plane_intersect(vertex_index s1, vertex_index s2, const face& f) const {
   const auto e1 = vertices_[f[1]] - vertices_[f[0]];
   const auto e2 = vertices_[f[2]] - vertices_[f[0]];
 
@@ -188,20 +140,10 @@ bool mesh_defects_finder::segment_crosses_the_plane(vertex_index s1, vertex_inde
   return sign1 * sign2 < 0.0;
 }
 
-mesh_defects_finder::halfedge mesh_defects_finder::vertex_incoming_halfedge(face_index fi, vertex_index vi) const {
-  const face& face = faces_[fi];
-  if (face[0] == vi) return { face[2], vi };
-  if (face[1] == vi) return { face[0], vi };
-  POLATORY_ASSERT(face[2] == vi);
-  return { face[1], vi };
-}
-
-mesh_defects_finder::halfedge mesh_defects_finder::vertex_outgoing_halfedge(face_index fi, vertex_index vi) const {
-  const face& face = faces_[fi];
-  if (face[0] == vi) return { vi, face[1] };
-  if (face[1] == vi) return { vi, face[2] };
-  POLATORY_ASSERT(face[2] == vi);
-  return { vi, face[0] };
+bool mesh_defects_finder::segment_triangle_intersect(vertex_index s1, vertex_index s2, const face& f) const {
+  return
+    segment_plane_intersect(s1, s2, f) &&
+    line_triangle_intersect(s1, s2, f);
 }
 
 }  // namespace isosurface

@@ -50,15 +50,10 @@ private:
 
     mesh_defects_finder defects(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
 
-    auto edges = defects.non_manifold_edges();
-    auto vertices = defects.non_manifold_vertices();
+    auto vertices = defects.singular_vertices();
     auto faces = defects.intersecting_faces();
 
     std::set<vertex_index> vertices_to_uncluster;
-    for (auto edge : edges) {
-      vertices_to_uncluster.insert(edge.first);
-      vertices_to_uncluster.insert(edge.second);
-    }
     for (auto vertex : vertices) {
       vertices_to_uncluster.insert(vertex);
     }

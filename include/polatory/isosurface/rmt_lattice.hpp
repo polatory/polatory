@@ -132,10 +132,11 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   // Removes nodes without any intersections.
   void remove_free_nodes(const std::vector<cell_index>& nodes) {
-    for (auto cell_idx : nodes) {
-      auto it = node_list.find(cell_idx);
-      if (it->second.all_intersections == 0)
+    for (auto ci : nodes) {
+      auto it = node_list.find(ci);
+      if (it->second.all_intersections == 0) {
         node_list.erase(it->first);
+      }
     }
   }
 
@@ -242,14 +243,14 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   void update_neighbor_cache() {
-    for (auto& nodei : node_list) {
-      auto cell_idx = nodei.first;
-      auto& node = nodei.second;
+    for (auto& ci_node : node_list) {
+      auto ci = ci_node.first;
+      auto& node = ci_node.second;
 
       auto neighbors = std::make_unique<std::array<rmt_node*, 14>>();
 
       for (edge_index ei = 0; ei < 14; ei++) {
-        neighbors->at(ei) = node_list.neighbor_node_ptr(cell_idx, ei);
+        neighbors->at(ei) = node_list.neighbor_node_ptr(ci, ei);
       }
 
       node.set_neighbors(std::move(neighbors));
@@ -306,8 +307,8 @@ public:
     }
 
     std::vector<cell_index> all_nodes;
-    for (auto const& node_map : node_list) {
-      all_nodes.push_back(node_map.first);
+    for (const auto& ci_node : node_list) {
+      all_nodes.push_back(ci_node.first);
     }
 
     generate_vertices(all_nodes);
@@ -335,8 +336,8 @@ public:
   void cluster_vertices() {
     clustered_vertices_begin = std::distance(vertices.begin(), vertices.end());
 
-    for (auto& nodei : node_list) {
-      auto& node = nodei.second;
+    for (auto& ci_node : node_list) {
+      auto& node = ci_node.second;
       node.cluster(vertices, cluster_map);
     }
   }
@@ -354,14 +355,14 @@ public:
         std::advance(map_it, thread_num);
 
       for (auto i = thread_num; i < map_size; i += thread_count) {
-        auto cell_idx = *map_it;
-        auto& node = node_list.at(cell_idx);
+        auto ci = *map_it;
+        auto& node = node_list.at(ci);
 
         // "distance" to the intersection point from the node
-        double d = std::abs(node.value());
+        auto d = std::abs(node.value());
 
-        for (edge_index ei : CellEdgeIndices) {
-          auto it = node_list.find_neighbor_node(cell_idx, ei);
+        for (auto ei : CellEdgeIndices) {
+          auto it = node_list.find_neighbor_node(ci, ei);
           if (it == node_list.end()) {
             // There is no neighbor node on the opposite end of the edge.
             continue;
@@ -374,12 +375,12 @@ public:
           }
 
           // "distance" to the intersection point from the neighbor node
-          double d2 = std::abs(node2.value());
+          auto d2 = std::abs(node2.value());
           auto vertex = (d2 * node.position() + d * node2.position()) / (d + d2);
 
 #pragma omp critical
           {
-            vertex_index vi = vertices.size();
+            auto vi = static_cast<vertex_index>(vertices.size());
             vertices.emplace_back(vertex);
 
             if (d < d2) {
@@ -426,8 +427,8 @@ public:
       }
     }
 
-    for (auto& nodei : node_list) {
-      auto& node = nodei.second;
+    for (auto& ci_node : node_list) {
+      auto& node = ci_node.second;
       if (node.vis) {
         for (auto& vi : *node.vis) {
           vi = vimap[clustered_vertex_index(vi)];
