@@ -536,7 +536,7 @@ _TYPES = re.compile(
 #_THIRD_PARTY_HEADERS_PATTERN = re.compile(
 #    r'^(?:[^/]*[A-Z][^/]*\.h|lua\.h|lauxlib\.h|lualib\.h)$')
 _THIRD_PARTY_HEADERS_PATTERN = re.compile(
-    r'^(absl/.*|boost/.*|ceres/.*|Eigen/.*|flann/.*|gsl-lite.hpp|gtest/.*|ScalFMM/.*)$')
+    r'^(absl/.*|boost/.*|ceres/.*|double-conversion/.*|Eigen/.*|flann/.*|gsl-lite.hpp|gtest/.*|ScalFMM/.*)$')
 
 # Pattern for matching FileInfo.BaseName() against test file name
 _test_suffixes = ['_test', '_regtest', '_unittest']

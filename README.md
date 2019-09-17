@@ -89,7 +89,7 @@ Polatory is available under two different licenses:
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
     ./bootstrap-vcpkg.sh
-    ./vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres eigen3 flann gsl-lite gtest --triplet x64-linux
+    ./vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gsl-lite gtest --triplet x64-linux
     ```
 
     See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
@@ -128,7 +128,7 @@ Polatory is available under two different licenses:
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
     bootstrap-vcpkg.bat
-    vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres eigen3 flann gsl-lite gtest --triplet x64-windows
+    vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gsl-lite gtest --triplet x64-windows
     ```
 
     See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
@@ -190,6 +190,8 @@ Polatory is built upon the following libraries. Each library may have other depe
   <dt><a href="http://www.boost.org/">Boost</a></dt>
   <dd>Boost Software License 1.0</dd>
   <dt><a href="http://ceres-solver.org/">Ceres Solver</a></dt>
+  <dd>BSD 3-Clause License</dd>
+  <dt><a href="https://github.com/google/double-conversion">double-conversion</a></dt>
   <dd>BSD 3-Clause License</dd>
   <dt><a href="http://eigen.tuxfamily.org/">Eigen</a></dt>
   <dd>Mozilla Public License 2.0</dd>
