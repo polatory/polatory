@@ -9,6 +9,8 @@
 
 #include <Eigen/Core>
 
+#include <polatory/common/exception.hpp>
+
 namespace polatory {
 namespace isosurface {
 
@@ -16,6 +18,9 @@ class dense_undirected_graph {
 public:
   explicit dense_undirected_graph(int order)
     : m_(Eigen::MatrixXi::Zero(order, order)) {
+    if (order <= 0) {
+      throw common::invalid_argument("order > 0");
+    }
   }
 
   void add_edge(int i, int j) {

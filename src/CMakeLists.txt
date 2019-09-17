@@ -26,6 +26,11 @@ if(UNIX)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
+    if(ENABLE_CLANG_TIDY)
+        # clang-analyzer-core.NullDereference is reported in Eigen's code with SSE2.
+        # This must be investigated later.
+        target_compile_options(${TARGET} PUBLIC -mno-sse2)
+    endif()
 elseif(MSVC)
     # C4702(unreachable code) is disabled as it is reported by link.exe in third-party code.
     target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702 /experimental:external /external:W0)

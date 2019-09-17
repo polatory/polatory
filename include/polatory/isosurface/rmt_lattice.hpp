@@ -381,7 +381,7 @@ public:
 #pragma omp critical
           {
             auto vi = static_cast<vertex_index>(vertices.size());
-            vertices.push_back(vertex);
+            vertices.emplace_back(vertex);
 
             if (d < d2) {
               node.insert_vertex(vi, ei);
