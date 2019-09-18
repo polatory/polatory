@@ -35,7 +35,7 @@ options parse_options(int argc, const char *argv[]) {
   po::options_description opts_desc("");
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required(),
-     "Input file (x,y,z format)")
+     "Input file (x,y,z,z_lb,z_ub format)")
     ("min-dist", po::value<double>(&opts.min_distance)->default_value(1e-10),
      "Minimum distance for preserving close points")
     ("smooth", po::value<double>(&opts.smooth)->default_value(0.0),

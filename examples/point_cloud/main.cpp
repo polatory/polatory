@@ -23,18 +23,19 @@ using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::sdf_data_generator;
 using polatory::rbf::biharmonic3d;
 using polatory::read_table;
+using polatory::tabled;
 using polatory::write_table;
 
 int main(int argc, const char *argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
-    // Read points and normals.
-    auto table = read_table(opts.in_file);
+    // Load points (x,y,z) and normals (nx,ny,nz).
+    tabled table = read_table(opts.in_file);
     points3d cloud_points = take_cols(table, 0, 1, 2);
     vectors3d cloud_normals = take_cols(table, 3, 4, 5);
 
-    // Generate SDF data.
+    // Generate SDF (signed distance function) data.
     sdf_data_generator sdf_data(cloud_points, cloud_normals, opts.min_sdf_distance, opts.max_sdf_distance, opts.sdf_multiplication);
     points3d points = sdf_data.sdf_points();
     valuesd values = sdf_data.sdf_values();
@@ -43,17 +44,17 @@ int main(int argc, const char *argv[]) {
     std::tie(points, values) = distance_filter(points, opts.min_distance)
       .filtered(points, values);
 
-    // Output SDF data (optional).
+    // Save the SDF data (optional).
     if (!opts.sdf_data_file.empty()) {
       write_table(opts.sdf_data_file, concatenate_cols(points, values));
     }
 
-    // Define model.
+    // Define the model.
     model model(biharmonic3d({ 1.0 }), opts.poly_dimension, opts.poly_degree);
     model.set_nugget(opts.smooth);
-    interpolant interpolant(model);
 
     // Fit.
+    interpolant interpolant(model);
     if (opts.incremental_fit) {
       interpolant.fit_incrementally(points, values, opts.absolute_tolerance);
     } else {
@@ -61,8 +62,8 @@ int main(int argc, const char *argv[]) {
     }
     std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
 
-    // Generate isosurface.
-    polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
+    // Generate the isosurface.
+    isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 
     auto n_seed_points = std::max(

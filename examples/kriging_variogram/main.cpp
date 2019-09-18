@@ -14,15 +14,18 @@ using polatory::geometry::points3d;
 using polatory::index_t;
 using polatory::kriging::empirical_variogram;
 using polatory::read_table;
+using polatory::tabled;
 
 int main(int argc, const char *argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
-    auto table = read_table(opts.in_file);
+    // Load points (x,y,z) and values (value).
+    tabled table = read_table(opts.in_file);
     points3d points = take_cols(table, 0, 1, 2);
     valuesd values = table.col(3);
 
+    // Compute the empirical variogram.
     empirical_variogram emp_variog(points, values, opts.bin_width, opts.n_bins);
     const auto& bin_distance = emp_variog.bin_distance();
     const auto& bin_gamma = emp_variog.bin_gamma();
@@ -35,6 +38,7 @@ int main(int argc, const char *argv[]) {
       std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin] << std::setw(12) <<  bin_gamma[bin] << std::endl;
     }
 
+    // Save the empirical variogram.
     if (!opts.out_file.empty()) {
       emp_variog.save(opts.out_file);
     }

@@ -19,13 +19,14 @@ using polatory::model;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic3d;
 using polatory::read_table;
+using polatory::tabled;
 
 int main(int argc, const char *argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
-    // Read points and normals.
-    auto table = read_table(opts.in_file);
+    // Load points (x,y,0), values (z), value lower bounds (z_lb) and value upper bounds (z_ub).
+    tabled table = read_table(opts.in_file);
     points3d points = concatenate_cols(take_cols(table, 0, 1), valuesd::Zero(table.rows()));
     valuesd values = table.col(2);
     valuesd values_lb = table.col(3);
@@ -35,15 +36,16 @@ int main(int argc, const char *argv[]) {
     std::tie(points, values, values_lb, values_ub) = distance_filter(points, opts.min_distance)
       .filtered(points, values, values_lb, values_ub);
 
-    // Define model.
+    // Define the model.
     model model(biharmonic3d({ 1.0 }), opts.poly_dimension, opts.poly_degree);
     model.set_nugget(opts.smooth);
-    interpolant interpolant(model);
 
+    // Fit.
+    interpolant interpolant(model);
     interpolant.fit_inequality(points, values, values_lb, values_ub, opts.absolute_tolerance);
     std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
 
-    // Generate isosurface.
+    // Generate the isosurface.
     isosurface_2d isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 

@@ -22,14 +22,15 @@ using polatory::point_cloud::normal_estimator;
 using polatory::point_cloud::sdf_data_generator;
 using polatory::rbf::biharmonic3d;
 using polatory::read_table;
+using polatory::tabled;
 using polatory::write_table;
 
 int main(int argc, const char *argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
-    // Read points.
-    auto table = read_table(opts.in_file);
+    // Load points (x,y,z).
+    tabled table = read_table(opts.in_file);
     points3d terrain_points = take_cols(table, 0, 1, 2);
 
     // Estimate normals.
@@ -37,7 +38,7 @@ int main(int argc, const char *argv[]) {
       .estimate_with_knn(20, opts.min_plane_factor)
       .orient_by_outward_vector({ 0, 0, 1 });
 
-    // Generate SDF data.
+    // Generate SDF (signed distance function) data.
     sdf_data_generator sdf_data(terrain_points, terrain_normals, opts.min_sdf_distance, opts.max_sdf_distance, opts.sdf_multiplication);
     points3d points = sdf_data.sdf_points();
     valuesd values = sdf_data.sdf_values();
@@ -65,7 +66,7 @@ int main(int argc, const char *argv[]) {
     std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
 
     // Generate isosurface.
-    polatory::isosurface::isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
+    isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 
     isosurf.generate_from_seed_points(terrain_points, field_fn)

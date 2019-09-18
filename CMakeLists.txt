@@ -13,6 +13,7 @@ if(CMAKE_CXX_STANDARD MATCHES "^(98|11)$")
     message(FATAL_ERROR "CMAKE_CXX_STANDARD must be 14 or later.")
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(Polatory CXX)
 

@@ -17,11 +17,14 @@ int main(int argc, const char *argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
+    // Load the empirical variogram.
     empirical_variogram emp_variog(opts.in_file);
 
+    // Define the model.
     model model(cov_quasi_spherical9({ opts.psill, opts.range }), -1, -1);
     model.set_nugget(opts.nugget);
 
+    // Fit model parameters.
     variogram_fitting fit(emp_variog, model, opts.weight_fn);
 
     auto params = fit.parameters();
