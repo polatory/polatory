@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -46,7 +47,7 @@ public:
 
   void fit(const geometry::points3d& points, const common::valuesd& values,
            double absolute_tolerance) {
-    auto min_n_points = model_.poly_basis_size() + 1;
+    auto min_n_points = std::max(1, model_.poly_basis_size());
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -70,7 +71,7 @@ public:
     if (model_.nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
-    auto min_n_points = model_.poly_basis_size() + 1;
+    auto min_n_points = std::max(1, model_.poly_basis_size());
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 
@@ -97,7 +98,7 @@ public:
     if (model_.nugget() > 0.0)
       throw common::not_supported("RBF with finite nugget");
 
-    auto min_n_points = model_.poly_basis_size() + 1;
+    auto min_n_points = std::max(1, model_.poly_basis_size());
     if (points.rows() < min_n_points)
       throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
 

@@ -37,6 +37,7 @@ public:
     , n_fld_points_(0) {
     auto ti_bbox = bbox.transform(model.rbf().inverse_transformation());
     auto width = (1.0 + 1.0 / 64.0) * ti_bbox.size().maxCoeff();
+    if (width == 0.0) width = 1.0;
     auto center = ti_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
