@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <stdexcept>
+
 #include <Eigen/Core>
 #include <Eigen/LU>
 
@@ -23,7 +25,12 @@ public:
 
     auto pt = mono_basis_.evaluate_points(points);
 
-    coeffs_ = pt.transpose().fullPivLu().inverse();
+    auto lu_of_p = pt.transpose().fullPivLu();
+    if (!lu_of_p.isInvertible()) {
+      throw std::domain_error("The set of points is not unisolvent.");
+    }
+
+    coeffs_ = lu_of_p.inverse();
   }
 
   Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {

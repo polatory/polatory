@@ -4,6 +4,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <memory>
 
 #include <Eigen/Core>
@@ -117,8 +118,7 @@ private:
       }
 
       if (solver.iteration_count() == solver.max_iterations()) {
-        std::cout << "Reached the maximum number of iterations." << std::endl;
-        break;
+        throw std::runtime_error("Reached the maximum number of iterations.");
       }
     }
 
