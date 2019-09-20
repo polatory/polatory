@@ -34,11 +34,11 @@ public:
       ofs << "v "
           << numeric::to_string(v[0]) << ' '
           << numeric::to_string(v[1]) << ' '
-          << numeric::to_string(v[2]) << std::endl;
+          << numeric::to_string(v[2]) << '\n';
     }
 
     for (auto& f : faces_) {
-      ofs << "f " << f[0] + 1 << ' ' << f[1] + 1 << ' ' << f[2] + 1 << std::endl;
+      ofs << "f " << f[0] + 1 << ' ' << f[1] + 1 << ' ' << f[2] + 1 << '\n';
     }
 
     return true;

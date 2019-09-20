@@ -77,7 +77,7 @@ void write_table(
       if (i != n_cols - 1)
         ofs << delimiter;
     }
-    ofs << std::endl;
+    ofs << '\n';
   }
 }
 
