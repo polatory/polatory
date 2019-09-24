@@ -8,7 +8,6 @@
 #include <cmath>
 #include <iterator>
 #include <memory>
-#include <random>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -35,6 +34,8 @@ class rmt_lattice : public rmt_primitive_lattice {
   friend class rmt_surface;
 
   using base = rmt_primitive_lattice;
+
+  static constexpr double kZeroValueReplacement = 1e-10;
 
   rmt_node_list node_list;
   std::vector<cell_index> nodes_to_evaluate;
@@ -103,10 +104,6 @@ class rmt_lattice : public rmt_primitive_lattice {
       return;
     }
 
-    std::random_device rd;
-    std::minstd_rand gen(rd());
-    std::uniform_real_distribution<double> dis(-1e-10, 1e-10);
-
     geometry::points3d points(nodes_to_evaluate.size(), 3);
 
     auto point_it = common::row_begin(points);
@@ -119,8 +116,8 @@ class rmt_lattice : public rmt_primitive_lattice {
     auto i = 0;
     for (auto idx : nodes_to_evaluate) {
       auto value = values(i);
-      while (value == 0.0) {
-        value = dis(gen);
+      if (value == 0.0) {
+        value = kZeroValueReplacement;
       }
 
       node_list.at(idx).set_value(value);
