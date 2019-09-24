@@ -25,6 +25,7 @@ std::set<face> mesh_defects_finder::intersecting_faces() const {
   std::set<face> result;
 
   auto n_vertices = static_cast<vertex_index>(vertices_.size());
+#pragma omp parallel for schedule(guided, 32)
   for (vertex_index vi = 0; vi < n_vertices; vi++) {
     auto& faces = vf_map_[vi];
 
@@ -42,8 +43,11 @@ std::set<face> mesh_defects_finder::intersecting_faces() const {
 
         if (segment_triangle_intersect(f1[1], f1[2], f2) ||
           segment_triangle_intersect(f2[1], f2[2], f1)) {
-          result.insert(f1);
-          result.insert(f2);
+#pragma omp critical
+            {
+              result.insert(f1);
+              result.insert(f2);
+            }
         }
       }
     }
