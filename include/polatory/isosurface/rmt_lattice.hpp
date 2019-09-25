@@ -401,7 +401,7 @@ public:
   void uncluster_vertices(const std::set<vertex_index>& vis) {
     auto map_it = cluster_map.begin();
     while (map_it != cluster_map.end()) {
-      if (vis.count(map_it->second)) {
+      if (vis.count(map_it->second) != 0) {
         // Uncluster.
         map_it = cluster_map.erase(map_it);
       } else {

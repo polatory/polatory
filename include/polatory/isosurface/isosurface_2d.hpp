@@ -59,7 +59,7 @@ public:
       }
     }
 
-    return { std::move(vertices), std::move(faces) };
+    return { vertices, faces };
   }
 
 private:
