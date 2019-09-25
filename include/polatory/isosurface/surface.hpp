@@ -4,7 +4,6 @@
 
 #include <fstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <polatory/common/exception.hpp>
@@ -20,12 +19,24 @@ public:
   using vertices_type = std::vector<geometry::point3d>;
   using faces_type = std::vector<face>;
 
-  surface(vertices_type vertices, faces_type faces)
-    : vertices_(std::move(vertices))
-    , faces_(std::move(faces)) {
+  surface(const vertices_type& vertices, const faces_type& faces) {
+    std::vector<vertex_index> vi_map(vertices.size(), -1);
+    face face_to_add;
+
+    for (auto& face : faces) {
+      for (auto i = 0; i < 3; i++) {
+        auto& vi = vi_map[face[i]];
+        if (vi == -1) {
+          vi = vertices_.size();
+          vertices_.push_back(vertices[face[i]]);
+        }
+        face_to_add[i] = vi;
+      }
+      faces_.push_back(face_to_add);
+    }
   }
 
-  bool export_obj(const std::string& filename) {
+  void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);
     if (!ofs)
       throw common::io_error("Could not open file '" + filename + "'.");
@@ -40,8 +51,6 @@ public:
     for (auto& f : faces_) {
       ofs << "f " << f[0] + 1 << ' ' << f[1] + 1 << ' ' << f[2] + 1 << '\n';
     }
-
-    return true;
   }
 
   const faces_type& faces() const {
@@ -53,8 +62,8 @@ public:
   }
 
 private:
-  const vertices_type vertices_;
-  const faces_type faces_;
+  vertices_type vertices_;
+  faces_type faces_;
 };
 
 }  // namespace isosurface

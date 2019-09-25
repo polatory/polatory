@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -45,7 +44,6 @@ class rmt_lattice : public rmt_primitive_lattice {
   std::vector<geometry::point3d> vertices;
   vertex_index clustered_vertices_begin;
   std::unordered_map<vertex_index, vertex_index> cluster_map;
-  std::vector<vertex_index> unclustered_vis;
 
   static bool has_intersection(const rmt_node *a, const rmt_node *b) {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
@@ -326,7 +324,6 @@ public:
     node_list.clear();
     nodes_to_evaluate.clear();
     cluster_map.clear();
-    unclustered_vis.clear();
     vertices.clear();
   }
 
@@ -401,57 +398,10 @@ public:
     return vertices;
   }
 
-  // This method should be called right after calling uncluster_vertices().
-  void remove_unreferenced_vertices() {
-    auto n_vertices = static_cast<vertex_index>(vertices.size());
-    std::vector<vertex_index> vimap(n_vertices);
-    std::vector<geometry::point3d> reduced_vertices;
-    reduced_vertices.reserve(n_vertices / 3);
-
-    for (vertex_index vi = 0; vi < n_vertices; vi++) {
-      if (cluster_map.count(vi) != 0) {
-        // The vertex is clustered and no longer used.
-        vimap[vi] = -1;
-      } else {
-        if (common::bsearch_eq(unclustered_vis.begin(), unclustered_vis.end(),
-                               vi) != unclustered_vis.end()) {
-          // The vertex has been unclustered.
-          vimap[vi] = -1;
-        } else {
-          vimap[vi] = reduced_vertices.size();
-          reduced_vertices.push_back(vertices[vi]);
-        }
-      }
-    }
-
-    for (auto& ci_node : node_list) {
-      auto& node = ci_node.second;
-      if (node.vis) {
-        for (auto& vi : *node.vis) {
-          vi = vimap[clustered_vertex_index(vi)];
-        }
-      }
-    }
-
-    vertices = reduced_vertices;
-
-    cluster_map.clear();
-    unclustered_vis.clear();
-  }
-
-  template <class InputIterator>
-  void uncluster_vertices(InputIterator vis_begin, InputIterator vis_end) {
-    unclustered_vis.clear();
-    for (auto it = vis_begin; it != vis_end; ++it) {
-      if (*it >= clustered_vertices_begin)
-        unclustered_vis.push_back(*it);
-    }
-    std::sort(unclustered_vis.begin(), unclustered_vis.end());
-
+  void uncluster_vertices(const std::set<vertex_index>& vis) {
     auto map_it = cluster_map.begin();
     while (map_it != cluster_map.end()) {
-      if (common::bsearch_eq(unclustered_vis.begin(), unclustered_vis.end(),
-                             map_it->second) != unclustered_vis.end()) {
+      if (vis.count(map_it->second)) {
         // Uncluster.
         map_it = cluster_map.erase(map_it);
       } else {
