@@ -3,7 +3,6 @@
 #pragma once
 
 #include <set>
-#include <utility>
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -63,11 +62,9 @@ private:
       vertices_to_uncluster.insert(face[2]);
     }
 
-    rmt_lattice_.uncluster_vertices(vertices_to_uncluster.begin(), vertices_to_uncluster.end());
-    rmt_lattice_.remove_unreferenced_vertices();
-    rmt_surf.generate_surface();
+    rmt_lattice_.uncluster_vertices(vertices_to_uncluster);
 
-    surface surf(std::move(rmt_lattice_.get_vertices()), std::move(rmt_surf.get_faces()));
+    surface surf(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
     rmt_lattice_.clear();
 
     return surf;

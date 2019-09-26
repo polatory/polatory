@@ -248,44 +248,40 @@ public:
     : lattice_(lattice) {
   }
 
-  std::vector<face>& get_faces() {
-    return faces_;
+  std::vector<face> get_faces() const {
+    std::vector<face> faces;
+
+    for (auto& face : faces_) {
+      auto v0 = lattice_.clustered_vertex_index(face[0]);
+      auto v1 = lattice_.clustered_vertex_index(face[1]);
+      auto v2 = lattice_.clustered_vertex_index(face[2]);
+
+      if (v0 == v1 || v1 == v2 || v2 == v0) {
+        // Degenerated face.
+        continue;
+      }
+
+      faces.push_back({ v0, v1, v2 });
+    }
+
+    return faces;
   }
 
   void generate_surface() {
     faces_.clear();
 
-    std::vector<face> faces;
+    auto inserter = std::back_inserter(faces_);
 
     for (auto& ci_node : lattice_.node_list) {
       auto& node = ci_node.second;
 
       for (detail::rmt_tetrahedron_iterator it(node); it.is_valid(); ++it) {
-        auto tetra = *it;
-        tetra.get_faces(std::back_inserter(faces));
-
-        for (const auto& face : faces) {
-          add_face(face);
-        }
-
-        faces.clear();
+        it->get_faces(inserter);
       }
     }
   }
 
 private:
-  void add_face(const face& face) {
-    auto v0 = lattice_.clustered_vertex_index(face[0]);
-    auto v1 = lattice_.clustered_vertex_index(face[1]);
-    auto v2 = lattice_.clustered_vertex_index(face[2]);
-    if (v0 == v1 || v1 == v2 || v2 == v0) {
-      // Degenerated face.
-      return;
-    }
-
-    faces_.push_back({ v0, v1, v2 });
-  }
-
   const rmt_lattice& lattice_;
   std::vector<face> faces_;
 };
