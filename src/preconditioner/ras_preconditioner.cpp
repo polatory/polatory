@@ -7,6 +7,7 @@
 #include <iostream>
 #include <numeric>
 
+#include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -24,15 +25,24 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   , n_poly_basis_(model.poly_basis_size())
   , finest_evaluator_(kReportResidual ? std::make_unique<interpolation::rbf_symmetric_evaluator<Order>>(model, points_) : nullptr)
 {
-  point_idcs_.emplace_back(n_points_);
-  std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
-
   std::vector<index_t> poly_point_idcs;
+
   if (n_poly_basis_ > 0) {
-    polynomial::unisolvent_point_set ups(points_, point_idcs_.back(), model.poly_dimension(), model.poly_degree());
-    point_idcs_.back() = ups.point_indices();
-    poly_point_idcs = std::vector<index_t>(point_idcs_.back().begin(), point_idcs_.back().begin() + n_poly_basis_);
+    polynomial::unisolvent_point_set ups(points_, model.poly_dimension(), model.poly_degree());
+
+    poly_point_idcs = ups.point_indices();
     lagrange_basis_ = std::make_unique<polynomial::lagrange_basis>(model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
+
+    point_idcs_.push_back(poly_point_idcs);
+    point_idcs_.back().reserve(n_points_);
+    for (index_t i = 0; i < n_points_; i++) {
+      if (common::bsearch_eq(poly_point_idcs.begin(), poly_point_idcs.end(), i) == poly_point_idcs.end()) {
+        point_idcs_.back().push_back(i);
+      }
+    }
+  } else {
+    point_idcs_.emplace_back(n_points_);
+    std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
   }
 
   n_fine_levels_ = std::max(0, static_cast<int>(
