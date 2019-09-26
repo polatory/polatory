@@ -42,7 +42,6 @@ class rmt_lattice : public rmt_primitive_lattice {
   std::vector<cell_index> last_added_cells;
 
   std::vector<geometry::point3d> vertices;
-  vertex_index clustered_vertices_begin;
   std::unordered_map<vertex_index, vertex_index> cluster_map;
 
   static bool has_intersection(const rmt_node *a, const rmt_node *b) {
@@ -254,8 +253,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
 public:
   rmt_lattice(const geometry::bbox3d& bbox, double resolution)
-    : base(bbox, resolution)
-    , clustered_vertices_begin(0) {
+    : base(bbox, resolution) {
     node_list.init_strides(cell_index{ 1 } << shift1, cell_index{ 1 } << shift2);
   }
 
@@ -328,8 +326,6 @@ public:
   }
 
   void cluster_vertices() {
-    clustered_vertices_begin = std::distance(vertices.begin(), vertices.end());
-
     for (auto& ci_node : node_list) {
       auto& node = ci_node.second;
       node.cluster(vertices, cluster_map);
@@ -399,13 +395,13 @@ public:
   }
 
   void uncluster_vertices(const std::set<vertex_index>& vis) {
-    auto map_it = cluster_map.begin();
-    while (map_it != cluster_map.end()) {
-      if (vis.count(map_it->second) != 0) {
+    auto it = cluster_map.begin();
+    while (it != cluster_map.end()) {
+      if (vis.count(it->second) != 0) {
         // Uncluster.
-        map_it = cluster_map.erase(map_it);
+        it = cluster_map.erase(it);
       } else {
-        ++map_it;
+        ++it;
       }
     }
   }
