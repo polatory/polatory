@@ -7,7 +7,6 @@
 #include <iostream>
 #include <numeric>
 
-#include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -36,7 +35,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     point_idcs_.push_back(poly_point_idcs);
     point_idcs_.back().reserve(n_points_);
     for (index_t i = 0; i < n_points_; i++) {
-      if (common::bsearch_eq(poly_point_idcs.begin(), poly_point_idcs.end(), i) == poly_point_idcs.end()) {
+      if (!std::binary_search(poly_point_idcs.begin(), poly_point_idcs.end(), i)) {
         point_idcs_.back().push_back(i);
       }
     }

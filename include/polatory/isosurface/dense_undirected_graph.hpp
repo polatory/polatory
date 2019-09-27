@@ -41,7 +41,7 @@ public:
     if (order() == 0)
       return true;
 
-    std::vector<bool> visited(order(), false);
+    std::vector<bool> visited(order());
     std::stack<int> to_visit;
 
     // DFS

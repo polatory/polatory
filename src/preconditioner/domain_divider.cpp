@@ -9,7 +9,6 @@
 
 #include <Eigen/Core>
 
-#include <polatory/common/bsearch.hpp>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/zip_sort.hpp>
 
@@ -21,9 +20,6 @@ index_t domain::size() const {
 }
 
 void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
-  std::vector<index_t> new_point_indices(poly_point_idcs.begin(), poly_point_idcs.end());
-  std::vector<bool> new_inner_point(new_point_indices.size());
-
   common::zip_sort(
     point_indices.begin(), point_indices.end(),
     inner_point.begin(), inner_point.end(),
@@ -31,15 +27,17 @@ void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
   );
 
   auto n_poly_points = static_cast<index_t>(poly_point_idcs.size());
+  std::vector<index_t> new_point_indices(poly_point_idcs);
+  std::vector<bool> new_inner_point(n_poly_points);
+
   for (index_t i = 0; i < n_poly_points; i++) {
-    auto it = common::bsearch_eq(point_indices.begin(), point_indices.end(), poly_point_idcs[i]);
-    if (it == point_indices.end())
+    auto idx = poly_point_idcs[i];
+    auto it = std::lower_bound(point_indices.begin(), point_indices.end(), idx);
+    if (it == point_indices.end() || *it != idx)
       continue;
 
     auto it_inner = inner_point.begin() + std::distance(point_indices.begin(), it);
-    if (*it_inner) {
-      new_inner_point[i] = true;
-    }
+    new_inner_point[i] = *it_inner;
 
     point_indices.erase(it);
     inner_point.erase(it_inner);
