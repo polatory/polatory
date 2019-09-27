@@ -6,7 +6,6 @@
 #include <polatory/types.hpp>
 
 using polatory::numeric::kahan_sum_accumulator;
-using polatory::numeric::knuth_sum_accumulator;
 using polatory::index_t;
 
 namespace {
@@ -26,8 +25,4 @@ void test_sum_accumulator() {
 
 TEST(kahan_sum_accumulator, trivial) {
   test_sum_accumulator<kahan_sum_accumulator<double>>();
-}
-
-TEST(knuth_sum_accumulator, trivial) {
-  test_sum_accumulator<knuth_sum_accumulator<double>>();
 }

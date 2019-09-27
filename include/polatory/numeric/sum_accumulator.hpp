@@ -33,32 +33,5 @@ private:
   Floating correction_;
 };
 
-template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>
-class knuth_sum_accumulator {
-public:
-  knuth_sum_accumulator()
-    : sum_()
-    , correction_() {
-  }
-
-  Floating get() const {
-    return sum_;
-  }
-
-  knuth_sum_accumulator& operator+=(Floating f) {
-    auto summand = f + correction_;
-    auto next_sum = sum_ + summand;
-    auto up = next_sum - summand;
-    auto vpp = next_sum - up;
-    correction_ = (sum_ - up) + (summand - vpp);
-    sum_ = next_sum;
-    return *this;
-  }
-
-private:
-  Floating sum_;
-  Floating correction_;
-};
-
 }  // namespace numeric
 }  // namespace polatory
