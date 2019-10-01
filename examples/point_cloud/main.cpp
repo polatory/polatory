@@ -1,6 +1,5 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <algorithm>
 #include <exception>
 #include <iostream>
 #include <tuple>
@@ -32,11 +31,11 @@ int main(int argc, const char *argv[]) {
 
     // Load points (x,y,z) and normals (nx,ny,nz).
     tabled table = read_table(opts.in_file);
-    points3d cloud_points = take_cols(table, 0, 1, 2);
-    vectors3d cloud_normals = take_cols(table, 3, 4, 5);
+    points3d surface_points = take_cols(table, 0, 1, 2);
+    vectors3d surface_normals = take_cols(table, 3, 4, 5);
 
     // Generate SDF (signed distance function) data.
-    sdf_data_generator sdf_data(cloud_points, cloud_normals, opts.min_sdf_distance, opts.max_sdf_distance, opts.sdf_multiplication);
+    sdf_data_generator sdf_data(surface_points, surface_normals, opts.min_sdf_distance, opts.max_sdf_distance, opts.sdf_multiplication);
     points3d points = sdf_data.sdf_points();
     valuesd values = sdf_data.sdf_values();
 
@@ -66,11 +65,7 @@ int main(int argc, const char *argv[]) {
     isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 
-    auto n_seed_points = std::max(
-        static_cast<index_t>(cloud_points.rows()) / 10,
-        index_t{ 100 });
-    points3d seed_points = cloud_points.topRows(n_seed_points);
-    isosurf.generate_from_seed_points(seed_points, field_fn)
+    isosurf.generate_from_seed_points(surface_points, field_fn)
       .export_obj(opts.mesh_file);
 
     return 0;
