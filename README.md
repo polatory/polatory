@@ -82,69 +82,64 @@ Polatory is available under two different licenses:
     sudo apt install intel-mkl-64bit-2018.3-051
     ```
 
-1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
+1. Clone Polatory
 
     ```bash
-    cd
-    git clone https://github.com/Microsoft/vcpkg.git
-    cd vcpkg
-    ./bootstrap-vcpkg.sh
-    ./vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gsl-lite gtest --triplet x64-linux
+    git clone --recursive https://github.com/polatory/polatory.git
+    cd polatory
     ```
 
-    See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
+    To update an existing repository:
+
+    ```bash
+    git submodule sync
+    git submodule update --init --recursive
+    ```
 
 1. Build polatory
 
     ```bash
-    cd
-    git clone https://github.com/polatory/polatory.git
-    cd polatory
-    mkdir build && cd build
-    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake
-    ninja
+    ./run init-vcpkg
+    ./run cmake
+    ./run build
     ```
 
 ### On Windows
 
-1. Install Visual Studio Community 2017
+1. Install Visual Studio Community 2019
 
     https://www.visualstudio.com/
 
-    From the **Workloads** tab, select the following item.
+    Under the **Workloads** tab, select the following item.
 
     - Desktop development with C++
 
-    From the **Individual components** tab, select the following item.
+    Under the **Individual components** tab, select the following item.
 
     - Code tools > Git for Windows
 
 1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
 
-1. Install libraries with [vcpkg](https://github.com/Microsoft/vcpkg)
+1. Clone Polatory
 
-    ```bat
-    cd /d C:\
-    git clone https://github.com/Microsoft/vcpkg.git
-    cd vcpkg
-    bootstrap-vcpkg.bat
-    vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gsl-lite gtest --triplet x64-windows
+    ```pwsh
+    git clone --recursive https://github.com/polatory/polatory.git
+    cd polatory
     ```
 
-    See also: [Updating vcpkg](https://github.com/polatory/polatory/wiki/Updating-vcpkg)
+    To update an existing repository:
+
+    ```pwsh
+    git submodule sync
+    git submodule update --init --recursive
+    ```
 
 1. Build polatory
 
-    Open **Start** > **Visual Studio 2017** > **x64 Native Tools Command Prompt for VS 2017**.
-
-    ```bat
-    cd /d %userprofile%
-    git clone https://github.com/polatory/polatory.git
-    cd polatory
-    mkdir build
-    cd build
-    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-    ninja
+    ```pwsh
+    .\run init-vcpkg
+    .\run cmake
+    .\run build
     ```
 
 ## Contribution
