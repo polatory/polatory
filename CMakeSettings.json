@@ -5,11 +5,10 @@
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
-      "buildRoot": "${projectDir}/build/${name}",
-      "installRoot": "${projectDir}/install/${name}",
-      "cmakeToolchain": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "buildRoot": "${projectDir}\\build\\${name}",
+      "installRoot": "${projectDir}\\install\\${name}",
+      "cmakeToolchain": "${projectDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "ctestCommandArgs": "-V",
-      "intelliSenseMode": "windows-msvc-x64",
       "variables": []
     },
     {
@@ -17,11 +16,10 @@
       "generator": "Ninja",
       "configurationType": "Release",
       "inheritEnvironments": [ "msvc_x64_x64" ],
-      "buildRoot": "${projectDir}/build/${name}",
-      "installRoot": "${projectDir}/install/${name}",
-      "cmakeToolchain": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "buildRoot": "${projectDir}\\build\\${name}",
+      "installRoot": "${projectDir}\\install\\${name}",
+      "cmakeToolchain": "${projectDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "ctestCommandArgs": "-V",
-      "intelliSenseMode": "windows-msvc-x64",
       "variables": []
     }
   ]
