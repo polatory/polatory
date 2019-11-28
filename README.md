@@ -29,7 +29,7 @@ Polatory runs on x86-64 processors and continuously tested on the following plat
 | OS               | Toolchain             |
 | ---------------- | --------------------- |
 | Ubuntu 18.04 LTS | GCC 7.4 and Clang 6.0 |
-| Windows          | Visual Studio 2017    |
+| Windows          | Visual Studio 2019    |
 
 ### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
 

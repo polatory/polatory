@@ -1,5 +1,3 @@
-# Copyright (c) GSI and The Polatory Authors.
-
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
