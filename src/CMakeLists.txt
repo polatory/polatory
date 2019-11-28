@@ -1,5 +1,3 @@
-# Workaround for https://github.com/microsoft/vcpkg/issues/7706
-list(APPEND CMAKE_PREFIX_PATH "${VCPKG_DIR}/share/abseil")
 find_package(absl CONFIG REQUIRED)
 find_package(Boost 1.67.0 REQUIRED COMPONENTS serialization)
 find_package(Ceres CONFIG REQUIRED)
