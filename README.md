@@ -79,7 +79,7 @@ Polatory is available under two different licenses:
     wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | sudo apt-key add -
     sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
     sudo apt update
-    sudo apt install intel-mkl-64bit-2018.3-051
+    sudo apt install intel-mkl-64bit-2019.5-075
     ```
 
 1. Clone Polatory

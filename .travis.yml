@@ -60,7 +60,7 @@ before_install:
 
 install:
   # Intel MKL
-  - docker exec test apt-get install -qq intel-mkl-64bit-2018.3-051
+  - docker exec test apt-get install -qq intel-mkl-64bit-2019.5-075
   # Boost
   - docker exec test wget -nv https://dl.bintray.com/boostorg/release/1.71.0/source/boost_1_71_0.tar.bz2
   - docker exec test tar xjf boost_1_71_0.tar.bz2
