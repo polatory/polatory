@@ -52,7 +52,7 @@ Rapidly decaying covariance functions are not supported in the current version, 
 
 Polatory is available under two different licenses:
 
-* <a href="https://opensource.org/licenses/gpl-3.0.html">GNU General Public License version 3</a> for **non-commercial** use
+* [GNU General Public License, version 3](LICENSE.GPLv3)
 * Commercial license (please contact at mizuno(at)gsinet.co.jp)
 
 ## Building
