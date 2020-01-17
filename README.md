@@ -33,20 +33,21 @@ Polatory runs on x86-64 processors and continuously tested on the following plat
 
 ### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
 
-Polatory can perform global kriging prediction via RBF interpolation. Although different terminology is used, both methods produce the same results. Here is the correspondence between kriging and RBF interpolation:
+Polatory can perform kriging prediction via RBF interpolation (dual kriging). Although different terminologies are used, both methods produce the same results. Here is the correspondence between them:
 
-| Kriging             | RBF interpolation                          |
-| ------------------- | ------------------------------------------ |
-| Prediction          | Interpolation (fitting + evaluation)       |
-| Covariance function | Positive definite RBF                      |
-| Nugget effect       | Spline smoothing                           |
-| Simple kriging      | Interpolant with no polynomial             |
-| Ordinary kriging    | Interpolant with polynomial of degree 0    |
-| Universal kriging   | Interpolant with polynomial of degree >= 1 |
-| Weights             | (Not computed) Cardinal basis functions    |
-| Kriging variance    | (Not computed)                             |
+| Kriging                                      | RBF interpolation                                 |
+| -------------------------------------------- | ------------------------------------------------- |
+| Prediction                                   | Interpolation (fitting + evaluation)              |
+| Covariance function                          | RBF, positive definite                            |
+| Generalized covariance function of order *k* | RBF, conditionally positive definite of order *k* |
+| Nugget effect model                          | Spline smoothing                                  |
+| Simple kriging                               | Interpolant with no polynomial                    |
+| Ordinary kriging                             | Interpolant with polynomial of degree 0           |
+| Universal kriging                            | Interpolant with polynomial of degree >= 1        |
+| Weights                                      | (Not computed) Cardinal basis functions           |
+| Kriging variance                             | (Not computed)                                    |
 
-Rapidly decaying covariance functions are not supported in the current version, such as the spherical and the Gaussian models. The spherical model can be substituted by a similar one named `cov_quasi_spherical9`.
+A limited number of covariance functions are supported. See [List of available RBFs](docs/rbf.ipynb) for details.
 
 ## License
 
