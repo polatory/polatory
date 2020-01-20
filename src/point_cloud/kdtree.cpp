@@ -3,10 +3,9 @@
 #include <polatory/point_cloud/kdtree.hpp>
 
 #include <cmath>
+#include <stdexcept>
 
 #include <flann/flann.hpp>
-
-#include <polatory/common/exception.hpp>
 
 namespace polatory {
 namespace point_cloud {
@@ -85,8 +84,8 @@ kdtree::kdtree(const geometry::points3d& points, bool use_exact_search)
 kdtree::~kdtree() = default;
 
 kdtree::indices_and_distances kdtree::knn_search(const geometry::point3d& point, index_t k) const {
-  if (k == 0)
-    throw common::invalid_argument("k > 0");
+  if (k <= 0)
+    throw std::invalid_argument("k must be greater than 0.");
 
   if (!pimpl_)
     return {};
@@ -96,7 +95,7 @@ kdtree::indices_and_distances kdtree::knn_search(const geometry::point3d& point,
 
 kdtree::indices_and_distances kdtree::radius_search(const geometry::point3d& point, double radius) const {
   if (radius <= 0.0)
-    throw common::invalid_argument("radius > 0.0");
+    throw std::invalid_argument("radius must be greater than 0.0.");
 
   if (!pimpl_)
     return {};

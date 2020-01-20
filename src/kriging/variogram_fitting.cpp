@@ -3,10 +3,10 @@
 #include <polatory/kriging/variogram_fitting.hpp>
 
 #include <iostream>
+#include <stdexcept>
+#include <string>
 
 #include <ceres/ceres.h>
-
-#include <polatory/common/exception.hpp>
 
 namespace polatory {
 namespace kriging {
@@ -64,7 +64,7 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
   auto n_bins = static_cast<index_t>(bin_num_pairs.size());
 
   if (n_bins < n_params)
-    throw common::invalid_argument("n_bins >= n_params");
+    throw std::invalid_argument("The number of lags must be greater than or equal to the number of parameters (= " + std::to_string(n_params) + ").");
 
   ceres::Problem problem;
   for (index_t i = 0; i < n_bins; i++) {

@@ -3,8 +3,8 @@
 #include <polatory/geometry/affine_transformation3d.hpp>
 
 #include <cmath>
+#include <stdexcept>
 
-#include <polatory/common/exception.hpp>
 #include <polatory/common/macros.hpp>
 
 namespace polatory {
@@ -17,7 +17,7 @@ affine_transformation3d::affine_transformation3d()
 affine_transformation3d::affine_transformation3d(const Eigen::Matrix4d& m)
   : m_(m) {
   if (m.row(3) != Eigen::RowVector4d(0, 0, 0, 1))
-    throw common::invalid_argument("m.row(3) must be (0, 0, 0, 1).");
+    throw std::invalid_argument("m.row(3) must be (0, 0, 0, 1).");
 }
 
 affine_transformation3d affine_transformation3d::inverse() const {

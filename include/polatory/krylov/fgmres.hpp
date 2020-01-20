@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <vector>
 
-#include <polatory/common/exception.hpp>
 #include <polatory/krylov/gmres.hpp>
 #include <polatory/types.hpp>
 
@@ -16,7 +16,7 @@ public:
   fgmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
 
   void set_left_preconditioner(const linear_operator& /*left_preconditioner*/) override {
-    throw common::not_supported("set_left_preconditioner");
+    throw std::runtime_error("set_left_preconditioner is not supported.");
   }
 
   common::valuesd solution_vector() const override;

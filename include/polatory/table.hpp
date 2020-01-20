@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -11,7 +12,6 @@
 #include <Eigen/Core>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/exception.hpp>
 #include <polatory/numeric/roundtrip_string.hpp>
 #include <polatory/types.hpp>
 
@@ -24,7 +24,7 @@ inline tabled read_table(
     const char *delimiters = " \t,") {
   std::ifstream ifs(filename);
   if (!ifs)
-    throw common::io_error("Could not open file '" + filename + "'.");
+    throw std::runtime_error("Failed to open file '" + filename + "'.");
 
   std::vector<double> buffer;
 
@@ -56,7 +56,7 @@ inline tabled read_table(
   }
 
   if (n_cols == 0)
-    throw common::io_error("File '" + filename + " is empty'.");
+    throw std::runtime_error("File '" + filename + "' is empty.");
 
   return tabled::Map(buffer.data(), buffer.size() / n_cols, n_cols);
 }
@@ -68,7 +68,7 @@ void write_table(
     char delimiter = ' ') {
   std::ofstream ofs(filename);
   if (!ofs)
-    throw common::io_error("Could not open file '" + filename + "'.");
+    throw std::runtime_error("Failed to open file '" + filename + "'.");
 
   auto n_cols = static_cast<index_t>(table.cols());
   for (auto row : common::row_range(table)) {
