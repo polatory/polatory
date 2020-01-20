@@ -17,7 +17,7 @@ public:
   orthonormal_basis(int dimension, int degree, const geometry::points3d& points)
     : polynomial_basis_base(dimension, degree)
     , mono_basis_(dimension, degree) {
-    auto pt = mono_basis_.evaluate_points(points);
+    auto pt = mono_basis_.evaluate(points);
     auto u_hat = Eigen::MatrixXd(pt.rows(), pt.cols());
 
     auto size = basis_size();
@@ -43,8 +43,8 @@ public:
     }
   }
 
-  Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {
-    auto pt = mono_basis_.evaluate_points(points);
+  Eigen::MatrixXd evaluate(const geometry::points3d& points) const {
+    auto pt = mono_basis_.evaluate(points);
 
     return c_hat_ * pt;
   }

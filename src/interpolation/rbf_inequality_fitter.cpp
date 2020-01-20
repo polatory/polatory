@@ -99,7 +99,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
 
       res_eval->set_source_points(center_points);
       res_eval->set_weights(center_weights);
-      values_fit = res_eval->evaluate_points(ineq_points);
+      values_fit = res_eval->evaluate(ineq_points);
     } else {
       values_fit = common::valuesd::Zero(ineq_idcs.size());
     }

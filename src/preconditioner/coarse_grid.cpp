@@ -55,7 +55,7 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
   if (l_ > 0) {
     // Compute -E.
     auto tail_points = common::take_rows(points_full, common::make_range(point_idcs_.begin() + l_, point_idcs_.end()));
-    me_ = -lagrange_basis_->evaluate_points(tail_points);
+    me_ = -lagrange_basis_->evaluate(tail_points);
 
     // Compute decomposition of Q^T A Q.
     ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_
@@ -68,7 +68,7 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
 
     polynomial::monomial_basis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
     auto head_points = common::take_rows(points_full, common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_));
-    Eigen::MatrixXd p_top = mono_basis.evaluate_points(head_points).transpose();
+    Eigen::MatrixXd p_top = mono_basis.evaluate(head_points).transpose();
     lu_of_p_top_ = p_top.fullPivLu();
   } else {
     ldlt_of_qtaq_ = a.ldlt();

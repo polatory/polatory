@@ -63,7 +63,7 @@ common::valuesd k_fold_cross_validation(
 
     interpolation::rbf_evaluator<> eval(model, train_points, bbox);
     eval.set_weights(weights);
-    auto test_values_fit = eval.evaluate_points(test_points);
+    auto test_values_fit = eval.evaluate(test_points);
 
     for (index_t j = 0; j < test_set_size; j++) {
       residuals(test_set[j]) = test_values(j) - test_values_fit(j);

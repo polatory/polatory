@@ -32,17 +32,13 @@ public:
     return centers_;
   }
 
-  geometry::bbox3d centers_bbox() const {
-    return centers_bbox_;
-  }
-
-  common::valuesd evaluate_points(const geometry::points3d& points) {
+  common::valuesd evaluate(const geometry::points3d& points) {
     set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
-    return evaluate_points_impl(points);
+    return evaluate_impl(points);
   }
 
-  common::valuesd evaluate_points_impl(const geometry::points3d& points) const {
-    return evaluator_->evaluate_points(points);
+  common::valuesd evaluate_impl(const geometry::points3d& points) const {
+    return evaluator_->evaluate(points);
   }
 
   void fit(const geometry::points3d& points, const common::valuesd& values,

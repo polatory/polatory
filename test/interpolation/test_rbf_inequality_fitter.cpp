@@ -58,7 +58,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   rbf_evaluator<> eval(model, take_rows(points, indices));
   eval.set_weights(weights);
-  valuesd values_fit = eval.evaluate_points(points);
+  valuesd values_fit = eval.evaluate(points);
 
   for (index_t i = 0; i < n_points; i++) {
     EXPECT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
@@ -113,7 +113,7 @@ TEST(rbf_inequality_fitter, kostov86) {
 
   rbf_evaluator<> eval(model, take_rows(points, indices));
   eval.set_weights(weights);
-  valuesd values_fit = eval.evaluate_points(points);
+  valuesd values_fit = eval.evaluate(points);
 
   for (index_t i = 0; i < n_points; i++) {
     if (!std::isnan(values(i))) {

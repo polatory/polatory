@@ -62,7 +62,7 @@ rbf_incremental_fitter::fit(const common::valuesd& values, double absolute_toler
     res_eval->set_source_points(center_points);
     res_eval->set_weights(center_weights);
 
-    auto c_values_fit = res_eval->evaluate_points(c_center_points);
+    auto c_values_fit = res_eval->evaluate(c_center_points);
     auto c_values = common::take_rows(values, c_centers);
     std::vector<double> c_residuals(c_centers.size());
     common::valuesd::Map(c_residuals.data(), c_centers.size()) = (c_values_fit - c_values).cwiseAbs();

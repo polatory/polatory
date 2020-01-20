@@ -18,7 +18,7 @@ public:
   }
 
   common::valuesd operator()(const geometry::points3d& points) const override {
-    return interpolant_.evaluate_points_impl(points);
+    return interpolant_.evaluate_impl(points);
   }
 
   void set_evaluation_bbox(const geometry::bbox3d& bbox) override {

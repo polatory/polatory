@@ -20,7 +20,7 @@ public:
   }
 
   common::valuesd evaluate() const {
-    Eigen::MatrixXd pt = basis_.evaluate_points(points_);
+    Eigen::MatrixXd pt = basis_.evaluate(points_);
 
     return pt.transpose() * weights_;
   }

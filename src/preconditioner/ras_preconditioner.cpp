@@ -115,7 +115,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 
   if (n_poly_basis_ > 0) {
     polynomial::orthonormal_basis poly(model.poly_dimension(), model.poly_degree(), points_);
-    p_ = poly.evaluate_points(points_).transpose();
+    p_ = poly.evaluate(points_).transpose();
     ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
     auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(model_without_poly_, points_);

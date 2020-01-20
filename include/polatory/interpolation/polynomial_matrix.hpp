@@ -48,7 +48,7 @@ public:
   }
 
   void set_points(const geometry::points3d& points) {
-    pt_ = basis_.evaluate_points(points);
+    pt_ = basis_.evaluate(points);
   }
 
 private:

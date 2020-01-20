@@ -19,7 +19,7 @@ public:
     POLATORY_ASSERT(degree >= 0 && degree <= 2);
   }
 
-  Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {
+  Eigen::MatrixXd evaluate(const geometry::points3d& points) const {
     auto n_points = static_cast<index_t>(points.rows());
 
     Eigen::MatrixXd result(basis_size(), n_points);

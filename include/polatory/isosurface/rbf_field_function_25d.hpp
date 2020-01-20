@@ -22,7 +22,7 @@ public:
     points_2d.col(2).array() = 0.0;
 
     return points.col(2) -
-      interpolant_.evaluate_points_impl(points_2d);
+      interpolant_.evaluate_impl(points_2d);
   }
 
   void set_evaluation_bbox(const geometry::bbox3d& bbox) override {

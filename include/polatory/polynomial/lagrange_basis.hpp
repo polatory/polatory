@@ -26,7 +26,7 @@ public:
     , mono_basis_(dimension, degree) {
     POLATORY_ASSERT(static_cast<index_t>(points.rows()) == basis_size());
 
-    Eigen::MatrixXd p = mono_basis_.evaluate_points(points).transpose();
+    Eigen::MatrixXd p = mono_basis_.evaluate(points).transpose();
 
     // Do not use p.fullPivLu().isInvertible() which is too robust
     // nor p.fullPivLu().rcond() which returns an inexact value.
@@ -37,8 +37,8 @@ public:
     coeffs_ = p.fullPivLu().inverse();
   }
 
-  Eigen::MatrixXd evaluate_points(const geometry::points3d& points) const {
-    auto pt = mono_basis_.evaluate_points(points);
+  Eigen::MatrixXd evaluate(const geometry::points3d& points) const {
+    auto pt = mono_basis_.evaluate(points);
 
     return coeffs_.transpose() * pt;
   }

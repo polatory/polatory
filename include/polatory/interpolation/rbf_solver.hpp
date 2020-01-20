@@ -55,7 +55,7 @@ public:
 
     if (n_poly_basis_ > 0) {
       polynomial::orthonormal_basis poly(model_.poly_dimension(), model_.poly_degree(), points);
-      p_ = poly.evaluate_points(points).transpose();
+      p_ = poly.evaluate(points).transpose();
     }
   }
 

@@ -52,7 +52,7 @@ TEST(rbf_incremental_fitter, trivial) {
 
   rbf_evaluator<> eval(model, take_rows(points, indices));
   eval.set_weights(weights);
-  valuesd values_fit = eval.evaluate_points(points);
+  valuesd values_fit = eval.evaluate(points);
 
   auto max_residual = (values - values_fit).lpNorm<Eigen::Infinity>();
   std::cout << "Maximum residual:" << std::endl

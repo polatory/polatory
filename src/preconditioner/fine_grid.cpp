@@ -54,7 +54,7 @@ void fine_grid::setup(const geometry::points3d& points_full) {
   if (l_ > 0) {
     // Compute -E.
     auto tail_points = common::take_rows(points_full, common::make_range(point_idcs_.begin() + l_, point_idcs_.end()));
-    me_ = -lagrange_basis_->evaluate_points(tail_points);
+    me_ = -lagrange_basis_->evaluate(tail_points);
 
     // Compute decomposition of Q^T A Q.
     ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_

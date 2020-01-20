@@ -72,7 +72,7 @@ public:
     return y;
   }
 
-  common::valuesd evaluate_points(const geometry::points3d& field_points) const {
+  common::valuesd evaluate(const geometry::points3d& field_points) const {
     set_field_points(field_points);
     return evaluate();
   }

@@ -28,7 +28,7 @@ int main(int /*argc*/, char *argv[]) {
     interpolant interpolant(model);
 
     interpolant.fit(points, values, absolute_tolerance);
-    auto prediction_values = interpolant.evaluate_points(prediction_points);
+    auto prediction_values = interpolant.evaluate(prediction_points);
 
     write_table(argv[4], prediction_values);
 
