@@ -5,13 +5,13 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include <boost/operators.hpp>
 #include <Eigen/Core>
 
-#include <polatory/common/exception.hpp>
 #include <polatory/common/fold.hpp>
 #include <polatory/common/iterator_range.hpp>
 #include <polatory/common/macros.hpp>
@@ -407,7 +407,7 @@ Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m) {
 template <class Derived, class ...Args>
 Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   if (m.cols() != common_cols(std::forward<Args>(args)...))
-    throw invalid_argument("All matrices must have the same number of columns.");
+    throw std::invalid_argument("All inputs must have the same number of columns.");
 
   return m.cols();
 }
@@ -420,7 +420,7 @@ Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m) {
 template <class Derived, class ...Args>
 Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   if (m.rows() != common_rows(std::forward<Args>(args)...))
-    throw invalid_argument("All matrices must have the same number of rows.");
+    throw std::invalid_argument("All inputs must have the same number of rows.");
 
   return m.rows();
 }

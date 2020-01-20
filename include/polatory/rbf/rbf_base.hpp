@@ -3,10 +3,10 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
-#include <polatory/common/exception.hpp>
 #include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 
@@ -53,7 +53,7 @@ public:
 
   void set_parameters(const std::vector<double>& params) {
     if (static_cast<int>(params.size()) != num_parameters())
-      throw common::invalid_argument("params.size() == " + std::to_string(num_parameters()));
+      throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) + ".");
 
     params_ = params;
   }

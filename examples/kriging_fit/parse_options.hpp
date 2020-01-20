@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include <boost/program_options.hpp>
@@ -75,7 +76,7 @@ options parse_options(int argc, const char *argv[]) {
     opts.weight_fn = polatory::kriging::weight_functions::one_over_model_gamma_squared;
     break;
   default:
-    throw polatory::common::invalid_argument("0 <= weight <= 5");
+    throw std::runtime_error("weight must be within the range of 0 to 5.");
   }
 
   return opts;

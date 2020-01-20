@@ -4,13 +4,13 @@
 
 #include <algorithm>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/exception.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -45,13 +45,13 @@ public:
            double absolute_tolerance) {
     auto min_n_points = std::max(1, model_.poly_basis_size());
     if (points.rows() < min_n_points)
-      throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
+      throw std::invalid_argument("points.rows() must be greater than or equal to " + std::to_string(min_n_points) + ".");
 
     if (values.rows() != points.rows())
-      throw common::invalid_argument("values.rows() == points.rows()");
+      throw std::invalid_argument("values.rows() must be equal to points.rows().");
 
     if (absolute_tolerance <= 0.0)
-      throw common::invalid_argument("absolute_tolerance > 0.0");
+      throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
 
     clear_centers();
 
@@ -65,17 +65,17 @@ public:
   void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
                          double absolute_tolerance) {
     if (model_.nugget() > 0.0)
-      throw common::not_supported("RBF with finite nugget");
+      throw std::runtime_error("Non-zero nugget is not supported.");
 
     auto min_n_points = std::max(1, model_.poly_basis_size());
     if (points.rows() < min_n_points)
-      throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
+      throw std::invalid_argument("points.rows() must be greater than or equal to " + std::to_string(min_n_points) + ".");
 
     if (values.rows() != points.rows())
-      throw common::invalid_argument("values.rows() == points.rows()");
+      throw std::invalid_argument("values.rows() must be equal to points.rows().");
 
     if (absolute_tolerance <= 0.0)
-      throw common::invalid_argument("absolute_tolerance > 0.0");
+      throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
 
     clear_centers();
 
@@ -92,23 +92,23 @@ public:
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
                       double absolute_tolerance) {
     if (model_.nugget() > 0.0)
-      throw common::not_supported("RBF with finite nugget");
+      throw std::runtime_error("Non-zero nugget is not supported.");
 
     auto min_n_points = std::max(1, model_.poly_basis_size());
     if (points.rows() < min_n_points)
-      throw common::invalid_argument("points.rows() >= " + std::to_string(min_n_points));
+      throw std::invalid_argument("points.rows() must be greater than or equal to " + std::to_string(min_n_points) + ".");
 
     if (values.rows() != points.rows())
-      throw common::invalid_argument("values.rows() == points.rows()");
+      throw std::invalid_argument("values.rows() must be equal to points.rows().");
 
     if (values_lb.rows() != points.rows())
-      throw common::invalid_argument("values_lb.rows() == points.rows()");
+      throw std::invalid_argument("values_lb.rows() must be equal to points.rows().");
 
     if (values_ub.rows() != points.rows())
-      throw common::invalid_argument("values_ub.rows() == points.rows()");
+      throw std::invalid_argument("values_ub.rows() must be equal to points.rows().");
 
     if (absolute_tolerance <= 0.0)
-      throw common::invalid_argument("absolute_tolerance > 0.0");
+      throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
 
     clear_centers();
 

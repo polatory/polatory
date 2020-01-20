@@ -4,12 +4,11 @@
 
 #include <algorithm>
 #include <stack>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include <Eigen/Core>
-
-#include <polatory/common/exception.hpp>
 
 namespace polatory {
 namespace isosurface {
@@ -19,7 +18,7 @@ public:
   explicit dense_undirected_graph(int order)
     : m_(Eigen::MatrixXi::Zero(order, order)) {
     if (order <= 0) {
-      throw common::invalid_argument("order > 0");
+      throw std::invalid_argument("order must be greater than 0.");
     }
   }
 

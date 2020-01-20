@@ -4,9 +4,9 @@
 
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
-#include <polatory/common/exception.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/types.hpp>
@@ -21,7 +21,7 @@ public:
     , poly_degree_(poly_degree)
     , nugget_(0.0) {
     if (poly_degree < rbf.cpd_order() - 1 || poly_degree > 2)
-      throw common::invalid_argument("rbf.cpd_order() - 1 <= poly_degree <= 2");
+      throw std::invalid_argument("poly_degree must be within the range of rbf.cpd_order() - 1 to 2.");
   }
 
   ~model() = default;
@@ -91,7 +91,7 @@ public:
   // Experimental function.
   void set_parameters(const std::vector<double>& params) {
     if (static_cast<int>(params.size()) != num_parameters())
-      throw common::invalid_argument("params.size() == " + std::to_string(num_parameters()));
+      throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) + ".");
 
     set_nugget(params[0]);
     rbf_->set_parameters(std::vector<double>(params.begin() + 1, params.end()));

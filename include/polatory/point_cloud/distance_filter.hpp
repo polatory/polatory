@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <string>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -10,7 +10,6 @@
 #include <Eigen/Core>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/exception.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
@@ -24,7 +23,7 @@ public:
   template <class Derived>
   auto filtered(const Eigen::MatrixBase<Derived>& m) {
     if (m.rows() != n_points_)
-      throw common::invalid_argument("m.rows() == " + std::to_string(n_points_));
+      throw std::invalid_argument("m.rows() must match with the original points.");
 
     return common::take_rows(m, filtered_indices_);
   }

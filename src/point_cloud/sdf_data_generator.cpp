@@ -2,10 +2,10 @@
 
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 
+#include <stdexcept>
 #include <tuple>
 #include <vector>
 
-#include <polatory/common/exception.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 
 namespace polatory {
@@ -19,14 +19,14 @@ sdf_data_generator::sdf_data_generator(
   double multiplication)
   : points_(points)
   , normals_(normals) {
-  if (points.rows() != normals.rows())
-    throw common::invalid_argument("points.rows() == normals.rows()");
+  if (normals.rows() != points.rows())
+    throw std::invalid_argument("normals.rows() must be equal to points.rows().");
 
   if (min_distance > max_distance)
-    throw common::invalid_argument("min_distance <= max_distance");
+    throw std::invalid_argument("min_distance must be less than or equal to max_distance.");
 
   if (multiplication <= 1.0 || multiplication > 3.0)
-    throw common::invalid_argument("1.0 < ratio <= 3.0");
+    throw std::invalid_argument("multiplication must be within (1.0, 3.0].");
 
   kdtree tree(points, true);
 

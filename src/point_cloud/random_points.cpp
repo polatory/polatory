@@ -3,9 +3,9 @@
 #include <polatory/point_cloud/random_points.hpp>
 
 #include <cmath>
+#include <stdexcept>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/exception.hpp>
 
 namespace polatory {
 namespace point_cloud {
@@ -15,7 +15,7 @@ geometry::points3d random_points(const geometry::cuboid3d& cuboid,
     seed_type seed) {
   auto size = cuboid.max() - cuboid.min();
   if (size.minCoeff() <= 0.0)
-    throw common::invalid_argument("cuboid must be a valid region");
+    throw std::invalid_argument("cuboid must have a positive volume.");
 
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(0.0, 1.0);
@@ -39,7 +39,7 @@ geometry::points3d random_points(const geometry::sphere3d& sphere,
     index_t n,
     seed_type seed) {
   if (sphere.radius() <= 0.0)
-    throw common::invalid_argument("sphere must be a valid region");
+    throw std::invalid_argument("sphere must have a positive volume.");
 
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(-1.0, 1.0);

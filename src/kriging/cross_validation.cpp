@@ -6,9 +6,9 @@
 #include <cmath>
 #include <numeric>
 #include <random>
+#include <stdexcept>
 
 #include <polatory/common/eigen_utility.hpp>
-#include <polatory/common/exception.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
@@ -23,10 +23,10 @@ common::valuesd k_fold_cross_validation(
     index_t k) {
   auto n_points = static_cast<index_t>(points.rows());
   if (n_points < 2)
-    throw common::invalid_argument("points.row() >= 2");
+    throw std::invalid_argument("points.row() must be greater than or equal to 2.");
 
   if (k < 2 || k > n_points)
-    throw common::invalid_argument("2 <= k <= points.rows()");
+    throw std::invalid_argument("k must be within the range of 2 to points.rows().");
 
   std::random_device rd;
   std::mt19937 gen(rd());
