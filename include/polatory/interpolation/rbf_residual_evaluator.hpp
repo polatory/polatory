@@ -56,11 +56,11 @@ public:
       if (begin == end) break;
 
       evaluator_->set_field_points(points_.middleRows(begin, end - begin));
-      auto fit = evaluator_->evaluate();
+      common::valuesd fit = evaluator_->evaluate() + weights.segment(begin, end - begin) * nugget;
 
       for (index_t j = 0; j < end - begin; j++) {
         auto res = std::abs(values(begin + j) - fit(j));
-        if (res >= absolute_tolerance + std::abs(nugget * weights(begin + j)))
+        if (res >= absolute_tolerance)
           return { false, 0.0 };
 
         max_residual = std::max(max_residual, res);

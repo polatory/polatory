@@ -30,6 +30,7 @@ void test_poly_degree(int poly_degree, index_t n_points) {
   rbf.set_transformation(random_transformation());
 
   model model(rbf, 3, poly_degree);
+  model.set_nugget(0.01);
 
   auto points = random_points(sphere3d(), n_points);
 
@@ -40,7 +41,7 @@ void test_poly_degree(int poly_degree, index_t n_points) {
 
   rbf_operator<> op(model, points);
 
-  valuesd direct_op_weights = direct_eval.evaluate() + model.nugget() * weights.head(n_points);
+  valuesd direct_op_weights = direct_eval.evaluate() + weights.head(n_points) * model.nugget();
   valuesd op_weights = op(weights);
 
   EXPECT_EQ(n_points + model.poly_basis_size(), op_weights.size());
