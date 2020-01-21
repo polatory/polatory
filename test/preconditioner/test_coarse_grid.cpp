@@ -24,7 +24,7 @@ using polatory::preconditioner::coarse_grid;
 using polatory::rbf::biharmonic3d;
 using polatory::index_t;
 
-void test_coarse_grid(double nugget) {
+TEST(coarse_grid, trivial) {
   auto n_points = index_t{ 1024 };
   auto poly_dimension = 3;
   auto poly_degree = 0;
@@ -40,7 +40,7 @@ void test_coarse_grid(double nugget) {
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
   model model(biharmonic3d({ 1.0 }), poly_dimension, poly_degree);
-  model.set_nugget(nugget);
+  model.set_nugget(0.01);
   auto lagr_basis = std::make_unique<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
 
   coarse_grid coarse(model, lagr_basis, point_indices, points);
@@ -53,17 +53,8 @@ void test_coarse_grid(double nugget) {
 
   auto eval = rbf_direct_symmetric_evaluator(model, points);
   eval.set_weights(sol);
-  valuesd values_fit = eval.evaluate();
+  valuesd values_fit = eval.evaluate() + sol.head(n_points) * model.nugget();
 
-  valuesd residuals = (values - values_fit).cwiseAbs();
-  valuesd smoothing_error_bounds = model.nugget() * sol.head(n_points).cwiseAbs();
-
-  for (index_t i = 0; i < n_points; i++) {
-    EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));
-  }
-}
-
-TEST(coarse_grid, trivial) {
-  test_coarse_grid(0.0);
-  test_coarse_grid(0.2);
+  auto max_residual = (values - values_fit).lpNorm<Eigen::Infinity>();
+  EXPECT_LT(max_residual, absolute_tolerance);
 }

@@ -1,6 +1,5 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <iostream>
 #include <tuple>
 
 #include <Eigen/Core>
@@ -40,6 +39,7 @@ void test_poly_degree(int poly_degree) {
   rbf.set_transformation(random_transformation());
 
   model model(rbf, poly_dimension, poly_degree);
+  model.set_nugget(0.01);
 
   rbf_fitter fitter(model, points);
   valuesd weights = fitter.fit(values, absolute_tolerance);
@@ -48,17 +48,10 @@ void test_poly_degree(int poly_degree) {
 
   rbf_symmetric_evaluator<> eval(model, points);
   eval.set_weights(weights);
-  valuesd values_fit = eval.evaluate();
+  valuesd values_fit = eval.evaluate() + weights.head(n_points) * model.nugget();
 
-  valuesd residuals = (values - values_fit).cwiseAbs();
-  valuesd smoothing_error_bounds = model.nugget() * weights.head(n_points).cwiseAbs();
-
-  std::cout << "Maximum residual:" << std::endl
-            << "  " << residuals.lpNorm<Eigen::Infinity>() << std::endl;
-
-  for (index_t i = 0; i < n_points; i++) {
-    EXPECT_LT(residuals(i), absolute_tolerance + smoothing_error_bounds(i));
-  }
+  auto max_residual = (values - values_fit).lpNorm<Eigen::Infinity>();
+  EXPECT_LT(max_residual, absolute_tolerance);
 }
 
 }  // namespace
