@@ -157,7 +157,7 @@ private:
     weights_ = common::valuesd();
   }
 
-  static const std::string kNotFittedErrorMessage;
+  static constexpr const char *kNotFittedErrorMessage = "The interpolant is not fitted yet.";
 
   const model model_;
 
