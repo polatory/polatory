@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -21,14 +20,17 @@ public:
   rbf_base& operator=(const rbf_base&) = delete;
   rbf_base& operator=(rbf_base&&) = delete;
 
+  const Eigen::Matrix3d& anisotropy() const {
+    return aniso_;
+  }
+
   virtual std::unique_ptr<rbf_base> clone() const = 0;
 
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;
 
   double evaluate(const geometry::vectors3d& v) const {
-    auto ti_v = ti_.transform_vector(v);
-    return evaluate_untransformed(ti_v.norm());
+    return evaluate_untransformed((aniso_ * v.transpose()).norm());
   }
 
   virtual void evaluate_gradient_untransformed(
@@ -37,8 +39,8 @@ public:
 
   virtual double evaluate_untransformed(double r) const = 0;
 
-  const geometry::affine_transformation3d& inverse_transformation() const {
-    return ti_;
+  const Eigen::Matrix3d& inverse_anisotropy() const {
+    return inv_aniso_;
   }
 
   virtual int num_parameters() const = 0;
@@ -51,6 +53,11 @@ public:
     return params_;
   }
 
+  void set_anisotropy(const Eigen::Matrix3d& aniso) {
+    aniso_ = aniso;
+    inv_aniso_ = aniso.inverse();
+  }
+
   void set_parameters(const std::vector<double>& params) {
     if (static_cast<int>(params.size()) != num_parameters())
       throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) + ".");
@@ -58,23 +65,18 @@ public:
     params_ = params;
   }
 
-  void set_transformation(const geometry::affine_transformation3d& t) {
-    t_ = t;
-    ti_ = t.inverse();
-  }
-
-  const geometry::affine_transformation3d& transformation() const {
-    return t_;
-  }
-
 protected:
-  rbf_base() = default;
+  rbf_base()
+    : aniso_(Eigen::Matrix3d::Identity())
+    , inv_aniso_(Eigen::Matrix3d::Identity()) {
+  }
+
   rbf_base(const rbf_base&) = default;
 
 private:
   std::vector<double> params_;
-  geometry::affine_transformation3d t_;
-  geometry::affine_transformation3d ti_;
+  Eigen::Matrix3d aniso_;
+  Eigen::Matrix3d inv_aniso_;
 };
 
 }  // namespace rbf

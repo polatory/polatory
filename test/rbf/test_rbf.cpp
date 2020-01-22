@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include <polatory/geometry/affine_transformation3d.hpp>
+#include <polatory/geometry/transformation.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
@@ -18,7 +18,10 @@
 #include <polatory/rbf/reference/cov_spherical.hpp>
 #include <polatory/rbf/reference/triharmonic3d.hpp>
 
-using polatory::geometry::affine_transformation3d;
+#include "../random_anisotropy.hpp"
+
+using polatory::geometry::scaling;
+using polatory::geometry::vector3d;
 using polatory::rbf::biharmonic2d;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
@@ -40,12 +43,12 @@ double hypot(double x, double y, double z) {
 template <class T>
 void test_clone(const std::vector<double>& params) {
   T rbf(params);
-  rbf.set_transformation(affine_transformation3d::scaling({ 1.0, 2.0, 3.0 }));
+  rbf.set_anisotropy(scaling({ 1.0, 2.0, 3.0 }));
 
   auto cloned = rbf.clone();
 
   ASSERT_EQ(rbf.parameters(), cloned->parameters());
-  ASSERT_EQ(rbf.transformation(), cloned->transformation());
+  ASSERT_EQ(rbf.inverse_anisotropy(), cloned->inverse_anisotropy());
 }
 
 void test_gradient(const rbf_base& rbf) {
@@ -86,6 +89,19 @@ void test_gradient(const rbf_base& rbf) {
 }
 
 }  // namespace
+
+TEST(rbf, anisotropy) {
+  auto v = vector3d(1.0, 1.0, 1.0);
+  auto m = random_anisotropy();
+  vector3d mv = m * v.transpose();
+
+  biharmonic3d rbf({ 1.0 });
+
+  auto cloned = rbf.clone();
+  cloned->set_anisotropy(m);
+
+  ASSERT_EQ(rbf.evaluate(mv), cloned->evaluate(v));
+}
 
 TEST(rbf, clone) {
   test_clone<biharmonic2d>({ 1.0 });

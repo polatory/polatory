@@ -38,20 +38,20 @@ using polatory::point_cloud::random_points;
 // Relative positions of neighbor nodes connected by each edge.
 std::array<vector3d, 14> NeighborVectors
   {
-    rotation().transform_vector({ 1.0, 1.0, 1.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 2.0, 0.0, 0.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 1.0, -1.0, -1.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 0.0, 2.0, 0.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 1.0, 1.0, -1.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 0.0, 0.0, -2.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ -1.0, +1.0, -1.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ -1.0, -1.0, -1.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ -2.0, 0.0, 0.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ -1.0, 1.0, 1.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 0.0, -2.0, 0.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ -1.0, -1.0, 1.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 0.0, 0.0, 2.0 }) / std::sqrt(2.0),
-    rotation().transform_vector({ 1.0, -1.0, 1.0 }) / std::sqrt(2.0)
+    rotation() * vector3d({ 1.0, 1.0, 1.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 2.0, 0.0, 0.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 1.0, -1.0, -1.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 0.0, 2.0, 0.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 1.0, 1.0, -1.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 0.0, 0.0, -2.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ -1.0, +1.0, -1.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ -1.0, -1.0, -1.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ -2.0, 0.0, 0.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ -1.0, 1.0, 1.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 0.0, -2.0, 0.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ -1.0, -1.0, 1.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 0.0, 0.0, 2.0 }).transpose() / std::sqrt(2.0),
+    rotation() * vector3d({ 1.0, -1.0, 1.0 }).transpose() / std::sqrt(2.0)
   };
 
 TEST(rmt, face_edges) {

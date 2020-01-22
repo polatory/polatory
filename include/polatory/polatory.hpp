@@ -4,9 +4,9 @@
 
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/pi.hpp>
-#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/geometry/transformation.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/isosurface_2d.hpp>
