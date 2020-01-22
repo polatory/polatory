@@ -20,6 +20,9 @@ public:
     , poly_dimension_(poly_dimension)
     , poly_degree_(poly_degree)
     , nugget_(0.0) {
+    if (poly_dimension < 0 || poly_dimension > 3)
+      throw std::invalid_argument("poly_dimension must be within the range of 0 to 3.");
+
     if (poly_degree < rbf.cpd_order() - 1 || poly_degree > 2)
       throw std::invalid_argument("poly_degree must be within the range of rbf.cpd_order() - 1 to 2.");
   }
@@ -85,6 +88,9 @@ public:
   }
 
   void set_nugget(double nugget) {
+    if (nugget < 0.0)
+      throw std::invalid_argument("nugget must be greater than or equal to 0.0.");
+
     nugget_ = nugget;
   }
 

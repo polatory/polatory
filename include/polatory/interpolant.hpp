@@ -25,19 +25,29 @@ namespace polatory {
 class interpolant {
 public:
   explicit interpolant(model model)
-    : model_(std::move(model)) {
+    : model_(std::move(model))
+    , fitted_(false) {
   }
 
   const geometry::points3d& centers() const {
+    if (!fitted_)
+      throw std::runtime_error(kNotFittedErrorMessage);
+
     return centers_;
   }
 
   common::valuesd evaluate(const geometry::points3d& points) {
+    if (!fitted_)
+      throw std::runtime_error(kNotFittedErrorMessage);
+
     set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
     return evaluate_impl(points);
   }
 
   common::valuesd evaluate_impl(const geometry::points3d& points) const {
+    if (!fitted_)
+      throw std::runtime_error(kNotFittedErrorMessage);
+
     return evaluator_->evaluate(points);
   }
 
@@ -53,13 +63,14 @@ public:
     if (absolute_tolerance <= 0.0)
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
 
-    clear_centers();
+    clear();
 
     interpolation::rbf_fitter fitter(model_, points);
+    weights_ = fitter.fit(values, absolute_tolerance);
 
+    fitted_ = true;
     centers_ = points;
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
-    weights_ = fitter.fit(values, absolute_tolerance);
   }
 
   void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
@@ -77,13 +88,13 @@ public:
     if (absolute_tolerance <= 0.0)
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
 
-    clear_centers();
+    clear();
 
     interpolation::rbf_incremental_fitter fitter(model_, points);
-
     std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
 
+    fitted_ = true;
     centers_ = common::take_rows(points, center_indices);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
   }
@@ -110,18 +121,21 @@ public:
     if (absolute_tolerance <= 0.0)
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
 
-    clear_centers();
+    clear();
 
     interpolation::rbf_inequality_fitter fitter(model_, points);
-
     std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
+    fitted_ = true;
     centers_ = common::take_rows(points, center_indices);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
   }
 
   void set_evaluation_bbox_impl(const geometry::bbox3d& bbox) {
+    if (!fitted_)
+      throw std::runtime_error(kNotFittedErrorMessage);
+
     auto union_bbox = bbox.union_hull(centers_bbox_);
 
     evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(model_, centers_, union_bbox);
@@ -129,18 +143,25 @@ public:
   }
 
   const common::valuesd& weights() const {
+    if (!fitted_)
+      throw std::runtime_error(kNotFittedErrorMessage);
+
     return weights_;
   }
 
 private:
-  void clear_centers() {
+  void clear() {
+    fitted_ = false;
     centers_ = geometry::points3d();
     centers_bbox_ = geometry::bbox3d();
     weights_ = common::valuesd();
   }
 
+  static constexpr const char *kNotFittedErrorMessage = "The interpolant is not fitted yet.";
+
   const model model_;
 
+  bool fitted_;
   geometry::points3d centers_;
   geometry::bbox3d centers_bbox_;
   common::valuesd weights_;
