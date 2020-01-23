@@ -49,6 +49,7 @@ void test_clone(const std::vector<double>& params) {
   auto cloned = rbf.clone();
 
   ASSERT_EQ(rbf.parameters(), cloned->parameters());
+  ASSERT_EQ(rbf.anisotropy(), cloned->anisotropy());
   ASSERT_EQ(rbf.inverse_anisotropy(), cloned->inverse_anisotropy());
 }
 
