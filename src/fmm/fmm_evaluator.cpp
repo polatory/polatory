@@ -74,7 +74,7 @@ public:
     // Insert target particles.
     auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_fld_points_; idx++) {
-      geometry::point3d ap = geometry::transform_point(a, points.row(idx));
+      auto ap = geometry::transform_point(a, points.row(idx));
       tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeTarget, idx, 0.0);
     }
 
@@ -95,7 +95,7 @@ public:
     // Insert source particles.
     auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_src_points_; idx++) {
-      geometry::point3d ap = geometry::transform_point(a, points.row(idx));
+      auto ap = geometry::transform_point(a, points.row(idx));
       tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeSource, idx, 0.0);
     }
 
@@ -116,7 +116,7 @@ public:
     // Insert source particles.
     auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_src_points_; idx++) {
-      geometry::point3d ap = geometry::transform_point(a, points.row(idx));
+      auto ap = geometry::transform_point(a, points.row(idx));
       tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
     }
 

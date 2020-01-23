@@ -68,7 +68,7 @@ public:
     // Insert points.
     auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_points_; idx++) {
-      geometry::point3d ap = geometry::transform_point(a, points.row(idx));
+      auto ap = geometry::transform_point(a, points.row(idx));
       tree_->insert(FPoint<double>(ap.data()), idx, 0.0);
     }
 

@@ -48,8 +48,8 @@ void test_clone(const std::vector<double>& params) {
 
   auto cloned = rbf.clone();
 
-  ASSERT_EQ(rbf.parameters(), cloned->parameters());
   ASSERT_EQ(rbf.anisotropy(), cloned->anisotropy());
+  ASSERT_EQ(rbf.parameters(), cloned->parameters());
 }
 
 void test_gradient(const rbf_base& rbf) {
