@@ -28,7 +28,7 @@ public:
 
   vector3d size() const;
 
-  bbox3d transform(const Eigen::Matrix3d& m) const;
+  bbox3d transform(const linear_transformation3d& m) const;
 
   bbox3d union_hull(const bbox3d& other) const;
 

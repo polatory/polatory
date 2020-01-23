@@ -3,9 +3,10 @@
 #include <cmath>
 #include <random>
 
+#include <Eigen/Geometry>
 #include <gtest/gtest.h>
 
-#include <polatory/geometry/transformation.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
@@ -20,7 +21,7 @@
 
 #include "../random_anisotropy.hpp"
 
-using polatory::geometry::scaling;
+using polatory::geometry::to_linear_transformation3d;
 using polatory::geometry::vector3d;
 using polatory::rbf::biharmonic2d;
 using polatory::rbf::biharmonic3d;
@@ -43,7 +44,7 @@ double hypot(double x, double y, double z) {
 template <class T>
 void test_clone(const std::vector<double>& params) {
   T rbf(params);
-  rbf.set_anisotropy(scaling({ 1.0, 2.0, 3.0 }));
+  rbf.set_anisotropy(to_linear_transformation3d(Eigen::Scaling(1.0, 2.0, 3.0)));
 
   auto cloned = rbf.clone();
 

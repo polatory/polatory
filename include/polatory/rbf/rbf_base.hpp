@@ -20,7 +20,7 @@ public:
   rbf_base& operator=(const rbf_base&) = delete;
   rbf_base& operator=(rbf_base&&) = delete;
 
-  const Eigen::Matrix3d& anisotropy() const {
+  const geometry::linear_transformation3d& anisotropy() const {
     return aniso_;
   }
 
@@ -39,7 +39,7 @@ public:
 
   virtual double evaluate_untransformed(double r) const = 0;
 
-  const Eigen::Matrix3d& inverse_anisotropy() const {
+  const geometry::linear_transformation3d& inverse_anisotropy() const {
     return inv_aniso_;
   }
 
@@ -53,7 +53,7 @@ public:
     return params_;
   }
 
-  void set_anisotropy(const Eigen::Matrix3d& aniso) {
+  void set_anisotropy(const geometry::linear_transformation3d& aniso) {
     aniso_ = aniso;
     inv_aniso_ = aniso.inverse();
   }
@@ -67,16 +67,16 @@ public:
 
 protected:
   rbf_base()
-    : aniso_(Eigen::Matrix3d::Identity())
-    , inv_aniso_(Eigen::Matrix3d::Identity()) {
+    : aniso_(geometry::linear_transformation3d::Identity())
+    , inv_aniso_(geometry::linear_transformation3d::Identity()) {
   }
 
   rbf_base(const rbf_base&) = default;
 
 private:
   std::vector<double> params_;
-  Eigen::Matrix3d aniso_;
-  Eigen::Matrix3d inv_aniso_;
+  geometry::linear_transformation3d aniso_;
+  geometry::linear_transformation3d inv_aniso_;
 };
 
 }  // namespace rbf

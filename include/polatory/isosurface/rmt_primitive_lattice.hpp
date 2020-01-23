@@ -6,10 +6,12 @@
 #include <cmath>
 #include <stdexcept>
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 #include <polatory/common/pi.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/geometry/transformation.hpp>
 #include <polatory/isosurface/types.hpp>
 
 namespace polatory {
@@ -34,10 +36,10 @@ public:
 }  // namespace detail
 
 inline
-Eigen::Matrix3d rotation() {
-  return
-    geometry::rotation(-common::pi<double>() / 2.0, 2) *
-    geometry::rotation(-common::pi<double>() / 4.0, 1);
+geometry::linear_transformation3d rotation() {
+  return geometry::to_linear_transformation3d(
+    Eigen::AngleAxisd(-common::pi<double>() / 2.0, Eigen::Vector3d::UnitZ()) *
+    Eigen::AngleAxisd(-common::pi<double>() / 4.0, Eigen::Vector3d::UnitY()));
 }
 
 // Primitive vectors of the body-centered cubic lattice.
