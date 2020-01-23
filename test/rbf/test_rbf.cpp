@@ -3,7 +3,6 @@
 #include <cmath>
 #include <random>
 
-#include <Eigen/Geometry>
 #include <gtest/gtest.h>
 
 #include <polatory/geometry/point3d.hpp>
@@ -45,7 +44,7 @@ double hypot(double x, double y, double z) {
 template <class T>
 void test_clone(const std::vector<double>& params) {
   T rbf(params);
-  rbf.set_anisotropy(to_linear_transformation3d(Eigen::Scaling(1.0, 2.0, 3.0)));
+  rbf.set_anisotropy(random_anisotropy());
 
   auto cloned = rbf.clone();
 

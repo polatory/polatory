@@ -5,7 +5,6 @@
 #include <cmath>
 #include <random>
 
-#include <Eigen/Core>
 #include <Eigen/Geometry>
 
 #include <polatory/common/pi.hpp>

@@ -54,6 +54,9 @@ public:
   }
 
   void set_anisotropy(const geometry::linear_transformation3d& aniso) {
+    if (aniso.determinant() <= 0.0)
+      throw std::invalid_argument("aniso must have a positive determinant.");
+
     aniso_ = aniso;
     inv_aniso_ = aniso.inverse();
   }
