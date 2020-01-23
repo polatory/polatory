@@ -39,10 +39,6 @@ public:
 
   virtual double evaluate_untransformed(double r) const = 0;
 
-  const geometry::linear_transformation3d& inverse_anisotropy() const {
-    return inv_aniso_;
-  }
-
   virtual int num_parameters() const = 0;
 
   virtual const std::vector<double>& parameter_lower_bounds() const = 0;
@@ -58,7 +54,6 @@ public:
       throw std::invalid_argument("aniso must have a positive determinant.");
 
     aniso_ = aniso;
-    inv_aniso_ = aniso.inverse();
   }
 
   void set_parameters(const std::vector<double>& params) {
@@ -70,8 +65,7 @@ public:
 
 protected:
   rbf_base()
-    : aniso_(geometry::linear_transformation3d::Identity())
-    , inv_aniso_(geometry::linear_transformation3d::Identity()) {
+    : aniso_(geometry::linear_transformation3d::Identity()) {
   }
 
   rbf_base(const rbf_base&) = default;
@@ -79,7 +73,6 @@ protected:
 private:
   std::vector<double> params_;
   geometry::linear_transformation3d aniso_;
-  geometry::linear_transformation3d inv_aniso_;
 };
 
 }  // namespace rbf
