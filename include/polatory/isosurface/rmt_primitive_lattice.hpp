@@ -6,7 +6,6 @@
 #include <cmath>
 #include <stdexcept>
 
-#include <Eigen/Core>
 #include <Eigen/Geometry>
 
 #include <polatory/common/pi.hpp>
@@ -38,8 +37,8 @@ public:
 inline
 geometry::linear_transformation3d rotation() {
   return geometry::to_linear_transformation3d(
-    Eigen::AngleAxisd(-common::pi<double>() / 2.0, Eigen::Vector3d::UnitZ()) *
-    Eigen::AngleAxisd(-common::pi<double>() / 4.0, Eigen::Vector3d::UnitY()));
+    Eigen::AngleAxisd(-common::pi<double>() / 2.0, geometry::vector3d::UnitZ()) *
+    Eigen::AngleAxisd(-common::pi<double>() / 4.0, geometry::vector3d::UnitY()));
 }
 
 // Primitive vectors of the body-centered cubic lattice.

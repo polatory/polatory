@@ -19,6 +19,7 @@ using polatory::common::row_range;
 using polatory::geometry::bbox3d;
 using polatory::geometry::cuboid3d;
 using polatory::geometry::point3d;
+using polatory::geometry::transform_vector;
 using polatory::geometry::vector3d;
 using polatory::isosurface::bit_count;
 using polatory::isosurface::bit_pop;
@@ -38,20 +39,20 @@ using polatory::point_cloud::random_points;
 // Relative positions of neighbor nodes connected by each edge.
 std::array<vector3d, 14> NeighborVectors
   {
-    rotation() * vector3d({ 1.0, 1.0, 1.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 2.0, 0.0, 0.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 1.0, -1.0, -1.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 0.0, 2.0, 0.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 1.0, 1.0, -1.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 0.0, 0.0, -2.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ -1.0, +1.0, -1.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ -1.0, -1.0, -1.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ -2.0, 0.0, 0.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ -1.0, 1.0, 1.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 0.0, -2.0, 0.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ -1.0, -1.0, 1.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 0.0, 0.0, 2.0 }).transpose() / std::sqrt(2.0),
-    rotation() * vector3d({ 1.0, -1.0, 1.0 }).transpose() / std::sqrt(2.0)
+    transform_vector(rotation(), { 1.0, 1.0, 1.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 2.0, 0.0, 0.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 1.0, -1.0, -1.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 0.0, 2.0, 0.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 1.0, 1.0, -1.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 0.0, 0.0, -2.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { -1.0, +1.0, -1.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { -1.0, -1.0, -1.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { -2.0, 0.0, 0.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { -1.0, 1.0, 1.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 0.0, -2.0, 0.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { -1.0, -1.0, 1.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 0.0, 0.0, 2.0 }) / std::sqrt(2.0),
+    transform_vector(rotation(), { 1.0, -1.0, 1.0 }) / std::sqrt(2.0)
   };
 
 TEST(rmt, face_edges) {

@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 

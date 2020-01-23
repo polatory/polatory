@@ -21,7 +21,7 @@ polatory::geometry::linear_transformation3d random_anisotropy(seed_type seed = s
 
   return polatory::geometry::to_linear_transformation3d(
     Eigen::Scaling(std::pow(10.0, log_scale_dist(gen)), std::pow(10.0, log_scale_dist(gen)), std::pow(10.0, log_scale_dist(gen))) *
-    Eigen::AngleAxisd(angle_dist(gen), Eigen::Vector3d::UnitZ()) *
-    Eigen::AngleAxisd(angle_dist(gen), Eigen::Vector3d::UnitX()) *
-    Eigen::AngleAxisd(angle_dist(gen), Eigen::Vector3d::UnitZ()));
+    Eigen::AngleAxisd(angle_dist(gen), polatory::geometry::vector3d::UnitZ()) *
+    Eigen::AngleAxisd(angle_dist(gen), polatory::geometry::vector3d::UnitX()) *
+    Eigen::AngleAxisd(angle_dist(gen), polatory::geometry::vector3d::UnitZ()));
 }

@@ -46,16 +46,16 @@ vector3d bbox3d::size() const {
   return max_ - min_;
 }
 
-bbox3d bbox3d::transform(const linear_transformation3d& m) const {
+bbox3d bbox3d::transform(const linear_transformation3d& t) const {
   point3d c = center();
   vector3d v1 = point3d(min_(0), max_(1), max_(2)) - c;
   vector3d v2 = point3d(max_(0), min_(1), max_(2)) - c;
   vector3d v3 = point3d(max_(0), max_(1), min_(2)) - c;
 
-  c = m * c.transpose();
-  v1 = m * v1.transpose();
-  v2 = m * v2.transpose();
-  v3 = m * v3.transpose();
+  c = transform_point(t, c);
+  v1 = transform_vector(t, v1);
+  v2 = transform_vector(t, v2);
+  v3 = transform_vector(t, v3);
 
   vectors3d vertices(8, 3);
   vertices.row(0) = -v1 - v2 - v3;  // min, min, min

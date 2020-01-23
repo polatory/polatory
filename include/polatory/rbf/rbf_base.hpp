@@ -30,7 +30,7 @@ public:
   virtual int cpd_order() const = 0;
 
   double evaluate(const geometry::vectors3d& v) const {
-    return evaluate_untransformed((aniso_ * v.transpose()).norm());
+    return evaluate_untransformed(geometry::transform_vector(aniso_, v).norm());
   }
 
   virtual void evaluate_gradient_untransformed(
