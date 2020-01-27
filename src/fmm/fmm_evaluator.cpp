@@ -35,10 +35,10 @@ public:
     , rbf_kernel_(model.rbf())
     , n_src_points_(0)
     , n_fld_points_(0) {
-    auto ti_bbox = bbox.transform(model.rbf().inverse_transformation());
-    auto width = (1.0 + 1.0 / 64.0) * ti_bbox.size().maxCoeff();
+    auto a_bbox = bbox.transform(model.rbf().anisotropy());
+    auto width = (1.0 + 1.0 / 64.0) * a_bbox.size().maxCoeff();
     if (width == 0.0) width = 1.0;
-    auto center = ti_bbox.center();
+    auto center = a_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
       tree_height, width, FPoint<double>(center.data()), &rbf_kernel_);
@@ -72,10 +72,10 @@ public:
     });
 
     // Insert target particles.
-    auto ti = model_.rbf().inverse_transformation();
+    auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_fld_points_; idx++) {
-      auto ti_p = ti.transform_point(points.row(idx));
-      tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeTarget, idx, 0.0);
+      auto ap = geometry::transform_point(a, points.row(idx));
+      tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeTarget, idx, 0.0);
     }
 
     fmm_->updateTargetCells();
@@ -93,10 +93,10 @@ public:
     });
 
     // Insert source particles.
-    auto ti = model_.rbf().inverse_transformation();
+    auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_src_points_; idx++) {
-      auto ti_p = ti.transform_point(points.row(idx));
-      tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeSource, idx, 0.0);
+      auto ap = geometry::transform_point(a, points.row(idx));
+      tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeSource, idx, 0.0);
     }
 
     update_weight_ptrs();
@@ -114,10 +114,10 @@ public:
     });
 
     // Insert source particles.
-    auto ti = model_.rbf().inverse_transformation();
+    auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_src_points_; idx++) {
-      auto ti_p = ti.transform_point(points.row(idx));
-      tree_->insert(FPoint<double>(ti_p.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
+      auto ap = geometry::transform_point(a, points.row(idx));
+      tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
     }
 
     tree_->forEachCell([&](Cell* cell) {

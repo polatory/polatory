@@ -11,7 +11,7 @@
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/types.hpp>
 
-#include "random_transformation.hpp"
+#include "../random_anisotropy.hpp"
 #include "sample_data.hpp"
 
 using polatory::common::valuesd;
@@ -36,7 +36,7 @@ void test_poly_degree(int poly_degree) {
   auto n_points = static_cast<index_t>(points.rows());
 
   biharmonic3d rbf({ 1.0 });
-  rbf.set_transformation(random_transformation());
+  rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, poly_dimension, poly_degree);
   model.set_nugget(0.01);

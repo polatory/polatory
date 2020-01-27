@@ -14,18 +14,18 @@ namespace detail {
 #pragma warning(disable : 4297)  // 'function' : function assumed not to throw an exception but does
 #endif
 lattice_vectors::lattice_vectors() noexcept try : base{ {
-  rotation().transform_vector({ 1.0, 1.0, -1.0 }) / std::sqrt(2.0),
-  rotation().transform_vector({ 1.0, -1.0, 1.0 }) / std::sqrt(2.0),
-  rotation().transform_vector({ -1.0, 1.0, 1.0 }) / std::sqrt(2.0)
+  geometry::transform_vector(rotation(), { 1.0, 1.0, -1.0 }) / std::sqrt(2.0),
+  geometry::transform_vector(rotation(), { 1.0, -1.0, 1.0 }) / std::sqrt(2.0),
+  geometry::transform_vector(rotation(), { -1.0, 1.0, 1.0 }) / std::sqrt(2.0)
 } } {
 } catch (const std::exception&) {
   std::terminate();
 }
 
 dual_lattice_vectors::dual_lattice_vectors() noexcept try : base{ {
-  rotation().transform_vector({ 1.0, 1.0, 0.0 }) / std::sqrt(2.0),
-  rotation().transform_vector({ 1.0, 0.0, 1.0 }) / std::sqrt(2.0),
-  rotation().transform_vector({ 0.0, 1.0, 1.0 }) / std::sqrt(2.0)
+  geometry::transform_vector(rotation(), { 1.0, 1.0, 0.0 }) / std::sqrt(2.0),
+  geometry::transform_vector(rotation(), { 1.0, 0.0, 1.0 }) / std::sqrt(2.0),
+  geometry::transform_vector(rotation(), { 0.0, 1.0, 1.0 }) / std::sqrt(2.0)
 } } {
 } catch (const std::exception&) {
   std::terminate();

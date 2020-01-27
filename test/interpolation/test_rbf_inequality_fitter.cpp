@@ -16,7 +16,7 @@
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/types.hpp>
 
-#include "random_transformation.hpp"
+#include "../random_anisotropy.hpp"
 #include "sample_data.hpp"
 
 using polatory::common::take_rows;
@@ -44,7 +44,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
   biharmonic3d rbf({ 1.0 });
-  rbf.set_transformation(random_transformation());
+  rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, poly_dimension, poly_degree);
 

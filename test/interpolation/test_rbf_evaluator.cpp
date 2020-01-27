@@ -10,7 +10,7 @@
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/types.hpp>
 
-#include "random_transformation.hpp"
+#include "../random_anisotropy.hpp"
 
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
@@ -27,7 +27,7 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) 
   auto absolute_tolerance = 2e-6;
 
   cov_exponential rbf({ 1.0, 0.2 });
-  rbf.set_transformation(random_transformation());
+  rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, 3, poly_degree);
 

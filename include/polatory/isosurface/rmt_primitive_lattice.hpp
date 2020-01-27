@@ -6,8 +6,9 @@
 #include <cmath>
 #include <stdexcept>
 
+#include <Eigen/Geometry>
+
 #include <polatory/common/pi.hpp>
-#include <polatory/geometry/affine_transformation3d.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -33,10 +34,11 @@ public:
 
 }  // namespace detail
 
-// RotationMatrix[-Pi/2, {0, 0, 1}].RotationMatrix[-Pi/4, {0, 1, 0}]
 inline
-geometry::affine_transformation3d rotation() {
-  return geometry::affine_transformation3d::roll_pitch_yaw({ -common::pi<double>() / 2.0, 0.0, -common::pi<double>() / 4.0 });
+geometry::linear_transformation3d rotation() {
+  return geometry::to_linear_transformation3d(
+    Eigen::AngleAxisd(-common::pi<double>() / 2.0, geometry::vector3d::UnitZ()) *
+    Eigen::AngleAxisd(-common::pi<double>() / 4.0, geometry::vector3d::UnitY()));
 }
 
 // Primitive vectors of the body-centered cubic lattice.
