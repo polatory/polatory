@@ -6,8 +6,9 @@
 
 [![Travis CI](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/andjvgjr58axrbe0/branch/master?svg=true)](https://ci.appveyor.com/project/mizuno-gsinet/polatory/branch/master)
+[![Read the Docs](https://readthedocs.org/projects/polatory/badge/?version=latest)](https://polatory.readthedocs.io/en/latest/?badge=latest)
 
-Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co. Ltd.](http://gsinet.co.jp/)
+Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co., Ltd.](http://gsinet.co.jp/)
 
 NOTE: This is a pre-release version. APIs subject to change without notice.
 
@@ -20,7 +21,7 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 * Meshing isosurfaces
 * Supports large number (millions) of input points
 * Supports inequality constraints
-* [List of available RBFs](docs/rbf.ipynb)
+* [List of available RBFs](https://polatory.readthedocs.io/en/latest/rbfs.html)
 
 ### Platforms
 
@@ -47,7 +48,7 @@ Polatory can perform kriging prediction via RBF interpolation (dual kriging). Al
 | Weights                                      | (Not computed) Cardinal basis functions           |
 | Kriging variance                             | (Not computed)                                    |
 
-A limited number of covariance functions are supported. See [List of available RBFs](docs/rbf.ipynb) for details.
+A limited number of covariance functions are supported. See the [list of available RBFs](https://polatory.readthedocs.io/en/latest/rbfs.html) for details.
 
 ## License
 

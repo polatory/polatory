@@ -22,9 +22,9 @@
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/rbf/cov_quasi_spherical3.hpp>
-#include <polatory/rbf/cov_quasi_spherical5.hpp>
-#include <polatory/rbf/cov_quasi_spherical7.hpp>
-#include <polatory/rbf/cov_quasi_spherical9.hpp>
+#include <polatory/rbf/cov_spheroidal3.hpp>
+#include <polatory/rbf/cov_spheroidal5.hpp>
+#include <polatory/rbf/cov_spheroidal7.hpp>
+#include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/table.hpp>
 #include <polatory/types.hpp>
