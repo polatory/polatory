@@ -11,25 +11,25 @@
 namespace polatory {
 namespace rbf {
 
-class cov_quasi_spherical9 final : public covariance_function_base {
+class cov_spheroidal3 final : public covariance_function_base {
 public:
   using covariance_function_base::covariance_function_base;
 
-  explicit cov_quasi_spherical9(const std::vector<double>& params) {
+  explicit cov_spheroidal3(const std::vector<double>& params) {
     set_parameters(params);
   }
 
   std::unique_ptr<rbf_base> clone() const override {
-    return std::make_unique<cov_quasi_spherical9>(*this);
+    return std::make_unique<cov_spheroidal3>(*this);
   }
 
   static double evaluate_untransformed(double r, const double *params) {
     auto psill = params[0];
     auto range = params[1];
 
-    return r < 0.3211688011376158 * range
-           ? psill * (1.0 - 1.4011323590773752 * r / range)
-           : psill * 0.9710239190254878 * std::pow(1.031493988241734 + std::pow(r / range, 2.0), -4.5);
+    return r < 0.18657871684006438 * range
+           ? psill * (1.0 - 2.0098755439584821 * r / range)
+           : psill * 0.87346405371085535 * std::pow(1.0 + 7.1815105816931630 * std::pow(r / range, 2.0), -1.5);
   }
 
   double evaluate_untransformed(double r) const override {
@@ -42,9 +42,9 @@ public:
     auto psill = parameters()[0];
     auto range = parameters()[1];
 
-    auto c = r < 0.3211688011376158 * range
-             ? -psill * 1.4011323590773752 / (range * r)
-             : -psill * 8.73921527122939 * std::pow(1.031493988241734 + std::pow(r / range, 2.0), -5.5) / (range * range);
+    auto c = r < 0.18657871684006438 * range
+             ? -psill * 2.0098755439584821 / (range * r)
+             : -psill * 18.818374033359339 * std::pow(1.0 + 7.1815105816931630 * std::pow(r / range, 2.0), -2.5) / (range * range);
     *gradx = c * x;
     *grady = c * y;
     *gradz = c * z;

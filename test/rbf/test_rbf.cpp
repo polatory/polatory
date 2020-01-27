@@ -9,10 +9,10 @@
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/rbf/cov_quasi_spherical3.hpp>
-#include <polatory/rbf/cov_quasi_spherical5.hpp>
-#include <polatory/rbf/cov_quasi_spherical7.hpp>
-#include <polatory/rbf/cov_quasi_spherical9.hpp>
+#include <polatory/rbf/cov_spheroidal3.hpp>
+#include <polatory/rbf/cov_spheroidal5.hpp>
+#include <polatory/rbf/cov_spheroidal7.hpp>
+#include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/cov_spherical.hpp>
@@ -26,10 +26,10 @@ using polatory::geometry::vector3d;
 using polatory::rbf::biharmonic2d;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
-using polatory::rbf::cov_quasi_spherical3;
-using polatory::rbf::cov_quasi_spherical5;
-using polatory::rbf::cov_quasi_spherical7;
-using polatory::rbf::cov_quasi_spherical9;
+using polatory::rbf::cov_spheroidal3;
+using polatory::rbf::cov_spheroidal5;
+using polatory::rbf::cov_spheroidal7;
+using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::rbf_base;
 using polatory::rbf::reference::cov_gaussian;
 using polatory::rbf::reference::cov_spherical;
@@ -107,10 +107,10 @@ TEST(rbf, clone) {
   test_clone<biharmonic2d>({ 1.0 });
   test_clone<biharmonic3d>({ 1.0 });
   test_clone<cov_exponential>({ 1.0, 1.0 });
-  test_clone<cov_quasi_spherical3>({ 1.0, 1.0 });
-  test_clone<cov_quasi_spherical5>({ 1.0, 1.0 });
-  test_clone<cov_quasi_spherical7>({ 1.0, 1.0 });
-  test_clone<cov_quasi_spherical9>({ 1.0, 1.0 });
+  test_clone<cov_spheroidal3>({ 1.0, 1.0 });
+  test_clone<cov_spheroidal5>({ 1.0, 1.0 });
+  test_clone<cov_spheroidal7>({ 1.0, 1.0 });
+  test_clone<cov_spheroidal9>({ 1.0, 1.0 });
 
   test_clone<cov_gaussian>({ 1.0, 1.0 });
   test_clone<cov_spherical>({ 1.0, 1.0 });
@@ -121,10 +121,10 @@ TEST(rbf, gradient) {
   test_gradient(biharmonic2d({ 1.0 }));
   test_gradient(biharmonic3d({ 1.0 }));
   test_gradient(cov_exponential({ 1.0, 1.0 }));
-  test_gradient(cov_quasi_spherical3({ 1.0, 1.0 }));
-  test_gradient(cov_quasi_spherical5({ 1.0, 1.0 }));
-  test_gradient(cov_quasi_spherical7({ 1.0, 1.0 }));
-  test_gradient(cov_quasi_spherical9({ 1.0, 1.0 }));
+  test_gradient(cov_spheroidal3({ 1.0, 1.0 }));
+  test_gradient(cov_spheroidal5({ 1.0, 1.0 }));
+  test_gradient(cov_spheroidal7({ 1.0, 1.0 }));
+  test_gradient(cov_spheroidal9({ 1.0, 1.0 }));
 
   test_gradient(cov_gaussian({ 1.0, 1.0 }));
   test_gradient(cov_spherical({ 1.0, 1.0 }));
