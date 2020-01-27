@@ -10,8 +10,8 @@
 
 struct options {
   std::string in_file;
-  double bin_width;
-  int n_bins;
+  int knn;
+  double min_plane_factor;
   std::string out_file;
 };
 
@@ -25,16 +25,16 @@ options parse_options(int argc, const char *argv[]) {
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required()
       ->value_name("<file>"),
-     "Input file in x,y,z,value format")
-    ("bin-width", po::value<double>(&opts.bin_width)->required()
+     "Input file in x,y,z format")
+    ("knn", po::value<int>(&opts.knn)->default_value(20)
       ->value_name("<value>"),
-     "Bin width of the empirical variogram")
-    ("n-bins", po::value<int>(&opts.n_bins)->default_value(15)
+     "Number of points in k-NN search")
+    ("min-plane-factor", po::value<double>(&opts.min_plane_factor)->default_value(1.8)
       ->value_name("<value>"),
-     "Number of bins in the empirical variogram")
+     "Threshold of acceptance for estimated normal vectors")
     ("out", po::value<std::string>(&opts.out_file)
       ->value_name("<file>"),
-     "Output file for use in kriging_fit");
+     "Output file in x,y,z,value format");
 
   po::variables_map vm;
   try {

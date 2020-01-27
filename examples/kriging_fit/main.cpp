@@ -11,7 +11,6 @@
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
 using polatory::model;
-using polatory::rbf::cov_spheroidal9;
 
 int main(int argc, const char *argv[]) {
   try {
@@ -21,7 +20,8 @@ int main(int argc, const char *argv[]) {
     empirical_variogram emp_variog(opts.in_file);
 
     // Define the model.
-    model model(cov_spheroidal9({ opts.psill, opts.range }), -1, -1);
+    auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
+    model model(*rbf, -1, -1);
     model.set_nugget(opts.nugget);
 
     // Fit model parameters.

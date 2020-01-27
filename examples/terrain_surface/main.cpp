@@ -13,11 +13,10 @@ using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolant;
-using polatory::isosurface::isosurface_2d;
-using polatory::isosurface::rbf_field_function;
+using polatory::isosurface::isosurface;
+using polatory::isosurface::rbf_field_function_25d;
 using polatory::model;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::biharmonic3d;
 using polatory::read_table;
 using polatory::tabled;
 
@@ -25,32 +24,30 @@ int main(int argc, const char *argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
-    // Load points (x,y,0), values (z), value lower bounds (z_lb) and value upper bounds (z_ub).
+    // Load points (x,y,0) and values (z).
     tabled table = read_table(opts.in_file);
     points3d points = concatenate_cols(take_cols(table, 0, 1), valuesd::Zero(table.rows()));
     valuesd values = table.col(2);
-    valuesd values_lb = table.col(3);
-    valuesd values_ub = table.col(4);
 
     // Remove very close points.
-    std::tie(points, values, values_lb, values_ub) = distance_filter(points, opts.min_distance)
-      .filtered(points, values, values_lb, values_ub);
+    std::tie(points, values) = distance_filter(points, opts.min_distance)
+      .filtered(points, values);
 
     // Define the model.
-    model model(biharmonic3d({ 1.0 }), opts.poly_dimension, opts.poly_degree);
+    auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
+    model model(*rbf, 2, opts.poly_degree);
     model.set_nugget(opts.smooth);
 
     // Fit.
     interpolant interpolant(model);
-    interpolant.fit_inequality(points, values, values_lb, values_ub, opts.absolute_tolerance);
-    std::cout << "Number of RBF centers: " << interpolant.centers().rows() << std::endl;
+    interpolant.fit(points, values, opts.absolute_tolerance);
 
     // Generate the isosurface.
-    isosurface_2d isosurf(opts.mesh_bbox, opts.mesh_resolution);
-    rbf_field_function field_fn(interpolant);
+    isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
+    rbf_field_function_25d field_fn(interpolant);
 
     points.col(2) = values;
-    isosurf.generate(field_fn)
+    isosurf.generate_from_seed_points(points, field_fn)
       .export_obj(opts.mesh_file);
 
     return 0;
