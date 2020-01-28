@@ -15,7 +15,7 @@
 namespace Eigen {
 
 inline
-void validate(boost::any& v, const std::vector<std::string>& values,
+void validate(boost::any& v, const std::vector<std::string>& values,  // NOLINT(runtime/references)
   polatory::geometry::linear_transformation3d*, int) {
   namespace po = boost::program_options;
 
@@ -44,7 +44,7 @@ namespace polatory {
 namespace geometry {
 
 inline
-void validate(boost::any& v, const std::vector<std::string>& values,
+void validate(boost::any& v, const std::vector<std::string>& values,  // NOLINT(runtime/references)
   bbox3d*, int) {
   namespace po = boost::program_options;
 
