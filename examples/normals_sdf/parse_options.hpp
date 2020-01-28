@@ -10,8 +10,9 @@
 
 struct options {
   std::string in_file;
-  double bin_width;
-  int n_bins;
+  double min_offset;
+  double max_offset;
+  double sdf_multiplication;
   std::string out_file;
 };
 
@@ -25,16 +26,19 @@ options parse_options(int argc, const char *argv[]) {
   opts_desc.add_options()
     ("in", po::value(&opts.in_file)->required()
       ->value_name("FILE"),
-     "Input file in CSV format:\n  X,Y,Z,VAL")
-    ("bin-width", po::value(&opts.bin_width)->required()
+     "Input file in CSV format:\n  X,Y,Z,NX,NY,NZ")
+    ("min-offset", po::value(&opts.min_offset)->default_value(0.0, "0.")
       ->value_name("VAL"),
-     "Bin width of the empirical variogram")
-    ("n-bins", po::value(&opts.n_bins)->default_value(15)
+     "Minimum offset distance of off-surface points")
+    ("offset", po::value(&opts.max_offset)->required()
       ->value_name("VAL"),
-     "Number of bins in the empirical variogram")
+     "Default offset distance of off-surface points, the average distance between adjacent points is a reasonable choice")
+    ("mult", po::value(&opts.sdf_multiplication)->default_value(2.0, "2.")
+      ->value_name("1.-3."),
+     "Multiplication factor of sdf data")
     ("out", po::value(&opts.out_file)
       ->value_name("FILE"),
-     "Output file for use in kriging_fit");
+     "Output file in CSV format:\n  X,Y,Z,VAL");
 
   po::variables_map vm;
   try {

@@ -1,9 +1,8 @@
-find_package(Boost 1.67.0 REQUIRED COMPONENTS program_options)
+set(TARGET terrain_normals)
 
-set(TARGET terrain_25d)
-
-file(GLOB_RECURSE SOURCES "*.cpp")
-add_executable(${TARGET} ${SOURCES})
+add_executable(${TARGET}
+    main.cpp
+)
 
 target_link_libraries(${TARGET} PRIVATE
     ${Boost_LIBRARIES}

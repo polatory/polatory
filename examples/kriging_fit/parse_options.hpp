@@ -6,15 +6,18 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
-
 #include <polatory/polatory.hpp>
+
+#include "../common/common.hpp"
 
 struct options {
   std::string in_file;
-  double psill;
-  double range;
+  std::string rbf_name;
+  std::vector<double> rbf_params;
   double nugget;
   polatory::kriging::weight_function weight_fn;
 };
@@ -24,26 +27,29 @@ options parse_options(int argc, const char *argv[]) {
   namespace po = boost::program_options;
 
   options opts;
+  std::vector<std::string> rbf_vec;
   int weights;
 
-  po::options_description opts_desc("");
+  po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()
-    ("in", po::value<std::string>(&opts.in_file)->required(),
-     "Input file (output file of kriging_variogram)")
-    ("psill", po::value<double>(&opts.psill)->required(),
-     "Initial value of the partial sill")
-    ("range", po::value<double>(&opts.range)->required(),
-     "Initial value of the range")
-    ("nugget", po::value<double>(&opts.nugget)->default_value(0),
+    ("in", po::value(&opts.in_file)->required()
+      ->value_name("FILE"),
+     "Input file (an output file from kriging_variogram)")
+    ("rbf", po::value(&rbf_vec)->multitoken()->required()
+      ->value_name("..."),
+     cov_list)
+    ("nugget", po::value(&opts.nugget)->default_value(0, "0.")
+      ->value_name("VAL"),
      "Initial value of the nugget")
-    ("weights", po::value<int>(&weights)->default_value(1),
-     "Weight function for least squares fitting, one of\n"
-       "  0: N_j\n"
-       "  1: N_j / h_j^2\n"
-       "  2: N_j / (\\gamma(h_j))^2\n"
-       "  3: 1\n"
-       "  4: 1 / h_j^2\n"
-       "  5: 1 / (\\gamma(h_j))^2");
+    ("weights", po::value(&weights)->default_value(1)
+      ->value_name("0-5"),
+     R"(Weight function for least squares fitting, one of
+  0: N_j
+  1: N_j / h_j^2
+  2: N_j / (\\gamma(h_j))^2
+  3: 1
+  4: 1 / h_j^2
+  5: 1 / (\\gamma(h_j))^2)");
 
   po::variables_map vm;
   try {
@@ -54,6 +60,11 @@ options parse_options(int argc, const char *argv[]) {
               << "Usage: " << argv[0] << " [OPTION]..." << std::endl
               << opts_desc;
     throw;
+  }
+
+  opts.rbf_name = rbf_vec[0];
+  for (size_t i = 1; i < rbf_vec.size(); i++) {
+    opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec[i]));
   }
 
   switch (weights) {

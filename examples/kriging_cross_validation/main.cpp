@@ -16,7 +16,6 @@ using polatory::geometry::points3d;
 using polatory::kriging::k_fold_cross_validation;
 using polatory::model;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::cov_spheroidal9;
 using polatory::read_table;
 using polatory::tabled;
 
@@ -34,7 +33,9 @@ int main(int argc, const char *argv[]) {
       .filtered(points, values);
 
     // Define the model.
-    model model(cov_spheroidal9({ opts.psill, opts.range }), opts.poly_dimension, opts.poly_degree);
+    auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
+    rbf->set_anisotropy(opts.aniso);
+    model model(*rbf, opts.poly_dimension, opts.poly_degree);
     model.set_nugget(opts.nugget);
 
     // Run the cross validation.
