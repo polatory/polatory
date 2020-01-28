@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <boost/program_options.hpp>
 #include <polatory/polatory.hpp>
