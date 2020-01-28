@@ -80,7 +80,7 @@ options parse_options(int argc, const char *argv[]) {
   }
 
   if (aniso_vec.size() != 9)
-    std::runtime_error("9 arguments must be given to --aniso.");
+    throw std::runtime_error("9 arguments must be given to --aniso.");
 
   opts.aniso = polatory::geometry::linear_transformation3d(aniso_vec.data());
 

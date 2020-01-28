@@ -81,7 +81,7 @@ options parse_options(int argc, const char *argv[]) {
   }
 
   if (bbox_vec.size() != 6)
-    std::runtime_error("6 arguments must be given to --mesh-bbox.");
+    throw std::runtime_error("6 arguments must be given to --mesh-bbox.");
 
   opts.mesh_bbox = polatory::geometry::bbox3d(
     { bbox_vec[0], bbox_vec[1], bbox_vec[2] },
