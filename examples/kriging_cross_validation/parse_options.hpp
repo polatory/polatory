@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 
 #include "../common/common.hpp"
@@ -31,35 +32,34 @@ options parse_options(int argc, const char *argv[]) {
 
   options opts;
   std::vector<std::string> rbf_vec;
-  std::vector<double> aniso_vec;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()
-    ("in", po::value<std::string>(&opts.in_file)->required()
+    ("in", po::value(&opts.in_file)->required()
       ->value_name("FILE"),
      "Input file in CSV format:\n  X,Y,Z,VAL")
-    ("min-dist", po::value<double>(&opts.min_distance)->default_value(1e-10)
+    ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)
       ->value_name("VAL"),
      "Minimum separation distance of input points")
-    ("rbf", po::value<std::vector<std::string>>(&rbf_vec)->multitoken()->required()
+    ("rbf", po::value(&rbf_vec)->multitoken()->required()
       ->value_name("..."),
      rbf_cov_list)
-    ("aniso", po::value<std::vector<double>>(&aniso_vec)->multitoken()->default_value({ 1, 0, 0, 0, 1, 0, 0, 0, 1 }, "1. 0. 0. 0. 1. 0. 0. 0. 1.")
+    ("aniso", po::value(&opts.aniso)->multitoken()->default_value(polatory::geometry::linear_transformation3d::Identity(), "1. 0. 0. 0. 1. 0. 0. 0. 1.")
       ->value_name("A11 A12 A13 A21 A22 A23 A31 A32 A33"),
      "Elements of the anisotropy matrix")
-    ("nugget", po::value<double>(&opts.nugget)->default_value(0.0, "0.")
+    ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")
       ->value_name("VAL"),
      "Nugget of the model")
-    ("dim", po::value<int>(&opts.poly_dimension)->default_value(3)
+    ("dim", po::value(&opts.poly_dimension)->default_value(3)
       ->value_name("1|2|3"),
      "Dimension of the drift polynomial")
-    ("deg", po::value<int>(&opts.poly_degree)->default_value(0)
+    ("deg", po::value(&opts.poly_degree)->default_value(0)
       ->value_name("-1|0|1|2"),
      "Degree of the drift polynomial")
-    ("tol", po::value<double>(&opts.absolute_tolerance)->required()
+    ("tol", po::value(&opts.absolute_tolerance)->required()
       ->value_name("VAL"),
      "Absolute tolerance of fitting")
-    ("k", po::value<int>(&opts.k)->default_value(5)
+    ("k", po::value(&opts.k)->default_value(5)
       ->value_name("K"),
      "Number of folds in the cross-validation");
 
@@ -76,13 +76,8 @@ options parse_options(int argc, const char *argv[]) {
 
   opts.rbf_name = rbf_vec[0];
   for (size_t i = 1; i < rbf_vec.size(); i++) {
-    opts.rbf_params.push_back(std::stod(rbf_vec[i]));
+    opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec[i]));
   }
-
-  if (aniso_vec.size() != 9)
-    throw std::runtime_error("9 arguments must be given to --aniso.");
-
-  opts.aniso = polatory::geometry::linear_transformation3d(aniso_vec.data());
 
   return opts;
 }

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <polatory/polatory.hpp>
 
@@ -31,16 +32,16 @@ options parse_options(int argc, const char *argv[]) {
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()
-    ("in", po::value<std::string>(&opts.in_file)->required()
+    ("in", po::value(&opts.in_file)->required()
       ->value_name("FILE"),
      "Input file (an output file from kriging_variogram)")
-    ("rbf", po::value<std::vector<std::string>>(&rbf_vec)->multitoken()->required()
+    ("rbf", po::value(&rbf_vec)->multitoken()->required()
       ->value_name("..."),
      cov_list)
-    ("nugget", po::value<double>(&opts.nugget)->default_value(0, "0.")
+    ("nugget", po::value(&opts.nugget)->default_value(0, "0.")
       ->value_name("VAL"),
      "Initial value of the nugget")
-    ("weights", po::value<int>(&weights)->default_value(1)
+    ("weights", po::value(&weights)->default_value(1)
       ->value_name("0-5"),
      R"(Weight function for least squares fitting, one of
   0: N_j
@@ -63,7 +64,7 @@ options parse_options(int argc, const char *argv[]) {
 
   opts.rbf_name = rbf_vec[0];
   for (size_t i = 1; i < rbf_vec.size(); i++) {
-    opts.rbf_params.push_back(std::stod(rbf_vec[i]));
+    opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec[i]));
   }
 
   switch (weights) {

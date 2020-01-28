@@ -24,19 +24,19 @@ options parse_options(int argc, const char *argv[]) {
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()
-    ("in", po::value<std::string>(&opts.in_file)->required()
+    ("in", po::value(&opts.in_file)->required()
       ->value_name("FILE"),
      "Input file in CSV format:\n  X,Y,Z,NX,NY,NZ")
-    ("min-offset", po::value<double>(&opts.min_offset)->default_value(0.0, "0.")
+    ("min-offset", po::value(&opts.min_offset)->default_value(0.0, "0.")
       ->value_name("VAL"),
      "Minimum offset distance of off-surface points")
-    ("offset", po::value<double>(&opts.max_offset)->required()
+    ("offset", po::value(&opts.max_offset)->required()
       ->value_name("VAL"),
      "Default offset distance of off-surface points, the average distance between adjacent points is a reasonable choice")
-    ("mult", po::value<double>(&opts.sdf_multiplication)->default_value(2.0, "2.")
+    ("mult", po::value(&opts.sdf_multiplication)->default_value(2.0, "2.")
       ->value_name("1.-3."),
      "Multiplication factor of sdf data")
-    ("out", po::value<std::string>(&opts.out_file)
+    ("out", po::value(&opts.out_file)
       ->value_name("FILE"),
      "Output file in CSV format:\n  X,Y,Z,VAL");
 
