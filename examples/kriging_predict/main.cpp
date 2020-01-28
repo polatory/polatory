@@ -34,6 +34,7 @@ int main(int argc, const char *argv[]) {
 
     // Define the model.
     auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
+    rbf->set_anisotropy(opts.aniso);
     model model(*rbf, opts.poly_dimension, opts.poly_degree);
     model.set_nugget(opts.nugget);
 

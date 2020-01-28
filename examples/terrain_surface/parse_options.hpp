@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -79,10 +80,12 @@ options parse_options(int argc, const char *argv[]) {
     opts.rbf_params.push_back(std::stod(rbf_vec[i]));
   }
 
+  if (bbox_vec.size() != 6)
+    std::runtime_error("6 arguments must be given to --mesh-bbox.");
+
   opts.mesh_bbox = polatory::geometry::bbox3d(
     { bbox_vec[0], bbox_vec[1], bbox_vec[2] },
-    { bbox_vec[3], bbox_vec[4], bbox_vec[5] }
-  );
+    { bbox_vec[3], bbox_vec[4], bbox_vec[5] });
 
   return opts;
 }

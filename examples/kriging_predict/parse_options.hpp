@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,6 +19,7 @@ struct options {
   double min_distance;
   std::string rbf_name;
   std::vector<double> rbf_params;
+  polatory::geometry::linear_transformation3d aniso;
   double nugget;
   int poly_dimension;
   int poly_degree;
@@ -33,6 +35,7 @@ options parse_options(int argc, const char *argv[]) {
 
   options opts;
   std::vector<std::string> rbf_vec;
+  std::vector<double> aniso_vec;
   std::vector<double> bbox_vec;
   std::vector<double> mesh_vals_vec;
   std::vector<std::string> mesh_files_vec;
@@ -48,6 +51,9 @@ options parse_options(int argc, const char *argv[]) {
     ("rbf", po::value<std::vector<std::string>>(&rbf_vec)->multitoken()->required()
       ->value_name("..."),
      rbf_cov_list)
+    ("aniso", po::value<std::vector<double>>(&aniso_vec)->multitoken()->default_value({ 1, 0, 0, 0, 1, 0, 0, 0, 1 }, "1. 0. 0. 0. 1. 0. 0. 0. 1.")
+      ->value_name("A11 A12 A13 A21 A22 A23 A31 A32 A33"),
+     "Elements of the anisotropy matrix")
     ("nugget", po::value<double>(&opts.nugget)->default_value(0, "0.")
       ->value_name("VAL"),
      "Nugget of the model")
@@ -89,10 +95,17 @@ options parse_options(int argc, const char *argv[]) {
     opts.rbf_params.push_back(std::stod(rbf_vec[i]));
   }
 
+  if (aniso_vec.size() != 9)
+    std::runtime_error("9 arguments must be given to --aniso.");
+
+  opts.aniso = polatory::geometry::linear_transformation3d(aniso_vec.data());
+
+  if (bbox_vec.size() != 6)
+    std::runtime_error("6 arguments must be given to --mesh-bbox.");
+
   opts.mesh_bbox = polatory::geometry::bbox3d(
     { bbox_vec[0], bbox_vec[1], bbox_vec[2] },
-    { bbox_vec[3], bbox_vec[4], bbox_vec[5] }
-  );
+    { bbox_vec[3], bbox_vec[4], bbox_vec[5] });
 
   for (size_t i = 0; i < mesh_vals_vec.size(); i++) {
     opts.mesh_values_files.emplace_back(mesh_vals_vec[i], mesh_files_vec[i]);
