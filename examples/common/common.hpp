@@ -42,5 +42,5 @@ std::unique_ptr<polatory::rbf::rbf_base> make_rbf(const std::string& name, const
   throw std::invalid_argument("Unknown RBF name: " + name);
 }
 
-extern const std::string cov_list;
-extern const std::string spline_list;
+extern const char *const cov_list;
+extern const char *const rbf_cov_list;

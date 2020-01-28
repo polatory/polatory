@@ -33,29 +33,29 @@ options parse_options(int argc, const char *argv[]) {
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required()
-      ->value_name("<file>"),
-     "Input file in x,y,z,value format")
+      ->value_name("FILE"),
+     "Input file in CSV format:\n  X,Y,Z,VAL")
     ("min-dist", po::value<double>(&opts.min_distance)->default_value(1e-10)
-      ->value_name("<value>"),
+      ->value_name("VAL"),
      "Minimum separation distance of input points")
     ("rbf", po::value<std::vector<std::string>>(&rbf_vec)->multitoken()->required()
       ->value_name("..."),
-     ("RBF/covariance function, one of" + cov_list + spline_list).c_str())
-    ("nugget", po::value<double>(&opts.nugget)->default_value(0.0, "0.0")
-      ->value_name("<value>"),
+     rbf_cov_list)
+    ("nugget", po::value<double>(&opts.nugget)->default_value(0.0, "0.")
+      ->value_name("VAL"),
      "Nugget of the model")
     ("dim", po::value<int>(&opts.poly_dimension)->default_value(3)
-      ->value_name("(1|2|3)"),
+      ->value_name("1|2|3"),
      "Dimension of the drift polynomial")
     ("deg", po::value<int>(&opts.poly_degree)->default_value(0)
-      ->value_name("(-1|0|1|2)"),
+      ->value_name("-1|0|1|2"),
      "Degree of the drift polynomial")
     ("tol", po::value<double>(&opts.absolute_tolerance)->required()
-      ->value_name("<value>"),
+      ->value_name("VAL"),
      "Absolute tolerance of fitting")
     ("k", po::value<int>(&opts.k)->default_value(5)
-      ->value_name("<value>"),
-     "k of k-fold cross validation");
+      ->value_name("K"),
+     "Number of folds in the cross-validation");
 
   po::variables_map vm;
   try {

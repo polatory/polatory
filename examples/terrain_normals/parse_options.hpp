@@ -24,17 +24,17 @@ options parse_options(int argc, const char *argv[]) {
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required()
-      ->value_name("<file>"),
-     "Input file in x,y,z format")
+      ->value_name("FILE"),
+     "Input file in CSV format:\n  X,Y,Z")
     ("knn", po::value<int>(&opts.knn)->default_value(20)
-      ->value_name("<value>"),
+      ->value_name("VAL"),
      "Number of points in k-NN search")
     ("min-plane-factor", po::value<double>(&opts.min_plane_factor)->default_value(1.8)
-      ->value_name("<value>"),
+      ->value_name("VAL"),
      "Threshold of acceptance for estimated normal vectors")
     ("out", po::value<std::string>(&opts.out_file)
-      ->value_name("<file>"),
-     "Output file in x,y,z,value format");
+      ->value_name("FILE"),
+     "Output file in CSV format:\n  X,Y,Z,VAL");
 
   po::variables_map vm;
   try {

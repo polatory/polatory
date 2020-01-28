@@ -31,13 +31,13 @@ options parse_options(int argc, const char *argv[]) {
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()
     ("in", po::value<std::string>(&opts.in_file)->required()
-      ->value_name("<file>"),
-     "Input file (output file of kriging_variogram)")
+      ->value_name("FILE"),
+     "Input file (an output file from kriging_variogram)")
     ("rbf", po::value<std::vector<std::string>>(&rbf_vec)->multitoken()->required()
       ->value_name("..."),
-     ("Covariance function, one of" + cov_list).c_str())
-    ("nugget", po::value<double>(&opts.nugget)->default_value(0)
-      ->value_name("<value>"),
+     cov_list)
+    ("nugget", po::value<double>(&opts.nugget)->default_value(0, "0.")
+      ->value_name("VAL"),
      "Initial value of the nugget")
     ("weights", po::value<int>(&weights)->default_value(1)
       ->value_name("0-5"),
