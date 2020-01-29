@@ -3,6 +3,8 @@
 #include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/geometry/sphere3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
@@ -13,6 +15,7 @@
 #include "../random_anisotropy.hpp"
 
 using polatory::common::valuesd;
+using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
@@ -32,24 +35,25 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) 
   model model(rbf, 3, poly_degree);
 
   auto points = random_points(sphere3d(), n_points);
+  points3d eval_points = points.topRows(n_eval_points);
 
   valuesd weights = valuesd::Random(n_points + model.poly_basis_size());
 
   rbf_direct_evaluator direct_eval(model, points);
   direct_eval.set_weights(weights);
-  direct_eval.set_field_points(points.topRows(n_eval_points));
+  direct_eval.set_field_points(eval_points);
 
   rbf_evaluator<> eval(model, points);
   eval.set_weights(weights);
-  eval.set_field_points(points);
+  eval.set_field_points(eval_points);
 
   auto direct_values = direct_eval.evaluate();
   auto values = eval.evaluate();
 
   EXPECT_EQ(n_eval_points, direct_values.size());
-  EXPECT_EQ(n_points, values.size());
+  EXPECT_EQ(n_eval_points, values.size());
 
-  auto max_residual = (values.head(n_eval_points) - direct_values).lpNorm<Eigen::Infinity>();
+  auto max_residual = (values - direct_values).lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
 }
 

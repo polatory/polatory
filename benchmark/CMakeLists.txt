@@ -1,3 +1,7 @@
+add_executable(accuracy accuracy.cpp)
+target_link_libraries(accuracy PRIVATE polatory)
+polatory_enable_ipo(accuracy)
+
 add_executable(points points.cpp)
 target_link_libraries(points PRIVATE polatory)
 polatory_enable_ipo(points)
