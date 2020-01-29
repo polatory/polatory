@@ -32,6 +32,7 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
   }
 
   double getMutualCoefficient() const {
+    // The kernel is symmetric.
     return 1.0;
   }
 
@@ -66,12 +67,12 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
   }
 
   double getScaleFactor(const double, const int) const override {
-    // return 1 because non homogeneous kernel functions cannot be scaled!!!
+    // The kernel is not homogeneous.
     return 1.0;
   }
 
   double getScaleFactor(const double) const override {
-    // return 1 because non homogeneous kernel functions cannot be scaled!!!
+    // The kernel is not homogeneous.
     return 1.0;
   }
 
