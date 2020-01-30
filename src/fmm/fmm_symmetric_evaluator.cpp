@@ -1,6 +1,6 @@
 // Copyright (c) 2016, GSI and The Polatory Authors.
 
-#include <polatory/fmm/fmm_operator.hpp>
+#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -19,7 +19,7 @@ namespace polatory {
 namespace fmm {
 
 template <int Order>
-class fmm_operator<Order>::impl {
+class fmm_symmetric_evaluator<Order>::impl {
   using Cell = FChebCell<double, Order>;
   using ParticleContainer = FP2PParticleContainerIndexed<double>;
   using Leaf = FSimpleLeaf<double, ParticleContainer>;
@@ -155,30 +155,30 @@ private:
 };
 
 template <int Order>
-fmm_operator<Order>::fmm_operator(const model& model, int tree_height, const geometry::bbox3d& bbox)
+fmm_symmetric_evaluator<Order>::fmm_symmetric_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
   : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {
 }
 
 template <int Order>
-fmm_operator<Order>::~fmm_operator() = default;
+fmm_symmetric_evaluator<Order>::~fmm_symmetric_evaluator() = default;
 
 template <int Order>
-common::valuesd fmm_operator<Order>::evaluate() const {
+common::valuesd fmm_symmetric_evaluator<Order>::evaluate() const {
   return pimpl_->evaluate();
 }
 
 template <int Order>
-void fmm_operator<Order>::set_points(const geometry::points3d& points) {
+void fmm_symmetric_evaluator<Order>::set_points(const geometry::points3d& points) {
   pimpl_->set_points(points);
 }
 
 template <int Order>
-void fmm_operator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
+void fmm_symmetric_evaluator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_weights(weights);
 }
 
-template class fmm_operator<6>;
-template class fmm_operator<10>;
+template class fmm_symmetric_evaluator<6>;
+template class fmm_symmetric_evaluator<10>;
 
 }  // namespace fmm
 }  // namespace polatory

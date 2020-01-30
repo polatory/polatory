@@ -4,7 +4,6 @@
 #include <gtest/gtest.h>
 
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
-#include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
@@ -16,7 +15,6 @@
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
-using polatory::interpolation::rbf_direct_symmetric_evaluator;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::model;
 using polatory::point_cloud::random_points;
@@ -25,7 +23,6 @@ using polatory::index_t;
 
 namespace {
 
-template <class Evaluator>
 void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) {
   auto absolute_tolerance = 2e-6;
 
@@ -42,7 +39,7 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) 
   direct_eval.set_weights(weights);
   direct_eval.set_field_points(points.topRows(n_eval_points));
 
-  Evaluator eval(model, points);
+  rbf_symmetric_evaluator<> eval(model, points);
   eval.set_weights(weights);
 
   auto direct_values = direct_eval.evaluate();
@@ -57,16 +54,9 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) 
 
 }  // namespace
 
-TEST(rbf_direct_symmetric_evaluator, trivial) {
-  test_poly_degree<rbf_direct_symmetric_evaluator>(-1, 1024, 1024);
-  test_poly_degree<rbf_direct_symmetric_evaluator>(0, 1024, 1024);
-  test_poly_degree<rbf_direct_symmetric_evaluator>(1, 1024, 1024);
-  test_poly_degree<rbf_direct_symmetric_evaluator>(2, 1024, 1024);
-}
-
 TEST(rbf_symmetric_evaluator, trivial) {
-  test_poly_degree<rbf_symmetric_evaluator<>>(-1, 32768, 1024);
-  test_poly_degree<rbf_symmetric_evaluator<>>(0, 32768, 1024);
-  test_poly_degree<rbf_symmetric_evaluator<>>(1, 32768, 1024);
-  test_poly_degree<rbf_symmetric_evaluator<>>(2, 32768, 1024);
+  test_poly_degree(-1, 32768, 1024);
+  test_poly_degree(0, 32768, 1024);
+  test_poly_degree(1, 32768, 1024);
+  test_poly_degree(2, 32768, 1024);
 }

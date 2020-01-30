@@ -5,11 +5,10 @@
 #include <memory>
 
 #include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_operator.hpp>
+#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/polynomial_matrix.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -20,20 +19,16 @@ namespace interpolation {
 
 template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
-private:
-  using PolynomialEvaluator = polynomial_matrix<polynomial::monomial_basis>;
-
-public:
   rbf_operator(const model& model, const geometry::points3d& points)
     : model_(model)
     , n_poly_basis_(model.poly_basis_size())
     , n_points_(0) {
     auto n_points = static_cast<index_t>(points.rows());
     auto bbox = geometry::bbox3d::from_points(points);
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(model, fmm::fmm_tree_height(n_points), bbox);
+    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, fmm::fmm_tree_height(n_points), bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
+      poly_basis_ = std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
     }
 
     set_points(points);
@@ -43,10 +38,10 @@ public:
     : model_(model)
     , n_poly_basis_(model.poly_basis_size())
     , n_points_(0) {
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(model, tree_height, bbox);
+    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, tree_height, bbox);
 
     if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
+      poly_basis_ = std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
     }
   }
 
@@ -64,7 +59,8 @@ public:
 
     if (n_poly_basis_ > 0) {
       // Add polynomial terms.
-      y += p_->evaluate(weights);
+      y.head(n_points_) += pt_.transpose() * weights.tail(n_poly_basis_);
+      y.tail(n_poly_basis_) += pt_ * weights.head(n_points_);
     }
 
     return y;
@@ -76,7 +72,7 @@ public:
     a_->set_points(points);
 
     if (n_poly_basis_ > 0) {
-      p_->set_points(points);
+      pt_ = poly_basis_->evaluate(points);
     }
   }
 
@@ -89,8 +85,9 @@ private:
   const index_t n_poly_basis_;
 
   index_t n_points_;
-  std::unique_ptr<fmm::fmm_operator<Order>> a_;
-  std::unique_ptr<PolynomialEvaluator> p_;
+  std::unique_ptr<fmm::fmm_symmetric_evaluator<Order>> a_;
+  std::unique_ptr<polynomial::monomial_basis> poly_basis_;
+  Eigen::MatrixXd pt_;
 };
 
 }  // namespace interpolation

@@ -15,16 +15,16 @@ namespace polatory {
 namespace fmm {
 
 template <int Order>
-class fmm_operator {
+class fmm_symmetric_evaluator {
 public:
-  fmm_operator(const model& model, int tree_height, const geometry::bbox3d& bbox);
+  fmm_symmetric_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox);
 
-  ~fmm_operator();
+  ~fmm_symmetric_evaluator();
 
-  fmm_operator(const fmm_operator&) = delete;
-  fmm_operator(fmm_operator&&) = delete;
-  fmm_operator& operator=(const fmm_operator&) = delete;
-  fmm_operator& operator=(fmm_operator&&) = delete;
+  fmm_symmetric_evaluator(const fmm_symmetric_evaluator&) = delete;
+  fmm_symmetric_evaluator(fmm_symmetric_evaluator&&) = delete;
+  fmm_symmetric_evaluator& operator=(const fmm_symmetric_evaluator&) = delete;
+  fmm_symmetric_evaluator& operator=(fmm_symmetric_evaluator&&) = delete;
 
   common::valuesd evaluate() const;
 
