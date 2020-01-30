@@ -7,7 +7,7 @@
 #include <Eigen/Core>
 
 #include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_operator.hpp>
+#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -29,7 +29,7 @@ public:
     , n_points_(static_cast<index_t>(points.rows()))
     , n_poly_basis_(model.poly_basis_size()) {
     auto bbox = geometry::bbox3d::from_points(points);
-    a_ = std::make_unique<fmm::fmm_operator<Order>>(model, fmm::fmm_tree_height(n_points_), bbox);
+    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, fmm::fmm_tree_height(n_points_), bbox);
     a_->set_points(points);
 
     if (n_poly_basis_ > 0) {
@@ -70,7 +70,7 @@ private:
   const index_t n_points_;
   const index_t n_poly_basis_;
 
-  std::unique_ptr<fmm::fmm_operator<Order>> a_;
+  std::unique_ptr<fmm::fmm_symmetric_evaluator<Order>> a_;
   std::unique_ptr<PolynomialEvaluator> p_;
 
   common::valuesd weights_;

@@ -7,7 +7,7 @@
 
 #include <gtest/gtest.h>
 
-#include <polatory/interpolation/rbf_direct_symmetric_evaluator.hpp>
+#include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
@@ -16,7 +16,7 @@
 
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
-using polatory::interpolation::rbf_direct_symmetric_evaluator;
+using polatory::interpolation::rbf_direct_evaluator;
 using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::lagrange_basis;
@@ -51,8 +51,9 @@ TEST(coarse_grid, trivial) {
   valuesd sol = valuesd::Zero(n_points + model.poly_basis_size());
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_symmetric_evaluator(model, points);
+  auto eval = rbf_direct_evaluator(model, points);
   eval.set_weights(sol);
+  eval.set_field_points(points);
   valuesd values_fit = eval.evaluate() + sol.head(n_points) * model.nugget();
 
   auto max_residual = (values - values_fit).lpNorm<Eigen::Infinity>();
