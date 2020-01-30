@@ -2,8 +2,6 @@
 
 // This is an example program that estimates the relative accuracy of
 // the fast evaluation of an interpolant.
-// An estimation of the absolute accuracy can be obtained by multiplying
-// the relative accuracy by the maximum norm of the measurement values.
 
 #include <exception>
 #include <iostream>
@@ -112,7 +110,7 @@ int main() {
     std::cout << "cov_spheroidal9[scale=10.]: " << estimate_accuracy(cov_spheroidal9({ 1.0, 10.0 })) << std::endl;
 
     return 0;
-  } catch (const std::exception & e) {
+  } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
     return 1;
   }
