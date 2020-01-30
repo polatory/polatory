@@ -32,14 +32,6 @@ public:
                                                    std::numeric_limits<double>::infinity() };
     return upper_bounds;
   }
-
-  double partial_sill() const {
-    return parameters()[0];
-  }
-
-  double range() const {
-    return parameters()[1];
-  }
 };
 
 }  // namespace rbf
