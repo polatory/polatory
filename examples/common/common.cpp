@@ -19,7 +19,7 @@ Positive definite
   sp5 VAR SCALE  (cov_spheroidal5)
   sp7 VAR SCALE  (cov_spheroidal7)
   sp9 VAR SCALE  (cov_spheroidal9)
-Conditionally positive definite of order 0
-  bh3 VAR        (biharmonic3d)
 Conditionally positive definite of order 1
+  bh3 VAR        (biharmonic3d)
+Conditionally positive definite of order 2
   bh2 VAR        (biharmonic2d))";
