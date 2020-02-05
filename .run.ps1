@@ -51,14 +51,14 @@ switch ($args[0]) {
     'build' {
         buildenv
         Set-Location build
-        & ninja
+        ninja
         break
     }
     'cmake' {
         buildenv
         New-Item build -ItemType Directory -Force
         Set-Location build
-        & cmake .. -GNinja '-DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake'
+        cmake .. -GNinja '-DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake'
         break
     }
     'init-vcpkg' {
@@ -71,7 +71,7 @@ switch ($args[0]) {
     'test' {
         buildenv
         Set-Location build
-        & ctest -V
+        ctest -V
         break
     }
     default {
