@@ -24,93 +24,82 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   , n_poly_basis_(model.poly_basis_size())
   , finest_evaluator_(kReportResidual ? std::make_unique<interpolation::rbf_symmetric_evaluator<Order>>(model, points_) : nullptr)
 {
-  std::vector<index_t> poly_point_idcs;
+  auto n_fine_levels = std::max(0, static_cast<int>(
+    std::ceil(std::log(static_cast<double>(n_points_) / static_cast<double>(n_coarsest_points)) / log(1.0 / coarse_ratio))));
+  n_levels_ = n_fine_levels + 1;
 
+  point_idcs_.resize(n_levels_);
+
+  std::vector<index_t> poly_point_idcs;
   if (n_poly_basis_ > 0) {
     polynomial::unisolvent_point_set ups(points_, model.poly_dimension(), model.poly_degree());
 
     poly_point_idcs = ups.point_indices();
     lagrange_basis_ = std::make_unique<polynomial::lagrange_basis>(model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
 
-    point_idcs_.push_back(poly_point_idcs);
-    point_idcs_.back().reserve(n_points_);
+    auto level = n_levels_ - 1;
+    point_idcs_[level] = poly_point_idcs;
+    point_idcs_[level].reserve(n_points_);
     for (index_t i = 0; i < n_points_; i++) {
       if (!std::binary_search(poly_point_idcs.begin(), poly_point_idcs.end(), i)) {
-        point_idcs_.back().push_back(i);
+        point_idcs_[level].push_back(i);
       }
     }
   } else {
-    point_idcs_.emplace_back(n_points_);
-    std::iota(point_idcs_.back().begin(), point_idcs_.back().end(), 0);
+    auto level = n_levels_ - 1;
+    point_idcs_[level].resize(n_points_);
+    std::iota(point_idcs_[level].begin(), point_idcs_[level].end(), 0);
   }
 
-  n_fine_levels_ = std::max(0, static_cast<int>(
-    std::ceil(std::log(static_cast<double>(n_points_) / static_cast<double>(n_coarsest_points)) / log(1.0 / coarse_ratio))));
-  if (n_fine_levels_ == 0) {
-    coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_.back(), points_);
-    return;
-  }
+  fine_grids_.resize(n_levels_);
 
-  auto bbox = geometry::bbox3d::from_points(points_);
-  auto divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
+  for (auto level = n_levels_ - 1; level >= 1; level--) {
+    auto divider = std::make_unique<domain_divider>(points_, point_idcs_[level], poly_point_idcs);
 
-  fine_grids_.emplace_back();
-  for (const auto& d : divider->domains()) {
-    fine_grids_.back().emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
-  }
-  auto n_points = static_cast<index_t>(points_.rows());
-  auto n_fine_grids = static_cast<index_t>(fine_grids_.back().size());
-  if (!kRecomputeAndClear) {
-#pragma omp parallel for
-    for (index_t i = 0; i < n_fine_grids; i++) {
-      auto& fine = fine_grids_.back()[i];
-      fine.setup(points_);
-    }
-  }
-  std::cout << "Number of points in level 0: " << n_points << std::endl;
-  std::cout << "Number of domains in level 0: " << n_fine_grids << std::endl;
-
-  auto ratio = 0 == n_fine_levels_ - 1
-               ? static_cast<double>(n_coarsest_points) / static_cast<double>(n_points)
-               : coarse_ratio;
-  upward_evaluator_.emplace_back(model_without_poly_, points_, bbox);
-  point_idcs_.push_back(divider->choose_coarse_points(ratio));
-  upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
-
-  for (auto level = 1; level < n_fine_levels_; level++) {
-    divider = std::make_unique<domain_divider>(points_, point_idcs_.back(), poly_point_idcs);
-
-    fine_grids_.emplace_back();
     for (const auto& d : divider->domains()) {
-      fine_grids_.back().emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
+      fine_grids_[level].emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
     }
-    n_points = static_cast<index_t>(point_idcs_.back().size());
-    n_fine_grids = static_cast<index_t>(fine_grids_.back().size());
+
+    auto ratio = level == 1
+      ? static_cast<double>(n_coarsest_points) / static_cast<double>(point_idcs_[level].size())
+      : coarse_ratio;
+    point_idcs_[level - 1] = divider->choose_coarse_points(ratio);
+
+    auto n_points = static_cast<index_t>(point_idcs_[level].size());
+    auto n_fine_grids = static_cast<index_t>(fine_grids_[level].size());
     if (!kRecomputeAndClear) {
 #pragma omp parallel for
       for (index_t i = 0; i < n_fine_grids; i++) {
-        auto& fine = fine_grids_.back()[i];
+        auto& fine = fine_grids_[level][i];
         fine.setup(points_);
       }
     }
     std::cout << "Number of points in level " << level << ": " << n_points << std::endl;
     std::cout << "Number of domains in level " << level << ": " << n_fine_grids << std::endl;
-
-    ratio = level == n_fine_levels_ - 1
-            ? static_cast<double>(n_coarsest_points) / static_cast<double>(n_points)
-            : coarse_ratio;
-    upward_evaluator_.emplace_back(model_without_poly_, common::take_rows(points_, point_idcs_.back()), bbox);
-    point_idcs_.push_back(divider->choose_coarse_points(ratio));
-    upward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_.back()));
   }
 
-  n_points = static_cast<index_t>(point_idcs_.back().size());
-  std::cout << "Number of points in coarse: " << n_points << std::endl;
-  coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_.back(), points_);
+  {
+    coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_[0], points_);
 
-  for (auto level = 1; level < n_fine_levels_; level++) {
-    downward_evaluator_.emplace_back(model, common::take_rows(points_, point_idcs_.back()), bbox);
-    downward_evaluator_.back().set_field_points(common::take_rows(points_, point_idcs_[level]));
+    auto n_points = static_cast<index_t>(point_idcs_[0].size());
+    std::cout << "Number of points in level 0: " << n_points << std::endl;
+  }
+
+  if (n_levels_ == 1) {
+    return;
+  }
+
+  auto bbox = geometry::bbox3d::from_points(points_);
+  for (auto level = 1; level < n_levels_; level++) {
+    if (level == n_levels_ - 1) {
+      add_evaluator(level, level - 1, model_without_poly_, points_, bbox);
+    } else {
+      add_evaluator(level, level - 1, model_without_poly_, common::take_rows(points_, point_idcs_[level]), bbox);
+    }
+    evaluator(level, level - 1).set_field_points(common::take_rows(points_, point_idcs_[level - 1]));
+
+    add_evaluator(0, level, model, common::take_rows(points_, point_idcs_[0]), bbox);
+    evaluator(0, level).set_field_points(common::take_rows(points_, point_idcs_[level]));
   }
 
   if (n_poly_basis_ > 0) {
@@ -132,7 +121,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
   common::valuesd residuals = v.head(n_points_);
   common::valuesd weights_total = common::valuesd::Zero(size());
-  if (n_fine_levels_ == 0) {
+  if (n_levels_ == 1) {
     coarse_->solve(residuals);
     coarse_->set_solution_to(weights_total);
     return weights_total;
@@ -142,7 +131,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
     std::cout << "Initial residual: " << residuals.norm() << std::endl;
   }
 
-  for (auto level = 0; level < n_fine_levels_; level++) {
+  for (auto level = n_levels_ - 1; level >= 1; level--) {
     {
       common::valuesd weights = common::valuesd::Zero(n_points_);
 
@@ -161,21 +150,21 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
         }
       }
 
-      // Evaluate residuals at coarse points.
-      if (level > 0) {
+      // Evaluate residuals on coarser level.
+      if (level < n_levels_ - 1) {
         const auto& finer_indices = point_idcs_[level];
         auto n_finer_points = static_cast<index_t>(finer_indices.size());
         common::valuesd finer_weights(n_finer_points);
         for (index_t i = 0; i < n_finer_points; i++) {
           finer_weights(i) = weights(finer_indices[i]);
         }
-        upward_evaluator_[level].set_weights(finer_weights);
+        evaluator(level, level - 1).set_weights(finer_weights);
       } else {
-        upward_evaluator_[level].set_weights(weights);
+        evaluator(level, level - 1).set_weights(weights);
       }
-      auto fit = upward_evaluator_[level].evaluate();
+      auto fit = evaluator(level, level - 1).evaluate();
 
-      const auto& indices = point_idcs_[level + 1];
+      const auto& indices = point_idcs_[level - 1];
       auto n_points = static_cast<index_t>(indices.size());
       for (index_t i = 0; i < n_points; i++) {
         residuals(indices[i]) -= fit(i);
@@ -208,19 +197,20 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       coarse_->solve(residuals);
       coarse_->set_solution_to(weights);
 
-      if (level < n_fine_levels_ - 1) {
-        const auto& coarse_indices = point_idcs_.back();
+      // Update residuals on next finer level.
+      if (level > 1) {
+        const auto& coarse_indices = point_idcs_[0];
         auto n_coarse_points = static_cast<index_t>(coarse_indices.size());
         common::valuesd coarse_weights(n_coarse_points + n_poly_basis_);
         for (index_t i = 0; i < n_coarse_points; i++) {
           coarse_weights(i) = weights(coarse_indices[i]);
         }
         coarse_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
-        downward_evaluator_[level].set_weights(coarse_weights);
+        evaluator(0, level - 1).set_weights(coarse_weights);
 
-        auto fit = downward_evaluator_[level].evaluate();
+        auto fit = evaluator(0, level - 1).evaluate();
 
-        const auto& indices = point_idcs_[level + 1];
+        const auto& indices = point_idcs_[level - 1];
         auto n_points = static_cast<index_t>(indices.size());
         for (index_t i = 0; i < n_points; i++) {
           residuals(indices[i]) -= fit(i);
@@ -233,7 +223,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
          // Test residual
          finest_evaluator_->set_weights(weights_total);
          common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
-         std::cout << "Residual after coarse correction: " << test_residuals.norm() << std::endl;
+         std::cout << "Residual after level 0: " << test_residuals.norm() << std::endl;
       }
     }
   }
