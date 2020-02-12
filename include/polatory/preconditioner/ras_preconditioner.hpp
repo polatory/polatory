@@ -2,7 +2,10 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include <Eigen/Core>
@@ -27,6 +30,8 @@ class ras_preconditioner : public krylov::linear_operator {
   static constexpr double coarse_ratio = 0.125;
   static constexpr index_t n_coarsest_points = 1024;
 
+  using Evaluator = interpolation::rbf_evaluator<Order>;
+
 public:
   ras_preconditioner(const model& model, const geometry::points3d& in_points);
 
@@ -35,6 +40,15 @@ public:
   index_t size() const override;
 
 private:
+  template <class... Args>
+  void add_evaluator(int from_level, int to_level, Args&&... args) {
+    evaluator_.emplace(std::piecewise_construct, std::forward_as_tuple(from_level, to_level), std::forward_as_tuple(std::forward<Args>(args)...));
+  }
+
+  const Evaluator& evaluator(int from_level, int to_level) const {
+    return evaluator_.at({ from_level, to_level });
+  }
+
   const model model_without_poly_;
   const geometry::points3d points_;
   const index_t n_points_;
@@ -42,12 +56,11 @@ private:
   const std::unique_ptr<interpolation::rbf_symmetric_evaluator<Order>> finest_evaluator_;
 
   std::unique_ptr<polynomial::lagrange_basis> lagrange_basis_;
-  int n_fine_levels_;
+  int n_levels_;
   std::vector<std::vector<index_t>> point_idcs_;
   mutable std::vector<std::vector<fine_grid>> fine_grids_;
   std::unique_ptr<coarse_grid> coarse_;
-  std::vector<interpolation::rbf_evaluator<Order>> downward_evaluator_;
-  std::vector<interpolation::rbf_evaluator<Order>> upward_evaluator_;
+  std::map<std::pair<int, int>, Evaluator> evaluator_;
   Eigen::MatrixXd p_;
   Eigen::MatrixXd ap_;
 };
