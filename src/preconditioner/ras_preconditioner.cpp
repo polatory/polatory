@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 
@@ -53,6 +54,8 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 
   fine_grids_.resize(n_levels_);
 
+  std::cout << std::setw(8) << "level" << std::setw(16) << "n_domains" << std::setw(16) << "n_points" << std::endl;
+
   for (auto level = n_levels_ - 1; level >= 1; level--) {
     auto divider = std::make_unique<domain_divider>(points_, point_idcs_[level], poly_point_idcs);
 
@@ -66,23 +69,22 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     point_idcs_[level - 1] = divider->choose_coarse_points(ratio);
 
     auto n_points = static_cast<index_t>(point_idcs_[level].size());
-    auto n_fine_grids = static_cast<index_t>(fine_grids_[level].size());
+    auto n_grids = static_cast<index_t>(fine_grids_[level].size());
     if (!kRecomputeAndClear) {
 #pragma omp parallel for
-      for (index_t i = 0; i < n_fine_grids; i++) {
+      for (index_t i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_[level][i];
         fine.setup(points_);
       }
     }
-    std::cout << "Number of points in level " << level << ": " << n_points << std::endl;
-    std::cout << "Number of domains in level " << level << ": " << n_fine_grids << std::endl;
+    std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16) << n_points << std::endl;
   }
 
   {
     coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_[0], points_);
 
     auto n_points = static_cast<index_t>(point_idcs_[0].size());
-    std::cout << "Number of points in level 0: " << n_points << std::endl;
+    std::cout << std::setw(8) << 0 << std::setw(16) << 1 << std::setw(16) << n_points << std::endl;
   }
 
   if (n_levels_ == 1) {
@@ -97,7 +99,9 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
       add_evaluator(level, level - 1, model_without_poly_, common::take_rows(points_, point_idcs_[level]), bbox);
     }
     evaluator(level, level - 1).set_field_points(common::take_rows(points_, point_idcs_[level - 1]));
+  }
 
+  for (auto level = 1; level < n_levels_ - 1; level++) {
     add_evaluator(0, level, model, common::take_rows(points_, point_idcs_[0]), bbox);
     evaluator(0, level).set_field_points(common::take_rows(points_, point_idcs_[level]));
   }
@@ -135,10 +139,10 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
     {
       common::valuesd weights = common::valuesd::Zero(n_points_);
 
-      // Solve on subdomains.
-      auto n_fine_grids = static_cast<index_t>(fine_grids_[level].size());
+      // Solve on level `level`.
+      auto n_grids = static_cast<index_t>(fine_grids_[level].size());
 #pragma omp parallel for schedule(guided)
-      for (index_t i = 0; i < n_fine_grids; i++) {
+      for (index_t i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_[level][i];
         if (kRecomputeAndClear) {
           fine.setup(points_);
@@ -150,7 +154,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
         }
       }
 
-      // Evaluate residuals on coarser level.
+      // Evaluate residuals on level `level` - 1.
       if (level < n_levels_ - 1) {
         const auto& finer_indices = point_idcs_[level];
         auto n_finer_points = static_cast<index_t>(finer_indices.size());
@@ -183,7 +187,6 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       weights_total.head(n_points_) += weights;
 
       if (kReportResidual) {
-         // Test residual
          finest_evaluator_->set_weights(weights_total);
          common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
          std::cout << "Residual after level " << level << ": " << test_residuals.norm() << std::endl;
@@ -193,11 +196,11 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
     {
       common::valuesd weights = common::valuesd::Zero(n_points_ + n_poly_basis_);
 
-      // Solve on coarse.
+      // Solve on level 0.
       coarse_->solve(residuals);
       coarse_->set_solution_to(weights);
 
-      // Update residuals on next finer level.
+      // Update residuals on level `level` - 1.
       if (level > 1) {
         const auto& coarse_indices = point_idcs_[0];
         auto n_coarse_points = static_cast<index_t>(coarse_indices.size());
@@ -220,7 +223,6 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       weights_total += weights;
 
       if (kReportResidual) {
-         // Test residual
          finest_evaluator_->set_weights(weights_total);
          common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
          std::cout << "Residual after level 0: " << test_residuals.norm() << std::endl;
