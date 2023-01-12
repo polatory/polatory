@@ -8,7 +8,7 @@
 
 NOTE: This is a pre-release version. APIs subject to change without notice.
 
-[Features](#features) | [License](#license) | [Building](#building) | [Contribution](#contribution) | [Module Index](#module-index) | [Acknowledgements](#acknowledgements)
+[Features](#features) • [Building](#building) • [Contribution](#contribution) • [Module Index](#module-index) • [Acknowledgements](#acknowledgements)
 
 ## Features
 
