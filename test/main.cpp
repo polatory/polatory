@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include <gtest/gtest.h>
 
 int main(int argc, char *argv[]) {

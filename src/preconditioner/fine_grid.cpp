@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include <polatory/preconditioner/fine_grid.hpp>
 
 #include <polatory/common/eigen_utility.hpp>

@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include <polatory/point_cloud/kdtree.hpp>
 
 #include <cmath>
