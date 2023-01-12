@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 
 #include <algorithm>

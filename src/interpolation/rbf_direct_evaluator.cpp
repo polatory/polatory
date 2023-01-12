@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 
 #include <polatory/numeric/sum_accumulator.hpp>

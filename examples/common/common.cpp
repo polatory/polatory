@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include "common.hpp"
 
 const char* const cov_list =

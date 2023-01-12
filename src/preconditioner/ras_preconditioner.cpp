@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 
 #include <algorithm>

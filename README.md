@@ -2,13 +2,9 @@
   <img src="https://polatory.github.io/images/polatory_logo.png" width="400" alt="Polatory">
 </div>
 
-----
+---
 
-[![Travis CI](https://travis-ci.org/polatory/polatory.svg?branch=master)](https://travis-ci.org/polatory/polatory)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/andjvgjr58axrbe0/branch/master?svg=true)](https://ci.appveyor.com/project/mizuno-gsinet/polatory/branch/master)
-[![Read the Docs](https://readthedocs.org/projects/polatory/badge/?version=latest)](https://polatory.readthedocs.io/en/latest/?badge=latest)
-
-Polatory is a fast and memory-efficient framework for RBF (radial basis function) interpolation, developed by [GSI Co., Ltd.](http://gsinet.co.jp/)
+**Polatory** is a fast and memory-efficient framework for RBF (radial basis function) interpolation.
 
 NOTE: This is a pre-release version. APIs subject to change without notice.
 
@@ -16,12 +12,12 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 
 ## Features
 
-* Fast spline surface reconstruction from 2.5D/3D point cloud
-* Fast interpolation of 1D/2D/3D scattered data (kriging prediction)
-* Meshing isosurfaces
-* Supports large number (millions) of input points
-* Supports inequality constraints
-* [List of available RBFs](https://polatory.readthedocs.io/en/latest/rbfs.html)
+- Fast spline surface reconstruction from 2.5D/3D point cloud
+- Fast interpolation of 1D/2D/3D scattered data (kriging prediction)
+- Meshing isosurfaces
+- Supports large number (millions) of input points
+- Supports inequality constraints
+- [List of available RBFs](https://polatory.readthedocs.io/en/latest/rbfs.html)
 
 ### Platforms
 
@@ -40,7 +36,7 @@ Polatory can perform kriging prediction via RBF interpolation (dual kriging). Al
 | -------------------------------------------- | ----------------------------------------------------- |
 | Prediction                                   | Interpolation (fitting + evaluation)                  |
 | Covariance function                          | RBF, positive definite                                |
-| Generalized covariance function of order *k* | RBF, conditionally positive definite of order *k* + 1 |
+| Generalized covariance function of order _k_ | RBF, conditionally positive definite of order _k_ + 1 |
 | Nugget effect model                          | Spline smoothing                                      |
 | Simple kriging                               | Interpolant with no polynomial                        |
 | Ordinary kriging                             | Interpolant with polynomial of degree 0               |
@@ -50,99 +46,92 @@ Polatory can perform kriging prediction via RBF interpolation (dual kriging). Al
 
 A limited number of covariance functions are supported. See the [list of available RBFs](https://polatory.readthedocs.io/en/latest/rbfs.html) for details.
 
-## License
-
-Polatory is available under two different licenses:
-
-* [GNU General Public License, version 3](LICENSE.GPLv3)
-* Commercial license (please contact at namihisa(at)gsinet.co.jp)
-
 ## Building
 
 ### On Ubuntu
 
 1. Install build tools
 
-    ```bash
-    sudo apt install build-essential cmake curl git ninja-build unzip
-    ```
+   ```bash
+   sudo apt install build-essential cmake curl git ninja-build unzip
+   ```
 
-    If you use Clang, `libomp-dev` is required.
+   If you use Clang, `libomp-dev` is required.
 
-    ```bash
-    sudo apt install clang libomp-dev
-    ```
+   ```bash
+   sudo apt install clang libomp-dev
+   ```
 
 1. Download and install [Intel(R) MKL](https://software.intel.com/mkl).
 
-    See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
+   See https://software.intel.com/articles/installing-intel-free-libs-and-python-apt-repo for details.
 
-    ```bash
-    wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | sudo apt-key add -
-    sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
-    sudo apt update
-    sudo apt install intel-mkl-64bit-2019.5-075
-    ```
+   ```bash
+   wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB -O - | sudo apt-key add -
+   sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources.list.d/intel-mkl.list'
+   sudo apt update
+   sudo apt install intel-mkl-64bit-2019.5-075
+   ```
 
 1. Clone Polatory
 
-    ```bash
-    git clone --recursive https://github.com/polatory/polatory.git
-    cd polatory
-    ```
+   ```bash
+   git clone --recursive https://github.com/polatory/polatory.git
+   cd polatory
+   ```
 
-    To update an existing repository:
+   To update an existing repository:
 
-    ```bash
-    git submodule sync
-    git submodule update --init --recursive
-    ```
+   ```bash
+   git submodule sync
+   git submodule update --init --recursive
+   ```
 
 1. Build polatory
 
-    ```bash
-    ./run init-vcpkg
-    ./run cmake
-    ./run build
-    ```
+   ```bash
+   ./run init-vcpkg
+   ./run cmake
+   ./run build
+   ```
 
 ### On Windows
 
 1. Install Visual Studio Community 2019
 
-    https://www.visualstudio.com/
+   https://www.visualstudio.com/
 
-    Under the **Workloads** tab, select the following item.
+   Under the **Workloads** tab, select the following item.
 
-    - Desktop development with C++
+   - Desktop development with C++
 
-    Under the **Individual components** tab, select the following item.
+   Under the **Individual components** tab, select the following item.
 
-    - Code tools > Git for Windows
+   - Code tools > Git for Windows
 
 1. [Download and install Intel(R) MKL](https://software.intel.com/mkl)
 
 1. Clone Polatory
 
-    ```pwsh
-    git clone --recursive https://github.com/polatory/polatory.git
-    cd polatory
-    ```
+   ```pwsh
+   git clone --recursive https://github.com/polatory/polatory.git
+   cd polatory
+   ```
 
-    To update an existing repository:
+   To update an existing repository:
 
-    ```pwsh
-    git submodule sync
-    git submodule update --init --recursive
-    ```
+   ```pwsh
+   git submodule sync
+   git submodule update --init --recursive
+   ```
 
 1. Build polatory
 
-    ```pwsh
-    .\run init-vcpkg
-    .\run cmake
-    .\run build
-    ```
+   ```pwsh
+   .\run init-vcpkg
+   .\run cmake
+   .\run build
+   ```
 
 ## Contribution
 
@@ -158,24 +147,24 @@ Feel free to file an issue, if you have any questions, feature requests, or if y
 
 ### <a href="https://github.com/polatory/polatory/pulls">Create a Pull Request</a>
 
-You can fork the source tree and make some improvements to it. Then feel free to create a PR. When sending a PR for the first time, please <a href="https://cla-assistant.io/polatory/polatory">review and sign the Individual Contributor License Agreement</a>.
+You can fork the source tree and make some improvements to it. Then feel free to create a PR.
 
 ## Module Index
 
-| Module                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| common                 | Common utility functions and classes.            |
-| fmm                    | Fast multipole methods (wrapper of ScalFMM).     |
-| geometry               | Geometric utilities.                             |
-| interpolation          | RBF fitting and evaluation.                      |
-| isosurface             | Isosurface generation.                           |
-| kriging                | Parameter estimation and validation for kriging. |
-| krylov                 | Krylov subspace methods.                         |
-| numeric                | Numerical utilities.                             |
-| point_cloud            | SDF data generation from point clouds.           |
-| polynomial             | Polynomial part of RBF interpolant.              |
-| preconditioner         | The preconditioner used with Krylov subspace methods. |
-| rbf                    | Definition of RBFs/covariance functions.         |
+| Module         | Description                                           |
+| -------------- | ----------------------------------------------------- |
+| common         | Common utility functions and classes.                 |
+| fmm            | Fast multipole methods (wrapper of ScalFMM).          |
+| geometry       | Geometric utilities.                                  |
+| interpolation  | RBF fitting and evaluation.                           |
+| isosurface     | Isosurface generation.                                |
+| kriging        | Parameter estimation and validation for kriging.      |
+| krylov         | Krylov subspace methods.                              |
+| numeric        | Numerical utilities.                                  |
+| point_cloud    | SDF data generation from point clouds.                |
+| polynomial     | Polynomial part of RBF interpolant.                   |
+| preconditioner | The preconditioner used with Krylov subspace methods. |
+| rbf            | Definition of RBFs/covariance functions.              |
 
 ## Acknowledgements
 

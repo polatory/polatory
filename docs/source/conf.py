@@ -20,8 +20,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Polatory'
-copyright = '2016, GSI Co., Ltd. and contributors'
-author = 'GSI Co., Ltd. and contributors'
+copyright = '2016, GSI Co., Ltd. and Masashi Mizuno'
+author = 'GSI Co., Ltd. and Masashi Mizuno'
 
 # The short X.Y version
 version = 'v0.1.0'

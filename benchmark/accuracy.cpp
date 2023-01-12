@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 // This is an example program that estimates the relative accuracy of
 // the fast evaluation of an interpolant.
 

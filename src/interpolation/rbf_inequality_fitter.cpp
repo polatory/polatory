@@ -1,5 +1,3 @@
-// Copyright (c) 2016, GSI and The Polatory Authors.
-
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 
 #include <algorithm>
