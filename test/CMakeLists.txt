@@ -1,6 +1,3 @@
-find_package(Boost 1.67.0 REQUIRED COMPONENTS filesystem system)
-find_package(GTest REQUIRED)
-
 set(TARGET Unittest)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
@@ -8,7 +5,7 @@ add_executable(${TARGET} ${SOURCES})
 
 target_link_libraries(${TARGET} PRIVATE
     ${Boost_LIBRARIES}
-    GTest::GTest
+    GTest::gtest
     polatory
 )
 

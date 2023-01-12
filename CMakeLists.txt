@@ -23,7 +23,15 @@ include(polatory_common_functions)
 if(UNIX)
     set(Boost_USE_STATIC_LIBS ON)
 endif()
-find_package(Boost 1.67.0 REQUIRED)
+find_package(absl CONFIG REQUIRED)
+find_package(Boost REQUIRED COMPONENTS filesystem program_options serialization)
+find_package(Ceres CONFIG REQUIRED)
+find_package(double-conversion CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(flann CONFIG REQUIRED)
+find_package(gsl-lite CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
+find_package(OpenMP REQUIRED)
 
 option(USE_PREBUILT_BOOST "Use prebuilt Boost libraries specified manually. This option takes effect only on MSVC.")
 
@@ -39,7 +47,7 @@ if(UNIX)
         message(FATAL_ERROR "Not supported compiler.")
     endif()
 
-    set(MKL_ROOT /opt/intel/mkl CACHE PATH "Path to mkl")
+    set(MKL_ROOT /opt/intel/oneapi/mkl/latest CACHE PATH "Path to mkl")
     set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
     set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
 elseif(MSVC)
@@ -50,16 +58,16 @@ elseif(MSVC)
     set(_PF86 "ProgramFiles(x86)")
     file(TO_CMAKE_PATH "$ENV{${_PF86}}" _PROG_FILES_X86)
 
-    if("$ENV{APPVEYOR}" STREQUAL "True")
-        file(TO_CMAKE_PATH "$ENV{CONDA_DIR}" CONDA_DIR)
+    if("$ENV{CI}" STREQUAL "true")
+        file(TO_CMAKE_PATH "$ENV{CONDA}" CONDA_DIR)
 
         set(MKL_ROOT "${CONDA_DIR}/Library")
         set(MKL_DLL_DIR "${MKL_ROOT}/bin")
         set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
         set(MKL_LIB_DIR "${MKL_ROOT}/lib")
     else()
-        set(MKL_ROOT "${_PROG_FILES_X86}/IntelSWTools/compilers_and_libraries/windows/mkl" CACHE PATH "Path to mkl")
-        set(MKL_DLL_DIR "${MKL_ROOT}/../redist/intel64/mkl")
+        set(MKL_ROOT "${_PROG_FILES_X86}/Intel/oneAPI/mkl/latest" CACHE PATH "Path to mkl")
+        set(MKL_DLL_DIR "${MKL_ROOT}/redist/intel64")
         set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
         set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
     endif()
@@ -71,14 +79,11 @@ elseif(MSVC)
     endif()
 
     set(POLATORY_DLLS
-        ${MKL_DLL_DIR}/mkl_avx.dll
-        ${MKL_DLL_DIR}/mkl_avx2.dll
-        ${MKL_DLL_DIR}/mkl_avx512.dll
-        ${MKL_DLL_DIR}/mkl_core.dll
-        ${MKL_DLL_DIR}/mkl_def.dll
-        ${MKL_DLL_DIR}/mkl_mc.dll
-        ${MKL_DLL_DIR}/mkl_mc3.dll
-        ${MKL_DLL_DIR}/mkl_sequential.dll
+        ${MKL_DLL_DIR}/mkl_avx.2.dll
+        ${MKL_DLL_DIR}/mkl_avx2.2.dll
+        ${MKL_DLL_DIR}/mkl_avx512.2.dll
+        ${MKL_DLL_DIR}/mkl_core.2.dll
+        ${MKL_DLL_DIR}/mkl_sequential.2.dll
     )
 else()
     message(FATAL_ERROR "Not supported system.")

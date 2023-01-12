@@ -1,0 +1,92 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ubuntu:
+    name: Build - Ubuntu
+    runs-on: ubuntu-latest
+
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_binary_cache
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: "true"
+
+      - name: Prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Install Intel(R) oneMKL
+        run: |
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \ | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update
+          sudo apt-get install -y intel-oneapi-mkl-devel
+
+      - name: Prepare to cache Vcpkg
+        run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: ${{ runner.os }}-vcpkg
+
+      - name: Setup Vcpkg
+        run: ./run init-vcpkg
+
+      - name: Configure
+        run: ./run cmake
+
+      - name: Build
+        run: ./run build
+
+      - name: Test
+        run: ./run test
+
+  build-windows:
+    name: Build - Windows
+    runs-on: windows-latest
+
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: "true"
+
+      - name: Install Intel(R) oneMKL
+        run: '. "$env:CONDA\Scripts\conda" install --channel intel --quiet --yes mkl-devel'
+
+      - name: Prepare to cache Vcpkg
+        run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: ${{ runner.os }}-vcpkg
+
+      - name: Setup Vcpkg
+        run: .\run init-vcpkg
+
+      - name: Configure
+        run: .\run cmake
+
+      - name: Build
+        run: .\run build
+
+      - name: Test
+        run: .\run test

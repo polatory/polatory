@@ -1,5 +1,3 @@
-find_package(Boost 1.67.0 REQUIRED COMPONENTS program_options)
-
 add_subdirectory(kriging_cross_validation)
 add_subdirectory(kriging_fit)
 add_subdirectory(kriging_predict)
