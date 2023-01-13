@@ -82,6 +82,12 @@ jobs:
       - name: Setup Vcpkg
         run: .\run init-vcpkg
 
+      - name: Free up disk space
+        run: |
+          if (Test-Path vcpkg\buildtrees\ceres) {
+              Remove-Item vcpkg\buildtrees\ceres -Recurse
+          }
+
       - name: Configure
         run: .\run cmake
 
