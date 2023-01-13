@@ -1,12 +1,3 @@
-find_package(absl CONFIG REQUIRED)
-find_package(Boost 1.67.0 REQUIRED COMPONENTS serialization)
-find_package(Ceres CONFIG REQUIRED)
-find_package(double-conversion CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(flann CONFIG REQUIRED)
-find_package(glog CONFIG REQUIRED)
-find_package(OpenMP REQUIRED)
-
 set(TARGET polatory)
 
 file(GLOB_RECURSE SOURCES
@@ -42,6 +33,7 @@ target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
     -DEIGEN_USE_MKL_ALL
+    -DGLOG_NO_ABBREVIATED_SEVERITIES
 )
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${TARGET} PRIVATE
@@ -94,19 +86,20 @@ target_link_libraries(${TARGET} INTERFACE
     ${Boost_LIBRARIES}
     ceres
     double-conversion::double-conversion
-    flann::flann_cpp
     glog::glog
-    ${OpenMP_CXX_LIBRARIES}
+    OpenMP::OpenMP_CXX
 )
 
 if(UNIX)
     target_link_libraries(${TARGET} INTERFACE
+        flann::flann_cpp_s
         "-Wl,--start-group"
         ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
         "-Wl,--end-group"
     )
 elseif(MSVC)
     target_link_libraries(${TARGET} INTERFACE
+        flann::flann_cpp
         ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
     )
 endif()
