@@ -44,7 +44,7 @@ Polatory can perform kriging prediction via RBF interpolation (dual kriging). Al
 | Weights                                      | (Not computed) Cardinal basis functions               |
 | Kriging variance                             | (Not computed)                                        |
 
-A limited number of covariance functions are supported. See the [list of available RBFs](https://polatory.readthedocs.io/en/latest/rbfs.html) for details.
+A limited number of covariance functions are supported. See the [list of available RBFs](https://github.com/polatory/polatory/wiki/List-of-Available-RBFs) for details.
 
 ## Building
 
@@ -54,7 +54,7 @@ A limited number of covariance functions are supported. See the [list of availab
 
 Your contribution is appreciated! You can contribute to this project in several ways:
 
-### Star the repo
+### Star the Repo
 
 You can just click the [★ Star] button on top of the page to show your interest.
 
@@ -82,30 +82,3 @@ You can fork the source tree and make some improvements to it. Then feel free to
 | polynomial     | Polynomial part of RBF interpolant.                   |
 | preconditioner | The preconditioner used with Krylov subspace methods. |
 | rbf            | Definition of RBFs/covariance functions.              |
-
-## Acknowledgements
-
-Polatory is built upon the following libraries. Each library may have other dependencies.
-
-<dl>
-  <dt><a href="https://abseil.io/">Abseil</a></dt>
-  <dd>Apache License 2.0</dd>
-  <dt><a href="http://www.boost.org/">Boost</a></dt>
-  <dd>Boost Software License 1.0</dd>
-  <dt><a href="http://ceres-solver.org/">Ceres Solver</a></dt>
-  <dd>BSD 3-Clause License</dd>
-  <dt><a href="https://github.com/google/double-conversion">double-conversion</a></dt>
-  <dd>BSD 3-Clause License</dd>
-  <dt><a href="http://eigen.tuxfamily.org/">Eigen</a></dt>
-  <dd>Mozilla Public License 2.0</dd>
-  <dt><a href="http://www.cs.ubc.ca/research/flann/">FLANN</a></dt>
-  <dd>BSD 2-Clause License</dd>
-  <dt><a href="https://github.com/google/googletest">Google Test</a></dt>
-  <dd>BSD 3-Clause License</dd>
-  <dt><a href="https://github.com/martinmoene/gsl-lite">gsl-lite</a></dt>
-  <dd>MIT License</dd>
-  <dt><a href="https://software.intel.com/mkl">Intel(R) MKL</a></dt>
-  <dd><a href="https://software.intel.com/license/intel-simplified-software-license">Intel Simplified Software License</a></dd>
-  <dt><a href="https://gitlab.inria.fr/solverstack/ScalFMM">ScalFMM</a></dt>
-  <dd><a href="http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html">CeCILL-C License 1.0</a></dd>
-</dl>
