@@ -17,7 +17,7 @@ NOTE: This is a pre-release version. APIs subject to change without notice.
 - Meshing isosurfaces
 - Supports large number (millions) of input points
 - Supports inequality constraints
-- [List of available RBFs](https://polatory.readthedocs.io/en/latest/rbfs.html)
+- [List of available RBFs](https://github.com/polatory/polatory/wiki/List-of-Available-RBFs)
 
 ### Platforms
 
@@ -52,11 +52,11 @@ A limited number of covariance functions are supported. See the [list of availab
 
 ## Contribution
 
-We welcome your contributions! You can contribute to this project in several ways:
+Your contribution is appreciated! You can contribute to this project in several ways:
 
-### Add a Star
+### Star the repo
 
-You can just click the ★Star button to show your interest.
+You can just click the [★ Star] button on top of the page to show your interest.
 
 ### <a href="https://github.com/polatory/polatory/issues">File an Issue</a>
 

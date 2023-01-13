@@ -67,7 +67,7 @@ jobs:
           submodules: "true"
 
       - name: Install Intel(R) oneMKL
-        run: '. "$env:CONDA\Scripts\conda" install --channel intel --quiet --yes mkl-devel'
+        run: '& "$env:CONDA\Scripts\conda" install --channel intel --quiet --yes mkl-devel'
 
       - name: Prepare to cache Vcpkg
         run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}

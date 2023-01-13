@@ -1,18 +1,13 @@
+# Build output
+build/
+install/
+
+# CLion
+.idea/*
+
 # Emacs
 *~
 \#*\#
 
-# Build output
-build/
-cmake-build-*/
-install/
-
-# CLion settings
-.idea/*
-!.idea/codeStyleSettings.xml
-
-# Jupyter Notebook
-.ipynb_checkpoints/
-
-# Visual Studio
-.vs/
+# Visual Studio Code
+.vscode/*
