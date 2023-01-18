@@ -6,9 +6,9 @@
 
 **Polatory** is a fast and memory-efficient framework for RBF (radial basis function) interpolation.
 
-NOTE: This is a pre-release version. APIs subject to change without notice.
+NOTE: This is a pre-release version. APIs are subject to change without notice.
 
-[Features](#features) • [Building](#building) • [Contribution](#contribution) • [Module Index](#module-index) • [Acknowledgements](#acknowledgements)
+[Features](#features) • [Building](#building) • [Contribution](#contribution) • [Module Index](#module-index)
 
 ## Features
 
@@ -40,8 +40,8 @@ Polatory can perform kriging prediction via RBF interpolation (dual kriging). Al
 | Nugget effect model                          | Spline smoothing                                      |
 | Simple kriging                               | Interpolant with no polynomial                        |
 | Ordinary kriging                             | Interpolant with polynomial of degree 0               |
-| Universal kriging                            | Interpolant with polynomial of degree >= 1            |
-| Weights                                      | (Not computed) Cardinal basis functions               |
+| Universal kriging                            | Interpolant with polynomial of degree ≥ 1             |
+| Weights                                      | (Not computed) Weights of cardinal basis functions    |
 | Kriging variance                             | (Not computed)                                        |
 
 A limited number of covariance functions are supported. See the [list of available RBFs](https://github.com/polatory/polatory/wiki/List-of-Available-RBFs) for details.
@@ -52,19 +52,19 @@ A limited number of covariance functions are supported. See the [list of availab
 
 ## Contribution
 
-Your contribution is appreciated! You can contribute to this project in several ways:
+Contributions are welcome! You can contribute to this project in several ways:
 
 ### Star the Repo
 
-You can just click the [★ Star] button on top of the page to show your interest.
+Just click the [★ Star] button on top of the page to show your interest!
 
 ### <a href="https://github.com/polatory/polatory/issues">File an Issue</a>
 
-Feel free to file an issue, if you have any questions, feature requests, or if you have found any unexpected results (please include a minimal reproducible example).
+Do not hesitate to file an issue if you have any questions, feature requests, or if you have encountered unexpected results (please include a minimal reproducible example).
 
-### <a href="https://github.com/polatory/polatory/pulls">Create a Pull Request</a>
+### <a href="https://github.com/polatory/polatory/pulls">Submit a Pull Request</a>
 
-You can fork the source tree and make some improvements to it. Then feel free to create a PR.
+You can fork the repo and make some improvements, then feel free to submit a pull request!
 
 ## Module Index
 
