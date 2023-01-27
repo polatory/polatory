@@ -34,6 +34,7 @@ target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_MPL2_ONLY
     -DEIGEN_USE_MKL_ALL
     -DGLOG_NO_ABBREVIATED_SEVERITIES
+    -DNOMINMAX
 )
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${TARGET} PRIVATE
