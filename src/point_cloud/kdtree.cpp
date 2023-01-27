@@ -1,3 +1,6 @@
+// https://github.com/flann-lib/flann/issues/386
+typedef unsigned long long pop_t;
+
 #include <cmath>
 #include <flann/flann.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
