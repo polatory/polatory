@@ -3,7 +3,7 @@
 #include <Eigen/Geometry>
 #include <array>
 #include <cmath>
-#include <polatory/common/pi.hpp>
+#include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -32,8 +32,8 @@ class dual_lattice_vectors : public std::array<geometry::vector3d, 3> {
 
 inline geometry::linear_transformation3d rotation() {
   return geometry::to_linear_transformation3d(
-      Eigen::AngleAxisd(-common::pi<double>() / 2.0, geometry::vector3d::UnitZ()) *
-      Eigen::AngleAxisd(-common::pi<double>() / 4.0, geometry::vector3d::UnitY()));
+      Eigen::AngleAxisd(-std::numbers::pi / 2.0, geometry::vector3d::UnitZ()) *
+      Eigen::AngleAxisd(-std::numbers::pi / 4.0, geometry::vector3d::UnitY()));
 }
 
 // Primitive vectors of the body-centered cubic lattice.
