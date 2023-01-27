@@ -1,20 +1,18 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <algorithm>
 #include <stack>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
-#include <Eigen/Core>
-
 namespace polatory {
 namespace isosurface {
 
 class dense_undirected_graph {
-public:
-  explicit dense_undirected_graph(int order)
-    : m_(Eigen::MatrixXi::Zero(order, order)) {
+ public:
+  explicit dense_undirected_graph(int order) : m_(Eigen::MatrixXi::Zero(order, order)) {
     if (order <= 0) {
       throw std::invalid_argument("order must be greater than 0.");
     }
@@ -25,9 +23,7 @@ public:
     m_(i, j)++;
   }
 
-  int degree(int i) const {
-    return m_.col(i).sum() + m_.row(i).sum() - m_(i, i);
-  }
+  int degree(int i) const { return m_.col(i).sum() + m_.row(i).sum() - m_(i, i); }
 
   bool has_edge(int i, int j) const {
     if (i > j) std::swap(i, j);
@@ -35,8 +31,7 @@ public:
   }
 
   bool is_connected() const {
-    if (order() == 0)
-      return true;
+    if (order() == 0) return true;
 
     std::vector<bool> visited(order());
     std::stack<int> to_visit;
@@ -59,15 +54,11 @@ public:
     return std::find(visited.begin(), visited.end(), false) == visited.end();
   }
 
-  int order() const {
-    return static_cast<int>(m_.rows());
-  }
+  int order() const { return static_cast<int>(m_.rows()); }
 
-  int size() const {
-    return m_.sum();
-  }
+  int size() const { return m_.sum(); }
 
-private:
+ private:
   Eigen::MatrixXi m_;
 };
 

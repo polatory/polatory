@@ -1,5 +1,3 @@
-#include <tuple>
-
 #include <gtest/gtest.h>
 
 #include <polatory/geometry/point3d.hpp>
@@ -7,7 +5,9 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <polatory/types.hpp>
+#include <tuple>
 
+using polatory::index_t;
 using polatory::common::valuesd;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
@@ -16,16 +16,15 @@ using polatory::geometry::vectors3d;
 using polatory::point_cloud::kdtree;
 using polatory::point_cloud::random_points;
 using polatory::point_cloud::sdf_data_generator;
-using polatory::index_t;
 
 TEST(sdf_data_generator, trivial) {
-  const auto n_points = index_t{ 512 };
+  const auto n_points = index_t{512};
   const auto min_distance = 1e-2;
   const auto max_distance = 5e-1;
 
   points3d points = random_points(sphere3d(), n_points);
-  vectors3d normals = (points + random_points(sphere3d(point3d::Zero(), 0.1), n_points))
-    .rowwise().normalized();
+  vectors3d normals =
+      (points + random_points(sphere3d(point3d::Zero(), 0.1), n_points)).rowwise().normalized();
 
   sdf_data_generator sdf_data(points, normals, min_distance, max_distance);
   points3d sdf_points = sdf_data.sdf_points();

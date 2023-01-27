@@ -1,29 +1,28 @@
-#include <tuple>
-
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/types.hpp>
+#include <tuple>
 
 #include "../random_anisotropy.hpp"
 #include "sample_data.hpp"
 
+using polatory::index_t;
+using polatory::model;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
-using polatory::model;
 using polatory::rbf::biharmonic3d;
-using polatory::index_t;
 
 namespace {
 
 void test_poly_degree(int poly_degree) {
-  const auto n_surface_points = index_t{ 10000 };
+  const auto n_surface_points = index_t{10000};
   const auto poly_dimension = 3;
   auto absolute_tolerance = 1e-4;
 
@@ -33,7 +32,7 @@ void test_poly_degree(int poly_degree) {
 
   auto n_points = static_cast<index_t>(points.rows());
 
-  biharmonic3d rbf({ 1.0 });
+  biharmonic3d rbf({1.0});
   rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, poly_dimension, poly_degree);

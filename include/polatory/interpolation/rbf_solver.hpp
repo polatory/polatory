@@ -1,12 +1,9 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
 #include <memory>
-
-#include <Eigen/Core>
-
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -17,6 +14,7 @@
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 #include <polatory/types.hpp>
+#include <stdexcept>
 
 namespace polatory {
 namespace interpolation {
@@ -24,11 +22,11 @@ namespace interpolation {
 class rbf_solver {
   using Preconditioner = preconditioner::ras_preconditioner;
 
-public:
+ public:
   rbf_solver(const model& model, const geometry::points3d& points)
-    : model_(model)
-    , n_poly_basis_(model.poly_basis_size())
-    , n_points_(static_cast<index_t>(points.rows())) {
+      : model_(model),
+        n_poly_basis_(model.poly_basis_size()),
+        n_points_(static_cast<index_t>(points.rows())) {
     op_ = std::make_unique<rbf_operator<>>(model, points);
     res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points);
 
@@ -36,9 +34,7 @@ public:
   }
 
   rbf_solver(const model& model, int tree_height, const geometry::bbox3d& bbox)
-    : model_(model)
-    , n_poly_basis_(model.poly_basis_size())
-    , n_points_(0) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
     op_ = std::make_unique<rbf_operator<>>(model, tree_height, bbox);
     res_eval_ = std::make_unique<rbf_residual_evaluator>(model, tree_height, bbox);
   }
@@ -83,31 +79,29 @@ public:
     return solve_impl(values, absolute_tolerance, &ini_sol);
   }
 
-private:
+ private:
   template <class Derived, class Derived2 = common::valuesd>
   common::valuesd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                             const Eigen::MatrixBase<Derived2> *initial_solution = nullptr) const {
+                             const Eigen::MatrixBase<Derived2>* initial_solution = nullptr) const {
     common::valuesd rhs(n_points_ + n_poly_basis_);
     rhs.head(n_points_) = values;
     rhs.tail(n_poly_basis_) = common::valuesd::Zero(n_poly_basis_);
 
     krylov::fgmres solver(*op_, rhs, 32);
-    if (initial_solution != nullptr)
-      solver.set_initial_solution(*initial_solution);
+    if (initial_solution != nullptr) solver.set_initial_solution(*initial_solution);
     solver.set_right_preconditioner(*pc_);
     solver.setup();
 
-    std::cout << std::setw(4) << "iter"
-              << std::setw(16) << "rel_res" << std::endl
-              << std::setw(4) << solver.iteration_count()
-              << std::setw(16) << std::scientific << solver.relative_residual() << std::defaultfloat << std::endl;
+    std::cout << std::setw(4) << "iter" << std::setw(16) << "rel_res" << std::endl
+              << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
+              << solver.relative_residual() << std::defaultfloat << std::endl;
 
     common::valuesd solution;
     while (true) {
       solver.iterate_process();
       solution = solver.solution_vector();
-      std::cout << std::setw(4) << solver.iteration_count()
-                << std::setw(16) << std::scientific << solver.relative_residual() << std::defaultfloat << std::endl;
+      std::cout << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
+                << solver.relative_residual() << std::defaultfloat << std::endl;
 
       auto convergence = res_eval_->converged(values, solution, absolute_tolerance);
       if (convergence.first) {

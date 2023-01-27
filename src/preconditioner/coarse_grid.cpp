@@ -1,9 +1,8 @@
-#include <polatory/preconditioner/coarse_grid.hpp>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/iterator_range.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/preconditioner/coarse_grid.hpp>
 
 namespace polatory {
 namespace preconditioner {
@@ -11,11 +10,11 @@ namespace preconditioner {
 coarse_grid::coarse_grid(const model& model,
                          const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
                          const std::vector<index_t>& point_indices)
-  : model_(model)
-  , lagrange_basis_(lagrange_basis)
-  , point_idcs_(point_indices)
-  , l_(lagrange_basis ? lagrange_basis->basis_size() : 0)
-  , m_(static_cast<index_t>(point_indices.size())) {
+    : model_(model),
+      lagrange_basis_(lagrange_basis),
+      point_idcs_(point_indices),
+      l_(lagrange_basis ? lagrange_basis->basis_size() : 0),
+      m_(static_cast<index_t>(point_indices.size())) {
   POLATORY_ASSERT(m_ > l_);
 }
 
@@ -23,16 +22,18 @@ coarse_grid::coarse_grid(const model& model,
                          const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
                          const std::vector<index_t>& point_indices,
                          const geometry::points3d& points_full)
-  : coarse_grid(model, lagrange_basis, point_indices) {
+    : coarse_grid(model, lagrange_basis, point_indices) {
   setup(points_full);
 }
 
 void coarse_grid::clear() {
   me_ = Eigen::MatrixXd();
-  ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
+  ldlt_of_qtaq_ =
+      Eigen::LDLT<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
 
   a_top_ = Eigen::MatrixXd();
-  lu_of_p_top_ = Eigen::FullPivLU<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
+  lu_of_p_top_ =
+      Eigen::FullPivLU<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
 }
 
 void coarse_grid::setup(const geometry::points3d& points_full) {
@@ -52,20 +53,22 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
 
   if (l_ > 0) {
     // Compute -E.
-    auto tail_points = common::take_rows(points_full, common::make_range(point_idcs_.begin() + l_, point_idcs_.end()));
+    auto tail_points = common::take_rows(
+        points_full, common::make_range(point_idcs_.begin() + l_, point_idcs_.end()));
     me_ = -lagrange_basis_->evaluate(tail_points);
 
     // Compute decomposition of Q^T A Q.
-    ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_
-                     + me_.transpose() * a.topRightCorner(l_, m_ - l_)
-                     + a.bottomLeftCorner(m_ - l_, l_) * me_
-                     + a.bottomRightCorner(m_ - l_, m_ - l_)).ldlt();
+    ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
+                     me_.transpose() * a.topRightCorner(l_, m_ - l_) +
+                     a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_))
+                        .ldlt();
 
     // Compute matrices used for solving polynomial part.
     a_top_ = a.topRows(l_);
 
     polynomial::monomial_basis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
-    auto head_points = common::take_rows(points_full, common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_));
+    auto head_points = common::take_rows(
+        points_full, common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_));
     Eigen::MatrixXd p_top = mono_basis.evaluate(head_points).transpose();
     lu_of_p_top_ = p_top.fullPivLu();
   } else {
@@ -89,8 +92,7 @@ void coarse_grid::solve(const Eigen::Ref<const common::valuesd>& values_full) {
 
   if (l_ > 0) {
     // Compute Q^T d.
-    common::valuesd qtd = me_.transpose() * values.head(l_)
-                          + values.tail(m_ - l_);
+    common::valuesd qtd = me_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
     // Solve Q^T A Q gamma = Q^T d for gamma.
     common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);

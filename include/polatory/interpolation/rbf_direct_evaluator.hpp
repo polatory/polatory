@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -15,7 +14,7 @@ namespace interpolation {
 class rbf_direct_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
-public:
+ public:
   rbf_direct_evaluator(const model& model, const geometry::points3d& source_points);
 
   common::valuesd evaluate() const;
@@ -33,7 +32,7 @@ public:
     }
   }
 
-private:
+ private:
   const model& model_;
   const index_t n_poly_basis_;
   const index_t n_src_points_;

@@ -1,6 +1,6 @@
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
 #include <polatory/common/eigen_utility.hpp>
 
 using polatory::common::col_range;
@@ -17,7 +17,7 @@ void test_take_cols() {
   Matrix m = Matrix::Random(2, 6);
 
   auto m2_fixed = take_cols(m, 1, 3, 4);
-  auto m2_dynamic = take_cols(m, { 1, 3, 4 });
+  auto m2_dynamic = take_cols(m, {1, 3, 4});
 
   Eigen::MatrixXd m2_expected(2, 3);
   m2_expected << m.col(1), m.col(3), m.col(4);
@@ -40,7 +40,7 @@ void test_take_rows() {
   Matrix m = Matrix::Random(6, 2);
 
   auto m2_fixed = take_rows(m, 1, 3, 4);
-  auto m2_dynamic = take_rows(m, { 1, 3, 4 });
+  auto m2_dynamic = take_rows(m, {1, 3, 4});
 
   Eigen::MatrixXd m2_expected(3, 2);
   m2_expected << m.row(1), m.row(3), m.row(4);

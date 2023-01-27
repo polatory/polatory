@@ -1,6 +1,5 @@
-#include <polatory/isosurface/rmt_primitive_lattice.hpp>
-
 #include <exception>
+#include <polatory/isosurface/rmt_primitive_lattice.hpp>
 
 namespace polatory {
 namespace isosurface {
@@ -15,8 +14,10 @@ lattice_vectors::lattice_vectors() noexcept try : base{ {
   geometry::transform_vector(rotation(), { 1.0, 1.0, -1.0 }) / std::sqrt(2.0),
   geometry::transform_vector(rotation(), { 1.0, -1.0, 1.0 }) / std::sqrt(2.0),
   geometry::transform_vector(rotation(), { -1.0, 1.0, 1.0 }) / std::sqrt(2.0)
-} } {
-} catch (const std::exception&) {
+}  // namespace detail
+}  // namespace isosurface
+{}
+catch (const std::exception&) {
   std::terminate();
 }
 
@@ -24,8 +25,10 @@ dual_lattice_vectors::dual_lattice_vectors() noexcept try : base{ {
   geometry::transform_vector(rotation(), { 1.0, 1.0, 0.0 }) / std::sqrt(2.0),
   geometry::transform_vector(rotation(), { 1.0, 0.0, 1.0 }) / std::sqrt(2.0),
   geometry::transform_vector(rotation(), { 0.0, 1.0, 1.0 }) / std::sqrt(2.0)
-} } {
-} catch (const std::exception&) {
+}  // namespace polatory
+}
+{}
+catch (const std::exception&) {
   std::terminate();
 }
 #ifdef _MSC_VER

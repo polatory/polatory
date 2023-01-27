@@ -1,10 +1,8 @@
 #pragma once
 
+#include <ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
 #include <cmath>
 #include <memory>
-
-#include <ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
-
 #include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
@@ -20,14 +18,10 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
   static const unsigned int NRHS = 1;  // Dimension of multipole expansions.
   static const unsigned int NLHS = 1;  // Dimension of local expansions.
 
-  explicit fmm_rbf_kernel(const rbf::rbf_base& rbf)
-    : rbf_(rbf.clone()) {
-  }
+  explicit fmm_rbf_kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
 
   // returns position in reduced storage
-  int getPosition(const unsigned int) const {
-    return 0;
-  }
+  int getPosition(const unsigned int) const { return 0; }
 
   double getMutualCoefficient() const {
     // The kernel is symmetric.
@@ -46,8 +40,8 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
 
   // evaluate interaction and derivative (blockwise)
   void evaluateBlockAndDerivative(const double& x1, const double& y1, const double& z1,
-    const double& x2, const double& y2, const double& z2,
-    double block[1], double blockDerivative[3]) const {
+                                  const double& x2, const double& y2, const double& z2,
+                                  double block[1], double blockDerivative[3]) const {
     const auto diffx = (x1 - x2);
     const auto diffy = (y1 - y2);
     const auto diffz = (z1 - z2);
@@ -56,7 +50,8 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
     block[0] = rbf_->evaluate_untransformed(r);
 
     if (kEvaluateGradient) {
-      rbf_->evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1], &blockDerivative[2], diffx, diffy, diffz, r);
+      rbf_->evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1],
+                                            &blockDerivative[2], diffx, diffy, diffz, r);
     } else {
       blockDerivative[0] = 0.0;
       blockDerivative[1] = 0.0;
@@ -78,7 +73,7 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
     return evaluate(p1.data(), p2.data());
   }
 
-private:
+ private:
   const std::unique_ptr<rbf::rbf_base> rbf_;
 };
 

@@ -1,34 +1,22 @@
-#include <polatory/krylov/gmres_base.hpp>
-
 #include <cmath>
 #include <iostream>
-
 #include <polatory/common/macros.hpp>
+#include <polatory/krylov/gmres_base.hpp>
 
 namespace polatory {
 namespace krylov {
 
 bool gmres_base::print_progress = true;
 
-double gmres_base::absolute_residual() const {
-  return std::abs(g_(iter_));
-}
+double gmres_base::absolute_residual() const { return std::abs(g_(iter_)); }
 
-bool gmres_base::converged() const {
-  return converged_;
-}
+bool gmres_base::converged() const { return converged_; }
 
-index_t gmres_base::iteration_count() const {
-  return iter_;
-}
+index_t gmres_base::iteration_count() const { return iter_; }
 
-index_t gmres_base::max_iterations() const {
-  return max_iter_;
-}
+index_t gmres_base::max_iterations() const { return max_iter_; }
 
-double gmres_base::relative_residual() const {
-  return std::abs(g_(iter_)) / rhs_norm_;
-}
+double gmres_base::relative_residual() const { return std::abs(g_(iter_)) / rhs_norm_; }
 
 void gmres_base::set_left_preconditioner(const linear_operator& left_preconditioner) {
   POLATORY_ASSERT(left_preconditioner.size() == m_);
@@ -90,41 +78,34 @@ common::valuesd gmres_base::solution_vector() const {
 
 void gmres_base::solve(double tolerance) {
   for (; iter_ < max_iter_;) {
-    if (print_progress)
-      std::cout << iter_ << ": \t" << relative_residual() << std::endl;
+    if (print_progress) std::cout << iter_ << ": \t" << relative_residual() << std::endl;
     iterate_process();
     if (relative_residual() < tolerance) {
       converged_ = true;
       break;
     }
   }
-  if (print_progress)
-    std::cout << iter_ << ": \t" << relative_residual() << std::endl;
+  if (print_progress) std::cout << iter_ << ": \t" << relative_residual() << std::endl;
 }
 
 gmres_base::gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
-  : op_(op)
-  , m_(static_cast<index_t>(rhs.rows()))
-  , max_iter_(max_iter)
-  , x0_(common::valuesd::Zero(m_))
-  , left_pc_(nullptr)
-  , right_pc_(nullptr)
-  , iter_(0)
-  , rhs_(rhs)
-  , rhs_norm_(rhs.norm())
-  , converged_(false) {
-}
+    : op_(op),
+      m_(static_cast<index_t>(rhs.rows())),
+      max_iter_(max_iter),
+      x0_(common::valuesd::Zero(m_)),
+      left_pc_(nullptr),
+      right_pc_(nullptr),
+      iter_(0),
+      rhs_(rhs),
+      rhs_norm_(rhs.norm()),
+      converged_(false) {}
 
 common::valuesd gmres_base::left_preconditioned(const common::valuesd& x) const {
-  return left_pc_ != nullptr
-         ? (*left_pc_)(x)
-         : x;
+  return left_pc_ != nullptr ? (*left_pc_)(x) : x;
 }
 
 common::valuesd gmres_base::right_preconditioned(const common::valuesd& x) const {
-  return right_pc_ != nullptr
-         ? (*right_pc_)(x)
-         : x;
+  return right_pc_ != nullptr ? (*right_pc_)(x) : x;
 }
 
 }  // namespace krylov

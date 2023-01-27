@@ -1,19 +1,14 @@
-#include <polatory/point_cloud/random_points.hpp>
-
 #include <cmath>
-#include <stdexcept>
-
 #include <polatory/common/eigen_utility.hpp>
+#include <polatory/point_cloud/random_points.hpp>
+#include <stdexcept>
 
 namespace polatory {
 namespace point_cloud {
 
-geometry::points3d random_points(const geometry::cuboid3d& cuboid,
-    index_t n,
-    seed_type seed) {
+geometry::points3d random_points(const geometry::cuboid3d& cuboid, index_t n, seed_type seed) {
   auto size = cuboid.max() - cuboid.min();
-  if (size.minCoeff() <= 0.0)
-    throw std::invalid_argument("cuboid must have a positive volume.");
+  if (size.minCoeff() <= 0.0) throw std::invalid_argument("cuboid must have a positive volume.");
 
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(0.0, 1.0);
@@ -33,11 +28,8 @@ geometry::points3d random_points(const geometry::cuboid3d& cuboid,
 
 // See Marsaglia (1972) at:
 // http://mathworld.wolfram.com/SpherePointPicking.html
-geometry::points3d random_points(const geometry::sphere3d& sphere,
-    index_t n,
-    seed_type seed) {
-  if (sphere.radius() <= 0.0)
-    throw std::invalid_argument("sphere must have a positive volume.");
+geometry::points3d random_points(const geometry::sphere3d& sphere, index_t n, seed_type seed) {
+  if (sphere.radius() <= 0.0) throw std::invalid_argument("sphere must have a positive volume.");
 
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> dist(-1.0, 1.0);

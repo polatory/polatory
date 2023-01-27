@@ -1,19 +1,18 @@
 #pragma once
 
 #include <fstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/numeric/roundtrip_string.hpp>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace polatory {
 namespace isosurface {
 
 class surface {
-public:
+ public:
   using vertices_type = std::vector<geometry::point3d>;
   using faces_type = std::vector<face>;
 
@@ -36,13 +35,10 @@ public:
 
   void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);
-    if (!ofs)
-      throw std::runtime_error("Failed to open file '" + filename + "'.");
+    if (!ofs) throw std::runtime_error("Failed to open file '" + filename + "'.");
 
     for (auto& v : vertices_) {
-      ofs << "v "
-          << numeric::to_string(v[0]) << ' '
-          << numeric::to_string(v[1]) << ' '
+      ofs << "v " << numeric::to_string(v[0]) << ' ' << numeric::to_string(v[1]) << ' '
           << numeric::to_string(v[2]) << '\n';
     }
 
@@ -51,15 +47,11 @@ public:
     }
   }
 
-  const faces_type& faces() const {
-    return faces_;
-  }
+  const faces_type& faces() const { return faces_; }
 
-  const vertices_type& vertices() const {
-    return vertices_;
-  }
+  const vertices_type& vertices() const { return vertices_; }
 
-private:
+ private:
   vertices_type vertices_;
   faces_type faces_;
 };

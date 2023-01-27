@@ -1,7 +1,6 @@
-#include <functional>
-
 #include <gtest/gtest.h>
 
+#include <functional>
 #include <polatory/common/fold.hpp>
 
 using polatory::common::fold_left;

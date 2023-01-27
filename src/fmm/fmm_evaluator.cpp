@@ -1,16 +1,14 @@
-#include <polatory/fmm/fmm_evaluator.hpp>
-
-#include <algorithm>
-#include <vector>
-
 #include <ScalFMM/Components/FTypedLeaf.hpp>
 #include <ScalFMM/Containers/FOctree.hpp>
 #include <ScalFMM/Core/FFmmAlgorithmThreadTsm.hpp>
 #include <ScalFMM/Kernels/Chebyshev/FChebCell.hpp>
 #include <ScalFMM/Kernels/Chebyshev/FChebSymKernel.hpp>
 #include <ScalFMM/Kernels/P2P/FP2PParticleContainerIndexed.hpp>
-
+#include <algorithm>
 #include <polatory/common/macros.hpp>
+#include <polatory/fmm/fmm_evaluator.hpp>
+#include <vector>
+
 #include "fmm_rbf_kernel.hpp"
 
 namespace polatory {
@@ -27,24 +25,22 @@ class fmm_evaluator<Order>::impl {
 
   static constexpr int FmmAlgorithmScheduleChunkSize = 1;
 
-public:
+ public:
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
-    : model_(model)
-    , rbf_kernel_(model.rbf())
-    , n_src_points_(0)
-    , n_fld_points_(0) {
+      : model_(model), rbf_kernel_(model.rbf()), n_src_points_(0), n_fld_points_(0) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
     auto width = (1.0 + 1.0 / 64.0) * a_bbox.size().maxCoeff();
     if (width == 0.0) width = 1.0;
     auto center = a_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-      tree_height, width, FPoint<double>(center.data()), &rbf_kernel_);
+        tree_height, width, FPoint<double>(center.data()), &rbf_kernel_);
 
-    tree_ = std::make_unique<Octree>(
-      tree_height, std::max(1, tree_height - 4), width, FPoint<double>(center.data()));
+    tree_ = std::make_unique<Octree>(tree_height, std::max(1, tree_height - 4), width,
+                                     FPoint<double>(center.data()));
 
-    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int{ FmmAlgorithmScheduleChunkSize });
+    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(),
+                                 int{FmmAlgorithmScheduleChunkSize});
   }
 
   common::valuesd evaluate() const {
@@ -100,7 +96,8 @@ public:
     update_weight_ptrs();
   }
 
-  void set_source_points_and_weights(const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
+  void set_source_points_and_weights(const geometry::points3d& points,
+                                     const Eigen::Ref<const common::valuesd>& weights) {
     POLATORY_ASSERT(weights.rows() == points.rows());
 
     n_src_points_ = static_cast<index_t>(points.rows());
@@ -115,12 +112,11 @@ public:
     auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_src_points_; idx++) {
       auto ap = geometry::transform_point(a, points.row(idx));
-      tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeSource, idx, weights[idx]);
+      tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeSource, idx,
+                    weights[idx]);
     }
 
-    tree_->forEachCell([&](Cell* cell) {
-      cell->resetToInitialState();
-    });
+    tree_->forEachCell([&](Cell* cell) { cell->resetToInitialState(); });
 
     fmm_->execute(FFmmP2M | FFmmM2M);
 
@@ -130,24 +126,20 @@ public:
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     POLATORY_ASSERT(static_cast<index_t>(weights.size()) == n_src_points_);
 
-    if (n_src_points_ == 0)
-      return;
+    if (n_src_points_ == 0) return;
 
-    if (weight_ptrs_.empty())
-      update_weight_ptrs();
+    if (weight_ptrs_.empty()) update_weight_ptrs();
 
     for (index_t idx = 0; idx < n_src_points_; idx++) {
       *weight_ptrs_[idx] = weights[idx];
     }
 
-    tree_->forEachCell([&](Cell* cell) {
-      cell->resetToInitialState();
-    });
+    tree_->forEachCell([&](Cell* cell) { cell->resetToInitialState(); });
 
     fmm_->execute(FFmmP2M | FFmmM2M);
   }
 
-private:
+ private:
   common::valuesd potentials() const {
     common::valuesd phi = common::valuesd::Zero(n_fld_points_);
 
@@ -207,9 +199,9 @@ private:
 };
 
 template <int Order>
-fmm_evaluator<Order>::fmm_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
-  : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {
-}
+fmm_evaluator<Order>::fmm_evaluator(const model& model, int tree_height,
+                                    const geometry::bbox3d& bbox)
+    : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {}
 
 template <int Order>
 fmm_evaluator<Order>::~fmm_evaluator() = default;
@@ -230,7 +222,8 @@ void fmm_evaluator<Order>::set_source_points(const geometry::points3d& points) {
 }
 
 template <int Order>
-void fmm_evaluator<Order>::set_source_points_and_weights(const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
+void fmm_evaluator<Order>::set_source_points_and_weights(
+    const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_source_points_and_weights(points, weights);
 }
 

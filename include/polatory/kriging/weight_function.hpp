@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-
 #include <polatory/types.hpp>
 
 namespace polatory {

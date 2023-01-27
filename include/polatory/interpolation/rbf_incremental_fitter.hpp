@@ -1,12 +1,11 @@
 #pragma once
 
-#include <utility>
-#include <vector>
-
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
+#include <utility>
+#include <vector>
 
 namespace polatory {
 namespace interpolation {
@@ -17,13 +16,13 @@ class rbf_incremental_fitter {
   static constexpr double point_adoption_ratio = 0.1;
   static constexpr index_t max_n_points_to_add = 1024;
 
-public:
+ public:
   rbf_incremental_fitter(const model& model, const geometry::points3d& points);
 
-  std::pair<std::vector<index_t>, common::valuesd>
-  fit(const common::valuesd& values, double absolute_tolerance) const;
+  std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
+                                                       double absolute_tolerance) const;
 
-private:
+ private:
   std::vector<index_t> initial_indices() const;
 
   std::vector<index_t> complement_indices(const std::vector<index_t>& indices) const;

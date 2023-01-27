@@ -6,7 +6,7 @@ namespace polatory {
 namespace krylov {
 
 class linear_operator {
-public:
+ public:
   virtual ~linear_operator() = default;
 
   linear_operator(const linear_operator&) = delete;
@@ -18,7 +18,7 @@ public:
 
   virtual index_t size() const = 0;
 
-protected:
+ protected:
   linear_operator() = default;
 };
 

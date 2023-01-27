@@ -1,6 +1,6 @@
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/sphere3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
@@ -12,22 +12,22 @@
 
 #include "../random_anisotropy.hpp"
 
+using polatory::index_t;
+using polatory::model;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
-using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::rbf::cov_exponential;
-using polatory::index_t;
 
 namespace {
 
 void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) {
   auto absolute_tolerance = 2e-6;
 
-  cov_exponential rbf({ 1.0, 0.2 });
+  cov_exponential rbf({1.0, 0.2});
   rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, 3, poly_degree);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
@@ -18,28 +17,27 @@ namespace interpolation {
 template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
   rbf_operator(const model& model, const geometry::points3d& points)
-    : model_(model)
-    , n_poly_basis_(model.poly_basis_size())
-    , n_points_(0) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
     auto n_points = static_cast<index_t>(points.rows());
     auto bbox = geometry::bbox3d::from_points(points);
-    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, fmm::fmm_tree_height(n_points), bbox);
+    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(
+        model, fmm::fmm_tree_height(n_points), bbox);
 
     if (n_poly_basis_ > 0) {
-      poly_basis_ = std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
+      poly_basis_ =
+          std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
     }
 
     set_points(points);
   }
 
   rbf_operator(const model& model, int tree_height, const geometry::bbox3d& bbox)
-    : model_(model)
-    , n_poly_basis_(model.poly_basis_size())
-    , n_points_(0) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
     a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, tree_height, bbox);
 
     if (n_poly_basis_ > 0) {
-      poly_basis_ = std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
+      poly_basis_ =
+          std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
     }
   }
 
@@ -74,11 +72,9 @@ struct rbf_operator : krylov::linear_operator {
     }
   }
 
-  index_t size() const override {
-    return n_points_ + n_poly_basis_;
-  }
+  index_t size() const override { return n_points_ + n_poly_basis_; }
 
-private:
+ private:
   const model& model_;
   const index_t n_poly_basis_;
 

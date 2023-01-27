@@ -10,10 +10,9 @@ namespace polatory {
 namespace isosurface {
 
 class rbf_field_function : public field_function {
-public:
+ public:
   explicit rbf_field_function(interpolant& interpolant)  // NOLINT(runtime/references)
-    : interpolant_(interpolant) {
-  }
+      : interpolant_(interpolant) {}
 
   common::valuesd operator()(const geometry::points3d& points) const override {
     return interpolant_.evaluate_impl(points);
@@ -23,7 +22,7 @@ public:
     interpolant_.set_evaluation_bbox_impl(bbox);
   }
 
-private:
+ private:
   interpolant& interpolant_;
 };
 

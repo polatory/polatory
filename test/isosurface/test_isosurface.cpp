@@ -1,7 +1,6 @@
-#include <cmath>
-
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>
@@ -17,7 +16,7 @@ using polatory::isosurface::isosurface;
 namespace {
 
 class test_field_function : public field_function {
-public:
+ public:
   valuesd operator()(const points3d& points) const override {
     valuesd values(points.rows());
 
@@ -32,9 +31,7 @@ public:
 }  // namespace
 
 TEST(isosurface, generate) {
-  const bbox3d bbox(
-    point3d(-1.0, -1.0, -1.0),
-    point3d(1.0, 1.0, 1.0));
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
 
   isosurface isosurf(bbox, resolution);
@@ -48,9 +45,7 @@ TEST(isosurface, generate) {
 }
 
 TEST(isosurface, generate_from_seed_points) {
-  const bbox3d bbox(
-    point3d(-1.0, -1.0, -1.0),
-    point3d(1.0, 1.0, 1.0));
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
 
   points3d seed_points(1, 3);

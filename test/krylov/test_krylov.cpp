@@ -1,28 +1,26 @@
-#include <memory>
+#include <gtest/gtest.h>
 
 #include <Eigen/Core>
 #include <Eigen/LU>
-#include <gtest/gtest.h>
-
+#include <memory>
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/krylov/gmres.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/krylov/minres.hpp>
 #include <polatory/types.hpp>
 
+using polatory::index_t;
 using polatory::common::valuesd;
 using polatory::krylov::fgmres;
 using polatory::krylov::gmres;
 using polatory::krylov::linear_operator;
 using polatory::krylov::minres;
-using polatory::index_t;
 
 namespace {
 
 class random_symmetric : public linear_operator {
-public:
-  explicit random_symmetric(index_t n)
-    : n_(n) {
+ public:
+  explicit random_symmetric(index_t n) : n_(n) {
     m_ = (Eigen::MatrixXd::Random(n, n) + Eigen::MatrixXd::Ones(n, n)) / 2.0;
     for (index_t i = 1; i < n; i++) {
       for (index_t j = 0; j < i; j++) {
@@ -31,47 +29,36 @@ public:
     }
   }
 
-  const Eigen::MatrixXd& matrix() const {
-    return m_;
-  }
+  const Eigen::MatrixXd& matrix() const { return m_; }
 
-  valuesd operator()(const valuesd& v) const override {
-    return m_ * v;
-  }
+  valuesd operator()(const valuesd& v) const override { return m_ * v; }
 
-  index_t size() const override {
-    return n_;
-  }
+  index_t size() const override { return n_; }
 
-private:
+ private:
   const index_t n_;
   Eigen::MatrixXd m_;
 };
 
 class preconditioner : public linear_operator {
-public:
-  explicit preconditioner(const random_symmetric& op)
-    : n_(op.size()) {
+ public:
+  explicit preconditioner(const random_symmetric& op) : n_(op.size()) {
     Eigen::MatrixXd perturbation = 0.1 * valuesd::Random(n_).asDiagonal();
     m_ = op.matrix().inverse() + perturbation;
   }
 
-  valuesd operator()(const valuesd& v) const override {
-    return m_ * v;
-  }
+  valuesd operator()(const valuesd& v) const override { return m_ * v; }
 
-  index_t size() const override {
-    return n_;
-  }
+  index_t size() const override { return n_; }
 
-private:
+ private:
   const index_t n_;
   Eigen::MatrixXd m_;
 };
 
 class krylov_test : public ::testing::Test {
-protected:
-  static constexpr index_t n = index_t{ 100 };
+ protected:
+  static constexpr index_t n = index_t{100};
 
   std::unique_ptr<random_symmetric> op;
   std::unique_ptr<preconditioner> pc;
@@ -91,18 +78,14 @@ protected:
     x0 = valuesd::Random(n);
   }
 
-  void TearDown() override {
-  }
+  void TearDown() override {}
 
   template <class Solver>
   void test_solver(bool with_initial_solution, bool with_right_pc, bool with_left_pc) {
     Solver solver(*op, rhs, n);
-    if (with_initial_solution)
-      solver.set_initial_solution(x0);
-    if (with_right_pc)
-      solver.set_right_preconditioner(*pc);
-    if (with_left_pc)
-      solver.set_left_preconditioner(*pc);
+    if (with_initial_solution) solver.set_initial_solution(x0);
+    if (with_right_pc) solver.set_right_preconditioner(*pc);
+    if (with_left_pc) solver.set_left_preconditioner(*pc);
     solver.setup();
 
     auto last_residual = 0.0;
@@ -112,10 +95,7 @@ protected:
       auto current_residual = solver.relative_residual();
 
       if (!with_left_pc) {
-        EXPECT_NEAR(
-          (rhs - (*op)(approx_solution)).norm() / rhs.norm(),
-          current_residual,
-          1e-12);
+        EXPECT_NEAR((rhs - (*op)(approx_solution)).norm() / rhs.norm(), current_residual, 1e-12);
       }
 
       if (i > 0) {

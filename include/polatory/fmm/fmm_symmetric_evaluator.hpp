@@ -1,9 +1,7 @@
 #pragma once
 
-#include <memory>
-
 #include <Eigen/Core>
-
+#include <memory>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -14,7 +12,7 @@ namespace fmm {
 
 template <int Order>
 class fmm_symmetric_evaluator {
-public:
+ public:
   fmm_symmetric_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox);
 
   ~fmm_symmetric_evaluator();
@@ -30,7 +28,7 @@ public:
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights);
 
-private:
+ private:
   class impl;
 
   std::unique_ptr<impl> pimpl_;

@@ -1,17 +1,12 @@
 #pragma once
 
 #include <omp.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <iterator>
 #include <memory>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -21,6 +16,11 @@
 #include <polatory/isosurface/rmt_primitive_lattice.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 namespace polatory {
 namespace isosurface {
@@ -42,7 +42,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   std::vector<geometry::point3d> vertices;
   std::unordered_map<vertex_index, vertex_index> cluster_map;
 
-  static bool has_intersection(const rmt_node *a, const rmt_node *b) {
+  static bool has_intersection(const rmt_node* a, const rmt_node* b) {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
   }
 
@@ -88,9 +88,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   vertex_index clustered_vertex_index(vertex_index vi) const {
-    return cluster_map.count(vi) != 0
-           ? cluster_map.at(vi)
-           : vi;
+    return cluster_map.count(vi) != 0 ? cluster_map.at(vi) : vi;
   }
 
   // Evaluates field values for each node in nodes_to_evaluate.
@@ -249,10 +247,9 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
   }
 
-public:
-  rmt_lattice(const geometry::bbox3d& bbox, double resolution)
-    : base(bbox, resolution) {
-    node_list.init_strides(cell_index{ 1 } << shift1, cell_index{ 1 } << shift2);
+ public:
+  rmt_lattice(const geometry::bbox3d& bbox, double resolution) : base(bbox, resolution) {
+    node_list.init_strides(cell_index{1} << shift1, cell_index{1} << shift2);
   }
 
   // Add all nodes inside the boundary.
@@ -331,7 +328,7 @@ public:
   }
 
   void generate_vertices(const std::vector<cell_index>& nodes) {
-    static constexpr std::array<edge_index, 7> CellEdgeIndices{ 0, 1, 3, 4, 9, 12, 13 };
+    static constexpr std::array<edge_index, 7> CellEdgeIndices{0, 1, 3, 4, 9, 12, 13};
 
 #pragma omp parallel
     {
@@ -339,8 +336,7 @@ public:
       auto thread_num = static_cast<size_t>(omp_get_thread_num());
       auto map_size = nodes.size();
       auto map_it = nodes.begin();
-      if (thread_num < map_size)
-        std::advance(map_it, thread_num);
+      if (thread_num < map_size) std::advance(map_it, thread_num);
 
       for (auto i = thread_num; i < map_size; i += thread_count) {
         auto ci = *map_it;
@@ -382,15 +378,12 @@ public:
           }
         }
 
-        if (i + thread_count < map_size)
-          std::advance(map_it, thread_count);
+        if (i + thread_count < map_size) std::advance(map_it, thread_count);
       }
     }
   }
 
-  std::vector<geometry::point3d>& get_vertices() {
-    return vertices;
-  }
+  std::vector<geometry::point3d>& get_vertices() { return vertices; }
 
   void uncluster_vertices(const std::set<vertex_index>& vis) {
     auto it = cluster_map.begin();

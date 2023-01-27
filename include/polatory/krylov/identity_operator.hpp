@@ -8,21 +8,17 @@ namespace polatory {
 namespace krylov {
 
 class identity_operator : public linear_operator {
-public:
-  explicit identity_operator(index_t n)
-    : n_(n) {
-  }
+ public:
+  explicit identity_operator(index_t n) : n_(n) {}
 
   common::valuesd operator()(const common::valuesd& v) const override {
     POLATORY_ASSERT(static_cast<int>(v.rows()) == n_);
     return v;
   }
 
-  index_t size() const override {
-    return n_;
-  }
+  index_t size() const override { return n_; }
 
-private:
+ private:
   const index_t n_;
 };
 

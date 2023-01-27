@@ -1,9 +1,7 @@
-#include <polatory/point_cloud/kdtree.hpp>
-
 #include <cmath>
-#include <stdexcept>
-
 #include <flann/flann.hpp>
+#include <polatory/point_cloud/kdtree.hpp>
+#include <stdexcept>
 
 namespace polatory {
 namespace point_cloud {
@@ -11,11 +9,12 @@ namespace point_cloud {
 class kdtree::impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
 
-public:
+ public:
   using indices_and_distances = std::pair<std::vector<index_t>, std::vector<double>>;
 
   impl(const geometry::points3d& points, bool use_exact_search) {
-    flann::Matrix<double> points_mat(const_cast<double *>(points.data()), points.rows(), 3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
+    flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(),
+                                     3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
 
     flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
     flann_index_->buildIndex();
@@ -27,7 +26,8 @@ public:
   }
 
   indices_and_distances knn_search(const geometry::point3d& point, index_t k) const {
-    flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
+    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1,
+                                    3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
@@ -44,11 +44,12 @@ public:
       d = std::sqrt(d);
     }
 
-    return { std::move(indices), std::move(distances_v[0]) };
+    return {std::move(indices), std::move(distances_v[0])};
   }
 
   indices_and_distances radius_search(const geometry::point3d& point, double radius) const {
-    flann::Matrix<double> point_mat(const_cast<double *>(point.data()), 1, 3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
+    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1,
+                                    3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
@@ -66,37 +67,33 @@ public:
       d = std::sqrt(d);
     }
 
-    return { std::move(indices), std::move(distances_v[0]) };
+    return {std::move(indices), std::move(distances_v[0])};
   }
 
-private:
+ private:
   flann::SearchParams params_knn_;
   flann::SearchParams params_radius_;
   std::unique_ptr<FlannIndex> flann_index_;
 };
 
 kdtree::kdtree(const geometry::points3d& points, bool use_exact_search)
-  : pimpl_(points.rows() == 0 ? nullptr : std::make_unique<impl>(points, use_exact_search)) {
-}
+    : pimpl_(points.rows() == 0 ? nullptr : std::make_unique<impl>(points, use_exact_search)) {}
 
 kdtree::~kdtree() = default;
 
 kdtree::indices_and_distances kdtree::knn_search(const geometry::point3d& point, index_t k) const {
-  if (k <= 0)
-    throw std::invalid_argument("k must be greater than 0.");
+  if (k <= 0) throw std::invalid_argument("k must be greater than 0.");
 
-  if (!pimpl_)
-    return {};
+  if (!pimpl_) return {};
 
   return pimpl_->knn_search(point, k);
 }
 
-kdtree::indices_and_distances kdtree::radius_search(const geometry::point3d& point, double radius) const {
-  if (radius <= 0.0)
-    throw std::invalid_argument("radius must be greater than 0.0.");
+kdtree::indices_and_distances kdtree::radius_search(const geometry::point3d& point,
+                                                    double radius) const {
+  if (radius <= 0.0) throw std::invalid_argument("radius must be greater than 0.0.");
 
-  if (!pimpl_)
-    return {};
+  if (!pimpl_) return {};
 
   return pimpl_->radius_search(point, radius);
 }

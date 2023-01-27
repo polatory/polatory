@@ -1,24 +1,21 @@
 #pragma once
 
 #include <cmath>
-#include <utility>
-#include <vector>
-
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/isosurface/surface.hpp>
 #include <polatory/isosurface/types.hpp>
+#include <utility>
+#include <vector>
 
 namespace polatory {
 namespace isosurface {
 
 class isosurface_2d {
-public:
+ public:
   isosurface_2d(const geometry::bbox3d& bbox, double resolution)
-    : bbox_(bbox)
-    , resolution_(resolution) {
-  }
+      : bbox_(bbox), resolution_(resolution) {}
 
   surface generate(field_function& field_fn) const {  // NOLINT(runtime/references)
     field_fn.set_evaluation_bbox(bbox_);
@@ -52,15 +49,15 @@ public:
         auto i1 = iy * nx + (ix + 1);
         auto i2 = (iy + 1) * nx + ix;
         auto i3 = (iy + 1) * nx + (ix + 1);
-        faces.push_back({ i0, i1, i3 });
-        faces.push_back({ i0, i3, i2 });
+        faces.push_back({i0, i1, i3});
+        faces.push_back({i0, i3, i2});
       }
     }
 
-    return { vertices, faces };
+    return {vertices, faces};
   }
 
-private:
+ private:
   const geometry::bbox3d bbox_;
   const double resolution_;
 };

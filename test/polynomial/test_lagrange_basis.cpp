@@ -1,14 +1,14 @@
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/types.hpp>
 
+using polatory::index_t;
 using polatory::geometry::cuboid3d;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::lagrange_basis;
-using polatory::index_t;
 
 namespace {
 

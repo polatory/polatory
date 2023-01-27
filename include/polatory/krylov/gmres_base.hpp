@@ -1,17 +1,15 @@
 #pragma once
 
-#include <vector>
-
 #include <Eigen/Core>
-
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
+#include <vector>
 
 namespace polatory {
 namespace krylov {
 
 class gmres_base {
-public:
+ public:
   static bool print_progress;
 
   virtual ~gmres_base() = default;
@@ -46,7 +44,7 @@ public:
   // tolerance: Tolerance of the relative residual (stopping criterion).
   void solve(double tolerance);
 
-protected:
+ protected:
   gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
 
   virtual void add_preconditioned_krylov_basis(const common::valuesd& /*z*/) {}
@@ -67,10 +65,10 @@ protected:
   common::valuesd x0_;
 
   // Left preconditioner.
-  const linear_operator *left_pc_;
+  const linear_operator* left_pc_;
 
   // Right preconditioner.
-  const linear_operator *right_pc_;
+  const linear_operator* right_pc_;
 
   // Current # of iteration.
   index_t iter_;

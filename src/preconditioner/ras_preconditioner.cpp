@@ -1,30 +1,32 @@
-#include <polatory/preconditioner/ras_preconditioner.hpp>
-
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <numeric>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
+#include <polatory/preconditioner/ras_preconditioner.hpp>
 
 namespace polatory {
 namespace preconditioner {
 
 ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& in_points)
-  : model_without_poly_(model.without_poly())
-  , points_(in_points)
-  , n_points_(static_cast<index_t>(in_points.rows()))
-  , n_poly_basis_(model.poly_basis_size())
-  , finest_evaluator_(kReportResidual ? std::make_unique<interpolation::rbf_symmetric_evaluator<Order>>(model, points_) : nullptr)
-{
-  auto n_fine_levels = std::max(0, static_cast<int>(
-    std::ceil(std::log(static_cast<double>(n_points_) / static_cast<double>(n_coarsest_points)) / log(1.0 / coarse_ratio))));
+    : model_without_poly_(model.without_poly()),
+      points_(in_points),
+      n_points_(static_cast<index_t>(in_points.rows())),
+      n_poly_basis_(model.poly_basis_size()),
+      finest_evaluator_(
+          kReportResidual
+              ? std::make_unique<interpolation::rbf_symmetric_evaluator<Order>>(model, points_)
+              : nullptr) {
+  auto n_fine_levels =
+      std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(n_points_) /
+                                                      static_cast<double>(n_coarsest_points)) /
+                                             log(1.0 / coarse_ratio))));
   n_levels_ = n_fine_levels + 1;
 
   point_idcs_.resize(n_levels_);
@@ -34,7 +36,8 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     polynomial::unisolvent_point_set ups(points_, model.poly_dimension(), model.poly_degree());
 
     poly_point_idcs = ups.point_indices();
-    lagrange_basis_ = std::make_unique<polynomial::lagrange_basis>(model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
+    lagrange_basis_ = std::make_unique<polynomial::lagrange_basis>(
+        model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
 
     auto level = n_levels_ - 1;
     point_idcs_[level] = poly_point_idcs;
@@ -52,7 +55,8 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 
   fine_grids_.resize(n_levels_);
 
-  std::cout << std::setw(8) << "level" << std::setw(16) << "n_domains" << std::setw(16) << "n_points" << std::endl;
+  std::cout << std::setw(8) << "level" << std::setw(16) << "n_domains" << std::setw(16)
+            << "n_points" << std::endl;
 
   for (auto level = n_levels_ - 1; level >= 1; level--) {
     auto divider = std::make_unique<domain_divider>(points_, point_idcs_[level], poly_point_idcs);
@@ -61,9 +65,9 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
       fine_grids_[level].emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
     }
 
-    auto ratio = level == 1
-      ? static_cast<double>(n_coarsest_points) / static_cast<double>(point_idcs_[level].size())
-      : coarse_ratio;
+    auto ratio = level == 1 ? static_cast<double>(n_coarsest_points) /
+                                  static_cast<double>(point_idcs_[level].size())
+                            : coarse_ratio;
     point_idcs_[level - 1] = divider->choose_coarse_points(ratio);
 
     auto n_points = static_cast<index_t>(point_idcs_[level].size());
@@ -75,7 +79,8 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
         fine.setup(points_);
       }
     }
-    std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16) << n_points << std::endl;
+    std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16) << n_points
+              << std::endl;
   }
 
   {
@@ -94,9 +99,11 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     if (level == n_levels_ - 1) {
       add_evaluator(level, level - 1, model_without_poly_, points_, bbox);
     } else {
-      add_evaluator(level, level - 1, model_without_poly_, common::take_rows(points_, point_idcs_[level]), bbox);
+      add_evaluator(level, level - 1, model_without_poly_,
+                    common::take_rows(points_, point_idcs_[level]), bbox);
     }
-    evaluator(level, level - 1).set_field_points(common::take_rows(points_, point_idcs_[level - 1]));
+    evaluator(level, level - 1)
+        .set_field_points(common::take_rows(points_, point_idcs_[level - 1]));
   }
 
   for (auto level = 1; level < n_levels_ - 1; level++) {
@@ -109,7 +116,8 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     p_ = poly.evaluate(points_).transpose();
     ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
-    auto finest_evaluator = interpolation::rbf_symmetric_evaluator<Order>(model_without_poly_, points_);
+    auto finest_evaluator =
+        interpolation::rbf_symmetric_evaluator<Order>(model_without_poly_, points_);
     auto n_cols = static_cast<index_t>(p_.cols());
     for (index_t i = 0; i < n_cols; i++) {
       finest_evaluator.set_weights(p_.col(i));
@@ -185,9 +193,9 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       weights_total.head(n_points_) += weights;
 
       if (kReportResidual) {
-         finest_evaluator_->set_weights(weights_total);
-         common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
-         std::cout << "Residual after level " << level << ": " << test_residuals.norm() << std::endl;
+        finest_evaluator_->set_weights(weights_total);
+        common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
+        std::cout << "Residual after level " << level << ": " << test_residuals.norm() << std::endl;
       }
     }
 
@@ -221,9 +229,9 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       weights_total += weights;
 
       if (kReportResidual) {
-         finest_evaluator_->set_weights(weights_total);
-         common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
-         std::cout << "Residual after level 0: " << test_residuals.norm() << std::endl;
+        finest_evaluator_->set_weights(weights_total);
+        common::valuesd test_residuals = v.head(n_points_) - finest_evaluator_->evaluate();
+        std::cout << "Residual after level 0: " << test_residuals.norm() << std::endl;
       }
     }
   }
@@ -231,9 +239,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
   return weights_total;
 }
 
-index_t ras_preconditioner::size() const {
-  return n_points_ + n_poly_basis_;
-}
+index_t ras_preconditioner::size() const { return n_points_ + n_poly_basis_; }
 
 }  // namespace preconditioner
 }  // namespace polatory

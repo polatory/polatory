@@ -1,30 +1,25 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
 #include <Eigen/LU>
-
+#include <memory>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/types.hpp>
+#include <vector>
 
 namespace polatory {
 namespace preconditioner {
 
 class coarse_grid {
-public:
-  coarse_grid(const model& model,
-              const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
+ public:
+  coarse_grid(const model& model, const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
               const std::vector<index_t>& point_indices);
 
-  coarse_grid(const model& model,
-              const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
-              const std::vector<index_t>& point_indices,
-              const geometry::points3d& points_full);
+  coarse_grid(const model& model, const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
+              const std::vector<index_t>& point_indices, const geometry::points3d& points_full);
 
   void clear();
 
@@ -34,7 +29,7 @@ public:
 
   void solve(const Eigen::Ref<const common::valuesd>& values_full);
 
-private:
+ private:
   const model& model_;
   const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis_;
   const std::vector<index_t> point_idcs_;

@@ -1,14 +1,11 @@
-#include <polatory/krylov/minres.hpp>
-
 #include <cmath>
+#include <polatory/krylov/minres.hpp>
 
 namespace polatory {
 namespace krylov {
 
 minres::minres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
-  : gmres_base(op, rhs, max_iter)
-  , beta_(0.0) {
-}
+    : gmres_base(op, rhs, max_iter), beta_(0.0) {}
 
 void minres::iterate_process() {
   if (iter_ == max_iter_) return;
@@ -25,11 +22,11 @@ void minres::iterate_process() {
     vs_[j + 1] -= r_(j - 1, j) * vs_[j - 1] + r_(j, j) * vs_[j];
   }
   r_(j + 1, j) = vs_[j + 1].norm();
-  beta_ = r_(j + 1, j);     // beta_j
+  beta_ = r_(j + 1, j);  // beta_j
   vs_[j + 1] /= r_(j + 1, j);
 
   // Update matrix R by Givens rotation
-  for (index_t i = std::max(index_t{ 0 }, j - 2); i < j; i++) {
+  for (index_t i = std::max(index_t{0}, j - 2); i < j; i++) {
     auto x = r_(i, j);
     auto y = r_(i + 1, j);
     auto tmp1 = c_(i) * x + s_(i) * y;

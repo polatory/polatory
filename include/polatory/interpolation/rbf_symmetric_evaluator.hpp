@@ -1,9 +1,7 @@
 #pragma once
 
-#include <memory>
-
 #include <Eigen/Core>
-
+#include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
@@ -21,13 +19,14 @@ template <int Order = 10>
 class rbf_symmetric_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
-public:
+ public:
   rbf_symmetric_evaluator(const model& model, const geometry::points3d& points)
-    : model_(model)
-    , n_points_(static_cast<index_t>(points.rows()))
-    , n_poly_basis_(model.poly_basis_size()) {
+      : model_(model),
+        n_points_(static_cast<index_t>(points.rows())),
+        n_poly_basis_(model.poly_basis_size()) {
     auto bbox = geometry::bbox3d::from_points(points);
-    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, fmm::fmm_tree_height(n_points_), bbox);
+    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(
+        model, fmm::fmm_tree_height(n_points_), bbox);
     a_->set_points(points);
 
     if (n_poly_basis_ > 0) {
@@ -63,7 +62,7 @@ public:
     }
   }
 
-private:
+ private:
   const model& model_;
   const index_t n_points_;
   const index_t n_poly_basis_;

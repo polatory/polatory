@@ -1,29 +1,26 @@
-#include <polatory/interpolation/rbf_inequality_fitter.hpp>
-
 #include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <set>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
+#include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
+#include <set>
 
 namespace polatory {
 namespace interpolation {
 
 rbf_inequality_fitter::rbf_inequality_fitter(const model& model, const geometry::points3d& points)
-  : model_(model)
-  , points_(points)
-  , n_points_(static_cast<index_t>(points.rows()))
-  , n_poly_basis_(model.poly_basis_size())
-  , bbox_(geometry::bbox3d::from_points(points)) {
-}
+    : model_(model),
+      points_(points),
+      n_points_(static_cast<index_t>(points.rows())),
+      n_poly_basis_(model.poly_basis_size()),
+      bbox_(geometry::bbox3d::from_points(points)) {}
 
-std::pair<std::vector<index_t>, common::valuesd>
-rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd& values_lb, const common::valuesd& values_ub,
-                           double absolute_tolerance) const {
+std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
+    const common::valuesd& values, const common::valuesd& values_lb,
+    const common::valuesd& values_ub, double absolute_tolerance) const {
   auto not_nan = [](double d) { return !std::isnan(d); };
 
   auto centers = arg_where(values, not_nan);
@@ -35,8 +32,7 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
   std::set<index_t> active_idcs_ub;
 
   std::vector<index_t> ineq_idcs;
-  std::set_union(idcs_lb.begin(), idcs_lb.end(),
-                 idcs_ub.begin(), idcs_ub.end(),
+  std::set_union(idcs_lb.begin(), idcs_lb.end(), idcs_ub.begin(), idcs_ub.end(),
                  std::back_inserter(ineq_idcs));
   auto ineq_points = common::take_rows(points_, ineq_idcs);
 
@@ -48,13 +44,14 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
   common::valuesd center_weights;
 
   while (true) {
-    std::cout << "Active lower bounds: " << active_idcs_lb.size() << " / " << idcs_lb.size() << std::endl;
-    std::cout << "Active upper bounds: " << active_idcs_ub.size() << " / " << idcs_ub.size() << std::endl;
+    std::cout << "Active lower bounds: " << active_idcs_lb.size() << " / " << idcs_lb.size()
+              << std::endl;
+    std::cout << "Active upper bounds: " << active_idcs_ub.size() << " / " << idcs_ub.size()
+              << std::endl;
 
     std::vector<index_t> active_ineq_idcs;
-    std::set_union(active_idcs_lb.begin(), active_idcs_lb.end(),
-                   active_idcs_ub.begin(), active_idcs_ub.end(),
-                   std::back_inserter(active_ineq_idcs));
+    std::set_union(active_idcs_lb.begin(), active_idcs_lb.end(), active_idcs_ub.begin(),
+                   active_idcs_ub.end(), std::back_inserter(active_ineq_idcs));
 
     centers.resize(n_eq);
     centers.insert(centers.end(), active_ineq_idcs.begin(), active_ineq_idcs.end());
@@ -135,11 +132,10 @@ rbf_inequality_fitter::fit(const common::valuesd& values, const common::valuesd&
       }
     }
 
-    if (!active_set_changed)
-      break;
+    if (!active_set_changed) break;
   }
 
-  return { std::move(centers), std::move(center_weights) };
+  return {std::move(centers), std::move(center_weights)};
 }
 
 }  // namespace interpolation

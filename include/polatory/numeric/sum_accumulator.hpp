@@ -6,17 +6,13 @@
 namespace polatory {
 namespace numeric {
 
-template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value, std::nullptr_t>::type = nullptr>
+template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value,
+                                                  std::nullptr_t>::type = nullptr>
 class kahan_sum_accumulator {
-public:
-  kahan_sum_accumulator()
-    : sum_()
-    , correction_() {
-  }
+ public:
+  kahan_sum_accumulator() : sum_(), correction_() {}
 
-  Floating get() const {
-    return sum_;
-  }
+  Floating get() const { return sum_; }
 
   kahan_sum_accumulator& operator+=(Floating f) {
     auto summand = f + correction_;
@@ -26,7 +22,7 @@ public:
     return *this;
   }
 
-private:
+ private:
   Floating sum_;
   Floating correction_;
 };

@@ -1,21 +1,20 @@
-#include <cmath>
-
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
+#include <cmath>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
 #include <polatory/types.hpp>
 
+using polatory::index_t;
 using polatory::geometry::cuboid3d;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::orthonormal_basis;
-using polatory::index_t;
 
 namespace {
 
 void test_degree(int dimension, int degree) {
-  const auto n_points = index_t{ 100 };
+  const auto n_points = index_t{100};
 
   auto points = random_points(cuboid3d(), n_points);
 
