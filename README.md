@@ -19,14 +19,9 @@ NOTE: This is a pre-release version. APIs are subject to change without notice.
 - Supports inequality constraints
 - [List of available RBFs](https://github.com/polatory/polatory/wiki/List-of-Available-RBFs)
 
-### Platforms
+### Supported Compilers
 
-Polatory runs on x86-64 processors and continuously tested on the following platforms.
-
-| OS               | Toolchain             |
-| ---------------- | --------------------- |
-| Ubuntu 18.04 LTS | GCC 7.4 and Clang 6.0 |
-| Windows          | Visual Studio 2019    |
+Polatory requires a C++ compiler that supports C++20 and OpenMP 2.0.
 
 ### Kriging via RBF Interpolation ([Benchmark](https://github.com/polatory/polatory/wiki/Benchmark))
 

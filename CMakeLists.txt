@@ -6,12 +6,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type: Debug or Release." FORCE)
 endif()
 
-if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard version (must be 14 or later)." FORCE)
-endif()
-if(CMAKE_CXX_STANDARD MATCHES "^(98|11)$")
-    message(FATAL_ERROR "CMAKE_CXX_STANDARD must be 14 or later.")
-endif()
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
