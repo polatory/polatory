@@ -7,7 +7,7 @@ namespace polatory {
 namespace geometry {
 
 class bbox3d {
-public:
+ public:
   bbox3d();
 
   bbox3d(const point3d& min, const point3d& max);
@@ -34,8 +34,7 @@ public:
   static bbox3d from_points(InputIterator points_begin, InputIterator points_end) {
     bbox3d ret;
 
-    if (points_begin == points_end)
-      return ret;
+    if (points_begin == points_end) return ret;
 
     auto it = points_begin;
     auto first_pt = *it;
@@ -57,7 +56,7 @@ public:
     return ret;
   }
 
-private:
+ private:
   point3d min_;
   point3d max_;
 };

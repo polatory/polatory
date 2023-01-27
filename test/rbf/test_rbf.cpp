@@ -1,8 +1,6 @@
-#include <cmath>
-#include <random>
-
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
@@ -15,6 +13,7 @@
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/cov_spherical.hpp>
 #include <polatory/rbf/reference/triharmonic3d.hpp>
+#include <random>
 
 #include "../random_anisotropy.hpp"
 
@@ -35,9 +34,7 @@ using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
-double hypot(double x, double y, double z) {
-  return std::sqrt(x * x + y * y + z * z);
-}
+double hypot(double x, double y, double z) { return std::sqrt(x * x + y * y + z * z); }
 
 template <class T>
 void test_clone(const std::vector<double>& params) {
@@ -77,9 +74,12 @@ void test_gradient(const rbf_base& rbf) {
     auto r_y2 = hypot(x, y + h, z);
     auto r_z2 = hypot(x, y, z + h);
 
-    auto gradx_approx = (rbf.evaluate_untransformed(r_x2) - rbf.evaluate_untransformed(r_x1)) / (2.0 * h);
-    auto grady_approx = (rbf.evaluate_untransformed(r_y2) - rbf.evaluate_untransformed(r_y1)) / (2.0 * h);
-    auto gradz_approx = (rbf.evaluate_untransformed(r_z2) - rbf.evaluate_untransformed(r_z1)) / (2.0 * h);
+    auto gradx_approx =
+        (rbf.evaluate_untransformed(r_x2) - rbf.evaluate_untransformed(r_x1)) / (2.0 * h);
+    auto grady_approx =
+        (rbf.evaluate_untransformed(r_y2) - rbf.evaluate_untransformed(r_y1)) / (2.0 * h);
+    auto gradz_approx =
+        (rbf.evaluate_untransformed(r_z2) - rbf.evaluate_untransformed(r_z1)) / (2.0 * h);
 
     EXPECT_LE(std::abs(gradx_approx - gradx), tolerance);
     EXPECT_LE(std::abs(grady_approx - grady), tolerance);
@@ -91,9 +91,9 @@ void test_gradient(const rbf_base& rbf) {
 
 TEST(rbf, anisotropy) {
   auto a = random_anisotropy();
-  vector3d v({ 1.0, 1.0, 1.0 });
+  vector3d v({1.0, 1.0, 1.0});
 
-  biharmonic3d rbf({ 1.0 });
+  biharmonic3d rbf({1.0});
 
   auto cloned = rbf.clone();
   cloned->set_anisotropy(a);
@@ -102,29 +102,29 @@ TEST(rbf, anisotropy) {
 }
 
 TEST(rbf, clone) {
-  test_clone<biharmonic2d>({ 1.0 });
-  test_clone<biharmonic3d>({ 1.0 });
-  test_clone<cov_exponential>({ 1.0, 1.0 });
-  test_clone<cov_spheroidal3>({ 1.0, 1.0 });
-  test_clone<cov_spheroidal5>({ 1.0, 1.0 });
-  test_clone<cov_spheroidal7>({ 1.0, 1.0 });
-  test_clone<cov_spheroidal9>({ 1.0, 1.0 });
+  test_clone<biharmonic2d>({1.0});
+  test_clone<biharmonic3d>({1.0});
+  test_clone<cov_exponential>({1.0, 1.0});
+  test_clone<cov_spheroidal3>({1.0, 1.0});
+  test_clone<cov_spheroidal5>({1.0, 1.0});
+  test_clone<cov_spheroidal7>({1.0, 1.0});
+  test_clone<cov_spheroidal9>({1.0, 1.0});
 
-  test_clone<cov_gaussian>({ 1.0, 1.0 });
-  test_clone<cov_spherical>({ 1.0, 1.0 });
-  test_clone<triharmonic3d>({ 1.0 });
+  test_clone<cov_gaussian>({1.0, 1.0});
+  test_clone<cov_spherical>({1.0, 1.0});
+  test_clone<triharmonic3d>({1.0});
 }
 
 TEST(rbf, gradient) {
-  test_gradient(biharmonic2d({ 1.0 }));
-  test_gradient(biharmonic3d({ 1.0 }));
-  test_gradient(cov_exponential({ 1.0, 1.0 }));
-  test_gradient(cov_spheroidal3({ 1.0, 1.0 }));
-  test_gradient(cov_spheroidal5({ 1.0, 1.0 }));
-  test_gradient(cov_spheroidal7({ 1.0, 1.0 }));
-  test_gradient(cov_spheroidal9({ 1.0, 1.0 }));
+  test_gradient(biharmonic2d({1.0}));
+  test_gradient(biharmonic3d({1.0}));
+  test_gradient(cov_exponential({1.0, 1.0}));
+  test_gradient(cov_spheroidal3({1.0, 1.0}));
+  test_gradient(cov_spheroidal5({1.0, 1.0}));
+  test_gradient(cov_spheroidal7({1.0, 1.0}));
+  test_gradient(cov_spheroidal9({1.0, 1.0}));
 
-  test_gradient(cov_gaussian({ 1.0, 1.0 }));
-  test_gradient(cov_spherical({ 1.0, 1.0 }));
-  test_gradient(triharmonic3d({ 1.0 }));
+  test_gradient(cov_gaussian({1.0, 1.0}));
+  test_gradient(cov_spherical({1.0, 1.0}));
+  test_gradient(triharmonic3d({1.0}));
 }

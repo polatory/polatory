@@ -14,6 +14,7 @@
 #include "../Utils/FEnv.hpp"
 
 #include <omp.h>
+#include <vector>
 
 /**
 * @author Berenger Bramas (berenger.bramas@inria.fr)

@@ -1,28 +1,21 @@
-#include <polatory/preconditioner/domain_divider.hpp>
-
+#include <Eigen/Core>
 #include <algorithm>
 #include <iterator>
 #include <numeric>
-#include <random>
-
-#include <Eigen/Core>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/zip_sort.hpp>
+#include <polatory/preconditioner/domain_divider.hpp>
+#include <random>
 
 namespace polatory {
 namespace preconditioner {
 
-index_t domain::size() const {
-  return static_cast<index_t>(point_indices.size());
-}
+index_t domain::size() const { return static_cast<index_t>(point_indices.size()); }
 
 void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
-  common::zip_sort(
-    point_indices.begin(), point_indices.end(),
-    inner_point.begin(), inner_point.end(),
-    [](const auto& a, const auto& b) { return a.first < b.first; }
-  );
+  common::zip_sort(point_indices.begin(), point_indices.end(), inner_point.begin(),
+                   inner_point.end(),
+                   [](const auto& a, const auto& b) { return a.first < b.first; });
 
   auto n_poly_points = static_cast<index_t>(poly_point_idcs.size());
   std::vector<index_t> new_point_indices(poly_point_idcs);
@@ -31,8 +24,7 @@ void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
   for (index_t i = 0; i < n_poly_points; i++) {
     auto idx = poly_point_idcs[i];
     auto it = std::lower_bound(point_indices.begin(), point_indices.end(), idx);
-    if (it == point_indices.end() || *it != idx)
-      continue;
+    if (it == point_indices.end() || *it != idx) continue;
 
     auto it_inner = inner_point.begin() + std::distance(point_indices.begin(), it);
     new_inner_point[i] = *it_inner;
@@ -51,9 +43,9 @@ void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
 domain_divider::domain_divider(const geometry::points3d& points,
                                const std::vector<index_t>& point_indices,
                                const std::vector<index_t>& poly_point_indices)
-  : points_(points)
-  , size_of_root_(static_cast<index_t>(point_indices.size()))
-  , poly_point_idcs_(poly_point_indices) {
+    : points_(points),
+      size_of_root_(static_cast<index_t>(point_indices.size())),
+      poly_point_idcs_(poly_point_indices) {
   auto root = domain();
 
   root.point_indices = point_indices;
@@ -81,14 +73,12 @@ std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
     std::shuffle(shuffled.begin(), shuffled.end(), gen);
 
     auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true);
-    auto n_coarse = std::max(
-        index_t{ 1 },
-        static_cast<index_t>(round_half_to_even(ratio * n_inner_pts)));
+    auto n_coarse =
+        std::max(index_t{1}, static_cast<index_t>(round_half_to_even(ratio * n_inner_pts)));
 
-    auto count = index_t{ 0 };
+    auto count = index_t{0};
     for (auto i : shuffled) {
-      if (count == n_coarse)
-        break;
+      if (count == n_coarse) break;
 
       if (d.inner_point[i]) {
         coarse_idcs.push_back(d.point_indices[i]);
@@ -100,28 +90,24 @@ std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
   return coarse_idcs;
 }
 
-const std::list<domain>& domain_divider::domains() const {
-  return domains_;
-}
+const std::list<domain>& domain_divider::domains() const { return domains_; }
 
 void domain_divider::divide_domain(std::list<domain>::iterator it) {
   auto& d = *it;
 
-  auto split_axis = index_t{ 0 };
+  auto split_axis = index_t{0};
   (void)d.bbox_.size().maxCoeff(&split_axis);
 
   // TODO(mizuno): Sort all points along each axis and cache the result as a permutation.
-  common::zip_sort(
-    d.point_indices.begin(), d.point_indices.end(),
-    d.inner_point.begin(), d.inner_point.end(),
-    [this, split_axis](const auto& a, const auto& b) {
-      return points_(a.first, split_axis) < points_(b.first, split_axis);
-    });
+  common::zip_sort(d.point_indices.begin(), d.point_indices.end(), d.inner_point.begin(),
+                   d.inner_point.end(), [this, split_axis](const auto& a, const auto& b) {
+                     return points_(a.first, split_axis) < points_(b.first, split_axis);
+                   });
 
   auto longest_side_length = d.bbox_.size()(split_axis);
-  auto q =
-    longest_side_length_of_root_ / longest_side_length * std::sqrt(static_cast<double>(max_leaf_size) / static_cast<double>(size_of_root_)) *
-    overlap_quota;
+  auto q = longest_side_length_of_root_ / longest_side_length *
+           std::sqrt(static_cast<double>(max_leaf_size) / static_cast<double>(size_of_root_)) *
+           overlap_quota;
   q = std::min(0.5, q);
 
   auto n_pts = static_cast<index_t>(d.size());
@@ -132,25 +118,21 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
   auto mid = static_cast<index_t>(round_half_to_even((left_partition + right_partition) / 2.0));
 
   domain left;
-  left.point_indices = std::vector<index_t>(
-    d.point_indices.begin(),
-    d.point_indices.begin() + right_partition);
+  left.point_indices =
+      std::vector<index_t>(d.point_indices.begin(), d.point_indices.begin() + right_partition);
 
-  left.inner_point = std::vector<bool>(
-    d.inner_point.begin(),
-    d.inner_point.begin() + right_partition);
+  left.inner_point =
+      std::vector<bool>(d.inner_point.begin(), d.inner_point.begin() + right_partition);
   std::fill(left.inner_point.begin() + mid, left.inner_point.end(), false);
 
   left.bbox_ = domain_bbox(left);
 
   domain right;
-  right.point_indices = std::vector<index_t>(
-    d.point_indices.begin() + left_partition,
-    d.point_indices.end());
+  right.point_indices =
+      std::vector<index_t>(d.point_indices.begin() + left_partition, d.point_indices.end());
 
-  right.inner_point = std::vector<bool>(
-    d.inner_point.begin() + left_partition,
-    d.inner_point.end());
+  right.inner_point =
+      std::vector<bool>(d.inner_point.begin() + left_partition, d.inner_point.end());
   std::fill(right.inner_point.begin(), right.inner_point.begin() + (mid - left_partition), false);
 
   right.bbox_ = domain_bbox(right);

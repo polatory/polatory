@@ -1,18 +1,16 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
 #include <memory>
-#include <utility>
-
-#include <Eigen/Core>
-
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
+#include <utility>
 
 namespace polatory {
 namespace interpolation {
@@ -20,19 +18,17 @@ namespace interpolation {
 class rbf_residual_evaluator {
   static constexpr index_t chunk_size = 1024;
 
-public:
+ public:
   rbf_residual_evaluator(const model& model, const geometry::points3d& points)
-    : model_(model)
-    , n_poly_basis_(model.poly_basis_size())
-    , n_points_(static_cast<index_t>(points.rows()))
-    , points_(points) {
+      : model_(model),
+        n_poly_basis_(model.poly_basis_size()),
+        n_points_(static_cast<index_t>(points.rows())),
+        points_(points) {
     evaluator_ = std::make_unique<rbf_evaluator<>>(model, points_);
   }
 
   rbf_residual_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
-    : model_(model)
-    , n_poly_basis_(model.poly_basis_size())
-    , n_points_(0) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
     evaluator_ = std::make_unique<rbf_evaluator<>>(model, tree_height, bbox);
   }
 
@@ -58,14 +54,13 @@ public:
 
       for (index_t j = 0; j < end - begin; j++) {
         auto res = std::abs(values(begin + j) - fit(j));
-        if (res >= absolute_tolerance)
-          return { false, 0.0 };
+        if (res >= absolute_tolerance) return {false, 0.0};
 
         max_residual = std::max(max_residual, res);
       }
     }
 
-    return { true, max_residual };
+    return {true, max_residual};
   }
 
   void set_points(const geometry::points3d& points) {
@@ -75,7 +70,7 @@ public:
     evaluator_->set_source_points(points);
   }
 
-private:
+ private:
   const model& model_;
   const index_t n_poly_basis_;
 

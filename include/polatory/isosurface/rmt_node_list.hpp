@@ -1,10 +1,9 @@
 #pragma once
 
 #include <array>
-#include <unordered_map>
-
 #include <polatory/isosurface/rmt_node.hpp>
 #include <polatory/isosurface/types.hpp>
+#include <unordered_map>
 
 namespace polatory {
 namespace isosurface {
@@ -14,7 +13,7 @@ namespace detail {
 class neighbor_cell_vectors : public std::array<cell_vector, 14> {
   using base = std::array<cell_vector, 14>;
 
-public:
+ public:
   neighbor_cell_vectors() noexcept;
 };
 
@@ -29,7 +28,7 @@ class rmt_node_list : std::unordered_map<cell_index, rmt_node> {
 
   std::array<cell_index, 14> NeighborCellIndexDeltas{};
 
-public:
+ public:
   using base::iterator;
 
   using base::at;
@@ -50,8 +49,7 @@ public:
   void init_strides(cell_index stride1, cell_index stride2) {
     for (edge_index ei = 0; ei < 14; ei++) {
       auto delta_cv = NeighborCellVectors[ei];
-      NeighborCellIndexDeltas[ei] =
-        delta_cv(2) * stride2 + delta_cv(1) * stride1 + delta_cv(0);
+      NeighborCellIndexDeltas[ei] = delta_cv(2) * stride2 + delta_cv(1) * stride1 + delta_cv(0);
     }
   }
 

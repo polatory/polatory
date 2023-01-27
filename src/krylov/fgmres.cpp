@@ -4,8 +4,7 @@ namespace polatory {
 namespace krylov {
 
 fgmres::fgmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
-  : gmres(op, rhs, max_iter) {
-}
+    : gmres(op, rhs, max_iter) {}
 
 common::valuesd fgmres::solution_vector() const {
   // r is an upper triangular matrix.
@@ -27,9 +26,7 @@ common::valuesd fgmres::solution_vector() const {
   return x;
 }
 
-void fgmres::add_preconditioned_krylov_basis(const common::valuesd& z) {
-  zs_.push_back(z);
-}
+void fgmres::add_preconditioned_krylov_basis(const common::valuesd& z) { zs_.push_back(z); }
 
 }  // namespace krylov
 }  // namespace polatory

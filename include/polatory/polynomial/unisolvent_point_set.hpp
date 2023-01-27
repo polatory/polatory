@@ -1,15 +1,14 @@
 #pragma once
 
+#include <polatory/common/eigen_utility.hpp>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/polynomial/lagrange_basis.hpp>
+#include <polatory/polynomial/polynomial_basis_base.hpp>
+#include <polatory/types.hpp>
 #include <random>
 #include <set>
 #include <stdexcept>
 #include <vector>
-
-#include <polatory/common/eigen_utility.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/polynomial_basis_base.hpp>
-#include <polatory/polynomial/lagrange_basis.hpp>
-#include <polatory/types.hpp>
 
 namespace polatory {
 namespace polynomial {
@@ -19,10 +18,8 @@ namespace polynomial {
 class unisolvent_point_set {
   static constexpr int kMaxTrial = 32;
 
-public:
-  unisolvent_point_set(const geometry::vectors3d& points,
-                       int dimension,
-                       int degree) {
+ public:
+  unisolvent_point_set(const geometry::vectors3d& points, int dimension, int degree) {
     if (degree < 0) return;
 
     auto n_points = static_cast<index_t>(points.rows());
@@ -30,7 +27,7 @@ public:
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<index_t> dist(index_t{ 0 }, n_points - 1);
+    std::uniform_int_distribution<index_t> dist(index_t{0}, n_points - 1);
 
     std::set<index_t> set;
     auto found = false;
@@ -59,11 +56,9 @@ public:
     point_idcs_.insert(point_idcs_.begin(), set.begin(), set.end());
   }
 
-  const std::vector<index_t>& point_indices() const {
-    return point_idcs_;
-  }
+  const std::vector<index_t>& point_indices() const { return point_idcs_; }
 
-private:
+ private:
   std::vector<index_t> point_idcs_;
 };
 

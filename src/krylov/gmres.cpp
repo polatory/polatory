@@ -1,13 +1,11 @@
-#include <polatory/krylov/gmres.hpp>
-
 #include <cmath>
+#include <polatory/krylov/gmres.hpp>
 
 namespace polatory {
 namespace krylov {
 
 gmres::gmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
-  : gmres_base(op, rhs, max_iter) {
-}
+    : gmres_base(op, rhs, max_iter) {}
 
 void gmres::iterate_process() {
   if (iter_ == max_iter_) return;

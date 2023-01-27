@@ -1,29 +1,28 @@
-#include <algorithm>
-#include <numeric>
-#include <random>
-#include <vector>
-
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <numeric>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/types.hpp>
+#include <random>
+#include <vector>
 
+using polatory::index_t;
+using polatory::model;
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
-using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
 using polatory::rbf::biharmonic3d;
-using polatory::index_t;
 
 TEST(coarse_grid, trivial) {
-  auto n_points = index_t{ 1024 };
+  auto n_points = index_t{1024};
   auto poly_dimension = 3;
   auto poly_degree = 0;
   auto absolute_tolerance = 1e-10;
@@ -37,9 +36,10 @@ TEST(coarse_grid, trivial) {
   std::iota(point_indices.begin(), point_indices.end(), 0);
   std::shuffle(point_indices.begin(), point_indices.end(), gen);
 
-  model model(biharmonic3d({ 1.0 }), poly_dimension, poly_degree);
+  model model(biharmonic3d({1.0}), poly_dimension, poly_degree);
   model.set_nugget(0.01);
-  auto lagr_basis = std::make_unique<lagrange_basis>(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
+  auto lagr_basis = std::make_unique<lagrange_basis>(poly_dimension, poly_degree,
+                                                     points.topRows(model.poly_basis_size()));
 
   coarse_grid coarse(model, lagr_basis, point_indices, points);
 

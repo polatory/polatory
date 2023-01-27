@@ -1,9 +1,8 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <array>
 #include <cstdint>
-
-#include <Eigen/Core>
 
 namespace polatory {
 namespace isosurface {

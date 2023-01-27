@@ -1,13 +1,8 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <map>
 #include <memory>
-#include <tuple>
-#include <utility>
-#include <vector>
-
-#include <Eigen/Core>
-
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
@@ -17,6 +12,9 @@
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
 #include <polatory/types.hpp>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace polatory {
 namespace preconditioner {
@@ -30,21 +28,22 @@ class ras_preconditioner : public krylov::linear_operator {
 
   using Evaluator = interpolation::rbf_evaluator<Order>;
 
-public:
+ public:
   ras_preconditioner(const model& model, const geometry::points3d& in_points);
 
   common::valuesd operator()(const common::valuesd& v) const override;
 
   index_t size() const override;
 
-private:
+ private:
   template <class... Args>
   void add_evaluator(int from_level, int to_level, Args&&... args) {
-    evaluator_.emplace(std::piecewise_construct, std::forward_as_tuple(from_level, to_level), std::forward_as_tuple(std::forward<Args>(args)...));
+    evaluator_.emplace(std::piecewise_construct, std::forward_as_tuple(from_level, to_level),
+                       std::forward_as_tuple(std::forward<Args>(args)...));
   }
 
   const Evaluator& evaluator(int from_level, int to_level) const {
-    return evaluator_.at({ from_level, to_level });
+    return evaluator_.at({from_level, to_level});
   }
 
   const model model_without_poly_;

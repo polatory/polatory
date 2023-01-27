@@ -1,20 +1,19 @@
 #pragma once
 
+#include <absl/types/optional.h>
+
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <memory>
 #include <numeric>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
-#include <absl/types/optional.h>
-
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/types.hpp>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace polatory {
 namespace isosurface {
@@ -24,7 +23,7 @@ namespace detail {
 class neighbor_edge_pairs : public std::array<std::vector<std::pair<int, int>>, 14> {
   using base = std::array<std::vector<std::pair<int, int>>, 14>;
 
-public:
+ public:
   neighbor_edge_pairs() noexcept;
 };
 
@@ -56,15 +55,13 @@ extern const std::array<face_bitset, 24> NeighborFaces;
 // and all three edges are coplanar.
 extern const detail::neighbor_edge_pairs NeighborEdgePairs;
 
-enum binary_sign {
-  Pos = 0, Neg = 1
-};
+enum binary_sign { Pos = 0, Neg = 1 };
 
 class rmt_node {
   geometry::point3d pos;
   double val;
 
-public:
+ public:
   bool evaluated;
 
   // The corresponding bit is set if an edge crosses the isosurface
@@ -77,7 +74,7 @@ public:
 
   std::unique_ptr<std::vector<vertex_index>> vis;
 
-private:
+ private:
   std::unique_ptr<std::array<rmt_node*, 14>> neighbors_;
 
   static std::vector<face_bitset> get_holes_impl(face_bitset face_set) {
@@ -169,14 +166,9 @@ private:
     return neighbors;
   }
 
-public:
+ public:
   explicit rmt_node(const geometry::point3d& position)
-    : pos(position)
-    , val(0.0)
-    , evaluated(false)
-    , intersections(0)
-    , all_intersections(0) {
-  }
+      : pos(position), val(0.0), evaluated(false), intersections(0), all_intersections(0) {}
 
   // Vertex clustering decision tree
   //
@@ -194,7 +186,9 @@ public:
   //   |         |  = 1 -> Simple surface
   //   |         .
   //   .
-  void cluster(std::vector<geometry::point3d>& vertices, std::unordered_map<vertex_index, vertex_index>& cluster_map) const {  // NOLINT(runtime/references)
+  void cluster(std::vector<geometry::point3d>& vertices,
+               std::unordered_map<vertex_index, vertex_index>& cluster_map)
+      const {  // NOLINT(runtime/references)
     auto surfaces = get_surfaces();
     auto holes = get_holes();
 
@@ -268,8 +262,7 @@ public:
   }
 
   absl::optional<double> clustering_weight(edge_index edge_idx) const {
-    if (!has_neighbor(edge_idx))
-      return {};
+    if (!has_neighbor(edge_idx)) return {};
 
     auto& a_node = neighbor(edge_idx);
     geometry::vector3d oa = a_node.pos - pos;
@@ -280,9 +273,7 @@ public:
     // Calculate alphas and accumulate normals per plane.
 
     for (auto neigh_pair : NeighborEdgePairs[edge_idx]) {
-      if (!has_neighbor(neigh_pair.first) ||
-          !has_neighbor(neigh_pair.second))
-        return {};
+      if (!has_neighbor(neigh_pair.first) || !has_neighbor(neigh_pair.second)) return {};
 
       auto& b_node = neighbor(neigh_pair.first);
       auto& c_node = neighbor(neigh_pair.second);
@@ -320,16 +311,15 @@ public:
 
       auto cos_gamma = normal.dot(plane_normal);
 
-      weights.push_back(std::sqrt(
-        (1.0 - cos_gamma * cos_gamma) *
-        (1.0 / std::pow(std::sin(alphas[i] / 2.0), 2.0) - 1.0)
-      ));
+      weights.push_back(std::sqrt((1.0 - cos_gamma * cos_gamma) *
+                                  (1.0 / std::pow(std::sin(alphas[i] / 2.0), 2.0) - 1.0)));
     }
 
     return *std::max_element(weights.begin(), weights.end());
   }
 
-  static double clustering_weight_theta(const rmt_node& o_node, const rmt_node& a_node, const rmt_node& b_node) {
+  static double clustering_weight_theta(const rmt_node& o_node, const rmt_node& a_node,
+                                        const rmt_node& b_node) {
     auto oa = a_node.pos - o_node.pos;
     auto dist_oa = oa.norm();
 
@@ -373,8 +363,7 @@ public:
 
   std::vector<edge_bitset> get_surfaces() const {
     // The most common case
-    if (intersections == 0)
-      return std::vector<edge_bitset>();
+    if (intersections == 0) return std::vector<edge_bitset>();
 
     return get_surfaces_impl(intersections);
   }
@@ -406,9 +395,7 @@ public:
 
   const rmt_node& neighbor(edge_index edge) const;
 
-  const geometry::point3d& position() const {
-    return pos;
-  }
+  const geometry::point3d& position() const { return pos; }
 
   void set_intersection(edge_index edge_idx) {
     edge_bitset edge_bit = 1 << edge_idx;
@@ -431,9 +418,7 @@ public:
     return val;
   }
 
-  binary_sign value_sign() const {
-    return value() < 0 ? Neg : Pos;
-  }
+  binary_sign value_sign() const { return value() < 0 ? Neg : Pos; }
 
   vertex_index vertex_on_edge(edge_index edge_idx) const {
     POLATORY_ASSERT(has_intersection(edge_idx));

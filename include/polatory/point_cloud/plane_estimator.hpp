@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <Eigen/SVD>
-
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory {
@@ -10,7 +9,7 @@ namespace point_cloud {
 
 // Computes the best-fit plane and its "plane factor" for the given points.
 class plane_estimator {
-public:
+ public:
   explicit plane_estimator(const geometry::points3d& points);
 
   double line_error() const;
@@ -23,7 +22,7 @@ public:
 
   double point_error() const;
 
-private:
+ private:
   static Eigen::JacobiSVD<Eigen::MatrixXd> pca_svd(const geometry::points3d& points);
 
   Eigen::Matrix3d basis_;

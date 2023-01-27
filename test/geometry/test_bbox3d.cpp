@@ -9,14 +9,8 @@ using polatory::geometry::points3d;
 
 TEST(bbox3d, from_points) {
   points3d points(7, 3);
-  points <<
-    point3d(0, 0, 0),
-    point3d(-1, 0, 0),
-    point3d(2, 0, 0),
-    point3d(0, -3, 0),
-    point3d(0, 4, 0),
-    point3d(0, 0, -5),
-    point3d(0, 0, 6);
+  points << point3d(0, 0, 0), point3d(-1, 0, 0), point3d(2, 0, 0), point3d(0, -3, 0),
+      point3d(0, 4, 0), point3d(0, 0, -5), point3d(0, 0, 6);
 
   auto bbox = bbox3d::from_points(points);
 

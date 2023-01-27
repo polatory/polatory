@@ -1,22 +1,21 @@
-#include <algorithm>
-#include <numeric>
-#include <vector>
-
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
+#include <algorithm>
+#include <numeric>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <polatory/types.hpp>
+#include <vector>
 
+using polatory::index_t;
 using polatory::geometry::sphere3d;
 using polatory::point_cloud::random_points;
 using polatory::preconditioner::domain_divider;
-using polatory::index_t;
 
 TEST(domain_divider, trivial) {
-  auto n_points = index_t{ 10000 };
-  auto n_poly_points = index_t{ 10 };
+  auto n_points = index_t{10000};
+  auto n_poly_points = index_t{10};
 
   auto points = random_points(sphere3d(), n_points);
   std::vector<index_t> point_idcs(n_points);

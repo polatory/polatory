@@ -1,8 +1,7 @@
-#include <array>
-#include <cmath>
-
 #include <gtest/gtest.h>
 
+#include <array>
+#include <cmath>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -35,23 +34,21 @@ using polatory::isosurface::rotation;
 using polatory::point_cloud::random_points;
 
 // Relative positions of neighbor nodes connected by each edge.
-std::array<vector3d, 14> NeighborVectors
-  {
-    transform_vector(rotation(), { 1.0, 1.0, 1.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 2.0, 0.0, 0.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 1.0, -1.0, -1.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 0.0, 2.0, 0.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 1.0, 1.0, -1.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 0.0, 0.0, -2.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { -1.0, +1.0, -1.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { -1.0, -1.0, -1.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { -2.0, 0.0, 0.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { -1.0, 1.0, 1.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 0.0, -2.0, 0.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { -1.0, -1.0, 1.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 0.0, 0.0, 2.0 }) / std::sqrt(2.0),
-    transform_vector(rotation(), { 1.0, -1.0, 1.0 }) / std::sqrt(2.0)
-  };
+std::array<vector3d, 14> NeighborVectors{
+    transform_vector(rotation(), {1.0, 1.0, 1.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {2.0, 0.0, 0.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {1.0, -1.0, -1.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {0.0, 2.0, 0.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {1.0, 1.0, -1.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {0.0, 0.0, -2.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {-1.0, +1.0, -1.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {-1.0, -1.0, -1.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {-2.0, 0.0, 0.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {-1.0, 1.0, 1.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {0.0, -2.0, 0.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {-1.0, -1.0, 1.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {0.0, 0.0, 2.0}) / std::sqrt(2.0),
+    transform_vector(rotation(), {1.0, -1.0, 1.0}) / std::sqrt(2.0)};
 
 TEST(rmt, face_edges) {
   for (edge_bitset edge_set : FaceEdges) {
@@ -136,10 +133,9 @@ TEST(rmt, neighbors) {
   }
 
   for (edge_index ei = 0; ei < 14; ei++) {
-    vector3d computed =
-      LatticeVectors[0] * NeighborCellVectors[ei][0]
-      + LatticeVectors[1] * NeighborCellVectors[ei][1]
-      + LatticeVectors[2] * NeighborCellVectors[ei][2];
+    vector3d computed = LatticeVectors[0] * NeighborCellVectors[ei][0] +
+                        LatticeVectors[1] * NeighborCellVectors[ei][1] +
+                        LatticeVectors[2] * NeighborCellVectors[ei][2];
 
     for (auto i = 0; i < 3; i++) {
       EXPECT_NEAR(NeighborVectors[ei](i), computed(i), 1e-15);

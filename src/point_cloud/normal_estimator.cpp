@@ -1,19 +1,14 @@
+#include <polatory/common/eigen_utility.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
-
+#include <polatory/point_cloud/plane_estimator.hpp>
 #include <stdexcept>
 #include <tuple>
-
-#include <polatory/common/eigen_utility.hpp>
-#include <polatory/point_cloud/plane_estimator.hpp>
 
 namespace polatory {
 namespace point_cloud {
 
 normal_estimator::normal_estimator(const geometry::points3d& points)
-  : n_points_(static_cast<index_t>(points.rows()))
-  , points_(points)
-  , tree_(points, true) {
-}
+    : n_points_(static_cast<index_t>(points.rows())), points_(points), tree_(points, true) {}
 
 normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_factor_threshold) {
   normals_ = geometry::vectors3d(n_points_, 3);
@@ -34,7 +29,8 @@ normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_fa
   return *this;
 }
 
-normal_estimator& normal_estimator::estimate_with_radius(double radius, double plane_factor_threshold) {
+normal_estimator& normal_estimator::estimate_with_radius(double radius,
+                                                         double plane_factor_threshold) {
   normals_ = geometry::vectors3d(n_points_, 3);
 
 #pragma omp parallel
@@ -68,14 +64,13 @@ geometry::vectors3d normal_estimator::orient_by_outward_vector(const geometry::v
   return normals_;
 }
 
-geometry::vector3d normal_estimator::estimate_impl(const std::vector<index_t>& nn_indices, double plane_factor_threshold) const {
-  if (nn_indices.size() < 3)
-    return geometry::vector3d::Zero();
+geometry::vector3d normal_estimator::estimate_impl(const std::vector<index_t>& nn_indices,
+                                                   double plane_factor_threshold) const {
+  if (nn_indices.size() < 3) return geometry::vector3d::Zero();
 
   plane_estimator est(common::take_rows(points_, nn_indices));
 
-  if (est.plane_factor() < plane_factor_threshold)
-    return geometry::vector3d::Zero();
+  if (est.plane_factor() < plane_factor_threshold) return geometry::vector3d::Zero();
 
   return est.plane_normal();
 }

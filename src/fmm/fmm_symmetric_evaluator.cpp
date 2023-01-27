@@ -1,16 +1,14 @@
-#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
-
-#include <algorithm>
-#include <vector>
-
 #include <ScalFMM/Components/FSimpleLeaf.hpp>
 #include <ScalFMM/Containers/FOctree.hpp>
 #include <ScalFMM/Core/FFmmAlgorithmThread.hpp>
 #include <ScalFMM/Kernels/Chebyshev/FChebCell.hpp>
 #include <ScalFMM/Kernels/Chebyshev/FChebSymKernel.hpp>
 #include <ScalFMM/Kernels/P2P/FP2PParticleContainerIndexed.hpp>
-
+#include <algorithm>
 #include <polatory/common/macros.hpp>
+#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <vector>
+
 #include "fmm_rbf_kernel.hpp"
 
 namespace polatory {
@@ -27,23 +25,22 @@ class fmm_symmetric_evaluator<Order>::impl {
 
   static constexpr int FmmAlgorithmScheduleChunkSize = 1;
 
-public:
+ public:
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
-    : model_(model)
-    , rbf_kernel_(model.rbf())
-    , n_points_(0) {
+      : model_(model), rbf_kernel_(model.rbf()), n_points_(0) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
     auto width = (1.0 + 1.0 / 64.0) * a_bbox.size().maxCoeff();
     if (width == 0.0) width = 1.0;
     auto center = a_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-      tree_height, width, FPoint<double>(center.data()), &rbf_kernel_);
+        tree_height, width, FPoint<double>(center.data()), &rbf_kernel_);
 
-    tree_ = std::make_unique<Octree>(
-      tree_height, std::max(1, tree_height - 4), width, FPoint<double>(center.data()));
+    tree_ = std::make_unique<Octree>(tree_height, std::max(1, tree_height - 4), width,
+                                     FPoint<double>(center.data()));
 
-    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(), int{ FmmAlgorithmScheduleChunkSize });
+    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(),
+                                 int{FmmAlgorithmScheduleChunkSize});
   }
 
   common::valuesd evaluate() const {
@@ -83,7 +80,7 @@ public:
     }
   }
 
-private:
+ private:
   common::valuesd potentials() const {
     common::valuesd phi = common::valuesd::Zero(n_points_);
 
@@ -95,9 +92,7 @@ private:
   }
 
   void reset_tree() const {
-    tree_->forEachCell([&](Cell* cell) {
-      cell->resetToInitialState();
-    });
+    tree_->forEachCell([&](Cell* cell) { cell->resetToInitialState(); });
 
     tree_->forEachLeaf([&](Leaf* leaf) {
       auto& particles = *leaf->getTargets();
@@ -153,9 +148,9 @@ private:
 };
 
 template <int Order>
-fmm_symmetric_evaluator<Order>::fmm_symmetric_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
-  : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {
-}
+fmm_symmetric_evaluator<Order>::fmm_symmetric_evaluator(const model& model, int tree_height,
+                                                        const geometry::bbox3d& bbox)
+    : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {}
 
 template <int Order>
 fmm_symmetric_evaluator<Order>::~fmm_symmetric_evaluator() = default;

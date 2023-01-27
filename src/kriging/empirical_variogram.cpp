@@ -1,22 +1,17 @@
-#include <polatory/kriging/empirical_variogram.hpp>
-
-#include <cmath>
-#include <fstream>
-
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
-
+#include <cmath>
+#include <fstream>
 #include <polatory/common/macros.hpp>
+#include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/numeric/sum_accumulator.hpp>
 
 namespace polatory {
 namespace kriging {
 
-empirical_variogram::empirical_variogram(
-    const geometry::points3d& points,
-    const common::valuesd& values,
-    double bin_width,
-    index_t n_bins) {
+empirical_variogram::empirical_variogram(const geometry::points3d& points,
+                                         const common::valuesd& values, double bin_width,
+                                         index_t n_bins) {
   POLATORY_ASSERT(values.size() == points.rows());
 
   auto n_points = static_cast<index_t>(points.rows());
@@ -34,9 +29,8 @@ empirical_variogram::empirical_variogram(
       // gstat's convention (to include more pairs in the first bin?):
       //   https://github.com/edzer/gstat/blob/32003307b11d6354340b653ab67c2d85d7304824/src/sem.c#L734-L738
       auto frac = dist / bin_width;
-      auto bin = dist > 0.0 && frac == std::floor(frac)
-        ? static_cast<index_t>(std::floor(frac)) - 1
-        : static_cast<index_t>(std::floor(frac));
+      auto bin = dist > 0.0 && frac == std::floor(frac) ? static_cast<index_t>(std::floor(frac)) - 1
+                                                        : static_cast<index_t>(std::floor(frac));
       if (bin >= n_bins) continue;
 
       dist_sum[bin] += dist;
@@ -75,17 +69,11 @@ empirical_variogram::empirical_variogram(const std::string& filename) {
   ia >> *this;
 }
 
-const std::vector<double>& empirical_variogram::bin_distance() const {
-  return distance_;
-}
+const std::vector<double>& empirical_variogram::bin_distance() const { return distance_; }
 
-const std::vector<double>& empirical_variogram::bin_gamma() const {
-  return gamma_;
-}
+const std::vector<double>& empirical_variogram::bin_gamma() const { return gamma_; }
 
-const std::vector<index_t>& empirical_variogram::bin_num_pairs() const {
-  return num_pairs_;
-}
+const std::vector<index_t>& empirical_variogram::bin_num_pairs() const { return num_pairs_; }
 
 void empirical_variogram::save(const std::string& filename) const {
   std::ofstream ofs(filename);

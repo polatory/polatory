@@ -1,22 +1,16 @@
+#include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
-
 #include <stdexcept>
 #include <tuple>
 #include <vector>
 
-#include <polatory/point_cloud/kdtree.hpp>
-
 namespace polatory {
 namespace point_cloud {
 
-sdf_data_generator::sdf_data_generator(
-  const geometry::points3d& points,
-  const geometry::vectors3d& normals,
-  double min_distance,
-  double max_distance,
-  double multiplication)
-  : points_(points)
-  , normals_(normals) {
+sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
+                                       const geometry::vectors3d& normals, double min_distance,
+                                       double max_distance, double multiplication)
+    : points_(points), normals_(normals) {
   if (normals.rows() != points.rows())
     throw std::invalid_argument("normals.rows() must be equal to points.rows().");
 
@@ -44,8 +38,7 @@ sdf_data_generator::sdf_data_generator(
     auto p = points.row(i);
     auto n = normals.row(i);
 
-    if (n == geometry::vector3d::Zero())
-      continue;
+    if (n == geometry::vector3d::Zero()) continue;
 
     auto d = max_distance;
     geometry::point3d q = p + d * n;
@@ -59,15 +52,13 @@ sdf_data_generator::sdf_data_generator(
       d = 0.99 * (p_nearest - p).norm() / 2.0;
       q = p + d * n;
 
-      if (d < min_distance)
-        break;
+      if (d < min_distance) break;
 
       std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
       i_nearest = nn_indices[0];
     }
 
-    if (d < min_distance)
-      continue;
+    if (d < min_distance) continue;
 
     sdf_points_.row(n_sdf_points) = q;
     sdf_values_(n_sdf_points) = d;
@@ -78,8 +69,7 @@ sdf_data_generator::sdf_data_generator(
     auto p = points.row(i);
     auto n = normals.row(i);
 
-    if (n == geometry::vector3d::Zero())
-      continue;
+    if (n == geometry::vector3d::Zero()) continue;
 
     auto d = max_distance;
     geometry::point3d q = p - d * n;
@@ -93,15 +83,13 @@ sdf_data_generator::sdf_data_generator(
       d = 0.99 * (p_nearest - p).norm() / 2.0;
       q = p - d * n;
 
-      if (d < min_distance)
-        break;
+      if (d < min_distance) break;
 
       std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
       i_nearest = nn_indices[0];
     }
 
-    if (d < min_distance)
-      continue;
+    if (d < min_distance) continue;
 
     sdf_points_.row(n_sdf_points) = q;
     sdf_values_(n_sdf_points) = -d;
@@ -112,13 +100,9 @@ sdf_data_generator::sdf_data_generator(
   sdf_values_.conservativeResize(n_sdf_points);
 }
 
-const geometry::points3d& sdf_data_generator::sdf_points() const {
-  return sdf_points_;
-}
+const geometry::points3d& sdf_data_generator::sdf_points() const { return sdf_points_; }
 
-const common::valuesd& sdf_data_generator::sdf_values() const {
-  return sdf_values_;
-}
+const common::valuesd& sdf_data_generator::sdf_values() const { return sdf_values_; }
 
 }  // namespace point_cloud
 }  // namespace polatory

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <set>
-
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -9,15 +7,14 @@
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_surface.hpp>
 #include <polatory/isosurface/surface.hpp>
+#include <set>
 
 namespace polatory {
 namespace isosurface {
 
 class isosurface {
-public:
-  isosurface(const geometry::bbox3d& bbox, double resolution)
-    : rmt_lattice_(bbox, resolution) {
-  }
+ public:
+  isosurface(const geometry::bbox3d& bbox, double resolution) : rmt_lattice_(bbox, resolution) {}
 
   surface generate(field_function& field_fn, double isovalue = 0.0) {  // NOLINT(runtime/references)
     field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
@@ -27,7 +24,8 @@ public:
     return generate_common();
   }
 
-  surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn, double isovalue = 0.0) {  // NOLINT(runtime/references)
+  surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn,
+                                    double isovalue = 0.0) {  // NOLINT(runtime/references)
     field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     for (auto p : common::row_range(seed_points)) {
@@ -38,7 +36,7 @@ public:
     return generate_common();
   }
 
-private:
+ private:
   surface generate_common() {
     rmt_lattice_.cluster_vertices();
 

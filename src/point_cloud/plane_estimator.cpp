@@ -1,9 +1,7 @@
-#include <polatory/point_cloud/plane_estimator.hpp>
-
 #include <cmath>
 #include <limits>
-
 #include <polatory/common/macros.hpp>
+#include <polatory/point_cloud/plane_estimator.hpp>
 
 namespace polatory {
 namespace point_cloud {
@@ -35,25 +33,15 @@ plane_estimator::plane_estimator(const geometry::points3d& points) {
   basis_ = svd.matrixV();
 }
 
-double plane_estimator::line_error() const {
-  return line_err_;
-}
+double plane_estimator::line_error() const { return line_err_; }
 
-double plane_estimator::plane_factor() const {
-  return plane_factor_;
-}
+double plane_estimator::plane_factor() const { return plane_factor_; }
 
-geometry::vector3d plane_estimator::plane_normal() const {
-  return basis_.col(2);
-}
+geometry::vector3d plane_estimator::plane_normal() const { return basis_.col(2); }
 
-double plane_estimator::plane_error() const {
-  return plane_err_;
-}
+double plane_estimator::plane_error() const { return plane_err_; }
 
-double plane_estimator::point_error() const {
-  return point_err_;
-}
+double plane_estimator::point_error() const { return point_err_; }
 
 Eigen::JacobiSVD<Eigen::MatrixXd> plane_estimator::pca_svd(const geometry::points3d& points) {
   geometry::point3d barycenter = points.colwise().mean();

@@ -1,19 +1,17 @@
-#include <polatory/isosurface/mesh_defects_finder.hpp>
-
 #include <map>
-
 #include <polatory/isosurface/dense_undirected_graph.hpp>
+#include <polatory/isosurface/mesh_defects_finder.hpp>
 
 namespace polatory {
 namespace isosurface {
 
-mesh_defects_finder::mesh_defects_finder(const std::vector<geometry::point3d>& vertices, const std::vector<face>& faces)
-  : vertices_(vertices)
-  , vf_map_(vertices_.size()) {
+mesh_defects_finder::mesh_defects_finder(const std::vector<geometry::point3d>& vertices,
+                                         const std::vector<face>& faces)
+    : vertices_(vertices), vf_map_(vertices_.size()) {
   for (auto& f : faces) {
-    vf_map_[f[0]].push_back({ f[0], f[1], f[2] });
-    vf_map_[f[1]].push_back({ f[1], f[2], f[0] });
-    vf_map_[f[2]].push_back({ f[2], f[0], f[1] });
+    vf_map_[f[0]].push_back({f[0], f[1], f[2]});
+    vf_map_[f[1]].push_back({f[1], f[2], f[0]});
+    vf_map_[f[2]].push_back({f[2], f[0], f[1]});
   }
 }
 
@@ -40,12 +38,12 @@ std::set<face> mesh_defects_finder::intersecting_faces() const {
         }
 
         if (segment_triangle_intersect(f1[1], f1[2], f2) ||
-          segment_triangle_intersect(f2[1], f2[2], f1)) {
+            segment_triangle_intersect(f2[1], f2[2], f1)) {
 #pragma omp critical
-            {
-              result.insert(f1);
-              result.insert(f2);
-            }
+          {
+            result.insert(f1);
+            result.insert(f2);
+          }
         }
       }
     }
@@ -107,7 +105,8 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
   return result;
 }
 
-bool mesh_defects_finder::line_triangle_intersect(vertex_index s1, vertex_index s2, const face& f) const {
+bool mesh_defects_finder::line_triangle_intersect(vertex_index s1, vertex_index s2,
+                                                  const face& f) const {
   const auto e1 = vertices_[f[1]] - vertices_[f[0]];
   const auto e2 = vertices_[f[2]] - vertices_[f[0]];
 
@@ -132,7 +131,8 @@ bool mesh_defects_finder::line_triangle_intersect(vertex_index s1, vertex_index 
   return true;
 }
 
-bool mesh_defects_finder::segment_plane_intersect(vertex_index s1, vertex_index s2, const face& f) const {
+bool mesh_defects_finder::segment_plane_intersect(vertex_index s1, vertex_index s2,
+                                                  const face& f) const {
   const auto e1 = vertices_[f[1]] - vertices_[f[0]];
   const auto e2 = vertices_[f[2]] - vertices_[f[0]];
 
@@ -142,10 +142,9 @@ bool mesh_defects_finder::segment_plane_intersect(vertex_index s1, vertex_index 
   return sign1 * sign2 < 0.0;
 }
 
-bool mesh_defects_finder::segment_triangle_intersect(vertex_index s1, vertex_index s2, const face& f) const {
-  return
-    segment_plane_intersect(s1, s2, f) &&
-    line_triangle_intersect(s1, s2, f);
+bool mesh_defects_finder::segment_triangle_intersect(vertex_index s1, vertex_index s2,
+                                                     const face& f) const {
+  return segment_plane_intersect(s1, s2, f) && line_triangle_intersect(s1, s2, f);
 }
 
 }  // namespace isosurface

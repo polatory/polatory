@@ -1,48 +1,34 @@
-#include <polatory/geometry/bbox3d.hpp>
-
 #include <limits>
-
 #include <polatory/common/eigen_utility.hpp>
+#include <polatory/geometry/bbox3d.hpp>
 
 namespace polatory {
 namespace geometry {
 
 bbox3d::bbox3d()
-  : min_(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity())
-  , max_(-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity()) {
-}
+    : min_(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(),
+           std::numeric_limits<double>::infinity()),
+      max_(-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
+           -std::numeric_limits<double>::infinity()) {}
 
-bbox3d::bbox3d(const point3d& min, const point3d& max)
-  : min_(min)
-  , max_(max) {
-}
+bbox3d::bbox3d(const point3d& min, const point3d& max) : min_(min), max_(max) {}
 
 bool bbox3d::operator==(const bbox3d& other) const {
   return min_ == other.min_ && max_ == other.max_;
 }
 
-point3d bbox3d::center() const {
-  return min_ + size() / 2.0;
-}
+point3d bbox3d::center() const { return min_ + size() / 2.0; }
 
 bool bbox3d::contains(const point3d& p) const {
-  return
-    p(0) >= min_(0) && p(0) <= max_(0) &&
-    p(1) >= min_(1) && p(1) <= max_(1) &&
-    p(2) >= min_(2) && p(2) <= max_(2);
+  return p(0) >= min_(0) && p(0) <= max_(0) && p(1) >= min_(1) && p(1) <= max_(1) &&
+         p(2) >= min_(2) && p(2) <= max_(2);
 }
 
-const point3d& bbox3d::max() const {
-  return max_;
-}
+const point3d& bbox3d::max() const { return max_; }
 
-const point3d& bbox3d::min() const {
-  return min_;
-}
+const point3d& bbox3d::min() const { return min_; }
 
-vector3d bbox3d::size() const {
-  return max_ - min_;
-}
+vector3d bbox3d::size() const { return max_ - min_; }
 
 bbox3d bbox3d::transform(const linear_transformation3d& t) const {
   point3d c = center();
@@ -68,14 +54,11 @@ bbox3d bbox3d::transform(const linear_transformation3d& t) const {
   point3d min = c + vertices.colwise().minCoeff();
   point3d max = c + vertices.colwise().maxCoeff();
 
-  return { min, max };
+  return {min, max};
 }
 
 bbox3d bbox3d::union_hull(const bbox3d& other) const {
-  return {
-    min().cwiseMin(other.min()),
-    max().cwiseMax(other.max())
-  };
+  return {min().cwiseMin(other.min()), max().cwiseMax(other.max())};
 }
 
 bbox3d bbox3d::from_points(const points3d& points) {

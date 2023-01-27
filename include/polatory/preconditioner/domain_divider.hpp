@@ -1,11 +1,10 @@
 #pragma once
 
 #include <list>
-#include <vector>
-
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
+#include <vector>
 
 namespace polatory {
 namespace preconditioner {
@@ -13,13 +12,13 @@ namespace preconditioner {
 class domain_divider;
 
 class domain {
-public:
+ public:
   std::vector<index_t> point_indices;
   std::vector<bool> inner_point;
 
   index_t size() const;
 
-private:
+ private:
   friend class domain_divider;
 
   void merge_poly_points(const std::vector<index_t>& poly_point_idcs);
@@ -31,16 +30,15 @@ class domain_divider {
   static constexpr double overlap_quota = 0.75;
   static constexpr index_t max_leaf_size = 256;
 
-public:
-  domain_divider(const geometry::points3d& points,
-                 const std::vector<index_t>& point_indices,
+ public:
+  domain_divider(const geometry::points3d& points, const std::vector<index_t>& point_indices,
                  const std::vector<index_t>& poly_point_indices);
 
   std::vector<index_t> choose_coarse_points(double ratio) const;
 
   const std::list<domain>& domains() const;
 
-private:
+ private:
   void divide_domain(std::list<domain>::iterator it);
 
   void divide_domains();

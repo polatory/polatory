@@ -1,6 +1,6 @@
-#include <Eigen/Core>
 #include <gtest/gtest.h>
 
+#include <Eigen/Core>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
@@ -10,21 +10,21 @@
 
 #include "../random_anisotropy.hpp"
 
+using polatory::index_t;
+using polatory::model;
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_symmetric_evaluator;
-using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::rbf::cov_exponential;
-using polatory::index_t;
 
 namespace {
 
 void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) {
   auto absolute_tolerance = 2e-6;
 
-  cov_exponential rbf({ 1.0, 0.2 });
+  cov_exponential rbf({1.0, 0.2});
   rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, 3, poly_degree);
@@ -46,7 +46,8 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_eval_points) 
   EXPECT_EQ(n_eval_points, direct_values.size());
   EXPECT_EQ(n_points, values.size());
 
-  auto max_residual = (values.head(n_eval_points) - direct_values).template lpNorm<Eigen::Infinity>();
+  auto max_residual =
+      (values.head(n_eval_points) - direct_values).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
 }
 

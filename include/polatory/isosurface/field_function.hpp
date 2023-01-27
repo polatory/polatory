@@ -8,7 +8,7 @@ namespace polatory {
 namespace isosurface {
 
 class field_function {
-public:
+ public:
   virtual ~field_function() = default;
 
   field_function(const field_function&) = delete;
@@ -20,7 +20,7 @@ public:
 
   virtual void set_evaluation_bbox(const geometry::bbox3d& /*bbox*/) {}
 
-protected:
+ protected:
   field_function() = default;
 };
 

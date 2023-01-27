@@ -1,25 +1,25 @@
 #pragma once
 
-#include <utility>
-#include <vector>
-
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
+#include <utility>
+#include <vector>
 
 namespace polatory {
 namespace interpolation {
 
 class rbf_inequality_fitter {
-public:
+ public:
   rbf_inequality_fitter(const model& model, const geometry::points3d& points);
 
-  std::pair<std::vector<index_t>, common::valuesd>
-  fit(const common::valuesd& values, const common::valuesd& values_lb, const common::valuesd& values_ub,
-      double absolute_tolerance) const;
+  std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
+                                                       const common::valuesd& values_lb,
+                                                       const common::valuesd& values_ub,
+                                                       double absolute_tolerance) const;
 
-private:
+ private:
   template <class Predicate>
   static std::vector<index_t> arg_where(const common::valuesd& v, Predicate predicate) {
     std::vector<index_t> idcs;

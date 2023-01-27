@@ -6,30 +6,18 @@ namespace polatory {
 namespace geometry {
 
 class cuboid3d {
-public:
-  cuboid3d()
-    : min_(point3d::Zero())
-    , max_(point3d::Ones()) {
-  }
+ public:
+  cuboid3d() : min_(point3d::Zero()), max_(point3d::Ones()) {}
 
-  cuboid3d(const point3d& min, const point3d& max)
-    : min_(min)
-    , max_(max) {
-  }
+  cuboid3d(const point3d& min, const point3d& max) : min_(min), max_(max) {}
 
-  bool operator==(const cuboid3d& other) const {
-    return min_ == other.min_ && max_ == other.max_;
-  }
+  bool operator==(const cuboid3d& other) const { return min_ == other.min_ && max_ == other.max_; }
 
-  const point3d& max() const {
-    return max_;
-  }
+  const point3d& max() const { return max_; }
 
-  const point3d& min() const {
-    return min_;
-  }
+  const point3d& min() const { return min_; }
 
-private:
+ private:
   const point3d min_;
   const point3d max_;
 };

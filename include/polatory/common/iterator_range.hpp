@@ -5,21 +5,14 @@ namespace common {
 
 template <class Forwarditerator>
 class iterator_range {
-public:
-  iterator_range(Forwarditerator begin, Forwarditerator end)
-    : begin_(begin)
-    , end_(end) {
-  }
+ public:
+  iterator_range(Forwarditerator begin, Forwarditerator end) : begin_(begin), end_(end) {}
 
-  auto begin() const {
-    return begin_;
-  }
+  auto begin() const { return begin_; }
 
-  auto end() const {
-    return end_;
-  }
+  auto end() const { return end_; }
 
-private:
+ private:
   Forwarditerator begin_;
   Forwarditerator end_;
 };
