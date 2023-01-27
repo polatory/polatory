@@ -1,12 +1,11 @@
 #pragma once
 
-#include <absl/types/optional.h>
-
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
@@ -261,7 +260,7 @@ class rmt_node {
     }
   }
 
-  absl::optional<double> clustering_weight(edge_index edge_idx) const {
+  std::optional<double> clustering_weight(edge_index edge_idx) const {
     if (!has_neighbor(edge_idx)) return {};
 
     auto& a_node = neighbor(edge_idx);

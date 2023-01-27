@@ -83,7 +83,6 @@ if(MSVC)
 endif()
 
 target_link_libraries(${TARGET} INTERFACE
-    absl::optional
     ${Boost_LIBRARIES}
     ceres
     double-conversion::double-conversion

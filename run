@@ -13,7 +13,7 @@ case $1 in
     cd vcpkg
     ./bootstrap-vcpkg.sh
     ./vcpkg remove --outdated --recurse
-    ./vcpkg install abseil boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gsl-lite gtest --triplet x64-linux
+    ./vcpkg install boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gsl-lite gtest --triplet x64-linux
     ;;
   'cmake' )
     mkdir -p build

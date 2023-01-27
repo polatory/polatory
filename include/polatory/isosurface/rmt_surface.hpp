@@ -1,11 +1,10 @@
 #pragma once
 
-#include <absl/types/optional.h>
-
 #include <array>
 #include <boost/iterator/iterator_facade.hpp>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <polatory/common/macros.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
@@ -151,8 +150,8 @@ class rmt_tetrahedron {
     return (s2 << 3) | (s1 << 2) | (s0 << 1) | s;
   }
 
-  static absl::optional<vertex_index> vertex_on_edge(const rmt_node& node, edge_index edge_idx,
-                                                     const rmt_node& opp_node) {
+  static std::optional<vertex_index> vertex_on_edge(const rmt_node& node, edge_index edge_idx,
+                                                    const rmt_node& opp_node) {
     if (node.has_intersection(edge_idx)) return node.vertex_on_edge(edge_idx);
 
     auto opp_edge_idx = OppositeEdge[edge_idx];
