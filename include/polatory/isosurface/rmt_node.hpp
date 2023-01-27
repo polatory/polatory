@@ -384,7 +384,7 @@ class rmt_node {
 
     intersections |= edge_bit;
 
-    auto it = vis->begin() + bit_count(intersections & edge_count_mask);
+    auto it = vis->begin() + bit_count(static_cast<edge_bitset>(intersections & edge_count_mask));
     vis->insert(it, vi);
 
     POLATORY_ASSERT(vertex_on_edge(edge_idx) == vi);
@@ -424,7 +424,7 @@ class rmt_node {
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;
-    return (*vis)[bit_count(intersections & edge_count_mask)];
+    return (*vis)[bit_count(static_cast<edge_bitset>(intersections & edge_count_mask))];
   }
 };
 
