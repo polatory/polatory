@@ -45,12 +45,18 @@ class bbox3d {
 
     for (; it != points_end; ++it) {
       auto pt = *it;
-      if (POLATORY_UNLIKELY(ret.min_(0) > pt(0))) ret.min_(0) = pt(0);
-      if (POLATORY_UNLIKELY(ret.max_(0) < pt(0))) ret.max_(0) = pt(0);
-      if (POLATORY_UNLIKELY(ret.min_(1) > pt(1))) ret.min_(1) = pt(1);
-      if (POLATORY_UNLIKELY(ret.max_(1) < pt(1))) ret.max_(1) = pt(1);
-      if (POLATORY_UNLIKELY(ret.min_(2) > pt(2))) ret.min_(2) = pt(2);
-      if (POLATORY_UNLIKELY(ret.max_(2) < pt(2))) ret.max_(2) = pt(2);
+      if (ret.min_(0) > pt(0)) [[unlikely]]
+        ret.min_(0) = pt(0);
+      if (ret.max_(0) < pt(0)) [[unlikely]]
+        ret.max_(0) = pt(0);
+      if (ret.min_(1) > pt(1)) [[unlikely]]
+        ret.min_(1) = pt(1);
+      if (ret.max_(1) < pt(1)) [[unlikely]]
+        ret.max_(1) = pt(1);
+      if (ret.min_(2) > pt(2)) [[unlikely]]
+        ret.min_(2) = pt(2);
+      if (ret.max_(2) < pt(2)) [[unlikely]]
+        ret.max_(2) = pt(2);
     }
 
     return ret;
