@@ -29,7 +29,7 @@ switch -regex ($args[0]) {
         Set-Location vcpkg
         Exec { .\bootstrap-vcpkg.bat }
         Exec { .\vcpkg remove --outdated --recurse }
-        Exec { .\vcpkg install boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gsl-lite gtest --triplet x64-windows }
+        Exec { .\vcpkg install boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gtest --triplet x64-windows }
         break
     }
     '^cmake$' {

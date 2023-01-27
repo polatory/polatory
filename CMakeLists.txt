@@ -23,7 +23,6 @@ find_package(Ceres CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(flann CONFIG REQUIRED)
-find_package(gsl-lite CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 

@@ -36,11 +36,6 @@ target_compile_definitions(${TARGET} PUBLIC
     -DGLOG_NO_ABBREVIATED_SEVERITIES
     -DNOMINMAX
 )
-if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(${TARGET} PRIVATE
-        -DGSL_UNENFORCED_ON_CONTRACT_VIOLATION
-    )
-endif()
 
 if(USE_PREBUILT_BOOST)
     target_compile_definitions(${TARGET} PUBLIC

@@ -1,5 +1,4 @@
 #include <exception>
-#include <gsl/gsl-lite.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
 
 namespace polatory {
@@ -47,16 +46,16 @@ const std::array<face_bitset, 24> NeighborFaces{
 
 const detail::neighbor_edge_pairs NeighborEdgePairs;
 
-bool rmt_node::has_neighbor(edge_index edge) const { return gsl::at(*neighbors_, edge) != nullptr; }
+bool rmt_node::has_neighbor(edge_index edge) const { return neighbors_->at(edge) != nullptr; }
 
 rmt_node& rmt_node::neighbor(edge_index edge) {
   POLATORY_ASSERT(has_neighbor(edge));
-  return *gsl::at(*neighbors_, edge);
+  return *neighbors_->at(edge);
 }
 
 const rmt_node& rmt_node::neighbor(edge_index edge) const {
   POLATORY_ASSERT(has_neighbor(edge));
-  return *gsl::at(*neighbors_, edge);
+  return *neighbors_->at(edge);
 }
 
 }  // namespace isosurface
