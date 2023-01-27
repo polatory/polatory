@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <limits>
+#include <numbers>
 
 #include "FGlobal.hpp"
 
@@ -26,11 +27,11 @@
  */
 struct FMath{
     template <class FReal>
-    constexpr static FReal FPi(){ return FReal(M_PI); }
+    constexpr static FReal FPi(){ return std::numbers::pi_v<FReal>; }
     template <class FReal>
-    constexpr static FReal FTwoPi(){ return FReal(2.0*M_PI); }
+    constexpr static FReal FTwoPi(){ return FReal(2.0) * std::numbers::pi_v<FReal>; }
     template <class FReal>
-    constexpr static FReal FPiDiv2(){ return FReal(M_PI_2); }
+    constexpr static FReal FPiDiv2(){ return std::numbers::pi_v<FReal> / FReal(2.0); }
     template <class FReal>
     constexpr static FReal Epsilon(){ return FReal(0.00000000000000000001); }
 
