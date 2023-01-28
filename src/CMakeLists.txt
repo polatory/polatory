@@ -47,7 +47,7 @@ endif()
 set(THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
-    ${MKL_INCLUDE_DIR}
+    ${MKL_ROOT}/include
     ${VCPKG_INCLUDE_DIR}
 )
 set(THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES
@@ -82,20 +82,17 @@ target_link_libraries(${TARGET} INTERFACE
     ceres
     double-conversion::double-conversion
     glog::glog
+    MKL::MKL
     OpenMP::OpenMP_CXX
 )
 
 if(UNIX)
     target_link_libraries(${TARGET} INTERFACE
         flann::flann_cpp_s
-        "-Wl,--start-group"
-        ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
-        "-Wl,--end-group"
     )
 elseif(MSVC)
     target_link_libraries(${TARGET} INTERFACE
         flann::flann_cpp
-        ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
     )
 endif()
 

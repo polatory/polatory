@@ -88,6 +88,9 @@ jobs:
               Remove-Item vcpkg\buildtrees\ceres -Recurse
           }
 
+      - name: Patch MKLConfig.cmake
+        run: Copy-Item cmake\MKLConfig.cmake "$env:CONDA\Library\lib\cmake\mkl\MKLConfig.cmake"
+
       - name: Configure
         run: .\run cmake
 
