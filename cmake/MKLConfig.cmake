@@ -646,6 +646,8 @@ foreach(lib ${MKL_LIBRARIES})
 
         mkl_message(STATUS "Found DLL: ${MKL_DLL_FILE}")
         set_target_properties(MKL::${lib} PROPERTIES IMPORTED_LOCATION "${MKL_DLL_FILE}")
+        message("a: MKL::${lib}")
+        message("b: ${MKL_DLL_FILE}")
       else()
         mkl_message(FATAL_ERROR "${MKL_DLL_GLOB} not found")
       endif()
