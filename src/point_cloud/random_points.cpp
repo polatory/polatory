@@ -40,9 +40,9 @@ geometry::points3d random_points(const geometry::sphere3d& sphere, index_t n, se
   geometry::points3d points(n, 3);
 
   for (auto p : common::row_range(points)) {
-    double x1;
-    double x2;
-    double rsq;
+    double x1{};
+    double x2{};
+    double rsq{};
     do {
       x1 = dist(gen);
       x2 = dist(gen);
