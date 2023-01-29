@@ -7,8 +7,7 @@
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <random>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 index_t domain::size() const { return static_cast<index_t>(point_indices.size()); }
 
@@ -24,7 +23,9 @@ void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
   for (index_t i = 0; i < n_poly_points; i++) {
     auto idx = poly_point_idcs[i];
     auto it = std::lower_bound(point_indices.begin(), point_indices.end(), idx);
-    if (it == point_indices.end() || *it != idx) continue;
+    if (it == point_indices.end() || *it != idx) {
+      continue;
+    }
 
     auto it_inner = inner_point.begin() + std::distance(point_indices.begin(), it);
     new_inner_point[i] = *it_inner;
@@ -78,7 +79,9 @@ std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
 
     auto count = index_t{0};
     for (auto i : shuffled) {
-      if (count == n_coarse) break;
+      if (count == n_coarse) {
+        break;
+      }
 
       if (d.inner_point[i]) {
         coarse_idcs.push_back(d.point_indices[i]);
@@ -171,5 +174,4 @@ double domain_divider::round_half_to_even(double d) {
   return std::ceil((d - 0.5) / 2.0) + std::floor((d + 0.5) / 2.0);
 }
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

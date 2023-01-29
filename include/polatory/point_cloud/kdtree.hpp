@@ -6,8 +6,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 class kdtree {
  public:
@@ -32,5 +31,4 @@ class kdtree {
   std::unique_ptr<impl> pimpl_;
 };
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

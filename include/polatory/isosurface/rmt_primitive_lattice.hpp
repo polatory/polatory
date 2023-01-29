@@ -9,8 +9,7 @@
 #include <polatory/isosurface/types.hpp>
 #include <stdexcept>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 namespace detail {
 
@@ -18,14 +17,14 @@ class lattice_vectors : public std::array<geometry::vector3d, 3> {
   using base = std::array<geometry::vector3d, 3>;
 
  public:
-  lattice_vectors() noexcept;
+  lattice_vectors();
 };
 
 class dual_lattice_vectors : public std::array<geometry::vector3d, 3> {
   using base = std::array<geometry::vector3d, 3>;
 
  public:
-  dual_lattice_vectors() noexcept;
+  dual_lattice_vectors();
 };
 
 }  // namespace detail
@@ -77,8 +76,9 @@ class rmt_primitive_lattice {
     auto dim = (cv_max - cv_min).array() + 16;
 
     if (static_cast<cell_index>(dim(0)) > mask || static_cast<cell_index>(dim(1)) > mask ||
-        static_cast<cell_index>(dim(2)) > mask)
+        static_cast<cell_index>(dim(2)) > mask) {
       throw std::range_error("Bounds are too large or resolution is too small.");
+    }
   }
 
   cell_index cell_index_from_point(const geometry::point3d& p) const {
@@ -121,7 +121,7 @@ class rmt_primitive_lattice {
  private:
   static geometry::bbox3d compute_extended_bbox(const geometry::bbox3d& bbox, double resolution) {
     geometry::vector3d cell_bbox_size =
-        resolution * geometry::vector3d(3.0 / std::sqrt(2.0), 2.0, 1.0);
+        resolution * geometry::vector3d(3.0 / std::numbers::sqrt2, 2.0, 1.0);
     geometry::vector3d ext = cell_bbox_size * (1.0 + 1.0 / 64.0);
     return {bbox.min() - ext, bbox.max() + ext};
   }
@@ -135,5 +135,4 @@ class rmt_primitive_lattice {
   const geometry::bbox3d ext_bbox_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

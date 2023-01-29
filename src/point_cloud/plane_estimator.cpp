@@ -3,8 +3,7 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 plane_estimator::plane_estimator(const geometry::points3d& points) {
   POLATORY_ASSERT(points.rows() >= 3);
@@ -48,5 +47,4 @@ Eigen::JacobiSVD<Eigen::MatrixXd> plane_estimator::pca_svd(const geometry::point
   return Eigen::JacobiSVD<Eigen::MatrixXd>(points.rowwise() - barycenter, Eigen::ComputeThinV);
 }
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

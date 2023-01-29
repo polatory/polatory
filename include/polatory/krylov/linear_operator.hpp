@@ -2,8 +2,7 @@
 
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace krylov {
+namespace polatory::krylov {
 
 class linear_operator {
  public:
@@ -22,5 +21,4 @@ class linear_operator {
   linear_operator() = default;
 };
 
-}  // namespace krylov
-}  // namespace polatory
+}  // namespace polatory::krylov

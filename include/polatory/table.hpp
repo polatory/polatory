@@ -17,7 +17,9 @@ using tabled = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowM
 
 inline tabled read_table(const std::string& filename, const char* delimiters = " \t,") {
   std::ifstream ifs(filename);
-  if (!ifs) throw std::runtime_error("Failed to open file '" + filename + "'.");
+  if (!ifs) {
+    throw std::runtime_error("Failed to open file '" + filename + "'.");
+  }
 
   std::vector<double> buffer;
 
@@ -27,7 +29,9 @@ inline tabled read_table(const std::string& filename, const char* delimiters = "
   while (std::getline(ifs, line)) {
     line_no++;
 
-    if (boost::starts_with(line, "#")) continue;
+    if (boost::starts_with(line, "#")) {
+      continue;
+    }
 
     std::vector<std::string> row;
     boost::split(row, line, boost::is_any_of(delimiters));
@@ -48,7 +52,9 @@ inline tabled read_table(const std::string& filename, const char* delimiters = "
     }
   }
 
-  if (n_cols == 0) throw std::runtime_error("File '" + filename + "' is empty.");
+  if (n_cols == 0) {
+    throw std::runtime_error("File '" + filename + "' is empty.");
+  }
 
   return tabled::Map(buffer.data(), buffer.size() / n_cols, n_cols);
 }
@@ -57,13 +63,17 @@ template <class Derived>
 void write_table(const std::string& filename, const Eigen::MatrixBase<Derived>& table,
                  char delimiter = ' ') {
   std::ofstream ofs(filename);
-  if (!ofs) throw std::runtime_error("Failed to open file '" + filename + "'.");
+  if (!ofs) {
+    throw std::runtime_error("Failed to open file '" + filename + "'.");
+  }
 
   auto n_cols = static_cast<index_t>(table.cols());
   for (auto row : common::row_range(table)) {
     for (index_t i = 0; i < n_cols; i++) {
       ofs << numeric::to_string(row(i));
-      if (i != n_cols - 1) ofs << delimiter;
+      if (i != n_cols - 1) {
+        ofs << delimiter;
+      }
     }
     ofs << '\n';
   }

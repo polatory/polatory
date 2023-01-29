@@ -6,8 +6,7 @@
 #include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 class normal_estimator {
  public:
@@ -30,5 +29,4 @@ class normal_estimator {
   geometry::vectors3d normals_;
 };
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

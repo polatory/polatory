@@ -11,8 +11,7 @@
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
@@ -32,9 +31,10 @@ struct rbf_operator : krylov::linear_operator {
   }
 
   rbf_operator(const model& model, int tree_height, const geometry::bbox3d& bbox)
-      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
-    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, tree_height, bbox);
-
+      : model_(model),
+        n_poly_basis_(model.poly_basis_size()),
+        n_points_(0),
+        a_(std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, tree_height, bbox)) {
     if (n_poly_basis_ > 0) {
       poly_basis_ =
           std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
@@ -46,7 +46,7 @@ struct rbf_operator : krylov::linear_operator {
 
     common::valuesd y = common::valuesd::Zero(size());
 
-    auto& rbf = model_.rbf();
+    const auto& rbf = model_.rbf();
     auto diagonal = rbf.evaluate_untransformed(0.0) + model_.nugget();
     y.head(n_points_) = diagonal * weights.head(n_points_);
 
@@ -84,5 +84,4 @@ struct rbf_operator : krylov::linear_operator {
   Eigen::MatrixXd pt_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

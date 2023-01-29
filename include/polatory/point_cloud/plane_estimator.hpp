@@ -4,8 +4,7 @@
 #include <Eigen/SVD>
 #include <polatory/geometry/point3d.hpp>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 // Computes the best-fit plane and its "plane factor" for the given points.
 class plane_estimator {
@@ -33,5 +32,4 @@ class plane_estimator {
   double plane_factor_;
 };
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

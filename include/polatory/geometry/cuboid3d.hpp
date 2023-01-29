@@ -2,8 +2,7 @@
 
 #include <polatory/geometry/point3d.hpp>
 
-namespace polatory {
-namespace geometry {
+namespace polatory::geometry {
 
 class cuboid3d {
  public:
@@ -22,5 +21,4 @@ class cuboid3d {
   const point3d max_;
 };
 
-}  // namespace geometry
-}  // namespace polatory
+}  // namespace polatory::geometry

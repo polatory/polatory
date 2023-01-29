@@ -7,8 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace polatory {
-namespace kriging {
+namespace polatory::kriging {
 
 class empirical_variogram {
  public:
@@ -40,5 +39,4 @@ class empirical_variogram {
   std::vector<index_t> num_pairs_;
 };
 
-}  // namespace kriging
-}  // namespace polatory
+}  // namespace polatory::kriging

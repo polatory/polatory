@@ -5,8 +5,7 @@
 #include <set>
 #include <vector>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 class mesh_defects_finder {
  public:
@@ -28,5 +27,4 @@ class mesh_defects_finder {
   std::vector<std::vector<face>> vf_map_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

@@ -2,8 +2,7 @@
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 
-namespace polatory {
-namespace geometry {
+namespace polatory::geometry {
 
 bbox3d::bbox3d()
     : min_(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(),
@@ -65,5 +64,4 @@ bbox3d bbox3d::from_points(const points3d& points) {
   return from_points(common::row_begin(points), common::row_end(points));
 }
 
-}  // namespace geometry
-}  // namespace polatory
+}  // namespace polatory::geometry

@@ -8,8 +8,7 @@
 #include <polatory/polynomial/polynomial_evaluator.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 class rbf_direct_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
@@ -45,5 +44,4 @@ class rbf_direct_evaluator {
   common::valuesd weights_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

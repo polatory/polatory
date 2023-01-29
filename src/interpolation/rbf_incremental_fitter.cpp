@@ -10,8 +10,7 @@
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <random>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 rbf_incremental_fitter::rbf_incremental_fitter(const model& model, const geometry::points3d& points)
     : model_(model),
@@ -46,7 +45,9 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     center_weights =
         solver->solve(common::take_rows(values, centers), absolute_tolerance, center_weights);
 
-    if (n_centers == n_points_) break;
+    if (n_centers == n_points_) {
+      break;
+    }
 
     // Evaluate residuals at remaining points.
 
@@ -73,7 +74,9 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     auto n_points_need_fitting = static_cast<index_t>(std::distance(it, c_residuals.end()));
     std::cout << "Number of points to fit: " << n_points_need_fitting << std::endl;
 
-    if (n_points_need_fitting == 0) break;
+    if (n_points_need_fitting == 0) {
+      break;
+    }
 
     // Append points with the largest residuals.
 
@@ -129,5 +132,4 @@ std::vector<index_t> rbf_incremental_fitter::complement_indices(
   return c_idcs;
 }
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

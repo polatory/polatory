@@ -9,8 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 class distance_filter {
  public:
@@ -18,8 +17,9 @@ class distance_filter {
 
   template <class Derived>
   auto filtered(const Eigen::MatrixBase<Derived>& m) {
-    if (m.rows() != n_points_)
+    if (m.rows() != n_points_) {
       throw std::invalid_argument("m.rows() must match with the original points.");
+    }
 
     return common::take_rows(m, filtered_indices_);
   }
@@ -35,5 +35,4 @@ class distance_filter {
   std::vector<index_t> filtered_indices_;
 };
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

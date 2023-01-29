@@ -4,21 +4,23 @@
 #include <tuple>
 #include <vector>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
                                        const geometry::vectors3d& normals, double min_distance,
                                        double max_distance, double multiplication)
     : points_(points), normals_(normals) {
-  if (normals.rows() != points.rows())
+  if (normals.rows() != points.rows()) {
     throw std::invalid_argument("normals.rows() must be equal to points.rows().");
+  }
 
-  if (min_distance > max_distance)
+  if (min_distance > max_distance) {
     throw std::invalid_argument("min_distance must be less than or equal to max_distance.");
+  }
 
-  if (multiplication <= 1.0 || multiplication > 3.0)
+  if (multiplication <= 1.0 || multiplication > 3.0) {
     throw std::invalid_argument("multiplication must be within (1.0, 3.0].");
+  }
 
   kdtree tree(points, true);
 
@@ -38,7 +40,9 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
     auto p = points.row(i);
     auto n = normals.row(i);
 
-    if (n == geometry::vector3d::Zero()) continue;
+    if (n == geometry::vector3d::Zero()) {
+      continue;
+    }
 
     auto d = max_distance;
     geometry::point3d q = p + d * n;
@@ -52,13 +56,17 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
       d = 0.99 * (p_nearest - p).norm() / 2.0;
       q = p + d * n;
 
-      if (d < min_distance) break;
+      if (d < min_distance) {
+        break;
+      }
 
       std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
       i_nearest = nn_indices[0];
     }
 
-    if (d < min_distance) continue;
+    if (d < min_distance) {
+      continue;
+    }
 
     sdf_points_.row(n_sdf_points) = q;
     sdf_values_(n_sdf_points) = d;
@@ -69,7 +77,9 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
     auto p = points.row(i);
     auto n = normals.row(i);
 
-    if (n == geometry::vector3d::Zero()) continue;
+    if (n == geometry::vector3d::Zero()) {
+      continue;
+    }
 
     auto d = max_distance;
     geometry::point3d q = p - d * n;
@@ -83,13 +93,17 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
       d = 0.99 * (p_nearest - p).norm() / 2.0;
       q = p - d * n;
 
-      if (d < min_distance) break;
+      if (d < min_distance) {
+        break;
+      }
 
       std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
       i_nearest = nn_indices[0];
     }
 
-    if (d < min_distance) continue;
+    if (d < min_distance) {
+      continue;
+    }
 
     sdf_points_.row(n_sdf_points) = q;
     sdf_values_(n_sdf_points) = -d;
@@ -104,5 +118,4 @@ const geometry::points3d& sdf_data_generator::sdf_points() const { return sdf_po
 
 const common::valuesd& sdf_data_generator::sdf_values() const { return sdf_values_; }
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

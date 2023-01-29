@@ -16,8 +16,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 class ras_preconditioner : public krylov::linear_operator {
   static constexpr bool kRecomputeAndClear = true;
@@ -62,5 +61,4 @@ class ras_preconditioner : public krylov::linear_operator {
   Eigen::MatrixXd ap_;
 };
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

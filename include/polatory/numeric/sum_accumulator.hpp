@@ -3,8 +3,7 @@
 #include <cstddef>
 #include <type_traits>
 
-namespace polatory {
-namespace numeric {
+namespace polatory::numeric {
 
 template <class Floating, typename std::enable_if<std::is_floating_point<Floating>::value,
                                                   std::nullptr_t>::type = nullptr>
@@ -27,5 +26,4 @@ class kahan_sum_accumulator {
   Floating correction_;
 };
 
-}  // namespace numeric
-}  // namespace polatory
+}  // namespace polatory::numeric

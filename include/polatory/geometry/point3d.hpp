@@ -3,8 +3,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-namespace polatory {
-namespace geometry {
+namespace polatory::geometry {
 
 using vector3d = Eigen::RowVector3d;
 
@@ -29,5 +28,4 @@ inline vector3d transform_vector(const linear_transformation3d& t, const vector3
   return t * v.transpose();
 }
 
-}  // namespace geometry
-}  // namespace polatory
+}  // namespace polatory::geometry

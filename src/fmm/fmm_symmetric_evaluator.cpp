@@ -11,8 +11,7 @@
 
 #include "fmm_rbf_kernel.hpp"
 
-namespace polatory {
-namespace fmm {
+namespace polatory::fmm {
 
 template <int Order>
 class fmm_symmetric_evaluator<Order>::impl {
@@ -30,7 +29,9 @@ class fmm_symmetric_evaluator<Order>::impl {
       : model_(model), rbf_kernel_(model.rbf()), n_points_(0) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
     auto width = (1.0 + 1.0 / 64.0) * a_bbox.size().maxCoeff();
-    if (width == 0.0) width = 1.0;
+    if (width == 0.0) {
+      width = 1.0;
+    }
     auto center = a_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
@@ -173,5 +174,4 @@ void fmm_symmetric_evaluator<Order>::set_weights(const Eigen::Ref<const common::
 template class fmm_symmetric_evaluator<6>;
 template class fmm_symmetric_evaluator<10>;
 
-}  // namespace fmm
-}  // namespace polatory
+}  // namespace polatory::fmm

@@ -14,8 +14,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 namespace detail {
 
@@ -23,7 +22,7 @@ class neighbor_edge_pairs : public std::array<std::vector<std::pair<int, int>>, 
   using base = std::array<std::vector<std::pair<int, int>>, 14>;
 
  public:
-  neighbor_edge_pairs() noexcept;
+  neighbor_edge_pairs();
 };
 
 }  // namespace detail
@@ -154,7 +153,9 @@ class rmt_node {
   }
 
   static edge_bitset propagate(edge_bitset edge_set) {
-    if (edge_set == 0) return 0;
+    if (edge_set == 0) {
+      return 0;
+    }
 
     edge_bitset neighbors = 0;
     do {
@@ -203,7 +204,9 @@ class rmt_node {
         while (surface != 0) {
           auto edge_idx = bit_pop(&surface);
           auto weight = clustering_weight(edge_idx);
-          if (!weight.has_value()) return;
+          if (!weight.has_value()) {
+            return;
+          }
           weights.push_back(weight.value());
         }
       }
@@ -235,7 +238,9 @@ class rmt_node {
           while (surface != 0) {
             auto edge_idx = bit_pop(&surface);
             auto weight = clustering_weight(edge_idx);
-            if (!weight.has_value()) return;
+            if (!weight.has_value()) {
+              return;
+            }
             weights.push_back(weight.value());
             edge_idcs.push_back(edge_idx);
           }
@@ -261,9 +266,11 @@ class rmt_node {
   }
 
   std::optional<double> clustering_weight(edge_index edge_idx) const {
-    if (!has_neighbor(edge_idx)) return {};
+    if (!has_neighbor(edge_idx)) {
+      return {};
+    }
 
-    auto& a_node = neighbor(edge_idx);
+    const auto& a_node = neighbor(edge_idx);
     geometry::vector3d oa = a_node.pos - pos;
 
     std::vector<double> alphas;
@@ -272,10 +279,12 @@ class rmt_node {
     // Calculate alphas and accumulate normals per plane.
 
     for (auto neigh_pair : NeighborEdgePairs[edge_idx]) {
-      if (!has_neighbor(neigh_pair.first) || !has_neighbor(neigh_pair.second)) return {};
+      if (!has_neighbor(neigh_pair.first) || !has_neighbor(neigh_pair.second)) {
+        return {};
+      }
 
-      auto& b_node = neighbor(neigh_pair.first);
-      auto& c_node = neighbor(neigh_pair.second);
+      const auto& b_node = neighbor(neigh_pair.first);
+      const auto& c_node = neighbor(neigh_pair.second);
 
       auto theta_b = clustering_weight_theta(*this, a_node, b_node);
       auto theta_c = clustering_weight_theta(*this, a_node, c_node);
@@ -302,7 +311,7 @@ class rmt_node {
 
     for (size_t i = 0; i < alphas.size(); i++) {
       auto neigh_pair = NeighborEdgePairs[edge_idx][i];
-      auto& b_node = neighbor(neigh_pair.first);
+      const auto& b_node = neighbor(neigh_pair.first);
 
       geometry::vector3d ob = b_node.pos - pos;
 
@@ -362,7 +371,9 @@ class rmt_node {
 
   std::vector<edge_bitset> get_surfaces() const {
     // The most common case
-    if (intersections == 0) return std::vector<edge_bitset>();
+    if (intersections == 0) {
+      return {};
+    }
 
     return get_surfaces_impl(intersections);
   }
@@ -377,7 +388,9 @@ class rmt_node {
   void insert_vertex(vertex_index vi, edge_index edge_idx) {
     POLATORY_ASSERT(!has_intersection(edge_idx));
 
-    if (!vis) vis = std::make_unique<std::vector<vertex_index>>();
+    if (!vis) {
+      vis = std::make_unique<std::vector<vertex_index>>();
+    }
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;
@@ -428,5 +441,4 @@ class rmt_node {
   }
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

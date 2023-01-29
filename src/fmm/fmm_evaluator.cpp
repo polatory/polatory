@@ -11,8 +11,7 @@
 
 #include "fmm_rbf_kernel.hpp"
 
-namespace polatory {
-namespace fmm {
+namespace polatory::fmm {
 
 template <int Order>
 class fmm_evaluator<Order>::impl {
@@ -30,7 +29,9 @@ class fmm_evaluator<Order>::impl {
       : model_(model), rbf_kernel_(model.rbf()), n_src_points_(0), n_fld_points_(0) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
     auto width = (1.0 + 1.0 / 64.0) * a_bbox.size().maxCoeff();
-    if (width == 0.0) width = 1.0;
+    if (width == 0.0) {
+      width = 1.0;
+    }
     auto center = a_bbox.center();
 
     interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
@@ -49,9 +50,7 @@ class fmm_evaluator<Order>::impl {
       particles.resetForcesAndPotential();
     });
 
-    // clang-tidy 6 reports clang-analyzer-core.CallAndMessage if these executions are merged.
-    fmm_->execute(FFmmM2L | FFmmL2L | FFmmL2P);
-    fmm_->execute(FFmmP2P);
+    fmm_->execute(FFmmM2L | FFmmL2L | FFmmL2P | FFmmP2P);
 
     return potentials();
   }
@@ -126,9 +125,13 @@ class fmm_evaluator<Order>::impl {
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     POLATORY_ASSERT(static_cast<index_t>(weights.size()) == n_src_points_);
 
-    if (n_src_points_ == 0) return;
+    if (n_src_points_ == 0) {
+      return;
+    }
 
-    if (weight_ptrs_.empty()) update_weight_ptrs();
+    if (weight_ptrs_.empty()) {
+      update_weight_ptrs();
+    }
 
     for (index_t idx = 0; idx < n_src_points_; idx++) {
       *weight_ptrs_[idx] = weights[idx];
@@ -235,5 +238,4 @@ void fmm_evaluator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& 
 template class fmm_evaluator<6>;
 template class fmm_evaluator<10>;
 
-}  // namespace fmm
-}  // namespace polatory
+}  // namespace polatory::fmm

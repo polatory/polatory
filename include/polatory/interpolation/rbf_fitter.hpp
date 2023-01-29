@@ -4,8 +4,7 @@
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 class rbf_fitter {
  public:
@@ -18,5 +17,4 @@ class rbf_fitter {
   const geometry::points3d& points_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

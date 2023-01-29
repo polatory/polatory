@@ -6,8 +6,7 @@
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace polynomial {
+namespace polatory::polynomial {
 
 class monomial_basis : public polynomial_basis_base {
  public:
@@ -136,5 +135,4 @@ class monomial_basis : public polynomial_basis_base {
   }
 };
 
-}  // namespace polynomial
-}  // namespace polatory
+}  // namespace polatory::polynomial

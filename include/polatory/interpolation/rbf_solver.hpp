@@ -16,8 +16,7 @@
 #include <polatory/types.hpp>
 #include <stdexcept>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 class rbf_solver {
   using Preconditioner = preconditioner::ras_preconditioner;
@@ -88,7 +87,9 @@ class rbf_solver {
     rhs.tail(n_poly_basis_) = common::valuesd::Zero(n_poly_basis_);
 
     krylov::fgmres solver(*op_, rhs, 32);
-    if (initial_solution != nullptr) solver.set_initial_solution(*initial_solution);
+    if (initial_solution != nullptr) {
+      solver.set_initial_solution(*initial_solution);
+    }
     solver.set_right_preconditioner(*pc_);
     solver.setup();
 
@@ -127,5 +128,4 @@ class rbf_solver {
   Eigen::MatrixXd p_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

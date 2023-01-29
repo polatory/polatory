@@ -7,8 +7,7 @@
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace fmm {
+namespace polatory::fmm {
 
 template <int Order>
 class fmm_evaluator {
@@ -39,5 +38,4 @@ class fmm_evaluator {
   std::unique_ptr<impl> pimpl_;
 };
 
-}  // namespace fmm
-}  // namespace polatory
+}  // namespace polatory::fmm

@@ -11,8 +11,7 @@
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& in_points)
     : model_without_poly_(model.without_poly()),
@@ -241,5 +240,4 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
 index_t ras_preconditioner::size() const { return n_points_ + n_poly_basis_; }
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

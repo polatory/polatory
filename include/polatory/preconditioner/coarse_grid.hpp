@@ -10,8 +10,7 @@
 #include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 class coarse_grid {
  public:
@@ -53,5 +52,4 @@ class coarse_grid {
   common::valuesd lambda_c_;
 };
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

@@ -8,8 +8,7 @@
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <set>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 rbf_inequality_fitter::rbf_inequality_fitter(const model& model, const geometry::points3d& points)
     : model_(model),
@@ -72,7 +71,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       auto center_values = common::take_rows(values, centers);
       for (index_t i = n_eq; i < n_centers; i++) {
         auto idx = centers[i];
-        if (active_idcs_lb.count(idx) != 0) {
+        if (active_idcs_lb.contains(idx)) {
           center_values(i) = values_lb(idx);
         } else {
           center_values(i) = values_ub(idx);
@@ -105,7 +104,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       auto idx = ineq_idcs[i];
 
       if (std::binary_search(idcs_lb.begin(), idcs_lb.end(), idx)) {
-        if (active_idcs_lb.count(idx) != 0) {
+        if (active_idcs_lb.contains(idx)) {
           if (weights(idx) <= 0.0) {
             active_idcs_lb.erase(idx);
             active_set_changed = true;
@@ -118,7 +117,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
         }
       }
       if (std::binary_search(idcs_ub.begin(), idcs_ub.end(), idx)) {
-        if (active_idcs_ub.count(idx) != 0) {
+        if (active_idcs_ub.contains(idx)) {
           if (weights(idx) >= 0.0) {
             active_idcs_ub.erase(idx);
             active_set_changed = true;
@@ -132,11 +131,12 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       }
     }
 
-    if (!active_set_changed) break;
+    if (!active_set_changed) {
+      break;
+    }
   }
 
   return {std::move(centers), std::move(center_weights)};
 }
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

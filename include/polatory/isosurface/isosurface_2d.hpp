@@ -9,8 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 class isosurface_2d {
  public:
@@ -62,5 +61,4 @@ class isosurface_2d {
   const double resolution_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

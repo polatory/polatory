@@ -10,8 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace polatory {
-namespace polynomial {
+namespace polatory::polynomial {
 
 // TODO(mizuno): If given points have a large offset from the origin,
 // construction can fail due to a large condition number.
@@ -20,7 +19,9 @@ class unisolvent_point_set {
 
  public:
   unisolvent_point_set(const geometry::vectors3d& points, int dimension, int degree) {
-    if (degree < 0) return;
+    if (degree < 0) {
+      return;
+    }
 
     auto n_points = static_cast<index_t>(points.rows());
     auto n_poly_basis = polynomial_basis_base::basis_size(dimension, degree);
@@ -62,5 +63,4 @@ class unisolvent_point_set {
   std::vector<index_t> point_idcs_;
 };
 
-}  // namespace polynomial
-}  // namespace polatory
+}  // namespace polatory::polynomial

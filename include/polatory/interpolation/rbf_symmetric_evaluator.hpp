@@ -12,8 +12,7 @@
 #include <polatory/polynomial/polynomial_evaluator.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 template <int Order = 10>
 class rbf_symmetric_evaluator {
@@ -73,5 +72,4 @@ class rbf_symmetric_evaluator {
   common::valuesd weights_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

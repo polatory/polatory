@@ -5,8 +5,7 @@
 #include <polatory/isosurface/types.hpp>
 #include <unordered_map>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 namespace detail {
 
@@ -14,7 +13,7 @@ class neighbor_cell_vectors : public std::array<cell_vector, 14> {
   using base = std::array<cell_vector, 14>;
 
  public:
-  neighbor_cell_vectors() noexcept;
+  neighbor_cell_vectors();
 };
 
 }  // namespace detail
@@ -66,5 +65,4 @@ class rmt_node_list : std::unordered_map<cell_index, rmt_node> {
   }
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

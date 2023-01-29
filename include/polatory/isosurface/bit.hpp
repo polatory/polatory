@@ -2,8 +2,7 @@
 
 #include <bit>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 template <class T>
 int bit_count(T bit_set) {
@@ -32,5 +31,4 @@ int bit_pop(T *bit_set) {
   return bit_index;
 }
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

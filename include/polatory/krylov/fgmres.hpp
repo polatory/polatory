@@ -5,8 +5,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace polatory {
-namespace krylov {
+namespace polatory::krylov {
 
 class fgmres : public gmres {
  public:
@@ -25,5 +24,4 @@ class fgmres : public gmres {
   std::vector<common::valuesd> zs_;
 };
 
-}  // namespace krylov
-}  // namespace polatory
+}  // namespace polatory::krylov

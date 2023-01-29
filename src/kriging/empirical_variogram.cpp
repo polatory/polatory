@@ -6,8 +6,7 @@
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/numeric/sum_accumulator.hpp>
 
-namespace polatory {
-namespace kriging {
+namespace polatory::kriging {
 
 empirical_variogram::empirical_variogram(const geometry::points3d& points,
                                          const common::valuesd& values, double bin_width,
@@ -15,7 +14,9 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
   POLATORY_ASSERT(values.size() == points.rows());
 
   auto n_points = static_cast<index_t>(points.rows());
-  if (n_points == 0) return;
+  if (n_points == 0) {
+    return;
+  }
 
   distance_.resize(n_bins);
   gamma_.resize(n_bins);
@@ -31,7 +32,9 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
       auto frac = dist / bin_width;
       auto bin = dist > 0.0 && frac == std::floor(frac) ? static_cast<index_t>(std::floor(frac)) - 1
                                                         : static_cast<index_t>(std::floor(frac));
-      if (bin >= n_bins) continue;
+      if (bin >= n_bins) {
+        continue;
+      }
 
       dist_sum[bin] += dist;
       gamma_sum[bin] += std::pow(values[i] - values[j], 2.0) / 2.0;
@@ -40,7 +43,9 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
   }
 
   for (index_t i = 0; i < n_bins; i++) {
-    if (num_pairs_[i] == 0) continue;
+    if (num_pairs_[i] == 0) {
+      continue;
+    }
 
     distance_[i] = dist_sum[i].get() / num_pairs_[i];
     gamma_[i] = gamma_sum[i].get() / num_pairs_[i];
@@ -81,5 +86,4 @@ void empirical_variogram::save(const std::string& filename) const {
   oa << *this;
 }
 
-}  // namespace kriging
-}  // namespace polatory
+}  // namespace polatory::kriging

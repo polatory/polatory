@@ -4,10 +4,8 @@
 
 // TODO(mizuno): Move valuesd to <polatory/types.hpp> and remove this file.
 
-namespace polatory {
-namespace common {
+namespace polatory::common {
 
 using valuesd = Eigen::VectorXd;
 
-}  // namespace common
-}  // namespace polatory
+}  // namespace polatory::common

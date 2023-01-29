@@ -7,8 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 class dense_undirected_graph {
  public:
@@ -19,19 +18,25 @@ class dense_undirected_graph {
   }
 
   void add_edge(int i, int j) {
-    if (i > j) std::swap(i, j);
+    if (i > j) {
+      std::swap(i, j);
+    }
     m_(i, j)++;
   }
 
   int degree(int i) const { return m_.col(i).sum() + m_.row(i).sum() - m_(i, i); }
 
   bool has_edge(int i, int j) const {
-    if (i > j) std::swap(i, j);
+    if (i > j) {
+      std::swap(i, j);
+    }
     return m_(i, j) != 0;
   }
 
   bool is_connected() const {
-    if (order() == 0) return true;
+    if (order() == 0) {
+      return true;
+    }
 
     std::vector<bool> visited(order());
     std::stack<int> to_visit;
@@ -62,5 +67,4 @@ class dense_undirected_graph {
   Eigen::MatrixXi m_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

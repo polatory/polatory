@@ -22,8 +22,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 extern const std::array<edge_index, 14> OppositeEdge;
 
@@ -48,7 +47,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   // Add nodes corresponding to eight vertices of the cell.
   void add_cell(cell_index ci) {
-    if (added_cells.count(ci) != 0) {
+    if (added_cells.contains(ci)) {
       return;
     }
 
@@ -88,7 +87,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   vertex_index clustered_vertex_index(vertex_index vi) const {
-    return cluster_map.count(vi) != 0 ? cluster_map.at(vi) : vi;
+    return cluster_map.contains(vi) ? cluster_map.at(vi) : vi;
   }
 
   // Evaluates field values for each node in nodes_to_evaluate.
@@ -145,14 +144,14 @@ class rmt_lattice : public rmt_primitive_lattice {
       const auto ibba = node_list.neighbor_cell_index(ci, 12);
       const auto ibbb = node_list.neighbor_cell_index(ci, 0);
 
-      const auto aaa = node_list.node_ptr(iaaa);
-      const auto aab = node_list.node_ptr(iaab);
-      const auto aba = node_list.node_ptr(iaba);
-      const auto abb = node_list.node_ptr(iabb);
-      const auto baa = node_list.node_ptr(ibaa);
-      const auto bab = node_list.node_ptr(ibab);
-      const auto bba = node_list.node_ptr(ibba);
-      const auto bbb = node_list.node_ptr(ibbb);
+      const auto* aaa = node_list.node_ptr(iaaa);
+      const auto* aab = node_list.node_ptr(iaab);
+      const auto* aba = node_list.node_ptr(iaba);
+      const auto* abb = node_list.node_ptr(iabb);
+      const auto* baa = node_list.node_ptr(ibaa);
+      const auto* bab = node_list.node_ptr(ibab);
+      const auto* bba = node_list.node_ptr(ibba);
+      const auto* bbb = node_list.node_ptr(ibbb);
 
       // __a and __b
       if (has_intersection(aaa, aab)) {  // o -> 4
@@ -224,7 +223,7 @@ class rmt_lattice : public rmt_primitive_lattice {
     last_added_cells.clear();
 
     for (auto ci : cells_to_add) {
-      if (added_cells.count(ci) != 0) {
+      if (added_cells.contains(ci)) {
         continue;
       }
 
@@ -336,7 +335,9 @@ class rmt_lattice : public rmt_primitive_lattice {
       auto thread_num = static_cast<size_t>(omp_get_thread_num());
       auto map_size = nodes.size();
       auto map_it = nodes.begin();
-      if (thread_num < map_size) std::advance(map_it, thread_num);
+      if (thread_num < map_size) {
+        std::advance(map_it, thread_num);
+      }
 
       for (auto i = thread_num; i < map_size; i += thread_count) {
         auto ci = *map_it;
@@ -378,7 +379,9 @@ class rmt_lattice : public rmt_primitive_lattice {
           }
         }
 
-        if (i + thread_count < map_size) std::advance(map_it, thread_count);
+        if (i + thread_count < map_size) {
+          std::advance(map_it, thread_count);
+        }
       }
     }
   }
@@ -388,7 +391,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   void uncluster_vertices(const std::set<vertex_index>& vis) {
     auto it = cluster_map.begin();
     while (it != cluster_map.end()) {
-      if (vis.count(it->second) != 0) {
+      if (vis.contains(it->second)) {
         // Uncluster.
         it = cluster_map.erase(it);
       } else {
@@ -398,5 +401,4 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

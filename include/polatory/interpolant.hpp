@@ -24,20 +24,26 @@ class interpolant {
   explicit interpolant(model model) : model_(std::move(model)), fitted_(false) {}
 
   const geometry::points3d& centers() const {
-    if (!fitted_) throw std::runtime_error(kNotFittedErrorMessage);
+    if (!fitted_) {
+      throw std::runtime_error(kNotFittedErrorMessage);
+    }
 
     return centers_;
   }
 
   common::valuesd evaluate(const geometry::points3d& points) {
-    if (!fitted_) throw std::runtime_error(kNotFittedErrorMessage);
+    if (!fitted_) {
+      throw std::runtime_error(kNotFittedErrorMessage);
+    }
 
     set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
     return evaluate_impl(points);
   }
 
   common::valuesd evaluate_impl(const geometry::points3d& points) const {
-    if (!fitted_) throw std::runtime_error(kNotFittedErrorMessage);
+    if (!fitted_) {
+      throw std::runtime_error(kNotFittedErrorMessage);
+    }
 
     return evaluator_->evaluate(points);
   }
@@ -45,15 +51,18 @@ class interpolant {
   void fit(const geometry::points3d& points, const common::valuesd& values,
            double absolute_tolerance) {
     auto min_n_points = std::max(1, model_.poly_basis_size());
-    if (points.rows() < min_n_points)
+    if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
                                   std::to_string(min_n_points) + ".");
+    }
 
-    if (values.rows() != points.rows())
+    if (values.rows() != points.rows()) {
       throw std::invalid_argument("values.rows() must be equal to points.rows().");
+    }
 
-    if (absolute_tolerance <= 0.0)
+    if (absolute_tolerance <= 0.0) {
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
+    }
 
     clear();
 
@@ -67,18 +76,23 @@ class interpolant {
 
   void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
                          double absolute_tolerance) {
-    if (model_.nugget() > 0.0) throw std::runtime_error("Non-zero nugget is not supported.");
+    if (model_.nugget() > 0.0) {
+      throw std::runtime_error("Non-zero nugget is not supported.");
+    }
 
     auto min_n_points = std::max(1, model_.poly_basis_size());
-    if (points.rows() < min_n_points)
+    if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
                                   std::to_string(min_n_points) + ".");
+    }
 
-    if (values.rows() != points.rows())
+    if (values.rows() != points.rows()) {
       throw std::invalid_argument("values.rows() must be equal to points.rows().");
+    }
 
-    if (absolute_tolerance <= 0.0)
+    if (absolute_tolerance <= 0.0) {
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
+    }
 
     clear();
 
@@ -94,24 +108,31 @@ class interpolant {
   void fit_inequality(const geometry::points3d& points, const common::valuesd& values,
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
                       double absolute_tolerance) {
-    if (model_.nugget() > 0.0) throw std::runtime_error("Non-zero nugget is not supported.");
+    if (model_.nugget() > 0.0) {
+      throw std::runtime_error("Non-zero nugget is not supported.");
+    }
 
     auto min_n_points = std::max(1, model_.poly_basis_size());
-    if (points.rows() < min_n_points)
+    if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
                                   std::to_string(min_n_points) + ".");
+    }
 
-    if (values.rows() != points.rows())
+    if (values.rows() != points.rows()) {
       throw std::invalid_argument("values.rows() must be equal to points.rows().");
+    }
 
-    if (values_lb.rows() != points.rows())
+    if (values_lb.rows() != points.rows()) {
       throw std::invalid_argument("values_lb.rows() must be equal to points.rows().");
+    }
 
-    if (values_ub.rows() != points.rows())
+    if (values_ub.rows() != points.rows()) {
       throw std::invalid_argument("values_ub.rows() must be equal to points.rows().");
+    }
 
-    if (absolute_tolerance <= 0.0)
+    if (absolute_tolerance <= 0.0) {
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
+    }
 
     clear();
 
@@ -126,7 +147,9 @@ class interpolant {
   }
 
   void set_evaluation_bbox_impl(const geometry::bbox3d& bbox) {
-    if (!fitted_) throw std::runtime_error(kNotFittedErrorMessage);
+    if (!fitted_) {
+      throw std::runtime_error(kNotFittedErrorMessage);
+    }
 
     auto union_bbox = bbox.union_hull(centers_bbox_);
 
@@ -135,7 +158,9 @@ class interpolant {
   }
 
   const common::valuesd& weights() const {
-    if (!fitted_) throw std::runtime_error(kNotFittedErrorMessage);
+    if (!fitted_) {
+      throw std::runtime_error(kNotFittedErrorMessage);
+    }
 
     return weights_;
   }

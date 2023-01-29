@@ -11,8 +11,7 @@
 #include <polatory/isosurface/types.hpp>
 #include <vector>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 namespace detail {
 
@@ -152,10 +151,14 @@ class rmt_tetrahedron {
 
   static std::optional<vertex_index> vertex_on_edge(const rmt_node& node, edge_index edge_idx,
                                                     const rmt_node& opp_node) {
-    if (node.has_intersection(edge_idx)) return node.vertex_on_edge(edge_idx);
+    if (node.has_intersection(edge_idx)) {
+      return node.vertex_on_edge(edge_idx);
+    }
 
     auto opp_edge_idx = OppositeEdge[edge_idx];
-    if (opp_node.has_intersection(opp_edge_idx)) return opp_node.vertex_on_edge(opp_edge_idx);
+    if (opp_node.has_intersection(opp_edge_idx)) {
+      return opp_node.vertex_on_edge(opp_edge_idx);
+    }
 
     return {};
   }
@@ -223,7 +226,7 @@ class rmt_surface {
   std::vector<face> get_faces() const {
     std::vector<face> faces;
 
-    for (auto& face : faces_) {
+    for (const auto& face : faces_) {
       auto v0 = lattice_.clustered_vertex_index(face[0]);
       auto v1 = lattice_.clustered_vertex_index(face[1]);
       auto v2 = lattice_.clustered_vertex_index(face[2]);
@@ -244,8 +247,8 @@ class rmt_surface {
 
     auto inserter = std::back_inserter(faces_);
 
-    for (auto& ci_node : lattice_.node_list) {
-      auto& node = ci_node.second;
+    for (const auto& ci_node : lattice_.node_list) {
+      const auto& node = ci_node.second;
 
       for (detail::rmt_tetrahedron_iterator it(node); it.is_valid(); ++it) {
         it->get_faces(inserter);
@@ -258,5 +261,4 @@ class rmt_surface {
   std::vector<face> faces_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

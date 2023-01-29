@@ -6,8 +6,7 @@
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
-namespace polatory {
-namespace rbf {
+namespace polatory::rbf {
 
 class biharmonic2d final : public rbf_base {
  public:
@@ -58,5 +57,4 @@ class biharmonic2d final : public rbf_base {
   }
 };
 
-}  // namespace rbf
-}  // namespace polatory
+}  // namespace polatory::rbf

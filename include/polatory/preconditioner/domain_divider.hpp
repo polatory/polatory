@@ -6,8 +6,7 @@
 #include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 class domain_divider;
 
@@ -55,5 +54,4 @@ class domain_divider {
   std::list<domain> domains_;
 };
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

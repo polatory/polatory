@@ -2,13 +2,12 @@
 #include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 mesh_defects_finder::mesh_defects_finder(const std::vector<geometry::point3d>& vertices,
                                          const std::vector<face>& faces)
     : vertices_(vertices), vf_map_(vertices_.size()) {
-  for (auto& f : faces) {
+  for (const auto& f : faces) {
     vf_map_[f[0]].push_back({f[0], f[1], f[2]});
     vf_map_[f[1]].push_back({f[1], f[2], f[0]});
     vf_map_[f[2]].push_back({f[2], f[0], f[1]});
@@ -23,13 +22,13 @@ std::set<face> mesh_defects_finder::intersecting_faces() const {
   auto n_vertices = static_cast<vertex_index>(vertices_.size());
 #pragma omp parallel for schedule(guided, 32)
   for (vertex_index vi = 0; vi < n_vertices; vi++) {
-    auto& faces = vf_map_[vi];
+    const auto& faces = vf_map_[vi];
 
     auto n_faces = static_cast<int>(faces.size());
     for (auto i = 0; i < n_faces - 1; i++) {
-      auto& f1 = faces[i];
+      const auto& f1 = faces[i];
       for (auto j = i + 1; j < n_faces; j++) {
-        auto& f2 = faces[j];
+        const auto& f2 = faces[j];
 
         if (f1[1] == f2[2] || f1[2] == f2[1]) {
           // Skip the pair of adjacent faces.
@@ -58,14 +57,14 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
   auto n_vertices = static_cast<vertex_index>(vertices_.size());
 #pragma omp parallel for schedule(guided, 32)
   for (vertex_index vi = 0; vi < n_vertices; vi++) {
-    auto& faces = vf_map_[vi];
+    const auto& faces = vf_map_[vi];
 
     if (faces.empty()) {
       continue;
     }
 
     std::map<vertex_index, int> vi_to_index;
-    for (auto& f : faces) {
+    for (const auto& f : faces) {
       vi_to_index[f[1]] = -1;
       vi_to_index[f[2]] = -1;
     }
@@ -82,7 +81,7 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
     // A graph represents the link (in the sense of simplicial complex) of the vertex.
     dense_undirected_graph g(order);
 
-    for (auto& f : faces) {
+    for (const auto& f : faces) {
       g.add_edge(vi_to_index[f[1]], vi_to_index[f[2]]);
     }
 
@@ -147,5 +146,4 @@ bool mesh_defects_finder::segment_triangle_intersect(vertex_index s1, vertex_ind
   return segment_plane_intersect(s1, s2, f) && line_triangle_intersect(s1, s2, f);
 }
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

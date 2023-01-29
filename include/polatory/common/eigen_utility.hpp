@@ -12,8 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace common {
+namespace polatory::common {
 
 namespace detail {
 
@@ -386,8 +385,9 @@ Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m) {
 
 template <class Derived, class... Args>
 Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
-  if (m.cols() != common_cols(std::forward<Args>(args)...))
+  if (m.cols() != common_cols(std::forward<Args>(args)...)) {
     throw std::invalid_argument("All inputs must have the same number of columns.");
+  }
 
   return m.cols();
 }
@@ -399,8 +399,9 @@ Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m) {
 
 template <class Derived, class... Args>
 Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
-  if (m.rows() != common_rows(std::forward<Args>(args)...))
+  if (m.rows() != common_rows(std::forward<Args>(args)...)) {
     throw std::invalid_argument("All inputs must have the same number of rows.");
+  }
 
   return m.rows();
 }
@@ -557,5 +558,4 @@ auto take_rows(const Eigen::MatrixBase<Derived>& m, const std::vector<Eigen::Ind
   return take_rows(m, make_range(indices.begin(), indices.end()));
 }
 
-}  // namespace common
-}  // namespace polatory
+}  // namespace polatory::common

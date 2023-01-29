@@ -1,13 +1,12 @@
 // https://github.com/flann-lib/flann/issues/386
-typedef unsigned long long pop_t;
+using pop_t = unsigned long long;
 
 #include <cmath>
 #include <flann/flann.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <stdexcept>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 class kdtree::impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
@@ -85,21 +84,28 @@ kdtree::kdtree(const geometry::points3d& points, bool use_exact_search)
 kdtree::~kdtree() = default;
 
 kdtree::indices_and_distances kdtree::knn_search(const geometry::point3d& point, index_t k) const {
-  if (k <= 0) throw std::invalid_argument("k must be greater than 0.");
+  if (k <= 0) {
+    throw std::invalid_argument("k must be greater than 0.");
+  }
 
-  if (!pimpl_) return {};
+  if (!pimpl_) {
+    return {};
+  }
 
   return pimpl_->knn_search(point, k);
 }
 
 kdtree::indices_and_distances kdtree::radius_search(const geometry::point3d& point,
                                                     double radius) const {
-  if (radius <= 0.0) throw std::invalid_argument("radius must be greater than 0.0.");
+  if (radius <= 0.0) {
+    throw std::invalid_argument("radius must be greater than 0.0.");
+  }
 
-  if (!pimpl_) return {};
+  if (!pimpl_) {
+    return {};
+  }
 
   return pimpl_->radius_search(point, radius);
 }
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

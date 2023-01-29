@@ -5,8 +5,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace polynomial {
+namespace polatory::polynomial {
 
 template <class Basis>
 class polynomial_evaluator {
@@ -35,5 +34,4 @@ class polynomial_evaluator {
   common::valuesd weights_;
 };
 
-}  // namespace polynomial
-}  // namespace polatory
+}  // namespace polatory::polynomial

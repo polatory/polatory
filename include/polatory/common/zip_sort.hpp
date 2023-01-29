@@ -10,8 +10,7 @@
 
 // TODO(mizuno): Should be replaced by ranges.
 
-namespace polatory {
-namespace common {
+namespace polatory::common {
 
 namespace detail {
 
@@ -25,7 +24,9 @@ static void inverse_permute(RandomAccessIterator begin, RandomAccessIterator end
 
   std::vector<bool> done(size);
   for (D i = 0; i < size; ++i) {
-    if (done[i]) continue;
+    if (done[i]) {
+      continue;
+    }
 
     auto prev_j = i;
     auto j = p[i];
@@ -65,5 +66,4 @@ void zip_sort(RandomAccessIterator1 begin1, RandomAccessIterator1 end1,
   detail::inverse_permute(begin2, end2, permutation);
 }
 
-}  // namespace common
-}  // namespace polatory
+}  // namespace polatory::common

@@ -7,8 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 class rbf_incremental_fitter {
   static constexpr index_t min_n_points_for_incremental_fitting = 4096;
@@ -36,5 +35,4 @@ class rbf_incremental_fitter {
   const geometry::bbox3d bbox_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

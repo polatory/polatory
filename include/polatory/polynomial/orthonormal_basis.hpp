@@ -6,8 +6,7 @@
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace polynomial {
+namespace polatory::polynomial {
 
 class orthonormal_basis : public polynomial_basis_base {
  public:
@@ -51,5 +50,4 @@ class orthonormal_basis : public polynomial_basis_base {
   Eigen::MatrixXd c_hat_;
 };
 
-}  // namespace polynomial
-}  // namespace polatory
+}  // namespace polatory::polynomial

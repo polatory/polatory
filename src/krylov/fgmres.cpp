@@ -1,7 +1,6 @@
 #include <polatory/krylov/fgmres.hpp>
 
-namespace polatory {
-namespace krylov {
+namespace polatory::krylov {
 
 fgmres::fgmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
     : gmres(op, rhs, max_iter) {}
@@ -28,5 +27,4 @@ common::valuesd fgmres::solution_vector() const {
 
 void fgmres::add_preconditioned_krylov_basis(const common::valuesd& z) { zs_.push_back(z); }
 
-}  // namespace krylov
-}  // namespace polatory
+}  // namespace polatory::krylov

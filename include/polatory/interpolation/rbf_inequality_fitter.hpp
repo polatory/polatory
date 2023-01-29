@@ -7,8 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 class rbf_inequality_fitter {
  public:
@@ -43,5 +42,4 @@ class rbf_inequality_fitter {
   const geometry::bbox3d bbox_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

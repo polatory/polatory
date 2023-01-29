@@ -9,17 +9,19 @@
 #include <random>
 #include <stdexcept>
 
-namespace polatory {
-namespace kriging {
+namespace polatory::kriging {
 
 common::valuesd k_fold_cross_validation(const model& model, const geometry::points3d& points,
                                         const common::valuesd& values, double absolute_tolerance,
                                         index_t k) {
   auto n_points = static_cast<index_t>(points.rows());
-  if (n_points < 2) throw std::invalid_argument("points.row() must be greater than or equal to 2.");
+  if (n_points < 2) {
+    throw std::invalid_argument("points.row() must be greater than or equal to 2.");
+  }
 
-  if (k < 2 || k > n_points)
+  if (k < 2 || k > n_points) {
     throw std::invalid_argument("k must be within the range of 2 to points.rows().");
+  }
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -66,5 +68,4 @@ common::valuesd k_fold_cross_validation(const model& model, const geometry::poin
   return residuals;
 }
 
-}  // namespace kriging
-}  // namespace polatory
+}  // namespace polatory::kriging

@@ -4,8 +4,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 class field_function {
  public:
@@ -24,5 +23,4 @@ class field_function {
   field_function() = default;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

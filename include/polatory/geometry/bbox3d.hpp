@@ -3,8 +3,7 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 
-namespace polatory {
-namespace geometry {
+namespace polatory::geometry {
 
 class bbox3d {
  public:
@@ -34,7 +33,9 @@ class bbox3d {
   static bbox3d from_points(InputIterator points_begin, InputIterator points_end) {
     bbox3d ret;
 
-    if (points_begin == points_end) return ret;
+    if (points_begin == points_end) {
+      return ret;
+    }
 
     auto it = points_begin;
     auto first_pt = *it;
@@ -45,18 +46,24 @@ class bbox3d {
 
     for (; it != points_end; ++it) {
       auto pt = *it;
-      if (ret.min_(0) > pt(0)) [[unlikely]]
+      if (ret.min_(0) > pt(0)) [[unlikely]] {
         ret.min_(0) = pt(0);
-      if (ret.max_(0) < pt(0)) [[unlikely]]
+      }
+      if (ret.max_(0) < pt(0)) [[unlikely]] {
         ret.max_(0) = pt(0);
-      if (ret.min_(1) > pt(1)) [[unlikely]]
+      }
+      if (ret.min_(1) > pt(1)) [[unlikely]] {
         ret.min_(1) = pt(1);
-      if (ret.max_(1) < pt(1)) [[unlikely]]
+      }
+      if (ret.max_(1) < pt(1)) [[unlikely]] {
         ret.max_(1) = pt(1);
-      if (ret.min_(2) > pt(2)) [[unlikely]]
+      }
+      if (ret.min_(2) > pt(2)) [[unlikely]] {
         ret.min_(2) = pt(2);
-      if (ret.max_(2) < pt(2)) [[unlikely]]
+      }
+      if (ret.max_(2) < pt(2)) [[unlikely]] {
         ret.max_(2) = pt(2);
+      }
     }
 
     return ret;
@@ -67,5 +74,4 @@ class bbox3d {
   point3d max_;
 };
 
-}  // namespace geometry
-}  // namespace polatory
+}  // namespace polatory::geometry

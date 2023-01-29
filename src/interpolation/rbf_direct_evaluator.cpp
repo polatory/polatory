@@ -1,8 +1,7 @@
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/numeric/sum_accumulator.hpp>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 rbf_direct_evaluator::rbf_direct_evaluator(const model& model,
                                            const geometry::points3d& source_points)
@@ -19,7 +18,7 @@ rbf_direct_evaluator::rbf_direct_evaluator(const model& model,
 common::valuesd rbf_direct_evaluator::evaluate() const {
   auto y_accum = std::vector<numeric::kahan_sum_accumulator<double>>(fld_points_.rows());
 
-  auto& rbf = model_.rbf();
+  const auto& rbf = model_.rbf();
   for (index_t i = 0; i < n_src_points_; i++) {
     for (index_t j = 0; j < n_fld_points_; j++) {
       auto a_ij = rbf.evaluate(src_points_.row(i) - fld_points_.row(j));
@@ -52,5 +51,4 @@ void rbf_direct_evaluator::set_field_points(const geometry::points3d& field_poin
   }
 }
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

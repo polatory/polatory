@@ -3,8 +3,7 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 fine_grid::fine_grid(const model& model,
                      const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
@@ -36,7 +35,7 @@ void fine_grid::clear() {
 void fine_grid::setup(const geometry::points3d& points_full) {
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
-  auto& rbf = model_.rbf();
+  const auto& rbf = model_.rbf();
   auto diagonal = rbf.evaluate_untransformed(0.0) + model_.nugget();
   for (index_t i = 0; i < m_; i++) {
     a(i, i) = diagonal;
@@ -66,7 +65,9 @@ void fine_grid::setup(const geometry::points3d& points_full) {
 
 void fine_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
   for (index_t i = 0; i < m_; i++) {
-    if (inner_point_[i]) weights_full(point_idcs_[i]) = lambda_(i);
+    if (inner_point_[i]) {
+      weights_full(point_idcs_[i]) = lambda_(i);
+    }
   }
 }
 
@@ -92,5 +93,4 @@ void fine_grid::solve(const Eigen::Ref<const common::valuesd>& values_full) {
   }
 }
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

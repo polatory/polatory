@@ -3,8 +3,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace point_cloud {
+namespace polatory::point_cloud {
 
 // Generates signed distance function data from given points and normals.
 class sdf_data_generator {
@@ -23,5 +22,4 @@ class sdf_data_generator {
   common::valuesd sdf_values_;
 };
 
-}  // namespace point_cloud
-}  // namespace polatory
+}  // namespace polatory::point_cloud

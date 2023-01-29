@@ -5,8 +5,7 @@
 #include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory {
-namespace krylov {
+namespace polatory::krylov {
 
 class gmres_base {
  public:
@@ -97,5 +96,4 @@ class gmres_base {
   bool converged_;
 };
 
-}  // namespace krylov
-}  // namespace polatory
+}  // namespace polatory::krylov

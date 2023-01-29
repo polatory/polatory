@@ -17,12 +17,14 @@ class model {
         poly_dimension_(poly_dimension),
         poly_degree_(poly_degree),
         nugget_(0.0) {
-    if (poly_dimension < 0 || poly_dimension > 3)
+    if (poly_dimension < 0 || poly_dimension > 3) {
       throw std::invalid_argument("poly_dimension must be within the range of 0 to 3.");
+    }
 
-    if (poly_degree < rbf.cpd_order() - 1 || poly_degree > 2)
+    if (poly_degree < rbf.cpd_order() - 1 || poly_degree > 2) {
       throw std::invalid_argument(
           "poly_degree must be within the range of rbf.cpd_order() - 1 to 2.");
+    }
   }
 
   ~model() = default;
@@ -77,16 +79,19 @@ class model {
   const rbf::rbf_base& rbf() const { return *rbf_; }
 
   void set_nugget(double nugget) {
-    if (nugget < 0.0) throw std::invalid_argument("nugget must be greater than or equal to 0.0.");
+    if (nugget < 0.0) {
+      throw std::invalid_argument("nugget must be greater than or equal to 0.0.");
+    }
 
     nugget_ = nugget;
   }
 
   // Experimental function.
   void set_parameters(const std::vector<double>& params) {
-    if (static_cast<int>(params.size()) != num_parameters())
+    if (static_cast<int>(params.size()) != num_parameters()) {
       throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) +
                                   ".");
+    }
 
     set_nugget(params[0]);
     rbf_->set_parameters(std::vector<double>(params.begin() + 1, params.end()));

@@ -3,8 +3,7 @@
 #include <polatory/krylov/gmres_base.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace krylov {
+namespace polatory::krylov {
 
 class minres : public gmres_base {
  public:
@@ -16,5 +15,4 @@ class minres : public gmres_base {
   double beta_;
 };
 
-}  // namespace krylov
-}  // namespace polatory
+}  // namespace polatory::krylov

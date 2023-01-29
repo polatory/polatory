@@ -9,8 +9,7 @@
 #include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 class fine_grid {
  public:
@@ -48,5 +47,4 @@ class fine_grid {
   common::valuesd lambda_;
 };
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

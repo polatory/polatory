@@ -7,8 +7,7 @@
 #include <string>
 #include <type_traits>
 
-namespace polatory {
-namespace numeric {
+namespace polatory::numeric {
 
 namespace detail {
 
@@ -63,5 +62,4 @@ std::string to_string(Floating value) {
   return builder.Finalize();
 }
 
-}  // namespace numeric
-}  // namespace polatory
+}  // namespace polatory::numeric

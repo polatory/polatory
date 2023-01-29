@@ -10,8 +10,7 @@
 #include <polatory/types.hpp>
 #include <stdexcept>
 
-namespace polatory {
-namespace polynomial {
+namespace polatory::polynomial {
 
 class lagrange_basis : public polynomial_basis_base {
   static constexpr double kRCondThreshold = 1e-10;
@@ -41,7 +40,7 @@ class lagrange_basis : public polynomial_basis_base {
  private:
   static bool is_invertible(const Eigen::MatrixXd& m) {
     auto svd = m.jacobiSvd();
-    auto& sigmas = svd.singularValues();
+    const auto& sigmas = svd.singularValues();
     if (sigmas(0) == 0.0) {
       return false;
     }
@@ -55,5 +54,4 @@ class lagrange_basis : public polynomial_basis_base {
   Eigen::MatrixXd coeffs_;
 };
 
-}  // namespace polynomial
-}  // namespace polatory
+}  // namespace polatory::polynomial

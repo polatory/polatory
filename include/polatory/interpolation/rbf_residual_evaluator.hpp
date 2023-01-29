@@ -12,8 +12,7 @@
 #include <polatory/types.hpp>
 #include <utility>
 
-namespace polatory {
-namespace interpolation {
+namespace polatory::interpolation {
 
 class rbf_residual_evaluator {
   static constexpr index_t chunk_size = 1024;
@@ -47,14 +46,18 @@ class rbf_residual_evaluator {
     for (index_t i = 0; i < n_points_ / chunk_size + 1; i++) {
       auto begin = i * chunk_size;
       auto end = std::min(n_points_, begin + chunk_size);
-      if (begin == end) break;
+      if (begin == end) {
+        break;
+      }
 
       evaluator_->set_field_points(points_.middleRows(begin, end - begin));
       common::valuesd fit = evaluator_->evaluate() + weights.segment(begin, end - begin) * nugget;
 
       for (index_t j = 0; j < end - begin; j++) {
         auto res = std::abs(values(begin + j) - fit(j));
-        if (res >= absolute_tolerance) return {false, 0.0};
+        if (res >= absolute_tolerance) {
+          return {false, 0.0};
+        }
 
         max_residual = std::max(max_residual, res);
       }
@@ -80,5 +83,4 @@ class rbf_residual_evaluator {
   std::unique_ptr<rbf_evaluator<>> evaluator_;
 };
 
-}  // namespace interpolation
-}  // namespace polatory
+}  // namespace polatory::interpolation

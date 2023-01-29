@@ -2,8 +2,7 @@
 
 #include <polatory/geometry/point3d.hpp>
 
-namespace polatory {
-namespace geometry {
+namespace polatory::geometry {
 
 class sphere3d {
  public:
@@ -24,5 +23,4 @@ class sphere3d {
   const double radius_{1.0};
 };
 
-}  // namespace geometry
-}  // namespace polatory
+}  // namespace polatory::geometry

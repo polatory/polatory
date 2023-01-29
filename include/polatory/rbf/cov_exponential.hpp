@@ -5,8 +5,7 @@
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <vector>
 
-namespace polatory {
-namespace rbf {
+namespace polatory::rbf {
 
 class cov_exponential final : public covariance_function_base {
  public:
@@ -41,5 +40,4 @@ class cov_exponential final : public covariance_function_base {
   }
 };
 
-}  // namespace rbf
-}  // namespace polatory
+}  // namespace polatory::rbf

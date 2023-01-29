@@ -6,8 +6,7 @@
 #include <polatory/isosurface/field_function.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 class rbf_field_function : public field_function {
  public:
@@ -26,5 +25,4 @@ class rbf_field_function : public field_function {
   interpolant& interpolant_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

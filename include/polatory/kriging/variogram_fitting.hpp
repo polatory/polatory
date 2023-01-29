@@ -5,8 +5,7 @@
 #include <polatory/model.hpp>
 #include <vector>
 
-namespace polatory {
-namespace kriging {
+namespace polatory::kriging {
 
 class variogram_fitting {
  public:
@@ -19,5 +18,4 @@ class variogram_fitting {
   std::vector<double> params_;
 };
 
-}  // namespace kriging
-}  // namespace polatory
+}  // namespace polatory::kriging

@@ -6,8 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace polatory {
-namespace rbf {
+namespace polatory::rbf {
 
 class rbf_base {
  public:
@@ -42,16 +41,18 @@ class rbf_base {
   const std::vector<double>& parameters() const { return params_; }
 
   void set_anisotropy(const geometry::linear_transformation3d& aniso) {
-    if (aniso.determinant() <= 0.0)
+    if (aniso.determinant() <= 0.0) {
       throw std::invalid_argument("aniso must have a positive determinant.");
+    }
 
     aniso_ = aniso;
   }
 
   void set_parameters(const std::vector<double>& params) {
-    if (static_cast<int>(params.size()) != num_parameters())
+    if (static_cast<int>(params.size()) != num_parameters()) {
       throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) +
                                   ".");
+    }
 
     params_ = params;
   }
@@ -66,5 +67,4 @@ class rbf_base {
   geometry::linear_transformation3d aniso_;
 };
 
-}  // namespace rbf
-}  // namespace polatory
+}  // namespace polatory::rbf

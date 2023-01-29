@@ -4,8 +4,7 @@
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 
-namespace polatory {
-namespace preconditioner {
+namespace polatory::preconditioner {
 
 coarse_grid::coarse_grid(const model& model,
                          const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
@@ -39,7 +38,7 @@ void coarse_grid::clear() {
 void coarse_grid::setup(const geometry::points3d& points_full) {
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
-  auto& rbf = model_.rbf();
+  const auto& rbf = model_.rbf();
   auto diagonal = rbf.evaluate_untransformed(0.0) + model_.nugget();
   for (index_t i = 0; i < m_; i++) {
     a(i, i) = diagonal;
@@ -110,5 +109,4 @@ void coarse_grid::solve(const Eigen::Ref<const common::valuesd>& values_full) {
   }
 }
 
-}  // namespace preconditioner
-}  // namespace polatory
+}  // namespace polatory::preconditioner

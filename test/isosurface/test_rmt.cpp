@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -35,20 +36,20 @@ using polatory::point_cloud::random_points;
 
 // Relative positions of neighbor nodes connected by each edge.
 std::array<vector3d, 14> NeighborVectors{
-    transform_vector(rotation(), {1.0, 1.0, 1.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {2.0, 0.0, 0.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {1.0, -1.0, -1.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {0.0, 2.0, 0.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {1.0, 1.0, -1.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {0.0, 0.0, -2.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {-1.0, +1.0, -1.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {-1.0, -1.0, -1.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {-2.0, 0.0, 0.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {-1.0, 1.0, 1.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {0.0, -2.0, 0.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {-1.0, -1.0, 1.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {0.0, 0.0, 2.0}) / std::sqrt(2.0),
-    transform_vector(rotation(), {1.0, -1.0, 1.0}) / std::sqrt(2.0)};
+    transform_vector(rotation(), {1.0, 1.0, 1.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {2.0, 0.0, 0.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {1.0, -1.0, -1.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {0.0, 2.0, 0.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {1.0, 1.0, -1.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {0.0, 0.0, -2.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {-1.0, +1.0, -1.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {-1.0, -1.0, -1.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {-2.0, 0.0, 0.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {-1.0, 1.0, 1.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {0.0, -2.0, 0.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {-1.0, -1.0, 1.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {0.0, 0.0, 2.0}) / std::numbers::sqrt2,
+    transform_vector(rotation(), {1.0, -1.0, 1.0}) / std::numbers::sqrt2};
 
 TEST(rmt, face_edges) {
   for (edge_bitset edge_set : FaceEdges) {

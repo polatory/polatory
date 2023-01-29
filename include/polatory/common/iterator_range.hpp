@@ -1,7 +1,6 @@
 #pragma once
 
-namespace polatory {
-namespace common {
+namespace polatory::common {
 
 template <class Forwarditerator>
 class iterator_range {
@@ -22,5 +21,4 @@ iterator_range<Forwarditerator> make_range(Forwarditerator begin, Forwarditerato
   return iterator_range<Forwarditerator>(begin, end);
 }
 
-}  // namespace common
-}  // namespace polatory
+}  // namespace polatory::common

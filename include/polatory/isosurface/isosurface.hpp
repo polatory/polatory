@@ -9,8 +9,7 @@
 #include <polatory/isosurface/surface.hpp>
 #include <set>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 class isosurface {
  public:
@@ -69,5 +68,4 @@ class isosurface {
   rmt_lattice rmt_lattice_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

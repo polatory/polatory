@@ -8,8 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace polatory {
-namespace isosurface {
+namespace polatory::isosurface {
 
 class surface {
  public:
@@ -20,7 +19,7 @@ class surface {
     std::vector<vertex_index> vi_map(vertices.size(), -1);
     face face_to_add;
 
-    for (auto& face : faces) {
+    for (const auto& face : faces) {
       for (auto i = 0; i < 3; i++) {
         auto& vi = vi_map[face[i]];
         if (vi == -1) {
@@ -35,14 +34,16 @@ class surface {
 
   void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);
-    if (!ofs) throw std::runtime_error("Failed to open file '" + filename + "'.");
+    if (!ofs) {
+      throw std::runtime_error("Failed to open file '" + filename + "'.");
+    }
 
-    for (auto& v : vertices_) {
+    for (const auto& v : vertices_) {
       ofs << "v " << numeric::to_string(v[0]) << ' ' << numeric::to_string(v[1]) << ' '
           << numeric::to_string(v[2]) << '\n';
     }
 
-    for (auto& f : faces_) {
+    for (const auto& f : faces_) {
       ofs << "f " << f[0] + 1 << ' ' << f[1] + 1 << ' ' << f[2] + 1 << '\n';
     }
   }
@@ -56,5 +57,4 @@ class surface {
   faces_type faces_;
 };
 
-}  // namespace isosurface
-}  // namespace polatory
+}  // namespace polatory::isosurface

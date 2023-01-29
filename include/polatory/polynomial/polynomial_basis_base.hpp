@@ -3,8 +3,7 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace polynomial {
+namespace polatory::polynomial {
 
 class polynomial_basis_base {
  public:
@@ -28,7 +27,9 @@ class polynomial_basis_base {
   int dimension() const { return dimension_; }
 
   static index_t basis_size(int dimension, int degree) {
-    if (degree < 0) return 0;
+    if (degree < 0) {
+      return 0;
+    }
     POLATORY_ASSERT(dimension >= 1 && dimension <= 3);
 
     auto k = static_cast<index_t>(degree) + 1;
@@ -52,5 +53,4 @@ class polynomial_basis_base {
   const int degree_;
 };
 
-}  // namespace polynomial
-}  // namespace polatory
+}  // namespace polatory::polynomial

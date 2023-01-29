@@ -3,8 +3,7 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/krylov/gmres_base.hpp>
 
-namespace polatory {
-namespace krylov {
+namespace polatory::krylov {
 
 bool gmres_base::print_progress = true;
 
@@ -78,14 +77,18 @@ common::valuesd gmres_base::solution_vector() const {
 
 void gmres_base::solve(double tolerance) {
   for (; iter_ < max_iter_;) {
-    if (print_progress) std::cout << iter_ << ": \t" << relative_residual() << std::endl;
+    if (print_progress) {
+      std::cout << iter_ << ": \t" << relative_residual() << std::endl;
+    }
     iterate_process();
     if (relative_residual() < tolerance) {
       converged_ = true;
       break;
     }
   }
-  if (print_progress) std::cout << iter_ << ": \t" << relative_residual() << std::endl;
+  if (print_progress) {
+    std::cout << iter_ << ": \t" << relative_residual() << std::endl;
+  }
 }
 
 gmres_base::gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
@@ -108,5 +111,4 @@ common::valuesd gmres_base::right_preconditioned(const common::valuesd& x) const
   return right_pc_ != nullptr ? (*right_pc_)(x) : x;
 }
 
-}  // namespace krylov
-}  // namespace polatory
+}  // namespace polatory::krylov
