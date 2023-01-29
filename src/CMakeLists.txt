@@ -67,12 +67,15 @@ if(MSVC)
     endforeach()
 endif()
 
+target_link_libraries(${TARGET} PUBLIC
+    OpenMP::OpenMP_CXX
+)
+
 target_link_libraries(${TARGET} INTERFACE
     ${Boost_LIBRARIES}
     ceres
     double-conversion::double-conversion
     glog::glog
-    OpenMP::OpenMP_CXX
 )
 
 if(UNIX)
