@@ -76,65 +76,65 @@ class rmt_tetrahedron {
         break;
       case tetrahedron_type<Neg, Pos, Pos, Pos>():
         // v0-v1-v2
-        *faces++ = {*v0, *v1, *v2};
+        *faces++ = {v0.value(), v1.value(), v2.value()};
         break;
       case tetrahedron_type<Pos, Neg, Neg, Neg>():
         // v0-v2-v1
-        *faces++ = {*v0, *v2, *v1};
+        *faces++ = {v0.value(), v2.value(), v1.value()};
         break;
       case tetrahedron_type<Pos, Neg, Pos, Pos>():
         // v0-v5-v3
-        *faces++ = {*v0, *v5, *v3};
+        *faces++ = {v0.value(), v5.value(), v3.value()};
         break;
       case tetrahedron_type<Neg, Pos, Neg, Neg>():
         // v0-v3-v5
-        *faces++ = {*v0, *v3, *v5};
+        *faces++ = {v0.value(), v3.value(), v5.value()};
         break;
       case tetrahedron_type<Pos, Pos, Neg, Pos>():
         // v1-v3-v4
-        *faces++ = {*v1, *v3, *v4};
+        *faces++ = {v1.value(), v3.value(), v4.value()};
         break;
       case tetrahedron_type<Neg, Neg, Pos, Neg>():
         // v1-v4-v3
-        *faces++ = {*v1, *v4, *v3};
+        *faces++ = {v1.value(), v4.value(), v3.value()};
         break;
       case tetrahedron_type<Pos, Pos, Pos, Neg>():
         // v2-v4-v5
-        *faces++ = {*v2, *v4, *v5};
+        *faces++ = {v2.value(), v4.value(), v5.value()};
         break;
       case tetrahedron_type<Neg, Neg, Neg, Pos>():
         // v2-v5-v4
-        *faces++ = {*v2, *v5, *v4};
+        *faces++ = {v2.value(), v5.value(), v4.value()};
         break;
       case tetrahedron_type<Neg, Neg, Pos, Pos>():
         // v5-v3-v1, v5-v1-v2
-        *faces++ = {*v5, *v3, *v1};
-        *faces++ = {*v5, *v1, *v2};
+        *faces++ = {v5.value(), v3.value(), v1.value()};
+        *faces++ = {v5.value(), v1.value(), v2.value()};
         break;
       case tetrahedron_type<Pos, Pos, Neg, Neg>():
         // v5-v1-v3, v5-v2-v1
-        *faces++ = {*v5, *v1, *v3};
-        *faces++ = {*v5, *v2, *v1};
+        *faces++ = {v5.value(), v1.value(), v3.value()};
+        *faces++ = {v5.value(), v2.value(), v1.value()};
         break;
       case tetrahedron_type<Neg, Pos, Neg, Pos>():
         // v0-v3-v4, v0-v4-v2
-        *faces++ = {*v0, *v3, *v4};
-        *faces++ = {*v0, *v4, *v2};
+        *faces++ = {v0.value(), v3.value(), v4.value()};
+        *faces++ = {v0.value(), v4.value(), v2.value()};
         break;
       case tetrahedron_type<Pos, Neg, Pos, Neg>():
         // v0-v4-v3, v0-v2-v4
-        *faces++ = {*v0, *v4, *v3};
-        *faces++ = {*v0, *v2, *v4};
+        *faces++ = {v0.value(), v4.value(), v3.value()};
+        *faces++ = {v0.value(), v2.value(), v4.value()};
         break;
       case tetrahedron_type<Neg, Pos, Pos, Neg>():
         // v5-v0-v1, v5-v1-v4
-        *faces++ = {*v5, *v0, *v1};
-        *faces++ = {*v5, *v1, *v4};
+        *faces++ = {v5.value(), v0.value(), v1.value()};
+        *faces++ = {v5.value(), v1.value(), v4.value()};
         break;
       case tetrahedron_type<Pos, Neg, Neg, Pos>():
         // v5-v1-v0, v5-v4-v1
-        *faces++ = {*v5, *v1, *v0};
-        *faces++ = {*v5, *v4, *v1};
+        *faces++ = {v5.value(), v1.value(), v0.value()};
+        *faces++ = {v5.value(), v4.value(), v1.value()};
         break;
       default:
         POLATORY_NEVER_REACH();
