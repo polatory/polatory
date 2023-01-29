@@ -1,20 +1,19 @@
 #include <exception>
 #include <iostream>
-
 #include <polatory/polatory.hpp>
 
 #include "parse_options.hpp"
 
+using polatory::read_table;
+using polatory::tabled;
+using polatory::write_table;
 using polatory::common::concatenate_cols;
 using polatory::common::take_cols;
 using polatory::geometry::points3d;
 using polatory::geometry::vectors3d;
 using polatory::point_cloud::normal_estimator;
-using polatory::read_table;
-using polatory::tabled;
-using polatory::write_table;
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
@@ -24,8 +23,8 @@ int main(int argc, const char *argv[]) {
 
     // Estimate normals.
     vectors3d normals = normal_estimator(points)
-      .estimate_with_knn(opts.knn, opts.min_plane_factor)
-      .orient_by_outward_vector({ 0, 0, 1 });
+                            .estimate_with_knn(opts.knn, opts.min_plane_factor)
+                            .orient_by_outward_vector({0, 0, 1});
 
     // Output points with normals.
     write_table(opts.out_file, concatenate_cols(points, normals));

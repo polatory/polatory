@@ -1,24 +1,23 @@
 #include <exception>
 #include <iostream>
-#include <tuple>
-
 #include <polatory/polatory.hpp>
+#include <tuple>
 
 #include "parse_options.hpp"
 
+using polatory::index_t;
+using polatory::interpolant;
+using polatory::model;
+using polatory::read_table;
+using polatory::tabled;
 using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
-using polatory::index_t;
-using polatory::interpolant;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
-using polatory::model;
 using polatory::point_cloud::distance_filter;
-using polatory::read_table;
-using polatory::tabled;
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
@@ -28,8 +27,7 @@ int main(int argc, const char *argv[]) {
     valuesd values = table.col(3);
 
     // Remove very close points.
-    std::tie(points, values) = distance_filter(points, opts.min_distance)
-      .filtered(points, values);
+    std::tie(points, values) = distance_filter(points, opts.min_distance).filtered(points, values);
 
     // Define the model.
     auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
@@ -53,8 +51,7 @@ int main(int argc, const char *argv[]) {
     isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     rbf_field_function field_fn(interpolant);
 
-    isosurf.generate_from_seed_points(surface_points, field_fn)
-      .export_obj(opts.mesh_file);
+    isosurf.generate_from_seed_points(surface_points, field_fn).export_obj(opts.mesh_file);
 
     return 0;
   } catch (const std::exception& e) {

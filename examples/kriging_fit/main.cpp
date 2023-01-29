@@ -1,16 +1,15 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
-
 #include <polatory/polatory.hpp>
 
 #include "parse_options.hpp"
 
+using polatory::model;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
-using polatory::model;
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
@@ -27,8 +26,10 @@ int main(int argc, const char *argv[]) {
 
     auto params = fit.parameters();
     std::cout << "Fitted parameters:" << std::endl
-              << std::setw(12) << "nugget" << std::setw(12) << "psill" << std::setw(12) << "range" << std::endl
-              << std::setw(12) << params[0] << std::setw(12) << params[1] << std::setw(12) << params[2] << std::endl;
+              << std::setw(12) << "nugget" << std::setw(12) << "psill" << std::setw(12) << "range"
+              << std::endl
+              << std::setw(12) << params[0] << std::setw(12) << params[1] << std::setw(12)
+              << params[2] << std::endl;
 
     return 0;
   } catch (const std::exception& e) {

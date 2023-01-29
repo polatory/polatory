@@ -2,22 +2,21 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
-#include <tuple>
-
 #include <polatory/polatory.hpp>
+#include <tuple>
 
 #include "parse_options.hpp"
 
+using polatory::model;
+using polatory::read_table;
+using polatory::tabled;
 using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::kriging::k_fold_cross_validation;
-using polatory::model;
 using polatory::point_cloud::distance_filter;
-using polatory::read_table;
-using polatory::tabled;
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
@@ -27,8 +26,7 @@ int main(int argc, const char *argv[]) {
     valuesd values = table.col(3);
 
     // Remove very close points.
-    std::tie(points, values) = distance_filter(points, opts.min_distance)
-      .filtered(points, values);
+    std::tie(points, values) = distance_filter(points, opts.min_distance).filtered(points, values);
 
     // Define the model.
     auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
@@ -37,7 +35,8 @@ int main(int argc, const char *argv[]) {
     model.set_nugget(opts.nugget);
 
     // Run the cross validation.
-    auto residuals = k_fold_cross_validation(model, points, values, opts.absolute_tolerance, opts.k);
+    auto residuals =
+        k_fold_cross_validation(model, points, values, opts.absolute_tolerance, opts.k);
 
     std::cout << "Estimated mean absolute error: " << std::endl
               << std::setw(12) << residuals.lpNorm<1>() / points.rows() << std::endl

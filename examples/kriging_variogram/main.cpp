@@ -1,20 +1,19 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
-
 #include <polatory/polatory.hpp>
 
 #include "parse_options.hpp"
 
+using polatory::index_t;
+using polatory::read_table;
+using polatory::tabled;
 using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
-using polatory::index_t;
 using polatory::kriging::empirical_variogram;
-using polatory::read_table;
-using polatory::tabled;
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
@@ -30,10 +29,12 @@ int main(int argc, const char *argv[]) {
     const auto& bin_num_pairs = emp_variog.bin_num_pairs();
 
     std::cout << "Empirical variogram:" << std::endl
-              << std::setw(12) << "n_pairs" << std::setw(12) << "distance" << std::setw(12) << "gamma" << std::endl;
+              << std::setw(12) << "n_pairs" << std::setw(12) << "distance" << std::setw(12)
+              << "gamma" << std::endl;
     auto n_bins = static_cast<index_t>(bin_num_pairs.size());
     for (index_t bin = 0; bin < n_bins; bin++) {
-      std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin] << std::setw(12) <<  bin_gamma[bin] << std::endl;
+      std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin]
+                << std::setw(12) << bin_gamma[bin] << std::endl;
     }
 
     // Save the empirical variogram.

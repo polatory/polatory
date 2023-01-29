@@ -1,7 +1,7 @@
 #include "common.hpp"
 
 const char* const cov_list =
-R"(Covariance function, one of:
+    R"(Covariance function, one of:
 Positive definite
   exp VAR SCALE  (cov_exponential)
   sp3 VAR SCALE  (cov_spheroidal3)
@@ -10,7 +10,7 @@ Positive definite
   sp9 VAR SCALE  (cov_spheroidal9))";
 
 const char* const rbf_cov_list =
-R"(RBF/covariance function, one of:
+    R"(RBF/covariance function, one of:
 Positive definite
   exp VAR SCALE  (cov_exponential)
   sp3 VAR SCALE  (cov_spheroidal3)
