@@ -15,7 +15,7 @@ class isosurface {
  public:
   isosurface(const geometry::bbox3d& bbox, double resolution) : rmt_lattice_(bbox, resolution) {}
 
-  surface generate(field_function& field_fn, double isovalue = 0.0) {  // NOLINT(runtime/references)
+  surface generate(field_function& field_fn, double isovalue = 0.0) {
     field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     rmt_lattice_.add_all_nodes(field_fn, isovalue);
@@ -24,7 +24,7 @@ class isosurface {
   }
 
   surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn,
-                                    double isovalue = 0.0) {  // NOLINT(runtime/references)
+                                    double isovalue = 0.0) {
     field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     for (auto p : common::row_range(seed_points)) {

@@ -15,8 +15,8 @@ class kdtree::impl {
   using indices_and_distances = std::pair<std::vector<index_t>, std::vector<double>>;
 
   impl(const geometry::points3d& points, bool use_exact_search) {
-    flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(),
-                                     3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(), 3);
 
     flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
     flann_index_->buildIndex();
@@ -28,8 +28,8 @@ class kdtree::impl {
   }
 
   indices_and_distances knn_search(const geometry::point3d& point, index_t k) const {
-    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1,
-                                    3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, 3);
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
@@ -50,8 +50,8 @@ class kdtree::impl {
   }
 
   indices_and_distances radius_search(const geometry::point3d& point, double radius) const {
-    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1,
-                                    3);  // NOLINT(cppcoreguidelines-pro-type-const-cast)
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, 3);
     std::vector<std::vector<size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 

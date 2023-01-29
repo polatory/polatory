@@ -16,7 +16,7 @@ class isosurface_2d {
   isosurface_2d(const geometry::bbox3d& bbox, double resolution)
       : bbox_(bbox), resolution_(resolution) {}
 
-  surface generate(field_function& field_fn) const {  // NOLINT(runtime/references)
+  surface generate(field_function& field_fn) const {
     field_fn.set_evaluation_bbox(bbox_);
 
     auto xmin = resolution_ * (std::floor(bbox_.min()(0) / resolution_) - 1.0);

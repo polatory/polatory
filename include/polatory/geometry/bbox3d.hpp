@@ -23,7 +23,7 @@ class bbox3d {
 
   vector3d size() const;
 
-  bbox3d transform(const linear_transformation3d& t) const;  // NOLINT(build/include_what_you_use)
+  bbox3d transform(const linear_transformation3d& t) const;
 
   bbox3d union_hull(const bbox3d& other) const;
 

@@ -186,8 +186,7 @@ class rmt_node {
   //   |         .
   //   .
   void cluster(std::vector<geometry::point3d>& vertices,
-               std::unordered_map<vertex_index, vertex_index>& cluster_map)
-      const {  // NOLINT(runtime/references)
+               std::unordered_map<vertex_index, vertex_index>& cluster_map) const {
     auto surfaces = get_surfaces();
     auto holes = get_holes();
 

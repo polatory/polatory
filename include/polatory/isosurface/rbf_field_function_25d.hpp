@@ -10,8 +10,7 @@ namespace polatory::isosurface {
 
 class rbf_field_function_25d : public field_function {
  public:
-  explicit rbf_field_function_25d(interpolant& interpolant)  // NOLINT(runtime/references)
-      : interpolant_(interpolant) {}
+  explicit rbf_field_function_25d(interpolant& interpolant) : interpolant_(interpolant) {}
 
   common::valuesd operator()(const geometry::points3d& points) const override {
     geometry::points3d points_2d(points);
