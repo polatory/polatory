@@ -9,6 +9,7 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(Polatory CXX)
 
@@ -27,8 +28,6 @@ find_package(GTest CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 
 option(USE_PREBUILT_BOOST "Use prebuilt Boost libraries specified manually. This option takes effect only on MSVC.")
-
-option(ENABLE_CLANG_TIDY "Enable clang-tidy target. This option should not be used for code generation because it disables OpenMP.")
 
 # vcpkg
 set(VCPKG_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
@@ -84,10 +83,6 @@ endif()
 
 if(MSVC)
     string(REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-endif()
-
-if(ENABLE_CLANG_TIDY)
-    polatory_enable_clang_tidy()
 endif()
 
 add_subdirectory(benchmark)

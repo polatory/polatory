@@ -6,20 +6,10 @@ file(GLOB_RECURSE SOURCES
 )
 add_library(${TARGET} STATIC ${SOURCES})
 
-if(NOT ENABLE_CLANG_TIDY)
-    # clang-tidy 6 does not work well with OpenMP pragmas.
-    target_compile_options(${TARGET} PUBLIC ${OpenMP_CXX_FLAGS})
-endif()
-
 if(UNIX)
     target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Werror)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
-    endif()
-    if(ENABLE_CLANG_TIDY)
-        # clang-analyzer-core.NullDereference is reported in Eigen's code with SSE2.
-        # This must be investigated later.
-        target_compile_options(${TARGET} PUBLIC -mno-sse2)
     endif()
 elseif(MSVC)
     # C4702(unreachable code) is disabled as it is reported by link.exe in third-party code.
