@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.16)
+cmake_policy(VERSION "3.16")
 
 if(NOT CMAKE_BUILD_TYPE)
     message("-- CMAKE_BUILD_TYPE is not set. Defaulting to Release.")
