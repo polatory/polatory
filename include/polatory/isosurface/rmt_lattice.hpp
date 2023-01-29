@@ -65,7 +65,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   bool add_node(cell_index ci) {
-    if (node_list.count(ci) != 0) {
+    if (node_list.contains(ci)) {
       return false;
     }
 
@@ -79,8 +79,7 @@ class rmt_lattice : public rmt_primitive_lattice {
       return false;
     }
 
-    rmt_node node(p);
-    node_list.insert(std::make_pair(ci, std::move(node)));
+    node_list.emplace(ci, rmt_node{p});
 
     nodes_to_evaluate.push_back(ci);
     return true;
@@ -371,11 +370,11 @@ class rmt_lattice : public rmt_primitive_lattice {
             if (d < d2) {
               node.insert_vertex(vi, ei);
             } else {
-              node2.insert_vertex(vi, OppositeEdge[ei]);
+              node2.insert_vertex(vi, OppositeEdge.at(ei));
             }
 
             node.set_intersection(ei);
-            node2.set_intersection(OppositeEdge[ei]);
+            node2.set_intersection(OppositeEdge.at(ei));
           }
         }
 

@@ -8,9 +8,9 @@ mesh_defects_finder::mesh_defects_finder(const std::vector<geometry::point3d>& v
                                          const std::vector<face>& faces)
     : vertices_(vertices), vf_map_(vertices_.size()) {
   for (const auto& f : faces) {
-    vf_map_[f[0]].push_back({f[0], f[1], f[2]});
-    vf_map_[f[1]].push_back({f[1], f[2], f[0]});
-    vf_map_[f[2]].push_back({f[2], f[0], f[1]});
+    vf_map_.at(f[0]).push_back({f[0], f[1], f[2]});
+    vf_map_.at(f[1]).push_back({f[1], f[2], f[0]});
+    vf_map_.at(f[2]).push_back({f[2], f[0], f[1]});
   }
 }
 
@@ -22,13 +22,13 @@ std::set<face> mesh_defects_finder::intersecting_faces() const {
   auto n_vertices = static_cast<vertex_index>(vertices_.size());
 #pragma omp parallel for schedule(guided, 32)
   for (vertex_index vi = 0; vi < n_vertices; vi++) {
-    const auto& faces = vf_map_[vi];
+    const auto& faces = vf_map_.at(vi);
 
     auto n_faces = static_cast<int>(faces.size());
     for (auto i = 0; i < n_faces - 1; i++) {
-      const auto& f1 = faces[i];
+      const auto& f1 = faces.at(i);
       for (auto j = i + 1; j < n_faces; j++) {
-        const auto& f2 = faces[j];
+        const auto& f2 = faces.at(j);
 
         if (f1[1] == f2[2] || f1[2] == f2[1]) {
           // Skip the pair of adjacent faces.
@@ -57,7 +57,7 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
   auto n_vertices = static_cast<vertex_index>(vertices_.size());
 #pragma omp parallel for schedule(guided, 32)
   for (vertex_index vi = 0; vi < n_vertices; vi++) {
-    const auto& faces = vf_map_[vi];
+    const auto& faces = vf_map_.at(vi);
 
     if (faces.empty()) {
       continue;
@@ -65,8 +65,8 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
 
     std::map<vertex_index, int> vi_to_index;
     for (const auto& f : faces) {
-      vi_to_index[f[1]] = -1;
-      vi_to_index[f[2]] = -1;
+      vi_to_index.emplace(f[1], -1);
+      vi_to_index.emplace(f[2], -1);
     }
 
     auto order = static_cast<int>(vi_to_index.size());
@@ -82,7 +82,7 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
     dense_undirected_graph g(order);
 
     for (const auto& f : faces) {
-      g.add_edge(vi_to_index[f[1]], vi_to_index[f[2]]);
+      g.add_edge(vi_to_index.at(f[1]), vi_to_index.at(f[2]));
     }
 
     for (auto i = 0; i < order; i++) {
@@ -90,7 +90,7 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
 #pragma omp critical
         {
           result.insert(vi);
-          result.insert(vis[i]);
+          result.insert(vis.at(i));
         }
       }
     }
@@ -106,14 +106,14 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
 
 bool mesh_defects_finder::line_triangle_intersect(vertex_index s1, vertex_index s2,
                                                   const face& f) const {
-  const auto e1 = vertices_[f[1]] - vertices_[f[0]];
-  const auto e2 = vertices_[f[2]] - vertices_[f[0]];
+  const auto e1 = vertices_.at(f[1]) - vertices_.at(f[0]);
+  const auto e2 = vertices_.at(f[2]) - vertices_.at(f[0]);
 
-  const auto dir = vertices_[s2] - vertices_[s1];
+  const auto dir = vertices_.at(s2) - vertices_.at(s1);
   const auto p = dir.cross(e2);
   // det = [e1, dir, e2] (scalar triple product of dir, e2 and e1)
   const auto inv_det = 1.0 / p.dot(e1);
-  const auto s = vertices_[s1] - vertices_[f[0]];
+  const auto s = vertices_.at(s1) - vertices_.at(f[0]);
   const auto u = inv_det * s.dot(p);
   if (u < 0.0 || u > 1.0) {
     return false;
@@ -132,12 +132,12 @@ bool mesh_defects_finder::line_triangle_intersect(vertex_index s1, vertex_index 
 
 bool mesh_defects_finder::segment_plane_intersect(vertex_index s1, vertex_index s2,
                                                   const face& f) const {
-  const auto e1 = vertices_[f[1]] - vertices_[f[0]];
-  const auto e2 = vertices_[f[2]] - vertices_[f[0]];
+  const auto e1 = vertices_.at(f[1]) - vertices_.at(f[0]);
+  const auto e2 = vertices_.at(f[2]) - vertices_.at(f[0]);
 
   const auto n = e1.cross(e2);
-  const auto sign1 = n.dot(vertices_[s1] - vertices_[f[0]]);
-  const auto sign2 = n.dot(vertices_[s2] - vertices_[f[0]]);
+  const auto sign1 = n.dot(vertices_.at(s1) - vertices_.at(f[0]));
+  const auto sign2 = n.dot(vertices_.at(s2) - vertices_.at(f[0]));
   return sign1 * sign2 < 0.0;
 }
 

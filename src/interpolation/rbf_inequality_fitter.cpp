@@ -70,7 +70,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
 
       auto center_values = common::take_rows(values, centers);
       for (index_t i = n_eq; i < n_centers; i++) {
-        auto idx = centers[i];
+        auto idx = centers.at(i);
         if (active_idcs_lb.contains(idx)) {
           center_values(i) = values_lb(idx);
         } else {
@@ -86,7 +86,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       center_weights = solver->solve(center_values, absolute_tolerance, center_weights);
 
       for (index_t i = 0; i < n_centers; i++) {
-        auto idx = centers[i];
+        auto idx = centers.at(i);
         weights(idx) = center_weights(i);
       }
       weights.tail(n_poly_basis_) = center_weights.tail(n_poly_basis_);
@@ -101,7 +101,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
     auto n_ineq = static_cast<index_t>(ineq_idcs.size());
     auto active_set_changed = false;
     for (index_t i = 0; i < n_ineq; i++) {
-      auto idx = ineq_idcs[i];
+      auto idx = ineq_idcs.at(i);
 
       if (std::binary_search(idcs_lb.begin(), idcs_lb.end(), idx)) {
         if (active_idcs_lb.contains(idx)) {

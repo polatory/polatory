@@ -45,7 +45,8 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
   }
   for (index_t i = 0; i < m_ - 1; i++) {
     for (index_t j = i + 1; j < m_; j++) {
-      a(i, j) = rbf.evaluate(points_full.row(point_idcs_[i]) - points_full.row(point_idcs_[j]));
+      a(i, j) =
+          rbf.evaluate(points_full.row(point_idcs_.at(i)) - points_full.row(point_idcs_.at(j)));
       a(j, i) = a(i, j);
     }
   }
@@ -77,7 +78,7 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
 
 void coarse_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
   for (index_t i = 0; i < m_; i++) {
-    weights_full(point_idcs_[i]) = lambda_c_(i);
+    weights_full(point_idcs_.at(i)) = lambda_c_(i);
   }
 
   weights_full.tail(l_) = lambda_c_.tail(l_).cast<double>();
@@ -86,7 +87,7 @@ void coarse_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) cons
 void coarse_grid::solve(const Eigen::Ref<const common::valuesd>& values_full) {
   common::valuesd values(m_);
   for (index_t i = 0; i < m_; i++) {
-    values(i) = values_full(point_idcs_[i]);
+    values(i) = values_full(point_idcs_.at(i));
   }
 
   if (l_ > 0) {

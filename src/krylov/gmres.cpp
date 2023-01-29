@@ -14,18 +14,18 @@ void gmres::iterate_process() {
   auto j = iter_;
 
   // Arnoldi process
-  auto z = right_preconditioned(vs_[j]);
+  auto z = right_preconditioned(vs_.at(j));
   add_preconditioned_krylov_basis(z);
   vs_.push_back(left_preconditioned(op_(z)));
 #pragma omp parallel for
   for (index_t i = 0; i <= j; i++) {
-    r_(i, j) = vs_[i].dot(vs_[j + 1]);
+    r_(i, j) = vs_.at(i).dot(vs_.at(j + 1));
   }
   for (index_t i = 0; i <= j; i++) {
-    vs_[j + 1] -= r_(i, j) * vs_[i];
+    vs_.at(j + 1) -= r_(i, j) * vs_.at(i);
   }
-  r_(j + 1, j) = vs_[j + 1].norm();
-  vs_[j + 1] /= r_(j + 1, j);
+  r_(j + 1, j) = vs_.at(j + 1).norm();
+  vs_.at(j + 1) /= r_(j + 1, j);
 
   // Update matrix R by Givens rotation
   for (index_t i = 0; i < j; i++) {

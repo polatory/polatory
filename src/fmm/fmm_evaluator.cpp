@@ -112,7 +112,7 @@ class fmm_evaluator<Order>::impl {
     for (index_t idx = 0; idx < n_src_points_; idx++) {
       auto ap = geometry::transform_point(a, points.row(idx));
       tree_->insert(FPoint<double>(ap.data()), FParticleType::FParticleTypeSource, idx,
-                    weights[idx]);
+                    weights(idx));
     }
 
     tree_->forEachCell([&](Cell* cell) { cell->resetToInitialState(); });
@@ -134,7 +134,7 @@ class fmm_evaluator<Order>::impl {
     }
 
     for (index_t idx = 0; idx < n_src_points_; idx++) {
-      *weight_ptrs_[idx] = weights[idx];
+      *weight_ptrs_.at(idx) = weights(idx);
     }
 
     tree_->forEachCell([&](Cell* cell) { cell->resetToInitialState(); });
@@ -147,7 +147,7 @@ class fmm_evaluator<Order>::impl {
     common::valuesd phi = common::valuesd::Zero(n_fld_points_);
 
     for (index_t i = 0; i < n_fld_points_; i++) {
-      phi[i] = *potential_ptrs_[i];
+      phi(i) = *potential_ptrs_.at(i);
     }
 
     return phi;
@@ -165,7 +165,7 @@ class fmm_evaluator<Order>::impl {
       for (index_t i = 0; i < n_particles; i++) {
         auto idx = static_cast<index_t>(indices[i]);
 
-        potential_ptrs_[idx] = &potentials[i];
+        potential_ptrs_.at(idx) = &potentials[i];
       }
     });
   }
@@ -182,7 +182,7 @@ class fmm_evaluator<Order>::impl {
       for (index_t i = 0; i < n_particles; i++) {
         auto idx = static_cast<index_t>(indices[i]);
 
-        weight_ptrs_[idx] = &weights[i];
+        weight_ptrs_.at(idx) = &weights[i];
       }
     });
   }

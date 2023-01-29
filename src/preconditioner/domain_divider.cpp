@@ -21,14 +21,14 @@ void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
   std::vector<bool> new_inner_point(n_poly_points);
 
   for (index_t i = 0; i < n_poly_points; i++) {
-    auto idx = poly_point_idcs[i];
+    auto idx = poly_point_idcs.at(i);
     auto it = std::lower_bound(point_indices.begin(), point_indices.end(), idx);
     if (it == point_indices.end() || *it != idx) {
       continue;
     }
 
     auto it_inner = inner_point.begin() + std::distance(point_indices.begin(), it);
-    new_inner_point[i] = *it_inner;
+    new_inner_point.at(i) = *it_inner;
 
     point_indices.erase(it);
     inner_point.erase(it_inner);
@@ -83,8 +83,8 @@ std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
         break;
       }
 
-      if (d.inner_point[i]) {
-        coarse_idcs.push_back(d.point_indices[i]);
+      if (d.inner_point.at(i)) {
+        coarse_idcs.push_back(d.point_indices.at(i));
         count++;
       }
     }

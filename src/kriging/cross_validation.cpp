@@ -61,7 +61,7 @@ common::valuesd k_fold_cross_validation(const model& model, const geometry::poin
     auto test_values_fit = eval.evaluate(test_points);
 
     for (index_t j = 0; j < test_set_size; j++) {
-      residuals(test_set[j]) = test_values(j) - test_values_fit(j);
+      residuals(test_set.at(j)) = test_values(j) - test_values_fit(j);
     }
   }
 

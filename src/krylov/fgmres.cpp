@@ -19,7 +19,7 @@ common::valuesd fgmres::solution_vector() const {
 
   common::valuesd x = x0_;
   for (index_t i = 0; i < iter_; i++) {
-    x += y(i) * zs_[i];
+    x += y(i) * zs_.at(i);
   }
 
   return x;

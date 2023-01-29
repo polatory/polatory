@@ -29,13 +29,13 @@ TEST(domain_divider, trivial) {
   inner_points.reserve(n_points);
   for (const auto& d : divider.domains()) {
     for (index_t i = 0; i < d.size(); i++) {
-      if (d.inner_point[i]) {
-        inner_points.push_back(d.point_indices[i]);
+      if (d.inner_point.at(i)) {
+        inner_points.push_back(d.point_indices.at(i));
       }
     }
 
     for (index_t i = 0; i < n_poly_points; i++) {
-      EXPECT_EQ(poly_point_idcs[i], d.point_indices[i]);
+      EXPECT_EQ(poly_point_idcs.at(i), d.point_indices.at(i));
     }
 
     auto domain_points = d.point_indices;
@@ -53,7 +53,7 @@ TEST(domain_divider, trivial) {
   EXPECT_GE(1.05 * coarse_ratio * n_points, coarse_point_idcs.size());
 
   for (index_t i = 0; i < n_poly_points; i++) {
-    EXPECT_EQ(poly_point_idcs[i], coarse_point_idcs[i]);
+    EXPECT_EQ(poly_point_idcs.at(i), coarse_point_idcs.at(i));
   }
 
   // TODO(mizuno): Check at least one coarse point is chosen from each domain.

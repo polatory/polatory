@@ -33,8 +33,8 @@ int main(int argc, const char* argv[]) {
               << "gamma" << std::endl;
     auto n_bins = static_cast<index_t>(bin_num_pairs.size());
     for (index_t bin = 0; bin < n_bins; bin++) {
-      std::cout << std::setw(12) << bin_num_pairs[bin] << std::setw(12) << bin_distance[bin]
-                << std::setw(12) << bin_gamma[bin] << std::endl;
+      std::cout << std::setw(12) << bin_num_pairs.at(bin) << std::setw(12) << bin_distance.at(bin)
+                << std::setw(12) << bin_gamma.at(bin) << std::endl;
     }
 
     // Save the empirical variogram.

@@ -101,7 +101,7 @@ class rmt_node {
           to_visit_faces ^= visiting;
           visited_faces |= visiting;
 
-          neighbors |= NeighborFaces[face_idx];
+          neighbors |= NeighborFaces.at(face_idx);
         } while (to_visit_faces != 0);
 
         // update to_visit_faces
@@ -160,7 +160,7 @@ class rmt_node {
     edge_bitset neighbors = 0;
     do {
       edge_index edge_idx = bit_pop(&edge_set);
-      neighbors |= NeighborMasks[edge_idx];
+      neighbors |= NeighborMasks.at(edge_idx);
     } while (edge_set != 0);
 
     return neighbors;
@@ -214,8 +214,8 @@ class rmt_node {
 
       geometry::point3d clustered = geometry::point3d::Zero();
       for (size_t i = 0; i < weights.size(); i++) {
-        auto vi = (*vis)[i];
-        clustered += weights[i] / weights_sum * vertices[vi];
+        auto vi = vis->at(i);
+        clustered += weights.at(i) / weights_sum * vertices.at(vi);
       }
 
       vertex_index new_vi = vertices.size();
@@ -249,9 +249,9 @@ class rmt_node {
 
         geometry::point3d clustered = geometry::point3d::Zero();
         for (size_t i = 0; i < weights.size(); i++) {
-          auto edge_idx = edge_idcs[i];
+          auto edge_idx = edge_idcs.at(i);
           auto vi = vertex_on_edge(edge_idx);
-          clustered += weights[i] / weights_sum * vertices[vi];
+          clustered += weights.at(i) / weights_sum * vertices.at(vi);
         }
 
         vertex_index new_vi = vertices.size();
@@ -277,7 +277,7 @@ class rmt_node {
 
     // Calculate alphas and accumulate normals per plane.
 
-    for (auto neigh_pair : NeighborEdgePairs[edge_idx]) {
+    for (auto neigh_pair : NeighborEdgePairs.at(edge_idx)) {
       if (!has_neighbor(neigh_pair.first) || !has_neighbor(neigh_pair.second)) {
         return {};
       }
@@ -309,7 +309,7 @@ class rmt_node {
     std::vector<double> weights;
 
     for (size_t i = 0; i < alphas.size(); i++) {
-      auto neigh_pair = NeighborEdgePairs[edge_idx][i];
+      auto neigh_pair = NeighborEdgePairs.at(edge_idx).at(i);
       const auto& b_node = neighbor(neigh_pair.first);
 
       geometry::vector3d ob = b_node.pos - pos;
@@ -319,7 +319,7 @@ class rmt_node {
       auto cos_gamma = normal.dot(plane_normal);
 
       weights.push_back(std::sqrt((1.0 - cos_gamma * cos_gamma) *
-                                  (1.0 / std::pow(std::sin(alphas[i] / 2.0), 2.0) - 1.0)));
+                                  (1.0 / std::pow(std::sin(alphas.at(i) / 2.0), 2.0) - 1.0)));
     }
 
     return *std::max_element(weights.begin(), weights.end());
@@ -356,7 +356,7 @@ class rmt_node {
   face_bitset get_faces() const {
     edge_bitset face_bits = 0;
     for (face_index fi = 0; fi < 24; fi++) {
-      auto face_edges = FaceEdges[fi];
+      auto face_edges = FaceEdges.at(fi);
       auto face_bit = static_cast<int>((intersections & face_edges) == face_edges);
       face_bits |= face_bit << fi;
     }
@@ -436,7 +436,7 @@ class rmt_node {
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;
-    return (*vis)[bit_count(static_cast<edge_bitset>(intersections & edge_count_mask))];
+    return vis->at(bit_count(static_cast<edge_bitset>(intersections & edge_count_mask)));
   }
 };
 
