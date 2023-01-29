@@ -56,7 +56,8 @@ inline tabled read_table(const std::string& filename, const char* delimiters = "
     throw std::runtime_error("File '" + filename + "' is empty.");
   }
 
-  return tabled::Map(buffer.data(), buffer.size() / n_cols, n_cols);
+  auto n_rows = static_cast<index_t>(buffer.size() / n_cols);
+  return tabled::Map(buffer.data(), n_rows, n_cols);
 }
 
 template <class Derived>

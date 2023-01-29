@@ -29,8 +29,8 @@ class isosurface_2d {
     geometry::points3d points(ny * nx, 3);
     for (vertex_index iy = 0; iy < ny; iy++) {
       for (vertex_index ix = 0; ix < nx; ix++) {
-        points(iy * nx + ix, 0) = xmin + ix * resolution_;
-        points(iy * nx + ix, 1) = ymin + iy * resolution_;
+        points(iy * nx + ix, 0) = xmin + static_cast<double>(ix) * resolution_;
+        points(iy * nx + ix, 1) = ymin + static_cast<double>(iy) * resolution_;
         points(iy * nx + ix, 2) = 0.0;
       }
     }

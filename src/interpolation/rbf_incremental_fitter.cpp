@@ -60,7 +60,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     auto c_values_fit = res_eval->evaluate(c_center_points);
     auto c_values = common::take_rows(values, c_centers);
     std::vector<double> c_residuals(c_centers.size());
-    common::valuesd::Map(c_residuals.data(), c_centers.size()) =
+    common::valuesd::Map(c_residuals.data(), static_cast<index_t>(c_centers.size())) =
         (c_values_fit - c_values).cwiseAbs();
 
     // Sort remaining points by their residuals.

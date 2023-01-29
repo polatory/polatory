@@ -74,8 +74,9 @@ std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
     std::shuffle(shuffled.begin(), shuffled.end(), gen);
 
     auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true);
-    auto n_coarse =
-        std::max(index_t{1}, static_cast<index_t>(round_half_to_even(ratio * n_inner_pts)));
+    auto n_coarse = std::max(
+        index_t{1},
+        static_cast<index_t>(round_half_to_even(ratio * static_cast<double>(n_inner_pts))));
 
     auto count = index_t{0};
     for (auto i : shuffled) {

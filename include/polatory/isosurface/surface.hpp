@@ -23,7 +23,7 @@ class surface {
       for (auto i = 0; i < 3; i++) {
         auto& vi = vi_map.at(face.at(i));
         if (vi == -1) {
-          vi = vertices_.size();
+          vi = static_cast<vertex_index>(vertices_.size());
           vertices_.push_back(vertices.at(face.at(i)));
         }
         face_to_add.at(i) = vi;

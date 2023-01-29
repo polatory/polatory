@@ -217,7 +217,7 @@ class rmt_node {
         clustered += weights.at(i) / weights_sum * vertices.at(vi);
       }
 
-      vertex_index new_vi = vertices.size();
+      auto new_vi = static_cast<vertex_index>(vertices.size());
       vertices.push_back(clustered);
 
       for (auto vi : *vis) {
@@ -253,7 +253,7 @@ class rmt_node {
           clustered += weights.at(i) / weights_sum * vertices.at(vi);
         }
 
-        vertex_index new_vi = vertices.size();
+        auto new_vi = static_cast<vertex_index>(vertices.size());
         vertices.push_back(clustered);
 
         for (auto edge_idx : edge_idcs) {

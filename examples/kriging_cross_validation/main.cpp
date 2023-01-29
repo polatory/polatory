@@ -39,9 +39,12 @@ int main(int argc, const char* argv[]) {
         k_fold_cross_validation(model, points, values, opts.absolute_tolerance, opts.k);
 
     std::cout << "Estimated mean absolute error: " << std::endl
-              << std::setw(12) << residuals.lpNorm<1>() / points.rows() << std::endl
+              << std::setw(12) << residuals.lpNorm<1>() / static_cast<double>(points.rows())
+              << std::endl
               << "Estimated root mean square error: " << std::endl
-              << std::setw(12) << std::sqrt(residuals.squaredNorm() / points.rows()) << std::endl;
+              << std::setw(12)
+              << std::sqrt(residuals.squaredNorm() / static_cast<double>(points.rows()))
+              << std::endl;
 
     return 0;
   } catch (const std::exception& e) {

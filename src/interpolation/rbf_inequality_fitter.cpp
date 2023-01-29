@@ -95,7 +95,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       res_eval->set_weights(center_weights);
       values_fit = res_eval->evaluate(ineq_points);
     } else {
-      values_fit = common::valuesd::Zero(ineq_idcs.size());
+      values_fit = common::valuesd::Zero(static_cast<index_t>(ineq_idcs.size()));
     }
 
     auto n_ineq = static_cast<index_t>(ineq_idcs.size());
