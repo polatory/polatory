@@ -57,9 +57,9 @@ TEST(rmt, face_edges) {
     auto e1 = bit_pop(&edge_set);
     auto e2 = bit_pop(&edge_set);
 
-    auto& v0 = NeighborVectors[e0];
-    auto& v1 = NeighborVectors[e1];
-    auto& v2 = NeighborVectors[e2];
+    auto& v0 = NeighborVectors.at(e0);
+    auto& v1 = NeighborVectors.at(e1);
+    auto& v2 = NeighborVectors.at(e2);
 
     auto area = (v1 - v0).cross(v2 - v0).norm();
     EXPECT_DOUBLE_EQ(std::sqrt(2.0), area);
@@ -89,7 +89,7 @@ TEST(rmt, lattice) {
 TEST(rmt, lattice_vectors) {
   for (auto i = 0; i < 3; i++) {
     for (auto j = 0; j < 3; j++) {
-      auto dot = LatticeVectors[i].dot(DualLatticeVectors[j]);
+      auto dot = LatticeVectors.at(i).dot(DualLatticeVectors.at(j));
       if (i == j) {
         EXPECT_NEAR(1.0, dot, 1e-15);
       } else {
@@ -101,11 +101,11 @@ TEST(rmt, lattice_vectors) {
 
 TEST(rmt, neighbor_edge_pairs) {
   for (edge_index ei = 0; ei < 14; ei++) {
-    auto& va = NeighborVectors[ei];
+    auto& va = NeighborVectors.at(ei);
 
-    for (auto& pair : NeighborEdgePairs[ei]) {
-      auto& vb = NeighborVectors[pair.first];
-      auto& vc = NeighborVectors[pair.second];
+    for (auto& pair : NeighborEdgePairs.at(ei)) {
+      auto& vb = NeighborVectors.at(pair.first);
+      auto& vc = NeighborVectors.at(pair.second);
 
       EXPECT_TRUE(va.dot(vb) > 0.0);
       EXPECT_TRUE(va.dot(vc) > 0.0);
@@ -116,14 +116,14 @@ TEST(rmt, neighbor_edge_pairs) {
 
 TEST(rmt, neighbors) {
   for (size_t i = 0; i < NeighborMasks.size(); i++) {
-    auto mask = NeighborMasks[i];
+    auto mask = NeighborMasks.at(i);
     auto count = bit_count(mask);
     EXPECT_TRUE(count == 4 || count == 6);
 
-    auto vi = NeighborVectors[i];
+    auto vi = NeighborVectors.at(i);
     for (auto k = 0; k < count; k++) {
       auto j = bit_pop(&mask);
-      auto vj = NeighborVectors[j];
+      auto vj = NeighborVectors.at(j);
       auto vijsq = (vj - vi).squaredNorm();
       if (vijsq > 1.75) {
         EXPECT_DOUBLE_EQ(2.0, vijsq);
@@ -134,18 +134,18 @@ TEST(rmt, neighbors) {
   }
 
   for (edge_index ei = 0; ei < 14; ei++) {
-    vector3d computed = LatticeVectors[0] * NeighborCellVectors[ei][0] +
-                        LatticeVectors[1] * NeighborCellVectors[ei][1] +
-                        LatticeVectors[2] * NeighborCellVectors[ei][2];
+    vector3d computed = LatticeVectors[0] * NeighborCellVectors.at(ei)[0] +
+                        LatticeVectors[1] * NeighborCellVectors.at(ei)[1] +
+                        LatticeVectors[2] * NeighborCellVectors.at(ei)[2];
 
     for (auto i = 0; i < 3; i++) {
-      EXPECT_NEAR(NeighborVectors[ei](i), computed(i), 1e-15);
+      EXPECT_NEAR(NeighborVectors.at(ei)(i), computed(i), 1e-15);
     }
   }
 }
 
 TEST(rmt, opposite_edge) {
   for (edge_index ei = 0; ei < 14; ei++) {
-    EXPECT_EQ(-NeighborVectors[ei], NeighborVectors[OppositeEdge[ei]]);
+    EXPECT_EQ(-NeighborVectors.at(ei), NeighborVectors.at(OppositeEdge.at(ei)));
   }
 }

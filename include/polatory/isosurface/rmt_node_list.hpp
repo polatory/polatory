@@ -33,11 +33,11 @@ class rmt_node_list : std::unordered_map<cell_index, rmt_node> {
   using base::at;
   using base::begin;
   using base::clear;
-  using base::count;
+  using base::contains;
+  using base::emplace;
   using base::end;
   using base::erase;
   using base::find;
-  using base::insert;
   using base::size;
 
   rmt_node *node_ptr(cell_index ci) {
@@ -47,13 +47,13 @@ class rmt_node_list : std::unordered_map<cell_index, rmt_node> {
 
   void init_strides(cell_index stride1, cell_index stride2) {
     for (edge_index ei = 0; ei < 14; ei++) {
-      auto delta_cv = NeighborCellVectors[ei];
-      NeighborCellIndexDeltas[ei] = delta_cv(2) * stride2 + delta_cv(1) * stride1 + delta_cv(0);
+      auto delta_cv = NeighborCellVectors.at(ei);
+      NeighborCellIndexDeltas.at(ei) = delta_cv(2) * stride2 + delta_cv(1) * stride1 + delta_cv(0);
     }
   }
 
   cell_index neighbor_cell_index(cell_index ci, edge_index ei) const {
-    return ci + NeighborCellIndexDeltas[ei];
+    return ci + NeighborCellIndexDeltas.at(ei);
   }
 
   iterator find_neighbor_node(cell_index ci, edge_index ei) {

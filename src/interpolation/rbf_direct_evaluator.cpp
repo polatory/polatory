@@ -21,7 +21,7 @@ common::valuesd rbf_direct_evaluator::evaluate() const {
   for (index_t i = 0; i < n_src_points_; i++) {
     for (index_t j = 0; j < n_fld_points_; j++) {
       auto a_ij = rbf.evaluate(src_points_.row(i) - fld_points_.row(j));
-      y_accum[j] += weights_(i) * a_ij;
+      y_accum.at(j) += weights_(i) * a_ij;
     }
   }
 
@@ -29,13 +29,13 @@ common::valuesd rbf_direct_evaluator::evaluate() const {
     // Add polynomial terms.
     auto poly_val = p_->evaluate();
     for (index_t i = 0; i < n_fld_points_; i++) {
-      y_accum[i] += poly_val(i);
+      y_accum.at(i) += poly_val(i);
     }
   }
 
   common::valuesd y(n_fld_points_);
   for (index_t i = 0; i < n_fld_points_; i++) {
-    y(i) = y_accum[i].get();
+    y(i) = y_accum.at(i).get();
   }
 
   return y;

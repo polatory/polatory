@@ -67,7 +67,7 @@ common::valuesd gmres_base::solution_vector() const {
 
   common::valuesd x = common::valuesd::Zero(m_);
   for (index_t i = 0; i < iter_; i++) {
-    x += y(i) * vs_[i];
+    x += y(i) * vs_.at(i);
   }
   x = right_preconditioned(x);
   x += x0_;

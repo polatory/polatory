@@ -21,12 +21,12 @@ class surface {
 
     for (const auto& face : faces) {
       for (auto i = 0; i < 3; i++) {
-        auto& vi = vi_map[face[i]];
+        auto& vi = vi_map.at(face.at(i));
         if (vi == -1) {
           vi = vertices_.size();
-          vertices_.push_back(vertices[face[i]]);
+          vertices_.push_back(vertices.at(face.at(i)));
         }
-        face_to_add[i] = vi;
+        face_to_add.at(i) = vi;
       }
       faces_.push_back(face_to_add);
     }

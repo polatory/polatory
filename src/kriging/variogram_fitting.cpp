@@ -67,20 +67,20 @@ variogram_fitting::variogram_fitting(const empirical_variogram& emp_variog, cons
 
   ceres::Problem problem;
   for (index_t i = 0; i < n_bins; i++) {
-    if (bin_num_pairs[i] == 0) {
+    if (bin_num_pairs.at(i) == 0) {
       continue;
     }
 
-    auto* cost_fn =
-        create_cost_function(&model2, bin_num_pairs[i], bin_distance[i], bin_gamma[i], weight_fn);
+    auto* cost_fn = create_cost_function(&model2, bin_num_pairs.at(i), bin_distance.at(i),
+                                         bin_gamma.at(i), weight_fn);
     problem.AddResidualBlock(cost_fn, nullptr, params_.data());
   }
 
   auto lower_bounds = model2.parameter_lower_bounds();
   auto upper_bounds = model2.parameter_upper_bounds();
   for (auto i = 0; i < n_params; i++) {
-    problem.SetParameterLowerBound(params_.data(), i, lower_bounds[i]);
-    problem.SetParameterUpperBound(params_.data(), i, upper_bounds[i]);
+    problem.SetParameterLowerBound(params_.data(), i, lower_bounds.at(i));
+    problem.SetParameterUpperBound(params_.data(), i, upper_bounds.at(i));
   }
 
   ceres::Solver::Options options;

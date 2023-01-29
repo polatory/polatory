@@ -36,19 +36,19 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
         continue;
       }
 
-      dist_sum[bin] += dist;
-      gamma_sum[bin] += std::pow(values[i] - values[j], 2.0) / 2.0;
-      num_pairs_[bin]++;
+      dist_sum.at(bin) += dist;
+      gamma_sum.at(bin) += std::pow(values(i) - values(j), 2.0) / 2.0;
+      num_pairs_.at(bin)++;
     }
   }
 
   for (index_t i = 0; i < n_bins; i++) {
-    if (num_pairs_[i] == 0) {
+    if (num_pairs_.at(i) == 0) {
       continue;
     }
 
-    distance_[i] = dist_sum[i].get() / num_pairs_[i];
-    gamma_[i] = gamma_sum[i].get() / num_pairs_[i];
+    distance_.at(i) = dist_sum.at(i).get() / num_pairs_.at(i);
+    gamma_.at(i) = gamma_sum.at(i).get() / num_pairs_.at(i);
   }
 
   // Remove empty bins.

@@ -47,10 +47,10 @@ class dense_undirected_graph {
       auto i = to_visit.top();
       to_visit.pop();
 
-      visited[i] = true;
+      visited.at(i) = true;
 
       for (auto j = 0; j < order(); j++) {
-        if (has_edge(i, j) && !visited[j]) {
+        if (has_edge(i, j) && !visited.at(j)) {
           to_visit.push(j);
         }
       }

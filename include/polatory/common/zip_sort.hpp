@@ -24,19 +24,19 @@ static void inverse_permute(RandomAccessIterator begin, RandomAccessIterator end
 
   std::vector<bool> done(size);
   for (D i = 0; i < size; ++i) {
-    if (done[i]) {
+    if (done.at(i)) {
       continue;
     }
 
     auto prev_j = i;
-    auto j = p[i];
+    auto j = p.at(i);
     while (i != j) {
       swap(begin[prev_j], begin[j]);
-      done[j] = true;
+      done.at(j) = true;
       prev_j = j;
-      j = p[j];
+      j = p.at(j);
     }
-    done[i] = true;
+    done.at(i) = true;
   }
 }
 

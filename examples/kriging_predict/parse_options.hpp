@@ -83,11 +83,11 @@ inline options parse_options(int argc, const char* argv[]) {
 
   opts.rbf_name = rbf_vec[0];
   for (size_t i = 1; i < rbf_vec.size(); i++) {
-    opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec[i]));
+    opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec.at(i)));
   }
 
   for (size_t i = 0; i < mesh_vals_vec.size(); i++) {
-    opts.mesh_values_files.emplace_back(mesh_vals_vec[i], mesh_files_vec[i]);
+    opts.mesh_values_files.emplace_back(mesh_vals_vec.at(i), mesh_files_vec.at(i));
   }
 
   return opts;

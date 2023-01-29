@@ -39,17 +39,17 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
         model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
 
     auto level = n_levels_ - 1;
-    point_idcs_[level] = poly_point_idcs;
-    point_idcs_[level].reserve(n_points_);
+    point_idcs_.at(level) = poly_point_idcs;
+    point_idcs_.at(level).reserve(n_points_);
     for (index_t i = 0; i < n_points_; i++) {
       if (!std::binary_search(poly_point_idcs.begin(), poly_point_idcs.end(), i)) {
-        point_idcs_[level].push_back(i);
+        point_idcs_.at(level).push_back(i);
       }
     }
   } else {
     auto level = n_levels_ - 1;
-    point_idcs_[level].resize(n_points_);
-    std::iota(point_idcs_[level].begin(), point_idcs_[level].end(), 0);
+    point_idcs_.at(level).resize(n_points_);
+    std::iota(point_idcs_.at(level).begin(), point_idcs_.at(level).end(), 0);
   }
 
   fine_grids_.resize(n_levels_);
@@ -58,23 +58,24 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
             << "n_points" << std::endl;
 
   for (auto level = n_levels_ - 1; level >= 1; level--) {
-    auto divider = std::make_unique<domain_divider>(points_, point_idcs_[level], poly_point_idcs);
+    auto divider =
+        std::make_unique<domain_divider>(points_, point_idcs_.at(level), poly_point_idcs);
 
     for (const auto& d : divider->domains()) {
-      fine_grids_[level].emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
+      fine_grids_.at(level).emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
     }
 
     auto ratio = level == 1 ? static_cast<double>(n_coarsest_points) /
-                                  static_cast<double>(point_idcs_[level].size())
+                                  static_cast<double>(point_idcs_.at(level).size())
                             : coarse_ratio;
-    point_idcs_[level - 1] = divider->choose_coarse_points(ratio);
+    point_idcs_.at(level - 1) = divider->choose_coarse_points(ratio);
 
-    auto n_points = static_cast<index_t>(point_idcs_[level].size());
-    auto n_grids = static_cast<index_t>(fine_grids_[level].size());
+    auto n_points = static_cast<index_t>(point_idcs_.at(level).size());
+    auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
     if (!kRecomputeAndClear) {
 #pragma omp parallel for
       for (index_t i = 0; i < n_grids; i++) {
-        auto& fine = fine_grids_[level][i];
+        auto& fine = fine_grids_.at(level).at(i);
         fine.setup(points_);
       }
     }
@@ -99,15 +100,15 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
       add_evaluator(level, level - 1, model_without_poly_, points_, bbox);
     } else {
       add_evaluator(level, level - 1, model_without_poly_,
-                    common::take_rows(points_, point_idcs_[level]), bbox);
+                    common::take_rows(points_, point_idcs_.at(level)), bbox);
     }
     evaluator(level, level - 1)
-        .set_field_points(common::take_rows(points_, point_idcs_[level - 1]));
+        .set_field_points(common::take_rows(points_, point_idcs_.at(level - 1)));
   }
 
   for (auto level = 1; level < n_levels_ - 1; level++) {
     add_evaluator(0, level, model, common::take_rows(points_, point_idcs_[0]), bbox);
-    evaluator(0, level).set_field_points(common::take_rows(points_, point_idcs_[level]));
+    evaluator(0, level).set_field_points(common::take_rows(points_, point_idcs_.at(level)));
   }
 
   if (n_poly_basis_ > 0) {
@@ -145,10 +146,10 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       common::valuesd weights = common::valuesd::Zero(n_points_);
 
       // Solve on level `level`.
-      auto n_grids = static_cast<index_t>(fine_grids_[level].size());
+      auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
 #pragma omp parallel for schedule(guided)
       for (index_t i = 0; i < n_grids; i++) {
-        auto& fine = fine_grids_[level][i];
+        auto& fine = fine_grids_.at(level).at(i);
         if (kRecomputeAndClear) {
           fine.setup(points_);
         }
@@ -161,11 +162,11 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       // Evaluate residuals on level `level` - 1.
       if (level < n_levels_ - 1) {
-        const auto& finer_indices = point_idcs_[level];
+        const auto& finer_indices = point_idcs_.at(level);
         auto n_finer_points = static_cast<index_t>(finer_indices.size());
         common::valuesd finer_weights(n_finer_points);
         for (index_t i = 0; i < n_finer_points; i++) {
-          finer_weights(i) = weights(finer_indices[i]);
+          finer_weights(i) = weights(finer_indices.at(i));
         }
         evaluator(level, level - 1).set_weights(finer_weights);
       } else {
@@ -173,10 +174,10 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       }
       auto fit = evaluator(level, level - 1).evaluate();
 
-      const auto& indices = point_idcs_[level - 1];
+      const auto& indices = point_idcs_.at(level - 1);
       auto n_points = static_cast<index_t>(indices.size());
       for (index_t i = 0; i < n_points; i++) {
-        residuals(indices[i]) -= fit(i);
+        residuals(indices.at(i)) -= fit(i);
       }
 
       if (n_poly_basis_ > 0) {
@@ -211,17 +212,17 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
         auto n_coarse_points = static_cast<index_t>(coarse_indices.size());
         common::valuesd coarse_weights(n_coarse_points + n_poly_basis_);
         for (index_t i = 0; i < n_coarse_points; i++) {
-          coarse_weights(i) = weights(coarse_indices[i]);
+          coarse_weights(i) = weights(coarse_indices.at(i));
         }
         coarse_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
         evaluator(0, level - 1).set_weights(coarse_weights);
 
         auto fit = evaluator(0, level - 1).evaluate();
 
-        const auto& indices = point_idcs_[level - 1];
+        const auto& indices = point_idcs_.at(level - 1);
         auto n_points = static_cast<index_t>(indices.size());
         for (index_t i = 0; i < n_points; i++) {
-          residuals(indices[i]) -= fit(i);
+          residuals(indices.at(i)) -= fit(i);
         }
       }
 

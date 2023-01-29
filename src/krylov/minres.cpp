@@ -14,17 +14,17 @@ void minres::iterate_process() {
   auto j = iter_;
 
   // Lanczos process
-  vs_.push_back(left_preconditioned(op_(right_preconditioned(vs_[j]))));
-  r_(j, j) = vs_[j].dot(vs_[j + 1]);
+  vs_.push_back(left_preconditioned(op_(right_preconditioned(vs_.at(j)))));
+  r_(j, j) = vs_.at(j).dot(vs_.at(j + 1));
   if (j == 0) {
-    vs_[j + 1] -= r_(j, j) * vs_[j];
+    vs_.at(j + 1) -= r_(j, j) * vs_.at(j);
   } else {
     r_(j - 1, j) = beta_;  // beta_{j - 1}
-    vs_[j + 1] -= r_(j - 1, j) * vs_[j - 1] + r_(j, j) * vs_[j];
+    vs_.at(j + 1) -= r_(j - 1, j) * vs_.at(j - 1) + r_(j, j) * vs_.at(j);
   }
-  r_(j + 1, j) = vs_[j + 1].norm();
+  r_(j + 1, j) = vs_.at(j + 1).norm();
   beta_ = r_(j + 1, j);  // beta_j
-  vs_[j + 1] /= r_(j + 1, j);
+  vs_.at(j + 1) /= r_(j + 1, j);
 
   // Update matrix R by Givens rotation
   for (index_t i = std::max(index_t{0}, j - 2); i < j; i++) {

@@ -43,13 +43,13 @@ class rmt_tetrahedron {
   // Adds 0, 1 or 2 triangular faces of the isosurface in this tetrahedron.
   template <class OutputIterator>
   void get_faces(OutputIterator faces) const {
-    auto ei0 = EdgeIndices[index_][0];
-    auto ei1 = EdgeIndices[index_][1];
-    auto ei2 = EdgeIndices[index_][2];
+    auto ei0 = EdgeIndices.at(index_)[0];
+    auto ei1 = EdgeIndices.at(index_)[1];
+    auto ei2 = EdgeIndices.at(index_)[2];
 
-    auto oei0 = OuterEdgeIndices[index_][0];
-    auto oei1 = OuterEdgeIndices[index_][1];
-    auto oei2 = OuterEdgeIndices[index_][2];
+    auto oei0 = OuterEdgeIndices.at(index_)[0];
+    auto oei1 = OuterEdgeIndices.at(index_)[1];
+    auto oei2 = OuterEdgeIndices.at(index_)[2];
 
     const auto& node0 = node_.neighbor(ei0);
     const auto& node1 = node_.neighbor(ei1);
@@ -155,7 +155,7 @@ class rmt_tetrahedron {
       return node.vertex_on_edge(edge_idx);
     }
 
-    auto opp_edge_idx = OppositeEdge[edge_idx];
+    auto opp_edge_idx = OppositeEdge.at(edge_idx);
     if (opp_node.has_intersection(opp_edge_idx)) {
       return opp_node.vertex_on_edge(opp_edge_idx);
     }
@@ -208,9 +208,9 @@ class rmt_tetrahedron_iterator
 
   // Returns if all nodes corresponding to three vertices of the tetrahedron exist.
   bool tetrahedron_exists() const {
-    return node_.has_neighbor(rmt_tetrahedron::EdgeIndices[index_][0]) &&
-           node_.has_neighbor(rmt_tetrahedron::EdgeIndices[index_][1]) &&
-           node_.has_neighbor(rmt_tetrahedron::EdgeIndices[index_][2]);
+    return node_.has_neighbor(rmt_tetrahedron::EdgeIndices.at(index_)[0]) &&
+           node_.has_neighbor(rmt_tetrahedron::EdgeIndices.at(index_)[1]) &&
+           node_.has_neighbor(rmt_tetrahedron::EdgeIndices.at(index_)[2]);
   }
 
   const rmt_node& node_;

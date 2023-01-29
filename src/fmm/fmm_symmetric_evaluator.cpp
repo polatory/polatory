@@ -77,7 +77,7 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     // Update weights.
     for (index_t idx = 0; idx < n_points_; idx++) {
-      *weight_ptrs_[idx] = weights[idx];
+      *weight_ptrs_.at(idx) = weights[idx];
     }
   }
 
@@ -86,7 +86,7 @@ class fmm_symmetric_evaluator<Order>::impl {
     common::valuesd phi = common::valuesd::Zero(n_points_);
 
     for (index_t i = 0; i < n_points_; i++) {
-      phi[i] = *potential_ptrs_[i];
+      phi(i) = *potential_ptrs_.at(i);
     }
 
     return phi;
@@ -113,7 +113,7 @@ class fmm_symmetric_evaluator<Order>::impl {
       for (index_t i = 0; i < n_particles; i++) {
         auto idx = static_cast<index_t>(indices[i]);
 
-        potential_ptrs_[idx] = &potentials[i];
+        potential_ptrs_.at(idx) = &potentials[i];
       }
     });
   }
@@ -130,7 +130,7 @@ class fmm_symmetric_evaluator<Order>::impl {
       for (index_t i = 0; i < n_particles; i++) {
         auto idx = static_cast<index_t>(indices[i]);
 
-        weight_ptrs_[idx] = &weights[i];
+        weight_ptrs_.at(idx) = &weights[i];
       }
     });
   }
