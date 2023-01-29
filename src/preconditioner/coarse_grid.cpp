@@ -27,12 +27,10 @@ coarse_grid::coarse_grid(const model& model,
 
 void coarse_grid::clear() {
   me_ = Eigen::MatrixXd();
-  ldlt_of_qtaq_ =
-      Eigen::LDLT<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
+  ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
 
   a_top_ = Eigen::MatrixXd();
-  lu_of_p_top_ =
-      Eigen::FullPivLU<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
+  lu_of_p_top_ = Eigen::FullPivLU<Eigen::MatrixXd>();
 }
 
 void coarse_grid::setup(const geometry::points3d& points_full) {

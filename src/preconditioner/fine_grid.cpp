@@ -28,8 +28,7 @@ fine_grid::fine_grid(const model& model,
 
 void fine_grid::clear() {
   me_ = Eigen::MatrixXd();
-  ldlt_of_qtaq_ =
-      Eigen::LDLT<Eigen::MatrixXd>();  // NOLINT(clang-analyzer-core.uninitialized.Assign)
+  ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
 }
 
 void fine_grid::setup(const geometry::points3d& points_full) {
