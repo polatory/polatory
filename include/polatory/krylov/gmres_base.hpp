@@ -64,13 +64,13 @@ class gmres_base {
   common::valuesd x0_;
 
   // Left preconditioner.
-  const linear_operator* left_pc_;
+  const linear_operator* left_pc_{};
 
   // Right preconditioner.
-  const linear_operator* right_pc_;
+  const linear_operator* right_pc_{};
 
   // Current # of iteration.
-  index_t iter_;
+  index_t iter_{};
 
   // Constant (right-hand side) vector.
   const common::valuesd rhs_;
@@ -93,7 +93,7 @@ class gmres_base {
   // Sequence of residuals.
   common::valuesd g_;
 
-  bool converged_;
+  bool converged_{};
 };
 
 }  // namespace polatory::krylov

@@ -4,7 +4,7 @@
 namespace polatory::krylov {
 
 minres::minres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
-    : gmres_base(op, rhs, max_iter), beta_(0.0) {}
+    : gmres_base(op, rhs, max_iter) {}
 
 void minres::iterate_process() {
   if (iter_ == max_iter_) {

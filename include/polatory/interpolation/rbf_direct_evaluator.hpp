@@ -39,7 +39,7 @@ class rbf_direct_evaluator {
 
   std::unique_ptr<PolynomialEvaluator> p_;
 
-  index_t n_fld_points_;
+  index_t n_fld_points_{};
   geometry::points3d fld_points_;
   common::valuesd weights_;
 };

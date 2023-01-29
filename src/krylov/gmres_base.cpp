@@ -96,12 +96,9 @@ gmres_base::gmres_base(const linear_operator& op, const common::valuesd& rhs, in
       m_(static_cast<index_t>(rhs.rows())),
       max_iter_(max_iter),
       x0_(common::valuesd::Zero(m_)),
-      left_pc_(nullptr),
-      right_pc_(nullptr),
-      iter_(0),
+
       rhs_(rhs),
-      rhs_norm_(rhs.norm()),
-      converged_(false) {}
+      rhs_norm_(rhs.norm()) {}
 
 common::valuesd gmres_base::left_preconditioned(const common::valuesd& x) const {
   return left_pc_ != nullptr ? (*left_pc_)(x) : x;

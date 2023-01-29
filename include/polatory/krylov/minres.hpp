@@ -12,7 +12,7 @@ class minres : public gmres_base {
   void iterate_process() override;
 
  private:
-  double beta_;
+  double beta_{};
 };
 
 }  // namespace polatory::krylov

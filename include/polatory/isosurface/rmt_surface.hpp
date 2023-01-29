@@ -174,7 +174,7 @@ class rmt_tetrahedron_iterator
   static constexpr int kNumTetrahedra = 6;
 
  public:
-  explicit rmt_tetrahedron_iterator(const rmt_node& node) : node_(node), index_(0) {
+  explicit rmt_tetrahedron_iterator(const rmt_node& node) : node_(node) {
     while (is_valid() && !tetrahedron_exists()) {
       // Some of the tetrahedron nodes do not exist.
       index_++;
@@ -214,7 +214,7 @@ class rmt_tetrahedron_iterator
   }
 
   const rmt_node& node_;
-  int index_;
+  int index_{};
 };
 
 }  // namespace detail

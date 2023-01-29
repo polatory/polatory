@@ -26,7 +26,7 @@ class fmm_symmetric_evaluator<Order>::impl {
 
  public:
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
-      : model_(model), rbf_kernel_(model.rbf()), n_points_(0) {
+      : model_(model), rbf_kernel_(model.rbf()) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
     auto width = (1.0 + 1.0 / 64.0) * a_bbox.size().maxCoeff();
     if (width == 0.0) {
@@ -138,7 +138,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   const model& model_;
   const fmm_rbf_kernel rbf_kernel_;
 
-  index_t n_points_;
+  index_t n_points_{};
 
   std::unique_ptr<Fmm> fmm_;
   std::unique_ptr<InterpolatedKernel> interpolated_kernel_;

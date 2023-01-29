@@ -21,7 +21,7 @@ namespace polatory {
 
 class interpolant {
  public:
-  explicit interpolant(model model) : model_(std::move(model)), fitted_(false) {}
+  explicit interpolant(model model) : model_(std::move(model)) {}
 
   const geometry::points3d& centers() const {
     if (!fitted_) {
@@ -177,7 +177,7 @@ class interpolant {
 
   const model model_;
 
-  bool fitted_;
+  bool fitted_{};
   geometry::points3d centers_;
   geometry::bbox3d centers_bbox_;
   common::valuesd weights_;

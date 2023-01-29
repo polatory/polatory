@@ -57,18 +57,18 @@ enum binary_sign { Pos = 0, Neg = 1 };
 
 class rmt_node {
   geometry::point3d pos;
-  double val;
+  double val{};
 
  public:
-  bool evaluated;
+  bool evaluated{};
 
   // The corresponding bit is set if an edge crosses the isosurface
   // at a point nearer than the midpoint.
   // Such intersections are called "near intersections".
-  edge_bitset intersections;
+  edge_bitset intersections{};
 
   // The corresponding bit is set if an edge crosses the isosurface.
-  edge_bitset all_intersections;
+  edge_bitset all_intersections{};
 
   std::unique_ptr<std::vector<vertex_index>> vis;
 
@@ -167,8 +167,7 @@ class rmt_node {
   }
 
  public:
-  explicit rmt_node(const geometry::point3d& position)
-      : pos(position), val(0.0), evaluated(false), intersections(0), all_intersections(0) {}
+  explicit rmt_node(const geometry::point3d& position) : pos(position) {}
 
   // Vertex clustering decision tree
   //
