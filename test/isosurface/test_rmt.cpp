@@ -113,7 +113,7 @@ TEST(rmt, neighbor_edge_pairs) {
 }
 
 TEST(rmt, neighbors) {
-  for (size_t i = 0; i < NeighborMasks.size(); i++) {
+  for (std::size_t i = 0; i < NeighborMasks.size(); i++) {
     auto mask = NeighborMasks.at(i);
     auto count = bit_count(mask);
     EXPECT_TRUE(count == 4 || count == 6);

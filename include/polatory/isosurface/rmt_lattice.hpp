@@ -329,8 +329,8 @@ class rmt_lattice : public rmt_primitive_lattice {
 
 #pragma omp parallel
     {
-      auto thread_count = static_cast<size_t>(omp_get_num_threads());
-      auto thread_num = static_cast<size_t>(omp_get_thread_num());
+      auto thread_count = static_cast<std::size_t>(omp_get_num_threads());
+      auto thread_num = static_cast<std::size_t>(omp_get_thread_num());
       auto map_size = nodes.size();
       auto map_it = nodes.begin();
       if (thread_num < map_size) {

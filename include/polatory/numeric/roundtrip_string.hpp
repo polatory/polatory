@@ -52,7 +52,7 @@ inline float to_float(const std::string& str) {
 template <class Floating,
           std::enable_if_t<std::is_floating_point<Floating>::value, std::nullptr_t> = nullptr>
 std::string to_string(Floating value) {
-  static constexpr size_t buffer_size = 32;
+  static constexpr std::size_t buffer_size = 32;
 
   std::array<char, buffer_size> buffer{};
   double_conversion::StringBuilder builder(buffer.data(), buffer_size);

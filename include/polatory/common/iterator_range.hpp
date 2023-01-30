@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace polatory::common {
 
 template <class RandomAccessIterator>
@@ -13,7 +15,7 @@ class iterator_range {
 
   auto size() const { return end_ - begin_; }
 
-  auto operator[](size_t i) const { return begin_[i]; }
+  auto operator[](std::size_t i) const { return begin_[i]; }
 
  private:
   RandomAccessIterator begin_;

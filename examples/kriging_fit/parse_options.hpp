@@ -58,7 +58,7 @@ inline options parse_options(int argc, const char* argv[]) {
   }
 
   opts.rbf_name = rbf_vec[0];
-  for (size_t i = 1; i < rbf_vec.size(); i++) {
+  for (std::size_t i = 1; i < rbf_vec.size(); i++) {
     opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec.at(i)));
   }
 

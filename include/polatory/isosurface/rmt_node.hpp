@@ -212,7 +212,7 @@ class rmt_node {
       POLATORY_ASSERT(weights_sum > 0.0);
 
       geometry::point3d clustered = geometry::point3d::Zero();
-      for (size_t i = 0; i < weights.size(); i++) {
+      for (std::size_t i = 0; i < weights.size(); i++) {
         auto vi = vis->at(i);
         clustered += weights.at(i) / weights_sum * vertices.at(vi);
       }
@@ -247,7 +247,7 @@ class rmt_node {
         POLATORY_ASSERT(weights_sum > 0.0);
 
         geometry::point3d clustered = geometry::point3d::Zero();
-        for (size_t i = 0; i < weights.size(); i++) {
+        for (std::size_t i = 0; i < weights.size(); i++) {
           auto edge_idx = edge_idcs.at(i);
           auto vi = vertex_on_edge(edge_idx);
           clustered += weights.at(i) / weights_sum * vertices.at(vi);
@@ -307,7 +307,7 @@ class rmt_node {
 
     std::vector<double> weights;
 
-    for (size_t i = 0; i < alphas.size(); i++) {
+    for (std::size_t i = 0; i < alphas.size(); i++) {
       auto neigh_pair = NeighborEdgePairs.at(edge_idx).at(i);
       const auto& b_node = neighbor(neigh_pair.first);
 

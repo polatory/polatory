@@ -30,7 +30,7 @@ class kdtree::impl {
   indices_and_distances knn_search(const geometry::point3d& point, index_t k) const {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, 3);
-    std::vector<std::vector<size_t>> indices_v;
+    std::vector<std::vector<std::size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
     (void)flann_index_->knnSearch(point_mat, indices_v, distances_v, k, params_knn_);
@@ -52,7 +52,7 @@ class kdtree::impl {
   indices_and_distances radius_search(const geometry::point3d& point, double radius) const {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, 3);
-    std::vector<std::vector<size_t>> indices_v;
+    std::vector<std::vector<std::size_t>> indices_v;
     std::vector<std::vector<double>> distances_v;
 
     auto radius_sq = static_cast<float>(radius * radius);
