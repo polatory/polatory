@@ -2,10 +2,8 @@
 
 #include <Eigen/Core>
 #include <boost/operators.hpp>
-#include <functional>
 #include <iterator>
 #include <memory>
-#include <polatory/common/fold.hpp>
 #include <polatory/common/iterator_range.hpp>
 #include <polatory/common/macros.hpp>
 #include <stdexcept>
@@ -467,8 +465,7 @@ void take_rows_impl(Eigen::MatrixBase<ResultDerived>& result, const Eigen::Matri
 template <class... Args>
 auto concatenate_cols(Args&&... args) {
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(
-      detail::common_rows(std::forward<Args>(args)...),
-      common::fold_left(std::plus<>(), args.cols()...));
+      detail::common_rows(std::forward<Args>(args)...), (args.cols() + ...));
 
   detail::concatenate_cols_impl(result, std::forward<Args>(args)...);
 
@@ -478,8 +475,7 @@ auto concatenate_cols(Args&&... args) {
 template <class... Args>
 auto concatenate_rows(Args&&... args) {
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(
-      common::fold_left(std::plus<>(), args.rows()...),
-      detail::common_cols(std::forward<Args>(args)...));
+      (args.rows() + ...), detail::common_cols(std::forward<Args>(args)...));
 
   detail::concatenate_rows_impl(result, std::forward<Args>(args)...);
 
