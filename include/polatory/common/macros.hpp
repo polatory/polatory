@@ -2,10 +2,10 @@
 
 #include <cassert>
 
-#define POLATORY_ASSERT(X) \
-  assert(                  \
-      X)  // NOLINT(cppcoreguidelines-macro-usage,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+namespace polatory {
 
-#define POLATORY_NEVER_REACH() \
-  assert(                      \
-      false)  // NOLINT(cert-dcl03-c,cppcoreguidelines-macro-usage,cppcoreguidelines-pro-bounds-array-to-pointer-decay,misc-static-assert)
+inline void POLATORY_ASSERT([[maybe_unused]] bool x) { assert(x); }
+
+inline void POLATORY_UNREACHABLE() { assert(false); }
+
+}  // namespace polatory

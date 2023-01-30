@@ -137,7 +137,7 @@ class rmt_tetrahedron {
         *faces++ = {v5.value(), v4.value(), v1.value()};
         break;
       default:
-        POLATORY_NEVER_REACH();
+        POLATORY_UNREACHABLE();
         break;
     }
   }

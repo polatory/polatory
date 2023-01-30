@@ -9,7 +9,6 @@ Checks: "-*,\
   cppcoreguidelines-*,\
   -cppcoreguidelines-avoid-magic-numbers,\
   -cppcoreguidelines-avoid-non-const-global-variables,\
-  -cppcoreguidelines-macro-usage,\
   -cppcoreguidelines-non-private-member-variables-in-classes,\
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
   google-*,\

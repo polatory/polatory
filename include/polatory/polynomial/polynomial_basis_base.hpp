@@ -41,7 +41,7 @@ class polynomial_basis_base {
       case 3:
         return k * (k + 1) * (k + 2) / 6;
       default:
-        POLATORY_NEVER_REACH();
+        POLATORY_UNREACHABLE();
         break;
     }
 

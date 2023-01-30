@@ -46,7 +46,7 @@ class monomial_basis : public polynomial_basis_base {
             }
             break;
           default:
-            POLATORY_NEVER_REACH();
+            POLATORY_UNREACHABLE();
             break;
         }
         break;
@@ -81,7 +81,7 @@ class monomial_basis : public polynomial_basis_base {
             }
             break;
           default:
-            POLATORY_NEVER_REACH();
+            POLATORY_UNREACHABLE();
             break;
         }
         break;
@@ -121,13 +121,13 @@ class monomial_basis : public polynomial_basis_base {
             }
             break;
           default:
-            POLATORY_NEVER_REACH();
+            POLATORY_UNREACHABLE();
             break;
         }
         break;
 
       default:
-        POLATORY_NEVER_REACH();
+        POLATORY_UNREACHABLE();
         break;
     }
 
