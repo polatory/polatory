@@ -69,10 +69,8 @@ class rmt_tetrahedron {
 
     switch (tetra) {
       case tetrahedron_type<Pos, Pos, Pos, Pos>():
-        // no faces.
-        break;
       case tetrahedron_type<Neg, Neg, Neg, Neg>():
-        // no faces.
+        // No faces.
         break;
       case tetrahedron_type<Neg, Pos, Pos, Pos>():
         // v0-v1-v2

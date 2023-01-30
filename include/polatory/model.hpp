@@ -13,10 +13,7 @@ namespace polatory {
 class model {
  public:
   model(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)
-      : rbf_(rbf.clone()),
-        poly_dimension_(poly_dimension),
-        poly_degree_(poly_degree),
-        nugget_(0.0) {
+      : rbf_(rbf.clone()), poly_dimension_(poly_dimension), poly_degree_(poly_degree) {
     if (poly_dimension < 0 || poly_dimension > 3) {
       throw std::invalid_argument("poly_dimension must be within the range of 0 to 3.");
     }
@@ -102,12 +99,12 @@ class model {
 
  private:
   explicit model(const rbf::rbf_base& rbf)
-      : rbf_(rbf.clone()), poly_dimension_(-1), poly_degree_(-1), nugget_(0.0) {}
+      : rbf_(rbf.clone()), poly_dimension_(-1), poly_degree_(-1) {}
 
   std::unique_ptr<rbf::rbf_base> rbf_;
   int poly_dimension_;
   int poly_degree_;
-  double nugget_;
+  double nugget_{};
 };
 
 }  // namespace polatory

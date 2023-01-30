@@ -1,7 +1,6 @@
 Checks: "-*,\
   boost-*,\
   bugprone-*,\
-  -bugprone-branch-clone,\
   -bugprone-easily-swappable-parameters,\
   -bugprone-unchecked-optional-access,\
   cert-*,\
