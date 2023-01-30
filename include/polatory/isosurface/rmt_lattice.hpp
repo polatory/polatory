@@ -7,7 +7,6 @@
 #include <cmath>
 #include <iterator>
 #include <memory>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
@@ -97,7 +96,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
     geometry::points3d points(nodes_to_evaluate.size(), 3);
 
-    auto point_it = common::row_begin(points);
+    auto point_it = points.rowwise().begin();
     for (auto idx : nodes_to_evaluate) {
       *point_it++ = node_list.at(idx).position();
     }

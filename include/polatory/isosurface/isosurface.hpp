@@ -1,6 +1,5 @@
 #pragma once
 
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
@@ -27,7 +26,7 @@ class isosurface {
                                     double isovalue = 0.0) {
     field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
-    for (auto p : common::row_range(seed_points)) {
+    for (auto p : seed_points.rowwise()) {
       rmt_lattice_.add_cell_contains_point(p);
     }
     rmt_lattice_.add_nodes_by_tracking(field_fn, isovalue);

@@ -3,7 +3,6 @@
 #include <array>
 #include <cmath>
 #include <numbers>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
@@ -13,7 +12,6 @@
 #include <polatory/isosurface/rmt_primitive_lattice.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
-using polatory::common::row_range;
 using polatory::geometry::bbox3d;
 using polatory::geometry::cuboid3d;
 using polatory::geometry::point3d;
@@ -77,7 +75,7 @@ TEST(rmt, lattice) {
 
   auto points = random_points(cuboid3d(min, max), 100);
 
-  for (auto p : row_range(points)) {
+  for (auto p : points.rowwise()) {
     auto ci = lat.cell_index_from_point(p);
     auto cv = lat.to_cell_vector(ci);
     auto cp = lat.cell_node_point(cv);

@@ -3,10 +3,8 @@
 #include <Eigen/Core>
 #include <polatory/common/eigen_utility.hpp>
 
-using polatory::common::col_range;
 using polatory::common::concatenate_cols;
 using polatory::common::concatenate_rows;
-using polatory::common::row_range;
 using polatory::common::take_cols;
 using polatory::common::take_rows;
 
@@ -54,48 +52,6 @@ void test_take_rows() {
   EXPECT_EQ(2u, decltype(m2_dynamic)::ColsAtCompileTime);
   EXPECT_EQ(RowMajor, decltype(m2_dynamic)::IsRowMajor);
   EXPECT_EQ(m2_expected, m2_dynamic);
-}
-
-TEST(col_range, trivial) {
-  Eigen::MatrixXd m = Eigen::MatrixXd::Random(5, 2);
-
-  const auto& m_const = m;
-
-  auto crng = col_range(m_const);
-  EXPECT_EQ(m.cols(), crng.end() - crng.begin());
-  EXPECT_EQ(m(2, 0), (*crng.begin())(2));
-  EXPECT_EQ(m(2, 1), (*(crng.end() - 1))(2));
-
-  auto rng = col_range(m);
-  EXPECT_EQ(m.cols(), rng.end() - rng.begin());
-  EXPECT_EQ(m(2, 0), (*crng.begin())(2));
-  EXPECT_EQ(m(2, 1), (*(crng.end() - 1))(2));
-
-  (*rng.begin())(2) = 42;
-  (*(rng.end() - 1))(2) = 47;
-  EXPECT_EQ(42, m(2, 0));
-  EXPECT_EQ(47, m(2, 1));
-}
-
-TEST(row_range, trivial) {
-  Eigen::MatrixXd m = Eigen::MatrixXd::Random(2, 5);
-
-  const auto& m_const = m;
-
-  auto crng = row_range(m_const);
-  EXPECT_EQ(m.rows(), crng.end() - crng.begin());
-  EXPECT_EQ(m(0, 2), (*crng.begin())(2));
-  EXPECT_EQ(m(1, 2), (*(crng.end() - 1))(2));
-
-  auto rng = row_range(m);
-  EXPECT_EQ(m.rows(), rng.end() - rng.begin());
-  EXPECT_EQ(m(0, 2), (*crng.begin())(2));
-  EXPECT_EQ(m(1, 2), (*(crng.end() - 1))(2));
-
-  (*rng.begin())(2) = 42;
-  (*(rng.end() - 1))(2) = 47;
-  EXPECT_EQ(42, m(0, 2));
-  EXPECT_EQ(47, m(1, 2));
 }
 
 TEST(concatenate_cols, trivial) {

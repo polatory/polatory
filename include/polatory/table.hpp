@@ -4,7 +4,6 @@
 #include <boost/algorithm/string.hpp>
 #include <fstream>
 #include <iostream>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/numeric/roundtrip_string.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -69,7 +68,7 @@ void write_table(const std::string& filename, const Eigen::MatrixBase<Derived>& 
   }
 
   auto n_cols = static_cast<index_t>(table.cols());
-  for (auto row : common::row_range(table)) {
+  for (auto row : table.rowwise()) {
     for (index_t i = 0; i < n_cols; i++) {
       ofs << numeric::to_string(row(i));
       if (i != n_cols - 1) {

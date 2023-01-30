@@ -1,5 +1,4 @@
 #include <cmath>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <stdexcept>
 
@@ -16,7 +15,7 @@ geometry::points3d random_points(const geometry::cuboid3d& cuboid, index_t n, se
 
   geometry::points3d points(n, 3);
 
-  for (auto p : common::row_range(points)) {
+  for (auto p : points.rowwise()) {
     auto x = dist(gen) * size(0);
     auto y = dist(gen) * size(1);
     auto z = dist(gen) * size(2);
@@ -39,7 +38,7 @@ geometry::points3d random_points(const geometry::sphere3d& sphere, index_t n, se
 
   geometry::points3d points(n, 3);
 
-  for (auto p : common::row_range(points)) {
+  for (auto p : points.rowwise()) {
     double x1{};
     double x2{};
     double rsq{};
