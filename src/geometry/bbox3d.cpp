@@ -18,8 +18,11 @@ bool bbox3d::operator==(const bbox3d& other) const {
 point3d bbox3d::center() const { return min_ + size() / 2.0; }
 
 bool bbox3d::contains(const point3d& p) const {
-  return p(0) >= min_(0) && p(0) <= max_(0) && p(1) >= min_(1) && p(1) <= max_(1) &&
-         p(2) >= min_(2) && p(2) <= max_(2);
+  return (p.array() >= min_.array()).all() && (p.array() <= max_.array()).all();
+}
+
+bbox3d bbox3d::convex_hull(const bbox3d& other) const {
+  return {min_.cwiseMin(other.min_), max_.cwiseMax(other.max_)};
 }
 
 const point3d& bbox3d::max() const { return max_; }
@@ -53,10 +56,6 @@ bbox3d bbox3d::transform(const linear_transformation3d& t) const {
   point3d max = c + vertices.colwise().maxCoeff();
 
   return {min, max};
-}
-
-bbox3d bbox3d::union_hull(const bbox3d& other) const {
-  return {min().cwiseMin(other.min()), max().cwiseMax(other.max())};
 }
 
 bbox3d bbox3d::from_points(const points3d& points) {

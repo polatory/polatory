@@ -17,6 +17,8 @@ class bbox3d {
 
   bool contains(const point3d& p) const;
 
+  bbox3d convex_hull(const bbox3d& other) const;
+
   const point3d& max() const;
 
   const point3d& min() const;
@@ -24,8 +26,6 @@ class bbox3d {
   vector3d size() const;
 
   bbox3d transform(const linear_transformation3d& t) const;
-
-  bbox3d union_hull(const bbox3d& other) const;
 
   static bbox3d from_points(const points3d& points);
 

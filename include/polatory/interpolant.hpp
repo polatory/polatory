@@ -151,7 +151,7 @@ class interpolant {
       throw std::runtime_error(kNotFittedErrorMessage);
     }
 
-    auto union_bbox = bbox.union_hull(centers_bbox_);
+    auto union_bbox = bbox.convex_hull(centers_bbox_);
 
     evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(model_, centers_, union_bbox);
     evaluator_->set_weights(weights_);
