@@ -1,4 +1,3 @@
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/iterator_range.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
@@ -49,8 +48,8 @@ void fine_grid::setup(const geometry::points3d& points_full) {
 
   if (l_ > 0) {
     // Compute -E.
-    auto tail_points = common::take_rows(
-        points_full, common::make_range(point_idcs_.begin() + l_, point_idcs_.end()));
+    geometry::points3d tail_points =
+        points_full(common::make_range(point_idcs_.begin() + l_, point_idcs_.end()), Eigen::all);
     me_ = -lagrange_basis_->evaluate(tail_points);
 
     // Compute decomposition of Q^T A Q.

@@ -3,7 +3,6 @@
 #include <iomanip>
 #include <iostream>
 #include <numeric>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/polynomial/orthonormal_basis.hpp>
@@ -36,7 +35,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 
     poly_point_idcs = ups.point_indices();
     lagrange_basis_ = std::make_unique<polynomial::lagrange_basis>(
-        model.poly_dimension(), model.poly_degree(), common::take_rows(points_, poly_point_idcs));
+        model.poly_dimension(), model.poly_degree(), points_(poly_point_idcs, Eigen::all));
 
     auto level = n_levels_ - 1;
     point_idcs_.at(level) = poly_point_idcs;
@@ -84,9 +83,9 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   }
 
   {
-    coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_[0], points_);
+    coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_.at(0), points_);
 
-    auto n_points = static_cast<index_t>(point_idcs_[0].size());
+    auto n_points = static_cast<index_t>(point_idcs_.at(0).size());
     std::cout << std::setw(8) << 0 << std::setw(16) << 1 << std::setw(16) << n_points << std::endl;
   }
 
@@ -100,15 +99,14 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
       add_evaluator(level, level - 1, model_without_poly_, points_, bbox);
     } else {
       add_evaluator(level, level - 1, model_without_poly_,
-                    common::take_rows(points_, point_idcs_.at(level)), bbox);
+                    points_(point_idcs_.at(level), Eigen::all), bbox);
     }
-    evaluator(level, level - 1)
-        .set_field_points(common::take_rows(points_, point_idcs_.at(level - 1)));
+    evaluator(level, level - 1).set_field_points(points_(point_idcs_.at(level - 1), Eigen::all));
   }
 
   for (auto level = 1; level < n_levels_ - 1; level++) {
-    add_evaluator(0, level, model, common::take_rows(points_, point_idcs_[0]), bbox);
-    evaluator(0, level).set_field_points(common::take_rows(points_, point_idcs_.at(level)));
+    add_evaluator(0, level, model, points_(point_idcs_.at(0), Eigen::all), bbox);
+    evaluator(0, level).set_field_points(points_(point_idcs_.at(level), Eigen::all));
   }
 
   if (n_poly_basis_ > 0) {
@@ -208,7 +206,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       // Update residuals on level `level` - 1.
       if (level > 1) {
-        const auto& coarse_indices = point_idcs_[0];
+        const auto& coarse_indices = point_idcs_.at(0);
         auto n_coarse_points = static_cast<index_t>(coarse_indices.size());
         common::valuesd coarse_weights(n_coarse_points + n_poly_basis_);
         for (index_t i = 0; i < n_coarse_points; i++) {

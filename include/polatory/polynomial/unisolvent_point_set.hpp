@@ -1,6 +1,5 @@
 #pragma once
 
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
@@ -12,7 +11,7 @@
 
 namespace polatory::polynomial {
 
-// TODO(mizuno): If given points have a large offset from the origin,
+// NOTE: If given points have a large offset from the origin,
 // construction can fail due to a large condition number.
 class unisolvent_point_set {
   static constexpr int kMaxTrial = 32;
@@ -41,7 +40,8 @@ class unisolvent_point_set {
       }
 
       try {
-        lagrange_basis basis(dimension, degree, common::take_rows(points, set));
+        lagrange_basis basis(dimension, degree,
+                             points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
         found = true;
       } catch (const std::domain_error&) {
         // noop.

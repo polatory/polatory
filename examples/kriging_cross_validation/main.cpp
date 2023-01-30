@@ -10,7 +10,6 @@
 using polatory::model;
 using polatory::read_table;
 using polatory::tabled;
-using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::kriging::k_fold_cross_validation;
@@ -22,7 +21,7 @@ int main(int argc, const char* argv[]) {
 
     // Load points (x,y,z) and values (value).
     tabled table = read_table(opts.in_file);
-    points3d points = take_cols(table, 0, 1, 2);
+    points3d points = table(Eigen::all, {0, 1, 2});
     valuesd values = table.col(3);
 
     // Remove very close points.

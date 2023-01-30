@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -101,7 +100,7 @@ class interpolant {
     std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
 
     fitted_ = true;
-    centers_ = common::take_rows(points, center_indices);
+    centers_ = points(center_indices, Eigen::all);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
   }
 
@@ -142,7 +141,7 @@ class interpolant {
         fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
     fitted_ = true;
-    centers_ = common::take_rows(points, center_indices);
+    centers_ = points(center_indices, Eigen::all);
     centers_bbox_ = geometry::bbox3d::from_points(centers_);
   }
 

@@ -8,7 +8,6 @@ using polatory::read_table;
 using polatory::tabled;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
-using polatory::common::take_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::geometry::vectors3d;
@@ -20,8 +19,8 @@ int main(int argc, const char* argv[]) {
 
     // Load points (x,y,z) and normals (nx,ny,nz).
     tabled table = read_table(opts.in_file);
-    points3d surface_points = take_cols(table, 0, 1, 2);
-    vectors3d surface_normals = take_cols(table, 3, 4, 5);
+    points3d surface_points = table(Eigen::all, {0, 1, 2});
+    vectors3d surface_normals = table(Eigen::all, {3, 4, 5});
 
     // Generate SDF (signed distance function) data.
     sdf_data_generator sdf_data(surface_points, surface_normals, opts.min_offset, opts.max_offset,

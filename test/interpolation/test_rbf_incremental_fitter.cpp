@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <iostream>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
@@ -17,7 +16,6 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::common::take_rows;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
@@ -47,7 +45,7 @@ TEST(rbf_incremental_fitter, trivial) {
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<> eval(model, take_rows(points, indices));
+  rbf_evaluator<> eval(model, points(indices, Eigen::all));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 

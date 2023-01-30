@@ -3,7 +3,6 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
@@ -32,7 +31,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
   while (true) {
     std::cout << "Number of RBF centers: " << n_centers << " / " << n_points_ << std::endl;
 
-    auto center_points = common::take_rows(points_, centers);
+    geometry::points3d center_points = points_(centers, Eigen::all);
     auto tree_height = fmm::fmm_tree_height(n_centers);
 
     if (tree_height != last_tree_height) {
@@ -42,8 +41,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     }
 
     solver->set_points(center_points);
-    center_weights =
-        solver->solve(common::take_rows(values, centers), absolute_tolerance, center_weights);
+    center_weights = solver->solve(values(centers, Eigen::all), absolute_tolerance, center_weights);
 
     if (n_centers == n_points_) {
       break;
@@ -52,13 +50,13 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     // Evaluate residuals at remaining points.
 
     auto c_centers = complement_indices(centers);
-    auto c_center_points = common::take_rows(points_, c_centers);
+    geometry::points3d c_center_points = points_(c_centers, Eigen::all);
 
     res_eval->set_source_points(center_points);
     res_eval->set_weights(center_weights);
 
     auto c_values_fit = res_eval->evaluate(c_center_points);
-    auto c_values = common::take_rows(values, c_centers);
+    common::valuesd c_values = values(c_centers, Eigen::all);
     std::vector<double> c_residuals(c_centers.size());
     common::valuesd::Map(c_residuals.data(), static_cast<index_t>(c_centers.size())) =
         (c_values_fit - c_values).cwiseAbs();

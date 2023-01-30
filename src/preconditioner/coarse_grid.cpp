@@ -1,4 +1,3 @@
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/iterator_range.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -51,8 +50,8 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
 
   if (l_ > 0) {
     // Compute -E.
-    auto tail_points = common::take_rows(
-        points_full, common::make_range(point_idcs_.begin() + l_, point_idcs_.end()));
+    geometry::points3d tail_points =
+        points_full(common::make_range(point_idcs_.begin() + l_, point_idcs_.end()), Eigen::all);
     me_ = -lagrange_basis_->evaluate(tail_points);
 
     // Compute decomposition of Q^T A Q.
@@ -65,8 +64,8 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
     a_top_ = a.topRows(l_);
 
     polynomial::monomial_basis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
-    auto head_points = common::take_rows(
-        points_full, common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_));
+    geometry::points3d head_points =
+        points_full(common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_), Eigen::all);
     Eigen::MatrixXd p_top = mono_basis.evaluate(head_points).transpose();
     lu_of_p_top_ = p_top.fullPivLu();
   } else {

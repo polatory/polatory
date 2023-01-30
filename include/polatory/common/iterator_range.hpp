@@ -2,23 +2,28 @@
 
 namespace polatory::common {
 
-template <class Forwarditerator>
+template <class RandomAccessIterator>
 class iterator_range {
  public:
-  iterator_range(Forwarditerator begin, Forwarditerator end) : begin_(begin), end_(end) {}
+  iterator_range(RandomAccessIterator begin, RandomAccessIterator end) : begin_(begin), end_(end) {}
 
   auto begin() const { return begin_; }
 
   auto end() const { return end_; }
 
+  auto size() const { return end_ - begin_; }
+
+  auto operator[](size_t i) const { return begin_[i]; }
+
  private:
-  Forwarditerator begin_;
-  Forwarditerator end_;
+  RandomAccessIterator begin_;
+  RandomAccessIterator end_;
 };
 
-template <class Forwarditerator>
-iterator_range<Forwarditerator> make_range(Forwarditerator begin, Forwarditerator end) {
-  return iterator_range<Forwarditerator>(begin, end);
+template <class RandomAccessIterator>
+iterator_range<RandomAccessIterator> make_range(RandomAccessIterator begin,
+                                                RandomAccessIterator end) {
+  return iterator_range<RandomAccessIterator>(begin, end);
 }
 
 }  // namespace polatory::common

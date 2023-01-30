@@ -1,4 +1,3 @@
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
 #include <stdexcept>
@@ -70,7 +69,7 @@ geometry::vector3d normal_estimator::estimate_impl(const std::vector<index_t>& n
     return geometry::vector3d::Zero();
   }
 
-  plane_estimator est(common::take_rows(points_, nn_indices));
+  plane_estimator est(points_(nn_indices, Eigen::all));
 
   if (est.plane_factor() < plane_factor_threshold) {
     return geometry::vector3d::Zero();

@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cmath>
 #include <numeric>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
@@ -47,11 +46,11 @@ common::valuesd k_fold_cross_validation(const model& model, const geometry::poin
     std::copy(indices.begin() + a, indices.begin() + b, test_set.begin());
     std::copy(indices.begin() + b, indices.end(), train_set.begin() + a);
 
-    auto train_points = common::take_rows(points, train_set);
-    auto test_points = common::take_rows(points, test_set);
+    geometry::points3d train_points = points(train_set, Eigen::all);
+    geometry::points3d test_points = points(test_set, Eigen::all);
 
-    auto train_values = common::take_rows(values, train_set);
-    auto test_values = common::take_rows(values, test_set);
+    common::valuesd train_values = values(train_set, Eigen::all);
+    common::valuesd test_values = values(test_set, Eigen::all);
 
     interpolation::rbf_fitter fitter(model, train_points);
     auto weights = fitter.fit(train_values, absolute_tolerance);

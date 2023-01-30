@@ -2,7 +2,6 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
@@ -33,7 +32,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
   std::vector<index_t> ineq_idcs;
   std::set_union(idcs_lb.begin(), idcs_lb.end(), idcs_ub.begin(), idcs_ub.end(),
                  std::back_inserter(ineq_idcs));
-  auto ineq_points = common::take_rows(points_, ineq_idcs);
+  geometry::points3d ineq_points = points_(ineq_idcs, Eigen::all);
 
   std::unique_ptr<rbf_solver> solver;
   std::unique_ptr<rbf_evaluator<>> res_eval;
@@ -66,9 +65,9 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
         last_tree_height = tree_height;
       }
 
-      auto center_points = common::take_rows(points_, centers);
+      geometry::points3d center_points = points_(centers, Eigen::all);
 
-      auto center_values = common::take_rows(values, centers);
+      common::valuesd center_values = values(centers, Eigen::all);
       for (index_t i = n_eq; i < n_centers; i++) {
         auto idx = centers.at(i);
         if (active_idcs_lb.contains(idx)) {
@@ -78,7 +77,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
         }
       }
 
-      center_weights = common::take_rows(weights, centers);
+      center_weights = weights(centers, Eigen::all);
       center_weights.conservativeResize(n_centers + n_poly_basis_);
       center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
 

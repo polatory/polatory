@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -21,7 +20,7 @@ class distance_filter {
       throw std::invalid_argument("m.rows() must match with the original points.");
     }
 
-    return common::take_rows(m, filtered_indices_);
+    return m(filtered_indices_, Eigen::all);
   }
 
   template <class Derived, class... Args>

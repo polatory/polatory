@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <iterator>
 #include <numeric>
-#include <polatory/common/eigen_utility.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <random>
@@ -166,7 +165,7 @@ void domain_divider::divide_domains() {
 }
 
 geometry::bbox3d domain_divider::domain_bbox(const domain& domain) const {
-  auto domain_points = common::take_rows(points_, domain.point_indices);
+  geometry::points3d domain_points = points_(domain.point_indices, Eigen::all);
 
   return geometry::bbox3d::from_points(domain_points);
 }
