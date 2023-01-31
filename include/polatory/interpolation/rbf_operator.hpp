@@ -16,7 +16,7 @@ namespace polatory::interpolation {
 template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
   rbf_operator(const model& model, const geometry::points3d& points)
-      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()) {
     auto n_points = static_cast<index_t>(points.rows());
     auto bbox = geometry::bbox3d::from_points(points);
     a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(
@@ -33,7 +33,7 @@ struct rbf_operator : krylov::linear_operator {
   rbf_operator(const model& model, int tree_height, const geometry::bbox3d& bbox)
       : model_(model),
         n_poly_basis_(model.poly_basis_size()),
-        n_points_(0),
+
         a_(std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, tree_height, bbox)) {
     if (n_poly_basis_ > 0) {
       poly_basis_ =
@@ -78,7 +78,7 @@ struct rbf_operator : krylov::linear_operator {
   const model& model_;
   const index_t n_poly_basis_;
 
-  index_t n_points_;
+  index_t n_points_{};
   std::unique_ptr<fmm::fmm_symmetric_evaluator<Order>> a_;
   std::unique_ptr<polynomial::monomial_basis> poly_basis_;
   Eigen::MatrixXd pt_;

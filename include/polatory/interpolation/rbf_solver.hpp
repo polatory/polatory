@@ -33,7 +33,7 @@ class rbf_solver {
   }
 
   rbf_solver(const model& model, int tree_height, const geometry::bbox3d& bbox)
-      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()) {
     op_ = std::make_unique<rbf_operator<>>(model, tree_height, bbox);
     res_eval_ = std::make_unique<rbf_residual_evaluator>(model, tree_height, bbox);
   }
@@ -121,7 +121,7 @@ class rbf_solver {
   const model& model_;
   const index_t n_poly_basis_;
 
-  index_t n_points_;
+  index_t n_points_{};
   std::unique_ptr<rbf_operator<>> op_;
   std::unique_ptr<Preconditioner> pc_;
   std::unique_ptr<rbf_residual_evaluator> res_eval_;

@@ -27,7 +27,7 @@ class rbf_residual_evaluator {
   }
 
   rbf_residual_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
-      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(0) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()) {
     evaluator_ = std::make_unique<rbf_evaluator<>>(model, tree_height, bbox);
   }
 
@@ -77,7 +77,7 @@ class rbf_residual_evaluator {
   const model& model_;
   const index_t n_poly_basis_;
 
-  index_t n_points_;
+  index_t n_points_{};
   geometry::points3d points_;
 
   std::unique_ptr<rbf_evaluator<>> evaluator_;
