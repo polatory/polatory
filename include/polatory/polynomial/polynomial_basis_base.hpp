@@ -32,7 +32,7 @@ class polynomial_basis_base {
     }
     POLATORY_ASSERT(dimension >= 1 && dimension <= 3);
 
-    auto k = static_cast<index_t>(degree) + 1;
+    auto k = index_t{degree} + 1;
     switch (dimension) {
       case 1:
         return k;

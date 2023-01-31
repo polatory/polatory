@@ -13,7 +13,7 @@ namespace polatory::kriging {
 common::valuesd k_fold_cross_validation(const model& model, const geometry::points3d& points,
                                         const common::valuesd& values, double absolute_tolerance,
                                         index_t k) {
-  auto n_points = static_cast<index_t>(points.rows());
+  auto n_points = points.rows();
   if (n_points < 2) {
     throw std::invalid_argument("points.row() must be greater than or equal to 2.");
   }
@@ -32,10 +32,10 @@ common::valuesd k_fold_cross_validation(const model& model, const geometry::poin
   auto bbox = geometry::bbox3d::from_points(points);
   common::valuesd residuals(n_points);
 
-  auto n_k = static_cast<double>(n_points) / k;
+  auto n_k = static_cast<double>(n_points) / static_cast<double>(k);
   for (index_t i = 0; i < k; i++) {
-    auto a = static_cast<index_t>(std::round(i * n_k));
-    auto b = static_cast<index_t>(std::round((i + 1) * n_k));
+    auto a = static_cast<index_t>(std::round(static_cast<double>(i) * n_k));
+    auto b = static_cast<index_t>(std::round(static_cast<double>(i + 1) * n_k));
     auto test_set_size = b - a;
     auto train_set_size = n_points - test_set_size;
 

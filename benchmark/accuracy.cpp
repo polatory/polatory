@@ -1,13 +1,11 @@
 // This is an example program that estimates the relative accuracy of
 // the fast evaluation of an interpolant.
 
+#include <Eigen/Core>
 #include <exception>
 #include <iostream>
-
-#include <Eigen/Core>
-
-#include <polatory/geometry/sphere3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/geometry/sphere3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
@@ -24,12 +22,12 @@
 #include <polatory/types.hpp>
 
 using polatory::index_t;
+using polatory::model;
 using polatory::common::valuesd;
-using polatory::geometry::sphere3d;
 using polatory::geometry::points3d;
+using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
-using polatory::model;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::orthonormal_basis;
 using polatory::rbf::biharmonic2d;
@@ -58,7 +56,7 @@ double estimate_accuracy(const rbf_base& rbf) {
     Eigen::MatrixXd p = poly.evaluate(points).transpose();
 
     // Orthogonalize weights against P.
-    auto n_cols = static_cast<index_t>(p.cols());
+    auto n_cols = p.cols();
     for (index_t i = 0; i < n_cols; i++) {
       auto dot = p.col(i).dot(weights.head(n_points));
       weights.head(n_points) -= dot * p.col(i);
@@ -84,28 +82,48 @@ double estimate_accuracy(const rbf_base& rbf) {
 
 int main() {
   try {
-    std::cout << "biharmonic2d: " << estimate_accuracy(biharmonic2d({ 1.0 })) << std::endl;
-    std::cout << "biharmonic3d: " << estimate_accuracy(biharmonic3d({ 1.0 })) << std::endl;
-    std::cout << "cov_exponential[scale=0.01]: " << estimate_accuracy(cov_exponential({ 1.0, 0.01 })) << std::endl;
-    std::cout << "cov_exponential[scale=0.1]: " << estimate_accuracy(cov_exponential({ 1.0, 0.1 })) << std::endl;
-    std::cout << "cov_exponential[scale=1.]: " << estimate_accuracy(cov_exponential({ 1.0, 1.0 })) << std::endl;
-    std::cout << "cov_exponential[scale=10.]: " << estimate_accuracy(cov_exponential({ 1.0, 10.0 })) << std::endl;
-    std::cout << "cov_spheroidal3[scale=0.01]: " << estimate_accuracy(cov_spheroidal3({ 1.0, 0.01 })) << std::endl;
-    std::cout << "cov_spheroidal3[scale=0.1]: " << estimate_accuracy(cov_spheroidal3({ 1.0, 0.1 })) << std::endl;
-    std::cout << "cov_spheroidal3[scale=1.]: " << estimate_accuracy(cov_spheroidal3({ 1.0, 1.0 })) << std::endl;
-    std::cout << "cov_spheroidal3[scale=10.]: " << estimate_accuracy(cov_spheroidal3({ 1.0, 10.0 })) << std::endl;
-    std::cout << "cov_spheroidal5[scale=0.01]: " << estimate_accuracy(cov_spheroidal5({ 1.0, 0.01 })) << std::endl;
-    std::cout << "cov_spheroidal5[scale=0.1]: " << estimate_accuracy(cov_spheroidal5({ 1.0, 0.1 })) << std::endl;
-    std::cout << "cov_spheroidal5[scale=1.]: " << estimate_accuracy(cov_spheroidal5({ 1.0, 1.0 })) << std::endl;
-    std::cout << "cov_spheroidal5[scale=10.]: " << estimate_accuracy(cov_spheroidal5({ 1.0, 10.0 })) << std::endl;
-    std::cout << "cov_spheroidal7[scale=0.01]: " << estimate_accuracy(cov_spheroidal7({ 1.0, 0.01 })) << std::endl;
-    std::cout << "cov_spheroidal7[scale=0.1]: " << estimate_accuracy(cov_spheroidal7({ 1.0, 0.1 })) << std::endl;
-    std::cout << "cov_spheroidal7[scale=1.]: " << estimate_accuracy(cov_spheroidal7({ 1.0, 1.0 })) << std::endl;
-    std::cout << "cov_spheroidal7[scale=10.]: " << estimate_accuracy(cov_spheroidal7({ 1.0, 10.0 })) << std::endl;
-    std::cout << "cov_spheroidal9[scale=0.01]: " << estimate_accuracy(cov_spheroidal9({ 1.0, 0.01 })) << std::endl;
-    std::cout << "cov_spheroidal9[scale=0.1]: " << estimate_accuracy(cov_spheroidal9({ 1.0, 0.1 })) << std::endl;
-    std::cout << "cov_spheroidal9[scale=1.]: " << estimate_accuracy(cov_spheroidal9({ 1.0, 1.0 })) << std::endl;
-    std::cout << "cov_spheroidal9[scale=10.]: " << estimate_accuracy(cov_spheroidal9({ 1.0, 10.0 })) << std::endl;
+    std::cout << "biharmonic2d: " << estimate_accuracy(biharmonic2d({1.0})) << std::endl;
+    std::cout << "biharmonic3d: " << estimate_accuracy(biharmonic3d({1.0})) << std::endl;
+    std::cout << "cov_exponential[scale=0.01]: " << estimate_accuracy(cov_exponential({1.0, 0.01}))
+              << std::endl;
+    std::cout << "cov_exponential[scale=0.1]: " << estimate_accuracy(cov_exponential({1.0, 0.1}))
+              << std::endl;
+    std::cout << "cov_exponential[scale=1.]: " << estimate_accuracy(cov_exponential({1.0, 1.0}))
+              << std::endl;
+    std::cout << "cov_exponential[scale=10.]: " << estimate_accuracy(cov_exponential({1.0, 10.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal3[scale=0.01]: " << estimate_accuracy(cov_spheroidal3({1.0, 0.01}))
+              << std::endl;
+    std::cout << "cov_spheroidal3[scale=0.1]: " << estimate_accuracy(cov_spheroidal3({1.0, 0.1}))
+              << std::endl;
+    std::cout << "cov_spheroidal3[scale=1.]: " << estimate_accuracy(cov_spheroidal3({1.0, 1.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal3[scale=10.]: " << estimate_accuracy(cov_spheroidal3({1.0, 10.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal5[scale=0.01]: " << estimate_accuracy(cov_spheroidal5({1.0, 0.01}))
+              << std::endl;
+    std::cout << "cov_spheroidal5[scale=0.1]: " << estimate_accuracy(cov_spheroidal5({1.0, 0.1}))
+              << std::endl;
+    std::cout << "cov_spheroidal5[scale=1.]: " << estimate_accuracy(cov_spheroidal5({1.0, 1.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal5[scale=10.]: " << estimate_accuracy(cov_spheroidal5({1.0, 10.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal7[scale=0.01]: " << estimate_accuracy(cov_spheroidal7({1.0, 0.01}))
+              << std::endl;
+    std::cout << "cov_spheroidal7[scale=0.1]: " << estimate_accuracy(cov_spheroidal7({1.0, 0.1}))
+              << std::endl;
+    std::cout << "cov_spheroidal7[scale=1.]: " << estimate_accuracy(cov_spheroidal7({1.0, 1.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal7[scale=10.]: " << estimate_accuracy(cov_spheroidal7({1.0, 10.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal9[scale=0.01]: " << estimate_accuracy(cov_spheroidal9({1.0, 0.01}))
+              << std::endl;
+    std::cout << "cov_spheroidal9[scale=0.1]: " << estimate_accuracy(cov_spheroidal9({1.0, 0.1}))
+              << std::endl;
+    std::cout << "cov_spheroidal9[scale=1.]: " << estimate_accuracy(cov_spheroidal9({1.0, 1.0}))
+              << std::endl;
+    std::cout << "cov_spheroidal9[scale=10.]: " << estimate_accuracy(cov_spheroidal9({1.0, 10.0}))
+              << std::endl;
 
     return 0;
   } catch (const std::exception& e) {

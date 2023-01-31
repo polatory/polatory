@@ -6,7 +6,7 @@
 namespace polatory::point_cloud {
 
 distance_filter::distance_filter(const geometry::points3d& points, double distance)
-    : n_points_(static_cast<index_t>(points.rows())) {
+    : n_points_(points.rows()) {
   if (distance <= 0.0) {
     throw std::invalid_argument("distance must be greater than 0.0.");
   }

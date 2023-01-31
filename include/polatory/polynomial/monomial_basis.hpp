@@ -15,7 +15,7 @@ class monomial_basis : public polynomial_basis_base {
   }
 
   Eigen::MatrixXd evaluate(const geometry::points3d& points) const {
-    auto n_points = static_cast<index_t>(points.rows());
+    auto n_points = points.rows();
 
     Eigen::MatrixXd result(basis_size(), n_points);
 

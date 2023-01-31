@@ -7,7 +7,7 @@ rbf_direct_evaluator::rbf_direct_evaluator(const model& model,
                                            const geometry::points3d& source_points)
     : model_(model),
       n_poly_basis_(model.poly_basis_size()),
-      n_src_points_(static_cast<index_t>(source_points.rows())),
+      n_src_points_(source_points.rows()),
       src_points_(source_points) {
   if (n_poly_basis_ > 0) {
     p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());

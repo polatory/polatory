@@ -30,7 +30,7 @@ void test_poly_degree(int poly_degree) {
   valuesd values;
   std::tie(points, values) = sample_sdf_data(n_surface_points);
 
-  auto n_points = static_cast<index_t>(points.rows());
+  auto n_points = points.rows();
 
   biharmonic3d rbf({1.0});
   rbf.set_anisotropy(random_anisotropy());

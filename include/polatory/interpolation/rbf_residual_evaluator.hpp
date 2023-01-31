@@ -21,7 +21,7 @@ class rbf_residual_evaluator {
   rbf_residual_evaluator(const model& model, const geometry::points3d& points)
       : model_(model),
         n_poly_basis_(model.poly_basis_size()),
-        n_points_(static_cast<index_t>(points.rows())),
+        n_points_(points.rows()),
         points_(points) {
     evaluator_ = std::make_unique<rbf_evaluator<>>(model, points_);
   }
@@ -35,8 +35,8 @@ class rbf_residual_evaluator {
   std::pair<bool, double> converged(const Eigen::MatrixBase<Derived>& values,
                                     const Eigen::MatrixBase<Derived2>& weights,
                                     double absolute_tolerance) const {
-    POLATORY_ASSERT(static_cast<index_t>(values.rows()) == n_points_);
-    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == n_points_ + n_poly_basis_);
+    POLATORY_ASSERT(values.rows() == n_points_);
+    POLATORY_ASSERT(weights.rows() == n_points_ + n_poly_basis_);
 
     evaluator_->set_weights(weights);
 
@@ -67,7 +67,7 @@ class rbf_residual_evaluator {
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = static_cast<index_t>(points.rows());
+    n_points_ = points.rows();
     points_ = points;
 
     evaluator_->set_source_points(points);

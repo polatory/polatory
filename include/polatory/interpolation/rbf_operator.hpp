@@ -17,7 +17,7 @@ template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
   rbf_operator(const model& model, const geometry::points3d& points)
       : model_(model), n_poly_basis_(model.poly_basis_size()) {
-    auto n_points = static_cast<index_t>(points.rows());
+    auto n_points = points.rows();
     auto bbox = geometry::bbox3d::from_points(points);
     a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(
         model, fmm::fmm_tree_height(n_points), bbox);
@@ -42,7 +42,7 @@ struct rbf_operator : krylov::linear_operator {
   }
 
   common::valuesd operator()(const common::valuesd& weights) const override {
-    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == size());
+    POLATORY_ASSERT(weights.rows() == size());
 
     common::valuesd y = common::valuesd::Zero(size());
 
@@ -63,7 +63,7 @@ struct rbf_operator : krylov::linear_operator {
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = static_cast<index_t>(points.rows());
+    n_points_ = points.rows();
 
     a_->set_points(points);
 

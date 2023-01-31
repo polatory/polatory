@@ -67,7 +67,7 @@ void write_table(const std::string& filename, const Eigen::MatrixBase<Derived>& 
     throw std::runtime_error("Failed to open file '" + filename + "'.");
   }
 
-  auto n_cols = static_cast<index_t>(table.cols());
+  auto n_cols = table.cols();
   for (auto row : table.rowwise()) {
     for (index_t i = 0; i < n_cols; i++) {
       ofs << numeric::to_string(row(i));

@@ -18,7 +18,7 @@ class lagrange_basis : public polynomial_basis_base {
  public:
   lagrange_basis(int dimension, int degree, const geometry::points3d& points)
       : polynomial_basis_base(dimension, degree), mono_basis_(dimension, degree) {
-    POLATORY_ASSERT(static_cast<index_t>(points.rows()) == basis_size());
+    POLATORY_ASSERT(points.rows() == basis_size());
 
     Eigen::MatrixXd p = mono_basis_.evaluate(points).transpose();
 
@@ -45,7 +45,7 @@ class lagrange_basis : public polynomial_basis_base {
       return false;
     }
 
-    auto rcond = sigmas(sigmas.size() - 1) / sigmas(0);
+    auto rcond = sigmas(sigmas.rows() - 1) / sigmas(0);
     return rcond >= kRCondThreshold;
   }
 

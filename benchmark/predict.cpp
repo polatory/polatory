@@ -1,17 +1,16 @@
 #include <exception>
 #include <iostream>
-
 #include <polatory/polatory.hpp>
 
-using polatory::common::valuesd;
-using polatory::geometry::points3d;
 using polatory::interpolant;
 using polatory::model;
-using polatory::rbf::cov_exponential;
 using polatory::read_table;
 using polatory::write_table;
+using polatory::common::valuesd;
+using polatory::geometry::points3d;
+using polatory::rbf::cov_exponential;
 
-int main(int /*argc*/, char *argv[]) {
+int main(int /*argc*/, char* argv[]) {
   try {
     points3d points = read_table(argv[1]);
     valuesd values = read_table(argv[2]);
@@ -21,7 +20,7 @@ int main(int /*argc*/, char *argv[]) {
 
     const auto poly_dimension = 3;
     const auto poly_degree = 0;
-    model model(cov_exponential({ 1.0, 0.02 }), poly_dimension, poly_degree);
+    model model(cov_exponential({1.0, 0.02}), poly_dimension, poly_degree);
 
     interpolant interpolant(model);
 

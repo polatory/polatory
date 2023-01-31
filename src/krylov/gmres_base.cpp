@@ -24,7 +24,7 @@ void gmres_base::set_left_preconditioner(const linear_operator& left_preconditio
 }
 
 void gmres_base::set_initial_solution(const common::valuesd& x0) {
-  POLATORY_ASSERT(static_cast<index_t>(x0.rows()) == m_);
+  POLATORY_ASSERT(x0.rows() == m_);
 
   x0_ = x0;
 }

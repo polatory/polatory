@@ -23,8 +23,7 @@ class rbf_inequality_fitter {
   static std::vector<index_t> arg_where(const common::valuesd& v, Predicate predicate) {
     std::vector<index_t> idcs;
 
-    auto size = static_cast<index_t>(v.size());
-    for (index_t i = 0; i < size; i++) {
+    for (index_t i = 0; i < v.rows(); i++) {
       if (predicate(v(i))) {
         idcs.push_back(i);
       }

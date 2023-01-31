@@ -22,7 +22,7 @@ class rbf_direct_evaluator {
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == n_src_points_ + n_poly_basis_);
+    POLATORY_ASSERT(weights.rows() == n_src_points_ + n_poly_basis_);
 
     weights_ = weights;
 

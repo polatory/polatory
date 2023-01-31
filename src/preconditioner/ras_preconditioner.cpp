@@ -15,7 +15,7 @@ namespace polatory::preconditioner {
 ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& in_points)
     : model_without_poly_(model.without_poly()),
       points_(in_points),
-      n_points_(static_cast<index_t>(in_points.rows())),
+      n_points_(in_points.rows()),
       n_poly_basis_(model.poly_basis_size()),
       finest_evaluator_(
           kReportResidual
@@ -116,7 +116,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 
     auto finest_evaluator =
         interpolation::rbf_symmetric_evaluator<Order>(model_without_poly_, points_);
-    auto n_cols = static_cast<index_t>(p_.cols());
+    auto n_cols = p_.cols();
     for (index_t i = 0; i < n_cols; i++) {
       finest_evaluator.set_weights(p_.col(i));
       ap_.col(i) = finest_evaluator.evaluate();
@@ -125,7 +125,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 }
 
 common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
-  POLATORY_ASSERT(static_cast<index_t>(v.rows()) == size());
+  POLATORY_ASSERT(v.rows() == size());
 
   common::valuesd residuals = v.head(n_points_);
   common::valuesd weights_total = common::valuesd::Zero(size());
@@ -180,7 +180,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
 
       if (n_poly_basis_ > 0) {
         // Orthogonalize weights against P.
-        auto n_cols = static_cast<index_t>(p_.cols());
+        auto n_cols = p_.cols();
         for (index_t i = 0; i < n_cols; i++) {
           auto dot = p_.col(i).dot(weights);
           weights -= dot * p_.col(i);

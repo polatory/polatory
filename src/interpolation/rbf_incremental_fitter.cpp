@@ -14,7 +14,7 @@ namespace polatory::interpolation {
 rbf_incremental_fitter::rbf_incremental_fitter(const model& model, const geometry::points3d& points)
     : model_(model),
       points_(points),
-      n_points_(static_cast<index_t>(points.rows())),
+      n_points_(points.rows()),
       n_poly_basis_(model.poly_basis_size()),
       bbox_(geometry::bbox3d::from_points(points)) {}
 
@@ -82,7 +82,8 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     auto n_centers_to_add =
         std::min(n_points_need_fitting,
                  std::max(index_t{max_n_points_to_add},
-                          static_cast<index_t>(point_adoption_ratio * n_points_need_fitting)));
+                          static_cast<index_t>(point_adoption_ratio *
+                                               static_cast<double>(n_points_need_fitting))));
 
     centers.insert(centers.end(), c_centers.end() - n_centers_to_add, c_centers.end());
     n_centers = static_cast<index_t>(centers.size());
@@ -105,7 +106,8 @@ std::vector<index_t> rbf_incremental_fitter::initial_indices() const {
   if (n_points_ >= min_n_points_for_incremental_fitting) {
     // TODO(mizuno): Use std::sample or a data-aware sampling method.
 
-    auto n_initial_points = static_cast<index_t>(initial_points_ratio * n_points_);
+    auto n_initial_points =
+        static_cast<index_t>(initial_points_ratio * static_cast<double>(n_points_));
 
     std::random_device rd;
     std::mt19937 gen(rd());

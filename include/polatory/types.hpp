@@ -4,6 +4,6 @@
 
 namespace polatory {
 
-using index_t = int;
+using index_t = Eigen::Index;
 
 }  // namespace polatory
