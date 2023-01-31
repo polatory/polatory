@@ -8,7 +8,7 @@
 
 NOTE: This is a pre-release version. APIs are subject to change without notice.
 
-[Features](#features) • [Building](#building) • [Contribution](#contribution) • [Module Index](#module-index)
+[Features](#features) • [Building](#building) • [Contribution](#contribution) • [Module Index](#module-index) • [References](#references)
 
 ## Features
 
@@ -77,3 +77,11 @@ You can fork the repo and make some improvements, then feel free to submit a pul
 | polynomial     | Polynomial part of RBF interpolant.                   |
 | preconditioner | The preconditioner used with Krylov subspace methods. |
 | rbf            | Definition of RBFs/covariance functions.              |
+
+## References
+
+1. J. C. Carr, R. K. Beatson, J. B. Cherrie, T. J. Mitchell, W. R. Fright, B. C. McCallum, and T. R. Evans. Reconstruction and representation of 3D objects with radial basis functions (2001) [https://doi.org/10.1145/383259.383266](https://doi.org/10.1145/383259.383266)
+
+1. R. K. Beatson, W. A. Light, and S. Billings. Fast Solution of the Radial Basis Function Interpolation Equations: Domain Decomposition Methods (2001) [http://doi.org/10.1137/S1064827599361771](http://doi.org/10.1137/S1064827599361771)
+
+1. G. M. Treece, R. W. Prager, and A. H. Gee. Regularised marching tetrahedra: improved iso-surface extraction (1999) [https://doi.org/10.1016/S0097-8493(99)00076-X](<https://doi.org/10.1016/S0097-8493(99)00076-X>)
