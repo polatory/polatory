@@ -38,9 +38,9 @@ int main(int argc, const char* argv[]) {
     interpolant.fit(points, values, opts.absolute_tolerance);
 
     // Generate the isosurface.
-    index_t n_surface_points = static_cast<index_t>((values.array() == 0.0).count());
+    auto n_surface_points = (values.array() == 0.0).count();
     points3d surface_points(n_surface_points, 3);
-    index_t si = 0;
+    index_t si{};
     for (index_t i = 0; i < points.rows(); i++) {
       if (values(i) == 0.0) {
         surface_points.row(si++) = points.row(i);

@@ -23,9 +23,7 @@ class rbf_solver {
 
  public:
   rbf_solver(const model& model, const geometry::points3d& points)
-      : model_(model),
-        n_poly_basis_(model.poly_basis_size()),
-        n_points_(static_cast<index_t>(points.rows())) {
+      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(points.rows()) {
     op_ = std::make_unique<rbf_operator<>>(model, points);
     res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points);
 
@@ -39,7 +37,7 @@ class rbf_solver {
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = static_cast<index_t>(points.rows());
+    n_points_ = points.rows();
 
     op_->set_points(points);
     res_eval_->set_points(points);
@@ -54,7 +52,7 @@ class rbf_solver {
 
   template <class Derived>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
-    POLATORY_ASSERT(static_cast<index_t>(values.rows()) == n_points_);
+    POLATORY_ASSERT(values.rows() == n_points_);
 
     return solve_impl(values, absolute_tolerance);
   }
@@ -62,14 +60,14 @@ class rbf_solver {
   template <class Derived, class Derived2>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         const Eigen::MatrixBase<Derived2>& initial_solution) const {
-    POLATORY_ASSERT(static_cast<index_t>(values.rows()) == n_points_);
-    POLATORY_ASSERT(static_cast<index_t>(initial_solution.rows()) == n_points_ + n_poly_basis_);
+    POLATORY_ASSERT(values.rows() == n_points_);
+    POLATORY_ASSERT(initial_solution.rows() == n_points_ + n_poly_basis_);
 
     common::valuesd ini_sol = initial_solution;
 
     if (n_poly_basis_ > 0) {
       // Orthogonalize weights against P.
-      auto n_cols = static_cast<index_t>(p_.cols());
+      auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
         ini_sol.head(n_points_) -= p_.col(i).dot(ini_sol.head(n_points_)) * p_.col(i);
       }

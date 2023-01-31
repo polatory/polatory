@@ -37,7 +37,7 @@ TEST(sdf_data_generator, trivial) {
   std::vector<index_t> indices;
   std::vector<double> distances;
 
-  auto n_sdf_points = static_cast<index_t>(sdf_points.rows());
+  auto n_sdf_points = sdf_points.rows();
   for (index_t i = 0; i < n_sdf_points; i++) {
     point3d sdf_point = sdf_points.row(i);
     auto sdf_value = sdf_values(i);

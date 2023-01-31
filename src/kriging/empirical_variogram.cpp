@@ -11,9 +11,9 @@ namespace polatory::kriging {
 empirical_variogram::empirical_variogram(const geometry::points3d& points,
                                          const common::valuesd& values, double bin_width,
                                          index_t n_bins) {
-  POLATORY_ASSERT(values.size() == points.rows());
+  POLATORY_ASSERT(values.rows() == points.rows());
 
-  auto n_points = static_cast<index_t>(points.rows());
+  auto n_points = points.rows();
   if (n_points == 0) {
     return;
   }
@@ -47,8 +47,8 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
       continue;
     }
 
-    distance_.at(i) = dist_sum.at(i).get() / num_pairs_.at(i);
-    gamma_.at(i) = gamma_sum.at(i).get() / num_pairs_.at(i);
+    distance_.at(i) = dist_sum.at(i).get() / static_cast<double>(num_pairs_.at(i));
+    gamma_.at(i) = gamma_sum.at(i).get() / static_cast<double>(num_pairs_.at(i));
   }
 
   // Remove empty bins.

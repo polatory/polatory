@@ -22,7 +22,7 @@ class unisolvent_point_set {
       return;
     }
 
-    auto n_points = static_cast<index_t>(points.rows());
+    auto n_points = points.rows();
     auto n_poly_basis = polynomial_basis_base::basis_size(dimension, degree);
 
     std::random_device rd;

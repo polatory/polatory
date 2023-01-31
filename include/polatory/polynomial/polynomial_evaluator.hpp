@@ -22,7 +22,7 @@ class polynomial_evaluator {
   void set_field_points(const geometry::points3d& points) { points_ = points; }
 
   void set_weights(const common::valuesd& weights) {
-    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == basis_.basis_size());
+    POLATORY_ASSERT(weights.rows() == basis_.basis_size());
 
     weights_ = weights;
   }

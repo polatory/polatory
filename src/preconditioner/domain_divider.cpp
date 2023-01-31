@@ -113,12 +113,14 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
            overlap_quota;
   q = std::min(0.5, q);
 
-  auto n_pts = static_cast<index_t>(d.size());
-  auto n_overlap_pts = static_cast<index_t>(round_half_to_even(q * n_pts));
-  auto n_subdomain_pts = static_cast<index_t>(std::ceil((n_pts + n_overlap_pts) / 2.0));
+  auto n_pts = d.size();
+  auto n_overlap_pts = static_cast<index_t>(round_half_to_even(q * static_cast<double>(n_pts)));
+  auto n_subdomain_pts =
+      static_cast<index_t>(std::ceil(static_cast<double>(n_pts + n_overlap_pts) / 2.0));
   auto left_partition = n_pts - n_subdomain_pts;
   auto right_partition = n_subdomain_pts;
-  auto mid = static_cast<index_t>(round_half_to_even((left_partition + right_partition) / 2.0));
+  auto mid = static_cast<index_t>(
+      round_half_to_even(static_cast<double>(left_partition + right_partition) / 2.0));
 
   domain left;
   left.point_indices =

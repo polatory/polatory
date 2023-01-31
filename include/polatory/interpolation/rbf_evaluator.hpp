@@ -21,7 +21,7 @@ class rbf_evaluator {
  public:
   rbf_evaluator(const model& model, const geometry::points3d& source_points)
       : n_poly_basis_(model.poly_basis_size()) {
-    auto n_src_points = static_cast<index_t>(source_points.rows());
+    auto n_src_points = source_points.rows();
     auto bbox = geometry::bbox3d::from_points(source_points);
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(n_src_points),
                                                      bbox);
@@ -36,7 +36,7 @@ class rbf_evaluator {
   rbf_evaluator(const model& model, const geometry::points3d& source_points,
                 const geometry::bbox3d& bbox)
       : n_poly_basis_(model.poly_basis_size()) {
-    auto n_src_points = static_cast<index_t>(source_points.rows());
+    auto n_src_points = source_points.rows();
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(n_src_points),
                                                      bbox);
 
@@ -81,14 +81,14 @@ class rbf_evaluator {
   }
 
   void set_source_points(const geometry::points3d& points) {
-    n_src_points_ = static_cast<index_t>(points.rows());
+    n_src_points_ = points.rows();
 
     a_->set_source_points(points);
   }
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) const {
-    POLATORY_ASSERT(static_cast<index_t>(weights.size()) == n_src_points_ + n_poly_basis_);
+    POLATORY_ASSERT(weights.rows() == n_src_points_ + n_poly_basis_);
 
     a_->set_weights(weights.head(n_src_points_));
 

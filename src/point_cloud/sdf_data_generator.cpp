@@ -27,8 +27,9 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
 
-  auto n_points = static_cast<index_t>(points.rows());
-  auto n_reduced_points = static_cast<index_t>(((multiplication - 1.0) / 2.0) * n_points);
+  auto n_points = points.rows();
+  auto n_reduced_points =
+      static_cast<index_t>(((multiplication - 1.0) / 2.0) * static_cast<double>(n_points));
   auto n_max_sdf_points = n_points + 2 * n_reduced_points;
   auto n_sdf_points = n_points;
 

@@ -53,7 +53,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = static_cast<index_t>(points.rows());
+    n_points_ = points.rows();
 
     // Remove all source particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -73,7 +73,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    POLATORY_ASSERT(static_cast<index_t>(weights.rows()) == n_points_);
+    POLATORY_ASSERT(weights.rows() == n_points_);
 
     // Update weights.
     for (index_t idx = 0; idx < n_points_; idx++) {

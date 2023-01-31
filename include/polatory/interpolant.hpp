@@ -49,7 +49,7 @@ class interpolant {
 
   void fit(const geometry::points3d& points, const common::valuesd& values,
            double absolute_tolerance) {
-    auto min_n_points = std::max(1, model_.poly_basis_size());
+    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
     if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
                                   std::to_string(min_n_points) + ".");
@@ -79,7 +79,7 @@ class interpolant {
       throw std::runtime_error("Non-zero nugget is not supported.");
     }
 
-    auto min_n_points = std::max(1, model_.poly_basis_size());
+    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
     if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
                                   std::to_string(min_n_points) + ".");
@@ -111,7 +111,7 @@ class interpolant {
       throw std::runtime_error("Non-zero nugget is not supported.");
     }
 
-    auto min_n_points = std::max(1, model_.poly_basis_size());
+    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
     if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
                                   std::to_string(min_n_points) + ".");

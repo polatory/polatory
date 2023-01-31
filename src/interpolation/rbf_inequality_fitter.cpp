@@ -12,7 +12,7 @@ namespace polatory::interpolation {
 rbf_inequality_fitter::rbf_inequality_fitter(const model& model, const geometry::points3d& points)
     : model_(model),
       points_(points),
-      n_points_(static_cast<index_t>(points.rows())),
+      n_points_(points.rows()),
       n_poly_basis_(model.poly_basis_size()),
       bbox_(geometry::bbox3d::from_points(points)) {}
 

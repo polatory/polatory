@@ -56,7 +56,7 @@ class fmm_evaluator<Order>::impl {
   }
 
   void set_field_points(const geometry::points3d& points) {
-    n_fld_points_ = static_cast<index_t>(points.rows());
+    n_fld_points_ = points.rows();
 
     // Remove all target particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -77,7 +77,7 @@ class fmm_evaluator<Order>::impl {
   }
 
   void set_source_points(const geometry::points3d& points) {
-    n_src_points_ = static_cast<index_t>(points.rows());
+    n_src_points_ = points.rows();
 
     // Remove all source particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -99,7 +99,7 @@ class fmm_evaluator<Order>::impl {
                                      const Eigen::Ref<const common::valuesd>& weights) {
     POLATORY_ASSERT(weights.rows() == points.rows());
 
-    n_src_points_ = static_cast<index_t>(points.rows());
+    n_src_points_ = points.rows();
 
     // Remove all source particles.
     tree_->forEachLeaf([&](Leaf* leaf) {
@@ -123,7 +123,7 @@ class fmm_evaluator<Order>::impl {
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    POLATORY_ASSERT(static_cast<index_t>(weights.size()) == n_src_points_);
+    POLATORY_ASSERT(weights.rows() == n_src_points_);
 
     if (n_src_points_ == 0) {
       return;
