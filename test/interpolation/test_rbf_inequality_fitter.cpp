@@ -9,8 +9,6 @@
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/types.hpp>
-#include <tuple>
-#include <vector>
 
 #include "../random_anisotropy.hpp"
 #include "sample_data.hpp"
@@ -30,9 +28,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   const auto poly_degree = 0;
   const auto absolute_tolerance = 1e-4;
 
-  points3d points;
-  valuesd values;
-  std::tie(points, values) = sample_numerical_data(n_points);
+  auto [points, values] = sample_numerical_data(n_points);
 
   valuesd values_lb = values.array() - 0.5;
   valuesd values_ub = values.array() + 0.5;
@@ -43,11 +39,8 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   model model(rbf, poly_dimension, poly_degree);
 
-  std::vector<index_t> indices;
-  valuesd weights;
-
   rbf_inequality_fitter fitter(model, points);
-  std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
+  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
@@ -88,11 +81,8 @@ TEST(rbf_inequality_fitter, kostov86) {
 
   model model(cov_exponential({1.0, 3.0}), poly_dimension, poly_degree);
 
-  std::vector<index_t> indices;
-  valuesd weights;
-
   rbf_inequality_fitter fitter(model, points);
-  std::tie(indices, weights) = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
+  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
 
   rbf_evaluator<> eval(model, points(indices, Eigen::all));
   eval.set_weights(weights);

@@ -6,8 +6,6 @@
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/types.hpp>
-#include <tuple>
-#include <vector>
 
 using polatory::index_t;
 using polatory::geometry::point3d;
@@ -30,25 +28,27 @@ TEST(kdtree, trivial) {
 
   kdtree tree(points, true);
 
-  std::vector<index_t> indices;
-  std::vector<double> distances;
-  std::tie(indices, distances) = tree.knn_search(query_point, k);
+  {
+    auto [indices, distances] = tree.knn_search(query_point, k);
 
-  EXPECT_EQ(k, indices.size());
-  EXPECT_EQ(indices.size(), distances.size());
+    EXPECT_EQ(k, indices.size());
+    EXPECT_EQ(indices.size(), distances.size());
 
-  std::sort(indices.begin(), indices.end());
-  EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
-
-  std::tie(indices, distances) = tree.radius_search(query_point, search_radius);
-
-  EXPECT_EQ(indices.size(), distances.size());
-  for (auto distance : distances) {
-    EXPECT_LE(distance, search_radius);
+    std::sort(indices.begin(), indices.end());
+    EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
   }
 
-  std::sort(indices.begin(), indices.end());
-  EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
+  {
+    auto [indices, distances] = tree.radius_search(query_point, search_radius);
+
+    EXPECT_EQ(indices.size(), distances.size());
+    for (auto distance : distances) {
+      EXPECT_LE(distance, search_radius);
+    }
+
+    std::sort(indices.begin(), indices.end());
+    EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
+  }
 }
 
 TEST(kdtree, zero_points) {
@@ -60,15 +60,17 @@ TEST(kdtree, zero_points) {
 
   kdtree tree(points, true);
 
-  std::vector<index_t> indices;
-  std::vector<double> distances;
-  std::tie(indices, distances) = tree.knn_search(query_point, k);
+  {
+    auto [indices, distances] = tree.knn_search(query_point, k);
 
-  EXPECT_EQ(0u, indices.size());
-  EXPECT_EQ(0u, distances.size());
+    EXPECT_EQ(0u, indices.size());
+    EXPECT_EQ(0u, distances.size());
+  }
 
-  std::tie(indices, distances) = tree.radius_search(query_point, search_radius);
+  {
+    auto [indices, distances] = tree.radius_search(query_point, search_radius);
 
-  EXPECT_EQ(0u, indices.size());
-  EXPECT_EQ(0u, distances.size());
+    EXPECT_EQ(0u, indices.size());
+    EXPECT_EQ(0u, distances.size());
+  }
 }

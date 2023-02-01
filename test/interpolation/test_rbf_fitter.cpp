@@ -6,7 +6,6 @@
 #include <polatory/model.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/types.hpp>
-#include <tuple>
 
 #include "../random_anisotropy.hpp"
 #include "sample_data.hpp"
@@ -26,9 +25,7 @@ void test_poly_degree(int poly_degree) {
   const auto poly_dimension = 3;
   auto absolute_tolerance = 1e-4;
 
-  points3d points;
-  valuesd values;
-  std::tie(points, values) = sample_sdf_data(n_surface_points);
+  auto [points, values] = sample_sdf_data(n_surface_points);
 
   auto n_points = points.rows();
 

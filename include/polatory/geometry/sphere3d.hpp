@@ -10,9 +10,7 @@ class sphere3d {
 
   sphere3d(const point3d& center, double radius) : center_(center), radius_(radius) {}
 
-  bool operator==(const sphere3d& other) const {
-    return center_ == other.center_ && radius_ == other.radius_;
-  }
+  bool operator==(const sphere3d& other) const = default;
 
   const point3d& center() const { return center_; }
 

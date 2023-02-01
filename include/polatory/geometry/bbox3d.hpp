@@ -11,7 +11,7 @@ class bbox3d {
 
   bbox3d(const point3d& min, const point3d& max);
 
-  bool operator==(const bbox3d& other) const;
+  bool operator==(const bbox3d& other) const = default;
 
   point3d center() const;
 

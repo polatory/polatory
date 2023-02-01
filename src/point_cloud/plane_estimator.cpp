@@ -15,7 +15,7 @@ plane_estimator::plane_estimator(const geometry::points3d& points) {
   auto s1 = svd.singularValues()(1);
   auto s2 = svd.singularValues()(2);
 
-  point_err_ = std::sqrt(s0 * s0 + s1 * s1 + s2 * s2) / std::sqrt(n_points);
+  point_err_ = std::hypot(s0, s1, s2) / std::sqrt(n_points);
   line_err_ = std::hypot(s1, s2) / std::sqrt(n_points);
   plane_err_ = std::abs(s2) / std::sqrt(n_points);
 

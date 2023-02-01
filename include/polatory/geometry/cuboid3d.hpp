@@ -10,7 +10,7 @@ class cuboid3d {
 
   cuboid3d(const point3d& min, const point3d& max) : min_(min), max_(max) {}
 
-  bool operator==(const cuboid3d& other) const { return min_ == other.min_ && max_ == other.max_; }
+  bool operator==(const cuboid3d& other) const = default;
 
   const point3d& max() const { return max_; }
 

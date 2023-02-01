@@ -34,8 +34,6 @@ using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
-double hypot(double x, double y, double z) { return std::sqrt(x * x + y * y + z * z); }
-
 template <class T>
 void test_clone(const std::vector<double>& params) {
   T rbf(params);
@@ -59,20 +57,20 @@ void test_gradient(const rbf_base& rbf) {
     auto x = dist(gen);
     auto y = dist(gen);
     auto z = dist(gen);
-    auto r = hypot(x, y, z);
+    auto r = std::hypot(x, y, z);
 
     double gradx, grady, gradz;
     rbf.evaluate_gradient_untransformed(&gradx, &grady, &gradz, x, y, z, r);
 
     // First-order central difference.
 
-    auto r_x1 = hypot(x - h, y, z);
-    auto r_y1 = hypot(x, y - h, z);
-    auto r_z1 = hypot(x, y, z - h);
+    auto r_x1 = std::hypot(x - h, y, z);
+    auto r_y1 = std::hypot(x, y - h, z);
+    auto r_z1 = std::hypot(x, y, z - h);
 
-    auto r_x2 = hypot(x + h, y, z);
-    auto r_y2 = hypot(x, y + h, z);
-    auto r_z2 = hypot(x, y, z + h);
+    auto r_x2 = std::hypot(x + h, y, z);
+    auto r_y2 = std::hypot(x, y + h, z);
+    auto r_z2 = std::hypot(x, y, z + h);
 
     auto gradx_approx =
         (rbf.evaluate_untransformed(r_x2) - rbf.evaluate_untransformed(r_x1)) / (2.0 * h);

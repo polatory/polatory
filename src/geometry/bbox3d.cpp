@@ -11,10 +11,6 @@ bbox3d::bbox3d()
 
 bbox3d::bbox3d(const point3d& min, const point3d& max) : min_(min), max_(max) {}
 
-bool bbox3d::operator==(const bbox3d& other) const {
-  return min_ == other.min_ && max_ == other.max_;
-}
-
 point3d bbox3d::center() const { return min_ + size() / 2.0; }
 
 bool bbox3d::contains(const point3d& p) const {

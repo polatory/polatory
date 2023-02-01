@@ -29,23 +29,22 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
   }
 
   // evaluate interaction
-  double evaluate(const double* p1, const double* p2) const {
-    const auto diffx = p1[0] - p2[0];
-    const auto diffy = p1[1] - p2[1];
-    const auto diffz = p1[2] - p2[2];
-    const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
+  double evaluate(double xt, double yt, double zt, double xs, double ys, double zs) const {
+    auto diffx = xt - xs;
+    auto diffy = yt - ys;
+    auto diffz = zt - zs;
+    auto r = std::hypot(diffx, diffy, diffz);
 
     return rbf_->evaluate_untransformed(r);
   }
 
   // evaluate interaction and derivative (blockwise)
-  void evaluateBlockAndDerivative(const double& x1, const double& y1, const double& z1,
-                                  const double& x2, const double& y2, const double& z2,
+  void evaluateBlockAndDerivative(double xt, double yt, double zt, double xs, double ys, double zs,
                                   double block[1], double blockDerivative[3]) const {
-    const auto diffx = (x1 - x2);
-    const auto diffy = (y1 - y2);
-    const auto diffz = (z1 - z2);
-    const auto r = std::sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
+    auto diffx = xt - xs;
+    auto diffy = yt - ys;
+    auto diffz = zt - zs;
+    auto r = std::hypot(diffx, diffy, diffz);
 
     block[0] = rbf_->evaluate_untransformed(r);
 
@@ -69,8 +68,8 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
     return 1.0;
   }
 
-  double evaluate(const FPoint<double>& p1, const FPoint<double>& p2) const {
-    return evaluate(p1.data(), p2.data());
+  double evaluate(const FPoint<double>& pt, const FPoint<double>& ps) const {
+    return evaluate(pt.getX(), pt.getY(), pt.getZ(), ps.getX(), ps.getY(), ps.getZ());
   }
 
  private:
