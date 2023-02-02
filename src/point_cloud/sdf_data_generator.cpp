@@ -2,7 +2,6 @@
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <stdexcept>
 #include <tuple>
-#include <vector>
 
 namespace polatory::point_cloud {
 
@@ -24,9 +23,6 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
 
   kdtree tree(points, true);
 
-  std::vector<index_t> nn_indices;
-  std::vector<double> nn_distances;
-
   auto n_points = points.rows();
   auto n_reduced_points =
       static_cast<index_t>(((multiplication - 1.0) / 2.0) * static_cast<double>(n_points));
@@ -37,78 +33,45 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
   sdf_points_.topRows(n_points) = points_;
   sdf_values_ = common::valuesd::Zero(n_max_sdf_points);
 
-  for (index_t i = 0; i < n_reduced_points; i++) {
-    auto p = points.row(i);
-    auto n = normals.row(i);
+  for (auto sign : {1.0, -1.0}) {
+    for (index_t i = 0; i < n_reduced_points; i++) {
+      auto p = points.row(i);
+      auto n = normals.row(i);
 
-    if (n == geometry::vector3d::Zero()) {
-      continue;
-    }
-
-    auto d = max_distance;
-    geometry::point3d q = p + d * n;
-
-    std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
-    auto i_nearest = nn_indices[0];
-
-    while (i_nearest != i) {
-      auto p_nearest = points.row(i_nearest);
-
-      d = 0.99 * (p_nearest - p).norm() / 2.0;
-      q = p + d * n;
-
-      if (d < min_distance) {
-        break;
+      if (n == geometry::vector3d::Zero()) {
+        continue;
       }
 
-      std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
-      i_nearest = nn_indices[0];
-    }
+      auto d = max_distance;
+      geometry::point3d q = p + sign * d * n;
 
-    if (d < min_distance) {
-      continue;
-    }
+      auto [nn_indices, nn_distances] = tree.knn_search(q, 1);
+      auto i_nearest = nn_indices.at(0);
 
-    sdf_points_.row(n_sdf_points) = q;
-    sdf_values_(n_sdf_points) = d;
-    n_sdf_points++;
-  }
+      while (i_nearest != i) {
+        auto p_nearest = points.row(i_nearest);
+        auto r = (p_nearest - p).norm() / 2.0;
+        auto cos = (q - p).normalized().dot((p_nearest - p).normalized());
 
-  for (index_t i = 0; i < n_reduced_points; i++) {
-    auto p = points.row(i);
-    auto n = normals.row(i);
+        d = 0.99 * r / cos;
+        q = p + sign * d * n;
 
-    if (n == geometry::vector3d::Zero()) {
-      continue;
-    }
+        if (d < min_distance) {
+          break;
+        }
 
-    auto d = max_distance;
-    geometry::point3d q = p - d * n;
-
-    std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
-    auto i_nearest = nn_indices[0];
-
-    while (i_nearest != i) {
-      auto p_nearest = points.row(i_nearest);
-
-      d = 0.99 * (p_nearest - p).norm() / 2.0;
-      q = p - d * n;
-
-      if (d < min_distance) {
-        break;
+        std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
+        i_nearest = nn_indices.at(0);
       }
 
-      std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
-      i_nearest = nn_indices[0];
-    }
+      if (d < min_distance) {
+        continue;
+      }
 
-    if (d < min_distance) {
-      continue;
+      sdf_points_.row(n_sdf_points) = q;
+      sdf_values_(n_sdf_points) = sign * d;
+      n_sdf_points++;
     }
-
-    sdf_points_.row(n_sdf_points) = q;
-    sdf_values_(n_sdf_points) = -d;
-    n_sdf_points++;
   }
 
   sdf_points_.conservativeResize(n_sdf_points, 3);
