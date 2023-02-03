@@ -20,7 +20,9 @@ class distance_filter {
       throw std::invalid_argument("m.rows() must match with the original points.");
     }
 
-    return m(filtered_indices_, Eigen::all);
+    // Use .eval() to prevent memory corruption caused if the result is being assigned
+    // back to the input matrix.
+    return m(filtered_indices_, Eigen::all).eval();
   }
 
   template <class Derived, class... Args>

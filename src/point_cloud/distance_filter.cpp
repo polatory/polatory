@@ -15,7 +15,7 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
   std::set<index_t> indices_to_remove;
 
   for (index_t i = 0; i < n_points_; i++) {
-    if (indices_to_remove.find(i) != indices_to_remove.end()) {
+    if (indices_to_remove.contains(i)) {
       continue;
     }
 
@@ -30,7 +30,7 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
   }
 
   for (index_t i = 0; i < n_points_; i++) {
-    if (indices_to_remove.find(i) == indices_to_remove.end()) {
+    if (!indices_to_remove.contains(i)) {
       filtered_indices_.push_back(i);
     }
   }
