@@ -10,11 +10,6 @@
 namespace polatory::interpolation {
 
 class rbf_incremental_fitter {
-  static constexpr index_t min_n_points_for_incremental_fitting = 4096;
-  static constexpr double initial_points_ratio = 0.01;
-  static constexpr double point_adoption_ratio = 0.1;
-  static constexpr index_t max_n_points_to_add = 1024;
-
  public:
   rbf_incremental_fitter(const model& model, const geometry::points3d& points);
 
@@ -22,8 +17,6 @@ class rbf_incremental_fitter {
                                                        double absolute_tolerance) const;
 
  private:
-  std::vector<index_t> initial_indices() const;
-
   std::vector<index_t> complement_indices(const std::vector<index_t>& indices) const;
 
   const model& model_;
