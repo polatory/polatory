@@ -26,7 +26,7 @@ int main(int argc, const char* argv[]) {
     valuesd values = table.col(3);
 
     // Remove very close points.
-    std::tie(points, values) = distance_filter(points, opts.min_distance).filtered(points, values);
+    std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
     // Define the model.
     auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);

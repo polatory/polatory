@@ -19,7 +19,7 @@ inline std::pair<polatory::geometry::points3d, polatory::common::valuesd> sample
   points3d points = random_points(sphere3d(), n_points);
   valuesd values = valuesd::Random(n_points);
 
-  std::tie(points, values) = distance_filter(points, 1e-4).filtered(points, values);
+  std::tie(points, values) = distance_filter(points, 1e-4)(points, values);
 
   return {std::move(points), std::move(values)};
 }
@@ -39,7 +39,7 @@ inline std::pair<polatory::geometry::points3d, polatory::common::valuesd> sample
   points3d points = sdf_data.sdf_points();
   valuesd values = sdf_data.sdf_values();
 
-  std::tie(points, values) = distance_filter(points, 1e-4).filtered(points, values);
+  std::tie(points, values) = distance_filter(points, 1e-4)(points, values);
 
   return {std::move(points), std::move(values)};
 }
