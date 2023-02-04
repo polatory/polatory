@@ -1,16 +1,12 @@
 #pragma once
 
-#include <algorithm>
-#include <numeric>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <polatory/types.hpp>
-#include <random>
 #include <tuple>
 #include <utility>
-#include <vector>
 
 inline std::pair<polatory::geometry::points3d, polatory::common::valuesd> sample_numerical_data(
     polatory::index_t n_points) {
@@ -43,13 +39,6 @@ inline std::pair<polatory::geometry::points3d, polatory::common::valuesd> sample
   sdf_data_generator sdf_data(surface_points, surface_points, 1e-3, 1e-2);
   points3d points = sdf_data.sdf_points();
   valuesd values = sdf_data.sdf_values();
-
-  std::vector<index_t> indices(points.rows());
-  std::iota(indices.begin(), indices.end(), index_t{0});
-  std::shuffle(indices.begin(), indices.end(), std::mt19937{std::random_device{}()});
-
-  points = points(indices, Eigen::all).eval();
-  values = values(indices, Eigen::all).eval();
 
   std::tie(points, values) = distance_filter(points, 1e-4)(points, values);
 
