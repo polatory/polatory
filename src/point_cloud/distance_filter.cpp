@@ -14,13 +14,16 @@ distance_filter::distance_filter(const geometry::points3d& points, double distan
 
   std::set<index_t> indices_to_remove;
 
+  std::vector<index_t> nn_indices;
+  std::vector<double> nn_distances;
+
   for (index_t i = 0; i < n_points_; i++) {
     if (indices_to_remove.contains(i)) {
       continue;
     }
 
     geometry::point3d p = points.row(i);
-    auto [nn_indices, nn_distances] = tree.radius_search(p, distance);
+    tree.radius_search(p, distance, nn_indices, nn_distances);
 
     for (auto j : nn_indices) {
       if (j != i) {

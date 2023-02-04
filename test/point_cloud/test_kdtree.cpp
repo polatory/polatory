@@ -28,8 +28,11 @@ TEST(kdtree, trivial) {
 
   kdtree tree(points, true);
 
+  std::vector<index_t> indices;
+  std::vector<double> distances;
+
   {
-    auto [indices, distances] = tree.knn_search(query_point, k);
+    tree.knn_search(query_point, k, indices, distances);
 
     EXPECT_EQ(k, indices.size());
     EXPECT_EQ(indices.size(), distances.size());
@@ -39,7 +42,7 @@ TEST(kdtree, trivial) {
   }
 
   {
-    auto [indices, distances] = tree.radius_search(query_point, search_radius);
+    tree.radius_search(query_point, search_radius, indices, distances);
 
     EXPECT_EQ(indices.size(), distances.size());
     for (auto distance : distances) {
@@ -60,15 +63,18 @@ TEST(kdtree, zero_points) {
 
   kdtree tree(points, true);
 
+  std::vector<index_t> indices;
+  std::vector<double> distances;
+
   {
-    auto [indices, distances] = tree.knn_search(query_point, k);
+    tree.knn_search(query_point, k, indices, distances);
 
     EXPECT_EQ(0u, indices.size());
     EXPECT_EQ(0u, distances.size());
   }
 
   {
-    auto [indices, distances] = tree.radius_search(query_point, search_radius);
+    tree.radius_search(query_point, search_radius, indices, distances);
 
     EXPECT_EQ(0u, indices.size());
     EXPECT_EQ(0u, distances.size());
