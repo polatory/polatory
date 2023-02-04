@@ -80,6 +80,11 @@ class rbf_solver {
   template <class Derived, class Derived2 = common::valuesd>
   common::valuesd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                              const Eigen::MatrixBase<Derived2>* initial_solution = nullptr) const {
+    // The solver does not work when all values are zero.
+    if (values.isZero()) {
+      return common::valuesd::Zero(n_points_ + n_poly_basis_);
+    }
+
     common::valuesd rhs(n_points_ + n_poly_basis_);
     rhs.head(n_points_) = values;
     rhs.tail(n_poly_basis_) = common::valuesd::Zero(n_poly_basis_);
