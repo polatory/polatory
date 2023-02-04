@@ -47,7 +47,11 @@ int main(int argc, const char* argv[]) {
 
     // Fit.
     interpolant interpolant(model);
-    interpolant.fit(points, values, opts.absolute_tolerance);
+    if (opts.reduce) {
+      interpolant.fit_incrementally(points, values, opts.absolute_tolerance);
+    } else {
+      interpolant.fit(points, values, opts.absolute_tolerance);
+    }
 
     // Generate the isosurface.
     auto n_surface_points = (values.array() == 0.0).count();

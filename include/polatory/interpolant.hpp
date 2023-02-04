@@ -76,7 +76,7 @@ class interpolant {
   void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
                          double absolute_tolerance) {
     if (model_.nugget() > 0.0) {
-      throw std::runtime_error("Non-zero nugget is not supported.");
+      throw std::runtime_error("Nonzero nugget is not supported by incremental fitting.");
     }
 
     auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
