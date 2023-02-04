@@ -45,7 +45,7 @@ class fmm_evaluator<Order>::impl {
   }
 
   common::valuesd evaluate() const {
-    tree_->forEachLeaf([&](Leaf* leaf) {
+    tree_->forEachLeaf([](Leaf* leaf) {
       auto& particles = *leaf->getTargets();
       particles.resetForcesAndPotential();
     });
@@ -59,7 +59,7 @@ class fmm_evaluator<Order>::impl {
     n_fld_points_ = points.rows();
 
     // Remove all target particles.
-    tree_->forEachLeaf([&](Leaf* leaf) {
+    tree_->forEachLeaf([](Leaf* leaf) {
       auto& particles = *leaf->getTargets();
       particles.clear();
     });
@@ -137,7 +137,7 @@ class fmm_evaluator<Order>::impl {
       *weight_ptrs_.at(idx) = weights(idx);
     }
 
-    tree_->forEachCell([&](Cell* cell) { cell->resetToInitialState(); });
+    tree_->forEachCell([](Cell* cell) { cell->resetToInitialState(); });
 
     fmm_->execute(FFmmP2M | FFmmM2M);
   }

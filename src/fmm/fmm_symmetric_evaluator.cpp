@@ -49,14 +49,15 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     fmm_->execute();
 
-    return potentials();
+    auto self_potential = model_.rbf().evaluate_untransformed(0.0);
+    return potentials() + weights_ * self_potential;
   }
 
   void set_points(const geometry::points3d& points) {
     n_points_ = points.rows();
 
     // Remove all source particles.
-    tree_->forEachLeaf([&](Leaf* leaf) {
+    tree_->forEachLeaf([](Leaf* leaf) {
       auto& particles = *leaf->getSrc();
       particles.clear();
     });
@@ -77,8 +78,10 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     // Update weights.
     for (index_t idx = 0; idx < n_points_; idx++) {
-      *weight_ptrs_.at(idx) = weights[idx];
+      *weight_ptrs_.at(idx) = weights(idx);
     }
+
+    weights_ = weights;
   }
 
  private:
@@ -93,9 +96,9 @@ class fmm_symmetric_evaluator<Order>::impl {
   }
 
   void reset_tree() const {
-    tree_->forEachCell([&](Cell* cell) { cell->resetToInitialState(); });
+    tree_->forEachCell([](Cell* cell) { cell->resetToInitialState(); });
 
-    tree_->forEachLeaf([&](Leaf* leaf) {
+    tree_->forEachLeaf([](Leaf* leaf) {
       auto& particles = *leaf->getTargets();
       particles.resetForcesAndPotential();
     });
@@ -139,6 +142,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   const fmm_rbf_kernel rbf_kernel_;
 
   index_t n_points_{};
+  common::valuesd weights_;
 
   std::unique_ptr<Fmm> fmm_;
   std::unique_ptr<InterpolatedKernel> interpolated_kernel_;

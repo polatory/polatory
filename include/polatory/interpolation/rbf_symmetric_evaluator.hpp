@@ -20,7 +20,7 @@ class rbf_symmetric_evaluator {
 
  public:
   rbf_symmetric_evaluator(const model& model, const geometry::points3d& points)
-      : model_(model), n_points_(points.rows()), n_poly_basis_(model.poly_basis_size()) {
+      : n_points_(points.rows()), n_poly_basis_(model.poly_basis_size()) {
     auto bbox = geometry::bbox3d::from_points(points);
     a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(
         model, fmm::fmm_tree_height(n_points_), bbox);
@@ -33,10 +33,7 @@ class rbf_symmetric_evaluator {
   }
 
   common::valuesd evaluate() const {
-    auto rbf_at_zero = model_.rbf().evaluate_untransformed(0.0);
-    common::valuesd y = weights_.head(n_points_) * rbf_at_zero;
-
-    y += a_->evaluate();
+    auto y = a_->evaluate();
 
     if (n_poly_basis_ > 0) {
       // Add polynomial terms.
@@ -50,8 +47,6 @@ class rbf_symmetric_evaluator {
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
     POLATORY_ASSERT(weights.rows() == n_points_ + n_poly_basis_);
 
-    weights_ = weights;
-
     a_->set_weights(weights.head(n_points_));
 
     if (n_poly_basis_ > 0) {
@@ -60,14 +55,11 @@ class rbf_symmetric_evaluator {
   }
 
  private:
-  const model& model_;
   const index_t n_points_;
   const index_t n_poly_basis_;
 
   std::unique_ptr<fmm::fmm_symmetric_evaluator<Order>> a_;
   std::unique_ptr<PolynomialEvaluator> p_;
-
-  common::valuesd weights_;
 };
 
 }  // namespace polatory::interpolation

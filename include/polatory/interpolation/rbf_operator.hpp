@@ -46,18 +46,16 @@ struct rbf_operator : krylov::linear_operator {
 
     common::valuesd y = common::valuesd::Zero(size());
 
-    const auto& rbf = model_.rbf();
-    auto diagonal = rbf.evaluate_untransformed(0.0) + model_.nugget();
-    y.head(n_points_) = diagonal * weights.head(n_points_);
-
     a_->set_weights(weights.head(n_points_));
-    y.head(n_points_) += a_->evaluate();
+    y.head(n_points_) = a_->evaluate();
 
     if (n_poly_basis_ > 0) {
       // Add polynomial terms.
       y.head(n_points_) += pt_.transpose() * weights.tail(n_poly_basis_);
       y.tail(n_poly_basis_) += pt_ * weights.head(n_points_);
     }
+
+    y.head(n_points_) += weights.head(n_points_) * model_.nugget();
 
     return y;
   }
