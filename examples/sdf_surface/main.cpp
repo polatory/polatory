@@ -1,7 +1,11 @@
+#include <algorithm>
 #include <exception>
 #include <iostream>
+#include <numeric>
 #include <polatory/polatory.hpp>
+#include <random>
 #include <tuple>
+#include <vector>
 
 #include "parse_options.hpp"
 
@@ -22,6 +26,14 @@ int main(int argc, const char* argv[]) {
 
     // Load points (x,y,z) and values (value).
     tabled table = read_table(opts.in_file);
+
+    // Shuffle the points for incremental fitting,
+    // which does not work if only on-surface points are picked while initial iterations.
+    std::vector<index_t> indices(table.rows());
+    std::iota(indices.begin(), indices.end(), index_t{0});
+    std::shuffle(indices.begin(), indices.end(), std::mt19937{std::random_device{}()});
+    table = table(indices, Eigen::all).eval();
+
     points3d points = table(Eigen::all, {0, 1, 2});
     valuesd values = table.col(3);
 
