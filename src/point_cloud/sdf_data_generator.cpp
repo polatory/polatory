@@ -1,7 +1,6 @@
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <stdexcept>
-#include <tuple>
 
 namespace polatory::point_cloud {
 
@@ -33,6 +32,9 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
   sdf_points_.topRows(n_points) = points_;
   sdf_values_ = common::valuesd::Zero(n_max_sdf_points);
 
+  std::vector<index_t> nn_indices;
+  std::vector<double> nn_distances;
+
   for (auto sign : {1.0, -1.0}) {
     for (index_t i = 0; i < n_reduced_points; i++) {
       auto p = points.row(i);
@@ -45,7 +47,7 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
       auto d = max_distance;
       geometry::point3d q = p + sign * d * n;
 
-      auto [nn_indices, nn_distances] = tree.knn_search(q, 1);
+      tree.knn_search(q, 1, nn_indices, nn_distances);
       auto i_nearest = nn_indices.at(0);
 
       while (i_nearest != i) {
@@ -60,7 +62,7 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
           break;
         }
 
-        std::tie(nn_indices, nn_distances) = tree.knn_search(q, 1);
+        tree.knn_search(q, 1, nn_indices, nn_distances);
         i_nearest = nn_indices.at(0);
       }
 

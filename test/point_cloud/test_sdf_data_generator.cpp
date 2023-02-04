@@ -33,12 +33,15 @@ TEST(sdf_data_generator, trivial) {
 
   kdtree tree(points, true);
 
+  std::vector<index_t> indices;
+  std::vector<double> distances;
+
   auto n_sdf_points = sdf_points.rows();
   for (index_t i = 0; i < n_sdf_points; i++) {
     point3d sdf_point = sdf_points.row(i);
     auto sdf_value = sdf_values(i);
 
-    auto [indices, distances] = tree.knn_search(sdf_point, 1);
+    tree.knn_search(sdf_point, 1, indices, distances);
     EXPECT_NEAR(distances[0], std::abs(sdf_value), 1e-15);
 
     if (sdf_values(i) != 0.0) {

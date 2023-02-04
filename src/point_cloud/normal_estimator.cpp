@@ -10,10 +10,13 @@ normal_estimator::normal_estimator(const geometry::points3d& points)
 normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_factor_threshold) {
   normals_ = geometry::vectors3d(n_points_, 3);
 
-#pragma omp parallel for
+  std::vector<index_t> nn_indices;
+  std::vector<double> nn_distances;
+
+#pragma omp parallel for private(nn_indices, nn_distances)
   for (index_t i = 0; i < n_points_; i++) {
     geometry::point3d p = points_.row(i);
-    auto [nn_indices, nn_distances] = tree_.knn_search(p, k);
+    tree_.knn_search(p, k, nn_indices, nn_distances);
 
     normals_.row(i) = estimate_impl(nn_indices, plane_factor_threshold);
   }
@@ -25,10 +28,13 @@ normal_estimator& normal_estimator::estimate_with_radius(double radius,
                                                          double plane_factor_threshold) {
   normals_ = geometry::vectors3d(n_points_, 3);
 
-#pragma omp parallel for
+  std::vector<index_t> nn_indices;
+  std::vector<double> nn_distances;
+
+#pragma omp parallel for private(nn_indices, nn_distances)
   for (index_t i = 0; i < n_points_; i++) {
     geometry::point3d p = points_.row(i);
-    auto [nn_indices, nn_distances] = tree_.radius_search(p, radius);
+    tree_.radius_search(p, radius, nn_indices, nn_distances);
 
     normals_.row(i) = estimate_impl(nn_indices, plane_factor_threshold);
   }
