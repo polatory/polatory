@@ -41,7 +41,7 @@ class ras_preconditioner : public krylov::linear_operator {
                        std::forward_as_tuple(std::forward<Args>(args)...));
   }
 
-  const Evaluator& evaluator(int from_level, int to_level) const {
+  Evaluator& evaluator(int from_level, int to_level) const {
     return evaluator_.at({from_level, to_level});
   }
 
@@ -56,7 +56,7 @@ class ras_preconditioner : public krylov::linear_operator {
   std::vector<std::vector<index_t>> point_idcs_;
   mutable std::vector<std::vector<fine_grid>> fine_grids_;
   std::unique_ptr<coarse_grid> coarse_;
-  std::map<std::pair<int, int>, Evaluator> evaluator_;
+  mutable std::map<std::pair<int, int>, Evaluator> evaluator_;
   Eigen::MatrixXd p_;
   Eigen::MatrixXd ap_;
 };
