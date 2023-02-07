@@ -14,8 +14,7 @@ mesh_defects_finder::mesh_defects_finder(const std::vector<geometry::point3d>& v
   }
 }
 
-// At this moment, self-intersection only between faces
-// which share a single vertex is checked.
+// Currently, intersections only between faces that share a single vertex are detected.
 std::set<face> mesh_defects_finder::intersecting_faces() const {
   std::set<face> result;
 

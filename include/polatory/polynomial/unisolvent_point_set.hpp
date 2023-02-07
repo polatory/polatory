@@ -44,7 +44,7 @@ class unisolvent_point_set {
                              points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
         found = true;
       } catch (const std::domain_error&) {
-        // noop.
+        // No-op.
       }
 
       trial++;
@@ -57,6 +57,7 @@ class unisolvent_point_set {
     point_idcs_.insert(point_idcs_.begin(), set.begin(), set.end());
   }
 
+  // Returns the sorted point indices.
   const std::vector<index_t>& point_indices() const { return point_idcs_; }
 
  private:
