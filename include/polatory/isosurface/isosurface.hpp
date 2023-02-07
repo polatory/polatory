@@ -6,7 +6,7 @@
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_surface.hpp>
 #include <polatory/isosurface/surface.hpp>
-#include <set>
+#include <unordered_set>
 
 namespace polatory::isosurface {
 
@@ -46,7 +46,7 @@ class isosurface {
     auto vertices = defects.singular_vertices();
     auto faces = defects.intersecting_faces();
 
-    std::set<vertex_index> vertices_to_uncluster;
+    std::unordered_set<vertex_index> vertices_to_uncluster;
     for (auto vertex : vertices) {
       vertices_to_uncluster.insert(vertex);
     }

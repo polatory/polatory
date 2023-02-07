@@ -15,7 +15,6 @@
 #include <polatory/isosurface/rmt_primitive_lattice.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
-#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -128,7 +127,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   void track_surface() {
-    std::set<cell_index> cells_to_add;
+    std::unordered_set<cell_index> cells_to_add;
 
     // Check 12 edges of each cell and add neighbor cells adjacent to an edge
     // at which ends the field values take opposite signs.
@@ -221,10 +220,6 @@ class rmt_lattice : public rmt_primitive_lattice {
     last_added_cells.clear();
 
     for (auto ci : cells_to_add) {
-      if (added_cells.contains(ci)) {
-        continue;
-      }
-
       add_cell(ci);
     }
   }
@@ -386,7 +381,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   std::vector<geometry::point3d>& get_vertices() { return vertices; }
 
-  void uncluster_vertices(const std::set<vertex_index>& vis) {
+  void uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
     auto it = cluster_map.begin();
     while (it != cluster_map.end()) {
       if (vis.contains(it->second)) {
