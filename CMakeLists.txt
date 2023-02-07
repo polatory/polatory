@@ -71,11 +71,13 @@ elseif(MSVC)
         endif()
     endif()
 
+    # https://www.intel.com/content/www/us/en/develop/documentation/onemkl-windows-developer-guide/top/appendix-c-directory-structure-in-detail/structure-of-the-intel-64-architecture-directories/contents-of-the-redist-intel64-directory.html
     set(POLATORY_DLLS
         ${MKL_DLL_DIR}/mkl_avx.2.dll
         ${MKL_DLL_DIR}/mkl_avx2.2.dll
         ${MKL_DLL_DIR}/mkl_avx512.2.dll
         ${MKL_DLL_DIR}/mkl_core.2.dll
+        ${MKL_DLL_DIR}/mkl_def.2.dll
         ${MKL_DLL_DIR}/mkl_sequential.2.dll
     )
 else()
