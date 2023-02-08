@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <boost/range/irange.hpp>
 #include <cmath>
 #include <iostream>
 #include <iterator>
@@ -102,20 +103,19 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
 
     // Incorporate inactive inequality points with large residuals.
 
-    auto ineq_idcs2 = ineq_idcs;
-    common::valuesd residuals = common::valuesd::Zero(n_ineq);
-    for (index_t i = 0; i < n_ineq; i++) {
-      auto idx = ineq_idcs.at(i);
+    auto indices = complementary_indices(centers);
+    auto n_indices = static_cast<index_t>(indices.size());
+    common::valuesd residuals = common::valuesd::Zero(n_indices);
+    for (index_t i = 0; i < n_indices; i++) {
+      auto idx = indices.at(i);
       auto lb = values_lb(idx);
       auto ub = values_ub(idx);
-      auto lb_res = std::isnan(lb) ? 0.0 : std::max(values_lb(idx) - values_fit(i), 0.0);
-      auto ub_res = std::isnan(ub) ? 0.0 : std::max(values_fit(i) - values_ub(idx), 0.0);
+      auto lb_res = std::isnan(lb) ? 0.0 : std::max(lb - values_fit(i), 0.0);
+      auto ub_res = std::isnan(ub) ? 0.0 : std::max(values_fit(i) - ub, 0.0);
       residuals(i) = std::max(lb_res, ub_res);
     }
-    common::zip_sort(ineq_idcs2.begin(), ineq_idcs2.end(), residuals.begin(), residuals.end(),
-                     [](const auto& a, const auto& b) { return a.second < b.second; });
-    std::vector<index_t> indices(eq_idcs.begin(), eq_idcs.end());
-    std::copy(ineq_idcs2.rbegin(), ineq_idcs2.rend(), std::back_inserter(indices));
+    common::zip_sort(indices.begin(), indices.end(), residuals.begin(), residuals.end(),
+                     [](const auto& a, const auto& b) { return a.second > b.second; });
     point_cloud::distance_filter filter(points_, filtering_distance, indices);
     std::unordered_set<index_t> filtered_indices(filter.filtered_indices().begin(),
                                                  filter.filtered_indices().end());
@@ -168,6 +168,18 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
   }
 
   return {std::move(centers), std::move(center_weights)};
+}
+
+std::vector<index_t> rbf_inequality_fitter::complementary_indices(
+    const std::vector<index_t>& indices) const {
+  std::vector<index_t> c_idcs(n_points_ - indices.size());
+
+  auto universe = boost::irange<index_t>(index_t{0}, n_points_);
+  auto idcs = indices;
+  std::sort(idcs.begin(), idcs.end());
+  std::set_difference(universe.begin(), universe.end(), idcs.begin(), idcs.end(), c_idcs.begin());
+
+  return c_idcs;
 }
 
 }  // namespace polatory::interpolation

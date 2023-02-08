@@ -52,7 +52,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
 
     // Evaluate residuals at remaining points.
 
-    auto c_centers = complement_indices(centers);
+    auto c_centers = complementary_indices(centers);
     geometry::points3d c_center_points = points_(c_centers, Eigen::all);
 
     res_eval->set_source_points(center_points);
@@ -108,7 +108,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
   return {std::move(centers), std::move(center_weights)};
 }
 
-std::vector<index_t> rbf_incremental_fitter::complement_indices(
+std::vector<index_t> rbf_incremental_fitter::complementary_indices(
     const std::vector<index_t>& indices) const {
   std::vector<index_t> c_idcs(n_points_ - indices.size());
 

@@ -32,6 +32,8 @@ class rbf_inequality_fitter {
     return idcs;
   }
 
+  std::vector<index_t> complementary_indices(const std::vector<index_t>& indices) const;
+
   const model& model_;
   const geometry::points3d& points_;
 
