@@ -21,9 +21,9 @@ rbf_incremental_fitter::rbf_incremental_fitter(const model& model, const geometr
 
 std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     const common::valuesd& values, double absolute_tolerance) const {
-  double distance = bbox_.size().mean() / 2.0;
+  auto filtering_distance = bbox_.size().mean() / 4.0;
 
-  auto centers = point_cloud::distance_filter(points_, distance).filtered_indices();
+  auto centers = point_cloud::distance_filter(points_, filtering_distance).filtered_indices();
   auto n_centers = static_cast<index_t>(centers.size());
   common::valuesd center_weights = common::valuesd::Zero(n_centers + n_poly_basis_);
 
@@ -52,7 +52,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
 
     // Evaluate residuals at remaining points.
 
-    auto c_centers = complement_indices(centers);
+    auto c_centers = complementary_indices(centers);
     geometry::points3d c_center_points = points_(c_centers, Eigen::all);
 
     res_eval->set_source_points(center_points);
@@ -83,11 +83,9 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
 
     auto n_last_centers = n_centers;
 
-    distance *= 0.5;
-
     std::vector<index_t> indices(centers.begin(), centers.end());
     std::copy(c_centers.rbegin(), c_centers.rend(), std::back_inserter(indices));
-    point_cloud::distance_filter filter(points_, distance, indices);
+    point_cloud::distance_filter filter(points_, filtering_distance, indices);
     std::unordered_set<index_t> filtered_indices(filter.filtered_indices().begin(),
                                                  filter.filtered_indices().end());
 
@@ -103,12 +101,14 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     center_weights = common::valuesd::Zero(n_centers + n_poly_basis_);
     center_weights.head(n_last_centers) = last_center_weights.head(n_last_centers);
     center_weights.tail(n_poly_basis_) = last_center_weights.tail(n_poly_basis_);
+
+    filtering_distance *= 0.5;
   }
 
   return {std::move(centers), std::move(center_weights)};
 }
 
-std::vector<index_t> rbf_incremental_fitter::complement_indices(
+std::vector<index_t> rbf_incremental_fitter::complementary_indices(
     const std::vector<index_t>& indices) const {
   std::vector<index_t> c_idcs(n_points_ - indices.size());
 

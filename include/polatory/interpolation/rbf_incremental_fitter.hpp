@@ -17,7 +17,7 @@ class rbf_incremental_fitter {
                                                        double absolute_tolerance) const;
 
  private:
-  std::vector<index_t> complement_indices(const std::vector<index_t>& indices) const;
+  std::vector<index_t> complementary_indices(const std::vector<index_t>& indices) const;
 
   const model& model_;
   const geometry::points3d& points_;
