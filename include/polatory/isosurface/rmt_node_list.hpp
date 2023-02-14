@@ -22,14 +22,10 @@ class neighbor_cell_vectors : public std::array<cell_vector, 14> {
 // to reproduce each NeighborVectors.
 extern const detail::neighbor_cell_vectors NeighborCellVectors;
 
-class rmt_node_list : std::unordered_map<cell_index, rmt_node> {
-  using base = std::unordered_map<cell_index, rmt_node>;
-
-  std::array<cell_index, 14> NeighborCellIndexDeltas{};
+class rmt_node_list : std::unordered_map<cell_vector, rmt_node> {
+  using base = std::unordered_map<cell_vector, rmt_node>;
 
  public:
-  using base::iterator;
-
   using base::at;
   using base::begin;
   using base::clear;
@@ -40,28 +36,13 @@ class rmt_node_list : std::unordered_map<cell_index, rmt_node> {
   using base::find;
   using base::size;
 
-  rmt_node *node_ptr(cell_index ci) {
-    auto it = find(ci);
+  rmt_node* node_ptr(const cell_vector& cv) {
+    auto it = find(cv);
     return it != end() ? &it->second : nullptr;
   }
 
-  void init_strides(cell_index stride1, cell_index stride2) {
-    for (edge_index ei = 0; ei < 14; ei++) {
-      auto delta_cv = NeighborCellVectors.at(ei);
-      NeighborCellIndexDeltas.at(ei) = delta_cv(2) * stride2 + delta_cv(1) * stride1 + delta_cv(0);
-    }
-  }
-
-  cell_index neighbor_cell_index(cell_index ci, edge_index ei) const {
-    return ci + NeighborCellIndexDeltas.at(ei);
-  }
-
-  iterator find_neighbor_node(cell_index ci, edge_index ei) {
-    return find(neighbor_cell_index(ci, ei));
-  }
-
-  rmt_node *neighbor_node_ptr(cell_index ci, edge_index ei) {
-    return node_ptr(neighbor_cell_index(ci, ei));
+  rmt_node* neighbor_node_ptr(const cell_vector& cv, edge_index ei) {
+    return node_ptr(cv + NeighborCellVectors.at(ei));
   }
 };
 

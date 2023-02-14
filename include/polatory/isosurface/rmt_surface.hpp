@@ -47,13 +47,17 @@ class rmt_tetrahedron {
     auto ei1 = EdgeIndices.at(index_)[1];
     auto ei2 = EdgeIndices.at(index_)[2];
 
-    auto oei0 = OuterEdgeIndices.at(index_)[0];
-    auto oei1 = OuterEdgeIndices.at(index_)[1];
-    auto oei2 = OuterEdgeIndices.at(index_)[2];
-
     const auto& node0 = node_.neighbor(ei0);
     const auto& node1 = node_.neighbor(ei1);
     const auto& node2 = node_.neighbor(ei2);
+
+    if (degenerate(node_, node0, node1, node2)) {
+      return;
+    }
+
+    auto oei0 = OuterEdgeIndices.at(index_)[0];
+    auto oei1 = OuterEdgeIndices.at(index_)[1];
+    auto oei2 = OuterEdgeIndices.at(index_)[2];
 
     // Check six edges to obtain vertices
 
@@ -142,6 +146,17 @@ class rmt_tetrahedron {
 
  private:
   friend class rmt_tetrahedron_iterator;
+
+  // Test if the tetrahedron is degenerate due to clamping within the bbox.
+  static bool degenerate(const rmt_node& node, const rmt_node& node0, const rmt_node& node1,
+                         const rmt_node& node2) {
+    const auto& p = node.position();
+    const auto& p0 = node0.position();
+    const auto& p1 = node1.position();
+    const auto& p2 = node2.position();
+
+    return (p.array() == p0.array() && p.array() == p1.array() && p.array() == p2.array()).any();
+  }
 
   static int tetrahedron_type(binary_sign s, binary_sign s0, binary_sign s1, binary_sign s2) {
     return (s2 << 3) | (s1 << 2) | (s0 << 1) | s;
