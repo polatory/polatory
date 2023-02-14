@@ -28,9 +28,9 @@ class neighbor_edge_pairs : public std::array<std::vector<std::pair<int, int>>, 
 }  // namespace detail
 
 // Encodes 0 or 1 on 14 outgoing halfedges for each node.
-using edge_bitset = uint16_t;
+using edge_bitset = std::uint16_t;
 // Encodes 0 or 1 on 24 faces for each node.
-using face_bitset = uint32_t;
+using face_bitset = std::uint32_t;
 
 static constexpr face_bitset FaceSetMask = 0xffffff;
 
@@ -172,183 +172,37 @@ class rmt_node {
   // Vertex clustering decision tree
   //
   //   # of surfaces
-  //   |  = 0 -> no surface
-  //   | >= 2 -> # of holes
-  //   |         |  = 1 -> Multiple surfaces
-  //   |         | >= 2 -> Multiple surfaces and multiple holes,
-  //   |         |         do not cluster
-  //   |         |         e.g. 0b10'1111'0010'1011
-  //   |         .
-  //   |  = 1 -> # of holes
-  //   |         |  = 0 -> Closed surface
-  //   |         | >= 2 -> Multiple holes
-  //   |         |  = 1 -> Simple surface
-  //   |         .
-  //   .
+  //   | = 0: No surface
+  //   | = 1: # of holes
+  //   |      | = 0: Closed surface
+  //   |      | = 1: Simple surface -> cluster
+  //   |      | ≥ 2: Multiple holes
+  //   | ≥ 2: # of holes
+  //          | = 1: Multiple surfaces -> cluster each surface
+  //          | ≥ 2: Multiple surfaces and multiple holes,
+  //                 e.g. 0b10'1111'0010'1011
   void cluster(std::vector<geometry::point3d>& vertices,
                std::unordered_map<vertex_index, vertex_index>& cluster_map) const {
     auto surfaces = get_surfaces();
     auto holes = get_holes();
 
-    if (surfaces.size() == 1 && holes.size() == 1) {
-      // simple surface
-      auto surface = surfaces[0];
-
-      std::vector<double> weights;
-
-      if (bit_count(surface) == 1) {
-        weights.push_back(1.0);
-      } else {
-        while (surface != 0) {
-          auto edge_idx = bit_pop(&surface);
-          auto weight = clustering_weight(edge_idx);
-          if (!weight.has_value()) {
-            return;
-          }
-          weights.push_back(weight.value());
-        }
-      }
-      auto weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-      POLATORY_ASSERT(weights_sum > 0.0);
-
-      geometry::point3d clustered = geometry::point3d::Zero();
-      for (std::size_t i = 0; i < weights.size(); i++) {
-        auto vi = vis->at(i);
-        clustered += weights.at(i) / weights_sum * vertices.at(vi);
-      }
-
-      auto new_vi = static_cast<vertex_index>(vertices.size());
-      vertices.push_back(clustered);
-
-      for (auto vi : *vis) {
-        cluster_map.emplace(vi, new_vi);
-      }
-    } else if (surfaces.size() >= 2 && holes.size() == 1) {
-      // multiple surfaces
+    if (surfaces.size() >= 1 && holes.size() == 1) {
+      // Simple or multiple surfaces.
       for (auto surface : surfaces) {
-        std::vector<double> weights;
-        std::vector<edge_index> edge_idcs;
-
-        if (bit_count(surface) == 1) {
-          weights.push_back(1.0);
-          edge_idcs.push_back(bit_pop(&surface));
-        } else {
-          while (surface != 0) {
-            auto edge_idx = bit_pop(&surface);
-            auto weight = clustering_weight(edge_idx);
-            if (!weight.has_value()) {
-              return;
-            }
-            weights.push_back(weight.value());
-            edge_idcs.push_back(edge_idx);
-          }
-        }
-        auto weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-        POLATORY_ASSERT(weights_sum > 0.0);
+        auto n = bit_count(surface);
+        auto new_vi = static_cast<vertex_index>(vertices.size());
 
         geometry::point3d clustered = geometry::point3d::Zero();
-        for (std::size_t i = 0; i < weights.size(); i++) {
-          auto edge_idx = edge_idcs.at(i);
+        while (surface != 0) {
+          auto edge_idx = bit_pop(&surface);
           auto vi = vertex_on_edge(edge_idx);
-          clustered += weights.at(i) / weights_sum * vertices.at(vi);
+          clustered += vertices.at(vi);
+          cluster_map.emplace(vi, new_vi);
         }
+        clustered /= static_cast<double>(n);
 
-        auto new_vi = static_cast<vertex_index>(vertices.size());
         vertices.push_back(clustered);
-
-        for (auto edge_idx : edge_idcs) {
-          cluster_map.emplace(vertex_on_edge(edge_idx), new_vi);
-        }
       }
-    }
-  }
-
-  std::optional<double> clustering_weight(edge_index edge_idx) const {
-    if (!has_neighbor(edge_idx)) {
-      return {};
-    }
-
-    const auto& a_node = neighbor(edge_idx);
-    geometry::vector3d oa = a_node.pos - pos;
-
-    std::vector<double> alphas;
-    geometry::vector3d normal = geometry::vector3d::Zero();
-
-    // Calculate alphas and accumulate normals per plane.
-
-    for (auto neigh_pair : NeighborEdgePairs.at(edge_idx)) {
-      if (!has_neighbor(neigh_pair.first) || !has_neighbor(neigh_pair.second)) {
-        return {};
-      }
-
-      const auto& b_node = neighbor(neigh_pair.first);
-      const auto& c_node = neighbor(neigh_pair.second);
-
-      auto theta_b = clustering_weight_theta(*this, a_node, b_node);
-      auto theta_c = clustering_weight_theta(*this, a_node, c_node);
-
-      alphas.push_back(std::abs(theta_b) + std::abs(theta_c));
-
-      geometry::vector3d ob = b_node.pos - pos;
-      geometry::vector3d oc = c_node.pos - pos;
-
-      // Orthogonalize ob and oc against oa.
-      geometry::vector3d ob_ortho = ob - ob.dot(oa) / oa.dot(oa) * oa;
-      geometry::vector3d oc_ortho = oc - oc.dot(oa) / oa.dot(oa) * oa;
-
-      normal += ob_ortho.normalized() / std::tan(theta_b);
-      normal += oc_ortho.normalized() / std::tan(theta_c);
-    }
-
-    normal += oa.normalized();
-    normal.normalize();
-
-    // Calculate weights per plane
-
-    std::vector<double> weights;
-
-    for (std::size_t i = 0; i < alphas.size(); i++) {
-      auto neigh_pair = NeighborEdgePairs.at(edge_idx).at(i);
-      const auto& b_node = neighbor(neigh_pair.first);
-
-      geometry::vector3d ob = b_node.pos - pos;
-
-      geometry::vector3d plane_normal = oa.cross(ob).normalized();
-
-      auto cos_gamma = normal.dot(plane_normal);
-
-      weights.push_back(std::sqrt((1.0 - cos_gamma * cos_gamma) *
-                                  (1.0 / std::pow(std::sin(alphas.at(i) / 2.0), 2.0) - 1.0)));
-    }
-
-    return *std::max_element(weights.begin(), weights.end());
-  }
-
-  static double clustering_weight_theta(const rmt_node& o_node, const rmt_node& a_node,
-                                        const rmt_node& b_node) {
-    auto oa = a_node.pos - o_node.pos;
-    auto dist_oa = oa.norm();
-
-    auto d_o = o_node.value();
-    auto d_a = a_node.value();
-    auto d_b = b_node.value();
-
-    if (d_b * d_a < 0) {
-      // intersection on edge ob
-      auto ob = b_node.pos - o_node.pos;
-      auto dist_ob = ob.norm();
-      auto cos_aob = oa.dot(ob) / (dist_oa * dist_ob);
-      auto sin_aob = std::sqrt(1.0 - cos_aob * cos_aob);
-      return std::atan(sin_aob / ((d_o - d_b) * dist_oa / ((d_o - d_a) * dist_ob) - cos_aob));
-    }
-    // else
-    {
-      // intersection on edge ab
-      auto ab = b_node.pos - a_node.pos;
-      auto dist_ab = ab.norm();
-      auto cos_oab = -oa.dot(ab) / (dist_oa * dist_ab);
-      auto sin_oab = std::sqrt(1.0 - cos_oab * cos_oab);
-      return std::atan(sin_oab / ((d_a - d_b) * dist_oa / ((d_a - d_o) * dist_ab) - cos_oab));
     }
   }
 

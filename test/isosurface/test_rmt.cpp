@@ -22,10 +22,13 @@ using polatory::isosurface::bit_pop;
 using polatory::isosurface::DualLatticeVectors;
 using polatory::isosurface::edge_bitset;
 using polatory::isosurface::edge_index;
+using polatory::isosurface::face_bitset;
+using polatory::isosurface::face_index;
 using polatory::isosurface::FaceEdges;
 using polatory::isosurface::LatticeVectors;
 using polatory::isosurface::NeighborCellVectors;
 using polatory::isosurface::NeighborEdgePairs;
+using polatory::isosurface::NeighborFaces;
 using polatory::isosurface::NeighborMasks;
 using polatory::isosurface::OppositeEdge;
 using polatory::isosurface::rmt_primitive_lattice;
@@ -76,8 +79,7 @@ TEST(rmt, lattice) {
   auto points = random_points(cuboid3d(min, max), 100);
 
   for (auto p : points.rowwise()) {
-    auto ci = lat.cell_index_from_point(p);
-    auto cv = lat.to_cell_vector(ci);
+    auto cv = lat.cell_vector_from_point(p);
     auto cp = lat.cell_node_point(cv);
 
     EXPECT_LT((p - cp).norm(), std::sqrt(2.0) * resolution);
@@ -108,6 +110,21 @@ TEST(rmt, neighbor_edge_pairs) {
       EXPECT_TRUE(va.dot(vb) > 0.0);
       EXPECT_TRUE(va.dot(vc) > 0.0);
       EXPECT_NEAR(0.0, vb.cross(va).cross(va.cross(vc)).norm(), 1e-15);
+    }
+  }
+}
+
+TEST(rmt, neighbor_faces) {
+  for (face_index fi = 0; fi < 24; fi++) {
+    auto fi_edges = FaceEdges.at(fi);
+    auto neigh = NeighborFaces.at(fi);
+    ASSERT_EQ(3, bit_count(neigh));
+
+    while (neigh) {
+      auto fj = bit_pop(&neigh);
+      auto& fj_edges = FaceEdges.at(fj);
+
+      ASSERT_EQ(2, bit_count(static_cast<edge_bitset>(fi_edges & fj_edges)));
     }
   }
 }

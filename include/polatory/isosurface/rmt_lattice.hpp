@@ -1,7 +1,5 @@
 #pragma once
 
-#include <omp.h>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -32,9 +30,9 @@ class rmt_lattice : public rmt_primitive_lattice {
   static constexpr double kZeroValueReplacement = 1e-10;
 
   rmt_node_list node_list;
-  std::vector<cell_index> nodes_to_evaluate;
-  std::unordered_set<cell_index> added_cells;
-  std::vector<cell_index> last_added_cells;
+  std::vector<cell_vector> nodes_to_evaluate;
+  std::unordered_set<cell_vector> added_cells;
+  std::vector<cell_vector> last_added_cells;
 
   std::vector<geometry::point3d> vertices;
   std::unordered_map<vertex_index, vertex_index> cluster_map;
@@ -44,43 +42,47 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   // Add nodes corresponding to eight vertices of the cell.
-  void add_cell(cell_index ci) {
-    if (added_cells.contains(ci)) {
+  void add_cell(const cell_vector& cv) {
+    if (added_cells.contains(cv)) {
       return;
     }
 
-    add_node(ci);
-    add_node(node_list.neighbor_cell_index(ci, 4));
-    add_node(node_list.neighbor_cell_index(ci, 9));
-    add_node(node_list.neighbor_cell_index(ci, 3));
-    add_node(node_list.neighbor_cell_index(ci, 13));
-    add_node(node_list.neighbor_cell_index(ci, 1));
-    add_node(node_list.neighbor_cell_index(ci, 12));
-    add_node(node_list.neighbor_cell_index(ci, 0));
+    add_node(cv);
+    add_node(cv + NeighborCellVectors[4]);
+    add_node(cv + NeighborCellVectors[9]);
+    add_node(cv + NeighborCellVectors[3]);
+    add_node(cv + NeighborCellVectors[13]);
+    add_node(cv + NeighborCellVectors[1]);
+    add_node(cv + NeighborCellVectors[12]);
+    add_node(cv + NeighborCellVectors[0]);
 
-    added_cells.insert(ci);
-    last_added_cells.push_back(ci);
+    added_cells.insert(cv);
+    last_added_cells.push_back(cv);
   }
 
-  bool add_node(cell_index ci) {
-    if (node_list.contains(ci)) {
+  bool add_node(const cell_vector& cv) {
+    if (node_list.contains(cv)) {
       return false;
     }
 
-    return add_node_unchecked(ci, to_cell_vector(ci));
+    return add_node_unchecked(cv);
   }
 
-  bool add_node_unchecked(cell_index ci, const cell_vector& cv) {
+  bool add_node_unchecked(const cell_vector& cv) {
     auto p = cell_node_point(cv);
 
     if (!extended_bbox().contains(p)) {
       return false;
     }
 
-    node_list.emplace(ci, rmt_node{p});
+    node_list.emplace(cv, rmt_node{clamp_within_bbox(p)});
 
-    nodes_to_evaluate.push_back(ci);
+    nodes_to_evaluate.push_back(cv);
     return true;
+  }
+
+  geometry::point3d clamp_within_bbox(const geometry::point3d& p) const {
+    return p.array().max(bbox().min().array()).min(bbox().max().array());
   }
 
   vertex_index clustered_vertex_index(vertex_index vi) const {
@@ -117,9 +119,9 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   // Removes nodes without any intersections.
-  void remove_free_nodes(const std::vector<cell_index>& nodes) {
-    for (auto ci : nodes) {
-      auto it = node_list.find(ci);
+  void remove_free_nodes(const std::vector<cell_vector>& node_cvs) {
+    for (const auto& cv : node_cvs) {
+      auto it = node_list.find(cv);
       if (it->second.all_intersections == 0) {
         node_list.erase(it->first);
       }
@@ -127,19 +129,19 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   void track_surface() {
-    std::unordered_set<cell_index> cells_to_add;
+    std::unordered_set<cell_vector> cells_to_add;
 
     // Check 12 edges of each cell and add neighbor cells adjacent to an edge
     // at which ends the field values take opposite signs.
-    for (auto ci : last_added_cells) {
-      const auto iaaa = ci;
-      const auto iaab = node_list.neighbor_cell_index(ci, 4);
-      const auto iaba = node_list.neighbor_cell_index(ci, 9);
-      const auto iabb = node_list.neighbor_cell_index(ci, 3);
-      const auto ibaa = node_list.neighbor_cell_index(ci, 13);
-      const auto ibab = node_list.neighbor_cell_index(ci, 1);
-      const auto ibba = node_list.neighbor_cell_index(ci, 12);
-      const auto ibbb = node_list.neighbor_cell_index(ci, 0);
+    for (const auto& cv : last_added_cells) {
+      auto iaaa = cv;
+      auto iaab = cv + NeighborCellVectors[4];
+      auto iaba = cv + NeighborCellVectors[9];
+      auto iabb = cv + NeighborCellVectors[3];
+      auto ibaa = cv + NeighborCellVectors[13];
+      auto ibab = cv + NeighborCellVectors[1];
+      auto ibba = cv + NeighborCellVectors[12];
+      auto ibbb = cv + NeighborCellVectors[0];
 
       const auto* aaa = node_list.node_ptr(iaaa);
       const auto* aab = node_list.node_ptr(iaab);
@@ -152,87 +154,87 @@ class rmt_lattice : public rmt_primitive_lattice {
 
       // __a and __b
       if (has_intersection(aaa, aab)) {  // o -> 4
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 2));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 5));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 6));
+        cells_to_add.insert(iaaa + NeighborCellVectors[2]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[5]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[6]);
       }
       if (has_intersection(aba, abb)) {  // 9 -> 3
         cells_to_add.insert(iaba);
-        cells_to_add.insert(node_list.neighbor_cell_index(iaba, 5));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaba, 6));
+        cells_to_add.insert(iaba + NeighborCellVectors[5]);
+        cells_to_add.insert(iaba + NeighborCellVectors[6]);
       }
       if (has_intersection(baa, bab)) {  // 13 -> 1
         cells_to_add.insert(ibaa);
-        cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 2));
-        cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 5));
+        cells_to_add.insert(ibaa + NeighborCellVectors[2]);
+        cells_to_add.insert(ibaa + NeighborCellVectors[5]);
       }
       if (has_intersection(bba, bbb)) {  // 12 -> 0
         cells_to_add.insert(ibba);
-        cells_to_add.insert(node_list.neighbor_cell_index(ibba, 2));
-        cells_to_add.insert(node_list.neighbor_cell_index(ibba, 6));
+        cells_to_add.insert(ibba + NeighborCellVectors[2]);
+        cells_to_add.insert(ibba + NeighborCellVectors[6]);
       }
 
       // _a_ and _b_
       if (has_intersection(aaa, aba)) {  // o -> 9
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 6));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 8));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 11));
+        cells_to_add.insert(iaaa + NeighborCellVectors[6]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[8]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[11]);
       }
       if (has_intersection(aab, abb)) {  // 4 -> 3
         cells_to_add.insert(iaab);
-        cells_to_add.insert(node_list.neighbor_cell_index(iaab, 6));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaab, 8));
+        cells_to_add.insert(iaab + NeighborCellVectors[6]);
+        cells_to_add.insert(iaab + NeighborCellVectors[8]);
       }
       if (has_intersection(baa, bba)) {  // 13 -> 12
         cells_to_add.insert(ibaa);
-        cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 8));
-        cells_to_add.insert(node_list.neighbor_cell_index(ibaa, 11));
+        cells_to_add.insert(ibaa + NeighborCellVectors[8]);
+        cells_to_add.insert(ibaa + NeighborCellVectors[11]);
       }
       if (has_intersection(bab, bbb)) {  // 1 -> 0
         cells_to_add.insert(ibab);
-        cells_to_add.insert(node_list.neighbor_cell_index(ibab, 6));
-        cells_to_add.insert(node_list.neighbor_cell_index(ibab, 11));
+        cells_to_add.insert(ibab + NeighborCellVectors[6]);
+        cells_to_add.insert(ibab + NeighborCellVectors[11]);
       }
 
       // a__ and b__
       if (has_intersection(aaa, baa)) {  // o -> 13
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 2));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 10));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaaa, 11));
+        cells_to_add.insert(iaaa + NeighborCellVectors[2]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[10]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[11]);
       }
       if (has_intersection(aab, bab)) {  // 4 -> 1
         cells_to_add.insert(iaab);
-        cells_to_add.insert(node_list.neighbor_cell_index(iaab, 2));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaab, 10));
+        cells_to_add.insert(iaab + NeighborCellVectors[2]);
+        cells_to_add.insert(iaab + NeighborCellVectors[10]);
       }
       if (has_intersection(aba, bba)) {  // 9 -> 12
         cells_to_add.insert(iaba);
-        cells_to_add.insert(node_list.neighbor_cell_index(iaba, 10));
-        cells_to_add.insert(node_list.neighbor_cell_index(iaba, 11));
+        cells_to_add.insert(iaba + NeighborCellVectors[10]);
+        cells_to_add.insert(iaba + NeighborCellVectors[11]);
       }
       if (has_intersection(abb, bbb)) {  // 3 -> 0
         cells_to_add.insert(iabb);
-        cells_to_add.insert(node_list.neighbor_cell_index(iabb, 2));
-        cells_to_add.insert(node_list.neighbor_cell_index(iabb, 11));
+        cells_to_add.insert(iabb + NeighborCellVectors[2]);
+        cells_to_add.insert(iabb + NeighborCellVectors[11]);
       }
     }
 
     last_added_cells.clear();
 
-    for (auto ci : cells_to_add) {
-      add_cell(ci);
+    for (const auto& cv : cells_to_add) {
+      add_cell(cv);
     }
   }
 
   void update_neighbor_cache() {
-    for (auto& ci_node : node_list) {
-      auto ci = ci_node.first;
-      auto& node = ci_node.second;
+    for (auto& cv_node : node_list) {
+      const auto& cv = cv_node.first;
+      auto& node = cv_node.second;
 
       auto neighbors = std::make_unique<std::array<rmt_node*, 14>>();
 
       for (edge_index ei = 0; ei < 14; ei++) {
-        neighbors->at(ei) = node_list.neighbor_node_ptr(ci, ei);
+        neighbors->at(ei) = node_list.neighbor_node_ptr(cv, ei);
       }
 
       node.set_neighbors(std::move(neighbors));
@@ -240,26 +242,19 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
  public:
-  rmt_lattice(const geometry::bbox3d& bbox, double resolution) : base(bbox, resolution) {
-    node_list.init_strides(cell_index{1} << shift1, cell_index{1} << shift2);
-  }
+  rmt_lattice(const geometry::bbox3d& bbox, double resolution) : base(bbox, resolution) {}
 
   // Add all nodes inside the boundary.
   void add_all_nodes(const field_function& field_fn, double isovalue) {
-    std::vector<cell_index> new_nodes;
-    std::vector<cell_index> prev_nodes;
+    std::vector<cell_vector> new_nodes;
+    std::vector<cell_vector> prev_nodes;
 
     for (auto cv2 = cv_min(2); cv2 <= cv_max(2); cv2++) {
-      auto offset2 = static_cast<cell_index>(cv2 - cv_offset(2)) << shift2;
-
       for (auto cv1 = cv_min(1); cv1 <= cv_max(1); cv1++) {
-        auto offset21 = offset2 | (static_cast<cell_index>(cv1 - cv_offset(1)) << shift1);
-
         for (auto cv0 = cv_min(0); cv0 <= cv_max(0); cv0++) {
-          auto ci = offset21 | static_cast<cell_index>(cv0 - cv_offset(0));
-
-          if (add_node_unchecked(ci, cell_vector(cv0, cv1, cv2))) {
-            new_nodes.push_back(ci);
+          cell_vector cv(cv0, cv1, cv2);
+          if (add_node_unchecked(cv)) {
+            new_nodes.push_back(cv);
           }
         }
       }
@@ -286,9 +281,9 @@ class rmt_lattice : public rmt_primitive_lattice {
       evaluate_field(field_fm, isovalue);
     }
 
-    std::vector<cell_index> all_nodes;
-    for (const auto& ci_node : node_list) {
-      all_nodes.push_back(ci_node.first);
+    std::vector<cell_vector> all_nodes;
+    for (const auto& cv_node : node_list) {
+      all_nodes.push_back(cv_node.first);
     }
 
     generate_vertices(all_nodes);
@@ -302,7 +297,7 @@ class rmt_lattice : public rmt_primitive_lattice {
       return;
     }
 
-    add_cell(cell_index_from_point(p));
+    add_cell(cell_vector_from_point(p));
   }
 
   void clear() {
@@ -315,65 +310,61 @@ class rmt_lattice : public rmt_primitive_lattice {
   void cluster_vertices() {
     for (auto& ci_node : node_list) {
       auto& node = ci_node.second;
+      const auto& p = node.position();
+      if ((p.array() == bbox().min().array() || p.array() == bbox().max().array()).any()) {
+        // Do not cluster boundary nodes' vertices.
+        continue;
+      }
       node.cluster(vertices, cluster_map);
     }
   }
 
-  void generate_vertices(const std::vector<cell_index>& nodes) {
+  void generate_vertices(const std::vector<cell_vector>& node_cvs) {
     static constexpr std::array<edge_index, 7> CellEdgeIndices{0, 1, 3, 4, 9, 12, 13};
 
-#pragma omp parallel
-    {
-      auto thread_count = static_cast<std::size_t>(omp_get_num_threads());
-      auto thread_num = static_cast<std::size_t>(omp_get_thread_num());
-      auto map_size = nodes.size();
-      auto map_it = nodes.begin();
-      if (thread_num < map_size) {
-        std::advance(map_it, thread_num);
-      }
+#pragma omp parallel for
+    for (std::ptrdiff_t i = 0; i < static_cast<std::ptrdiff_t>(node_cvs.size()); i++) {
+      const auto& cv = node_cvs.at(i);
+      auto& node = node_list.at(cv);
 
-      for (auto i = thread_num; i < map_size; i += thread_count) {
-        auto ci = *map_it;
-        auto& node = node_list.at(ci);
+      // "distance" to the intersection point (if exists) from the node
+      auto d = std::abs(node.value());
+      const auto& p = node.position();
 
-        // "distance" to the intersection point from the node
-        auto d = std::abs(node.value());
-
-        for (auto ei : CellEdgeIndices) {
-          auto it = node_list.find_neighbor_node(ci, ei);
-          if (it == node_list.end()) {
-            // There is no neighbor node on the opposite end of the edge.
-            continue;
-          }
-
-          auto& node2 = it->second;
-          if (node.value_sign() == node2.value_sign()) {
-            // Same sign: there is no intersection on the edge.
-            continue;
-          }
-
-          // "distance" to the intersection point from the neighbor node
-          auto d2 = std::abs(node2.value());
-          auto vertex = (d2 * node.position() + d * node2.position()) / (d + d2);
-
-#pragma omp critical
-          {
-            auto vi = static_cast<vertex_index>(vertices.size());
-            vertices.emplace_back(vertex);
-
-            if (d < d2) {
-              node.insert_vertex(vi, ei);
-            } else {
-              node2.insert_vertex(vi, OppositeEdge.at(ei));
-            }
-
-            node.set_intersection(ei);
-            node2.set_intersection(OppositeEdge.at(ei));
-          }
+      for (auto ei : CellEdgeIndices) {
+        auto* node2_ptr = node_list.neighbor_node_ptr(cv, ei);
+        if (node2_ptr == nullptr) {
+          // There is no neighbor node on the opposite end of the edge.
+          continue;
         }
 
-        if (i + thread_count < map_size) {
-          std::advance(map_it, thread_count);
+        auto& node2 = *node2_ptr;
+        if (node.value_sign() == node2.value_sign()) {
+          // There is no intersection on the edge.
+          continue;
+        }
+
+        // "distance" to the intersection point from the neighbor node
+        auto d2 = std::abs(node2.value());
+        const auto& p2 = node2.position();
+
+        // Do not interpolate when coordinates are the same
+        // to prevent boundary vertices from being moved.
+        auto vertex = (p.array() == p2.array()).select(p, (d2 * p + d * p2) / (d + d2));
+
+#pragma omp critical
+        {
+          auto vi = static_cast<vertex_index>(vertices.size());
+          vertices.emplace_back(vertex);
+
+          if (d < d2) {
+            node.insert_vertex(vi, ei);
+          } else {
+            node2.insert_vertex(vi, OppositeEdge.at(ei));
+          }
+
+          node.set_intersection(ei);
+          node2.set_intersection(OppositeEdge.at(ei));
         }
       }
     }
