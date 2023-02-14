@@ -5,6 +5,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>
+#include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/types.hpp>
 #include <unordered_set>
 #include <utility>
@@ -15,6 +16,7 @@ using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
+using polatory::isosurface::mesh_defects_finder;
 using polatory::isosurface::vertex_index;
 
 namespace {
@@ -63,6 +65,20 @@ TEST(isosurface, generate_from_seed_points) {
   ASSERT_EQ(2928u, surface.faces().size());
 }
 
+TEST(isosurface, manifold) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  random_field_function field_fn;
+
+  auto surface = isosurf.generate(field_fn);
+
+  mesh_defects_finder defects(surface.vertices(), surface.faces());
+
+  ASSERT_TRUE(defects.singular_vertices().empty());
+}
+
 using halfedge = std::pair<vertex_index, vertex_index>;
 
 template <>
@@ -82,7 +98,7 @@ TEST(isosurface, boundary_coordinates) {
   isosurface isosurf(bbox, resolution);
   random_field_function field_fn;
 
-  auto surface = isosurf.generate(field_fn, 0.0);
+  auto surface = isosurf.generate(field_fn);
 
   std::unordered_set<halfedge> boundary_hes;
   for (const auto& f : surface.faces()) {
