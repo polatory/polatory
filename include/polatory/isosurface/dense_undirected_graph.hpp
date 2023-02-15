@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <polatory/types.hpp>
 #include <stack>
 #include <stdexcept>
 #include <utility>
@@ -11,22 +12,24 @@ namespace polatory::isosurface {
 
 class dense_undirected_graph {
  public:
-  explicit dense_undirected_graph(int order) : m_(Eigen::MatrixXi::Zero(order, order)) {
+  explicit dense_undirected_graph(index_t order) : m_(Eigen::MatrixXi::Zero(order, order)) {
     if (order <= 0) {
       throw std::invalid_argument("order must be greater than 0.");
     }
   }
 
-  void add_edge(int i, int j) {
+  void add_edge(index_t i, index_t j) {
     if (i > j) {
       std::swap(i, j);
     }
     m_(i, j)++;
   }
 
-  int degree(int i) const { return m_.col(i).sum() + m_.row(i).sum() - m_(i, i); }
+  index_t degree(index_t i) const {
+    return m_.col(i).cast<index_t>().sum() + m_.row(i).cast<index_t>().sum() - m_(i, i);
+  }
 
-  bool has_edge(int i, int j) const {
+  bool has_edge(index_t i, index_t j) const {
     if (i > j) {
       std::swap(i, j);
     }
@@ -34,12 +37,8 @@ class dense_undirected_graph {
   }
 
   bool is_connected() const {
-    if (order() == 0) {
-      return true;
-    }
-
     std::vector<bool> visited(order());
-    std::stack<int> to_visit;
+    std::stack<index_t> to_visit;
 
     // DFS
     to_visit.push(0);
@@ -49,7 +48,7 @@ class dense_undirected_graph {
 
       visited.at(i) = true;
 
-      for (auto j = 0; j < order(); j++) {
+      for (index_t j = 0; j < order(); j++) {
         if (has_edge(i, j) && !visited.at(j)) {
           to_visit.push(j);
         }
@@ -59,9 +58,31 @@ class dense_undirected_graph {
     return std::find(visited.begin(), visited.end(), false) == visited.end();
   }
 
-  int order() const { return static_cast<int>(m_.rows()); }
+  bool is_simple() const {
+    for (index_t i = 0; i < order(); i++) {
+      if (m_(i, i) != 0) {
+        return false;
+      }
 
-  int size() const { return m_.sum(); }
+      for (index_t j = i + 1; j < order(); j++) {
+        if (m_(i, j) > 1) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  index_t max_degree() const {
+    index_t max_degree{};
+    for (index_t i = 0; i < order(); i++) {
+      max_degree = std::max(max_degree, degree(i));
+    }
+    return max_degree;
+  }
+
+  index_t order() const { return m_.rows(); }
 
  private:
   Eigen::MatrixXi m_;

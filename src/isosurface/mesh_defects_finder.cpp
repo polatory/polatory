@@ -59,42 +59,37 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
     const auto& faces = vf_map_.at(vi);
 
     if (faces.empty()) {
+      // An isolated vertex.
       continue;
     }
 
-    std::map<vertex_index, int> vi_to_index;
+    std::map<vertex_index, index_t> vi_to_index;
     for (const auto& f : faces) {
       vi_to_index.emplace(f[1], -1);
       vi_to_index.emplace(f[2], -1);
     }
 
-    auto order = static_cast<int>(vi_to_index.size());
+    auto order = static_cast<index_t>(vi_to_index.size());
 
-    std::vector<vertex_index> vis;
-    vis.reserve(order);
+    std::vector<vertex_index> index_to_vi;
+    index_to_vi.reserve(order);
     for (auto& vi_index : vi_to_index) {
-      vi_index.second = static_cast<int>(vis.size());
-      vis.push_back(vi_index.first);
+      auto index = static_cast<index_t>(index_to_vi.size());
+      index_to_vi.push_back(vi_index.first);
+      vi_index.second = index;
     }
 
-    // A graph represents the link (in the sense of simplicial complex) of the vertex.
+    // The graph that represents the link complex of the vertex.
     dense_undirected_graph g(order);
 
     for (const auto& f : faces) {
-      g.add_edge(vi_to_index.at(f[1]), vi_to_index.at(f[2]));
+      auto i = vi_to_index.at(f[1]);
+      auto j = vi_to_index.at(f[2]);
+      g.add_edge(i, j);
     }
 
-    for (auto i = 0; i < order; i++) {
-      if (g.degree(i) > 2) {
-#pragma omp critical
-        {
-          result.insert(vi);
-          result.insert(vis.at(i));
-        }
-      }
-    }
-
-    if (!g.is_connected()) {
+    // Check if the graph is a cycle or a path (in case of a boundary vertex).
+    if (!(g.is_simple() && g.is_connected() && g.max_degree() <= 2)) {
 #pragma omp critical
       result.insert(vi);
     }
