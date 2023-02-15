@@ -63,22 +63,23 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
       continue;
     }
 
-    std::map<vertex_index, int> vi_to_index;
+    std::map<vertex_index, index_t> vi_to_index;
     for (const auto& f : faces) {
       vi_to_index.emplace(f[1], -1);
       vi_to_index.emplace(f[2], -1);
     }
 
-    auto order = static_cast<int>(vi_to_index.size());
+    auto order = static_cast<index_t>(vi_to_index.size());
 
     std::vector<vertex_index> index_to_vi;
     index_to_vi.reserve(order);
     for (auto& vi_index : vi_to_index) {
-      vi_index.second = static_cast<int>(index_to_vi.size());
+      auto index = static_cast<index_t>(index_to_vi.size());
       index_to_vi.push_back(vi_index.first);
+      vi_index.second = index;
     }
 
-    // A graph represents the link (in the sense of simplicial complex) of the vertex.
+    // The graph that represents the link complex of the vertex.
     dense_undirected_graph g(order);
 
     for (const auto& f : faces) {
@@ -87,7 +88,8 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
       g.add_edge(i, j);
     }
 
-    if (!g.is_simple() || !g.is_cycle_or_path()) {
+    // Check if the graph is a cycle or a path (in case of a boundary vertex).
+    if (!(g.is_simple() && g.is_connected() && g.max_degree() <= 2)) {
 #pragma omp critical
       result.insert(vi);
     }

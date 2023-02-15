@@ -25,7 +25,9 @@ class dense_undirected_graph {
     m_(i, j)++;
   }
 
-  index_t degree(index_t i) const { return m_.col(i).sum() + m_.row(i).sum() - m_(i, i); }
+  index_t degree(index_t i) const {
+    return m_.col(i).cast<index_t>().sum() + m_.row(i).cast<index_t>().sum() - m_(i, i);
+  }
 
   bool has_edge(index_t i, index_t j) const {
     if (i > j) {
@@ -34,10 +36,7 @@ class dense_undirected_graph {
     return m_(i, j) != 0;
   }
 
-  // Returns true if the graph is a cycle or a path.
-  // The singleton graph is not considered as a cycle or a path.
-  // Precondition: the graph is simple.
-  bool is_cycle_or_path() const {
+  bool is_connected() const {
     std::vector<bool> visited(order());
     std::stack<index_t> to_visit;
 
@@ -46,10 +45,6 @@ class dense_undirected_graph {
     while (!to_visit.empty()) {
       auto i = to_visit.top();
       to_visit.pop();
-
-      if (!(degree(i) == 1 || degree(i) == 2)) {
-        return false;
-      }
 
       visited.at(i) = true;
 
@@ -79,7 +74,15 @@ class dense_undirected_graph {
     return true;
   }
 
-  int order() const { return static_cast<int>(m_.rows()); }
+  index_t max_degree() const {
+    index_t max_degree{};
+    for (index_t i = 0; i < order(); i++) {
+      max_degree = std::max(max_degree, degree(i));
+    }
+    return max_degree;
+  }
+
+  index_t order() const { return m_.rows(); }
 
  private:
   Eigen::MatrixXi m_;
