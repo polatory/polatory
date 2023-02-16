@@ -94,7 +94,7 @@ class rmt_primitive_lattice {
   static geometry::bbox3d compute_extended_bbox(const geometry::bbox3d& bbox, double resolution) {
     geometry::vector3d cell_bbox_size =
         resolution * geometry::vector3d(3.0 / std::numbers::sqrt2, 2.0, 1.0);
-    geometry::vector3d ext = cell_bbox_size * (1.0 + 1.0 / 64.0);
+    geometry::vector3d ext = 1.01 * cell_bbox_size;
     return {bbox.min() - ext, bbox.max() + ext};
   }
 

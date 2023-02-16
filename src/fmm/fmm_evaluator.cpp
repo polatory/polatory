@@ -28,7 +28,7 @@ class fmm_evaluator<Order>::impl {
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
       : model_(model), rbf_kernel_(model.rbf()) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
-    auto width = (1.0 + 1.0 / 64.0) * a_bbox.size().maxCoeff();
+    auto width = 1.01 * a_bbox.size().maxCoeff();
     if (width == 0.0) {
       width = 1.0;
     }
