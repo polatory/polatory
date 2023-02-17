@@ -22,13 +22,8 @@ using polatory::isosurface::bit_pop;
 using polatory::isosurface::DualLatticeVectors;
 using polatory::isosurface::edge_bitset;
 using polatory::isosurface::edge_index;
-using polatory::isosurface::face_bitset;
-using polatory::isosurface::face_index;
-using polatory::isosurface::FaceEdges;
 using polatory::isosurface::LatticeVectors;
 using polatory::isosurface::NeighborCellVectors;
-using polatory::isosurface::NeighborEdgePairs;
-using polatory::isosurface::NeighborFaces;
 using polatory::isosurface::NeighborMasks;
 using polatory::isosurface::OppositeEdge;
 using polatory::isosurface::rmt_primitive_lattice;
@@ -51,21 +46,6 @@ std::array<vector3d, 14> NeighborVectors{
     transform_vector(rotation(), {-1.0, -1.0, 1.0}) / std::numbers::sqrt2,
     transform_vector(rotation(), {0.0, 0.0, 2.0}) / std::numbers::sqrt2,
     transform_vector(rotation(), {1.0, -1.0, 1.0}) / std::numbers::sqrt2};
-
-TEST(rmt, face_edges) {
-  for (edge_bitset edge_set : FaceEdges) {
-    auto e0 = bit_pop(&edge_set);
-    auto e1 = bit_pop(&edge_set);
-    auto e2 = bit_pop(&edge_set);
-
-    auto& v0 = NeighborVectors.at(e0);
-    auto& v1 = NeighborVectors.at(e1);
-    auto& v2 = NeighborVectors.at(e2);
-
-    auto area = (v1 - v0).cross(v2 - v0).norm();
-    EXPECT_DOUBLE_EQ(std::sqrt(2.0), area);
-  }
-}
 
 TEST(rmt, lattice) {
   point3d min(-1.0, -1.0, -1.0);
@@ -95,36 +75,6 @@ TEST(rmt, lattice_vectors) {
       } else {
         EXPECT_NEAR(0.0, dot, 1e-15);
       }
-    }
-  }
-}
-
-TEST(rmt, neighbor_edge_pairs) {
-  for (edge_index ei = 0; ei < 14; ei++) {
-    auto& va = NeighborVectors.at(ei);
-
-    for (auto& pair : NeighborEdgePairs.at(ei)) {
-      auto& vb = NeighborVectors.at(pair.first);
-      auto& vc = NeighborVectors.at(pair.second);
-
-      EXPECT_TRUE(va.dot(vb) > 0.0);
-      EXPECT_TRUE(va.dot(vc) > 0.0);
-      EXPECT_NEAR(0.0, vb.cross(va).cross(va.cross(vc)).norm(), 1e-15);
-    }
-  }
-}
-
-TEST(rmt, neighbor_faces) {
-  for (face_index fi = 0; fi < 24; fi++) {
-    auto fi_edges = FaceEdges.at(fi);
-    auto neigh = NeighborFaces.at(fi);
-    ASSERT_EQ(3, bit_count(neigh));
-
-    while (neigh) {
-      auto fj = bit_pop(&neigh);
-      auto& fj_edges = FaceEdges.at(fj);
-
-      ASSERT_EQ(2, bit_count(static_cast<edge_bitset>(fi_edges & fj_edges)));
     }
   }
 }

@@ -1,57 +1,26 @@
 #pragma once
 
 #include <array>
-#include <cmath>
-#include <cstdint>
 #include <memory>
-#include <numeric>
-#include <optional>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 namespace polatory::isosurface {
 
-namespace detail {
-
-class neighbor_edge_pairs : public std::array<std::vector<std::pair<int, int>>, 14> {
-  using base = std::array<std::vector<std::pair<int, int>>, 14>;
-
- public:
-  neighbor_edge_pairs();
-};
-
-}  // namespace detail
-
 // Encodes 0 or 1 on 14 outgoing halfedges for each node.
 using edge_bitset = std::uint16_t;
-// Encodes 0 or 1 on 24 faces for each node.
-using face_bitset = std::uint32_t;
 
-static constexpr face_bitset FaceSetMask = 0xffffff;
+static constexpr edge_bitset EdgeSetMask = 0x3fff;
 
 // Edge index per node: 0 - 13
 using edge_index = int;
-// 0 - 23
-using face_index = int;
 
 // Adjacent edges (4 or 6) of each edge.
 extern const std::array<edge_bitset, 14> NeighborMasks;
-
-// List of three edges which point to the vertices of each faces.
-extern const std::array<edge_bitset, 24> FaceEdges;
-
-// List of three faces which are adjacent to each faces.
-extern const std::array<face_bitset, 24> NeighborFaces;
-
-// List of pairs of edges for each edge.
-// e.g. { 1, 9 } for edge 0: edge 1 and 9 are adjacent to edge 0
-// and all three edges are coplanar.
-extern const detail::neighbor_edge_pairs NeighborEdgePairs;
 
 enum binary_sign { Pos = 0, Neg = 1 };
 
@@ -75,47 +44,11 @@ class rmt_node {
  private:
   std::unique_ptr<std::array<rmt_node*, 14>> neighbors_;
 
-  static std::vector<face_bitset> get_holes_impl(face_bitset face_set) {
-    std::vector<face_bitset> holes;
-
-    if (face_set == 0) {
-      // no holes
-      return holes;
-    }
-
-    face_bitset remaining_faces = face_set;
-
-    while (remaining_faces != 0) {
-      // visit a new hole
-      face_bitset to_visit_faces = 1 << bit_peek(remaining_faces);
-      face_bitset visited_faces = 0;
-
-      while (to_visit_faces != 0) {
-        // scan to_visit_faces and construct its neighbor list
-        face_bitset neighbors = 0;
-        do {
-          face_index face_idx = bit_peek(to_visit_faces);
-          face_bitset visiting = 1 << face_idx;
-
-          // move current face from to_visit_faces to visited_faces
-          to_visit_faces ^= visiting;
-          visited_faces |= visiting;
-
-          neighbors |= NeighborFaces.at(face_idx);
-        } while (to_visit_faces != 0);
-
-        // update to_visit_faces
-        to_visit_faces = neighbors & (~visited_faces & remaining_faces);
-      }
-
-      remaining_faces ^= visited_faces;
-      holes.push_back(visited_faces);
-    }
-
-    return holes;
+  static std::vector<edge_bitset> get_holes(edge_bitset edge_set) {
+    return get_surfaces(edge_set ^ EdgeSetMask);
   }
 
-  static std::vector<edge_bitset> get_surfaces_impl(edge_bitset edge_set) {
+  static std::vector<edge_bitset> get_surfaces(edge_bitset edge_set) {
     std::vector<edge_bitset> surfaces;
 
     edge_bitset remaining_edges = edge_set;
@@ -169,65 +102,29 @@ class rmt_node {
  public:
   explicit rmt_node(const geometry::point3d& position) : pos(position) {}
 
-  // Vertex clustering decision tree
-  //
-  //   # of surfaces
-  //   | = 0: No surface
-  //   | = 1: # of holes
-  //   |      | = 0: Closed surface
-  //   |      | = 1: Simple surface -> cluster
-  //   |      | ≥ 2: Multiple holes
-  //   | ≥ 2: # of holes
-  //          | = 1: Multiple surfaces -> cluster each surface
-  //          | ≥ 2: Multiple surfaces and multiple holes,
-  //                 e.g. 0b10'1111'0010'1011
   void cluster(std::vector<geometry::point3d>& vertices,
                std::unordered_map<vertex_index, vertex_index>& cluster_map) const {
-    auto surfaces = get_surfaces();
-    auto holes = get_holes();
-
-    if (surfaces.size() >= 1 && holes.size() == 1) {
-      // Simple or multiple surfaces.
-      for (auto surface : surfaces) {
-        auto n = bit_count(surface);
-        auto new_vi = static_cast<vertex_index>(vertices.size());
-
-        geometry::point3d clustered = geometry::point3d::Zero();
-        while (surface != 0) {
-          auto edge_idx = bit_pop(&surface);
-          auto vi = vertex_on_edge(edge_idx);
-          clustered += vertices.at(vi);
-          cluster_map.emplace(vi, new_vi);
-        }
-        clustered /= static_cast<double>(n);
-
-        vertices.push_back(clustered);
+    auto surfaces = get_surfaces(intersections);
+    for (auto surface : surfaces) {
+      auto holes = get_holes(surface);
+      if (holes.size() != 1) {
+        continue;
       }
+
+      auto n = bit_count(surface);
+      auto new_vi = static_cast<vertex_index>(vertices.size());
+
+      geometry::point3d clustered = geometry::point3d::Zero();
+      while (surface != 0) {
+        auto edge_idx = bit_pop(&surface);
+        auto vi = vertex_on_edge(edge_idx);
+        clustered += vertices.at(vi);
+        cluster_map.emplace(vi, new_vi);
+      }
+      clustered /= static_cast<double>(n);
+
+      vertices.push_back(clustered);
     }
-  }
-
-  face_bitset get_faces() const {
-    edge_bitset face_bits = 0;
-    for (face_index fi = 0; fi < 24; fi++) {
-      auto face_edges = FaceEdges.at(fi);
-      auto face_bit = static_cast<int>((intersections & face_edges) == face_edges);
-      face_bits |= face_bit << fi;
-    }
-    return face_bits;
-  }
-
-  std::vector<face_bitset> get_holes() const {
-    face_bitset hole_faces = ~get_faces() & FaceSetMask;
-    return get_holes_impl(hole_faces);
-  }
-
-  std::vector<edge_bitset> get_surfaces() const {
-    // The most common case
-    if (intersections == 0) {
-      return {};
-    }
-
-    return get_surfaces_impl(intersections);
   }
 
   bool has_intersection(edge_index edge_idx) const {
