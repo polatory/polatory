@@ -44,59 +44,20 @@ class rmt_node {
  private:
   std::unique_ptr<std::array<rmt_node*, 14>> neighbors_;
 
-  static std::vector<edge_bitset> get_holes(edge_bitset edge_set) {
-    return get_surfaces(edge_set ^ EdgeSetMask);
-  }
-
-  static std::vector<edge_bitset> get_surfaces(edge_bitset edge_set) {
-    std::vector<edge_bitset> surfaces;
-
-    edge_bitset remaining_edges = edge_set;
-
-    while (remaining_edges != 0) {
-      // visit a new surface
-      edge_bitset to_visit_edges = 1 << bit_peek(remaining_edges);
-      edge_bitset visited_edges = 0;
-
-      while (to_visit_edges != 0) {
-        // scan to_visit_edges and build its neighbor list
-        edge_bitset neighbors = 0;
-        do {
-          edge_index edge_idx = bit_peek(to_visit_edges);
-          edge_bitset visiting = 1 << edge_idx;
-
-          // move current edge from to_visit_edges to visited_edges
-          to_visit_edges ^= visiting;
-          visited_edges |= visiting;
-
-          edge_bitset next = propagate(visiting) & edge_set;
-          edge_bitset after_next = propagate(next) & edge_set;
-          neighbors |= next & after_next;
-        } while (to_visit_edges != 0);
-
-        // update to_visit_edges
-        to_visit_edges = neighbors & (~visited_edges & remaining_edges);
+  static std::vector<edge_bitset> connected_components(edge_bitset edge_set) {
+    std::vector<edge_bitset> components;
+    while (edge_set != 0) {
+      edge_bitset component{};
+      edge_bitset queue = 1 << bit_peek(edge_set);
+      while (queue != 0) {
+        auto e = bit_pop(&queue);
+        component |= 1 << e;
+        edge_set ^= 1 << e;
+        queue |= NeighborMasks.at(e) & edge_set;
       }
-
-      remaining_edges ^= visited_edges;
-      surfaces.push_back(visited_edges);
+      components.push_back(component);
     }
-
-    return surfaces;
-  }
-
-  static edge_bitset propagate(edge_bitset edge_set) {
-    if (edge_set == 0) {
-      return 0;
-    }
-
-    edge_bitset neighbors = 0;
-    do {
-      edge_index edge_idx = bit_pop(&edge_set);
-      neighbors |= NeighborMasks.at(edge_idx);
-    } while (edge_set != 0);
-
-    return neighbors;
+    return components;
   }
 
  public:
@@ -104,10 +65,12 @@ class rmt_node {
 
   void cluster(std::vector<geometry::point3d>& vertices,
                std::unordered_map<vertex_index, vertex_index>& cluster_map) const {
-    auto surfaces = get_surfaces(intersections);
+    auto surfaces = connected_components(intersections);
     for (auto surface : surfaces) {
-      auto holes = get_holes(surface);
+      auto holes = connected_components(surface ^ EdgeSetMask);
       if (holes.size() != 1) {
+        // holes.size() == 0 -> closed surface
+        // holes.size() >= 2 -> holes in the surface
         continue;
       }
 

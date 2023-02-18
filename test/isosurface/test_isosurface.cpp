@@ -44,9 +44,8 @@ TEST(isosurface, generate) {
 
   auto surface = isosurf.generate(field_fn, 1.0);
 
-  // TODO(mizuno): Check topological properties instead.
-  ASSERT_EQ(1466u, surface.vertices().size());
-  ASSERT_EQ(2928u, surface.faces().size());
+  ASSERT_EQ(1082u, surface.vertices().size());
+  ASSERT_EQ(2160u, surface.faces().size());
 }
 
 TEST(isosurface, generate_from_seed_points) {
@@ -61,8 +60,8 @@ TEST(isosurface, generate_from_seed_points) {
 
   auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
-  ASSERT_EQ(1466u, surface.vertices().size());
-  ASSERT_EQ(2928u, surface.faces().size());
+  ASSERT_EQ(1082u, surface.vertices().size());
+  ASSERT_EQ(2160u, surface.faces().size());
 }
 
 TEST(isosurface, manifold) {
