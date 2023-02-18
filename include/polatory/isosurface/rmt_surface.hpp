@@ -260,7 +260,7 @@ class rmt_surface {
 
     auto inserter = std::back_inserter(faces_);
 
-    for (const auto& ci_node : lattice_.node_list) {
+    for (const auto& ci_node : lattice_.node_list_) {
       const auto& node = ci_node.second;
 
       for (detail::rmt_tetrahedron_iterator it(node); it.is_valid(); ++it) {
