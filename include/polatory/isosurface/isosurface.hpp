@@ -41,30 +41,22 @@ class isosurface {
     rmt_surface rmt_surf(rmt_lattice_);
     rmt_surf.generate_surface();
 
-    // Unclustering non-manifold vertices may require multiple iterations.
-    while (true) {
-      mesh_defects_finder defects(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
+    mesh_defects_finder defects(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
 
-      auto vertices = defects.singular_vertices();
-      auto faces = defects.intersecting_faces();
+    auto vertices = defects.singular_vertices();
+    auto faces = defects.intersecting_faces();
 
-      std::unordered_set<vertex_index> vertices_to_uncluster;
-      for (auto vertex : vertices) {
-        vertices_to_uncluster.insert(vertex);
-      }
-      for (auto face : faces) {
-        vertices_to_uncluster.insert(face[0]);
-        vertices_to_uncluster.insert(face[1]);
-        vertices_to_uncluster.insert(face[2]);
-      }
-
-      rmt_lattice_.uncluster_vertices(vertices_to_uncluster);
-
-      // faces.empty() is not checked as it is not possible to eliminate all self intersections.
-      if (vertices.empty()) {
-        break;
-      }
+    std::unordered_set<vertex_index> vertices_to_uncluster;
+    for (auto vertex : vertices) {
+      vertices_to_uncluster.insert(vertex);
     }
+    for (auto face : faces) {
+      vertices_to_uncluster.insert(face[0]);
+      vertices_to_uncluster.insert(face[1]);
+      vertices_to_uncluster.insert(face[2]);
+    }
+
+    rmt_lattice_.uncluster_vertices(vertices_to_uncluster);
 
     surface surf(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
 
