@@ -3,8 +3,11 @@
 #include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
+#include <polatory/polatory.hpp>
 #include <polatory/types.hpp>
 #include <vector>
+
+using polatory::geometry::point3d;
 
 namespace polatory::point_cloud {
 
