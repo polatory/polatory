@@ -16,6 +16,9 @@ class normal_estimator {
 
   normal_estimator& estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
 
+  geometry::vectors3d estimate_with_knn_closed_surface(
+      index_t k, point3d p_outside, double plane_factor_threshold);
+
   geometry::vectors3d orient_by_outward_vector(const geometry::vector3d& v);
 
  private:
