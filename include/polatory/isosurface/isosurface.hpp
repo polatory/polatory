@@ -41,7 +41,7 @@ class isosurface {
     rmt_surface rmt_surf(rmt_lattice_);
     rmt_surf.generate_surface();
 
-    // Unclustering non-manifold vertices may require multiple iterations.
+    // Unclustering non-manifold vertices may require a few iterations.
     while (true) {
       mesh_defects_finder defects(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
 
