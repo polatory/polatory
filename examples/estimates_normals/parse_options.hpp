@@ -36,7 +36,7 @@ inline options parse_options(int argc, const char* argv[]) {
       "min-plane-factor", po::value(&opts.min_plane_factor)->default_value(1.8)->value_name("VAL"),
       "Threshold of acceptance for estimated normal vectors")
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
-      "Output file in CSV format:\n  X,Y,Z,VAL");
+      "Output file in CSV format:\n  X,Y,Z,NX,NY,NZ");
 
   po::variables_map vm;
 
