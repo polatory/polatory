@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
+#include <polatory/polatory.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
@@ -15,6 +16,13 @@ class normal_estimator {
   normal_estimator& estimate_with_knn(index_t k, double plane_factor_threshold = 1.8);
 
   normal_estimator& estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
+
+  double distance(geometry::point3d& a, geometry::point3d &b);
+
+  index_t find_cloest_point(std::unordered_set<index_t>& P, geometry::point3d &p_outside);
+
+  geometry::vectors3d estimate_with_knn_closed_surface(
+      index_t k, geometry::point3d p_outside, double plane_factor_threshold);
 
   geometry::vectors3d orient_by_outward_vector(const geometry::vector3d& v);
 
