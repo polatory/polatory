@@ -1,9 +1,7 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cmath>
-#include <iterator>
 #include <memory>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -20,7 +18,7 @@
 
 namespace polatory::isosurface {
 
-extern const std::array<edge_index, 14> OppositeEdge;
+inline const std::array<edge_index, 14> OppositeEdge{7, 8, 9, 10, 11, 12, 13, 0, 1, 2, 3, 4, 5, 6};
 
 class rmt_lattice : public rmt_primitive_lattice {
   friend class rmt_surface;
@@ -29,13 +27,13 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   static constexpr double kZeroValueReplacement = 1e-10;
 
-  rmt_node_list node_list;
-  std::vector<cell_vector> nodes_to_evaluate;
-  std::unordered_set<cell_vector> added_cells;
-  std::vector<cell_vector> last_added_cells;
+  rmt_node_list node_list_;
+  std::vector<cell_vector> nodes_to_evaluate_;
+  std::unordered_set<cell_vector> added_cells_;
+  std::vector<cell_vector> last_added_cells_;
 
-  std::vector<geometry::point3d> vertices;
-  std::unordered_map<vertex_index, vertex_index> cluster_map;
+  std::vector<geometry::point3d> vertices_;
+  std::unordered_map<vertex_index, vertex_index> cluster_map_;
 
   static bool has_intersection(const rmt_node* a, const rmt_node* b) {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
@@ -43,7 +41,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   // Add nodes corresponding to eight vertices of the cell.
   void add_cell(const cell_vector& cv) {
-    if (added_cells.contains(cv)) {
+    if (added_cells_.contains(cv)) {
       return;
     }
 
@@ -56,12 +54,12 @@ class rmt_lattice : public rmt_primitive_lattice {
     add_node(cv + NeighborCellVectors[12]);
     add_node(cv + NeighborCellVectors[0]);
 
-    added_cells.insert(cv);
-    last_added_cells.push_back(cv);
+    added_cells_.insert(cv);
+    last_added_cells_.push_back(cv);
   }
 
   bool add_node(const cell_vector& cv) {
-    if (node_list.contains(cv)) {
+    if (node_list_.contains(cv)) {
       return false;
     }
 
@@ -75,9 +73,9 @@ class rmt_lattice : public rmt_primitive_lattice {
       return false;
     }
 
-    node_list.emplace(cv, rmt_node{clamp_within_bbox(p)});
+    node_list_.emplace(cv, rmt_node{clamp_within_bbox(p)});
 
-    nodes_to_evaluate.push_back(cv);
+    nodes_to_evaluate_.push_back(cv);
     return true;
   }
 
@@ -86,44 +84,44 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   vertex_index clustered_vertex_index(vertex_index vi) const {
-    return cluster_map.contains(vi) ? cluster_map.at(vi) : vi;
+    return cluster_map_.contains(vi) ? cluster_map_.at(vi) : vi;
   }
 
-  // Evaluates field values for each node in nodes_to_evaluate.
+  // Evaluates field values for each node in nodes_to_evaluate_.
   void evaluate_field(const field_function& field_fn, double isovalue) {
-    if (nodes_to_evaluate.empty()) {
+    if (nodes_to_evaluate_.empty()) {
       return;
     }
 
-    geometry::points3d points(nodes_to_evaluate.size(), 3);
+    geometry::points3d points(nodes_to_evaluate_.size(), 3);
 
     auto point_it = points.rowwise().begin();
-    for (auto idx : nodes_to_evaluate) {
-      *point_it++ = node_list.at(idx).position();
+    for (auto idx : nodes_to_evaluate_) {
+      *point_it++ = node_list_.at(idx).position();
     }
 
     common::valuesd values = field_fn(points).array() - isovalue;
 
     auto i = 0;
-    for (auto idx : nodes_to_evaluate) {
+    for (auto idx : nodes_to_evaluate_) {
       auto value = values(i);
       if (value == 0.0) {
         value = kZeroValueReplacement;
       }
 
-      node_list.at(idx).set_value(value);
+      node_list_.at(idx).set_value(value);
       i++;
     }
 
-    nodes_to_evaluate.clear();
+    nodes_to_evaluate_.clear();
   }
 
   // Removes nodes without any intersections.
   void remove_free_nodes(const std::vector<cell_vector>& node_cvs) {
     for (const auto& cv : node_cvs) {
-      auto it = node_list.find(cv);
-      if (it->second.all_intersections == 0) {
-        node_list.erase(it->first);
+      auto it = node_list_.find(cv);
+      if (it->second.is_free()) {
+        node_list_.erase(it->first);
       }
     }
   }
@@ -133,7 +131,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
     // Check 12 edges of each cell and add neighbor cells adjacent to an edge
     // at which ends the field values take opposite signs.
-    for (const auto& cv : last_added_cells) {
+    for (const auto& cv : last_added_cells_) {
       auto iaaa = cv;
       auto iaab = cv + NeighborCellVectors[4];
       auto iaba = cv + NeighborCellVectors[9];
@@ -143,14 +141,14 @@ class rmt_lattice : public rmt_primitive_lattice {
       auto ibba = cv + NeighborCellVectors[12];
       auto ibbb = cv + NeighborCellVectors[0];
 
-      const auto* aaa = node_list.node_ptr(iaaa);
-      const auto* aab = node_list.node_ptr(iaab);
-      const auto* aba = node_list.node_ptr(iaba);
-      const auto* abb = node_list.node_ptr(iabb);
-      const auto* baa = node_list.node_ptr(ibaa);
-      const auto* bab = node_list.node_ptr(ibab);
-      const auto* bba = node_list.node_ptr(ibba);
-      const auto* bbb = node_list.node_ptr(ibbb);
+      const auto* aaa = node_list_.node_ptr(iaaa);
+      const auto* aab = node_list_.node_ptr(iaab);
+      const auto* aba = node_list_.node_ptr(iaba);
+      const auto* abb = node_list_.node_ptr(iabb);
+      const auto* baa = node_list_.node_ptr(ibaa);
+      const auto* bab = node_list_.node_ptr(ibab);
+      const auto* bba = node_list_.node_ptr(ibba);
+      const auto* bbb = node_list_.node_ptr(ibbb);
 
       // __a and __b
       if (has_intersection(aaa, aab)) {  // o -> 4
@@ -219,7 +217,7 @@ class rmt_lattice : public rmt_primitive_lattice {
       }
     }
 
-    last_added_cells.clear();
+    last_added_cells_.clear();
 
     for (const auto& cv : cells_to_add) {
       add_cell(cv);
@@ -227,14 +225,14 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   void update_neighbor_cache() {
-    for (auto& cv_node : node_list) {
+    for (auto& cv_node : node_list_) {
       const auto& cv = cv_node.first;
       auto& node = cv_node.second;
 
       auto neighbors = std::make_unique<std::array<rmt_node*, 14>>();
 
       for (edge_index ei = 0; ei < 14; ei++) {
-        neighbors->at(ei) = node_list.neighbor_node_ptr(cv, ei);
+        neighbors->at(ei) = node_list_.neighbor_node_ptr(cv, ei);
       }
 
       node.set_neighbors(std::move(neighbors));
@@ -276,13 +274,13 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   void add_nodes_by_tracking(const field_function& field_fm, double isovalue) {
     evaluate_field(field_fm, isovalue);
-    while (!last_added_cells.empty()) {
+    while (!last_added_cells_.empty()) {
       track_surface();
       evaluate_field(field_fm, isovalue);
     }
 
     std::vector<cell_vector> all_nodes;
-    for (const auto& cv_node : node_list) {
+    for (const auto& cv_node : node_list_) {
       all_nodes.push_back(cv_node.first);
     }
 
@@ -301,21 +299,21 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   void clear() {
-    node_list.clear();
-    nodes_to_evaluate.clear();
-    cluster_map.clear();
-    vertices.clear();
+    node_list_.clear();
+    nodes_to_evaluate_.clear();
+    cluster_map_.clear();
+    vertices_.clear();
   }
 
   void cluster_vertices() {
-    for (auto& ci_node : node_list) {
+    for (auto& ci_node : node_list_) {
       auto& node = ci_node.second;
       const auto& p = node.position();
       if ((p.array() == bbox().min().array() || p.array() == bbox().max().array()).any()) {
         // Do not cluster boundary nodes' vertices.
         continue;
       }
-      node.cluster(vertices, cluster_map);
+      node.cluster(vertices_, cluster_map_);
     }
   }
 
@@ -325,14 +323,14 @@ class rmt_lattice : public rmt_primitive_lattice {
 #pragma omp parallel for
     for (std::ptrdiff_t i = 0; i < static_cast<std::ptrdiff_t>(node_cvs.size()); i++) {
       const auto& cv = node_cvs.at(i);
-      auto& node = node_list.at(cv);
+      auto& node = node_list_.at(cv);
 
       // "distance" to the intersection point (if exists) from the node
       auto d = std::abs(node.value());
       const auto& p = node.position();
 
       for (auto ei : CellEdgeIndices) {
-        auto* node2_ptr = node_list.neighbor_node_ptr(cv, ei);
+        auto* node2_ptr = node_list_.neighbor_node_ptr(cv, ei);
         if (node2_ptr == nullptr) {
           // There is no neighbor node on the opposite end of the edge.
           continue;
@@ -354,8 +352,8 @@ class rmt_lattice : public rmt_primitive_lattice {
 
 #pragma omp critical
         {
-          auto vi = static_cast<vertex_index>(vertices.size());
-          vertices.emplace_back(vertex);
+          auto vi = static_cast<vertex_index>(vertices_.size());
+          vertices_.emplace_back(vertex);
 
           if (d < d2) {
             node.insert_vertex(vi, ei);
@@ -370,14 +368,14 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
   }
 
-  std::vector<geometry::point3d>& get_vertices() { return vertices; }
+  std::vector<geometry::point3d>& get_vertices() { return vertices_; }
 
   void uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
-    auto it = cluster_map.begin();
-    while (it != cluster_map.end()) {
+    auto it = cluster_map_.begin();
+    while (it != cluster_map_.end()) {
       if (vis.contains(it->second)) {
         // Uncluster.
-        it = cluster_map.erase(it);
+        it = cluster_map_.erase(it);
       } else {
         ++it;
       }

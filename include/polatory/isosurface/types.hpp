@@ -8,8 +8,6 @@
 
 namespace polatory::isosurface {
 
-using cell_index = std::int64_t;
-
 using cell_vector = Eigen::Vector3i;
 
 using cell_vectors = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
