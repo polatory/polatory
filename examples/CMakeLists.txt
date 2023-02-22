@@ -1,3 +1,4 @@
+add_subdirectory(closed_normals)
 add_subdirectory(kriging_cross_validation)
 add_subdirectory(kriging_fit)
 add_subdirectory(kriging_predict)

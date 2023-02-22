@@ -18,6 +18,8 @@ class normal_estimator {
 
   geometry::vectors3d orient_by_outward_vector(const geometry::vector3d& v);
 
+  geometry::vectors3d orient_closed_surface(index_t k);
+
  private:
   geometry::vector3d estimate_impl(const std::vector<index_t>& nn_indices,
                                    double plane_factor_threshold) const;
