@@ -153,13 +153,13 @@ geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
 
       geometry::point3d p = points_.row(j);
       tree_.knn_search(p, k, nn_indices, nn_distances);
-      for (auto k : nn_indices) {
-        if (oriented.at(k)) {
+      for (auto kk : nn_indices) {
+        if (oriented.at(kk)) {
           continue;
         }
 
-        auto weight = std::abs(normals_.row(j).dot(normals_.row(k)));
-        queue.emplace(j, k, weight);
+        auto weight = std::abs(normals_.row(j).dot(normals_.row(kk)));
+        queue.emplace(j, kk, weight);
       }
     }
 
