@@ -1,5 +1,11 @@
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <polatory/geometry/bbox3d.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
+#include <queue>
 #include <stdexcept>
 
 namespace polatory::point_cloud {
@@ -54,6 +60,113 @@ geometry::vectors3d normal_estimator::orient_by_outward_vector(const geometry::v
       n = -n;
     }
   }
+
+  return normals_;
+}
+
+class weighted_pair {
+ public:
+  weighted_pair(index_t first, index_t second, double weight)
+      : first_(first), second_(second), weight_(weight) {}
+
+  bool operator<(const weighted_pair& rhs) const { return weight_ < rhs.weight_; }
+
+  index_t first() const { return first_; }
+
+  index_t second() const { return second_; }
+
+  double weight() const { return weight_; }
+
+ private:
+  index_t first_;
+  index_t second_;
+  double weight_;
+};
+
+geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
+  if (n_points_ > 0 && normals_.rows() == 0) {
+    throw std::runtime_error("Normals have not been estimated yet.");
+  }
+
+  auto bbox = geometry::bbox3d::from_points(points_);
+  auto center = bbox.center();
+  geometry::point3d p_outer{center(0), bbox.min()(1) - 1.0, center(2)};
+
+  std::vector<bool> oriented(n_points_, false);
+  for (index_t i = 0; i < n_points_; i++) {
+    if (normals_.row(i).isZero()) {
+      oriented.at(i) = true;
+    }
+  }
+
+  std::priority_queue<weighted_pair> queue;
+  std::vector<index_t> nn_indices;
+  std::vector<double> nn_distances;
+
+  index_t n_connected_components{};
+  while (std::find(oriented.begin(), oriented.end(), false) != oriented.end()) {
+    index_t i_closest{-1};
+    auto d_closest = std::numeric_limits<double>::infinity();
+    for (index_t i = 0; i < n_points_; i++) {
+      if (oriented.at(i)) {
+        continue;
+      }
+
+      geometry::point3d p = points_.row(i);
+      auto d = (p_outer - p).norm();
+      if (d < d_closest) {
+        d_closest = d;
+        i_closest = i;
+      }
+    }
+
+    geometry::point3d p_closest = points_.row(i_closest);
+    if (normals_.row(i_closest).dot(p_outer - p_closest) < 0.0) {
+      normals_.row(i_closest) *= -1.0;
+    }
+    oriented.at(i_closest) = true;
+
+    tree_.knn_search(p_closest, k, nn_indices, nn_distances);
+    for (auto j : nn_indices) {
+      if (oriented.at(j)) {
+        continue;
+      }
+
+      auto weight = std::abs(normals_.row(i_closest).dot(normals_.row(j)));
+      queue.emplace(i_closest, j, weight);
+    }
+
+    while (!queue.empty()) {
+      auto pair = queue.top();
+      queue.pop();
+
+      auto i = pair.first();
+      auto j = pair.second();
+      if (oriented.at(j)) {
+        continue;
+      }
+
+      if (normals_.row(i).dot(normals_.row(j)) < 0.0) {
+        normals_.row(j) *= -1.0;
+      }
+      oriented.at(j) = true;
+
+      geometry::point3d p = points_.row(j);
+      tree_.knn_search(p, k, nn_indices, nn_distances);
+      for (auto k : nn_indices) {
+        if (oriented.at(k)) {
+          continue;
+        }
+
+        auto weight = std::abs(normals_.row(j).dot(normals_.row(k)));
+        queue.emplace(j, k, weight);
+      }
+    }
+
+    n_connected_components++;
+  }
+
+  std::cout << "Number of connected components: " << n_connected_components << std::endl;
 
   return normals_;
 }

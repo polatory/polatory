@@ -8,6 +8,7 @@
 struct options {
   std::string in_file;
   int k;
+  int k_orient;
   double min_plane_factor;
   std::string out_file;
 };
@@ -26,6 +27,8 @@ inline options parse_options(int argc, const char* argv[]) {
       ("min-plane-factor",
        po::value(&opts.min_plane_factor)->default_value(1.8)->value_name("FACTOR"),  //
        "Threshold of acceptance for estimated normals")                              //
+      ("k-orient", po::value(&opts.k_orient)->default_value(20)->value_name("K"),    //
+       "Number of points for kNN search for normal orientation")                     //
       ("out", po::value(&opts.out_file)->value_name("FILE"),                         //
        "Output file in CSV format:\n  X,Y,Z,VAL");
 
