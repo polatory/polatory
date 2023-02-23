@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
@@ -99,27 +100,30 @@ geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
     }
   }
 
+  std::vector<index_t> indices(n_points_);
+  std::iota(indices.begin(), indices.end(), 0);
+  {
+    std::vector<double> distances(n_points_);
+    for (index_t i = 0; i < n_points_; i++) {
+      geometry::point3d p = points_.row(i);
+      distances.at(i) = (p_outer - p).norm();
+    }
+    std::sort(indices.begin(), indices.end(),
+              [&](auto i, auto j) { return distances.at(i) < distances.at(j); });
+  }
+  auto indices_it = indices.begin();
+
   std::priority_queue<weighted_pair> queue;
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
 
   index_t n_connected_components{};
   while (std::find(oriented.begin(), oriented.end(), false) != oriented.end()) {
-    index_t i_closest{-1};
-    auto d_closest = std::numeric_limits<double>::infinity();
-    for (index_t i = 0; i < n_points_; i++) {
-      if (oriented.at(i)) {
-        continue;
-      }
-
-      geometry::point3d p = points_.row(i);
-      auto d = (p_outer - p).norm();
-      if (d < d_closest) {
-        d_closest = d;
-        i_closest = i;
-      }
+    while (oriented.at(*indices_it)) {
+      indices_it++;
     }
 
+    auto i_closest = *indices_it;
     geometry::point3d p_closest = points_.row(i_closest);
     if (normals_.row(i_closest).dot(p_outer - p_closest) < 0.0) {
       normals_.row(i_closest) *= -1.0;
