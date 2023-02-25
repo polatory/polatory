@@ -2,13 +2,15 @@
 #ifndef FBLAS_HPP
 #define FBLAS_HPP
 
-#include "mkl_blas.h"
-#include "mkl_lapack.h"
+#include <complex>
 
-#define as_c(x) reinterpret_cast<MKL_Complex8 *>(x)
-#define as_z(x) reinterpret_cast<MKL_Complex16 *>(x)
-#define as_const_c(x) reinterpret_cast<const MKL_Complex8 *>(x)
-#define as_const_z(x) reinterpret_cast<const MKL_Complex16 *>(x)
+#if defined(POLATORY_USE_ACCELERATE)
+#include "FBlasAccelerate.hpp"
+#elif defined(POLATORY_USE_MKL)
+#include "FBlasMKL.hpp"
+#else
+#error "No BLAS/LAPACK has been selected"
+#endif
 
 // This file interfaces the blas functions
 // to enable a generic use.
@@ -18,19 +20,21 @@
 
 // for real
 namespace scalfmm {
-  const double D_ZERO = 0.0;
-  const double D_ONE  = 1.0;
+  const double D_ZERO =  0.0;
+  const double D_ONE  =  1.0;
   const double D_MONE = -1.0;
-  const float  S_ZERO = 0.0;
-  const float  S_ONE  = 1.0;
+  const float  S_ZERO =  0.0;
+  const float  S_ONE  =  1.0;
   const float  S_MONE = -1.0;
   // for complex
-  const MKL_Complex16 Z_ZERO = MKL_Complex16{ 0.0, 0.0 };
-  const MKL_Complex16 Z_ONE  = MKL_Complex16{ 1.0, 0.0 };
-  const MKL_Complex16 Z_MONE = MKL_Complex16{ -1.0, 0.0 };
-  const MKL_Complex8  C_ZERO = MKL_Complex8{ 0.0, 0.0 };
-  const MKL_Complex8  C_ONE  = MKL_Complex8{ 1.0, 0.0 };
-  const MKL_Complex8  C_MONE = MKL_Complex8{ -1.0, 0.0 };
+  const std::complex<double> Z_ZERO =  {0.0,0.0};
+  const std::complex<double> Z_ONE  =  {1.0,0.0};
+  const std::complex<double> Z_MONE =  {-1.0,0.0};
+  const std::complex<float>  C_ZERO =  {0.0,0.0};
+  const std::complex<float>  C_ONE  =  {1.0,0.0};
+  const std::complex<float>  C_MONE =  {-1.0,0.0};
+
+  //const double D_PREC = 1e-16;
 
   const int N_ONE = 1;
   const int N_MONE = -1;
@@ -96,9 +100,9 @@ namespace FBlas {
   inline void add(const int n, float *x, float *y)
   { saxpy(&n, &scalfmm::S_ONE, x, &scalfmm::N_ONE, y, &scalfmm::N_ONE); }
   inline void c_add(const int n, float *x, float *y)
-  { caxpy(&n, &scalfmm::C_ONE, as_c(x), &scalfmm::N_ONE, as_c(y), &scalfmm::N_ONE); }
+  { caxpy(&n, as_const_c(&scalfmm::C_ONE), as_c(x), &scalfmm::N_ONE, as_c(y), &scalfmm::N_ONE); }
   inline void c_add(const int n, double *x,double *y)
-  { zaxpy(&n, &scalfmm::Z_ONE, as_z(x), &scalfmm::N_ONE, as_z(y), &scalfmm::N_ONE); }
+  { zaxpy(&n, as_const_z(&scalfmm::Z_ONE), as_z(x), &scalfmm::N_ONE, as_z(y), &scalfmm::N_ONE); }
 
   // y += d x
   inline void axpy(const int n, const double d, const double *x, double *y)
@@ -116,9 +120,9 @@ namespace FBlas {
   inline void gemv(const int m, const int n, float d, float *A, float *x, float *y)
   { sgemv(scalfmm::JOB_STR, &m, &n, &d, A, &m, x, &scalfmm::N_ONE, &scalfmm::S_ZERO, y, &scalfmm::N_ONE); }
   inline void c_gemv(const int m, const int n, float *d, float *A, float *x, float *y)
-  { cgemv(scalfmm::JOB_STR, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, &scalfmm::C_ZERO, as_c(y), &scalfmm::N_ONE); }
+  { cgemv(scalfmm::JOB_STR, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, as_const_c(&scalfmm::C_ZERO), as_c(y), &scalfmm::N_ONE); }
   inline void c_gemv(const int m, const int n, double *d, double *A, double *x, double *y)
-  { zgemv(scalfmm::JOB_STR, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, &scalfmm::Z_ZERO, as_z(y), &scalfmm::N_ONE); }
+  { zgemv(scalfmm::JOB_STR, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, as_const_z(&scalfmm::Z_ZERO), as_z(y), &scalfmm::N_ONE); }
 
   // y += d Ax
   inline void gemva(const int m, const int n, double d, double *A, double *x, double *y)
@@ -126,9 +130,9 @@ namespace FBlas {
   inline void gemva(const int m, const int n, float d, float *A, float *x, float *y)
   { sgemv(scalfmm::JOB_STR, &m, &n, &d, A, &m, x, &scalfmm::N_ONE, &scalfmm::S_ONE, y, &scalfmm::N_ONE); }
   inline void c_gemva(const int m, const int n, const float *d, const float *A, const float *x, float *y)
-  { cgemv(scalfmm::JOB_STR, &m, &n, as_const_c(d), as_const_c(A), &m, as_const_c(x), &scalfmm::N_ONE, &scalfmm::C_ONE, as_c(y), &scalfmm::N_ONE); }
+  { cgemv(scalfmm::JOB_STR, &m, &n, as_const_c(d), as_const_c(A), &m, as_const_c(x), &scalfmm::N_ONE, as_const_c(&scalfmm::C_ONE), as_c(y), &scalfmm::N_ONE); }
   inline void c_gemva(const int m, const int n, const double *d, const double *A, const double *x, double *y)
-  { zgemv(scalfmm::JOB_STR, &m, &n, as_const_z(d), as_const_z(A), &m, as_const_z(x), &scalfmm::N_ONE, &scalfmm::Z_ONE, as_z(y), &scalfmm::N_ONE); }
+  { zgemv(scalfmm::JOB_STR, &m, &n, as_const_z(d), as_const_z(A), &m, as_const_z(x), &scalfmm::N_ONE, as_const_z(&scalfmm::Z_ONE), as_z(y), &scalfmm::N_ONE); }
 
   // y = d A^T x
   inline void gemtv(const int m, const int n, double d, double *A, double *x, double *y)
@@ -136,13 +140,13 @@ namespace FBlas {
   inline void gemtv(const int m, const int n, float d, float *A, float *x, float *y)
   { sgemv(scalfmm::JOB_STR+1, &m, &n, &d, A, &m, x, &scalfmm::N_ONE, &scalfmm::S_ZERO, y, &scalfmm::N_ONE); }
   inline void c_gemtv(const int m, const int n, float *d, float *A, float *x, float *y)
-  { cgemv(scalfmm::JOB_STR+1, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, &scalfmm::C_ZERO, as_c(y), &scalfmm::N_ONE); }
+  { cgemv(scalfmm::JOB_STR+1, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, as_const_c(&scalfmm::C_ZERO), as_c(y), &scalfmm::N_ONE); }
   inline void c_gemtv(const int m, const int n, double *d, double *A, double *x, double *y)
-  { zgemv(scalfmm::JOB_STR+1, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, &scalfmm::Z_ZERO, as_z(y), &scalfmm::N_ONE); }
+  { zgemv(scalfmm::JOB_STR+1, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, as_const_z(&scalfmm::Z_ZERO), as_z(y), &scalfmm::N_ONE); }
   inline void c_gemhv(const int m, const int n, float *d, float *A, float *x, float *y)
-  { cgemv(scalfmm::JOB_STR+7, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, &scalfmm::C_ZERO, as_c(y), &scalfmm::N_ONE); } // hermitian transposed
+  { cgemv(scalfmm::JOB_STR+7, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, as_const_c(&scalfmm::C_ZERO), as_c(y), &scalfmm::N_ONE); } // hermitian transposed
   inline void c_gemhv(const int m, const int n, double *d, double *A, double *x, double *y)
-  { zgemv(scalfmm::JOB_STR+7, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, &scalfmm::Z_ZERO, as_z(y), &scalfmm::N_ONE); } // hermitian transposed
+  { zgemv(scalfmm::JOB_STR+7, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, as_const_z(&scalfmm::Z_ZERO), as_z(y), &scalfmm::N_ONE); } // hermitian transposed
 
   // y += d A^T x
   inline void gemtva(const int m, const int n, double d, double *A, double *x, double *y)
@@ -150,13 +154,13 @@ namespace FBlas {
   inline void gemtva(const int m, const int n, float d, float *A, float *x, float *y)
   { sgemv(scalfmm::JOB_STR+1, &m, &n, &d, A, &m, x, &scalfmm::N_ONE, &scalfmm::S_ONE, y, &scalfmm::N_ONE); }
   inline void c_gemtva(const int m, const int n, float *d, float *A, float *x, float *y)
-  { cgemv(scalfmm::JOB_STR+1, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, &scalfmm::C_ONE, as_c(y), &scalfmm::N_ONE); }
+  { cgemv(scalfmm::JOB_STR+1, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, as_const_c(&scalfmm::C_ONE), as_c(y), &scalfmm::N_ONE); }
   inline void c_gemtva(const int m, const int n, double *d, double *A, double *x, double *y)
-  { zgemv(scalfmm::JOB_STR+1, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, &scalfmm::Z_ONE, as_z(y), &scalfmm::N_ONE); }
+  { zgemv(scalfmm::JOB_STR+1, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, as_const_z(&scalfmm::Z_ONE), as_z(y), &scalfmm::N_ONE); }
   inline void c_gemhva(const int m, const int n, float *d, float *A, float *x, float *y)
-  { cgemv(scalfmm::JOB_STR+7, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, &scalfmm::C_ONE, as_c(y), &scalfmm::N_ONE); } // hermitian transposed
+  { cgemv(scalfmm::JOB_STR+7, &m, &n, as_c(d), as_c(A), &m, as_c(x), &scalfmm::N_ONE, as_const_c(&scalfmm::C_ONE), as_c(y), &scalfmm::N_ONE); } // hermitian transposed
   inline void c_gemhva(const int m, const int n, double *d, double *A, double *x, double *y)
-  { zgemv(scalfmm::JOB_STR+7, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, &scalfmm::Z_ONE, as_z(y), &scalfmm::N_ONE); } // hermitian transposed
+  { zgemv(scalfmm::JOB_STR+7, &m, &n, as_z(d), as_z(A), &m, as_z(x), &scalfmm::N_ONE, as_const_z(&scalfmm::Z_ONE), as_z(y), &scalfmm::N_ONE); } // hermitian transposed
 
 
 
@@ -170,10 +174,10 @@ namespace FBlas {
   { sgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, &d, A, &ldA, B, &ldB, &scalfmm::S_ZERO, C, &ldC); }
   inline void c_gemm(const int m, const int p, const int n, const float *d,
                      float *A, const int ldA, float *B, const int ldB, float *C, const int ldC)
-  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_const_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ZERO, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_const_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ZERO), as_c(C), &ldC); }
   inline void c_gemm(const int m, const int p, const int n, const double *d,
                      double *A, const int ldA, double *B, const int ldB, double *C, const int ldC)
-  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_const_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ZERO, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_const_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ZERO), as_z(C), &ldC); }
 
   // C += d A B, A is m x p, B is p x n
   inline void gemma(int m, int p, int n, double d,
@@ -184,10 +188,10 @@ namespace FBlas {
   { sgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, &d, A, &ldA, B, &ldB, &scalfmm::S_ONE, C, &ldC); }
   inline void c_gemma(int m, int p, int n, float *d,
                       float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ONE, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ONE), as_c(C), &ldC); }
   inline void c_gemma(int m, int p, int n, double *d,
                       double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ONE, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR, &m, &n, &p, as_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ONE), as_z(C), &ldC); }
 
   // C = d A^T B, A is m x p, B is m x n
   inline void gemtm(int m, int p, int n, double d,
@@ -198,16 +202,16 @@ namespace FBlas {
   { sgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, &d, A, &ldA, B, &ldB, &scalfmm::S_ZERO, C, &ldC); }
   inline void c_gemtm(int m, int p, int n, float *d,
                       float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ZERO, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ZERO), as_c(C), &ldC); }
   inline void c_gemtm(int m, int p, int n, double *d,
                       double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ZERO, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ZERO), as_z(C), &ldC); }
   inline void c_gemhm(int m, int p, int n, float *d, // hermitialn transposed
                       float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ZERO, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ZERO), as_c(C), &ldC); }
   inline void c_gemhm(int m, int p, int n, double *d, // hermitian transposed
                       double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ZERO, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ZERO), as_z(C), &ldC); }
 
   // C += d A^T B, A is m x p, B is m x n
   inline void gemtma(int m, int p, int n, double d,
@@ -218,16 +222,16 @@ namespace FBlas {
   { sgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, &d, A, &ldA, B, &ldB, &scalfmm::S_ONE, C, &ldC); }
   inline void c_gemtma(int m, int p, int n, float *d,
                        float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ONE, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ONE), as_c(C), &ldC); }
   inline void c_gemtma(int m, int p, int n, double *d,
                        double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ONE, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR+1, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ONE), as_z(C), &ldC); }
   inline void c_gemhma(int m, int p, int n, float *d, // hermitian transposed
                        float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ONE, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ONE), as_c(C), &ldC); }
   inline void c_gemhma(int m, int p, int n, double *d, // hermitian transposed
                        double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ONE, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR+7, scalfmm::JOB_STR, &p, &n, &m, as_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ONE), as_z(C), &ldC); }
 
 
   // C = d A B^T, A is m x p, B is n x p
@@ -239,16 +243,16 @@ namespace FBlas {
   { sgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, &d, A, &ldA, B, &ldB, &scalfmm::S_ZERO, C, &ldC); }
   inline void c_gemmt(int m, int p, int n, float d,
                       float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_c(&d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ZERO, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_c(&d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ZERO), as_c(C), &ldC); }
   inline void c_gemmt(int m, int p, int n, double d,
                       double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_z(&d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ZERO, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_z(&d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ZERO), as_z(C), &ldC); }
   inline void c_gemmh(int m, int p, int n, float d, // hermitian transposed
                       float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_c(&d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ZERO, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_c(&d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ZERO), as_c(C), &ldC); }
   inline void c_gemmh(int m, int p, int n, double d, // hermitian transposed
                       double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_z(&d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ZERO, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_z(&d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ZERO), as_z(C), &ldC); }
 
   // C += d A B^T, A is m x p, B is n x p
   inline void gemmta(int m, int p, int n, double d,
@@ -259,16 +263,16 @@ namespace FBlas {
   { sgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, &d, A, &ldA, B, &ldB, &scalfmm::S_ONE, C, &ldC); }
   inline void c_gemmta(int m, int p, int n, float *d,
                        float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ONE, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ONE), as_c(C), &ldC); }
   inline void c_gemmta(int m, int p, int n, double *d,
                        double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ONE, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+1, &m, &n, &p, as_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ONE), as_z(C), &ldC); }
   inline void c_gemmha(int m, int p, int n, float *d, // hermitian transposed
                        float *A, int ldA, float *B, int ldB, float *C, int ldC)
-  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_c(d), as_c(A), &ldA, as_c(B), &ldB, &scalfmm::C_ONE, as_c(C), &ldC); }
+  { cgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_c(d), as_c(A), &ldA, as_c(B), &ldB, as_const_c(&scalfmm::C_ONE), as_c(C), &ldC); }
   inline void c_gemmha(int m, int p, int n, double *d, // hermitian transposed
                        double *A, int ldA, double *B, int ldB, double *C, int ldC)
-  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_z(d), as_z(A), &ldA, as_z(B), &ldB, &scalfmm::Z_ONE, as_z(C), &ldC); }
+  { zgemm(scalfmm::JOB_STR, scalfmm::JOB_STR+7, &m, &n, &p, as_z(d), as_z(A), &ldA, as_z(B), &ldB, as_const_z(&scalfmm::Z_ONE), as_z(C), &ldC); }
 
 
   // singular value decomposition

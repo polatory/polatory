@@ -22,10 +22,20 @@ endif()
 target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
-    -DEIGEN_USE_MKL_ALL
+    -DEIGEN_USE_BLAS
     -DGLOG_NO_ABBREVIATED_SEVERITIES
     -DNOMINMAX
 )
+if(APPLE)
+    target_compile_definitions(${TARGET} PUBLIC
+        -DPOLATORY_USE_ACCELERATE
+    )
+else()
+    target_compile_definitions(${TARGET} PUBLIC
+        -DEIGEN_USE_MKL_ALL
+        -DPOLATORY_USE_MKL
+    )
+endif()
 
 if(USE_PREBUILT_BOOST)
     target_compile_definitions(${TARGET} PUBLIC
@@ -37,9 +47,14 @@ endif()
 set(THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
-    ${MKL_INCLUDE_DIR}
     ${VCPKG_INCLUDE_DIR}
 )
+if(NOT(APPLE))
+    list(APPEND THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
+        ${MKL_INCLUDE_DIR}
+    )
+endif()
+
 set(THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
@@ -81,10 +96,18 @@ target_link_libraries(${TARGET} INTERFACE
 if(UNIX)
     target_link_libraries(${TARGET} INTERFACE
         flann::flann_cpp_s
-        "-Wl,--start-group"
-        ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
-        "-Wl,--end-group"
     )
+    if(APPLE)
+        target_link_libraries(${TARGET} INTERFACE
+            "-framework Accelerate"
+        )
+    else()
+        target_link_libraries(${TARGET} INTERFACE
+            "-Wl,--start-group"
+            ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
+            "-Wl,--end-group"
+        )
+    endif()
 elseif(MSVC)
     target_link_libraries(${TARGET} INTERFACE
         flann::flann_cpp
