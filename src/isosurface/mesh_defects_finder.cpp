@@ -89,6 +89,7 @@ std::set<vertex_index> mesh_defects_finder::singular_vertices() const {
     }
 
     // Check if the graph is a cycle or a path (in case of a boundary vertex).
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
     if (!(g.is_simple() && g.is_connected() && g.max_degree() <= 2)) {
 #pragma omp critical
       result.insert(vi);

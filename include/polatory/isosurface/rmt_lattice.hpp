@@ -96,20 +96,20 @@ class rmt_lattice : public rmt_primitive_lattice {
     geometry::points3d points(nodes_to_evaluate_.size(), 3);
 
     auto point_it = points.rowwise().begin();
-    for (auto idx : nodes_to_evaluate_) {
-      *point_it++ = node_list_.at(idx).position();
+    for (const auto& cv : nodes_to_evaluate_) {
+      *point_it++ = node_list_.at(cv).position();
     }
 
     common::valuesd values = field_fn(points).array() - isovalue;
 
-    auto i = 0;
-    for (auto idx : nodes_to_evaluate_) {
+    index_t i{};
+    for (const auto& cv : nodes_to_evaluate_) {
       auto value = values(i);
       if (value == 0.0) {
         value = kZeroValueReplacement;
       }
 
-      node_list_.at(idx).set_value(value);
+      node_list_.at(cv).set_value(value);
       i++;
     }
 
@@ -321,6 +321,7 @@ class rmt_lattice : public rmt_primitive_lattice {
     static constexpr std::array<edge_index, 7> CellEdgeIndices{0, 1, 3, 4, 9, 12, 13};
 
 #pragma omp parallel for
+    // NOLINTNEXTLINE(modernize-loop-convert)
     for (std::ptrdiff_t i = 0; i < static_cast<std::ptrdiff_t>(node_cvs.size()); i++) {
       const auto& cv = node_cvs.at(i);
       auto& node = node_list_.at(cv);
