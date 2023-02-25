@@ -5,7 +5,8 @@
 
 #include <array>
 #include <iterator>
-#include <iostream>
+#include <ostream>
+#include <istream>
 
 #include "FMath.hpp"
 #include "FConstFuncs.hpp"

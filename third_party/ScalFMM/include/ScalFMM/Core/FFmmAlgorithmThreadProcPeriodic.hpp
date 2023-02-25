@@ -2,35 +2,40 @@
 #ifndef FFMMALGORITHMTHREADPROCPPERIODIC_HPP
 #define FFMMALGORITHMTHREADPROCPPERIODIC_HPP
 
+#define SCALFMM_DISTRIBUTED_ALGORITHM
 
-#include "../Utils/FAssert.hpp"
-#include "../Utils/FLog.hpp"
+#include <array>
+#include <memory>
 
-#include "../Utils/FTic.hpp"
-#include "../Utils/FGlobal.hpp"
-#include "../Utils/FMemUtils.hpp"
-#include "../Utils/FEnv.hpp"
+#include "Utils/FAssert.hpp"
+#include "Utils/FLog.hpp"
 
-#include "../Containers/FBoolArray.hpp"
-#include "../Containers/FOctree.hpp"
-#include "../Containers/FLightOctree.hpp"
+#include "Utils/FTic.hpp"
+#include "Utils/FGlobal.hpp"
+#include "Utils/FMemUtils.hpp"
+#include "Utils/FEnv.hpp"
 
-#include "../Containers/FBufferWriter.hpp"
-#include "../Containers/FBufferReader.hpp"
-#include "../Containers/FMpiBufferWriter.hpp"
-#include "../Containers/FMpiBufferReader.hpp"
-#include "../Utils/FEnv.hpp"
+#include "Containers/FBoolArray.hpp"
+#include "Containers/FOctree.hpp"
+#include "Containers/FLightOctree.hpp"
 
-#include "../Utils/FMpi.hpp"
+#include "Containers/FBufferWriter.hpp"
+#include "Containers/FBufferReader.hpp"
+#include "Containers/FMpiBufferWriter.hpp"
+#include "Containers/FMpiBufferReader.hpp"
+#include "Utils/FEnv.hpp"
 
+#include "Utils/FMpi.hpp"
+
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include "FCoreCommon.hpp"
 #include "FP2PExclusion.hpp"
 
 #include "Utils/FAlgorithmTimers.hpp"
 
-#include <memory>
 
 /**
  * @author Berenger Bramas (berenger.bramas@inria.fr)
@@ -1389,16 +1394,17 @@ protected:
 
         FBoolArray leafsNeedOther(this->numberOfLeafs);
         int countNeedOther = 0;
+	const FReal boxWidth = tree->getBoxWidth();
 
         // To store the result
-        OctreeClass otherP2Ptree( tree->getHeight(), tree->getSubHeight(), tree->getBoxWidth(), tree->getBoxCenter() );
+        OctreeClass otherP2Ptree( tree->getHeight(), tree->getSubHeight(),
+				  boxWidth, tree->getBoxCenter() );
 
         // init
         const int LeafIndex = OctreeHeight - 1;
         const int SizeShape = P2PExclusionClass::SizeShape;
 
-        int shapeLeaf[SizeShape];
-        memset(shapeLeaf,0,SizeShape*sizeof(int));
+        int shapeLeaf[SizeShape]{};
 
         LeafData* const leafsDataArray = new LeafData[this->numberOfLeafs];
 
@@ -1627,7 +1633,6 @@ protected:
                 {
                     FLOG(computationCounter.tic());
                     int previous = 0;
-                    const FReal boxWidth = tree->getBoxWidth();
 
                     for(int idxShape = 0 ; idxShape < SizeShape ; ++idxShape){
                         const int endAtThisShape = shapeLeaf[idxShape] + previous;
@@ -1640,10 +1645,11 @@ protected:
                                 KernelClass* myThreadkernels = (kernels[omp_get_thread_num()]);
 
                                 // There is a maximum of 26 neighbors
-                                ContainerClass* neighbors[26];
-                                FTreeCoordinate offsets[26];
-                                int neighborPositions[26];
-                                bool hasPeriodicLeaves;
+                                ContainerClass* neighbors[26]{};
+                                FTreeCoordinate offsets[26]{};
+                                int neighborPositions[26]{};
+				std::array<FTreeCoordinate,26> periodicOffsets{} ;
+                                bool hasPeriodicLeaves{};
                                 for(int idxTaskLeaf = idxLeafs ; idxTaskLeaf < (idxLeafs + nbLeavesInTask) ; ++idxTaskLeaf){
                                     LeafData& currentIter = leafsDataArray[idxTaskLeaf];
                                     if(l2pEnabled){
@@ -1656,55 +1662,51 @@ protected:
                                         int periodicNeighborsCounter = 0;
 
                                         if(hasPeriodicLeaves){
-                                            ContainerClass* periodicNeighbors[26];
-                                            int periodicNeighborPositions[26];
-
+					  constexpr int maxPeriodicNeighbors = 19;
+					  ContainerClass* periodicNeighbors[maxPeriodicNeighbors]{};
+					  int periodicNeighborPositions[maxPeriodicNeighbors]{};
+					  //
                                             for(int idxNeig = 0 ; idxNeig < counter ; ++idxNeig){
                                                 if( !offsets[idxNeig].equals(0,0,0) ){
-                                                    // Put periodic neighbors into other array
-                                                    FReal*const positionsX = neighbors[idxNeig]->getWPositions()[0];
-                                                    FReal*const positionsY = neighbors[idxNeig]->getWPositions()[1];
-                                                    FReal*const positionsZ = neighbors[idxNeig]->getWPositions()[2];
-
-                                                    for(FSize idxPart = 0; idxPart < neighbors[idxNeig]->getNbParticles() ; ++idxPart){
-                                                        positionsX[idxPart] += boxWidth * FReal(offsets[idxNeig].getX());
-                                                        positionsY[idxPart] += boxWidth * FReal(offsets[idxNeig].getY());
-                                                        positionsZ[idxPart] += boxWidth * FReal(offsets[idxNeig].getZ());
-                                                    }
-
-                                                    offsets[periodicNeighborsCounter] = offsets[idxNeig];
-                                                    periodicNeighbors[periodicNeighborsCounter] = neighbors[idxNeig];
-                                                    periodicNeighborPositions[periodicNeighborsCounter] = neighborPositions[idxNeig];
-                                                    ++periodicNeighborsCounter;
+						  //
+						  // Put periodic cell into another cell (copy data)
+						  periodicNeighbors[periodicNeighborsCounter] = new ContainerClass(*(neighbors[idxNeig])) ;
+						  // newPos = pos + ofsset
+						  auto * const  positionsX = periodicNeighbors[periodicNeighborsCounter]->getPositions()[0];
+						  FReal*const positionsY = periodicNeighbors[periodicNeighborsCounter]->getPositions()[1];
+						  FReal*const positionsZ = periodicNeighbors[periodicNeighborsCounter]->getPositions()[2];
+						  FReal  xoffset= boxWidth * FReal(offsets[idxNeig].getX()) ;
+						  FReal  yoffset= boxWidth * FReal(offsets[idxNeig].getY()) ;
+						  FReal  zoffset= boxWidth * FReal(offsets[idxNeig].getZ()) ;
+						  for(FSize idxPart = 0; idxPart < periodicNeighbors[periodicNeighborsCounter]->getNbParticles() ; ++idxPart){
+						    positionsX[idxPart] += xoffset;
+						    positionsY[idxPart] += yoffset;
+						    positionsZ[idxPart] += zoffset;
+						  }
+						  periodicNeighborPositions[periodicNeighborsCounter] = neighborPositions[idxNeig];
+						  ++periodicNeighborsCounter;
                                                 }
                                                 else{
-                                                    neighbors[idxNeig-periodicNeighborsCounter] = neighbors[idxNeig];
-                                                    neighborPositions[idxNeig-periodicNeighborsCounter] = neighborPositions[idxNeig];
+						  neighbors[idxNeig-periodicNeighborsCounter] = neighbors[idxNeig];
+						  neighborPositions[idxNeig-periodicNeighborsCounter] = neighborPositions[idxNeig];
                                                 }
                                             }
 
                                             myThreadkernels->P2PRemote(currentIter.coord,currentIter.targets,
                                                                        currentIter.sources, periodicNeighbors, periodicNeighborPositions, periodicNeighborsCounter);
-
-                                            for(int idxNeig = 0 ; idxNeig < periodicNeighborsCounter ; ++idxNeig){
-                                                FAssertLF( periodicNeighbors[idxNeig] );
-                                                FReal*const positionsX = periodicNeighbors[idxNeig]->getWPositions()[0];
-                                                FReal*const positionsY = periodicNeighbors[idxNeig]->getWPositions()[1];
-                                                FReal*const positionsZ = periodicNeighbors[idxNeig]->getWPositions()[2];
-
-                                                for(FSize idxPart = 0; idxPart < periodicNeighbors[idxNeig]->getNbParticles() ; ++idxPart){
-                                                    positionsX[idxPart] -= boxWidth * FReal(offsets[idxNeig].getX());
-                                                    positionsY[idxPart] -= boxWidth * FReal(offsets[idxNeig].getY());
-                                                    positionsZ[idxPart] -= boxWidth * FReal(offsets[idxNeig].getZ());
-                                                }
-                                            }
+					    for(int idxNeig = 0 ; idxNeig < periodicNeighborsCounter ; ++idxNeig){
+					      delete periodicNeighbors[idxNeig] ;
+					    }
                                         }
-
+					//
+					// Now treat P2P interaction with non periodic cells
+					//    Like in non periodic algorithm !!
+					//
                                         myThreadkernels->P2P( currentIter.coord, currentIter.targets,
-                                                          currentIter.sources, neighbors, neighborPositions, counter - periodicNeighborsCounter);
+							      currentIter.sources, neighbors, neighborPositions, counter - periodicNeighborsCounter);
                                     }
                                 }
-
+				
                             }
                         }
                         previous = endAtThisShape;
@@ -1726,7 +1728,7 @@ protected:
 #pragma omp master
         { FLOG( computation2Counter.tic() ); }
 
-        if(p2pEnabled){
+        if(p2pEnabled && nbProcess > 1){
             KernelClass& myThreadkernels = (*kernels[omp_get_thread_num()]);
             // There is a maximum of 26 neighbors
             ContainerClass* neighbors[26];
@@ -1735,37 +1737,81 @@ protected:
             int neighborPositions[26];
             // Box limite
             const int limite = 1 << (this->OctreeHeight - 1);
+	    const int limitem1 = limite -1 ;
             FAssertLF(leafsNeedOtherData.getSize() < std::numeric_limits<int>::max());
             const int nbLeafToProceed = int(leafsNeedOtherData.getSize());
 
 #pragma omp for  schedule(dynamic, userChunkSize)
             for(int idxLeafs = 0 ; idxLeafs < nbLeafToProceed ; ++idxLeafs){
-                LeafData currentIter = leafsNeedOtherData[idxLeafs];
+	      LeafData currentIter = leafsNeedOtherData[idxLeafs];
+	      
+	      // need the current particles and neighbors particles
+	      int counter = 0;
+	      
+	      // Take possible data
+	      const int nbNeigh = this->getNeighborsIndexesPeriodic(currentIter.coord,limite,
+								    indexesNeighbors,indexArray,AllDirs);
 
-                // need the current particles and neighbors particles
-                int counter = 0;
+	      std::array<ContainerClass*,19>     periodicNeighbors{};
+	      int nbPeriodicCells = 0 ;
+	      //
+	      for(int idxNeigh = 0 ; idxNeigh < nbNeigh ; ++idxNeigh){
+		if(indexesNeighbors[idxNeigh] < (intervals[idProcess].leftIndex) || (intervals[idProcess].rightIndex) < indexesNeighbors[idxNeigh]){
 
-                // Take possible data
-                const int nbNeigh = getNeighborsIndexesPeriodic(currentIter.coord,limite,
-                                                                indexesNeighbors,indexArray,AllDirs);
+		  ContainerClass*const hypotheticNeighbor = otherP2Ptree.getLeafSrc(indexesNeighbors[idxNeigh]);
 
-                for(int idxNeigh = 0 ; idxNeigh < nbNeigh ; ++idxNeigh){
-                    if(indexesNeighbors[idxNeigh] < (intervals[idProcess].leftIndex) || (intervals[idProcess].rightIndex) < indexesNeighbors[idxNeigh]){
-                        ContainerClass*const hypotheticNeighbor = otherP2Ptree.getLeafSrc(indexesNeighbors[idxNeigh]);
-                        if(hypotheticNeighbor){
-                            neighbors[counter] = hypotheticNeighbor;
-                            neighborPositions[counter] = indexArray[idxNeigh];
-                            ++counter;
-                        }
-                    }
-                }
-                if(counter){
-                    myThreadkernels.P2PRemote( currentIter.coord, currentIter.targets,
-                                           currentIter.sources, neighbors, neighborPositions, counter);
-                }
-            }
+		  if(hypotheticNeighbor){
+		    // we should check if the cells is periodic or not
+		    neighbors[counter]         = hypotheticNeighbor;
+		    neighborPositions[counter] = indexArray[idxNeigh];
+		    FTreeCoordinate coord3d(indexesNeighbors[idxNeigh] );
+		    std::array<FReal,3> offSet{};
+		    bool movePos = false ;
+		    coord3d-=currentIter.coord ;
+		    if (std::abs(coord3d.getX()) == limitem1  ){ // it's a periodic cell)
+		      offSet[0] = coord3d.getX() < 0 ? boxWidth : -boxWidth;
+		      movePos = true ;
+		    }
+		    if (std::abs(coord3d.getY()) == limitem1 ){ // it's a periodic cell)
+		      offSet[1] = coord3d.getY() < 0 ? boxWidth : -boxWidth;
+		      movePos = true ;
+		    }
+		    if (std::abs(coord3d.getZ()) == limitem1 ){ // it's a periodic cell)
+		      offSet[2] = coord3d.getZ() < 0 ? boxWidth : -boxWidth;
+		      movePos = true ;
+		    }
 
-        }
+		    if(movePos){
+		      // Put periodic cell into another cell (copy data)
+		      periodicNeighbors[nbPeriodicCells] = new ContainerClass(*hypotheticNeighbor) ;
+		      // newPos = pos + ofsset
+		      FReal*const positionsX = periodicNeighbors[nbPeriodicCells]->getPositions()[0];
+		      FReal*const positionsY = periodicNeighbors[nbPeriodicCells]->getPositions()[1];
+		      FReal*const positionsZ = periodicNeighbors[nbPeriodicCells]->getPositions()[2];
+		      for(FSize idxPart = 0; idxPart < periodicNeighbors[nbPeriodicCells]->getNbParticles() ; ++idxPart){
+			positionsX[idxPart] += offSet[0];
+			positionsY[idxPart] += offSet[1];
+			positionsZ[idxPart] += offSet[2];
+		      }
+		      neighbors[counter] = periodicNeighbors[nbPeriodicCells];
+		      ++nbPeriodicCells;
+		    }
+		    ++counter;
+		  }
+		}
+	      }
+	      if(counter> 0){  // neighborPositions doesn't use)
+		myThreadkernels.P2PRemote( currentIter.coord, currentIter.targets,
+					   nullptr /*currentIter.sources*/, neighbors, neighborPositions, counter);
+		if(nbPeriodicCells >0){
+		  //to Do
+		  for(int i=0 ; i < nbPeriodicCells ; ++i){
+		    delete periodicNeighbors[i] ;
+		  }
+		}
+	      }
+	    }
+	}
 
         delete[] leafsDataArray;
 
@@ -1992,6 +2038,10 @@ protected:
         FLOG( FLog::Controller.write("\tStart Periodic Pass\n").write(FLog::Flush); );
         FLOG(FTic counterTime);
 
+	// the root level of the octree in the virtual array of cells
+	const int rootLevel = offsetRealTree-1 ;
+	rootCellFromProc.setLevel(rootLevel+1);
+	
         if( nbLevelsAboveRoot != -1 ){
             // we will use offsetRealTree-1 cells but for simplicity allocate offsetRealTree
             // upperCells[offsetRealTree-1] is root cell

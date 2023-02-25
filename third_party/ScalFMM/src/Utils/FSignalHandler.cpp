@@ -15,7 +15,7 @@ FSignalHandler FSignalHandler::controler;
 
 #ifdef SCALFMM_USE_SIGNALS
 
-#include <polatory/third_party/ScalFMM/Utils/FLog.hpp>
+#include <ScalFMM/Utils/FLog.hpp>
 #include <iostream>
 #include <execinfo.h>
 #include <cstdio>

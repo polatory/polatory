@@ -5,8 +5,10 @@
 #include <iostream>
 #include <fstream>
 
-#include "../Containers/FBufferReader.hpp"
-#include "../Containers/FBufferWriter.hpp"
+#include "Utils/FPoint.hpp"
+#include "Containers/FBufferReader.hpp"
+#include "Containers/FBufferWriter.hpp"
+#include "Utils/FPoint.hpp"
 
 
 /** This class proposes static methods to save and load
@@ -192,6 +194,7 @@ public:
                 FSize sizeOfLeaf = 0;
                 file.read((char*)&sizeOfLeaf, sizeof(FSize));
 
+                buffer.seek(0);
                 buffer.reserve(sizeOfLeaf);
                 file.read((char*)buffer.data(), sizeOfLeaf);
 
@@ -226,6 +229,7 @@ public:
                 FSize sizeOfCell = 0;
                 file.read((char*)&sizeOfCell, sizeof(FSize));
 
+                buffer.seek(0);
                 buffer.reserve(sizeOfCell);
                 file.read((char*)buffer.data(), sizeOfCell);
 

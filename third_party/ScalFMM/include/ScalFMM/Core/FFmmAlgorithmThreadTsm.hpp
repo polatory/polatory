@@ -3,6 +3,8 @@
 #define FFMMALGORITHMTHREADTSM_HPP
 
 
+#include <vector>
+
 #include "../Utils/FAssert.hpp"
 #include "../Utils/FLog.hpp"
 
@@ -14,7 +16,6 @@
 #include "../Utils/FEnv.hpp"
 
 #include <omp.h>
-#include <vector>
 
 /**
 * @author Berenger Bramas (berenger.bramas@inria.fr)

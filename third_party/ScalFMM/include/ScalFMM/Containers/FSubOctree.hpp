@@ -65,7 +65,7 @@ protected:
         // Remove right useless part - used by child
         const MortonIndex fullIndex = index >> (3 * (inTreeHeight - (this->subOctreeHeight + this->subOctreePosition) ) );
         // Remove left extra data part - used by parent
-        const MortonIndex treeLeafMask = ~(~0x00LL << (3 *  this->subOctreeHeight ));
+        const MortonIndex treeLeafMask = ~(~0ULL << (3 *  this->subOctreeHeight ));
         return treeLeafMask & fullIndex;
     }
 

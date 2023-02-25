@@ -4,8 +4,8 @@
 #define FALGORITHMTIMERS_HPP
 
 #include <map>
-#include <stdexcept>
 #include <string>
+#include <stdexcept>
 
 #include "FTic.hpp"
 

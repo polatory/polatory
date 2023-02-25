@@ -738,7 +738,7 @@ public:
     CellClass* getCell(const MortonIndex inIndex, const int inLevel) const{
         SubOctreeTypesConst workingTree;
         workingTree.tree = this->root;
-        const MortonIndex treeSubLeafMask = ~(~0x00LL << (3 *  workingTree.tree->getSubOctreeHeight() ));
+        const MortonIndex treeSubLeafMask = ~(~0ULL << (3 *  workingTree.tree->getSubOctreeHeight() ));
 
         // Find the suboctree a the correct level
         while(inLevel >= workingTree.tree->getSubOctreeHeight() + workingTree.tree->getSubOctreePosition()) {
@@ -750,7 +750,7 @@ public:
         }
 
         // compute correct index in the array
-        const MortonIndex treeLeafMask = ~(~0x00LL << (3 *  (inLevel + 1 - workingTree.tree->getSubOctreePosition()) ));
+        const MortonIndex treeLeafMask = ~(~0ULL << (3 *  (inLevel + 1 - workingTree.tree->getSubOctreePosition()) ));
         return workingTree.tree->cellsAt(inLevel - workingTree.tree->getSubOctreePosition())[treeLeafMask & inIndex];
     }
 
@@ -817,7 +817,7 @@ public:
         SubOctreeTypesConst workingTree;
         workingTree.tree = this->root;
 
-        const MortonIndex treeMiddleMask = ~(~0x00LL << (3 *  workingTree.tree->getSubOctreeHeight() ));
+        const MortonIndex treeMiddleMask = ~(~0ULL << (3 *  workingTree.tree->getSubOctreeHeight() ));
 
         // Find the suboctree a the correct level
         while(inLevel >= workingTree.tree->getSubOctreeHeight() + workingTree.tree->getSubOctreePosition()) {
@@ -830,12 +830,12 @@ public:
 
         // Be sure there is a parent allocated
         const int levelInTree = inLevel - workingTree.tree->getSubOctreePosition();
-        if( levelInTree && !workingTree.tree->cellsAt(levelInTree - 1)[~(~0x00LL << (3 * levelInTree )) & (inIndex>>3)]){
+        if( levelInTree && !workingTree.tree->cellsAt(levelInTree - 1)[~(~0ULL << (3 * levelInTree )) & (inIndex>>3)]){
             return nullptr;
         }
 
         // compute correct index in the array and return the @ in array
-        const MortonIndex treeLeafMask = ~(~0x00LL << (3 * (levelInTree + 1 ) ));
+        const MortonIndex treeLeafMask = ~(~0ULL << (3 * (levelInTree + 1 ) ));
         return &workingTree.tree->cellsAt(levelInTree)[treeLeafMask & inIndex];
     }
 
@@ -1298,7 +1298,7 @@ public:
     ContainerClass* getLeafSrc(const MortonIndex inIndex){
         SubOctreeTypes workingTree;
         workingTree.tree = this->root;
-        const MortonIndex treeSubLeafMask = ~(~0x00LL << (3 *  workingTree.tree->getSubOctreeHeight() ));
+        const MortonIndex treeSubLeafMask = ~(~0ULL << (3 *  workingTree.tree->getSubOctreeHeight() ));
 
         // Find the suboctree a the correct level
         while(leafIndex >= workingTree.tree->getSubOctreeHeight() + workingTree.tree->getSubOctreePosition()) {
@@ -1310,7 +1310,7 @@ public:
         }
 
         // compute correct index in the array
-        const MortonIndex treeLeafMask = ~(~0x00LL << (3 *  (leafIndex + 1 - workingTree.tree->getSubOctreePosition()) ));
+        const MortonIndex treeLeafMask = ~(~0ULL << (3 *  (leafIndex + 1 - workingTree.tree->getSubOctreePosition()) ));
         return workingTree.leafTree->getLeafSrc(int(treeLeafMask & inIndex));
     }
 

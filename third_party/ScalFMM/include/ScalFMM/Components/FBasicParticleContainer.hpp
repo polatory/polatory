@@ -1,6 +1,9 @@
 // See LICENCE file at project root
-#ifndef FBASICPARTICLECONTAINER_HPP
-#define FBASICPARTICLECONTAINER_HPP
+#ifndef FBASIC_PARTICLE_CONTAINER_HPP_
+#define FBASIC_PARTICLE_CONTAINER_HPP_
+
+#include <array>
+#include <algorithm>
 
 #include "FAbstractParticleContainer.hpp"
 #include "FAbstractSerializable.hpp"
@@ -10,8 +13,6 @@
 #include "../Utils/FMath.hpp"
 #include "../Utils/FPoint.hpp"
 #include "FParticleType.hpp"
-
-#include <array>
 
 /**
  * @author Berenger Bramas (berenger.bramas@inria.fr)
@@ -135,7 +136,30 @@ public:
     /////////////////////////////////////////////////////
     /////////////////////////////////////////////////////
 
-    FBasicParticleContainer(const FBasicParticleContainer&)            = delete;
+  FBasicParticleContainer( FBasicParticleContainer& leaf) : nbParticles(leaf.nbParticles),allocatedParticles(leaf.allocatedParticles) 
+  {
+    // allocate memory
+    const FSize moduloParticlesNumber = (MemoryAlignement/sizeof(FReal));
+    allocatedParticles = (nbParticles + moduloParticlesNumber - 1) & ~(moduloParticlesNumber-1);
+    // init with 0
+    const size_t allocatedBytes = (sizeof(FReal)*3 + sizeof(AttributeClass)*NbAttributesPerParticle)*allocatedParticles;
+
+    FReal* newData  = reinterpret_cast<FReal*>(FAlignedMemory::AllocateBytes<MemoryAlignement>(allocatedBytes));
+    FReal * const oldData = (leaf.getWPositions()[0]);
+    
+    std::copy(oldData,oldData+allocatedBytes,newData) ;
+    //
+    // Fill the structure
+    //
+    for(int idx = 0 ; idx < 3 ; ++idx){
+      positions[idx] = newData + (allocatedParticles * idx);
+    }
+    AttributeClass* startAddress = reinterpret_cast<AttributeClass*>(positions[2] + allocatedParticles);
+    for(unsigned idx = 0 ; idx < NbAttributesPerParticle ; ++idx){
+      attributes[idx] = startAddress + (idx * allocatedParticles);
+    }
+  }
+  
     FBasicParticleContainer& operator=(const FBasicParticleContainer&) = delete;
 
     /////////////////////////////////////////////////////
@@ -177,6 +201,13 @@ public:
     }
 
     /**
+   * @brief getPositions
+   * @return get the position in write mode
+   */
+    FReal* const* getPositions() {
+        return positions;
+    }
+   /**
    * @brief getWPositions
    * @return get the position in write mode
    */
