@@ -137,8 +137,8 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
             if (filtered_indices.contains(idx)) {
               active_lb_idcs.insert(idx);
               weights(idx) = 0.0;
-              active_set_changed = true;
             }
+            active_set_changed = true;
           }
         }
       }
@@ -153,8 +153,8 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
             if (filtered_indices.contains(idx)) {
               active_ub_idcs.insert(idx);
               weights(idx) = 0.0;
-              active_set_changed = true;
             }
+            active_set_changed = true;
           }
         }
       }
