@@ -69,17 +69,21 @@ class rmt_lattice : public rmt_primitive_lattice {
   bool add_node_unchecked(const cell_vector& cv) {
     auto p = cell_node_point(cv);
 
+    // Round the position of the node to prevent creation of near-degenerate tetrahedra.
+    auto unit = resolution() / 100.0;
+    p = unit * (p.array() / unit).round();
+
     if (!extended_bbox().contains(p)) {
       return false;
     }
 
-    node_list_.emplace(cv, rmt_node{clamp_within_bbox(p)});
+    node_list_.emplace(cv, rmt_node{clamp_to_bbox(p)});
 
     nodes_to_evaluate_.push_back(cv);
     return true;
   }
 
-  geometry::point3d clamp_within_bbox(const geometry::point3d& p) const {
+  geometry::point3d clamp_to_bbox(const geometry::point3d& p) const {
     return p.array().max(bbox().min().array()).min(bbox().max().array());
   }
 
@@ -349,7 +353,8 @@ class rmt_lattice : public rmt_primitive_lattice {
 
         // Do not interpolate when coordinates are the same
         // to prevent boundary vertices from being moved.
-        auto vertex = (p.array() == p2.array()).select(p, (d2 * p + d * p2) / (d + d2));
+        geometry::point3d vertex =
+            (p.array() == p2.array()).select(p, (d2 * p + d * p2) / (d + d2));
 
 #pragma omp critical
         {
@@ -369,7 +374,7 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
   }
 
-  std::vector<geometry::point3d>& get_vertices() { return vertices_; }
+  const std::vector<geometry::point3d>& get_vertices() const { return vertices_; }
 
   void uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
     auto it = cluster_map_.begin();

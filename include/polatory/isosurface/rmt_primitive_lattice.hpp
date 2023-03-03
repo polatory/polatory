@@ -51,7 +51,8 @@ class rmt_primitive_lattice {
         b1_(DualLatticeVectors[1] / resolution),
         b2_(DualLatticeVectors[2] / resolution),
         bbox_(bbox),
-        ext_bbox_(compute_extended_bbox(bbox, resolution)) {
+        ext_bbox_(compute_extended_bbox(bbox, resolution)),
+        resolution_(resolution) {
     geometry::points3d ext_bbox_vertices(8, 3);
     ext_bbox_vertices << ext_bbox_.min()(0), ext_bbox_.min()(1), ext_bbox_.min()(2),
         ext_bbox_.max()(0), ext_bbox_.min()(1), ext_bbox_.min()(2), ext_bbox_.min()(0),
@@ -71,7 +72,7 @@ class rmt_primitive_lattice {
     cv_max = cvs.colwise().maxCoeff();
   }
 
-  geometry::bbox3d bbox() const { return bbox_; }
+  const geometry::bbox3d& bbox() const { return bbox_; }
 
   geometry::point3d cell_node_point(const cell_vector& cv) const {
     return cv(0) * a0_ + cv(1) * a1_ + cv(2) * a2_;
@@ -84,7 +85,9 @@ class rmt_primitive_lattice {
 
   // All nodes in the extended bbox must be evaluated
   // to ensure that the isosurface does not have boundary in the bbox.
-  geometry::bbox3d extended_bbox() const { return ext_bbox_; }
+  const geometry::bbox3d& extended_bbox() const { return ext_bbox_; }
+
+  double resolution() const { return resolution_; }
 
  protected:
   cell_vector cv_min;
@@ -106,6 +109,7 @@ class rmt_primitive_lattice {
   const geometry::vector3d b2_;
   const geometry::bbox3d bbox_;
   const geometry::bbox3d ext_bbox_;
+  const double resolution_;
 };
 
 }  // namespace polatory::isosurface
