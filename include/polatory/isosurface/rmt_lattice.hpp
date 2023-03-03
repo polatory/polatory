@@ -69,6 +69,8 @@ class rmt_lattice : public rmt_primitive_lattice {
   bool add_node_unchecked(const cell_vector& cv) {
     auto p = cell_node_point(cv);
 
+    // Due to the numerical error in the rotation of the lattice,
+    // nodes are not perfectly aligned with planes.
     // Round the position of the node to prevent creation of near-degenerate tetrahedra.
     auto unit = resolution() / 100.0;
     p = unit * (p.array() / unit).round();
