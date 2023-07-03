@@ -18,7 +18,7 @@ case $1 in
   'cmake' )
     mkdir -p build
     cd build
-    cmake .. -GNinja -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
+    cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
     ;;
   'b'|'build' )
     cd build

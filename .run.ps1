@@ -36,7 +36,7 @@ switch -regex ($args[0]) {
         buildenv
         New-Item build -ItemType Directory -Force
         Set-Location build
-        Exec { cmake .. -GNinja '-DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake' }
+        Exec { cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE='../vcpkg/scripts/buildsystems/vcpkg.cmake' }
         break
     }
     '^b(uild)?$' {
