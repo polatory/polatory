@@ -13,12 +13,12 @@ case $1 in
     cd vcpkg
     ./bootstrap-vcpkg.sh
     ./vcpkg remove --outdated --recurse
-    ./vcpkg install boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gtest --triplet x64-linux
+    ./vcpkg install boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gtest --triplet "$(../tools/triplet)"
     ;;
   'cmake' )
     mkdir -p build
     cd build
-    cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
+    cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_COMPILER="$(../tools/cxx)"
     ;;
   'b'|'build' )
     cd build
