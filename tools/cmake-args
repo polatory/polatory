@@ -5,7 +5,7 @@ case "$(uname -s)" in
     echo ''
     ;;
   Darwin )
-    echo "$(brew --prefix)/opt/llvm/bin/clang++"
+    echo -DCMAKE_CXX_COMPILER="$(brew --prefix)/opt/llvm/bin/clang++"
     ;;
   * )
     echo 'Unsupported operating system' >&2

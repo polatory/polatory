@@ -18,7 +18,7 @@ case $1 in
   'cmake' )
     mkdir -p build
     cd build
-    cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_CXX_COMPILER="$(../tools/cxx)"
+    cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake "$(../tools/cmake-args)"
     ;;
   'b'|'build' )
     cd build
