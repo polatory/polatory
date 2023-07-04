@@ -1,40 +1,40 @@
 # Building on Windows
 
-1. Install Visual Studio 2022
+## Prerequisites
 
-   https://www.visualstudio.com/
+- [Visual Studio 2022](https://visualstudio.microsoft.com/)
 
-   Under the **Workloads** tab, select the following item.
+  Under **Workloads**, select the following item:
 
-   - **Desktop & Mobile**
+  - **Desktop & Mobile**
 
-     - **Desktop development with C++**
+    - **Desktop development with C++**
 
-   Under the **Individual components** tab, select the following item.
+  Under **Individual components**, select the following item:
 
-   - **Code tools**
+  - **Code tools**
 
-     - **Git for Windows**
+    - **Git for Windows**
 
-1. [Install Intel(R) oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)
+- [Intel(R) oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)
 
-1. Clone Polatory
+## Clone
 
-   ```pwsh
-   git clone --recurse-submodules https://github.com/polatory/polatory.git
-   cd polatory
-   ```
+```pwsh
+git clone --recurse-submodules https://github.com/polatory/polatory.git
+cd polatory
+```
 
-   To update an existing repository:
+To update an existing repository:
 
-   ```pwsh
-   git pull --recurse-submodules
-   ```
+```pwsh
+git pull --recurse-submodules
+```
 
-1. Build polatory
+## Build
 
-   ```pwsh
-   .\run init-vcpkg
-   .\run cmake
-   .\run build
-   ```
+```pwsh
+./run init-vcpkg
+./run cmake
+./run build
+```

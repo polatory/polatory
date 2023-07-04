@@ -1,43 +1,45 @@
 # Building on Ubuntu 22.04
 
-1. Install build tools
+## Prerequisites
 
-   ```bash
-   sudo apt install build-essential cmake curl git ninja-build pkg-config unzip
-   ```
+- Build tools
 
-   If you use Clang, `libomp-dev` is required.
+  ```bash
+  sudo apt install build-essential cmake curl git ninja-build pkg-config unzip
+  ```
 
-   ```bash
-   sudo apt install clang libomp-dev
-   ```
+  If you prefer Clang:
 
-1. Install [Intel(R) oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html).
+  ```bash
+  sudo apt install clang libomp-dev
+  ```
 
-   ```bash
-   wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \ | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-   echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-   sudo apt update
-   sudo apt install intel-oneapi-mkl-devel
-   ```
+- [Intel(R) oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html).
 
-1. Clone Polatory
+  ```bash
+  wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \ | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+  echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+  sudo apt update
+  sudo apt install intel-oneapi-mkl-devel
+  ```
 
-   ```bash
-   git clone --recurse-submodules https://github.com/polatory/polatory.git
-   cd polatory
-   ```
+## Clone
 
-   To update an existing repository:
+```bash
+git clone --recurse-submodules https://github.com/polatory/polatory.git
+cd polatory
+```
 
-   ```bash
-   git pull --recurse-submodules
-   ```
+To update an existing repository:
 
-1. Build polatory
+```bash
+git pull --recurse-submodules
+```
 
-   ```bash
-   ./run init-vcpkg
-   ./run cmake
-   ./run build
-   ```
+## Build
+
+```bash
+./run init-vcpkg
+./run cmake
+./run build
+```

@@ -36,14 +36,14 @@ Polatory can perform kriging prediction via RBF interpolation (dual kriging). Al
 | Simple kriging                               | Interpolant with no polynomial                        |
 | Ordinary kriging                             | Interpolant with polynomial of degree 0               |
 | Universal kriging                            | Interpolant with polynomial of degree ≥ 1             |
-| Weights                                      | (Not computed) Weights of cardinal basis functions    |
+| Weights                                      | (Not computed)                                        |
 | Kriging variance                             | (Not computed)                                        |
 
 A limited number of covariance functions are supported. See the [list of available RBFs](https://github.com/polatory/polatory/wiki/List-of-Available-RBFs) for details.
 
 ## Building
 
-[On Ubuntu](docs/build-ubuntu.md) • [On Windows](docs/build-windows.md)
+[On Windows](docs/build-windows.md) • [On macOS](docs/build-macos.md) • [On Ubuntu](docs/build-ubuntu.md)
 
 ## Contribution
 
