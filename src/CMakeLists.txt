@@ -13,7 +13,7 @@ if(UNIX)
     endif()
 elseif(MSVC)
     # C4702(unreachable code) is disabled as it is reported by link.exe in third-party code.
-    target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702 /experimental:external /external:W0)
+    target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702)
     target_compile_definitions(${TARGET} PUBLIC
         -D_ENABLE_EXTENDED_ALIGNED_STORAGE
     )

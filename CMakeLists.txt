@@ -78,10 +78,6 @@ else()
     message(FATAL_ERROR "Not supported system.")
 endif()
 
-if(MSVC)
-    string(REGEX REPLACE "/W[0-4]" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-endif()
-
 add_subdirectory(benchmark)
 add_subdirectory(examples)
 add_subdirectory(src)
