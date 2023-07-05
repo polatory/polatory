@@ -8,6 +8,14 @@
   xcode-select --install
   ```
 
+- [Homebrew](https://brew.sh)
+
+- Build tools
+
+  ```bash
+  brew install cmake llvm ninja
+  ```
+
 ## Clone
 
 ```bash
