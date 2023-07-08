@@ -19,6 +19,7 @@ struct options {
   double smooth;
   int poly_degree;
   double absolute_tolerance;
+  bool reduce;
   polatory::geometry::bbox3d mesh_bbox;
   double mesh_resolution;
   std::string mesh_file;
@@ -43,6 +44,8 @@ inline options parse_options(int argc, const char* argv[]) {
        "Degree of the polynomial")                                                             //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),              //
        "Absolute tolerance of the fitting")                                                    //
+      ("reduce", po::bool_switch(&opts.reduce),                                                //
+       "Try to reduce the number of RBF centers (incremental fitting)")                        //
       ("mesh-bbox",
        po::value(&opts.mesh_bbox)
            ->multitoken()
@@ -68,7 +71,7 @@ inline options parse_options(int argc, const char* argv[]) {
     throw;
   }
 
-  opts.rbf_name = rbf_vec[0];
+  opts.rbf_name = rbf_vec.at(0);
   for (std::size_t i = 1; i < rbf_vec.size(); i++) {
     opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec.at(i)));
   }
