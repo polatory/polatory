@@ -42,9 +42,6 @@ jobs:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           key: ${{ runner.os }}-vcpkg
 
-      - name: Setup Vcpkg
-        run: ./run init-vcpkg
-
       - name: Configure
         run: ./run cmake
 
@@ -79,17 +76,14 @@ jobs:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           key: ${{ runner.os }}-vcpkg
 
-      - name: Setup Vcpkg
-        run: .\run init-vcpkg
+      - name: Configure
+        run: .\run cmake
 
       - name: Free up disk space
         run: |
           if (Test-Path vcpkg\buildtrees\ceres) {
               Remove-Item vcpkg\buildtrees\ceres -Recurse
           }
-
-      - name: Configure
-        run: .\run cmake
 
       - name: Build
         run: .\run build

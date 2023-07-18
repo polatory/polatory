@@ -25,30 +25,19 @@ if ($args.Length -lt 1) {
 Set-Location $PSScriptRoot
 
 switch -regex ($args[0]) {
-    '^init-vcpkg$' {
-        Set-Location vcpkg
-        Exec { .\bootstrap-vcpkg.bat }
-        Exec { .\vcpkg remove --outdated --recurse }
-        Exec { .\vcpkg install boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gtest --triplet x64-windows }
-        break
-    }
     '^cmake$' {
         buildenv
-        New-Item build -ItemType Directory -Force
-        Set-Location build
-        Exec { cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE='../vcpkg/scripts/buildsystems/vcpkg.cmake' }
+        Exec { cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE='vcpkg/scripts/buildsystems/vcpkg.cmake' }
         break
     }
     '^b(uild)?$' {
         buildenv
-        Set-Location build
-        Exec { ninja }
+        Exec { cmake --build build }
         break
     }
     '^t(est)?$' {
         buildenv
-        Set-Location build
-        Exec { ctest -V }
+        Exec { ctest -V --test-dir build }
         break
     }
     default {

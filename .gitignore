@@ -1,13 +1,6 @@
-# Build output
+.idea/
+.vscode/
 build/
 install/
-
-# CLion
-.idea/*
-
-# Emacs
-*~
-\#*\#
-
-# Visual Studio Code
-.vscode/*
+vcpkg_installed/
+.DS_Store
