@@ -43,7 +43,7 @@ jobs:
           key: ${{ runner.os }}-vcpkg
 
       - name: Configure
-        run: ./run cmake
+        run: ./run configure
 
       - name: Build
         run: ./run build
@@ -77,7 +77,7 @@ jobs:
           key: ${{ runner.os }}-vcpkg
 
       - name: Configure
-        run: .\run cmake
+        run: .\run configure
 
       - name: Free up disk space
         run: |

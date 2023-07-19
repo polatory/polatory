@@ -25,7 +25,7 @@ if ($args.Length -lt 1) {
 Set-Location $PSScriptRoot
 
 switch -regex ($args[0]) {
-    '^cmake$' {
+    '^c(onfigure)?$' {
         buildenv
         Exec { cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE='vcpkg/scripts/buildsystems/vcpkg.cmake' }
         break
