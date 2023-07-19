@@ -1,3 +1,2 @@
 include(polatory_enable_ipo)
-include(polatory_get_prebuilt_boost_dlls)
 include(polatory_target_contents)

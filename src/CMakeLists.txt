@@ -37,13 +37,6 @@ else()
     )
 endif()
 
-if(USE_PREBUILT_BOOST)
-    target_compile_definitions(${TARGET} PUBLIC
-        -DBOOST_ALL_DYN_LINK
-        -DBOOST_ALL_NO_LIB
-    )
-endif()
-
 set(THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
     ${Boost_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
@@ -113,12 +106,6 @@ elseif(MSVC)
         flann::flann_cpp
         ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
     )
-endif()
-
-if(MSVC)
-    polatory_get_prebuilt_boost_dlls(BOOST_DLLS)
-    list(APPEND POLATORY_DLLS ${BOOST_DLLS})
-    set(POLATORY_DLLS ${POLATORY_DLLS} PARENT_SCOPE)
 endif()
 
 install(TARGETS ${TARGET} ARCHIVE DESTINATION lib)
