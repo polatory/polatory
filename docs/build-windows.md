@@ -34,6 +34,6 @@ git pull --recurse-submodules
 ## Build
 
 ```pwsh
-./run cmake
-./run build
+./run configure  # or ./run c
+./run build      # or ./run b
 ```

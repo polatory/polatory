@@ -41,6 +41,6 @@ git pull --recurse-submodules
 ## Build
 
 ```bash
-./run cmake
-./run build
+./run configure  # or ./run c
+./run build      # or ./run b
 ```
