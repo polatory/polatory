@@ -22,8 +22,6 @@ find_package(flann CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 
-option(USE_PREBUILT_BOOST "Use prebuilt Boost libraries specified manually. This option takes effect only on MSVC.")
-
 # vcpkg
 set(VCPKG_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
 set(VCPKG_LIB_DIR "${VCPKG_DIR}$<$<CONFIG:Debug>:/debug>/lib")
@@ -57,12 +55,6 @@ elseif(MSVC)
         set(MKL_DLL_DIR "${MKL_ROOT}/redist/intel64")
         set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
         set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
-    endif()
-
-    if(USE_PREBUILT_BOOST)
-        if("${Boost_INCLUDE_DIR}" STREQUAL "${VCPKG_INCLUDE_DIR}")
-            message(FATAL_ERROR "Boost libraries from vcpkg are detected. Turn off USE_PREBUILT_BOOST.")
-        endif()
     endif()
 
     # https://www.intel.com/content/www/us/en/develop/documentation/onemkl-windows-developer-guide/top/appendix-c-directory-structure-in-detail/structure-of-the-intel-64-architecture-directories/contents-of-the-redist-intel64-directory.html
