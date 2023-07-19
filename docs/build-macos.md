@@ -32,7 +32,6 @@ git pull --recurse-submodules
 ## Build
 
 ```bash
-./run init-vcpkg
 ./run cmake
 ./run build
 ```

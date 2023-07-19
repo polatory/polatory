@@ -1,0 +1,14 @@
+{
+  "name": "polatory",
+  "version": "0.1.0",
+  "dependencies": [
+    "boost-filesystem",
+    "boost-program-options",
+    "boost-serialization",
+    "ceres",
+    "double-conversion",
+    "eigen3",
+    "flann",
+    "gtest"
+  ]
+}

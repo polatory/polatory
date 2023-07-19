@@ -6,27 +6,17 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 case $1 in
-  'init-vcpkg' )
-    cd vcpkg
-    ./bootstrap-vcpkg.sh
-    ./vcpkg remove --outdated --recurse
-    ./vcpkg install boost-filesystem boost-program-options boost-serialization ceres double-conversion eigen3 flann gtest --triplet "$(../tools/triplet)"
-    ;;
   'cmake' )
-    mkdir -p build
-    cd build
-    cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake "$(../tools/cmake-args)"
+    cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake "$(tools/cmake-args)"
     ;;
   'b'|'build' )
-    cd build
-    ninja
+    cmake --build build
     ;;
   't'|'test' )
-    cd build
-    ctest -V
+    ctest -V --test-dir build
     ;;
   * )
     echo "Unrecognized task: $1" >&2

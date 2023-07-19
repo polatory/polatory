@@ -34,7 +34,6 @@ git pull --recurse-submodules
 ## Build
 
 ```pwsh
-./run init-vcpkg
 ./run cmake
 ./run build
 ```
