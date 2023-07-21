@@ -23,9 +23,15 @@ target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
     -DEIGEN_USE_BLAS
-    -DGLOG_NO_ABBREVIATED_SEVERITIES
-    -DNOMINMAX
 )
+
+if(MSVC)
+    target_compile_definitions(${TARGET} PUBLIC
+        -DWIN32_LEAN_AND_MEAN
+        -DNOMINMAX
+    )
+endif()
+
 if(APPLE)
     target_compile_definitions(${TARGET} PUBLIC
         -DPOLATORY_USE_ACCELERATE
@@ -37,57 +43,29 @@ else()
     )
 endif()
 
-set(THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
-    ${Boost_INCLUDE_DIR}
-    ${EIGEN3_INCLUDE_DIR}
-    ${VCPKG_INCLUDE_DIR}
-)
-if(NOT(APPLE))
-    list(APPEND THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES
-        ${MKL_INCLUDE_DIR}
-    )
-endif()
-
-set(THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES
-    ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
-)
 
 target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
-target_include_directories(${TARGET} SYSTEM PUBLIC
-    ${THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES}
-)
-target_include_directories(${TARGET} SYSTEM PRIVATE
-    ${THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES}
-)
-
-if(MSVC)
-    foreach(DIR ${THIRD_PARTY_PUBLIC_INCLUDE_DIRECTORIES})
-        target_compile_options(${TARGET} PUBLIC
-            "SHELL:/external:I \"${DIR}\""
-        )
-    endforeach()
-    foreach(DIR ${THIRD_PARTY_PRIVATE_INCLUDE_DIRECTORIES})
-        target_compile_options(${TARGET} PRIVATE
-            "SHELL:/external:I \"${DIR}\""
-        )
-    endforeach()
+if(NOT(APPLE))
+    target_include_directories(${TARGET} SYSTEM PUBLIC
+        ${MKL_INCLUDE_DIR}
+    )
 endif()
+target_include_directories(${TARGET} SYSTEM PRIVATE
+    ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
+)
 
 target_link_libraries(${TARGET} PUBLIC
+    Boost::boost Boost::filesystem Boost::serialization
+    ceres
+    double-conversion::double-conversion
+    Eigen3::Eigen
     OpenMP::OpenMP_CXX
 )
 
-target_link_libraries(${TARGET} INTERFACE
-    ${Boost_LIBRARIES}
-    ceres
-    double-conversion::double-conversion
-    glog::glog
-)
-
 if(UNIX)
-    target_link_libraries(${TARGET} INTERFACE
+    target_link_libraries(${TARGET} PUBLIC
         flann::flann_cpp_s
     )
     if(APPLE)
@@ -102,8 +80,10 @@ if(UNIX)
         )
     endif()
 elseif(MSVC)
-    target_link_libraries(${TARGET} INTERFACE
+    target_link_libraries(${TARGET} PUBLIC
         flann::flann_cpp
+    )
+    target_link_libraries(${TARGET} INTERFACE
         ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
     )
 endif()
