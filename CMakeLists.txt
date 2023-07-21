@@ -1,19 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 cmake_policy(VERSION "3.16")
 
+project(Polatory CXX)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(Polatory CXX)
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(polatory_common_functions)
 
-if(UNIX)
-    set(Boost_USE_STATIC_LIBS ON)
-endif()
 find_package(Boost REQUIRED COMPONENTS filesystem program_options serialization)
 find_package(Ceres CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
@@ -21,11 +18,6 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(flann CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
-
-# vcpkg
-set(VCPKG_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
-set(VCPKG_LIB_DIR "${VCPKG_DIR}$<$<CONFIG:Debug>:/debug>/lib")
-set(VCPKG_INCLUDE_DIR "${VCPKG_DIR}/include")
 
 if(UNIX)
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
