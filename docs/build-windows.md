@@ -16,8 +16,6 @@
 
     - **Git for Windows**
 
-- [Intel(R) oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)
-
 ## Clone
 
 ```pwsh

@@ -11,55 +11,41 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(polatory_common_functions)
 
+set(MKL_ARCH "intel64")
+if(UNIX)
+    set(MKL_LINK "static")
+elseif(MSVC)
+    set(MKL_LINK "dynamic")
+endif()
+set(MKL_THREADING "sequential")
+set(MKL_INTERFACE "lp64")
+
 find_package(Boost REQUIRED COMPONENTS filesystem program_options serialization)
 find_package(Ceres CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(flann CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
+find_package(MKL CONFIG)
 find_package(OpenMP REQUIRED)
 
-if(UNIX)
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(Clang|GNU)$")
-        message(FATAL_ERROR "Not supported compiler.")
-    endif()
+set(VCPKG_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
 
-    set(MKL_ROOT /opt/intel/oneapi/mkl/latest CACHE PATH "Path to mkl")
-    set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
-    set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
-elseif(MSVC)
-    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        message(FATAL_ERROR "Not supported compiler.")
-    endif()
+if(${VCPKG_TARGET_TRIPLET} MATCHES ^x64-)
+    set(USE_MKL ON)
+endif()
 
-    set(_PF86 "ProgramFiles(x86)")
-    file(TO_CMAKE_PATH "$ENV{${_PF86}}" _PROG_FILES_X86)
-
-    if("$ENV{CI}" STREQUAL "true")
-        file(TO_CMAKE_PATH "$ENV{CONDA}" CONDA_DIR)
-
-        set(MKL_ROOT "${CONDA_DIR}/Library")
-        set(MKL_DLL_DIR "${MKL_ROOT}/bin")
-        set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
-        set(MKL_LIB_DIR "${MKL_ROOT}/lib")
-    else()
-        set(MKL_ROOT "${_PROG_FILES_X86}/Intel/oneAPI/mkl/latest" CACHE PATH "Path to mkl")
-        set(MKL_DLL_DIR "${MKL_ROOT}/redist/intel64")
-        set(MKL_INCLUDE_DIR "${MKL_ROOT}/include")
-        set(MKL_LIB_DIR "${MKL_ROOT}/lib/intel64")
-    endif()
-
+if(MSVC AND USE_MKL)
+    # DLLs not copied by MKL::MKL
     # https://www.intel.com/content/www/us/en/develop/documentation/onemkl-windows-developer-guide/top/appendix-c-directory-structure-in-detail/structure-of-the-intel-64-architecture-directories/contents-of-the-redist-intel64-directory.html
     set(POLATORY_DLLS
-        ${MKL_DLL_DIR}/mkl_avx.2.dll
-        ${MKL_DLL_DIR}/mkl_avx2.2.dll
-        ${MKL_DLL_DIR}/mkl_avx512.2.dll
-        ${MKL_DLL_DIR}/mkl_core.2.dll
-        ${MKL_DLL_DIR}/mkl_def.2.dll
-        ${MKL_DLL_DIR}/mkl_sequential.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_def.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_mc.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_mc3.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx2.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx512.2.dll
     )
-else()
-    message(FATAL_ERROR "Not supported system.")
 endif()
 
 add_subdirectory(benchmark)

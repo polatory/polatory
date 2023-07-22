@@ -19,9 +19,7 @@ endif()
 target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
-    -DEIGEN_USE_BLAS
 )
-
 if(MSVC)
     target_compile_definitions(${TARGET} PUBLIC
         -DWIN32_LEAN_AND_MEAN
@@ -29,26 +27,9 @@ if(MSVC)
     )
 endif()
 
-if(APPLE)
-    target_compile_definitions(${TARGET} PUBLIC
-        -DPOLATORY_USE_ACCELERATE
-    )
-else()
-    target_compile_definitions(${TARGET} PUBLIC
-        -DEIGEN_USE_MKL_ALL
-        -DPOLATORY_USE_MKL
-    )
-endif()
-
-
 target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
-if(NOT(APPLE))
-    target_include_directories(${TARGET} SYSTEM PUBLIC
-        ${MKL_INCLUDE_DIR}
-    )
-endif()
 target_include_directories(${TARGET} SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
@@ -65,23 +46,29 @@ if(UNIX)
     target_link_libraries(${TARGET} PUBLIC
         flann::flann_cpp_s
     )
-    if(APPLE)
-        target_link_libraries(${TARGET} INTERFACE
-            "-framework Accelerate"
-        )
-    else()
-        target_link_libraries(${TARGET} INTERFACE
-            "-Wl,--start-group"
-            ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
-            "-Wl,--end-group"
-        )
-    endif()
 elseif(MSVC)
     target_link_libraries(${TARGET} PUBLIC
         flann::flann_cpp
     )
+endif()
+
+if(USE_MKL)
+    target_compile_definitions(${TARGET} PUBLIC
+        -DEIGEN_USE_MKL_ALL
+        -DPOLATORY_USE_MKL
+    )
+
+    target_link_libraries(${TARGET} PUBLIC
+        MKL::MKL
+    )
+elseif(APPLE)
+    target_compile_definitions(${TARGET} PUBLIC
+        -DEIGEN_USE_BLAS
+        -DPOLATORY_USE_ACCELERATE
+    )
+
     target_link_libraries(${TARGET} INTERFACE
-        ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
+        "-framework Accelerate"
     )
 endif()
 

@@ -25,13 +25,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build
 
-      - name: Install Intel(R) oneMKL
-        run: |
-          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \ | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
-          sudo apt-get update
-          sudo apt-get install -y intel-oneapi-mkl-devel
-
       - name: Prepare to cache Vcpkg
         run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
 
@@ -63,9 +56,6 @@ jobs:
         with:
           submodules: "true"
 
-      - name: Install Intel(R) oneMKL
-        run: '& "$env:CONDA\Scripts\conda" install --channel intel --quiet --yes mkl-devel'
-
       - name: Prepare to cache Vcpkg
         run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
 
@@ -77,13 +67,13 @@ jobs:
           key: ${{ runner.os }}-vcpkg
 
       - name: Configure
-        run: .\run configure
-
-      - name: Free up disk space
         run: |
-          if (Test-Path vcpkg\buildtrees\ceres) {
-              Remove-Item vcpkg\buildtrees\ceres -Recurse
-          }
+          $hash = git rev-parse HEAD:vcpkg
+          Push-Location C:\vcpkg
+          git fetch $hash
+          git checkout $hash
+          Pop-Location
+          .\run configure-on-ci
 
       - name: Build
         run: .\run build
