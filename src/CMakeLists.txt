@@ -58,22 +58,9 @@ if(USE_MKL)
         -DPOLATORY_USE_MKL
     )
 
-    target_include_directories(${TARGET} SYSTEM PUBLIC
-        ${VCPKG_DIR}/include
+    target_link_libraries(${TARGET} INTERFACE
+        MKL::MKL
     )
-    target_link_directories(${TARGET} PUBLIC
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/lib/intel64
-    )
-
-    if(UNIX)
-        target_link_libraries(${TARGET} INTERFACE
-            "-Wl,--start-group" libmkl_intel_lp64.a libmkl_sequential.a libmkl_core.a "-Wl,--end-group" pthread m dl
-        )
-    elseif(MSVC)
-        target_link_libraries(${TARGET} INTERFACE
-            mkl_intel_lp64_dll.lib mkl_sequential_dll.lib mkl_core_dll.lib
-        )
-    endif()
 elseif(APPLE)
     target_compile_definitions(${TARGET} PUBLIC
         -DEIGEN_USE_BLAS
