@@ -44,14 +44,18 @@ endif()
 target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
-if(NOT(APPLE))
-    target_include_directories(${TARGET} SYSTEM PUBLIC
-        ${MKL_INCLUDE_DIR}
-    )
-endif()
 target_include_directories(${TARGET} SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
+
+if(${MKL_FOUND})
+    target_include_directories(${TARGET} SYSTEM PUBLIC
+        ${VCPKG_DIR}/include
+    )
+    target_link_directories(${TARGET} PUBLIC
+        ${VCPKG_DIR}/lib/intel64
+    )
+endif()
 
 target_link_libraries(${TARGET} PUBLIC
     Boost::boost Boost::filesystem Boost::serialization
@@ -71,9 +75,7 @@ if(UNIX)
         )
     else()
         target_link_libraries(${TARGET} INTERFACE
-            "-Wl,--start-group"
-            ${MKL_LIB_DIR}/libmkl_intel_lp64.a ${MKL_LIB_DIR}/libmkl_sequential.a ${MKL_LIB_DIR}/libmkl_core.a pthread m dl
-            "-Wl,--end-group"
+            "-Wl,--start-group" libmkl_intel_lp64.a libmkl_sequential.a libmkl_core.a "-Wl,--end-group" pthread m dl
         )
     endif()
 elseif(MSVC)
@@ -81,7 +83,7 @@ elseif(MSVC)
         flann::flann_cpp
     )
     target_link_libraries(${TARGET} INTERFACE
-        ${MKL_LIB_DIR}/mkl_intel_lp64_dll.lib ${MKL_LIB_DIR}/mkl_sequential_dll.lib ${MKL_LIB_DIR}/mkl_core_dll.lib
+        mkl_intel_lp64_dll.lib mkl_sequential_dll.lib mkl_core_dll.lib
     )
 endif()
 

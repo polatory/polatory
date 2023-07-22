@@ -9,6 +9,10 @@
     "double-conversion",
     "eigen3",
     "flann",
-    "gtest"
+    "gtest",
+    {
+      "name": "intel-mkl",
+      "platform": "(windows | linux | osx) & x64"
+    }
   ]
 }

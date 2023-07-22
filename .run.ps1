@@ -40,6 +40,11 @@ switch -regex ($args[0]) {
         Exec { ctest -V --test-dir build }
         break
     }
+    '^configure-on-ci$' {
+        buildenv
+        Exec { cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE='C:/vcpkg/scripts/buildsystems/vcpkg.cmake' }
+        break
+    }
     default {
         throw "Unrecognized task: $($args[0])"
     }
