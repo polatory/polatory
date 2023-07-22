@@ -2,5 +2,4 @@
 .vscode/
 build/
 install/
-vcpkg_installed/
 .DS_Store
