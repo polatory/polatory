@@ -17,20 +17,23 @@ find_package(double-conversion CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(flann CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
-find_package(MKL CONFIG)
 find_package(OpenMP REQUIRED)
 
-set(VCPKG_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+set(VCPKG_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
 
-if(MSVC)
+if(${VCPKG_TARGET_TRIPLET} MATCHES ^x64-)
+    set(USE_MKL ON)
+endif()
+
+if(MSVC AND USE_MKL)
     # https://www.intel.com/content/www/us/en/develop/documentation/onemkl-windows-developer-guide/top/appendix-c-directory-structure-in-detail/structure-of-the-intel-64-architecture-directories/contents-of-the-redist-intel64-directory.html
     set(POLATORY_DLLS
-        ${VCPKG_DIR}/bin/mkl_avx.2.dll
-        ${VCPKG_DIR}/bin/mkl_avx2.2.dll
-        ${VCPKG_DIR}/bin/mkl_avx512.2.dll
-        ${VCPKG_DIR}/bin/mkl_core.2.dll
-        ${VCPKG_DIR}/bin/mkl_def.2.dll
-        ${VCPKG_DIR}/bin/mkl_sequential.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx2.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx512.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_core.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_def.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_sequential.2.dll
     )
 endif()
 

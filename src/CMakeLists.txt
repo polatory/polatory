@@ -19,9 +19,7 @@ endif()
 target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
-    -DEIGEN_USE_BLAS
 )
-
 if(MSVC)
     target_compile_definitions(${TARGET} PUBLIC
         -DWIN32_LEAN_AND_MEAN
@@ -29,33 +27,12 @@ if(MSVC)
     )
 endif()
 
-if(APPLE)
-    target_compile_definitions(${TARGET} PUBLIC
-        -DPOLATORY_USE_ACCELERATE
-    )
-else()
-    target_compile_definitions(${TARGET} PUBLIC
-        -DEIGEN_USE_MKL_ALL
-        -DPOLATORY_USE_MKL
-    )
-endif()
-
-
 target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
 target_include_directories(${TARGET} SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
 )
-
-if(${MKL_FOUND})
-    target_include_directories(${TARGET} SYSTEM PUBLIC
-        ${VCPKG_DIR}/include
-    )
-    target_link_directories(${TARGET} PUBLIC
-        ${VCPKG_DIR}/lib/intel64
-    )
-endif()
 
 target_link_libraries(${TARGET} PUBLIC
     Boost::boost Boost::filesystem Boost::serialization
@@ -69,21 +46,42 @@ if(UNIX)
     target_link_libraries(${TARGET} PUBLIC
         flann::flann_cpp_s
     )
-    if(APPLE)
-        target_link_libraries(${TARGET} INTERFACE
-            "-framework Accelerate"
-        )
-    else()
-        target_link_libraries(${TARGET} INTERFACE
-            "-Wl,--start-group" libmkl_intel_lp64.a libmkl_sequential.a libmkl_core.a "-Wl,--end-group" pthread m dl
-        )
-    endif()
 elseif(MSVC)
     target_link_libraries(${TARGET} PUBLIC
         flann::flann_cpp
     )
+endif()
+
+if(USE_MKL)
+    target_compile_definitions(${TARGET} PUBLIC
+        -DEIGEN_USE_MKL_ALL
+        -DPOLATORY_USE_MKL
+    )
+
+    target_include_directories(${TARGET} SYSTEM PUBLIC
+        ${VCPKG_DIR}/include
+    )
+    target_link_directories(${TARGET} PUBLIC
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/lib
+    )
+
+    if(UNIX)
+        target_link_libraries(${TARGET} INTERFACE
+            "-Wl,--start-group" libmkl_intel_lp64.a libmkl_sequential.a libmkl_core.a "-Wl,--end-group" pthread m dl
+        )
+    elseif(MSVC)
+        target_link_libraries(${TARGET} INTERFACE
+            mkl_intel_lp64_dll.lib mkl_sequential_dll.lib mkl_core_dll.lib
+        )
+    endif()
+elseif(APPLE)
+    target_compile_definitions(${TARGET} PUBLIC
+        -DEIGEN_USE_BLAS
+        -DPOLATORY_USE_ACCELERATE
+    )
+
     target_link_libraries(${TARGET} INTERFACE
-        mkl_intel_lp64_dll.lib mkl_sequential_dll.lib mkl_core_dll.lib
+        "-framework Accelerate"
     )
 endif()
 
