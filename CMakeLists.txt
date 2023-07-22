@@ -12,7 +12,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(polatory_common_functions)
 
 set(MKL_ARCH "intel64")
-set(MKL_LINK "dynamic")
+if(UNIX)
+    set(MKL_LINK "static")
+elseif(MSVC)
+    set(MKL_LINK "dynamic")
+endif()
 set(MKL_THREADING "sequential")
 set(MKL_INTERFACE "lp64")
 
