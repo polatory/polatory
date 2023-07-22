@@ -58,7 +58,7 @@ if(USE_MKL)
         -DPOLATORY_USE_MKL
     )
 
-    target_link_libraries(${TARGET} INTERFACE
+    target_link_libraries(${TARGET} PUBLIC
         MKL::MKL
     )
 elseif(APPLE)
