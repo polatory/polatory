@@ -62,7 +62,7 @@ if(USE_MKL)
         ${VCPKG_DIR}/include
     )
     target_link_directories(${TARGET} PUBLIC
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/lib
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/lib/intel64
     )
 
     if(UNIX)
