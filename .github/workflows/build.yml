@@ -80,3 +80,37 @@ jobs:
 
       - name: Test
         run: .\run test
+
+  build-macos:
+    name: Build - macOS
+    runs-on: macos-latest
+
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_binary_cache
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: "true"
+
+      - name: Prerequisites
+        run: brew install ninja
+
+      - name: Prepare to cache Vcpkg
+        run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: ${{ runner.os }}-vcpkg
+
+      - name: Configure
+        run: ./run configure
+
+      - name: Build
+        run: ./run build
+
+      - name: Test
+        run: ./run test

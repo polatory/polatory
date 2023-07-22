@@ -5,7 +5,11 @@ case "$(uname)" in
     echo ''
     ;;
   Darwin )
-    echo -DCMAKE_CXX_COMPILER="$(brew --prefix)/opt/llvm/bin/clang++"
+    if [ "$CI" ]; then
+      echo -DCMAKE_CXX_COMPILER="$(brew --prefix llvm@15)/opt/llvm/bin/clang++"
+    else
+      echo -DCMAKE_CXX_COMPILER="$(brew --prefix)/opt/llvm/bin/clang++"
+    fi
     ;;
   * )
     echo 'Unsupported operating system' >&2
