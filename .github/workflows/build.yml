@@ -70,7 +70,7 @@ jobs:
         run: |
           $hash = git rev-parse HEAD:vcpkg
           Push-Location C:\vcpkg
-          git fetch $hash
+          git fetch origin $hash
           git checkout $hash
           Pop-Location
           .\run configure-on-ci
