@@ -94,7 +94,7 @@ jobs:
           submodules: "true"
 
       - name: Prerequisites
-        run: brew install libomp ninja
+        run: brew install cmake llvm ninja
 
       - name: Prepare to cache Vcpkg
         run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
