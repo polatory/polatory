@@ -57,7 +57,7 @@ jobs:
           submodules: "true"
 
       - name: Prepare to cache Vcpkg
-        run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        run: New-Item -Path ${{ env.VCPKG_DEFAULT_BINARY_CACHE }} -ItemType Directory
 
       - uses: actions/cache@v3
         env:
