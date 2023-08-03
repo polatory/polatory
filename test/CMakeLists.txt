@@ -4,7 +4,7 @@ file(GLOB_RECURSE SOURCES "*.cpp")
 add_executable(${TARGET} ${SOURCES})
 
 target_link_libraries(${TARGET} PRIVATE
-    GTest::gtest
+    GTest::gtest GTest::gtest_main
     polatory
 )
 
