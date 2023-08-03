@@ -11,13 +11,13 @@ class cov_spheroidal9 final : public covariance_function_base {
  public:
   using covariance_function_base::covariance_function_base;
 
-  explicit cov_spheroidal9(const std::vector<double> &params) { set_parameters(params); }
+  explicit cov_spheroidal9(const std::vector<double>& params) { set_parameters(params); }
 
   std::unique_ptr<rbf_base> clone() const override {
     return std::make_unique<cov_spheroidal9>(*this);
   }
 
-  static double evaluate_untransformed(double r, const double *params) {
+  static double evaluate_untransformed(double r, const double* params) {
     auto psill = params[0];
     auto range = params[1];
 
@@ -30,7 +30,7 @@ class cov_spheroidal9 final : public covariance_function_base {
     return evaluate_untransformed(r, parameters().data());
   }
 
-  void evaluate_gradient_untransformed(double *gradx, double *grady, double *gradz, double x,
+  void evaluate_gradient_untransformed(double* gradx, double* grady, double* gradz, double x,
                                        double y, double z, double r) const override {
     auto psill = parameters()[0];
     auto range = parameters()[1];

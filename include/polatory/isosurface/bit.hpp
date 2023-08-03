@@ -19,7 +19,7 @@ int bit_peek(T bit_set) {
 }
 
 template <class T>
-int bit_pop(T *bit_set) {
+int bit_pop(T* bit_set) {
   if (*bit_set == 0) {
     return -1;
   }
