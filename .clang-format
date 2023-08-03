@@ -1,4 +1,5 @@
 BasedOnStyle: Google
 Language: Cpp
-Standard: c++14
+Standard: c++20
 ColumnLimit: 100
+DerivePointerAlignment: false

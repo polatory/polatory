@@ -12,7 +12,7 @@ function buildenv() {
         -property installationPath
 
     if (-not $vsDir) {
-        throw 'Some of the required workloads/components of Visual Studio are not installed.'
+        throw 'MSVC is not installed.'
     }
 
     Invoke-BatchFile "$vsDir\VC\Auxiliary\Build\vcvars64.bat"
