@@ -71,6 +71,3 @@ elseif(APPLE)
         "-framework Accelerate"
     )
 endif()
-
-install(TARGETS ${TARGET} ARCHIVE DESTINATION lib)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/polatory DESTINATION include)
