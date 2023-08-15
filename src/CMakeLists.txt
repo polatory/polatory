@@ -8,11 +8,7 @@ add_library(${TARGET} STATIC ${SOURCES})
 
 if(UNIX)
     target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror)
-    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_compile_options(${TARGET} PUBLIC -O2)
-    endif()
 elseif(MSVC)
-    # C4702(unreachable code) is disabled as it is reported by link.exe in third-party code.
     target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702)
 endif()
 
