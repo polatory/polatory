@@ -7,7 +7,7 @@ file(GLOB_RECURSE SOURCES
 add_library(${TARGET} STATIC ${SOURCES})
 
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Werror)
+    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror)
     if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_compile_options(${TARGET} PUBLIC -O2)
     endif()
