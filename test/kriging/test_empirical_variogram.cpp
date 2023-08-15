@@ -1,14 +1,15 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <boost/filesystem.hpp>
 #include <cmath>
+#include <filesystem>
 #include <polatory/geometry/cuboid3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/types.hpp>
 
+namespace fs = std::filesystem;
 using polatory::index_t;
 using polatory::common::valuesd;
 using polatory::geometry::cuboid3d;
@@ -23,8 +24,7 @@ TEST(empirical_variogram, serialize) {
   points3d points = random_points(cuboid3d(), n_points);
   valuesd values = valuesd::Random(n_points);
 
-  auto filename =
-      (boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()).string();
+  auto filename = (fs::temp_directory_path() / "840297bb-21d8-42a2-a3b5-814d27d78e14").string();
 
   empirical_variogram v(points, values, 0.1, 10);
   v.save(filename);
