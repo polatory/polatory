@@ -1,5 +1,3 @@
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
 #include <cmath>
 #include <fstream>
 #include <polatory/common/macros.hpp>
@@ -69,9 +67,7 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
 }
 
 empirical_variogram::empirical_variogram(const std::string& filename) {
-  std::ifstream ifs(filename);
-  boost::archive::text_iarchive ia(ifs);
-  ia >> *this;
+  common::load(filename, *this);
 }
 
 const std::vector<double>& empirical_variogram::bin_distance() const { return distance_; }
@@ -80,10 +76,6 @@ const std::vector<double>& empirical_variogram::bin_gamma() const { return gamma
 
 const std::vector<index_t>& empirical_variogram::bin_num_pairs() const { return num_pairs_; }
 
-void empirical_variogram::save(const std::string& filename) const {
-  std::ofstream ofs(filename);
-  boost::archive::text_oarchive oa(ofs);
-  oa << *this;
-}
+void empirical_variogram::save(const std::string& filename) const { common::save(filename, *this); }
 
 }  // namespace polatory::kriging

@@ -31,7 +31,7 @@ target_include_directories(${TARGET} SYSTEM PRIVATE
 )
 
 target_link_libraries(${TARGET} PUBLIC
-    Boost::boost Boost::filesystem Boost::serialization
+    Boost::boost
     ceres
     double-conversion::double-conversion
     Eigen3::Eigen

@@ -3,9 +3,13 @@
   "name": "polatory",
   "version": "0.1.0",
   "dependencies": [
-    "boost-filesystem",
+    "boost-algorithm",
+    "boost-any",
+    "boost-container-hash",
+    "boost-iterator",
+    "boost-lexical-cast",
     "boost-program-options",
-    "boost-serialization",
+    "boost-range",
     "ceres",
     "double-conversion",
     "eigen3",
@@ -19,9 +23,7 @@
   "features": {
     "python": {
       "description": "Build the Python binding",
-      "dependencies": [
-        "pybind11"
-      ]
+      "dependencies": ["pybind11"]
     }
   }
 }
