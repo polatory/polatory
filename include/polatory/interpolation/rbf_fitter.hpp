@@ -10,7 +10,7 @@ class rbf_fitter {
  public:
   rbf_fitter(const model& model, const geometry::points3d& points);
 
-  common::valuesd fit(const common::valuesd& values, double absolute_tolerance) const;
+  common::valuesd fit(const common::valuesd& values, double absolute_tolerance, int max_iter) const;
 
  private:
   const model& model_;

@@ -16,7 +16,8 @@ class rbf_inequality_fitter {
   std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
                                                        const common::valuesd& values_lb,
                                                        const common::valuesd& values_ub,
-                                                       double absolute_tolerance) const;
+                                                       double absolute_tolerance,
+                                                       int max_iter) const;
 
  private:
   template <class Predicate>

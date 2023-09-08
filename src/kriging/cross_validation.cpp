@@ -12,7 +12,7 @@ namespace polatory::kriging {
 
 common::valuesd k_fold_cross_validation(const model& model, const geometry::points3d& points,
                                         const common::valuesd& values, double absolute_tolerance,
-                                        index_t k) {
+                                        int max_iter, index_t k) {
   auto n_points = points.rows();
   if (n_points < 2) {
     throw std::invalid_argument("points.row() must be greater than or equal to 2.");
@@ -53,7 +53,7 @@ common::valuesd k_fold_cross_validation(const model& model, const geometry::poin
     common::valuesd test_values = values(test_set, Eigen::all);
 
     interpolation::rbf_fitter fitter(model, train_points);
-    auto weights = fitter.fit(train_values, absolute_tolerance);
+    auto weights = fitter.fit(train_values, absolute_tolerance, max_iter);
 
     interpolation::rbf_evaluator<> eval(model, train_points, bbox);
     eval.set_weights(weights);

@@ -48,7 +48,7 @@ class interpolant {
   }
 
   void fit(const geometry::points3d& points, const common::valuesd& values,
-           double absolute_tolerance) {
+           double absolute_tolerance, int max_iter = 32) {
     auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
     if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
@@ -66,7 +66,7 @@ class interpolant {
     clear();
 
     interpolation::rbf_fitter fitter(model_, points);
-    weights_ = fitter.fit(values, absolute_tolerance);
+    weights_ = fitter.fit(values, absolute_tolerance, max_iter);
 
     fitted_ = true;
     centers_ = points;
@@ -74,7 +74,7 @@ class interpolant {
   }
 
   void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
-                         double absolute_tolerance) {
+                         double absolute_tolerance, int max_iter = 32) {
     auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
     if (points.rows() < min_n_points) {
       throw std::invalid_argument("points.rows() must be greater than or equal to " +
@@ -93,7 +93,7 @@ class interpolant {
 
     interpolation::rbf_incremental_fitter fitter(model_, points);
     std::vector<index_t> center_indices;
-    std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance);
+    std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance, max_iter);
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
@@ -102,7 +102,7 @@ class interpolant {
 
   void fit_inequality(const geometry::points3d& points, const common::valuesd& values,
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
-                      double absolute_tolerance) {
+                      double absolute_tolerance, int max_iter = 32) {
     if (model_.nugget() > 0.0) {
       throw std::runtime_error("Non-zero nugget is not supported.");
     }
@@ -134,7 +134,7 @@ class interpolant {
     interpolation::rbf_inequality_fitter fitter(model_, points);
     std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) =
-        fitter.fit(values, values_lb, values_ub, absolute_tolerance);
+        fitter.fit(values, values_lb, values_ub, absolute_tolerance, max_iter);
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);

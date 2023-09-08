@@ -8,6 +8,6 @@ namespace polatory::kriging {
 
 common::valuesd k_fold_cross_validation(const model& model, const geometry::points3d& points,
                                         const common::valuesd& values, double absolute_tolerance,
-                                        index_t k);
+                                        int max_iter, index_t k);
 
 }  // namespace polatory::kriging

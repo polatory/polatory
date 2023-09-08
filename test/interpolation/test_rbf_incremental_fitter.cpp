@@ -34,7 +34,7 @@ TEST(rbf_incremental_fitter, trivial) {
   model model(rbf, poly_dimension, poly_degree);
 
   rbf_incremental_fitter fitter(model, points);
-  auto [indices, weights] = fitter.fit(values, absolute_tolerance);
+  auto [indices, weights] = fitter.fit(values, absolute_tolerance, 32);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 

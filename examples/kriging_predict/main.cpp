@@ -35,7 +35,7 @@ int main(int argc, const char* argv[]) {
 
     // Fit.
     interpolant interpolant(model);
-    interpolant.fit(points, values, opts.absolute_tolerance);
+    interpolant.fit(points, values, opts.absolute_tolerance, opts.max_iter);
 
     // Generate isosurfaces of given values.
     isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
