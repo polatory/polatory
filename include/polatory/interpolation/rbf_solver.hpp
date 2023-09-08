@@ -51,15 +51,16 @@ class rbf_solver {
   }
 
   template <class Derived>
-  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance) const {
+  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
+                        int max_iter) const {
     POLATORY_ASSERT(values.rows() == n_points_);
 
-    return solve_impl(values, absolute_tolerance);
+    return solve_impl(values, absolute_tolerance, max_iter);
   }
 
   template <class Derived, class Derived2>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                        const Eigen::MatrixBase<Derived2>& initial_solution) const {
+                        int max_iter, const Eigen::MatrixBase<Derived2>& initial_solution) const {
     POLATORY_ASSERT(values.rows() == n_points_);
     POLATORY_ASSERT(initial_solution.rows() == n_points_ + n_poly_basis_);
 
@@ -73,12 +74,13 @@ class rbf_solver {
       }
     }
 
-    return solve_impl(values, absolute_tolerance, &ini_sol);
+    return solve_impl(values, absolute_tolerance, max_iter, &ini_sol);
   }
 
  private:
   template <class Derived, class Derived2 = common::valuesd>
   common::valuesd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
+                             int max_iter,
                              const Eigen::MatrixBase<Derived2>* initial_solution = nullptr) const {
     // The solver does not work when all values are zero.
     if (values.isZero()) {
@@ -89,7 +91,7 @@ class rbf_solver {
     rhs.head(n_points_) = values;
     rhs.tail(n_poly_basis_) = common::valuesd::Zero(n_poly_basis_);
 
-    krylov::fgmres solver(*op_, rhs, 32);
+    krylov::fgmres solver(*op_, rhs, max_iter);
     if (initial_solution != nullptr) {
       solver.set_initial_solution(*initial_solution);
     }

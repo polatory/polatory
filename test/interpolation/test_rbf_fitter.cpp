@@ -36,7 +36,7 @@ void test_poly_degree(int poly_degree) {
   model.set_nugget(0.01);
 
   rbf_fitter fitter(model, points);
-  valuesd weights = fitter.fit(values, absolute_tolerance);
+  valuesd weights = fitter.fit(values, absolute_tolerance, 32);
 
   EXPECT_EQ(weights.rows(), n_points + model.poly_basis_size());
 

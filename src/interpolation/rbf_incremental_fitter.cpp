@@ -20,7 +20,7 @@ rbf_incremental_fitter::rbf_incremental_fitter(const model& model, const geometr
       bbox_(geometry::bbox3d::from_points(points)) {}
 
 std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
-    const common::valuesd& values, double absolute_tolerance) const {
+    const common::valuesd& values, double absolute_tolerance, int max_iter) const {
   auto filtering_distance = bbox_.size().mean() / 4.0;
 
   auto centers = point_cloud::distance_filter(points_, filtering_distance).filtered_indices();
@@ -44,7 +44,8 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     geometry::points3d center_points = points_(centers, Eigen::all);
 
     solver->set_points(center_points);
-    center_weights = solver->solve(values(centers, Eigen::all), absolute_tolerance, center_weights);
+    center_weights =
+        solver->solve(values(centers, Eigen::all), absolute_tolerance, max_iter, center_weights);
 
     if (n_centers == n_points_) {
       break;

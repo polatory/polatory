@@ -37,11 +37,12 @@ PYBIND11_MODULE(_core, m) {
   py::class_<interpolant>(m, "Interpolant")
       .def(py::init<const model&>(), "model"_a)
       .def("evaluate", &interpolant::evaluate, "points"_a)
-      .def("fit", &interpolant::fit, "points"_a, "values"_a, "absolute_tolerance"_a)
+      .def("fit", &interpolant::fit, "points"_a, "values"_a, "absolute_tolerance"_a,
+           "max_iter"_a = 32)
       .def("fit_incrementally", &interpolant::fit_incrementally, "points"_a, "values"_a,
-           "absolute_tolerance"_a)
+           "absolute_tolerance"_a, "max_iter"_a = 32)
       .def("fit_inequality", &interpolant::fit_inequality, "points"_a, "values"_a, "values_lb"_a,
-           "values_ub"_a, "absolute_tolerance"_a)
+           "values_ub"_a, "absolute_tolerance"_a, "max_iter"_a = 32)
       .def_property_readonly("centers", &interpolant::centers)
       .def_property_readonly("weights", &interpolant::weights);
 

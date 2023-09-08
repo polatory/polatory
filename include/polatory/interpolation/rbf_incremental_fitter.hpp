@@ -14,7 +14,8 @@ class rbf_incremental_fitter {
   rbf_incremental_fitter(const model& model, const geometry::points3d& points);
 
   std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
-                                                       double absolute_tolerance) const;
+                                                       double absolute_tolerance,
+                                                       int max_iter) const;
 
  private:
   std::vector<index_t> complementary_indices(const std::vector<index_t>& indices) const;

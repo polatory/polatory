@@ -40,7 +40,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   model model(rbf, poly_dimension, poly_degree);
 
   rbf_inequality_fitter fitter(model, points);
-  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
+  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
@@ -82,7 +82,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   model model(cov_exponential({1.0, 3.0}), poly_dimension, poly_degree);
 
   rbf_inequality_fitter fitter(model, points);
-  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance);
+  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
   rbf_evaluator<> eval(model, points(indices, Eigen::all));
   eval.set_weights(weights);

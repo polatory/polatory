@@ -23,7 +23,7 @@ rbf_inequality_fitter::rbf_inequality_fitter(const model& model, const geometry:
 
 std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
     const common::valuesd& values, const common::valuesd& values_lb,
-    const common::valuesd& values_ub, double absolute_tolerance) const {
+    const common::valuesd& values_ub, double absolute_tolerance, int max_iter) const {
   double filtering_distance = bbox_.size().mean() / 4.0;
 
   auto not_nan = [](double d) { return !std::isnan(d); };
@@ -86,7 +86,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
 
       solver->set_points(center_points);
-      center_weights = solver->solve(center_values, absolute_tolerance, center_weights);
+      center_weights = solver->solve(center_values, absolute_tolerance, max_iter, center_weights);
 
       for (index_t i = 0; i < n_centers; i++) {
         auto idx = centers.at(i);

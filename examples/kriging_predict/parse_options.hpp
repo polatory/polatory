@@ -21,6 +21,7 @@ struct options {
   int poly_dimension;
   int poly_degree;
   double absolute_tolerance;
+  int max_iter;
   polatory::geometry::bbox3d mesh_bbox;
   double mesh_resolution;
   std::vector<std::pair<double, std::string>> mesh_values_files;
@@ -57,6 +58,8 @@ inline options parse_options(int argc, const char* argv[]) {
        "Degree of the drift polynomial")                                               //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),      //
        "Absolute tolerance of the fitting")                                            //
+      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),      //
+       "Maximum number of iterations")                                                 //
       ("mesh-bbox",
        po::value(&opts.mesh_bbox)
            ->multitoken()
