@@ -5,6 +5,7 @@
 #include <boost/container_hash/hash.hpp>
 #include <cstdint>
 #include <functional>
+#include <polatory/types.hpp>
 
 namespace polatory::isosurface {
 
@@ -12,7 +13,7 @@ using cell_vector = Eigen::Vector3i;
 
 using cell_vectors = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
-using vertex_index = std::int64_t;
+using vertex_index = index_t;
 
 using face = std::array<vertex_index, 3>;
 
