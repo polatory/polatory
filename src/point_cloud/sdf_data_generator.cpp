@@ -6,8 +6,7 @@ namespace polatory::point_cloud {
 
 sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
                                        const geometry::vectors3d& normals, double min_distance,
-                                       double max_distance, double multiplication)
-    : points_(points), normals_(normals) {
+                                       double max_distance, double multiplication) {
   if (normals.rows() != points.rows()) {
     throw std::invalid_argument("normals.rows() must be equal to points.rows().");
   }
@@ -29,7 +28,7 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
   auto n_sdf_points = n_points;
 
   sdf_points_ = geometry::points3d(n_max_sdf_points, 3);
-  sdf_points_.topRows(n_points) = points_;
+  sdf_points_.topRows(n_points) = points;
   sdf_values_ = common::valuesd::Zero(n_max_sdf_points);
 
   std::vector<index_t> nn_indices;

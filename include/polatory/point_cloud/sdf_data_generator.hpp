@@ -15,9 +15,6 @@ class sdf_data_generator {
   const common::valuesd& sdf_values() const;
 
  private:
-  const geometry::points3d points_;    // Do not hold a reference to a temporary object.
-  const geometry::vectors3d normals_;  // Do not hold a reference to a temporary object.
-
   geometry::points3d sdf_points_;
   common::valuesd sdf_values_;
 };
