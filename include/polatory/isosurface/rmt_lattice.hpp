@@ -376,7 +376,14 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
   }
 
-  const std::vector<geometry::point3d>& get_vertices() const { return vertices_; }
+  geometry::points3d get_vertices() {
+    geometry::points3d vertices(static_cast<index_t>(vertices_.size()), 3);
+    auto it = vertices.rowwise().begin();
+    for (const auto& v : vertices_) {
+      *it++ = v;
+    }
+    return vertices;
+  }
 
   void uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
     auto it = cluster_map_.begin();

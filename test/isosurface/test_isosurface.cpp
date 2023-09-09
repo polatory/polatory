@@ -44,8 +44,8 @@ TEST(isosurface, generate) {
 
   auto surface = isosurf.generate(field_fn, 1.0);
 
-  ASSERT_EQ(1082u, surface.vertices().size());
-  ASSERT_EQ(2160u, surface.faces().size());
+  ASSERT_EQ(1082, surface.vertices().rows());
+  ASSERT_EQ(2160, surface.faces().rows());
 }
 
 TEST(isosurface, generate_from_seed_points) {
@@ -60,8 +60,8 @@ TEST(isosurface, generate_from_seed_points) {
 
   auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
-  ASSERT_EQ(1082u, surface.vertices().size());
-  ASSERT_EQ(2160u, surface.faces().size());
+  ASSERT_EQ(1082, surface.vertices().rows());
+  ASSERT_EQ(2160, surface.faces().rows());
 }
 
 TEST(isosurface, manifold) {
@@ -100,9 +100,9 @@ TEST(isosurface, boundary_coordinates) {
   auto surface = isosurf.generate(field_fn);
 
   std::unordered_set<halfedge> boundary_hes;
-  for (const auto& f : surface.faces()) {
+  for (auto f : surface.faces().rowwise()) {
     for (std::size_t i = 0; i < 3; i++) {
-      auto he = std::make_pair(f.at(i), f.at((i + 1) % 3));
+      auto he = std::make_pair(f(i), f((i + 1) % 3));
       auto opp_he = std::make_pair(he.second, he.first);
       auto it = boundary_hes.find(opp_he);
       if (it == boundary_hes.end()) {
@@ -120,7 +120,7 @@ TEST(isosurface, boundary_coordinates) {
   }
 
   for (auto vi : boundary_vertices) {
-    const auto& p = surface.vertices().at(vi);
+    auto p = surface.vertices().row(vi);
     ASSERT_TRUE((p.array() == bbox.min().array() || p.array() == bbox.max().array()).any());
   }
 }

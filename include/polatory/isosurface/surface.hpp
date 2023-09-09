@@ -2,8 +2,8 @@
 
 #include <fstream>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/types.hpp>
 #include <polatory/numeric/roundtrip_string.hpp>
+#include <polatory/types.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -12,24 +12,36 @@ namespace polatory::isosurface {
 
 class surface {
  public:
-  using vertices_type = std::vector<geometry::point3d>;
-  using faces_type = std::vector<face>;
+  using vertices_type = geometry::points3d;
+  using face_type = Eigen::Matrix<index_t, 1, 3>;
+  using faces_type = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
-  surface(const vertices_type& vertices, const faces_type& faces) {
-    std::vector<vertex_index> vi_map(vertices.size(), -1);
-    face face_to_add;
+  surface(const vertices_type& vertices, const faces_type& faces)
+      : vertices_(vertices.rows(), 3), faces_(faces.rows(), 3) {
+    std::vector<index_t> vi_map(vertices.rows(), -1);
+    face_type new_face;
 
-    for (const auto& face : faces) {
+    auto v_it = vertices_.rowwise().begin();
+    auto f_it = faces_.rowwise().begin();
+    index_t n_vertices = 0;
+    index_t n_faces = 0;
+
+    for (auto face : faces.rowwise()) {
       for (auto i = 0; i < 3; i++) {
-        auto& vi = vi_map.at(face.at(i));
+        auto& vi = vi_map.at(face(i));
         if (vi == -1) {
-          vi = static_cast<vertex_index>(vertices_.size());
-          vertices_.push_back(vertices.at(face.at(i)));
+          vi = n_vertices;
+          *v_it++ = vertices.row(face(i));
+          n_vertices++;
         }
-        face_to_add.at(i) = vi;
+        new_face(i) = vi;
       }
-      faces_.push_back(face_to_add);
+      *f_it++ = new_face;
+      n_faces++;
     }
+
+    vertices_.conservativeResize(n_vertices, 3);
+    faces_.conservativeResize(n_faces, 3);
   }
 
   void export_obj(const std::string& filename) const {
@@ -38,13 +50,13 @@ class surface {
       throw std::runtime_error("Failed to open file '" + filename + "'.");
     }
 
-    for (const auto& v : vertices_) {
-      ofs << "v " << numeric::to_string(v[0]) << ' ' << numeric::to_string(v[1]) << ' '
-          << numeric::to_string(v[2]) << '\n';
+    for (auto v : vertices_.rowwise()) {
+      ofs << "v " << numeric::to_string(v(0)) << ' ' << numeric::to_string(v(1)) << ' '
+          << numeric::to_string(v(2)) << '\n';
     }
 
-    for (const auto& f : faces_) {
-      ofs << "f " << f[0] + 1 << ' ' << f[1] + 1 << ' ' << f[2] + 1 << '\n';
+    for (auto f : faces_.rowwise()) {
+      ofs << "f " << f(0) + 1 << ' ' << f(1) + 1 << ' ' << f(2) + 1 << '\n';
     }
   }
 
