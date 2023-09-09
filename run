@@ -6,11 +6,16 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
+if [ "$(uname)" = 'Darwin' ]; then
+  export CC="${CC:-$(brew --prefix)/opt/llvm/bin/clang}"
+  export CXX="${CXX:-$(brew --prefix)/opt/llvm/bin/clang++}"
+fi
+
 cd "$(dirname "$0")"
 
 case $1 in
   'c'|'configure' )
-    cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake "$(tools/cmake-args)"
+    cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
     ;;
   'b'|'build' )
     cmake --build build
