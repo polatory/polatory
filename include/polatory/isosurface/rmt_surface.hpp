@@ -9,6 +9,7 @@
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
 #include <polatory/isosurface/types.hpp>
+#include <polatory/types.hpp>
 #include <vector>
 
 namespace polatory::isosurface {
@@ -236,9 +237,13 @@ class rmt_surface {
  public:
   explicit rmt_surface(const rmt_lattice& lattice) : lattice_(lattice) {}
 
-  std::vector<face> get_faces() const {
-    std::vector<face> faces;
+  Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor> get_faces() const {
+    Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor> faces(
+        static_cast<index_t>(faces_.size()), 3);
 
+    index_t n_faces = 0;
+
+    auto it = faces.rowwise().begin();
     for (const auto& face : faces_) {
       auto v0 = lattice_.clustered_vertex_index(face[0]);
       auto v1 = lattice_.clustered_vertex_index(face[1]);
@@ -249,9 +254,11 @@ class rmt_surface {
         continue;
       }
 
-      faces.push_back({v0, v1, v2});
+      *it++ << v0, v1, v2;
+      n_faces++;
     }
 
+    faces.conservativeResize(n_faces, 3);
     return faces;
   }
 

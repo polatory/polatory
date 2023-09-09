@@ -84,7 +84,9 @@ PYBIND11_MODULE(_core, m) {
       .def(py::init<interpolant&>(), "interpolant"_a);
 
   py::class_<isosurface::surface>(m, "Surface")
-      .def("export_obj", &isosurface::surface::export_obj, "filename"_a);
+      .def("export_obj", &isosurface::surface::export_obj, "filename"_a)
+      .def_property_readonly("vertices", &isosurface::surface::vertices)
+      .def_property_readonly("faces", &isosurface::surface::faces);
 
   py::class_<isosurface::isosurface>(m, "Isosurface")
       .def(py::init<const geometry::bbox3d&, double>(), "bbox"_a, "resolution"_a)
