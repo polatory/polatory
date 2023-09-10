@@ -60,6 +60,15 @@ PYBIND11_MODULE(_core, m) {
            "v"_a)
       .def("orient_closed_surface", &point_cloud::normal_estimator::orient_closed_surface, "k"_a);
 
+  py::class_<point_cloud::offset_points_generator>(m, "OffsetPointsGenerator")
+      .def(py::init<const geometry::points3d&, const geometry::vectors3d&, double>(), "points"_a,
+           "normals"_a, "offset"_a)
+      .def(
+          py::init<const geometry::points3d&, const geometry::vectors3d&, const common::valuesd&>(),
+          "points"_a, "normals"_a, "offsets"_a)
+      .def_property_readonly("new_points", &point_cloud::offset_points_generator::new_points)
+      .def_property_readonly("new_normals", &point_cloud::offset_points_generator::new_normals);
+
   py::class_<point_cloud::sdf_data_generator>(m, "SdfDataGenerator")
       .def(
           py::init<const geometry::points3d&, const geometry::vectors3d&, double, double, double>(),
