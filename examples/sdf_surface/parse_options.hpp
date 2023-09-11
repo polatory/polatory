@@ -21,6 +21,7 @@ struct options {
   int poly_degree;
   double absolute_tolerance;
   int max_iter;
+  bool ineq;
   bool reduce;
   polatory::geometry::bbox3d mesh_bbox;
   double mesh_resolution;
@@ -36,7 +37,7 @@ inline options parse_options(int argc, const char* argv[]) {
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()                                                                      //
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                         //
-       "Input file in CSV format:\n  X,Y,Z,VAL")                                               //
+       "Input file in CSV format:\n  X,Y,Z,VAL[,LOWER,UPPER]")                                 //
       ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("VAL"),     //
        "Minimum separation distance of input points")                                          //
       ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."), rbf_cov_list)  //
@@ -55,6 +56,8 @@ inline options parse_options(int argc, const char* argv[]) {
        "Absolute tolerance of the fitting")                                            //
       ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),      //
        "Maximum number of iterations")                                                 //
+      ("ineq", po::bool_switch(&opts.ineq),                                            //
+       "Use inequality constraints")                                                   //
       ("reduce", po::bool_switch(&opts.reduce),                                        //
        "Try to reduce the number of RBF centers (incremental fitting)")                //
       ("mesh-bbox",
