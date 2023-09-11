@@ -3,12 +3,13 @@
 #include <boost/program_options.hpp>
 #include <exception>
 #include <iostream>
+#include <polatory/types.hpp>
 #include <string>
 
 struct options {
   std::string in_file;
-  int k;
-  int k_orient;
+  std::vector<polatory::index_t> ks;
+  polatory::index_t k_orient;
   double min_plane_factor;
   std::string out_file;
 };
@@ -22,8 +23,12 @@ inline options parse_options(int argc, const char* argv[]) {
   opts_desc.add_options()                                               //
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),  //
        "Input file in CSV format:\n  X,Y,Z")                            //
-      ("k", po::value(&opts.k)->default_value(20)->value_name("K"),     //
-       "Number of points for kNN search for normal estimation")         //
+      ("k",
+       po::value(&opts.ks)
+           ->multitoken()
+           ->default_value(std::vector<polatory::index_t>{10, 30, 100, 300}, "10 30 100 300")
+           ->value_name("K [K2...]"),                            //
+       "Number of points for kNN search for normal estimation")  //
       ("min-plane-factor",
        po::value(&opts.min_plane_factor)->default_value(1.8)->value_name("FACTOR"),  //
        "Threshold of acceptance for estimated normals")                              //
