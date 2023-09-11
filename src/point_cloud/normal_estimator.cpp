@@ -135,7 +135,8 @@ geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
         continue;
       }
 
-      auto weight = std::abs(normals_.row(i_closest).dot(normals_.row(j)));
+      auto weight = std::abs(normals_.row(i_closest).dot(normals_.row(j))) /
+                    (p_closest - points_.row(j)).norm();
       queue.emplace(i_closest, j, weight);
     }
 
@@ -161,7 +162,8 @@ geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
           continue;
         }
 
-        auto weight = std::abs(normals_.row(j).dot(normals_.row(kk)));
+        auto weight =
+            std::abs(normals_.row(j).dot(normals_.row(kk))) / (p - points_.row(kk)).norm();
         queue.emplace(j, kk, weight);
       }
     }
