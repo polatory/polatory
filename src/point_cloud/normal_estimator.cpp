@@ -24,7 +24,7 @@ normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
 
-  std::vector<index_t> ks_sorted{ks};
+  std::vector<index_t> ks_sorted(ks);
   std::sort(ks_sorted.rbegin(), ks_sorted.rend());
   auto k_max = ks_sorted.front();
 
