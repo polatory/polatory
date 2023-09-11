@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
+#include <polatory/point_cloud/plane_estimator.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
@@ -14,6 +15,9 @@ class normal_estimator {
 
   normal_estimator& estimate_with_knn(index_t k, double plane_factor_threshold = 1.8);
 
+  normal_estimator& estimate_with_knn(const std::vector<index_t>& ks,
+                                      double plane_factor_threshold = 1.8);
+
   normal_estimator& estimate_with_radius(double radius, double plane_factor_threshold = 1.8);
 
   geometry::vectors3d orient_by_outward_vector(const geometry::vector3d& v);
@@ -21,9 +25,6 @@ class normal_estimator {
   geometry::vectors3d orient_closed_surface(index_t k);
 
  private:
-  geometry::vector3d estimate_impl(const std::vector<index_t>& nn_indices,
-                                   double plane_factor_threshold) const;
-
   const index_t n_points_;
   const geometry::points3d points_;  // Do not hold a reference to a temporary object.
   kdtree tree_;

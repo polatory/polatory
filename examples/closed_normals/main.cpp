@@ -22,7 +22,7 @@ int main(int argc, const char* argv[]) {
 
     // Estimate normals.
     vectors3d normals = normal_estimator(points)
-                            .estimate_with_knn(opts.k, opts.min_plane_factor)
+                            .estimate_with_knn(opts.ks, opts.min_plane_factor)
                             .orient_closed_surface(opts.k_orient);
 
     // Output points with normals.

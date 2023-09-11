@@ -14,17 +14,43 @@ normal_estimator::normal_estimator(const geometry::points3d& points)
     : n_points_(points.rows()), points_(points), tree_(points, true) {}
 
 normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_factor_threshold) {
-  normals_ = geometry::vectors3d(n_points_, 3);
+  return estimate_with_knn(std::vector<index_t>{k}, plane_factor_threshold);
+}
+
+normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>& ks,
+                                                      double plane_factor_threshold) {
+  normals_ = geometry::vectors3d::Zero(n_points_, 3);
 
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
 
-#pragma omp parallel for private(nn_indices, nn_distances)
+  std::vector<index_t> ks_sorted{ks};
+  std::sort(ks_sorted.rbegin(), ks_sorted.rend());
+  auto k_max = ks_sorted.front();
+
+  std::vector<double> plane_factors;
+  std::vector<geometry::vector3d> plane_normals;
+
+#pragma omp parallel for private(nn_indices, nn_distances, plane_factors, plane_normals)
   for (index_t i = 0; i < n_points_; i++) {
     geometry::point3d p = points_.row(i);
-    tree_.knn_search(p, k, nn_indices, nn_distances);
+    tree_.knn_search(p, k_max, nn_indices, nn_distances);
 
-    normals_.row(i) = estimate_impl(nn_indices, plane_factor_threshold);
+    plane_factors.clear();
+    plane_normals.clear();
+    for (auto k : ks_sorted) {
+      nn_indices.resize(k);
+      plane_estimator est(points_(nn_indices, Eigen::all));
+      plane_factors.push_back(est.plane_factor());
+      plane_normals.push_back(est.plane_normal());
+    }
+
+    auto best = std::distance(plane_factors.begin(),
+                              std::max_element(plane_factors.begin(), plane_factors.end()));
+
+    if (plane_factors.at(best) >= plane_factor_threshold) {
+      normals_.row(i) = plane_normals.at(best);
+    }
   }
 
   return *this;
@@ -32,7 +58,7 @@ normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_fa
 
 normal_estimator& normal_estimator::estimate_with_radius(double radius,
                                                          double plane_factor_threshold) {
-  normals_ = geometry::vectors3d(n_points_, 3);
+  normals_ = geometry::vectors3d::Zero(n_points_, 3);
 
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
@@ -42,7 +68,15 @@ normal_estimator& normal_estimator::estimate_with_radius(double radius,
     geometry::point3d p = points_.row(i);
     tree_.radius_search(p, radius, nn_indices, nn_distances);
 
-    normals_.row(i) = estimate_impl(nn_indices, plane_factor_threshold);
+    if (nn_indices.size() < 3) {
+      continue;
+    }
+
+    plane_estimator est(points_(nn_indices, Eigen::all));
+
+    if (est.plane_factor() >= plane_factor_threshold) {
+      normals_.row(i) = est.plane_normal();
+    }
   }
 
   return *this;
@@ -174,21 +208,6 @@ geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
   std::cout << "Number of connected components: " << n_connected_components << std::endl;
 
   return normals_;
-}
-
-geometry::vector3d normal_estimator::estimate_impl(const std::vector<index_t>& nn_indices,
-                                                   double plane_factor_threshold) const {
-  if (nn_indices.size() < 3) {
-    return geometry::vector3d::Zero();
-  }
-
-  plane_estimator est(points_(nn_indices, Eigen::all));
-
-  if (est.plane_factor() < plane_factor_threshold) {
-    return geometry::vector3d::Zero();
-  }
-
-  return est.plane_normal();
 }
 
 }  // namespace polatory::point_cloud
