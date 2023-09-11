@@ -1,5 +1,6 @@
 #include <exception>
 #include <iostream>
+#include <optional>
 #include <polatory/polatory.hpp>
 #include <tuple>
 
@@ -24,6 +25,12 @@ int main(int argc, const char* argv[]) {
     tabled table = read_table(opts.in_file);
     points3d points = table(Eigen::all, {0, 1, 2});
     valuesd values = table.col(3);
+    std::optional<valuesd> values_lb;
+    std::optional<valuesd> values_ub;
+    if (opts.ineq) {
+      values_lb = table.col(4);
+      values_ub = table.col(5);
+    }
 
     // Remove very close points.
     std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
@@ -36,7 +43,10 @@ int main(int argc, const char* argv[]) {
 
     // Fit.
     interpolant interpolant(model);
-    if (opts.reduce) {
+    if (opts.ineq) {
+      interpolant.fit_inequality(points, values, *values_lb, *values_ub, opts.absolute_tolerance,
+                                 opts.max_iter);
+    } else if (opts.reduce) {
       interpolant.fit_incrementally(points, values, opts.absolute_tolerance, opts.max_iter);
     } else {
       interpolant.fit(points, values, opts.absolute_tolerance, opts.max_iter);
