@@ -5,6 +5,10 @@
 
 namespace polatory::geometry {
 
+using vector2d = Eigen::RowVector2d;
+
+using point2d = vector2d;
+
 using vector3d = Eigen::RowVector3d;
 
 using point3d = vector3d;

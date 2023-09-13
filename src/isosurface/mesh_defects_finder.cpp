@@ -95,49 +95,6 @@ std::unordered_set<index_t> mesh_defects_finder::singular_vertices() const {
   return result;
 }
 
-bool mesh_defects_finder::line_triangle_intersect(index_t vi, index_t vj, index_t fi) const {
-  const auto f = faces_.row(fi);
-
-  const auto e1 = vertices_.row(f(1)) - vertices_.row(f(0));
-  const auto e2 = vertices_.row(f(2)) - vertices_.row(f(0));
-
-  const auto dir = vertices_.row(vj) - vertices_.row(vi);
-  const auto p = dir.cross(e2);
-  // det = [e1, dir, e2] (scalar triple product of dir, e2 and e1)
-  const auto inv_det = 1.0 / p.dot(e1);
-  const auto s = vertices_.row(vi) - vertices_.row(f(0));
-  const auto u = inv_det * s.dot(p);
-  if (u < 0.0 || u > 1.0) {
-    return false;
-  }
-  const auto q = s.cross(e1);
-  const auto v = inv_det * dir.dot(q);
-  if (v < 0.0 || v > 1.0 || u + v > 1.0) {
-    return false;
-  }
-  if (u + v > 1.0) {
-    return false;
-  }
-
-  return true;
-}
-
-bool mesh_defects_finder::segment_plane_intersect(index_t vi, index_t vj, index_t fi) const {
-  const auto f = faces_.row(fi);
-
-  const auto e1 = vertices_.row(f(1)) - vertices_.row(f(0));
-  const auto e2 = vertices_.row(f(2)) - vertices_.row(f(0));
-
-  const auto n = e1.cross(e2);
-  const auto sign1 = n.dot(vertices_.row(vi) - vertices_.row(f(0)));
-  const auto sign2 = n.dot(vertices_.row(vj) - vertices_.row(f(0)));
-  return sign1 * sign2 < 0.0;
-}
-
-bool mesh_defects_finder::segment_triangle_intersect(index_t vi, index_t vj, index_t fi) const {
-  return segment_plane_intersect(vi, vj, fi) && line_triangle_intersect(vi, vj, fi);
-}
-
 index_t mesh_defects_finder::next_vertex(index_t fi, index_t vi) const {
   auto f = faces_.row(fi);
   if (f(0) == vi) {
@@ -158,6 +115,78 @@ index_t mesh_defects_finder::prev_vertex(index_t fi, index_t vi) const {
     return f(0);
   }
   return f(1);
+}
+
+double orient2d_inexact(const geometry::point2d& a, const geometry::point2d& b,
+                        const geometry::point2d& c) {
+  Eigen::Matrix2d m;
+  m << a(0) - c(0), a(1) - c(1), b(0) - c(0), b(1) - c(1);
+  return m.determinant();
+}
+
+double orient3d_inexact(const geometry::point3d& a, const geometry::point3d& b,
+                        const geometry::point3d& c, const geometry::point3d& d) {
+  Eigen::Matrix3d m;
+  m << a(0) - d(0), a(1) - d(1), a(2) - d(2), b(0) - d(0), b(1) - d(1), b(2) - d(2), c(0) - d(0),
+      c(1) - d(1), c(2) - d(2);
+  return m.determinant();
+}
+
+double coplanar_orientation(const geometry::point3d& a, const geometry::point3d& b,
+                            const geometry::point3d& c) {
+  geometry::point2d a_xy(a(0), a(1));
+  geometry::point2d b_xy(b(0), b(1));
+  geometry::point2d c_xy(c(0), c(1));
+  auto abc_xy = orient2d_inexact(a_xy, b_xy, c_xy);
+  if (abc_xy != 0.0) {
+    return abc_xy;
+  }
+
+  geometry::point2d a_yz(a(1), a(2));
+  geometry::point2d b_yz(b(1), b(2));
+  geometry::point2d c_yz(c(1), c(2));
+  auto abc_yz = orient2d_inexact(a_yz, b_yz, c_yz);
+  if (abc_yz != 0.0) {
+    return abc_yz;
+  }
+
+  geometry::point2d a_zx(a(2), a(0));
+  geometry::point2d b_zx(b(2), b(0));
+  geometry::point2d c_zx(c(2), c(0));
+  auto abc_zx = orient2d_inexact(a_zx, b_zx, c_zx);
+  return abc_zx;
+}
+
+bool mesh_defects_finder::segment_triangle_intersect(index_t vi, index_t vj, index_t fi) const {
+  auto f = faces_.row(fi);
+
+  auto a = vertices_.row(f(0));
+  auto b = vertices_.row(f(1));
+  auto c = vertices_.row(f(2));
+  auto p = vertices_.row(vi);
+  auto q = vertices_.row(vj);
+
+  auto abcp = orient3d_inexact(a, b, c, p);
+  auto abcq = orient3d_inexact(a, b, c, q);
+
+  if ((abcp > 0.0 && abcq > 0.0) || (abcp < 0.0 && abcq < 0.0)) {
+    return false;
+  }
+
+  if (abcp == 0.0 && abcq == 0.0) {
+    auto pqa = coplanar_orientation(p, q, a);
+    auto pqb = coplanar_orientation(p, q, b);
+    auto pqc = coplanar_orientation(p, q, c);
+
+    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
+    return !((pqa > 0.0 && pqb > 0.0 && pqc > 0.0) || (pqa < 0.0 && pqb < 0.0 && pqc < 0.0));
+  }
+
+  auto pqab = orient3d_inexact(p, q, a, b);
+  auto pqbc = orient3d_inexact(p, q, b, c);
+  auto pqca = orient3d_inexact(p, q, c, a);
+
+  return (pqab >= 0.0 && pqbc >= 0.0 && pqca >= 0.0) || (pqab <= 0.0 && pqbc <= 0.0 && pqca <= 0.0);
 }
 
 }  // namespace polatory::isosurface
