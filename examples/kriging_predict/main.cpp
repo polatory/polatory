@@ -32,7 +32,12 @@ int main(int argc, const char* argv[]) {
     }
 
     // Remove very close points.
-    std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
+    distance_filter filter(points, opts.min_distance);
+    std::tie(points, values) = filter(points, values);
+    if (opts.ineq) {
+      *values_lb = filter(*values_lb);
+      *values_ub = filter(*values_ub);
+    }
 
     // Define the model.
     auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
