@@ -98,6 +98,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       res_eval->set_weights(center_weights);
       values_fit = res_eval->evaluate(ineq_points);
     } else {
+      center_weights = common::valuesd::Zero(n_poly_basis_);
       values_fit = common::valuesd::Zero(n_ineq);
     }
 
