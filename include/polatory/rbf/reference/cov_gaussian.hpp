@@ -17,26 +17,30 @@ class cov_gaussian final : public covariance_function_base {
 
   std::unique_ptr<rbf_base> clone() const override { return std::make_unique<cov_gaussian>(*this); }
 
-  static double evaluate_untransformed(double r, const double* params) {
-    auto psill = params[0];
-    auto range = params[1];
+  double evaluate_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
 
     return psill * std::exp(-r * r / (range * range));
   }
 
-  double evaluate_untransformed(double r) const override {
-    return evaluate_untransformed(r, parameters().data());
+  vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+
+    auto coeff = -2.0 * psill * std::exp(-r * r / (range * range)) / (range * range);
+    return coeff * diff;
   }
 
-  void evaluate_gradient_untransformed(double* gradx, double* grady, double* gradz, double x,
-                                       double y, double z, double r) const override {
-    auto psill = parameters()[0];
-    auto range = parameters()[1];
+  matrix3d evaluate_hessian_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
 
-    auto c = -2.0 * psill * std::exp(-r * r / (range * range)) / (range * range);
-    *gradx = c * x;
-    *grady = c * y;
-    *gradz = c * z;
+    auto coeff = -2.0 * psill * std::exp(-r * r / (range * range)) / (range * range);
+    return coeff * (matrix3d::Identity() - 2.0 * diff.transpose() * diff / (range * range));
   }
 };
 

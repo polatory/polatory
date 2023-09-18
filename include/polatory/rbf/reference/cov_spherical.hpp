@@ -3,6 +3,7 @@
 #include <cmath>
 #include <memory>
 #include <polatory/rbf/covariance_function_base.hpp>
+#include <stdexcept>
 #include <vector>
 
 namespace polatory {
@@ -19,32 +20,29 @@ class cov_spherical final : public covariance_function_base {
     return std::make_unique<cov_spherical>(*this);
   }
 
-  static double evaluate_untransformed(double r, const double* params) {
-    auto psill = params[0];
-    auto range = params[1];
+  double evaluate_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
 
     return r < range ? psill * (1.0 - 1.5 * r / range + 0.5 * std::pow(r / range, 3.0)) : 0.0;
   }
 
-  double evaluate_untransformed(double r) const override {
-    return evaluate_untransformed(r, parameters().data());
-  }
-
-  void evaluate_gradient_untransformed(double* gradx, double* grady, double* gradz, double x,
-                                       double y, double z, double r) const override {
-    auto psill = parameters()[0];
-    auto range = parameters()[1];
+  vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
 
     if (r < range) {
-      auto c = psill * 1.5 * (-1.0 / (range * r) + r / std::pow(range, 3.0));
-      *gradx = c * x;
-      *grady = c * y;
-      *gradz = c * z;
-    } else {
-      *gradx = 0.0;
-      *grady = 0.0;
-      *gradz = 0.0;
+      auto coeff = psill * 1.5 * (-1.0 / (range * r) + r / std::pow(range, 3.0));
+      return coeff * diff;
     }
+
+    return vector3d::Zero();
+  }
+
+  matrix3d evaluate_hessian_untransformed(const vector3d& /*diff*/) const override {
+    throw std::runtime_error("cov_spherical::evaluate_hessian_untransformed is not implemented");
   }
 };
 

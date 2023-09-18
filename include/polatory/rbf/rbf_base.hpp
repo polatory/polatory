@@ -9,6 +9,10 @@
 namespace polatory::rbf {
 
 class rbf_base {
+ protected:
+  using matrix3d = geometry::matrix3d;
+  using vector3d = geometry::vector3d;
+
  public:
   virtual ~rbf_base() = default;
 
@@ -23,14 +27,19 @@ class rbf_base {
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;
 
-  double evaluate(const geometry::vectors3d& v) const {
-    return evaluate_untransformed(geometry::transform_vector(aniso_, v).norm());
+  double evaluate(const vector3d& diff) const {
+    return evaluate_untransformed(geometry::transform_vector(aniso_, diff));
   }
 
-  virtual void evaluate_gradient_untransformed(double* gradx, double* grady, double* gradz,
-                                               double x, double y, double z, double r) const = 0;
+  double evaluate_untransformed(double r) const {
+    return evaluate_untransformed(vector3d{r, 0.0, 0.0});
+  }
 
-  virtual double evaluate_untransformed(double r) const = 0;
+  virtual double evaluate_untransformed(const vector3d& diff) const = 0;
+
+  virtual vector3d evaluate_gradient_untransformed(const vector3d& diff) const = 0;
+
+  virtual matrix3d evaluate_hessian_untransformed(const vector3d& diff) const = 0;
 
   virtual int num_parameters() const = 0;
 

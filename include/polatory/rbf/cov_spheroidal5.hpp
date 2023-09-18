@@ -17,33 +17,47 @@ class cov_spheroidal5 final : public covariance_function_base {
     return std::make_unique<cov_spheroidal5>(*this);
   }
 
-  static double evaluate_untransformed(double r, const double* params) {
-    auto psill = params[0];
-    auto range = params[1];
+  double evaluate_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+    auto rho = r / range;
 
-    return r < 0.25801274118035729 * range
-               ? psill * (1.0 - 1.6149073288415875 * r / range)
-               : psill * 0.85759801680320064 *
-                     std::pow(1.0 + 2.5036086535164204 * std::pow(r / range, 2.0), -2.5);
+    return rho < 0.25801274118035729 ? psill * (1.0 - 1.6149073288415875 * rho)
+                                     : psill * 0.85759801680320064 *
+                                           std::pow(1.0 + 2.5036086535164204 * (rho * rho), -2.5);
   }
 
-  double evaluate_untransformed(double r) const override {
-    return evaluate_untransformed(r, parameters().data());
+  vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+    auto rho = r / range;
+
+    auto coeff =
+        (rho < 0.25801274118035729 ? -psill * 1.6149073288415875 / rho
+                                   : -psill * 10.735449080535068 *
+                                         std::pow(1.0 + 2.5036086535164204 * (rho * rho), -3.5)) /
+        (range * range);
+    return coeff * diff;
   }
 
-  void evaluate_gradient_untransformed(double* gradx, double* grady, double* gradz, double x,
-                                       double y, double z, double r) const override {
-    auto psill = parameters()[0];
-    auto range = parameters()[1];
+  matrix3d evaluate_hessian_untransformed(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+    auto rho = r / range;
 
-    auto c = r < 0.25801274118035729 * range
-                 ? -psill * 1.6149073288415875 / (range * r)
-                 : -psill * 10.735449080535068 *
-                       std::pow(1.0 + 2.5036086535164204 * std::pow(r / range, 2.0), -3.5) /
-                       (range * range);
-    *gradx = c * x;
-    *grady = c * y;
-    *gradz = c * z;
+    auto coeff =
+        (rho < 0.25801274118035729 ? -psill * 1.6149073288415875 / rho
+                                   : -psill * 10.735449080535068 *
+                                         std::pow(1.0 + 2.5036086535164204 * (rho * rho), -3.5)) /
+        (range * range);
+    return coeff *
+           (matrix3d::Identity() - diff.transpose() * diff *
+                                       (rho < 0.25801274118035729
+                                            ? 1.0 / (r * r)
+                                            : 7.0 / (r * r + 0.3994234476684122 * range * range)));
   }
 };
 

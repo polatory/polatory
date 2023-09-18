@@ -3,6 +3,7 @@
 #include <ScalFMM/Kernels/Interpolation/FInterpMatrixKernel.hpp>
 #include <cmath>
 #include <memory>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory {
@@ -30,27 +31,23 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
 
   // evaluate interaction
   double evaluate(double xt, double yt, double zt, double xs, double ys, double zs) const {
-    auto diffx = xt - xs;
-    auto diffy = yt - ys;
-    auto diffz = zt - zs;
-    auto r = std::hypot(diffx, diffy, diffz);
+    geometry::vector3d diff{xt - xs, yt - ys, zt - zs};
 
-    return rbf_->evaluate_untransformed(r);
+    return rbf_->evaluate_untransformed(diff);
   }
 
   // evaluate interaction and derivative (blockwise)
   void evaluateBlockAndDerivative(double xt, double yt, double zt, double xs, double ys, double zs,
                                   double block[1], double blockDerivative[3]) const {
-    auto diffx = xt - xs;
-    auto diffy = yt - ys;
-    auto diffz = zt - zs;
-    auto r = std::hypot(diffx, diffy, diffz);
+    geometry::vector3d diff{xt - xs, yt - ys, zt - zs};
 
-    block[0] = rbf_->evaluate_untransformed(r);
+    block[0] = rbf_->evaluate_untransformed(diff);
 
     if (kEvaluateGradient) {
-      rbf_->evaluate_gradient_untransformed(&blockDerivative[0], &blockDerivative[1],
-                                            &blockDerivative[2], diffx, diffy, diffz, r);
+      auto grad = rbf_->evaluate_gradient_untransformed(diff);
+      blockDerivative[0] = grad(0);
+      blockDerivative[1] = grad(1);
+      blockDerivative[2] = grad(2);
     } else {
       blockDerivative[0] = 0.0;
       blockDerivative[1] = 0.0;

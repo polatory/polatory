@@ -29,6 +29,8 @@ PYBIND11_MODULE(_core, m) {
       .def(py::init<const std::vector<double>&>(), "params"_a);
   py::class_<rbf::cov_spheroidal9, rbf::rbf_base>(m, "CovSpheroidal9")
       .def(py::init<const std::vector<double>&>(), "params"_a);
+  py::class_<rbf::multiquadric1, rbf::rbf_base>(m, "Multiquadric1")
+      .def(py::init<const std::vector<double>&>(), "params"_a);
 
   py::class_<model>(m, "Model")
       .def(py::init<const rbf::rbf_base&, int, int>(), "rbf"_a, "poly_dimension"_a, "poly_degree"_a)

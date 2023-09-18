@@ -60,6 +60,10 @@ inline std::unique_ptr<polatory::rbf::rbf_base> make_rbf(const std::string& name
     return std::make_unique<polatory::rbf::biharmonic3d>(params);
   }
 
+  if (name == "mq1") {
+    return std::make_unique<polatory::rbf::multiquadric1>(params);
+  }
+
   if (name == "exp") {
     return std::make_unique<polatory::rbf::cov_exponential>(params);
   }

@@ -3,6 +3,7 @@
 #include <limits>
 #include <memory>
 #include <polatory/rbf/rbf_base.hpp>
+#include <stdexcept>
 #include <vector>
 
 namespace polatory::rbf {
@@ -17,24 +18,19 @@ class biharmonic3d final : public rbf_base {
 
   int cpd_order() const override { return 1; }
 
-  static double evaluate_untransformed(double r, const double* params) {
-    auto slope = params[0];
+  double evaluate_untransformed(const vector3d& diff) const override {
+    auto slope = parameters().at(0);
+    auto r = diff.norm();
 
     return -slope * r;
   }
 
-  double evaluate_untransformed(double r) const override {
-    return evaluate_untransformed(r, parameters().data());
+  vector3d evaluate_gradient_untransformed(const vector3d& /*diff*/) const override {
+    throw std::runtime_error("biharmonic3d::evaluate_gradient_untransformed() is not implemented");
   }
 
-  void evaluate_gradient_untransformed(double* gradx, double* grady, double* gradz, double x,
-                                       double y, double z, double r) const override {
-    auto slope = parameters()[0];
-
-    auto c = -slope / r;
-    *gradx = c * x;
-    *grady = c * y;
-    *gradz = c * z;
+  matrix3d evaluate_hessian_untransformed(const vector3d& /*diff*/) const override {
+    throw std::runtime_error("biharmonic3d::evaluate_hessian_untransformed() is not implemented");
   }
 
   int num_parameters() const override { return 1; }
