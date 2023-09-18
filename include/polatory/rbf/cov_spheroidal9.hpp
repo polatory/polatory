@@ -8,6 +8,11 @@
 namespace polatory::rbf {
 
 class cov_spheroidal9 final : public covariance_function_base {
+  static constexpr double kRho0 = 0.31622776601683794;
+  static constexpr double kA = 1.4230249470757708;
+  static constexpr double kB = 0.8445585690332554;
+  static constexpr double kD = 7.601027121299299;
+
  public:
   using covariance_function_base::covariance_function_base;
 
@@ -23,9 +28,7 @@ class cov_spheroidal9 final : public covariance_function_base {
     auto r = diff.norm();
     auto rho = r / range;
 
-    return rho < 0.31622776601683793
-               ? psill * (1.0 - 1.4230249470757707 * rho)
-               : psill * 0.84455856903325538 * std::pow(1.0 + (rho * rho), -4.5);
+    return rho < kRho0 ? psill * (1.0 - kA * rho) : psill * kB * std::pow(1.0 + (rho * rho), -4.5);
   }
 
   vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
@@ -34,10 +37,9 @@ class cov_spheroidal9 final : public covariance_function_base {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff = (rho < 0.31622776601683793
-                      ? -psill * 1.4230249470757707 / rho
-                      : -psill * 7.6010271212992985 * std::pow(1.0 + (rho * rho), -5.5)) /
-                 (range * range);
+    auto coeff =
+        (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + (rho * rho), -5.5)) /
+        (range * range);
     return coeff * diff;
   }
 
@@ -47,14 +49,12 @@ class cov_spheroidal9 final : public covariance_function_base {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff = (rho < 0.31622776601683793
-                      ? -psill * 1.4230249470757707 / rho
-                      : -psill * 7.6010271212992985 * std::pow(1.0 + (rho * rho), -5.5)) /
-                 (range * range);
-    return coeff *
-           (matrix3d::Identity() -
-            diff.transpose() * diff *
-                (rho < 0.31622776601683793 ? 1.0 / (r * r) : 11.0 / (r * r + range * range)));
+    auto coeff =
+        (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + (rho * rho), -5.5)) /
+        (range * range);
+    return coeff * (matrix3d::Identity() -
+                    diff.transpose() * diff *
+                        (rho < kRho0 ? 1.0 / (r * r) : 11.0 / (r * r + range * range)));
   }
 };
 
