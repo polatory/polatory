@@ -17,26 +17,31 @@ class cov_exponential final : public covariance_function_base {
     return std::make_unique<cov_exponential>(*this);
   }
 
-  static double evaluate_untransformed(double r, const double* params) {
-    auto psill = params[0];
-    auto range = params[1];
+  double evaluate_isotropic(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
 
     return psill * std::exp(-r / range);
   }
 
-  double evaluate_untransformed(double r) const override {
-    return evaluate_untransformed(r, parameters().data());
+  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+
+    auto coeff = -psill * std::exp(-r / range) / (range * r);
+    return coeff * diff;
   }
 
-  void evaluate_gradient_untransformed(double* gradx, double* grady, double* gradz, double x,
-                                       double y, double z, double r) const override {
-    auto psill = parameters()[0];
-    auto range = parameters()[1];
+  matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
 
-    auto c = -psill * std::exp(-r / range) / (range * r);
-    *gradx = c * x;
-    *grady = c * y;
-    *gradz = c * z;
+    auto coeff = -psill * std::exp(-r / range) / (range * r);
+    return coeff *
+           (matrix3d::Identity() - diff.transpose() * diff * (1.0 / (r * r) + 1.0 / (range * r)));
   }
 };
 

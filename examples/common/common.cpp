@@ -19,5 +19,6 @@ Positive definite
   sp9 VAR SCALE  (cov_spheroidal9)
 Conditionally positive definite of order 1
   bh3 VAR        (biharmonic3d)
+  mq1 VAR C      (multiquadric1)
 Conditionally positive definite of order 2
   bh2 VAR        (biharmonic2d))";
