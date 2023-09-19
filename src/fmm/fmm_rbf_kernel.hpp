@@ -33,7 +33,7 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
   double evaluate(double xt, double yt, double zt, double xs, double ys, double zs) const {
     geometry::vector3d diff{xt - xs, yt - ys, zt - zs};
 
-    return rbf_->evaluate_untransformed(diff);
+    return rbf_->evaluate_isotropic(diff);
   }
 
   // evaluate interaction and derivative (blockwise)
@@ -41,10 +41,10 @@ struct fmm_rbf_kernel : FInterpAbstractMatrixKernel<double> {
                                   double block[1], double blockDerivative[3]) const {
     geometry::vector3d diff{xt - xs, yt - ys, zt - zs};
 
-    block[0] = rbf_->evaluate_untransformed(diff);
+    block[0] = rbf_->evaluate_isotropic(diff);
 
     if (kEvaluateGradient) {
-      auto grad = rbf_->evaluate_gradient_untransformed(diff);
+      auto grad = rbf_->evaluate_gradient_isotropic(diff);
       blockDerivative[0] = grad(0);
       blockDerivative[1] = grad(1);
       blockDerivative[2] = grad(2);

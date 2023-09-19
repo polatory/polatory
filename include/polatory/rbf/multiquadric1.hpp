@@ -20,7 +20,7 @@ class multiquadric1 final : public rbf_base {
 
   int cpd_order() const override { return 1; }
 
-  double evaluate_untransformed(const vector3d& diff) const override {
+  double evaluate_isotropic(const vector3d& diff) const override {
     auto slope = parameters().at(0);
     auto c = parameters().at(1);
     auto r = diff.norm();
@@ -28,7 +28,7 @@ class multiquadric1 final : public rbf_base {
     return -slope * std::hypot(r, c);
   }
 
-  vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
+  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
     auto slope = parameters().at(0);
     auto c = parameters().at(1);
     auto r = diff.norm();
@@ -37,7 +37,7 @@ class multiquadric1 final : public rbf_base {
     return coeff * diff;
   }
 
-  matrix3d evaluate_hessian_untransformed(const vector3d& diff) const override {
+  matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
     auto slope = parameters().at(0);
     auto c = parameters().at(1);
     auto r = diff.norm();

@@ -49,7 +49,7 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     fmm_->execute();
 
-    auto self_potential = model_.rbf().evaluate_untransformed(0.0);
+    auto self_potential = model_.rbf().evaluate_isotropic(geometry::vector3d::Zero());
     return potentials() + weights_ * self_potential;
   }
 

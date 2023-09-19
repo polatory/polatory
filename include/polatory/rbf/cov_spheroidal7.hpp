@@ -24,7 +24,7 @@ class cov_spheroidal7 final : public covariance_function_base {
     return std::make_unique<cov_spheroidal7>(*this);
   }
 
-  double evaluate_untransformed(const vector3d& diff) const override {
+  double evaluate_isotropic(const vector3d& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);
     auto r = diff.norm();
@@ -34,7 +34,7 @@ class cov_spheroidal7 final : public covariance_function_base {
                        : psill * kB * std::pow(1.0 + kC * (rho * rho), -3.5);
   }
 
-  vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
+  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);
     auto r = diff.norm();
@@ -46,7 +46,7 @@ class cov_spheroidal7 final : public covariance_function_base {
     return coeff * diff;
   }
 
-  matrix3d evaluate_hessian_untransformed(const vector3d& diff) const override {
+  matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);
     auto r = diff.norm();

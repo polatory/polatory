@@ -21,14 +21,14 @@ class triharmonic3d final : public rbf_base {
 
   int cpd_order() const override { return 2; }
 
-  double evaluate_untransformed(const vector3d& diff) const override {
+  double evaluate_isotropic(const vector3d& diff) const override {
     auto slope = parameters().at(0);
     auto r = diff.norm();
 
     return slope * r * r * r;
   }
 
-  vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
+  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
     auto slope = parameters().at(0);
     auto r = diff.norm();
 
@@ -36,7 +36,7 @@ class triharmonic3d final : public rbf_base {
     return coeff * diff;
   }
 
-  matrix3d evaluate_hessian_untransformed(const vector3d& diff) const override {
+  matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
     auto slope = parameters().at(0);
     auto r = diff.norm();
 

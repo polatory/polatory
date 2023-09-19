@@ -18,19 +18,19 @@ class biharmonic3d final : public rbf_base {
 
   int cpd_order() const override { return 1; }
 
-  double evaluate_untransformed(const vector3d& diff) const override {
+  double evaluate_isotropic(const vector3d& diff) const override {
     auto slope = parameters().at(0);
     auto r = diff.norm();
 
     return -slope * r;
   }
 
-  vector3d evaluate_gradient_untransformed(const vector3d& /*diff*/) const override {
-    throw std::runtime_error("biharmonic3d::evaluate_gradient_untransformed() is not implemented");
+  vector3d evaluate_gradient_isotropic(const vector3d& /*diff*/) const override {
+    throw std::runtime_error("biharmonic3d::evaluate_gradient_isotropic() is not implemented");
   }
 
-  matrix3d evaluate_hessian_untransformed(const vector3d& /*diff*/) const override {
-    throw std::runtime_error("biharmonic3d::evaluate_hessian_untransformed() is not implemented");
+  matrix3d evaluate_hessian_isotropic(const vector3d& /*diff*/) const override {
+    throw std::runtime_error("biharmonic3d::evaluate_hessian_isotropic() is not implemented");
   }
 
   int num_parameters() const override { return 1; }

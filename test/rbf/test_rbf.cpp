@@ -48,9 +48,9 @@ vector3d gradient_approx(const rbf_base& rbf, const vector3d& v, double h) {
   auto yp = vector3d{v(0), v(1) + h, v(2)};
   auto zp = vector3d{v(0), v(1), v(2) + h};
 
-  return vector3d{rbf.evaluate_untransformed(xp) - rbf.evaluate_untransformed(xm),
-                  rbf.evaluate_untransformed(yp) - rbf.evaluate_untransformed(ym),
-                  rbf.evaluate_untransformed(zp) - rbf.evaluate_untransformed(zm)} /
+  return vector3d{rbf.evaluate_isotropic(xp) - rbf.evaluate_isotropic(xm),
+                  rbf.evaluate_isotropic(yp) - rbf.evaluate_isotropic(ym),
+                  rbf.evaluate_isotropic(zp) - rbf.evaluate_isotropic(zm)} /
          (2.0 * h);
 }
 
@@ -64,9 +64,9 @@ matrix3d hessian_approx(const rbf_base& rbf, const vector3d& v, double h) {
   auto zp = vector3d{v(0), v(1), v(2) + h};
 
   matrix3d m;
-  m << rbf.evaluate_gradient_untransformed(xp) - rbf.evaluate_gradient_untransformed(xm),
-      rbf.evaluate_gradient_untransformed(yp) - rbf.evaluate_gradient_untransformed(ym),
-      rbf.evaluate_gradient_untransformed(zp) - rbf.evaluate_gradient_untransformed(zm);
+  m << rbf.evaluate_gradient_isotropic(xp) - rbf.evaluate_gradient_isotropic(xm),
+      rbf.evaluate_gradient_isotropic(yp) - rbf.evaluate_gradient_isotropic(ym),
+      rbf.evaluate_gradient_isotropic(zp) - rbf.evaluate_gradient_isotropic(zm);
   m /= 2.0 * h;
 
   return m;
@@ -97,7 +97,7 @@ void test_gradient(const rbf_base& rbf) {
     auto z = dist(gen);
     vector3d xx{x, y, z};
 
-    auto grad = rbf.evaluate_gradient_untransformed(xx);
+    auto grad = rbf.evaluate_gradient_isotropic(xx);
     auto grad_approx = gradient_approx(rbf, xx, h);
 
     EXPECT_LE((grad_approx - grad).norm(), tolerance);
@@ -118,7 +118,7 @@ void test_hessian(const rbf_base& rbf) {
     auto z = dist(gen);
     vector3d xx{x, y, z};
 
-    auto hess = rbf.evaluate_hessian_untransformed(xx);
+    auto hess = rbf.evaluate_hessian_isotropic(xx);
     auto hess_approx = hessian_approx(rbf, xx, h);
 
     EXPECT_LE((hess_approx - hess).norm(), tolerance);

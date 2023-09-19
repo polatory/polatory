@@ -28,18 +28,14 @@ class rbf_base {
   virtual int cpd_order() const = 0;
 
   double evaluate(const vector3d& diff) const {
-    return evaluate_untransformed(geometry::transform_vector(aniso_, diff));
+    return evaluate_isotropic(geometry::transform_vector(aniso_, diff));
   }
 
-  double evaluate_untransformed(double r) const {
-    return evaluate_untransformed(vector3d{r, 0.0, 0.0});
-  }
+  virtual double evaluate_isotropic(const vector3d& diff) const = 0;
 
-  virtual double evaluate_untransformed(const vector3d& diff) const = 0;
+  virtual vector3d evaluate_gradient_isotropic(const vector3d& diff) const = 0;
 
-  virtual vector3d evaluate_gradient_untransformed(const vector3d& diff) const = 0;
-
-  virtual matrix3d evaluate_hessian_untransformed(const vector3d& diff) const = 0;
+  virtual matrix3d evaluate_hessian_isotropic(const vector3d& diff) const = 0;
 
   virtual int num_parameters() const = 0;
 

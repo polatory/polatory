@@ -20,7 +20,7 @@ class cov_spherical final : public covariance_function_base {
     return std::make_unique<cov_spherical>(*this);
   }
 
-  double evaluate_untransformed(const vector3d& diff) const override {
+  double evaluate_isotropic(const vector3d& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);
     auto r = diff.norm();
@@ -28,7 +28,7 @@ class cov_spherical final : public covariance_function_base {
     return r < range ? psill * (1.0 - 1.5 * r / range + 0.5 * std::pow(r / range, 3.0)) : 0.0;
   }
 
-  vector3d evaluate_gradient_untransformed(const vector3d& diff) const override {
+  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);
     auto r = diff.norm();
@@ -41,8 +41,8 @@ class cov_spherical final : public covariance_function_base {
     return vector3d::Zero();
   }
 
-  matrix3d evaluate_hessian_untransformed(const vector3d& /*diff*/) const override {
-    throw std::runtime_error("cov_spherical::evaluate_hessian_untransformed is not implemented");
+  matrix3d evaluate_hessian_isotropic(const vector3d& /*diff*/) const override {
+    throw std::runtime_error("cov_spherical::evaluate_hessian_isotropic is not implemented");
   }
 };
 
