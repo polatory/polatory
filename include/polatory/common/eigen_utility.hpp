@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <iterator>
-#include <polatory/common/iterator_range.hpp>
 #include <polatory/common/macros.hpp>
 #include <stdexcept>
 #include <utility>

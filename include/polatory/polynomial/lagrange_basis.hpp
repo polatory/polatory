@@ -16,7 +16,8 @@ class lagrange_basis : public polynomial_basis_base {
   static constexpr double kRCondThreshold = 1e-10;
 
  public:
-  lagrange_basis(int dimension, int degree, const geometry::points3d& points)
+  template <class Derived>
+  lagrange_basis(int dimension, int degree, const Eigen::MatrixBase<Derived>& points)
       : polynomial_basis_base(dimension, degree), mono_basis_(dimension, degree) {
     POLATORY_ASSERT(points.rows() == basis_size());
 
@@ -31,7 +32,8 @@ class lagrange_basis : public polynomial_basis_base {
     coeffs_ = p.fullPivLu().inverse();
   }
 
-  Eigen::MatrixXd evaluate(const geometry::points3d& points) const {
+  template <class Derived>
+  Eigen::MatrixXd evaluate(const Eigen::MatrixBase<Derived>& points) const {
     auto pt = mono_basis_.evaluate(points);
 
     return coeffs_.transpose() * pt;

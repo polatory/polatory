@@ -1,4 +1,3 @@
-#include <polatory/common/iterator_range.hpp>
 #include <polatory/common/macros.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
@@ -33,25 +32,22 @@ void coarse_grid::clear() {
 }
 
 void coarse_grid::setup(const geometry::points3d& points_full) {
+  auto points = points_full(point_idcs_, Eigen::all);
+
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
   const auto& rbf = model_.rbf();
-  auto diagonal = rbf.evaluate(geometry::vector3d::Zero()) + model_.nugget();
-  for (index_t i = 0; i < m_; i++) {
-    a(i, i) = diagonal;
-  }
+  a.diagonal().array() = rbf.evaluate(geometry::vector3d::Zero()) + model_.nugget();
   for (index_t i = 0; i < m_ - 1; i++) {
     for (index_t j = i + 1; j < m_; j++) {
-      a(i, j) =
-          rbf.evaluate(points_full.row(point_idcs_.at(i)) - points_full.row(point_idcs_.at(j)));
+      a(i, j) = rbf.evaluate(points.row(i) - points.row(j));
       a(j, i) = a(i, j);
     }
   }
 
   if (l_ > 0) {
     // Compute -E.
-    geometry::points3d tail_points =
-        points_full(common::make_range(point_idcs_.begin() + l_, point_idcs_.end()), Eigen::all);
+    auto tail_points = points.bottomRows(m_ - l_);
     me_ = -lagrange_basis_->evaluate(tail_points);
 
     // Compute decomposition of Q^T A Q.
@@ -64,8 +60,7 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
     a_top_ = a.topRows(l_);
 
     polynomial::monomial_basis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
-    geometry::points3d head_points =
-        points_full(common::make_range(point_idcs_.begin(), point_idcs_.begin() + l_), Eigen::all);
+    auto head_points = points.topRows(l_);
     Eigen::MatrixXd p_top = mono_basis.evaluate(head_points).transpose();
     lu_of_p_top_ = p_top.fullPivLu();
   } else {
@@ -74,18 +69,12 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
 }
 
 void coarse_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
-  for (index_t i = 0; i < m_; i++) {
-    weights_full(point_idcs_.at(i)) = lambda_c_(i);
-  }
-
-  weights_full.tail(l_) = lambda_c_.tail(l_).cast<double>();
+  weights_full(point_idcs_) = lambda_c_.head(m_);
+  weights_full.tail(l_) = lambda_c_.tail(l_);
 }
 
 void coarse_grid::solve(const Eigen::Ref<const common::valuesd>& values_full) {
-  common::valuesd values(m_);
-  for (index_t i = 0; i < m_; i++) {
-    values(i) = values_full(point_idcs_.at(i));
-  }
+  auto values = values_full(point_idcs_);
 
   if (l_ > 0) {
     // Compute Q^T d.
