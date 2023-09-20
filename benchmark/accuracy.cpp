@@ -4,13 +4,14 @@
 #include <Eigen/Core>
 #include <exception>
 #include <iostream>
+#include <polatory/common/orthonormalize.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/sphere3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/polynomial/orthonormal_basis.hpp>
+#include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
@@ -23,13 +24,14 @@
 
 using polatory::index_t;
 using polatory::model;
+using polatory::common::orthonormalize_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
 using polatory::point_cloud::random_points;
-using polatory::polynomial::orthonormal_basis;
+using polatory::polynomial::monomial_basis;
 using polatory::rbf::biharmonic2d;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
@@ -52,8 +54,9 @@ double estimate_accuracy(const rbf_base& rbf) {
   weights.head(n_points) = valuesd::Random(n_points);
 
   if (poly_degree >= 0) {
-    orthonormal_basis poly(model.poly_dimension(), model.poly_degree(), points);
+    monomial_basis poly(model.poly_dimension(), model.poly_degree());
     Eigen::MatrixXd p = poly.evaluate(points).transpose();
+    orthonormalize_cols(p);
 
     // Orthogonalize weights against P.
     auto n_cols = p.cols();

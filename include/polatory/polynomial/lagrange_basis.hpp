@@ -34,7 +34,13 @@ class lagrange_basis : public polynomial_basis_base {
 
   template <class Derived>
   Eigen::MatrixXd evaluate(const Eigen::MatrixBase<Derived>& points) const {
-    auto pt = mono_basis_.evaluate(points);
+    return evaluate(points, geometry::points3d(0, 3));
+  }
+
+  template <class DerivedPoints, class DerivedGradPoints>
+  Eigen::MatrixXd evaluate(const Eigen::MatrixBase<DerivedPoints>& points,
+                           const Eigen::MatrixBase<DerivedGradPoints>& grad_points) const {
+    auto pt = mono_basis_.evaluate(points, grad_points);
 
     return coeffs_.transpose() * pt;
   }

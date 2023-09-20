@@ -2,10 +2,8 @@
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
-#include <memory>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
-#include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
@@ -13,16 +11,12 @@ namespace polatory::preconditioner {
 
 class fine_grid {
  public:
-  fine_grid(const model& model, const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
-            const std::vector<index_t>& point_indices, const std::vector<bool>& inner_point);
-
-  fine_grid(const model& model, const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
-            const std::vector<index_t>& point_indices, const std::vector<bool>& inner_point,
-            const geometry::points3d& points_full);
+  fine_grid(const model& model, const std::vector<index_t>& point_indices,
+            const std::vector<bool>& inner_point);
 
   void clear();
 
-  void setup(const geometry::points3d& points_full);
+  void setup(const geometry::points3d& points_full, const Eigen::MatrixXd& lagrange_pt_full);
 
   void set_solution_to(Eigen::Ref<common::valuesd> weights_full) const;
 
@@ -30,7 +24,6 @@ class fine_grid {
 
  private:
   const model& model_;
-  const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis_;
   const std::vector<index_t> point_idcs_;
   const std::vector<bool> inner_point_;
 

@@ -5,13 +5,14 @@
 #include <iostream>
 #include <memory>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/orthonormalize.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/interpolation/rbf_residual_evaluator.hpp>
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/model.hpp>
-#include <polatory/polynomial/orthonormal_basis.hpp>
+#include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -45,8 +46,9 @@ class rbf_solver {
     pc_ = std::make_unique<Preconditioner>(model_, points);
 
     if (n_poly_basis_ > 0) {
-      polynomial::orthonormal_basis poly(model_.poly_dimension(), model_.poly_degree(), points);
+      polynomial::monomial_basis poly(model_.poly_dimension(), model_.poly_degree());
       p_ = poly.evaluate(points).transpose();
+      common::orthonormalize_cols(p_);
     }
   }
 

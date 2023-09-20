@@ -4,23 +4,12 @@
 
 namespace polatory::preconditioner {
 
-coarse_grid::coarse_grid(const model& model,
-                         const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
-                         const std::vector<index_t>& point_indices)
+coarse_grid::coarse_grid(const model& model, const std::vector<index_t>& point_indices)
     : model_(model),
-      lagrange_basis_(lagrange_basis),
       point_idcs_(point_indices),
-      l_(lagrange_basis ? lagrange_basis->basis_size() : 0),
+      l_(model.poly_basis_size()),
       m_(static_cast<index_t>(point_indices.size())) {
   POLATORY_ASSERT(m_ > l_);
-}
-
-coarse_grid::coarse_grid(const model& model,
-                         const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
-                         const std::vector<index_t>& point_indices,
-                         const geometry::points3d& points_full)
-    : coarse_grid(model, lagrange_basis, point_indices) {
-  setup(points_full);
 }
 
 void coarse_grid::clear() {
@@ -31,8 +20,10 @@ void coarse_grid::clear() {
   lu_of_p_top_ = Eigen::FullPivLU<Eigen::MatrixXd>();
 }
 
-void coarse_grid::setup(const geometry::points3d& points_full) {
+void coarse_grid::setup(const geometry::points3d& points_full,
+                        const Eigen::MatrixXd& lagrange_pt_full) {
   auto points = points_full(point_idcs_, Eigen::all);
+  auto lagrange_pt = lagrange_pt_full(Eigen::all, point_idcs_);
 
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
@@ -48,7 +39,7 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
   if (l_ > 0) {
     // Compute -E.
     auto tail_points = points.bottomRows(m_ - l_);
-    me_ = -lagrange_basis_->evaluate(tail_points);
+    me_ = -lagrange_pt.rightCols(m_ - l_);
 
     // Compute decomposition of Q^T A Q.
     ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
@@ -59,7 +50,7 @@ void coarse_grid::setup(const geometry::points3d& points_full) {
     // Compute matrices used for solving polynomial part.
     a_top_ = a.topRows(l_);
 
-    polynomial::monomial_basis mono_basis(lagrange_basis_->dimension(), lagrange_basis_->degree());
+    polynomial::monomial_basis mono_basis(model_.poly_dimension(), model_.poly_degree());
     auto head_points = points.topRows(l_);
     Eigen::MatrixXd p_top = mono_basis.evaluate(head_points).transpose();
     lu_of_p_top_ = p_top.fullPivLu();

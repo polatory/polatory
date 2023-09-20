@@ -51,7 +51,7 @@ class ras_preconditioner : public krylov::linear_operator {
   const index_t n_poly_basis_;
   const std::unique_ptr<interpolation::rbf_symmetric_evaluator<Order>> finest_evaluator_;
 
-  std::unique_ptr<polynomial::lagrange_basis> lagrange_basis_;
+  Eigen::MatrixXd lagrange_pt_;
   int n_levels_;
   std::vector<std::vector<index_t>> point_idcs_;
   mutable std::vector<std::vector<fine_grid>> fine_grids_;
