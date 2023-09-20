@@ -4,8 +4,9 @@
 #include <iostream>
 #include <numeric>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/orthonormalize.hpp>
 #include <polatory/geometry/bbox3d.hpp>
-#include <polatory/polynomial/orthonormal_basis.hpp>
+#include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
@@ -34,8 +35,9 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
     polynomial::unisolvent_point_set ups(points_, model.poly_dimension(), model.poly_degree());
 
     poly_point_idcs = ups.point_indices();
-    lagrange_basis_ = std::make_unique<polynomial::lagrange_basis>(
-        model.poly_dimension(), model.poly_degree(), points_(poly_point_idcs, Eigen::all));
+    polynomial::lagrange_basis lagrange_basis(model.poly_dimension(), model.poly_degree(),
+                                              points_(poly_point_idcs, Eigen::all));
+    lagrange_pt_ = lagrange_basis.evaluate(points_);
 
     auto level = n_levels_ - 1;
     point_idcs_.at(level) = poly_point_idcs;
@@ -61,7 +63,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
         std::make_unique<domain_divider>(points_, point_idcs_.at(level), poly_point_idcs);
 
     for (const auto& d : divider->domains()) {
-      fine_grids_.at(level).emplace_back(model, lagrange_basis_, d.point_indices, d.inner_point);
+      fine_grids_.at(level).emplace_back(model, d.point_indices, d.inner_point);
     }
 
     auto ratio = level == 1 ? static_cast<double>(n_coarsest_points) /
@@ -75,7 +77,7 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
 #pragma omp parallel for
       for (index_t i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
-        fine.setup(points_);
+        fine.setup(points_, lagrange_pt_);
       }
     }
     std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16) << n_points
@@ -83,7 +85,8 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   }
 
   {
-    coarse_ = std::make_unique<coarse_grid>(model, lagrange_basis_, point_idcs_.at(0), points_);
+    coarse_ = std::make_unique<coarse_grid>(model, point_idcs_.at(0));
+    coarse_->setup(points_, lagrange_pt_);
 
     auto n_points = static_cast<index_t>(point_idcs_.at(0).size());
     std::cout << std::setw(8) << 0 << std::setw(16) << 1 << std::setw(16) << n_points << std::endl;
@@ -110,8 +113,10 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   }
 
   if (n_poly_basis_ > 0) {
-    polynomial::orthonormal_basis poly(model.poly_dimension(), model.poly_degree(), points_);
+    polynomial::monomial_basis poly(model.poly_dimension(), model.poly_degree());
     p_ = poly.evaluate(points_).transpose();
+    common::orthonormalize_cols(p_);
+
     ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
     auto finest_evaluator =
@@ -149,7 +154,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
       for (index_t i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
         if (kRecomputeAndClear) {
-          fine.setup(points_);
+          fine.setup(points_, lagrange_pt_);
         }
         fine.solve(residuals);
         fine.set_solution_to(weights);

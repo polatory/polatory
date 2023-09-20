@@ -5,6 +5,7 @@
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
+#include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/types.hpp>
@@ -38,10 +39,12 @@ TEST(coarse_grid, trivial) {
 
   model model(biharmonic3d({1.0}), poly_dimension, poly_degree);
   model.set_nugget(0.01);
-  auto lagr_basis = std::make_unique<lagrange_basis>(poly_dimension, poly_degree,
-                                                     points.topRows(model.poly_basis_size()));
 
-  coarse_grid coarse(model, lagr_basis, point_indices, points);
+  coarse_grid coarse(model, point_indices);
+  lagrange_basis lagrange_basis(poly_dimension, poly_degree,
+                                points.topRows(model.poly_basis_size()));
+  auto lagrange_pt = lagrange_basis.evaluate(points);
+  coarse.setup(points, lagrange_pt);
 
   valuesd values = valuesd::Random(n_points);
   coarse.solve(values);

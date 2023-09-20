@@ -3,25 +3,14 @@
 
 namespace polatory::preconditioner {
 
-fine_grid::fine_grid(const model& model,
-                     const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
-                     const std::vector<index_t>& point_indices,
+fine_grid::fine_grid(const model& model, const std::vector<index_t>& point_indices,
                      const std::vector<bool>& inner_point)
     : model_(model),
-      lagrange_basis_(lagrange_basis),
       point_idcs_(point_indices),
       inner_point_(inner_point),
-      l_(lagrange_basis ? lagrange_basis->basis_size() : 0),
+      l_(model.poly_basis_size()),
       m_(static_cast<index_t>(point_indices.size())) {
   POLATORY_ASSERT(m_ > l_);
-}
-
-fine_grid::fine_grid(const model& model,
-                     const std::unique_ptr<polynomial::lagrange_basis>& lagrange_basis,
-                     const std::vector<index_t>& point_indices,
-                     const std::vector<bool>& inner_point, const geometry::points3d& points_full)
-    : fine_grid(model, lagrange_basis, point_indices, inner_point) {
-  setup(points_full);
 }
 
 void fine_grid::clear() {
@@ -29,8 +18,10 @@ void fine_grid::clear() {
   ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
 }
 
-void fine_grid::setup(const geometry::points3d& points_full) {
+void fine_grid::setup(const geometry::points3d& points_full,
+                      const Eigen::MatrixXd& lagrange_pt_full) {
   auto points = points_full(point_idcs_, Eigen::all);
+  auto lagrange_pt = lagrange_pt_full(Eigen::all, point_idcs_);
 
   // Compute A.
   Eigen::MatrixXd a(m_, m_);
@@ -46,7 +37,7 @@ void fine_grid::setup(const geometry::points3d& points_full) {
   if (l_ > 0) {
     // Compute -E.
     auto tail_points = points.bottomRows(m_ - l_);
-    me_ = -lagrange_basis_->evaluate(tail_points);
+    me_ = -lagrange_pt.rightCols(m_ - l_);
 
     // Compute decomposition of Q^T A Q.
     ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
