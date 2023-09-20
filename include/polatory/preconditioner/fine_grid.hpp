@@ -14,9 +14,16 @@ class fine_grid {
   fine_grid(const model& model, const std::vector<index_t>& point_indices,
             const std::vector<bool>& inner_point);
 
+  fine_grid(const model& model, const std::vector<index_t>& point_indices,
+            const std::vector<index_t>& grad_point_indices, const std::vector<bool>& inner_point,
+            const std::vector<bool>& inner_grad_point);
+
   void clear();
 
   void setup(const geometry::points3d& points_full, const Eigen::MatrixXd& lagrange_pt_full);
+
+  void setup(const geometry::points3d& points_full, const geometry::points3d& grad_points_full,
+             const Eigen::MatrixXd& lagrange_pt_full);
 
   void set_solution_to(Eigen::Ref<common::valuesd> weights_full) const;
 
@@ -25,10 +32,15 @@ class fine_grid {
  private:
   const model& model_;
   const std::vector<index_t> point_idcs_;
+  const std::vector<index_t> grad_point_idcs_;
   const std::vector<bool> inner_point_;
+  const std::vector<bool> inner_grad_point_;
 
   const index_t l_;
+  const index_t mu_;
+  const index_t sigma_;
   const index_t m_;
+  index_t mu_full_;
 
   // Matrix -E.
   Eigen::MatrixXd me_;

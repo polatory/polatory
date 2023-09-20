@@ -2,14 +2,23 @@
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 
+#include "mat_a.hpp"
+
 namespace polatory::preconditioner {
 
 coarse_grid::coarse_grid(const model& model, const std::vector<index_t>& point_indices)
+    : coarse_grid(model, point_indices, {}) {}
+
+coarse_grid::coarse_grid(const model& model, const std::vector<index_t>& point_indices,
+                         const std::vector<index_t>& grad_point_indices)
     : model_(model),
       point_idcs_(point_indices),
+      grad_point_idcs_(grad_point_indices),
       l_(model.poly_basis_size()),
-      m_(static_cast<index_t>(point_indices.size())) {
-  POLATORY_ASSERT(m_ > l_);
+      mu_(static_cast<index_t>(point_indices.size())),
+      sigma_(static_cast<index_t>(grad_point_indices.size())),
+      m_(mu_ + model.poly_dimension() * sigma_) {
+  POLATORY_ASSERT(mu_ > l_);
 }
 
 void coarse_grid::clear() {
@@ -22,22 +31,21 @@ void coarse_grid::clear() {
 
 void coarse_grid::setup(const geometry::points3d& points_full,
                         const Eigen::MatrixXd& lagrange_pt_full) {
+  setup(points_full, geometry::points3d(0, 3), lagrange_pt_full);
+}
+
+void coarse_grid::setup(const geometry::points3d& points_full,
+                        const geometry::points3d& grad_points_full,
+                        const Eigen::MatrixXd& lagrange_pt_full) {
   auto points = points_full(point_idcs_, Eigen::all);
-  auto lagrange_pt = lagrange_pt_full(Eigen::all, point_idcs_);
+  auto grad_points = grad_points_full(grad_point_idcs_, Eigen::all);
 
   // Compute A.
-  Eigen::MatrixXd a(m_, m_);
-  const auto& rbf = model_.rbf();
-  a.diagonal().array() = rbf.evaluate(geometry::vector3d::Zero()) + model_.nugget();
-  for (index_t i = 0; i < m_ - 1; i++) {
-    for (index_t j = i + 1; j < m_; j++) {
-      a(i, j) = rbf.evaluate(points.row(i) - points.row(j));
-      a(j, i) = a(i, j);
-    }
-  }
+  auto a = mat_a(model_, points, grad_points);
 
   if (l_ > 0) {
     // Compute -E.
+    auto lagrange_pt = lagrange_pt_full(Eigen::all, point_idcs_);
     me_ = -lagrange_pt.rightCols(m_ - l_);
 
     // Compute decomposition of Q^T A Q.
@@ -56,10 +64,20 @@ void coarse_grid::setup(const geometry::points3d& points_full,
   } else {
     ldlt_of_qtaq_ = a.ldlt();
   }
+
+  mu_full_ = points_full.rows();
 }
 
 void coarse_grid::set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
-  weights_full(point_idcs_) = lambda_c_.head(m_);
+  auto dim = model_.poly_dimension();
+
+  weights_full(point_idcs_) = lambda_c_.head(mu_);
+
+  for (index_t i = 0; i < sigma_; i++) {
+    weights_full.segment(mu_full_ + dim * grad_point_idcs_.at(i), dim) =
+        lambda_c_.segment(mu_ + dim * i, dim);
+  }
+
   weights_full.tail(l_) = lambda_c_.tail(l_);
 }
 
