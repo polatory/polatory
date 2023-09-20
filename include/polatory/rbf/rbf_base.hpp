@@ -28,7 +28,18 @@ class rbf_base {
   virtual int cpd_order() const = 0;
 
   double evaluate(const vector3d& diff) const {
-    return evaluate_isotropic(geometry::transform_vector(aniso_, diff));
+    auto a_diff = geometry::transform_vector(aniso_, diff);
+    return evaluate_isotropic(a_diff);
+  }
+
+  vector3d evaluate_gradient(const vector3d& diff) const {
+    auto a_diff = geometry::transform_vector(aniso_, diff);
+    return evaluate_gradient_isotropic(a_diff) * aniso_;
+  }
+
+  matrix3d evaluate_hessian(const vector3d& diff) const {
+    auto a_diff = geometry::transform_vector(aniso_, diff);
+    return aniso_.transpose() * evaluate_hessian_isotropic(a_diff) * aniso_;
   }
 
   virtual double evaluate_isotropic(const vector3d& diff) const = 0;
