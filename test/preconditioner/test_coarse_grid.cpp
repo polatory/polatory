@@ -41,9 +41,10 @@ TEST(coarse_grid, trivial) {
   model.set_nugget(0.01);
 
   coarse_grid coarse(model, point_indices);
-  lagrange_basis basis(poly_dimension, poly_degree, points.topRows(model.poly_basis_size()));
-  auto pt = basis.evaluate(points);
-  coarse.setup(points, pt);
+  lagrange_basis lagrange_basis(poly_dimension, poly_degree,
+                                points.topRows(model.poly_basis_size()));
+  auto lagrange_pt = lagrange_basis.evaluate(points);
+  coarse.setup(points, lagrange_pt);
 
   valuesd values = valuesd::Random(n_points);
   coarse.solve(values);
