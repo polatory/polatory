@@ -61,7 +61,7 @@ domain_divider::domain_divider(const geometry::points3d& points,
 }
 
 std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
-  std::vector<index_t> coarse_idcs(poly_point_idcs_.begin(), poly_point_idcs_.end());
+  std::vector<index_t> coarse_idcs(poly_point_idcs_);
 
   std::random_device rd;
   std::mt19937 gen(rd());

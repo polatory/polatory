@@ -14,7 +14,8 @@ class monomial_basis : public polynomial_basis_base {
     POLATORY_ASSERT(degree >= 0 && degree <= 2);
   }
 
-  Eigen::MatrixXd evaluate(const geometry::points3d& points) const {
+  template <class Derived>
+  Eigen::MatrixXd evaluate(const Eigen::MatrixBase<Derived>& points) const {
     auto n_points = points.rows();
 
     Eigen::MatrixXd result(basis_size(), n_points);

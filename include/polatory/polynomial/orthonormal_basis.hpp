@@ -10,7 +10,8 @@ namespace polatory::polynomial {
 
 class orthonormal_basis : public polynomial_basis_base {
  public:
-  orthonormal_basis(int dimension, int degree, const geometry::points3d& points)
+  template <class Derived>
+  orthonormal_basis(int dimension, int degree, const Eigen::MatrixBase<Derived>& points)
       : polynomial_basis_base(dimension, degree), mono_basis_(dimension, degree) {
     auto pt = mono_basis_.evaluate(points);
     auto u_hat = Eigen::MatrixXd(pt.rows(), pt.cols());
@@ -38,7 +39,8 @@ class orthonormal_basis : public polynomial_basis_base {
     }
   }
 
-  Eigen::MatrixXd evaluate(const geometry::points3d& points) const {
+  template <class Derived>
+  Eigen::MatrixXd evaluate(const Eigen::MatrixBase<Derived>& points) const {
     auto pt = mono_basis_.evaluate(points);
 
     return c_hat_ * pt;

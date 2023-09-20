@@ -84,7 +84,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
 
     auto n_last_centers = n_centers;
 
-    std::vector<index_t> indices(centers.begin(), centers.end());
+    std::vector<index_t> indices(centers);
     std::copy(c_centers.rbegin(), c_centers.rend(), std::back_inserter(indices));
     point_cloud::distance_filter filter(points_, filtering_distance, indices);
     std::unordered_set<index_t> filtered_indices(filter.filtered_indices().begin(),
