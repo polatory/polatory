@@ -36,7 +36,6 @@ void fine_grid::setup(const geometry::points3d& points_full,
 
   if (l_ > 0) {
     // Compute -E.
-    auto tail_points = points.bottomRows(m_ - l_);
     me_ = -lagrange_pt.rightCols(m_ - l_);
 
     // Compute decomposition of Q^T A Q.
