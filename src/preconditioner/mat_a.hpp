@@ -27,23 +27,26 @@ Eigen::MatrixXd mat_a(const model& model, const Eigen::MatrixBase<DerivedPoints>
   }
 
   if (sigma > 0) {
-    auto af = a.block(0, mu, mu, dim * sigma);
+    auto af = a.topRightCorner(mu, dim * sigma);
     for (index_t i = 0; i < mu; i++) {
       for (index_t j = 0; j < sigma; j++) {
-        af.block(i, dim * j, 1, dim) = -rbf.evaluate_gradient(points.row(i) - grad_points.row(j));
+        af.block(i, dim * j, 1, dim) =
+            -rbf.evaluate_gradient(points.row(i) - grad_points.row(j)).head(dim);
       }
     }
-    a.block(mu, 0, dim * sigma, mu) = af.transpose();
+    a.bottomLeftCorner(dim * sigma, mu) = af.transpose();
 
-    auto ah = a.block(mu, mu, dim * sigma, dim * sigma);
-    auto ah_diagonal = rbf.evaluate_hessian(geometry::vector3d::Zero());
+    auto ah = a.bottomRightCorner(dim * sigma, dim * sigma);
+    Eigen::MatrixXd ah_diagonal =
+        rbf.evaluate_hessian(geometry::vector3d::Zero()).topLeftCorner(dim, dim);
     for (index_t i = 0; i < sigma; i++) {
       ah.block(dim * i, dim * i, dim, dim) = ah_diagonal;
     }
     for (index_t i = 0; i < sigma - 1; i++) {
       for (index_t j = i + 1; j < sigma; j++) {
         ah.block(dim * i, dim * j, dim, dim) =
-            rbf.evaluate_hessian(grad_points.row(i) - grad_points.row(j));
+            rbf.evaluate_hessian(grad_points.row(i) - grad_points.row(j)).topLeftCorner(dim, dim);
+        ah.block(dim * j, dim * i, dim, dim) = ah.block(dim * i, dim * j, dim, dim).transpose();
       }
     }
   }
