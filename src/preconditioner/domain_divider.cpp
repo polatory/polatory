@@ -167,7 +167,7 @@ void domain_divider::divide_domains() {
 }
 
 geometry::bbox3d domain_divider::domain_bbox(const domain& domain) const {
-  geometry::points3d domain_points = points_(domain.point_indices, Eigen::all);
+  auto domain_points = points_(domain.point_indices, Eigen::all);
 
   return geometry::bbox3d::from_points(domain_points);
 }

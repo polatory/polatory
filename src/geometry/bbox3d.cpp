@@ -54,45 +54,4 @@ bbox3d bbox3d::transform(const linear_transformation3d& t) const {
   return {min, max};
 }
 
-bbox3d bbox3d::from_points(const points3d& points) {
-  bbox3d ret;
-
-  auto begin = points.rowwise().begin();
-  auto end = points.rowwise().end();
-  if (begin == end) {
-    return ret;
-  }
-
-  auto it = begin;
-  auto first_pt = *it;
-  ret.min_(0) = ret.max_(0) = first_pt(0);
-  ret.min_(1) = ret.max_(1) = first_pt(1);
-  ret.min_(2) = ret.max_(2) = first_pt(2);
-  ++it;
-
-  for (; it != end; ++it) {
-    auto pt = *it;
-    if (ret.min_(0) > pt(0)) [[unlikely]] {
-      ret.min_(0) = pt(0);
-    }
-    if (ret.max_(0) < pt(0)) [[unlikely]] {
-      ret.max_(0) = pt(0);
-    }
-    if (ret.min_(1) > pt(1)) [[unlikely]] {
-      ret.min_(1) = pt(1);
-    }
-    if (ret.max_(1) < pt(1)) [[unlikely]] {
-      ret.max_(1) = pt(1);
-    }
-    if (ret.min_(2) > pt(2)) [[unlikely]] {
-      ret.min_(2) = pt(2);
-    }
-    if (ret.max_(2) < pt(2)) [[unlikely]] {
-      ret.max_(2) = pt(2);
-    }
-  }
-
-  return ret;
-}
-
 }  // namespace polatory::geometry

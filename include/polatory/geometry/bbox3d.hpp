@@ -27,7 +27,14 @@ class bbox3d {
 
   bbox3d transform(const linear_transformation3d& t) const;
 
-  static bbox3d from_points(const points3d& points);
+  template <class Derived>
+  static bbox3d from_points(const Eigen::MatrixBase<Derived>& points) {
+    if (points.rows() == 0) {
+      return {};
+    }
+
+    return {points.colwise().minCoeff(), points.colwise().maxCoeff()};
+  }
 
  private:
   point3d min_;

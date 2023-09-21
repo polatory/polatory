@@ -11,6 +11,10 @@ using namespace polatory;
 namespace py = pybind11;
 using namespace py::literals;
 
+geometry::bbox3d bbox3d_from_points(const geometry::points3d& points) {
+  return geometry::bbox3d::from_points(points);
+}
+
 PYBIND11_MODULE(_core, m) {
   py::class_<rbf::rbf_base>(m, "_RbfBase")
       .def_property("anisotropy", &rbf::rbf_base::anisotropy, &rbf::rbf_base::set_anisotropy);
@@ -86,7 +90,7 @@ PYBIND11_MODULE(_core, m) {
   py::class_<geometry::bbox3d>(m, "Bbox3d")
       .def(py::init<>())
       .def(py::init<const geometry::point3d&, const geometry::point3d&>(), "min"_a, "max"_a)
-      .def_static("from_points", &geometry::bbox3d::from_points, "points"_a)
+      .def_static("from_points", &bbox3d_from_points, "points"_a)
       .def_property_readonly("min", &geometry::bbox3d::min)
       .def_property_readonly("max", &geometry::bbox3d::max);
 
