@@ -54,8 +54,13 @@ PYBIND11_MODULE(_core, m) {
 
   py::class_<point_cloud::normal_estimator>(m, "NormalEstimator")
       .def(py::init<const geometry::points3d&>(), "points"_a)
-      .def("estimate_with_knn", &point_cloud::normal_estimator::estimate_with_knn, "k"_a,
-           "plane_factor_threshold"_a = 1.8)
+      .def("estimate_with_knn",
+           py::overload_cast<index_t, double>(&point_cloud::normal_estimator::estimate_with_knn),
+           "k"_a, "plane_factor_threshold"_a = 1.8)
+      .def("estimate_with_knn",
+           py::overload_cast<const std::vector<index_t>&, double>(
+               &point_cloud::normal_estimator::estimate_with_knn),
+           "ks"_a, "plane_factor_threshold"_a = 1.8)
       .def("estimate_with_radius", &point_cloud::normal_estimator::estimate_with_radius, "radius"_a,
            "plane_factor_threshold"_a = 1.8)
       .def("orient_by_outward_vector", &point_cloud::normal_estimator::orient_by_outward_vector,
