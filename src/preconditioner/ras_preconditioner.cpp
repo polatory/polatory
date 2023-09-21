@@ -13,10 +13,10 @@
 
 namespace polatory::preconditioner {
 
-ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& in_points)
+ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& points)
     : model_without_poly_(model.without_poly()),
-      points_(in_points),
-      n_points_(in_points.rows()),
+      points_(points),
+      n_points_(points.rows()),
       n_poly_basis_(model.poly_basis_size()),
       finest_evaluator_(
           kReportResidual
