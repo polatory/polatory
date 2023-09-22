@@ -8,112 +8,111 @@
 
 namespace polatory::preconditioner {
 
-index_t domain::size() const { return static_cast<index_t>(point_indices.size()); }
-
-void domain::merge_poly_points(const std::vector<index_t>& poly_point_idcs) {
-  common::zip_sort(point_indices.begin(), point_indices.end(), inner_point.begin(),
-                   inner_point.end(),
-                   [](const auto& a, const auto& b) { return a.first < b.first; });
-
-  auto n_poly_points = static_cast<index_t>(poly_point_idcs.size());
-  std::vector<index_t> new_point_indices(poly_point_idcs);
-  std::vector<bool> new_inner_point(n_poly_points);
-
-  for (index_t i = 0; i < n_poly_points; i++) {
-    auto idx = poly_point_idcs.at(i);
-    auto it = std::lower_bound(point_indices.begin(), point_indices.end(), idx);
-    if (it == point_indices.end() || *it != idx) {
-      continue;
-    }
-
-    auto it_inner = inner_point.begin() + std::distance(point_indices.begin(), it);
-    new_inner_point.at(i) = *it_inner;
-
-    point_indices.erase(it);
-    inner_point.erase(it_inner);
-  }
-
-  new_point_indices.insert(new_point_indices.end(), point_indices.begin(), point_indices.end());
-  new_inner_point.insert(new_inner_point.end(), inner_point.begin(), inner_point.end());
-
-  point_indices = new_point_indices;
-  inner_point = new_inner_point;
-}
+struct mixed_point {
+  index_t index{};
+  bool inner{};
+  bool grad{};
+};
 
 domain_divider::domain_divider(const geometry::points3d& points,
+                               const geometry::points3d& grad_points,
                                const std::vector<index_t>& point_indices,
+                               const std::vector<index_t>& grad_point_indices,
                                const std::vector<index_t>& poly_point_indices)
     : points_(points),
-      size_of_root_(static_cast<index_t>(point_indices.size())),
+      grad_points_(grad_points),
+      mixed_size_of_root_(static_cast<index_t>(point_indices.size() + grad_point_indices.size())),
       poly_point_idcs_(poly_point_indices) {
-  auto root = domain();
+  domain root;
 
   root.point_indices = point_indices;
+  root.grad_point_indices = grad_point_indices;
 
   root.inner_point = std::vector<bool>(point_indices.size(), true);
+  root.inner_grad_point = std::vector<bool>(grad_point_indices.size(), true);
 
   root.bbox_ = domain_bbox(root);
   longest_side_length_of_root_ = root.bbox_.size().maxCoeff();
 
-  domains_.push_back(root);
+  domains_.push_back(std::move(root));
 
   divide_domains();
 }
 
-std::vector<index_t> domain_divider::choose_coarse_points(double ratio) const {
-  std::vector<index_t> coarse_idcs(poly_point_idcs_);
+std::pair<std::vector<index_t>, std::vector<index_t>> domain_divider::choose_coarse_points(
+    double ratio) const {
+  std::vector<index_t> idcs(poly_point_idcs_);
+  std::vector<index_t> grad_idcs;
 
   std::random_device rd;
   std::mt19937 gen(rd());
 
   auto n_poly_points = static_cast<index_t>(poly_point_idcs_.size());
   for (const auto& d : domains_) {
-    std::vector<index_t> shuffled(d.size() - n_poly_points);
-    std::iota(shuffled.begin(), shuffled.end(), n_poly_points);
-    std::shuffle(shuffled.begin(), shuffled.end(), gen);
+    std::vector<mixed_point> mixed_points;
+    for (index_t i = n_poly_points; i < d.size(); i++) {
+      mixed_points.emplace_back(d.point_indices.at(i), d.inner_point.at(i), false);
+    }
+    for (index_t i = 0; i < d.grad_size(); i++) {
+      mixed_points.emplace_back(d.grad_point_indices.at(i), d.inner_grad_point.at(i), true);
+    }
 
-    auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true);
+    std::shuffle(mixed_points.begin(), mixed_points.end(), gen);
+
+    auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true) +
+                       std::count(d.inner_grad_point.begin(), d.inner_grad_point.end(), true);
     auto n_coarse = std::max(
         index_t{1},
         static_cast<index_t>(round_half_to_even(ratio * static_cast<double>(n_inner_pts))));
 
     auto count = index_t{0};
-    for (auto i : shuffled) {
+    for (const auto& p : mixed_points) {
       if (count == n_coarse) {
         break;
       }
 
-      if (d.inner_point.at(i)) {
-        coarse_idcs.push_back(d.point_indices.at(i));
+      if (p.inner) {
+        (p.grad ? grad_idcs : idcs).push_back(p.index);
         count++;
       }
     }
   }
 
-  return coarse_idcs;
+  return {std::move(idcs), std::move(grad_idcs)};
 }
 
 const std::list<domain>& domain_divider::domains() const { return domains_; }
 
+std::list<domain>&& domain_divider::into_domains() { return std::move(domains_); }
+
 void domain_divider::divide_domain(std::list<domain>::iterator it) {
   auto& d = *it;
 
+  std::vector<mixed_point> mixed_points;
+  for (index_t i = 0; i < d.size(); i++) {
+    mixed_points.emplace_back(d.point_indices.at(i), d.inner_point.at(i), false);
+  }
+  for (index_t i = 0; i < d.grad_size(); i++) {
+    mixed_points.emplace_back(d.grad_point_indices.at(i), d.inner_grad_point.at(i), true);
+  }
+
   auto split_axis = index_t{0};
-  (void)d.bbox_.size().maxCoeff(&split_axis);
+  auto longest_side_length = d.bbox_.size().maxCoeff(&split_axis);
 
   // TODO(mizuno): Sort all points along each axis and cache the result as a permutation.
-  common::zip_sort(d.point_indices.begin(), d.point_indices.end(), d.inner_point.begin(),
-                   d.inner_point.end(), [this, split_axis](const auto& a, const auto& b) {
-                     return points_(a.first, split_axis) < points_(b.first, split_axis);
-                   });
+  std::sort(mixed_points.begin(), mixed_points.end(),
+            [this, split_axis](const auto& a, const auto& b) {
+              return (a.grad ? grad_points_ : points_)(a.index, split_axis) <
+                     (b.grad ? grad_points_ : points_)(b.index, split_axis);
+            });
 
-  auto longest_side_length = d.bbox_.size()(split_axis);
-  auto q = longest_side_length_of_root_ / longest_side_length *
-           std::sqrt(static_cast<double>(max_leaf_size) / static_cast<double>(size_of_root_)) *
-           overlap_quota;
+  auto q =
+      longest_side_length_of_root_ / longest_side_length *
+      std::sqrt(static_cast<double>(max_leaf_size) / static_cast<double>(mixed_size_of_root_)) *
+      overlap_quota;
   q = std::min(0.5, q);
 
-  auto n_pts = d.size();
+  auto n_pts = d.mixed_size();
   auto n_overlap_pts = static_cast<index_t>(round_half_to_even(q * static_cast<double>(n_pts)));
   auto n_subdomain_pts =
       static_cast<index_t>(std::ceil(static_cast<double>(n_pts + n_overlap_pts) / 2.0));
@@ -123,27 +122,39 @@ void domain_divider::divide_domain(std::list<domain>::iterator it) {
       round_half_to_even(static_cast<double>(left_partition + right_partition) / 2.0));
 
   domain left;
-  left.point_indices =
-      std::vector<index_t>(d.point_indices.begin(), d.point_indices.begin() + right_partition);
+  domain right;
 
-  left.inner_point =
-      std::vector<bool>(d.inner_point.begin(), d.inner_point.begin() + right_partition);
-  std::fill(left.inner_point.begin() + mid, left.inner_point.end(), false);
+  for (index_t i = 0; i < right_partition; i++) {
+    const auto& p = mixed_points.at(i);
+    auto inner = p.inner && i < mid;
+
+    if (p.grad) {
+      left.grad_point_indices.push_back(p.index);
+      left.inner_grad_point.push_back(inner);
+    } else {
+      left.point_indices.push_back(p.index);
+      left.inner_point.push_back(inner);
+    }
+  }
+
+  for (index_t i = left_partition; i < n_pts; i++) {
+    const auto& p = mixed_points.at(i);
+    auto inner = p.inner && i >= mid;
+
+    if (p.grad) {
+      right.grad_point_indices.push_back(p.index);
+      right.inner_grad_point.push_back(inner);
+    } else {
+      right.point_indices.push_back(p.index);
+      right.inner_point.push_back(inner);
+    }
+  }
 
   left.bbox_ = domain_bbox(left);
-
-  domain right;
-  right.point_indices =
-      std::vector<index_t>(d.point_indices.begin() + left_partition, d.point_indices.end());
-
-  right.inner_point =
-      std::vector<bool>(d.inner_point.begin() + left_partition, d.inner_point.end());
-  std::fill(right.inner_point.begin(), right.inner_point.begin() + (mid - left_partition), false);
-
   right.bbox_ = domain_bbox(right);
 
-  domains_.push_back(left);
-  domains_.push_back(right);
+  domains_.push_back(std::move(left));
+  domains_.push_back(std::move(right));
 }
 
 void domain_divider::divide_domains() {
@@ -151,7 +162,7 @@ void domain_divider::divide_domains() {
 
   while (it != domains_.end()) {
     auto& d = *it;
-    if (d.size() <= max_leaf_size) {
+    if (d.mixed_size() <= max_leaf_size) {
       ++it;
       continue;
     }
@@ -167,9 +178,11 @@ void domain_divider::divide_domains() {
 }
 
 geometry::bbox3d domain_divider::domain_bbox(const domain& domain) const {
-  auto domain_points = points_(domain.point_indices, Eigen::all);
+  auto points = points_(domain.point_indices, Eigen::all);
+  auto grad_points = grad_points_(domain.grad_point_indices, Eigen::all);
 
-  return geometry::bbox3d::from_points(domain_points);
+  return geometry::bbox3d::from_points(points).convex_hull(
+      geometry::bbox3d::from_points(grad_points));
 }
 
 double domain_divider::round_half_to_even(double d) {

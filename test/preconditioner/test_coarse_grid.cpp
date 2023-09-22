@@ -7,9 +7,11 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
+#include <polatory/preconditioner/domain.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/types.hpp>
 #include <random>
+#include <utility>
 #include <vector>
 
 using polatory::index_t;
@@ -20,6 +22,7 @@ using polatory::interpolation::rbf_direct_evaluator;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
+using polatory::preconditioner::domain;
 using polatory::rbf::biharmonic3d;
 
 TEST(coarse_grid, trivial) {
@@ -40,7 +43,10 @@ TEST(coarse_grid, trivial) {
   model model(biharmonic3d({1.0}), poly_dimension, poly_degree);
   model.set_nugget(0.01);
 
-  coarse_grid coarse(model, point_indices);
+  domain domain;
+  domain.point_indices = point_indices;
+
+  coarse_grid coarse(model, std::move(domain));
   lagrange_basis lagrange_basis(poly_dimension, poly_degree,
                                 points.topRows(model.poly_basis_size()));
   auto lagrange_pt = lagrange_basis.evaluate(points);
