@@ -16,26 +16,32 @@ class rbf_direct_evaluator {
  public:
   rbf_direct_evaluator(const model& model, const geometry::points3d& source_points);
 
+  rbf_direct_evaluator(const model& model, const geometry::points3d& source_points,
+                       const geometry::points3d& source_grad_points);
+
   common::valuesd evaluate() const;
 
   void set_field_points(const geometry::points3d& field_points);
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    POLATORY_ASSERT(weights.rows() == n_src_points_ + n_poly_basis_);
+    POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
 
     weights_ = weights;
 
-    if (n_poly_basis_ > 0) {
-      p_->set_weights(weights.tail(n_poly_basis_));
+    if (l_ > 0) {
+      p_->set_weights(weights.tail(l_));
     }
   }
 
  private:
   const model& model_;
-  const index_t n_poly_basis_;
-  const index_t n_src_points_;
+  const index_t dim_;
+  const index_t l_;
+  const index_t mu_;
+  const index_t sigma_;
   const geometry::points3d src_points_;
+  const geometry::points3d src_grad_points_;
 
   std::unique_ptr<PolynomialEvaluator> p_;
 

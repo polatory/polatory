@@ -31,11 +31,13 @@ class coarse_grid {
   const std::vector<index_t> point_idcs_;
   const std::vector<index_t> grad_point_idcs_;
 
+  const index_t dim_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;
   const index_t m_;
   index_t mu_full_;
+  index_t sigma_full_;
 
   // Matrix -E.
   Eigen::MatrixXd me_;
