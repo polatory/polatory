@@ -1,22 +1,19 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
+#include <utility>
 
 #include "mat_a.hpp"
 
 namespace polatory::preconditioner {
 
-coarse_grid::coarse_grid(const model& model, const std::vector<index_t>& point_indices)
-    : coarse_grid(model, point_indices, {}) {}
-
-coarse_grid::coarse_grid(const model& model, const std::vector<index_t>& point_indices,
-                         const std::vector<index_t>& grad_point_indices)
+coarse_grid::coarse_grid(const model& model, domain&& domain)
     : model_(model),
-      point_idcs_(point_indices),
-      grad_point_idcs_(grad_point_indices),
+      point_idcs_(std::move(domain.point_indices)),
+      grad_point_idcs_(std::move(domain.grad_point_indices)),
       l_(model.poly_basis_size()),
-      mu_(static_cast<index_t>(point_indices.size())),
-      sigma_(static_cast<index_t>(grad_point_indices.size())),
+      mu_(static_cast<index_t>(point_idcs_.size())),
+      sigma_(static_cast<index_t>(grad_point_idcs_.size())),
       m_(mu_ + model.poly_dimension() * sigma_) {
   POLATORY_ASSERT(mu_ > l_);
 }

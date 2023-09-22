@@ -5,6 +5,7 @@
 #include <Eigen/LU>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/preconditioner/domain.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
@@ -12,10 +13,7 @@ namespace polatory::preconditioner {
 
 class coarse_grid {
  public:
-  coarse_grid(const model& model, const std::vector<index_t>& point_indices);
-
-  coarse_grid(const model& model, const std::vector<index_t>& point_indices,
-              const std::vector<index_t>& grad_point_indices);
+  coarse_grid(const model& model, domain&& domain);
 
   void clear();
 

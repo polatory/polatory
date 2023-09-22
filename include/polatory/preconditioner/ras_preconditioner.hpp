@@ -30,6 +30,9 @@ class ras_preconditioner : public krylov::linear_operator {
  public:
   ras_preconditioner(const model& model, const geometry::points3d& points);
 
+  ras_preconditioner(const model& model, const geometry::points3d& points,
+                     const geometry::points3d& grad_points);
+
   common::valuesd operator()(const common::valuesd& v) const override;
 
   index_t size() const override;
@@ -47,13 +50,16 @@ class ras_preconditioner : public krylov::linear_operator {
 
   const model model_without_poly_;
   const geometry::points3d points_;
+  const geometry::points3d grad_points_;
   const index_t n_points_;
+  const index_t n_grad_points_;
   const index_t n_poly_basis_;
   const std::unique_ptr<interpolation::rbf_symmetric_evaluator<Order>> finest_evaluator_;
 
   Eigen::MatrixXd lagrange_pt_;
   int n_levels_;
   std::vector<std::vector<index_t>> point_idcs_;
+  std::vector<std::vector<index_t>> grad_point_idcs_;
   mutable std::vector<std::vector<fine_grid>> fine_grids_;
   std::unique_ptr<coarse_grid> coarse_;
   mutable std::map<std::pair<int, int>, Evaluator> evaluator_;

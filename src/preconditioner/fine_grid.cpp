@@ -1,26 +1,20 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
+#include <utility>
 
 #include "mat_a.hpp"
 
 namespace polatory::preconditioner {
 
-fine_grid::fine_grid(const model& model, const std::vector<index_t>& point_indices,
-                     const std::vector<bool>& inner_point)
-    : fine_grid(model, point_indices, {}, inner_point, {}) {}
-
-fine_grid::fine_grid(const model& model, const std::vector<index_t>& point_indices,
-                     const std::vector<index_t>& grad_point_indices,
-                     const std::vector<bool>& inner_point,
-                     const std::vector<bool>& inner_grad_point)
+fine_grid::fine_grid(const model& model, domain&& domain)
     : model_(model),
-      point_idcs_(point_indices),
-      grad_point_idcs_(grad_point_indices),
-      inner_point_(inner_point),
-      inner_grad_point_(inner_grad_point),
+      point_idcs_(std::move(domain.point_indices)),
+      grad_point_idcs_(std::move(domain.grad_point_indices)),
+      inner_point_(std::move(domain.inner_point)),
+      inner_grad_point_(std::move(domain.inner_grad_point)),
       l_(model.poly_basis_size()),
-      mu_(static_cast<index_t>(point_indices.size())),
-      sigma_(static_cast<index_t>(grad_point_indices.size())),
+      mu_(static_cast<index_t>(point_idcs_.size())),
+      sigma_(static_cast<index_t>(grad_point_idcs_.size())),
       m_(mu_ + model.poly_dimension() * sigma_) {
   POLATORY_ASSERT(mu_ > l_);
 }

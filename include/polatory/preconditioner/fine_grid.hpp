@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/preconditioner/domain.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
@@ -11,12 +12,7 @@ namespace polatory::preconditioner {
 
 class fine_grid {
  public:
-  fine_grid(const model& model, const std::vector<index_t>& point_indices,
-            const std::vector<bool>& inner_point);
-
-  fine_grid(const model& model, const std::vector<index_t>& point_indices,
-            const std::vector<index_t>& grad_point_indices, const std::vector<bool>& inner_point,
-            const std::vector<bool>& inner_grad_point);
+  fine_grid(const model& model, domain&& domain);
 
   void clear();
 
