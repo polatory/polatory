@@ -13,6 +13,10 @@
     "ceres",
     "double-conversion",
     "eigen3",
+    {
+      "name": "fftw3",
+      "platform": "osx & arm64"
+    },
     "flann",
     "gtest",
     {

@@ -28,6 +28,7 @@ target_include_directories(${TARGET} PUBLIC
 )
 target_include_directories(${TARGET} SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
+    ${CMAKE_BINARY_DIR}/scalfmm/install/include
 )
 
 target_link_libraries(${TARGET} PUBLIC

@@ -1,53 +1,71 @@
-#include <ScalFMM/Components/FSimpleLeaf.hpp>
-#include <ScalFMM/Containers/FOctree.hpp>
-#include <ScalFMM/Core/FFmmAlgorithmThread.hpp>
-#include <ScalFMM/Kernels/Chebyshev/FChebCell.hpp>
-#include <ScalFMM/Kernels/Chebyshev/FChebSymKernel.hpp>
-#include <ScalFMM/Kernels/P2P/FP2PParticleContainerIndexed.hpp>
 #include <algorithm>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <scalfmm/algorithms/fmm.hpp>
+#include <scalfmm/algorithms/full_direct.hpp>
+#include <scalfmm/container/particle.hpp>
+#include <scalfmm/interpolation/interpolation.hpp>
+#include <scalfmm/matrix_kernels/laplace.hpp>
+#include <scalfmm/meta/utils.hpp>
+#include <scalfmm/operators/fmm_operators.hpp>
+#include <scalfmm/tree/box.hpp>
+#include <scalfmm/tree/cell.hpp>
+#include <scalfmm/tree/for_each.hpp>
+#include <scalfmm/tree/group_tree_view.hpp>
+#include <scalfmm/tree/leaf_view.hpp>
+#include <scalfmm/utils/accurater.hpp>
 #include <vector>
 
-#include "fmm_rbf_kernel.hpp"
+#include "fmm_rbf_kernel2.hpp"
 
 namespace polatory::fmm {
 
 template <int Order>
 class fmm_symmetric_evaluator<Order>::impl {
-  using Cell = FChebCell<double, Order>;
-  using ParticleContainer = FP2PParticleContainerIndexed<double>;
-  using Leaf = FSimpleLeaf<double, ParticleContainer>;
-  using Octree = FOctree<double, Cell, ParticleContainer, Leaf>;
-  using InterpolatedKernel = FChebSymKernel<double, Cell, ParticleContainer, fmm_rbf_kernel, Order>;
-  using Fmm = FFmmAlgorithmThread<Octree, Cell, ParticleContainer, InterpolatedKernel, Leaf>;
+  using particle_type = scalfmm::container::particle<
+      /* position */ double, 3,
+      /* inputs */ double, 1,
+      /* outputs */ double, 1,
+      /* variables */ index_t>;
 
-  static constexpr int FmmAlgorithmScheduleChunkSize = 1;
+  using far_matrix_kernel_type = fmm_rbf_kernel2;
+  using near_matrix_kernel_type = far_matrix_kernel_type;
+  using near_field_type = scalfmm::operators::near_field_operator<near_matrix_kernel_type>;
+  using interpolator_type =
+      scalfmm::interpolation::interpolator<double, 3, far_matrix_kernel_type,
+                                           scalfmm::options::uniform_<scalfmm::options::fft_>>;
+  using far_field_type = scalfmm::operators::far_field_operator<interpolator_type>;
+  using fmm_operator_type = scalfmm::operators::fmm_operators<near_field_type, far_field_type>;
+  using cell_type = scalfmm::component::cell<typename interpolator_type::storage_type>;
+  using leaf_type = scalfmm::component::leaf_view<particle_type>;
+  using position_type = typename particle_type::position_type;
+  using box_type = scalfmm::component::box<position_type>;
+  using group_tree_type = scalfmm::component::group_tree_view<cell_type, leaf_type, box_type>;
 
- public:
-  impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
-      : model_(model), rbf_kernel_(model.rbf()) {
+ private:
+  box_type make_box(const model& model, const geometry::bbox3d& bbox) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
     auto width = 1.01 * a_bbox.size().maxCoeff();
     if (width == 0.0) {
       width = 1.0;
     }
     auto center = a_bbox.center();
-
-    interpolated_kernel_ = std::make_unique<InterpolatedKernel>(
-        tree_height, width, FPoint<double>(center.data()), &rbf_kernel_);
-
-    tree_ = std::make_unique<Octree>(tree_height, std::max(1, tree_height - 4), width,
-                                     FPoint<double>(center.data()));
-
-    fmm_ = std::make_unique<Fmm>(tree_.get(), interpolated_kernel_.get(),
-                                 int{FmmAlgorithmScheduleChunkSize});
+    return {width, {center(0), center(1), center(2)}};
   }
 
-  common::valuesd evaluate() const {
-    reset_tree();
+ public:
+  impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
+      : model_(model),
+        rbf_kernel_(model.rbf()),
+        tree_height_(tree_height),
+        box_(make_box(model, bbox)),
+        near_field_(rbf_kernel_),
+        interpolator_(rbf_kernel_, Order, tree_height, box_.width(0)),
+        far_field_(interpolator_),
+        fmm_operator_(near_field_, far_field_) {}
 
-    fmm_->execute();
+  common::valuesd evaluate() const {
+    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](*tree_, fmm_operator_);
 
     auto self_potential = model_.rbf().evaluate_isotropic(geometry::vector3d::Zero());
     return potentials() + weights_ * self_potential;
@@ -56,100 +74,70 @@ class fmm_symmetric_evaluator<Order>::impl {
   void set_points(const geometry::points3d& points) {
     n_points_ = points.rows();
 
-    // Remove all source particles.
-    tree_->forEachLeaf([](Leaf* leaf) {
-      auto& particles = *leaf->getSrc();
-      particles.clear();
-    });
-
-    // Insert points.
     auto a = model_.rbf().anisotropy();
-    for (index_t idx = 0; idx < n_points_; idx++) {
-      auto ap = geometry::transform_point(a, points.row(idx));
-      tree_->insert(FPoint<double>(ap.data()), idx, 0.0);
+
+    particles_ = std::vector<particle_type>(n_points_);
+    for (index_t i = 0; i < n_points_; i++) {
+      auto& p = particles_.at(i);
+      auto ap = geometry::transform_point(a, points.row(i));
+      p.position() = position_type{ap(0), ap(1), ap(2)};
+      p.inputs().at(0) = 0.0;
+      p.outputs().at(0) = 0.0;
+      p.variables(i);
     }
 
-    update_weight_ptrs();
-    update_potential_ptrs();
+    tree_ = std::make_unique<group_tree_type>(tree_height_, Order, box_, 10, 10, particles_);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     POLATORY_ASSERT(weights.rows() == n_points_);
 
-    // Update weights.
-    for (index_t idx = 0; idx < n_points_; idx++) {
-      *weight_ptrs_.at(idx) = weights(idx);
-    }
+    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
+      // loop on the particles of the leaf
+      for (auto p_ref : leaf) {
+        // build a particle
+        auto p = typename leaf_type::proxy_type(p_ref);
+        auto idx = std::get<0>(p.variables());
+        p.inputs().at(0).get() = weights(idx);
+      }
+    });
 
     weights_ = weights;
   }
 
  private:
   common::valuesd potentials() const {
-    common::valuesd phi = common::valuesd::Zero(n_points_);
+    common::valuesd potentials(n_points_);
 
-    for (index_t i = 0; i < n_points_; i++) {
-      phi(i) = *potential_ptrs_.at(i);
-    }
+    scalfmm::component::for_each_leaf(
+        std::cbegin(*tree_), std::cend(*tree_), [&](auto const& leaf) {
+          // loop on the particles of the leaf
+          for (auto const p_ref : leaf) {
+            // build a particle
+            const auto p = typename leaf_type::const_proxy_type(p_ref);
+            auto idx = std::get<0>(p.variables());
+            potentials(idx) = p.outputs().at(0);
+          }
+        });
 
-    return phi;
-  }
-
-  void reset_tree() const {
-    tree_->forEachCell([](Cell* cell) { cell->resetToInitialState(); });
-
-    tree_->forEachLeaf([](Leaf* leaf) {
-      auto& particles = *leaf->getTargets();
-      particles.resetForcesAndPotential();
-    });
-  }
-
-  void update_potential_ptrs() {
-    potential_ptrs_.resize(n_points_);
-    tree_->forEachLeaf([&](Leaf* leaf) {
-      const auto& particles = *leaf->getTargets();
-
-      const auto& indices = particles.getIndexes();
-      const double* potentials = particles.getPotentials();
-
-      auto n_particles = static_cast<index_t>(particles.getNbParticles());
-      for (index_t i = 0; i < n_particles; i++) {
-        auto idx = static_cast<index_t>(indices[i]);
-
-        potential_ptrs_.at(idx) = &potentials[i];
-      }
-    });
-  }
-
-  void update_weight_ptrs() {
-    weight_ptrs_.resize(n_points_);
-    tree_->forEachLeaf([&](Leaf* leaf) {
-      auto& particles = *leaf->getSrc();
-
-      const auto& indices = particles.getIndexes();
-      double* weights = particles.getPhysicalValues();
-
-      auto n_particles = static_cast<index_t>(particles.getNbParticles());
-      for (index_t i = 0; i < n_particles; i++) {
-        auto idx = static_cast<index_t>(indices[i]);
-
-        weight_ptrs_.at(idx) = &weights[i];
-      }
-    });
+    return potentials;
   }
 
   const model& model_;
-  const fmm_rbf_kernel rbf_kernel_;
+  const far_matrix_kernel_type rbf_kernel_;
+  const int tree_height_;
 
   index_t n_points_{};
   common::valuesd weights_;
 
-  std::unique_ptr<Fmm> fmm_;
-  std::unique_ptr<InterpolatedKernel> interpolated_kernel_;
-  std::unique_ptr<Octree> tree_;
+  std::vector<particle_type> particles_;
 
-  std::vector<const double*> potential_ptrs_;
-  std::vector<double*> weight_ptrs_;
+  mutable box_type box_;
+  mutable near_field_type near_field_;
+  mutable interpolator_type interpolator_;
+  mutable far_field_type far_field_;
+  mutable fmm_operator_type fmm_operator_;
+  mutable std::unique_ptr<group_tree_type> tree_;
 };
 
 template <int Order>

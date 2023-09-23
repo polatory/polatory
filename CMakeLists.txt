@@ -29,6 +29,7 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(Ceres CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
+find_package(FFTW3 CONFIG)
 find_package(flann CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(MKL CONFIG)
@@ -38,6 +39,8 @@ set(VCPKG_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
 
 if(${VCPKG_TARGET_TRIPLET} MATCHES ^x64-)
     set(USE_MKL ON)
+else()
+    set(BLA_VENDOR "Apple")
 endif()
 
 if(MSVC AND USE_MKL)
@@ -64,3 +67,17 @@ if(BUILD_PYTHON)
     find_package(pybind11 CONFIG REQUIRED)
     add_subdirectory(python)
 endif()
+
+include(ExternalProject)
+
+ExternalProject_Add(
+    scalfmm
+    PREFIX ${CMAKE_BINARY_DIR}/scalfmm
+    GIT_REPOSITORY https://gitlab.inria.fr/solverstack/ScalFMM.git
+    GIT_TAG 9c6cba1b5090fac0ea3853a63b010fe83e997951
+    GIT_SHALLOW ON
+    GIT_PROGRESS ON
+    CMAKE_ARGS -DBLA_VENDOR=Apple -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
+)
+
+add_dependencies(polatory scalfmm)
