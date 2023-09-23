@@ -1,19 +1,16 @@
-#include <algorithm>
+#include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
-#include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
-#include <scalfmm/matrix_kernels/laplace.hpp>
-#include <scalfmm/meta/utils.hpp>
 #include <scalfmm/operators/fmm_operators.hpp>
 #include <scalfmm/tree/box.hpp>
 #include <scalfmm/tree/cell.hpp>
 #include <scalfmm/tree/for_each.hpp>
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
-#include <scalfmm/utils/accurater.hpp>
+#include <tuple>
 #include <vector>
 
 #include "fmm_rbf_kernel2.hpp"
@@ -33,10 +30,10 @@ class fmm_symmetric_evaluator<Order>::impl {
       double, 3, fmm_rbf_kernel2, scalfmm::options::chebyshev_<scalfmm::options::low_rank_>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
-  using Cell = scalfmm::component::cell<typename Interpolator::storage_type>;
-  using Leaf = scalfmm::component::leaf_view<Particle>;
   using Position = typename Particle::position_type;
   using Box = scalfmm::component::box<Position>;
+  using Cell = scalfmm::component::cell<typename Interpolator::storage_type>;
+  using Leaf = scalfmm::component::leaf_view<Particle>;
   using Tree = scalfmm::component::group_tree_view<Cell, Leaf, Box>;
 
  private:
