@@ -48,7 +48,7 @@ struct fmm_rbf_kernel {
       scalfmm::container::point<xsimd::batch<double>, 3> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
     auto n = x.at(0).size;
-    std::vector<double> v(n);
+    std::array<double, 4> v;
 
     for (size_t i = 0; i < n; i++) {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
