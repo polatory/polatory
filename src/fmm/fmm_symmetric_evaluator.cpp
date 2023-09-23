@@ -22,27 +22,25 @@ namespace polatory::fmm {
 
 template <int Order>
 class fmm_symmetric_evaluator<Order>::impl {
-  using particle_type = scalfmm::container::particle<
+  using Particle = scalfmm::container::particle<
       /* position */ double, 3,
       /* inputs */ double, 1,
       /* outputs */ double, 1,
       /* variables */ index_t>;
 
-  using far_matrix_kernel_type = fmm_rbf_kernel2;
-  using near_matrix_kernel_type = far_matrix_kernel_type;
-  using near_field_type = scalfmm::operators::near_field_operator<near_matrix_kernel_type>;
-  using interpolator_type = scalfmm::interpolation::interpolator<
-      double, 3, far_matrix_kernel_type, scalfmm::options::chebyshev_<scalfmm::options::low_rank_>>;
-  using far_field_type = scalfmm::operators::far_field_operator<interpolator_type>;
-  using fmm_operator_type = scalfmm::operators::fmm_operators<near_field_type, far_field_type>;
-  using cell_type = scalfmm::component::cell<typename interpolator_type::storage_type>;
-  using leaf_type = scalfmm::component::leaf_view<particle_type>;
-  using position_type = typename particle_type::position_type;
-  using box_type = scalfmm::component::box<position_type>;
-  using group_tree_type = scalfmm::component::group_tree_view<cell_type, leaf_type, box_type>;
+  using NearField = scalfmm::operators::near_field_operator<fmm_rbf_kernel2>;
+  using Interpolator = scalfmm::interpolation::interpolator<
+      double, 3, fmm_rbf_kernel2, scalfmm::options::chebyshev_<scalfmm::options::low_rank_>>;
+  using FarField = scalfmm::operators::far_field_operator<Interpolator>;
+  using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
+  using Cell = scalfmm::component::cell<typename Interpolator::storage_type>;
+  using Leaf = scalfmm::component::leaf_view<Particle>;
+  using Position = typename Particle::position_type;
+  using Box = scalfmm::component::box<Position>;
+  using Tree = scalfmm::component::group_tree_view<Cell, Leaf, Box>;
 
  private:
-  box_type make_box(const model& model, const geometry::bbox3d& bbox) {
+  Box make_box(const model& model, const geometry::bbox3d& bbox) {
     auto a_bbox = bbox.transform(model.rbf().anisotropy());
     auto width = 1.01 * a_bbox.size().maxCoeff();
     if (width == 0.0) {
@@ -80,17 +78,17 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     auto a = model_.rbf().anisotropy();
 
-    std::vector<particle_type> particles(n_points_);
+    std::vector<Particle> particles(n_points_);
     for (index_t i = 0; i < n_points_; i++) {
       auto& p = particles.at(i);
       auto ap = geometry::transform_point(a, points.row(i));
-      p.position() = position_type{ap(0), ap(1), ap(2)};
+      p.position() = Position{ap(0), ap(1), ap(2)};
       p.inputs().at(0) = 0.0;
       p.outputs().at(0) = 0.0;
       p.variables(i);
     }
 
-    tree_ = std::make_unique<group_tree_type>(tree_height_, order_, box_, 10, 10, particles);
+    tree_ = std::make_unique<Tree>(tree_height_, order_, box_, 10, 10, particles);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
@@ -100,7 +98,7 @@ class fmm_symmetric_evaluator<Order>::impl {
       // loop on the particles of the leaf
       for (auto p_ref : leaf) {
         // build a particle
-        auto p = typename leaf_type::proxy_type(p_ref);
+        auto p = typename Leaf::proxy_type(p_ref);
         auto idx = std::get<0>(p.variables());
         p.inputs().at(0).get() = weights(idx);
       }
@@ -113,34 +111,34 @@ class fmm_symmetric_evaluator<Order>::impl {
   common::valuesd potentials() const {
     common::valuesd potentials(n_points_);
 
-    scalfmm::component::for_each_leaf(
-        std::cbegin(*tree_), std::cend(*tree_), [&](auto const& leaf) {
-          // loop on the particles of the leaf
-          for (auto const p_ref : leaf) {
-            // build a particle
-            const auto p = typename leaf_type::const_proxy_type(p_ref);
-            auto idx = std::get<0>(p.variables());
-            potentials(idx) = p.outputs().at(0);
-          }
-        });
+    scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
+                                      [&](const auto& leaf) {
+                                        // loop on the particles of the leaf
+                                        for (auto p_ref : leaf) {
+                                          // build a particle
+                                          auto p = typename Leaf::const_proxy_type(p_ref);
+                                          auto idx = std::get<0>(p.variables());
+                                          potentials(idx) = p.outputs().at(0);
+                                        }
+                                      });
 
     return potentials;
   }
 
   const model& model_;
-  const far_matrix_kernel_type rbf_kernel_;
+  const fmm_rbf_kernel2 rbf_kernel_;
   const int order_;
   const int tree_height_;
 
   index_t n_points_{};
   common::valuesd weights_;
 
-  mutable box_type box_;
-  mutable near_field_type near_field_;
-  mutable interpolator_type interpolator_;
-  mutable far_field_type far_field_;
-  mutable fmm_operator_type fmm_operator_;
-  mutable std::unique_ptr<group_tree_type> tree_;
+  mutable Box box_;
+  mutable NearField near_field_;
+  mutable Interpolator interpolator_;
+  mutable FarField far_field_;
+  mutable FmmOperator fmm_operator_;
+  mutable std::unique_ptr<Tree> tree_;
 };
 
 template <int Order>
