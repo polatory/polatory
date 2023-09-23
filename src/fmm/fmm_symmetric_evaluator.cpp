@@ -66,8 +66,11 @@ class fmm_symmetric_evaluator<Order>::impl {
     tree_->reset_locals();
     tree_->reset_outputs();
 
-    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](
-        *tree_, fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
+    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
+        *tree_, fmm_operator_, p2m | m2m | m2l | l2l | l2p);
+
+    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
+        *tree_, fmm_operator_, p2p);
 
     auto self_potential = model_.rbf().evaluate_isotropic(geometry::vector3d::Zero());
     return potentials() + weights_ * self_potential;
