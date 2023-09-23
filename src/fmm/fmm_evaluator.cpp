@@ -13,7 +13,7 @@
 #include <tuple>
 #include <vector>
 
-#include "fmm_rbf_kernel2.hpp"
+#include "fmm_rbf_kernel.hpp"
 
 namespace polatory::fmm {
 
@@ -31,9 +31,9 @@ class fmm_evaluator<Order>::impl {
       /* outputs */ double, 1,
       /* variables */ index_t>;
 
-  using NearField = scalfmm::operators::near_field_operator<fmm_rbf_kernel2>;
+  using NearField = scalfmm::operators::near_field_operator<fmm_rbf_kernel>;
   using Interpolator = scalfmm::interpolation::interpolator<
-      double, 3, fmm_rbf_kernel2, scalfmm::options::chebyshev_<scalfmm::options::low_rank_>>;
+      double, 3, fmm_rbf_kernel, scalfmm::options::chebyshev_<scalfmm::options::low_rank_>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename SourceParticle::position_type;
@@ -177,7 +177,7 @@ class fmm_evaluator<Order>::impl {
   }
 
   const model& model_;
-  const fmm_rbf_kernel2 rbf_kernel_;
+  const fmm_rbf_kernel rbf_kernel_;
   const int order_;
   const int tree_height_;
 
