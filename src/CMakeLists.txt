@@ -66,5 +66,6 @@ elseif(APPLE)
 
     target_link_libraries(${TARGET} INTERFACE
         "-framework Accelerate"
+        FFTW3::fftw3
     )
 endif()
