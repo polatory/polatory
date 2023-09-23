@@ -73,8 +73,8 @@ include(ExternalProject)
 ExternalProject_Add(
     scalfmm
     PREFIX ${CMAKE_BINARY_DIR}/scalfmm
-    GIT_REPOSITORY https://gitlab.inria.fr/solverstack/ScalFMM.git
-    GIT_TAG 9c6cba1b5090fac0ea3853a63b010fe83e997951
+    GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
+    GIT_TAG polatory
     GIT_SHALLOW ON
     GIT_PROGRESS ON
     CMAKE_ARGS -DBLA_VENDOR=Apple -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
