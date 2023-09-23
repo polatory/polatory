@@ -31,9 +31,8 @@ class fmm_symmetric_evaluator<Order>::impl {
   using far_matrix_kernel_type = fmm_rbf_kernel2;
   using near_matrix_kernel_type = far_matrix_kernel_type;
   using near_field_type = scalfmm::operators::near_field_operator<near_matrix_kernel_type>;
-  using interpolator_type =
-      scalfmm::interpolation::interpolator<double, 3, far_matrix_kernel_type,
-                                           scalfmm::options::uniform_<scalfmm::options::fft_>>;
+  using interpolator_type = scalfmm::interpolation::interpolator<
+      double, 3, far_matrix_kernel_type, scalfmm::options::chebyshev_<scalfmm::options::low_rank_>>;
   using far_field_type = scalfmm::operators::far_field_operator<interpolator_type>;
   using fmm_operator_type = scalfmm::operators::fmm_operators<near_field_type, far_field_type>;
   using cell_type = scalfmm::component::cell<typename interpolator_type::storage_type>;
@@ -57,14 +56,19 @@ class fmm_symmetric_evaluator<Order>::impl {
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
       : model_(model),
         rbf_kernel_(model.rbf()),
+        order_(Order),
         tree_height_(tree_height),
         box_(make_box(model, bbox)),
         near_field_(rbf_kernel_),
-        interpolator_(rbf_kernel_, Order, tree_height, box_.width(0)),
+        interpolator_(rbf_kernel_, order_, tree_height, box_.width(0)),
         far_field_(interpolator_),
         fmm_operator_(near_field_, far_field_) {}
 
   common::valuesd evaluate() const {
+    tree_->reset_multipoles();
+    tree_->reset_locals();
+    tree_->reset_outputs();
+
     scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](*tree_, fmm_operator_);
 
     auto self_potential = model_.rbf().evaluate_isotropic(geometry::vector3d::Zero());
@@ -86,7 +90,7 @@ class fmm_symmetric_evaluator<Order>::impl {
       p.variables(i);
     }
 
-    tree_ = std::make_unique<group_tree_type>(tree_height_, Order, box_, 10, 10, particles);
+    tree_ = std::make_unique<group_tree_type>(tree_height_, order_, box_, 10, 10, particles);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
@@ -125,6 +129,7 @@ class fmm_symmetric_evaluator<Order>::impl {
 
   const model& model_;
   const far_matrix_kernel_type rbf_kernel_;
+  const int order_;
   const int tree_height_;
 
   index_t n_points_{};
