@@ -76,9 +76,9 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     auto a = model_.rbf().anisotropy();
 
-    particles_ = std::vector<particle_type>(n_points_);
+    std::vector<particle_type> particles(n_points_);
     for (index_t i = 0; i < n_points_; i++) {
-      auto& p = particles_.at(i);
+      auto& p = particles.at(i);
       auto ap = geometry::transform_point(a, points.row(i));
       p.position() = position_type{ap(0), ap(1), ap(2)};
       p.inputs().at(0) = 0.0;
@@ -86,7 +86,7 @@ class fmm_symmetric_evaluator<Order>::impl {
       p.variables(i);
     }
 
-    tree_ = std::make_unique<group_tree_type>(tree_height_, Order, box_, 10, 10, particles_);
+    tree_ = std::make_unique<group_tree_type>(tree_height_, Order, box_, 10, 10, particles);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
@@ -129,8 +129,6 @@ class fmm_symmetric_evaluator<Order>::impl {
 
   index_t n_points_{};
   common::valuesd weights_;
-
-  std::vector<particle_type> particles_;
 
   mutable box_type box_;
   mutable near_field_type near_field_;
