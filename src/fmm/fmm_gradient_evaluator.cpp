@@ -46,12 +46,13 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  private:
-  Box make_box(const geometry::bbox3d& bbox) {
-    auto width = 1.01 * bbox.size().maxCoeff();
+  Box make_box(const model& model, const geometry::bbox3d& bbox) {
+    auto a_bbox = bbox.transform(model.rbf().anisotropy());
+    auto width = 1.01 * a_bbox.size().maxCoeff();
     if (width == 0.0) {
       width = 1.0;
     }
-    auto center = bbox.center();
+    auto center = a_bbox.center();
     return {width, {center(0), center(1), center(2)}};
   }
 
@@ -61,7 +62,7 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
         kernel_(model.rbf()),
         order_(Order),
         tree_height_(tree_height),
-        box_(make_box(bbox)),
+        box_(make_box(model, bbox)),
         near_field_(kernel_, false),
         interpolator_(kernel_, order_, tree_height, box_.width(0)),
         far_field_(interpolator_),
@@ -85,12 +86,14 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
   void set_field_points(const geometry::points3d& points) {
     n_fld_points_ = points.rows();
 
+    auto a = model_.rbf().anisotropy();
+
     std::vector<TargetParticle> particles(n_fld_points_);
     for (index_t i = 0; i < n_fld_points_; i++) {
-      auto p = points.row(i);
-      auto& part = particles.at(i);
-      part.position() = Position{p(0), p(1), p(2)};
-      part.variables(i);
+      auto& p = particles.at(i);
+      auto ap = geometry::transform_point(a, points.row(i));
+      p.position() = Position{ap(0), ap(1), ap(2)};
+      p.variables(i);
     }
 
     trg_tree_ = std::make_unique<TargetTree>(tree_height_, order_, box_, 10, 10, particles);
@@ -99,12 +102,14 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
   void set_source_points(const geometry::points3d& points) {
     n_src_points_ = points.rows();
 
+    auto a = model_.rbf().anisotropy();
+
     std::vector<SourceParticle> particles(n_src_points_);
     for (index_t i = 0; i < n_src_points_; i++) {
-      auto p = points.row(i);
-      auto& part = particles.at(i);
-      part.position() = Position{p(0), p(1), p(2)};
-      part.variables(i);
+      auto& p = particles.at(i);
+      auto ap = geometry::transform_point(a, points.row(i));
+      p.position() = Position{ap(0), ap(1), ap(2)};
+      p.variables(i);
     }
 
     src_tree_ = std::make_unique<SourceTree>(tree_height_, order_, box_, 10, 10, particles);
@@ -116,19 +121,21 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
 
     n_src_points_ = points.rows();
 
+    auto a = model_.rbf().anisotropy();
+
     std::vector<SourceParticle> particles(n_src_points_);
     for (index_t i = 0; i < n_src_points_; i++) {
-      auto p = points.row(i);
-      auto& part = particles.at(i);
-      part.position() = Position{p(0), p(1), p(2)};
-      part.inputs().at(0) = weights(Dim * i);
+      auto& p = particles.at(i);
+      auto ap = geometry::transform_point(a, points.row(i));
+      p.position() = Position{ap(0), ap(1), ap(2)};
+      p.inputs().at(0) = weights(Dim * i);
       if (Dim > 1) {
-        part.inputs().at(1) = weights(Dim * i + 1);
+        p.inputs().at(1) = weights(Dim * i + 1);
       }
       if (Dim > 2) {
-        part.inputs().at(2) = weights(Dim * i + 2);
+        p.inputs().at(2) = weights(Dim * i + 2);
       }
-      part.variables(i);
+      p.variables(i);
     }
 
     src_tree_ = std::make_unique<SourceTree>(tree_height_, order_, box_, 10, 10, particles);

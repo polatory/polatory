@@ -41,7 +41,7 @@ struct fmm_rbf_gradient_kernel {
     geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
     geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
 
-    auto g = rbf_->evaluate_gradient(xx - yy);
+    geometry::vector3d g = rbf_->evaluate_gradient_isotropic(xx - yy) * rbf_->anisotropy();
 
     matrix_type<double> result;
     for (index_t i = 0; i < Dim; i++) {
@@ -63,7 +63,7 @@ struct fmm_rbf_gradient_kernel {
     for (size_t i = 0; i < n; i++) {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
       geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
-      auto g = rbf_->evaluate_gradient(xx - yy);
+      geometry::vector3d g = rbf_->evaluate_gradient_isotropic(xx - yy) * rbf_->anisotropy();
       v0.at(i) = -g(0);
       v1.at(i) = -g(1);
       v2.at(i) = -g(2);

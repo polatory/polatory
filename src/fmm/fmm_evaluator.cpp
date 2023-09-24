@@ -93,7 +93,6 @@ class fmm_evaluator<Order>::impl {
       auto& p = particles.at(i);
       auto ap = geometry::transform_point(a, points.row(i));
       p.position() = Position{ap(0), ap(1), ap(2)};
-      p.outputs().at(0) = 0.0;
       p.variables(i);
     }
 
@@ -110,7 +109,6 @@ class fmm_evaluator<Order>::impl {
       auto& p = particles.at(i);
       auto ap = geometry::transform_point(a, points.row(i));
       p.position() = Position{ap(0), ap(1), ap(2)};
-      p.inputs().at(0) = 0.0;
       p.variables(i);
     }
 
