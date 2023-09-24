@@ -40,19 +40,21 @@ class rbf_evaluator {
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(mu), bbox);
 
     auto sigma = source_grad_points.rows();
-    switch (dim_) {
-      case 1:
-        f1_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(
-            model, fmm::fmm_tree_height(sigma), bbox);
-        break;
-      case 2:
-        f2_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(
-            model, fmm::fmm_tree_height(sigma), bbox);
-        break;
-      case 3:
-        f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(
-            model, fmm::fmm_tree_height(sigma), bbox);
-        break;
+    if (sigma > 0) {
+      switch (dim_) {
+        case 1:
+          f1_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(
+              model, fmm::fmm_tree_height(sigma), bbox);
+          break;
+        case 2:
+          f2_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(
+              model, fmm::fmm_tree_height(sigma), bbox);
+          break;
+        case 3:
+          f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(
+              model, fmm::fmm_tree_height(sigma), bbox);
+          break;
+      }
     }
 
     if (l_ > 0) {
@@ -66,16 +68,18 @@ class rbf_evaluator {
       : l_(model.poly_basis_size()), dim_(model.poly_dimension()) {
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, tree_height, bbox);
 
-    switch (dim_) {
-      case 1:
-        f1_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(model, tree_height, bbox);
-        break;
-      case 2:
-        f2_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(model, tree_height, bbox);
-        break;
-      case 3:
-        f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(model, tree_height, bbox);
-        break;
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          f1_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(model, tree_height, bbox);
+          break;
+        case 2:
+          f2_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(model, tree_height, bbox);
+          break;
+        case 3:
+          f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(model, tree_height, bbox);
+          break;
+      }
     }
 
     if (l_ > 0) {
@@ -86,16 +90,18 @@ class rbf_evaluator {
   common::valuesd evaluate() const {
     auto y = a_->evaluate();
 
-    switch (dim_) {
-      case 1:
-        y += f1_->evaluate();
-        break;
-      case 2:
-        y += f2_->evaluate();
-        break;
-      case 3:
-        y += f3_->evaluate();
-        break;
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          y += f1_->evaluate();
+          break;
+        case 2:
+          y += f2_->evaluate();
+          break;
+        case 3:
+          y += f3_->evaluate();
+          break;
+      }
     }
 
     if (l_ > 0) {
@@ -115,16 +121,18 @@ class rbf_evaluator {
   void set_field_points(const geometry::points3d& points) const {
     a_->set_field_points(points);
 
-    switch (dim_) {
-      case 1:
-        f1_->set_field_points(points);
-        break;
-      case 2:
-        f2_->set_field_points(points);
-        break;
-      case 3:
-        f3_->set_field_points(points);
-        break;
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          f1_->set_field_points(points);
+          break;
+        case 2:
+          f2_->set_field_points(points);
+          break;
+        case 3:
+          f3_->set_field_points(points);
+          break;
+      }
     }
 
     if (l_ > 0) {
@@ -142,16 +150,18 @@ class rbf_evaluator {
 
     a_->set_source_points(points);
 
-    switch (dim_) {
-      case 1:
-        f1_->set_source_points(grad_points);
-        break;
-      case 2:
-        f2_->set_source_points(grad_points);
-        break;
-      case 3:
-        f3_->set_source_points(grad_points);
-        break;
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          f1_->set_source_points(grad_points);
+          break;
+        case 2:
+          f2_->set_source_points(grad_points);
+          break;
+        case 3:
+          f3_->set_source_points(grad_points);
+          break;
+      }
     }
   }
 
@@ -161,16 +171,18 @@ class rbf_evaluator {
 
     a_->set_weights(weights.head(mu_));
 
-    switch (dim_) {
-      case 1:
-        f1_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        break;
-      case 2:
-        f2_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        break;
-      case 3:
-        f3_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        break;
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          f1_->set_weights(weights.segment(mu_, dim_ * sigma_));
+          break;
+        case 2:
+          f2_->set_weights(weights.segment(mu_, dim_ * sigma_));
+          break;
+        case 3:
+          f3_->set_weights(weights.segment(mu_, dim_ * sigma_));
+          break;
+      }
     }
 
     if (l_ > 0) {

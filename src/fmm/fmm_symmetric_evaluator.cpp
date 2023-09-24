@@ -133,11 +133,11 @@ class fmm_symmetric_evaluator<Order>::impl {
   index_t n_points_{};
   common::valuesd weights_;
 
-  mutable Box box_;
-  mutable NearField near_field_;
-  mutable Interpolator interpolator_;
-  mutable FarField far_field_;
-  mutable FmmOperator fmm_operator_;
+  const Box box_;
+  const NearField near_field_;
+  const Interpolator interpolator_;
+  const FarField far_field_;
+  const FmmOperator fmm_operator_;
   mutable std::unique_ptr<Tree> tree_;
 };
 
