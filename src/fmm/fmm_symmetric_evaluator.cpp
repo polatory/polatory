@@ -25,9 +25,10 @@ class fmm_symmetric_evaluator<Order>::impl {
       /* outputs */ double, 1,
       /* variables */ index_t>;
 
-  using NearField = scalfmm::operators::near_field_operator<fmm_rbf_kernel>;
-  using Interpolator = scalfmm::interpolation::interpolator<
-      double, 3, fmm_rbf_kernel, scalfmm::options::chebyshev_<scalfmm::options::low_rank_>>;
+  using Kernel = fmm_rbf_kernel;
+  using NearField = scalfmm::operators::near_field_operator<Kernel>;
+  using Interpolator =
+      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::chebyshev_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename Particle::position_type;
@@ -50,12 +51,12 @@ class fmm_symmetric_evaluator<Order>::impl {
  public:
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
       : model_(model),
-        rbf_kernel_(model.rbf()),
+        kernel_(model.rbf()),
         order_(Order),
         tree_height_(tree_height),
         box_(make_box(model, bbox)),
-        near_field_(rbf_kernel_),
-        interpolator_(rbf_kernel_, order_, tree_height, box_.width(0)),
+        near_field_(kernel_),
+        interpolator_(kernel_, order_, tree_height, box_.width(0)),
         far_field_(interpolator_),
         fmm_operator_(near_field_, far_field_) {}
 
@@ -83,8 +84,6 @@ class fmm_symmetric_evaluator<Order>::impl {
       auto& p = particles.at(i);
       auto ap = geometry::transform_point(a, points.row(i));
       p.position() = Position{ap(0), ap(1), ap(2)};
-      p.inputs().at(0) = 0.0;
-      p.outputs().at(0) = 0.0;
       p.variables(i);
     }
 
@@ -113,9 +112,7 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
                                       [&](const auto& leaf) {
-                                        // loop on the particles of the leaf
                                         for (auto p_ref : leaf) {
-                                          // build a particle
                                           auto p = typename Leaf::const_proxy_type(p_ref);
                                           auto idx = std::get<0>(p.variables());
                                           potentials(idx) = p.outputs().at(0);
@@ -126,7 +123,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   }
 
   const model& model_;
-  const fmm_rbf_kernel rbf_kernel_;
+  const Kernel kernel_;
   const int order_;
   const int tree_height_;
 

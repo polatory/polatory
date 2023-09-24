@@ -1,6 +1,6 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_evaluator.hpp>
+#include <polatory/fmm/fmm_gradient_evaluator.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -13,28 +13,28 @@
 #include <tuple>
 #include <vector>
 
-#include "fmm_rbf_kernel.hpp"
+#include "fmm_rbf_gradient_kernel.hpp"
 
 namespace polatory::fmm {
 
-template <int Order>
-class fmm_evaluator<Order>::impl {
+template <int Order, int Dim>
+class fmm_gradient_evaluator<Order, Dim>::impl {
   using SourceParticle = scalfmm::container::particle<
       /* position */ double, 3,
-      /* inputs */ double, 1,
+      /* inputs */ double, Dim,
       /* outputs */ double, 1,  // should be 0
       /* variables */ index_t>;
 
   using TargetParticle = scalfmm::container::particle<
       /* position */ double, 3,
-      /* inputs */ double, 1,  // should be 0
+      /* inputs */ double, Dim,  // should be 0
       /* outputs */ double, 1,
       /* variables */ index_t>;
 
-  using Kernel = fmm_rbf_kernel;
+  using Kernel = fmm_rbf_gradient_kernel<Dim>;
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::chebyshev_<>>;
+      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename SourceParticle::position_type;
@@ -46,13 +46,12 @@ class fmm_evaluator<Order>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  private:
-  Box make_box(const model& model, const geometry::bbox3d& bbox) {
-    auto a_bbox = bbox.transform(model.rbf().anisotropy());
-    auto width = 1.01 * a_bbox.size().maxCoeff();
+  Box make_box(const geometry::bbox3d& bbox) {
+    auto width = 1.01 * bbox.size().maxCoeff();
     if (width == 0.0) {
       width = 1.0;
     }
-    auto center = a_bbox.center();
+    auto center = bbox.center();
     return {width, {center(0), center(1), center(2)}};
   }
 
@@ -62,7 +61,7 @@ class fmm_evaluator<Order>::impl {
         kernel_(model.rbf()),
         order_(Order),
         tree_height_(tree_height),
-        box_(make_box(model, bbox)),
+        box_(make_box(bbox)),
         near_field_(kernel_, false),
         interpolator_(kernel_, order_, tree_height, box_.width(0)),
         far_field_(interpolator_),
@@ -83,15 +82,12 @@ class fmm_evaluator<Order>::impl {
   void set_field_points(const geometry::points3d& points) {
     n_fld_points_ = points.rows();
 
-    auto a = model_.rbf().anisotropy();
-
     std::vector<TargetParticle> particles(n_fld_points_);
     for (index_t i = 0; i < n_fld_points_; i++) {
-      auto& p = particles.at(i);
-      auto ap = geometry::transform_point(a, points.row(i));
-      p.position() = Position{ap(0), ap(1), ap(2)};
-      p.outputs().at(0) = 0.0;
-      p.variables(i);
+      auto p = points.row(i);
+      auto& part = particles.at(i);
+      part.position() = Position{p(0), p(1), p(2)};
+      part.variables(i);
     }
 
     trg_tree_ = std::make_unique<TargetTree>(tree_height_, order_, box_, 10, 10, particles);
@@ -100,15 +96,12 @@ class fmm_evaluator<Order>::impl {
   void set_source_points(const geometry::points3d& points) {
     n_src_points_ = points.rows();
 
-    auto a = model_.rbf().anisotropy();
-
     std::vector<SourceParticle> particles(n_src_points_);
     for (index_t i = 0; i < n_src_points_; i++) {
-      auto& p = particles.at(i);
-      auto ap = geometry::transform_point(a, points.row(i));
-      p.position() = Position{ap(0), ap(1), ap(2)};
-      p.inputs().at(0) = 0.0;
-      p.variables(i);
+      auto p = points.row(i);
+      auto& part = particles.at(i);
+      part.position() = Position{p(0), p(1), p(2)};
+      part.variables(i);
     }
 
     src_tree_ = std::make_unique<SourceTree>(tree_height_, order_, box_, 10, 10, particles);
@@ -120,15 +113,19 @@ class fmm_evaluator<Order>::impl {
 
     n_src_points_ = points.rows();
 
-    auto a = model_.rbf().anisotropy();
-
     std::vector<SourceParticle> particles(n_src_points_);
     for (index_t i = 0; i < n_src_points_; i++) {
-      auto& p = particles.at(i);
-      auto ap = geometry::transform_point(a, points.row(i));
-      p.position() = Position{ap(0), ap(1), ap(2)};
-      p.inputs().at(0) = weights(i);
-      p.variables(i);
+      auto p = points.row(i);
+      auto& part = particles.at(i);
+      part.position() = Position{p(0), p(1), p(2)};
+      part.inputs().at(0) = weights(Dim * i);
+      if (Dim > 1) {
+        part.inputs().at(1) = weights(Dim * i + 1);
+      }
+      if (Dim > 2) {
+        part.inputs().at(2) = weights(Dim * i + 2);
+      }
+      part.variables(i);
     }
 
     src_tree_ = std::make_unique<SourceTree>(tree_height_, order_, box_, 10, 10, particles);
@@ -140,14 +137,20 @@ class fmm_evaluator<Order>::impl {
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     using namespace scalfmm::algorithms;
 
-    POLATORY_ASSERT(weights.rows() == n_src_points_);
+    POLATORY_ASSERT(weights.rows() == Dim * n_src_points_);
 
     scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
                                       [&](const auto& leaf) {
                                         for (auto p_ref : leaf) {
                                           auto p = typename SourceLeaf::proxy_type(p_ref);
                                           auto idx = std::get<0>(p.variables());
-                                          p.inputs().at(0).get() = weights(idx);
+                                          p.inputs().at(0).get() = weights(Dim * idx);
+                                          if (Dim > 1) {
+                                            p.inputs().at(1).get() = weights(Dim * idx + 1);
+                                          }
+                                          if (Dim > 2) {
+                                            p.inputs().at(2).get() = weights(Dim * idx + 2);
+                                          }
                                         }
                                       });
 
@@ -190,41 +193,46 @@ class fmm_evaluator<Order>::impl {
   mutable std::unique_ptr<TargetTree> trg_tree_;
 };
 
-template <int Order>
-fmm_evaluator<Order>::fmm_evaluator(const model& model, int tree_height,
-                                    const geometry::bbox3d& bbox)
+template <int Order, int Dim>
+fmm_gradient_evaluator<Order, Dim>::fmm_gradient_evaluator(const model& model, int tree_height,
+                                                           const geometry::bbox3d& bbox)
     : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {}
 
-template <int Order>
-fmm_evaluator<Order>::~fmm_evaluator() = default;
+template <int Order, int Dim>
+fmm_gradient_evaluator<Order, Dim>::~fmm_gradient_evaluator() = default;
 
-template <int Order>
-common::valuesd fmm_evaluator<Order>::evaluate() const {
+template <int Order, int Dim>
+common::valuesd fmm_gradient_evaluator<Order, Dim>::evaluate() const {
   return pimpl_->evaluate();
 }
 
-template <int Order>
-void fmm_evaluator<Order>::set_field_points(const geometry::points3d& points) {
+template <int Order, int Dim>
+void fmm_gradient_evaluator<Order, Dim>::set_field_points(const geometry::points3d& points) {
   pimpl_->set_field_points(points);
 }
 
-template <int Order>
-void fmm_evaluator<Order>::set_source_points(const geometry::points3d& points) {
+template <int Order, int Dim>
+void fmm_gradient_evaluator<Order, Dim>::set_source_points(const geometry::points3d& points) {
   pimpl_->set_source_points(points);
 }
 
-template <int Order>
-void fmm_evaluator<Order>::set_source_points_and_weights(
+template <int Order, int Dim>
+void fmm_gradient_evaluator<Order, Dim>::set_source_points_and_weights(
     const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_source_points_and_weights(points, weights);
 }
 
-template <int Order>
-void fmm_evaluator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
+template <int Order, int Dim>
+void fmm_gradient_evaluator<Order, Dim>::set_weights(
+    const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_weights(weights);
 }
 
-template class fmm_evaluator<6>;
-template class fmm_evaluator<10>;
+template class fmm_gradient_evaluator<6, 1>;
+template class fmm_gradient_evaluator<10, 1>;
+template class fmm_gradient_evaluator<6, 2>;
+template class fmm_gradient_evaluator<10, 2>;
+template class fmm_gradient_evaluator<6, 3>;
+template class fmm_gradient_evaluator<10, 3>;
 
 }  // namespace polatory::fmm

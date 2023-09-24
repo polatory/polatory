@@ -2,10 +2,6 @@
 
 #include <cassert>
 
-namespace polatory {
+#define POLATORY_ASSERT(X) assert(X)
 
-inline void POLATORY_ASSERT([[maybe_unused]] bool x) { assert(x); }
-
-inline void POLATORY_UNREACHABLE() { assert(false); }
-
-}  // namespace polatory
+#define POLATORY_UNREACHABLE() assert(false)
