@@ -23,15 +23,15 @@ namespace {
 
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
-  const index_t n_points = 512;
-  const index_t n_grad_points = 128;
+  const index_t n_points = 1024;
+  const index_t n_grad_points = 1024;
 
-  auto absolute_tolerance = 1e-6;
+  auto absolute_tolerance = 2e-6;
 
   multiquadric1 rbf({1.0, 0.001});
-  // rbf.set_anisotropy(random_anisotropy());
+  rbf.set_anisotropy(random_anisotropy());
 
-  model model(rbf, 3, poly_degree);
+  model model(rbf, dim, poly_degree);
   // model.set_nugget(0.01);
 
   auto points = random_points(sphere3d(), n_points);

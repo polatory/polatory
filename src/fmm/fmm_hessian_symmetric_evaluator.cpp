@@ -114,20 +114,39 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
   common::valuesd potentials() const {
     common::valuesd potentials(Dim * n_points_);
 
-    scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
-                                      [&](const auto& leaf) {
-                                        for (auto p_ref : leaf) {
-                                          auto p = typename Leaf::const_proxy_type(p_ref);
-                                          auto idx = std::get<0>(p.variables());
-                                          potentials(Dim * idx) = p.outputs().at(0);
-                                          if (Dim > 1) {
-                                            potentials(Dim * idx + 1) = p.outputs().at(1);
-                                          }
-                                          if (Dim > 2) {
-                                            potentials(Dim * idx + 2) = p.outputs().at(2);
-                                          }
-                                        }
-                                      });
+    auto h = model_.rbf().evaluate_hessian(geometry::vector3d::Zero());
+
+    scalfmm::component::for_each_leaf(
+        std::cbegin(*tree_), std::cend(*tree_), [&](const auto& leaf) {
+          for (auto p_ref : leaf) {
+            auto p = typename Leaf::const_proxy_type(p_ref);
+            auto idx = std::get<0>(p.variables());
+            potentials(Dim * idx) = p.outputs().at(0);
+            if (Dim > 1) {
+              potentials(Dim * idx + 1) = p.outputs().at(1);
+            }
+            if (Dim > 2) {
+              potentials(Dim * idx + 2) = p.outputs().at(2);
+            }
+            switch (Dim) {
+              case 1: {
+                auto w = p.inputs().at(0);
+                potentials(idx) += w * h(0, 0);
+                break;
+              }
+              case 2: {
+                geometry::vector2d w{p.inputs().at(0), p.inputs().at(1)};
+                potentials.segment<2>(Dim * idx) += (w * h.topLeftCorner<2, 2>()).transpose();
+                break;
+              }
+              case 3: {
+                geometry::vector3d w{p.inputs().at(0), p.inputs().at(1), p.inputs().at(2)};
+                potentials.segment<3>(Dim * idx) += (w * h).transpose();
+                break;
+              }
+            }
+          }
+        });
 
     return potentials;
   }

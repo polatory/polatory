@@ -73,8 +73,7 @@ class fmm_symmetric_evaluator<Order>::impl {
           *tree_, fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
     }
 
-    auto self_potential = model_.rbf().evaluate_isotropic(geometry::vector3d::Zero());
-    return potentials() + weights_ * self_potential;
+    return potentials();
   }
 
   void set_points(const geometry::points3d& points) {
@@ -103,22 +102,22 @@ class fmm_symmetric_evaluator<Order>::impl {
         p.inputs().at(0).get() = weights(idx);
       }
     });
-
-    weights_ = weights;
   }
 
  private:
   common::valuesd potentials() const {
     common::valuesd potentials(n_points_);
 
-    scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
-                                      [&](const auto& leaf) {
-                                        for (auto p_ref : leaf) {
-                                          auto p = typename Leaf::const_proxy_type(p_ref);
-                                          auto idx = std::get<0>(p.variables());
-                                          potentials(idx) = p.outputs().at(0);
-                                        }
-                                      });
+    auto a = model_.rbf().evaluate(geometry::vector3d::Zero());
+
+    scalfmm::component::for_each_leaf(
+        std::cbegin(*tree_), std::cend(*tree_), [&](const auto& leaf) {
+          for (auto p_ref : leaf) {
+            auto p = typename Leaf::const_proxy_type(p_ref);
+            auto idx = std::get<0>(p.variables());
+            potentials(idx) = p.outputs().at(0) + a * p.inputs().at(0);
+          }
+        });
 
     return potentials;
   }
@@ -129,7 +128,6 @@ class fmm_symmetric_evaluator<Order>::impl {
   const int tree_height_;
 
   index_t n_points_{};
-  common::valuesd weights_;
 
   const Box box_;
   const NearField near_field_;
