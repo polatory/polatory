@@ -30,10 +30,10 @@ namespace {
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
   const index_t n_points = 32768;
-  const index_t n_grad_points = 1024;
+  const index_t n_grad_points = 4096;
   const index_t n_eval_points = 1024;
 
-  auto absolute_tolerance = n_grad_points > 0 ? 5e-5 : 2e-6;
+  auto absolute_tolerance = 2e-6;
 
   cov_exponential rbf({1.0, 0.2});
   rbf.set_anisotropy(random_anisotropy());

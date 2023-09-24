@@ -60,7 +60,7 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order),
+        order_(Order + 2),
         tree_height_(tree_height),
         box_(make_box(model, bbox)),
         near_field_(kernel_, false),
