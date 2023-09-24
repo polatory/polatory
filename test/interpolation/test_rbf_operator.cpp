@@ -21,7 +21,11 @@ using polatory::rbf::cov_exponential;
 
 namespace {
 
-void test_poly_degree(int poly_degree, index_t n_points) {
+void test_poly_degree(int poly_degree) {
+  const int dim = 3;
+  const index_t n_points = 1024;
+  const index_t n_grad_points = 256;
+
   auto absolute_tolerance = 1e-6;
 
   cov_exponential rbf({1.0, 0.2});
@@ -31,10 +35,11 @@ void test_poly_degree(int poly_degree, index_t n_points) {
   model.set_nugget(0.01);
 
   auto points = random_points(sphere3d(), n_points);
-  valuesd weights = valuesd::Random(n_points + model.poly_basis_size());
+  auto grad_points = random_points(sphere3d(), n_grad_points);
+  valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
 
-  rbf_direct_operator direct_op(model, points);
-  rbf_operator<> op(model, points);
+  rbf_direct_operator direct_op(model, points, grad_points);
+  rbf_operator<> op(model, points, grad_points);
 
   valuesd direct_op_weights = direct_op(weights);
   valuesd op_weights = op(weights);
@@ -49,8 +54,8 @@ void test_poly_degree(int poly_degree, index_t n_points) {
 }  // namespace
 
 TEST(rbf_operator, trivial) {
-  test_poly_degree(-1, 1024);
-  test_poly_degree(0, 1024);
-  test_poly_degree(1, 1024);
-  test_poly_degree(2, 1024);
+  test_poly_degree(-1);
+  test_poly_degree(0);
+  test_poly_degree(1);
+  test_poly_degree(2);
 }

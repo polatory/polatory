@@ -24,9 +24,9 @@ struct hessian_kernel {
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
 
-  explicit gradient_transpose_kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
+  explicit hessian_kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
 
-  gradient_transpose_kernel(const gradient_kernel& other) : rbf_(other.rbf_->clone()) {}
+  hessian_kernel(const hessian_kernel& other) : rbf_(other.rbf_->clone()) {}
 
   const std::string name() const { return std::string(""); }
 
@@ -72,7 +72,7 @@ struct hessian_kernel {
     for (size_t i = 0; i < n; i++) {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
       geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
-      geometry::vector3d h = aniso.transpose() * rbf_->evaluate_hessian_isotropic(xx - yy) * aniso;
+      geometry::matrix3d h = aniso.transpose() * rbf_->evaluate_hessian_isotropic(xx - yy) * aniso;
       v00.at(i) = h(0, 0);
       v01.at(i) = h(0, 1);
       v02.at(i) = h(0, 2);
@@ -82,7 +82,7 @@ struct hessian_kernel {
     }
 
     matrix_type<decayed_type> result;
-    result.at(Dim * 0 + 0) = decayed_type::load(v0.data(), xsimd::unaligned_mode{});
+    result.at(Dim * 0 + 0) = decayed_type::load(v00.data(), xsimd::unaligned_mode{});
     if (Dim > 1) {
       result.at(Dim * 0 + 1) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});
       result.at(Dim * 1 + 0) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});

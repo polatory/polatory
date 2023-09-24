@@ -26,7 +26,7 @@ struct gradient_transpose_kernel {
 
   explicit gradient_transpose_kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
 
-  gradient_transpose_kernel(const gradient_kernel& other) : rbf_(other.rbf_->clone()) {}
+  gradient_transpose_kernel(const gradient_transpose_kernel& other) : rbf_(other.rbf_->clone()) {}
 
   const std::string name() const { return std::string(""); }
 

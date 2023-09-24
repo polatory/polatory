@@ -1,6 +1,6 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <polatory/fmm/fmm_hessian_symmetric_evaluator.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -13,22 +13,22 @@
 #include <tuple>
 #include <vector>
 
-#include "kernel.hpp"
+#include "hessian_kernel.hpp"
 
 namespace polatory::fmm {
 
-template <int Order>
-class fmm_symmetric_evaluator<Order>::impl {
+template <int Order, int Dim>
+class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
   using Particle = scalfmm::container::particle<
       /* position */ double, 3,
-      /* inputs */ double, 1,
-      /* outputs */ double, 1,
+      /* inputs */ double, Dim,
+      /* outputs */ double, Dim,
       /* variables */ index_t>;
 
-  using Kernel = kernel;
+  using Kernel = hessian_kernel<Dim>;
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::chebyshev_<>>;
+      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename Particle::position_type;
@@ -52,7 +52,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order),
+        order_(Order + 2),
         tree_height_(tree_height),
         box_(make_box(model, bbox)),
         near_field_(kernel_),
@@ -73,8 +73,7 @@ class fmm_symmetric_evaluator<Order>::impl {
           *tree_, fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
     }
 
-    auto self_potential = model_.rbf().evaluate_isotropic(geometry::vector3d::Zero());
-    return potentials() + weights_ * self_potential;
+    return potentials();
   }
 
   void set_points(const geometry::points3d& points) {
@@ -94,17 +93,23 @@ class fmm_symmetric_evaluator<Order>::impl {
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    POLATORY_ASSERT(weights.rows() == n_points_);
+    using namespace scalfmm::algorithms;
+
+    POLATORY_ASSERT(weights.rows() == Dim * n_points_);
 
     scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
       for (auto p_ref : leaf) {
         auto p = typename Leaf::proxy_type(p_ref);
         auto idx = std::get<0>(p.variables());
-        p.inputs().at(0).get() = weights(idx);
+        p.inputs().at(0).get() = weights(Dim * idx);
+        if (Dim > 1) {
+          p.inputs().at(1).get() = weights(Dim * idx + 1);
+        }
+        if (Dim > 2) {
+          p.inputs().at(2).get() = weights(Dim * idx + 2);
+        }
       }
     });
-
-    weights_ = weights;
   }
 
  private:
@@ -116,7 +121,13 @@ class fmm_symmetric_evaluator<Order>::impl {
                                         for (auto p_ref : leaf) {
                                           auto p = typename Leaf::const_proxy_type(p_ref);
                                           auto idx = std::get<0>(p.variables());
-                                          potentials(idx) = p.outputs().at(0);
+                                          potentials(Dim * idx) = p.outputs().at(0);
+                                          if (Dim > 1) {
+                                            potentials(Dim * idx + 1) = p.outputs().at(1);
+                                          }
+                                          if (Dim > 2) {
+                                            potentials(Dim * idx + 2) = p.outputs().at(2);
+                                          }
                                         }
                                       });
 
@@ -129,7 +140,6 @@ class fmm_symmetric_evaluator<Order>::impl {
   const int tree_height_;
 
   index_t n_points_{};
-  common::valuesd weights_;
 
   const Box box_;
   const NearField near_field_;
@@ -139,30 +149,35 @@ class fmm_symmetric_evaluator<Order>::impl {
   mutable std::unique_ptr<Tree> tree_;
 };
 
-template <int Order>
-fmm_symmetric_evaluator<Order>::fmm_symmetric_evaluator(const model& model, int tree_height,
-                                                        const geometry::bbox3d& bbox)
+template <int Order, int Dim>
+fmm_hessian_symmetric_evaluator<Order, Dim>::fmm_hessian_symmetric_evaluator(
+    const model& model, int tree_height, const geometry::bbox3d& bbox)
     : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {}
 
-template <int Order>
-fmm_symmetric_evaluator<Order>::~fmm_symmetric_evaluator() = default;
+template <int Order, int Dim>
+fmm_hessian_symmetric_evaluator<Order, Dim>::~fmm_hessian_symmetric_evaluator() = default;
 
-template <int Order>
-common::valuesd fmm_symmetric_evaluator<Order>::evaluate() const {
+template <int Order, int Dim>
+common::valuesd fmm_hessian_symmetric_evaluator<Order, Dim>::evaluate() const {
   return pimpl_->evaluate();
 }
 
-template <int Order>
-void fmm_symmetric_evaluator<Order>::set_points(const geometry::points3d& points) {
+template <int Order, int Dim>
+void fmm_hessian_symmetric_evaluator<Order, Dim>::set_points(const geometry::points3d& points) {
   pimpl_->set_points(points);
 }
 
-template <int Order>
-void fmm_symmetric_evaluator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
+template <int Order, int Dim>
+void fmm_hessian_symmetric_evaluator<Order, Dim>::set_weights(
+    const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_weights(weights);
 }
 
-template class fmm_symmetric_evaluator<6>;
-template class fmm_symmetric_evaluator<10>;
+template class fmm_hessian_symmetric_evaluator<6, 1>;
+template class fmm_hessian_symmetric_evaluator<10, 1>;
+template class fmm_hessian_symmetric_evaluator<6, 2>;
+template class fmm_hessian_symmetric_evaluator<10, 2>;
+template class fmm_hessian_symmetric_evaluator<6, 3>;
+template class fmm_hessian_symmetric_evaluator<10, 3>;
 
 }  // namespace polatory::fmm
