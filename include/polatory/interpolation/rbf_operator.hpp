@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
