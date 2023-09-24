@@ -74,8 +74,11 @@ class fmm_evaluator<Order>::impl {
     trg_tree_->reset_locals();
     trg_tree_->reset_outputs();
 
-    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-        *src_tree_, *trg_tree_, fmm_operator_, m2l | l2l | l2p | p2p);
+    // Prevent segfault.
+    if (n_src_points_ > 0 && n_fld_points_ > 0) {
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
+          *src_tree_, *trg_tree_, fmm_operator_, m2l | l2l | l2p | p2p);
+    }
 
     return potentials();
   }
