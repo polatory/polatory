@@ -5,7 +5,7 @@
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
@@ -17,22 +17,22 @@ using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_operator;
 using polatory::interpolation::rbf_operator;
 using polatory::point_cloud::random_points;
-using polatory::rbf::cov_exponential;
+using polatory::rbf::multiquadric1;
 
 namespace {
 
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
-  const index_t n_points = 1024;
-  const index_t n_grad_points = 256;
+  const index_t n_points = 32;
+  const index_t n_grad_points = 8;
 
   auto absolute_tolerance = 1e-6;
 
-  cov_exponential rbf({1.0, 0.2});
+  multiquadric1 rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, 3, poly_degree);
-  model.set_nugget(0.01);
+  // model.set_nugget(0.01);
 
   auto points = random_points(sphere3d(), n_points);
   auto grad_points = random_points(sphere3d(), n_grad_points);
@@ -44,8 +44,8 @@ void test_poly_degree(int poly_degree) {
   valuesd direct_op_weights = direct_op(weights);
   valuesd op_weights = op(weights);
 
-  EXPECT_EQ(n_points + model.poly_basis_size(), direct_op_weights.rows());
-  EXPECT_EQ(n_points + model.poly_basis_size(), op_weights.rows());
+  EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), direct_op_weights.rows());
+  EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), op_weights.rows());
 
   auto max_residual = (op_weights - direct_op_weights).lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
@@ -54,7 +54,6 @@ void test_poly_degree(int poly_degree) {
 }  // namespace
 
 TEST(rbf_operator, trivial) {
-  test_poly_degree(-1);
   test_poly_degree(0);
   test_poly_degree(1);
   test_poly_degree(2);

@@ -141,7 +141,7 @@ class fmm_gradient_transpose_evaluator<Order, Dim>::impl {
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     using namespace scalfmm::algorithms;
 
-    POLATORY_ASSERT(weights.rows() == Dim * n_src_points_);
+    POLATORY_ASSERT(weights.rows() == n_src_points_);
 
     scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
                                       [&](const auto& leaf) {
@@ -160,7 +160,7 @@ class fmm_gradient_transpose_evaluator<Order, Dim>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials(n_fld_points_);
+    common::valuesd potentials(Dim * n_fld_points_);
 
     scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
                                       [&](const auto& leaf) {

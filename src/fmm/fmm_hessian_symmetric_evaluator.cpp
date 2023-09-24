@@ -114,7 +114,7 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials(n_points_);
+    common::valuesd potentials(Dim * n_points_);
 
     scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
                                       [&](const auto& leaf) {
