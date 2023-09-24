@@ -93,8 +93,6 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    using namespace scalfmm::algorithms;
-
     POLATORY_ASSERT(weights.rows() == Dim * n_points_);
 
     scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {

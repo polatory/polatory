@@ -23,13 +23,13 @@ namespace {
 
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
-  const index_t n_points = 32;
-  const index_t n_grad_points = 8;
+  const index_t n_points = 512;
+  const index_t n_grad_points = 128;
 
   auto absolute_tolerance = 1e-6;
 
   multiquadric1 rbf({1.0, 0.001});
-  rbf.set_anisotropy(random_anisotropy());
+  // rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, 3, poly_degree);
   // model.set_nugget(0.01);
