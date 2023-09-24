@@ -29,7 +29,7 @@ namespace {
 
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
-  const index_t n_points = 1024;
+  const index_t n_points = 32768;
   const index_t n_grad_points = 1024;
   const index_t n_eval_points = 1024;
 
@@ -69,7 +69,7 @@ void test_poly_degree(int poly_degree) {
 
 TEST(rbf_evaluator, trivial) {
   test_poly_degree(-1);
-  // test_poly_degree(0);
-  // test_poly_degree(1);
-  // test_poly_degree(2);
+  test_poly_degree(0);
+  test_poly_degree(1);
+  test_poly_degree(2);
 }
