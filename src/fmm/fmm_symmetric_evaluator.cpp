@@ -28,7 +28,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   using Kernel = kernel;
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::chebyshev_<>>;
+      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename Particle::position_type;
@@ -52,7 +52,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order),
+        order_(Order + 2),
         tree_height_(tree_height),
         box_(make_box(model, bbox)),
         near_field_(kernel_),
