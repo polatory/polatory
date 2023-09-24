@@ -13,7 +13,7 @@
 #include <tuple>
 #include <vector>
 
-#include "fmm_rbf_gradient_kernel.hpp"
+#include "gradient_kernel.hpp"
 
 namespace polatory::fmm {
 
@@ -31,7 +31,7 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
       /* outputs */ double, 1,
       /* variables */ index_t>;
 
-  using Kernel = fmm_rbf_gradient_kernel<Dim>;
+  using Kernel = gradient_kernel<Dim>;
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
       scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
