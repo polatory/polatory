@@ -6,6 +6,7 @@
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
+#include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/types.hpp>
@@ -20,6 +21,7 @@ using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
+using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::random_points;
 using polatory::rbf::multiquadric1;
 
@@ -27,8 +29,8 @@ namespace {
 
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
-  const index_t n_surface_points = 100;
-  const index_t n_grad_points = 100;
+  const index_t n_surface_points = 4096;
+  index_t n_grad_points = 1024;
 
   auto absolute_tolerance = 1e-4;
 
@@ -36,12 +38,14 @@ void test_poly_degree(int poly_degree) {
   auto n_points = points.rows();
 
   auto grad_points = random_points(sphere3d(), n_grad_points);
+  grad_points = distance_filter(grad_points, 1e-4)(grad_points);
+  n_grad_points = grad_points.rows();
 
   valuesd rhs = valuesd(n_points + dim * n_grad_points);
-  rhs << values, grad_points.reshaped<Eigen::RowMajor>();
+  rhs << values, -grad_points.reshaped<Eigen::RowMajor>();
 
   multiquadric1 rbf({1.0, 0.001});
-  rbf.set_anisotropy(random_anisotropy());
+  // rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, dim, poly_degree);
   // model.set_nugget(0.01);
