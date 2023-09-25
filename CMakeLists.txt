@@ -67,17 +67,3 @@ if(BUILD_PYTHON)
     find_package(pybind11 CONFIG REQUIRED)
     add_subdirectory(python)
 endif()
-
-include(ExternalProject)
-
-ExternalProject_Add(
-    scalfmm
-    PREFIX ${CMAKE_BINARY_DIR}/scalfmm
-    GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
-    GIT_TAG polatory
-    GIT_SHALLOW ON
-    GIT_PROGRESS ON
-    CMAKE_ARGS -DBLA_VENDOR=Apple -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
-)
-
-add_dependencies(polatory scalfmm)

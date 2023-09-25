@@ -27,7 +27,7 @@ Set-Location $PSScriptRoot
 switch -regex ($args[0]) {
     '^c(onfigure)?$' {
         buildenv
-        Exec { cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE='vcpkg/scripts/buildsystems/vcpkg.cmake' }
+        Exec { cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_TOOLCHAIN_FILE='vcpkg/scripts/buildsystems/vcpkg.cmake' }
         break
     }
     '^b(uild)?$' {
