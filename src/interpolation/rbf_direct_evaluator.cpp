@@ -45,8 +45,8 @@ common::valuesd rbf_direct_evaluator::evaluate() const {
     for (index_t j = 0; j < mu_; j++) {
       y.segment(fld_mu_ + dim_ * i, dim_) +=
           w(j) * -rbf.evaluate_gradient(fld_grad_points_.row(i) - src_points_.row(j))
-                      .transpose()
-                      .head(dim_);
+                      .head(dim_)
+                      .transpose();
     }
 
     for (index_t j = 0; j < sigma_; j++) {

@@ -63,7 +63,7 @@ class rbf_evaluator {
         case 3:
           f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(
               model, fmm::fmm_tree_height(sigma), bbox);
-          ft2_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 2>>(
+          ft3_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 3>>(
               model, fmm::fmm_tree_height(sigma), bbox);
           h3_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 3>>(
               model, fmm::fmm_tree_height(sigma), bbox);
@@ -113,22 +113,22 @@ class rbf_evaluator {
   common::valuesd evaluate() const {
     common::valuesd y = common::valuesd::Zero(fld_mu_ + dim_ * fld_sigma_);
 
-    y.head(mu_) += a_->evaluate();
+    y.head(fld_mu_) += a_->evaluate();
 
     if (sigma_ > 0) {
       switch (dim_) {
         case 1:
-          y.head(mu_) += f1_->evaluate();
+          y.head(fld_mu_) += f1_->evaluate();
           y.tail(dim_ * fld_sigma_) += ft1_->evaluate();
           y.tail(dim_ * fld_sigma_) += h1_->evaluate();
           break;
         case 2:
-          y.head(mu_) += f2_->evaluate();
+          y.head(fld_mu_) += f2_->evaluate();
           y.tail(dim_ * fld_sigma_) += ft2_->evaluate();
           y.tail(dim_ * fld_sigma_) += h2_->evaluate();
           break;
         case 3:
-          y.head(mu_) += f3_->evaluate();
+          y.head(fld_mu_) += f3_->evaluate();
           y.tail(dim_ * fld_sigma_) += ft3_->evaluate();
           y.tail(dim_ * fld_sigma_) += h3_->evaluate();
           break;
@@ -169,23 +169,23 @@ class rbf_evaluator {
         case 1:
           f1_->set_field_points(points);
           ft1_->set_field_points(grad_points);
-          h1_->set_field_points(points);
+          h1_->set_field_points(grad_points);
           break;
         case 2:
           f2_->set_field_points(points);
           ft2_->set_field_points(grad_points);
-          h2_->set_field_points(points);
+          h2_->set_field_points(grad_points);
           break;
         case 3:
           f3_->set_field_points(points);
           ft3_->set_field_points(grad_points);
-          h3_->set_field_points(points);
+          h3_->set_field_points(grad_points);
           break;
       }
     }
 
     if (l_ > 0) {
-      p_->set_field_points(points);
+      p_->set_field_points(points, grad_points);
     }
   }
 

@@ -60,8 +60,8 @@ void test_poly_degree(int poly_degree) {
   auto direct_values = direct_eval.evaluate();
   auto values = eval.evaluate();
 
-  EXPECT_EQ(n_eval_points, direct_values.rows());
-  EXPECT_EQ(n_eval_points, values.rows());
+  EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
+  EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, values.rows());
 
   auto max_residual = (values - direct_values).lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
