@@ -6,7 +6,8 @@ file(GLOB_RECURSE SOURCES
 add_library(${TARGET} STATIC ${SOURCES})
 
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror)
+    # target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror -fsanitize=address)
+    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra)
 elseif(MSVC)
     target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702)
 endif()
@@ -94,3 +95,7 @@ elseif(APPLE)
 endif()
 
 add_dependencies(polatory scalfmm)
+
+# if(UNIX)
+#     target_link_libraries(${TARGET} PRIVATE -fsanitize=address)
+# endif()

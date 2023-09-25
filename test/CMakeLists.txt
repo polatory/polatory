@@ -17,4 +17,9 @@ endif()
 add_test(
     NAME ${TARGET}
     COMMAND $<TARGET_FILE:${TARGET}>
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_evaluator.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_fitter.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_inequality_fitter.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_operator.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_symmetric_evaluator.*
 )
