@@ -139,7 +139,8 @@ ras_preconditioner::ras_preconditioner(const model& model, const geometry::point
   }
 
   for (auto level = 1; level < n_levels_ - 1; level++) {
-    add_evaluator(0, level, model, points_(point_idcs_.at(0), Eigen::all), bbox);
+    add_evaluator(0, level, model, points_(point_idcs_.at(0), Eigen::all),
+                  grad_points_(grad_point_idcs_.at(0), Eigen::all), bbox);
     evaluator(0, level).set_field_points(points_(point_idcs_.at(level), Eigen::all),
                                          grad_points_(grad_point_idcs_.at(level), Eigen::all));
   }
