@@ -233,10 +233,6 @@ class rbf_evaluator {
     }
   }
 
-  void set_source_points(const geometry::points3d& points) {
-    set_source_points(points, geometry::points3d(0, 3));
-  }
-
   void set_source_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
     mu_ = points.rows();
     sigma_ = grad_points.rows();

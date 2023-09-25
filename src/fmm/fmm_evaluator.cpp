@@ -115,29 +115,6 @@ class fmm_evaluator<Order>::impl {
     src_tree_ = std::make_unique<SourceTree>(tree_height_, order_, box_, 10, 10, particles);
   }
 
-  void set_source_points_and_weights(const geometry::points3d& points,
-                                     const Eigen::Ref<const common::valuesd>& weights) {
-    using namespace scalfmm::algorithms;
-
-    n_src_points_ = points.rows();
-
-    auto a = model_.rbf().anisotropy();
-
-    std::vector<SourceParticle> particles(n_src_points_);
-    for (index_t i = 0; i < n_src_points_; i++) {
-      auto& p = particles.at(i);
-      auto ap = geometry::transform_point(a, points.row(i));
-      p.position() = Position{ap(0), ap(1), ap(2)};
-      p.inputs().at(0) = weights(i);
-      p.variables(i);
-    }
-
-    src_tree_ = std::make_unique<SourceTree>(tree_height_, order_, box_, 10, 10, particles);
-
-    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](*src_tree_, fmm_operator_,
-                                                                          p2m | m2m);
-  }
-
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     using namespace scalfmm::algorithms;
 
@@ -212,12 +189,6 @@ void fmm_evaluator<Order>::set_field_points(const geometry::points3d& points) {
 template <int Order>
 void fmm_evaluator<Order>::set_source_points(const geometry::points3d& points) {
   pimpl_->set_source_points(points);
-}
-
-template <int Order>
-void fmm_evaluator<Order>::set_source_points_and_weights(
-    const geometry::points3d& points, const Eigen::Ref<const common::valuesd>& weights) {
-  pimpl_->set_source_points_and_weights(points, weights);
 }
 
 template <int Order>

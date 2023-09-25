@@ -94,7 +94,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       }
       weights.tail(n_poly_basis_) = center_weights.tail(n_poly_basis_);
 
-      res_eval->set_source_points(center_points);
+      res_eval->set_source_points(center_points, geometry::points3d(0, 3));
       res_eval->set_weights(center_weights);
       values_fit = res_eval->evaluate(ineq_points);
     } else {

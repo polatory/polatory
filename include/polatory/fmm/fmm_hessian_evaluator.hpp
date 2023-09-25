@@ -27,9 +27,6 @@ class fmm_hessian_evaluator {
 
   void set_source_points(const geometry::points3d& points);
 
-  void set_source_points_and_weights(const geometry::points3d& points,
-                                     const Eigen::Ref<const common::valuesd>& weights);
-
   void set_weights(const Eigen::Ref<const common::valuesd>& weights);
 
  private:

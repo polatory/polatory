@@ -56,7 +56,7 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_incremental_fitter::fit(
     auto c_centers = complementary_indices(centers);
     geometry::points3d c_center_points = points_(c_centers, Eigen::all);
 
-    res_eval->set_source_points(center_points);
+    res_eval->set_source_points(center_points, geometry::points3d(0, 3));
     res_eval->set_weights(center_weights);
 
     auto c_values_fit = res_eval->evaluate(c_center_points);
