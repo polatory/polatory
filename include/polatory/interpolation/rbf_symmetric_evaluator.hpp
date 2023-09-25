@@ -33,11 +33,14 @@ class rbf_symmetric_evaluator {
         sigma_(grad_points.rows()) {
     auto bbox = geometry::bbox3d::from_points(points).convex_hull(
         geometry::bbox3d::from_points(grad_points));
-    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, fmm::fmm_tree_height(mu_),
-                                                               bbox);
-    a_->set_points(points);
 
-    if (sigma_ > 0) {
+    if (mu_ > 0) {
+      a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, fmm::fmm_tree_height(mu_),
+                                                                 bbox);
+      a_->set_points(points);
+    }
+
+    if (mu_ > 0 && sigma_ > 0) {
       switch (dim_) {
         case 1:
           f1_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(
@@ -48,9 +51,6 @@ class rbf_symmetric_evaluator {
               model, fmm::fmm_tree_height(std::max(mu_, sigma_)), bbox);
           ft1_->set_source_points(points);
           ft1_->set_field_points(grad_points);
-          h1_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 1>>(
-              model, fmm::fmm_tree_height(sigma_), bbox);
-          h1_->set_points(grad_points);
           break;
         case 2:
           f2_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(
@@ -61,9 +61,6 @@ class rbf_symmetric_evaluator {
               model, fmm::fmm_tree_height(std::max(mu_, sigma_)), bbox);
           ft2_->set_source_points(points);
           ft2_->set_field_points(grad_points);
-          h2_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 2>>(
-              model, fmm::fmm_tree_height(sigma_), bbox);
-          h2_->set_points(grad_points);
           break;
         case 3:
           f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(
@@ -74,6 +71,23 @@ class rbf_symmetric_evaluator {
               model, fmm::fmm_tree_height(std::max(mu_, sigma_)), bbox);
           ft3_->set_source_points(points);
           ft3_->set_field_points(grad_points);
+          break;
+      }
+    }
+
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          h1_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 1>>(
+              model, fmm::fmm_tree_height(sigma_), bbox);
+          h1_->set_points(grad_points);
+          break;
+        case 2:
+          h2_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 2>>(
+              model, fmm::fmm_tree_height(sigma_), bbox);
+          h2_->set_points(grad_points);
+          break;
+        case 3:
           h3_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 3>>(
               model, fmm::fmm_tree_height(sigma_), bbox);
           h3_->set_points(grad_points);
@@ -90,23 +104,36 @@ class rbf_symmetric_evaluator {
   common::valuesd evaluate() const {
     common::valuesd y = common::valuesd::Zero(mu_ + dim_ * sigma_);
 
-    y.head(mu_) += a_->evaluate();
+    if (mu_ > 0) {
+      y.head(mu_) += a_->evaluate();
+    }
 
-    if (sigma_ > 0) {
+    if (mu_ > 0 && sigma_ > 0) {
       switch (dim_) {
         case 1:
           y.head(mu_) += f1_->evaluate();
           y.tail(dim_ * sigma_) += ft1_->evaluate();
-          y.tail(dim_ * sigma_) += h1_->evaluate();
           break;
         case 2:
           y.head(mu_) += f2_->evaluate();
           y.tail(dim_ * sigma_) += ft2_->evaluate();
-          y.tail(dim_ * sigma_) += h2_->evaluate();
           break;
         case 3:
           y.head(mu_) += f3_->evaluate();
           y.tail(dim_ * sigma_) += ft3_->evaluate();
+          break;
+      }
+    }
+
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          y.tail(dim_ * sigma_) += h1_->evaluate();
+          break;
+        case 2:
+          y.tail(dim_ * sigma_) += h2_->evaluate();
+          break;
+        case 3:
           y.tail(dim_ * sigma_) += h3_->evaluate();
           break;
       }
@@ -124,23 +151,36 @@ class rbf_symmetric_evaluator {
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
     POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
 
-    a_->set_weights(weights.head(mu_));
+    if (mu_ > 0) {
+      a_->set_weights(weights.head(mu_));
+    }
 
-    if (sigma_ > 0) {
+    if (mu_ > 0 && sigma_ > 0) {
       switch (dim_) {
         case 1:
           f1_->set_weights(weights.segment(mu_, dim_ * sigma_));
           ft1_->set_weights(weights.head(mu_));
-          h1_->set_weights(weights.segment(mu_, dim_ * sigma_));
           break;
         case 2:
           f2_->set_weights(weights.segment(mu_, dim_ * sigma_));
           ft2_->set_weights(weights.head(mu_));
-          h2_->set_weights(weights.segment(mu_, dim_ * sigma_));
           break;
         case 3:
           f3_->set_weights(weights.segment(mu_, dim_ * sigma_));
           ft3_->set_weights(weights.head(mu_));
+          break;
+      }
+    }
+
+    if (sigma_ > 0) {
+      switch (dim_) {
+        case 1:
+          h1_->set_weights(weights.segment(mu_, dim_ * sigma_));
+          break;
+        case 2:
+          h2_->set_weights(weights.segment(mu_, dim_ * sigma_));
+          break;
+        case 3:
           h3_->set_weights(weights.segment(mu_, dim_ * sigma_));
           break;
       }
