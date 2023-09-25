@@ -39,7 +39,7 @@ class rbf_direct_evaluator {
 
  private:
   const model& model_;
-  const index_t dim_;
+  const int dim_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;

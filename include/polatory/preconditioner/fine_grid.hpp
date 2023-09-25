@@ -32,7 +32,7 @@ class fine_grid {
   const std::vector<bool> inner_point_;
   const std::vector<bool> inner_grad_point_;
 
-  const index_t dim_;
+  const int dim_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;

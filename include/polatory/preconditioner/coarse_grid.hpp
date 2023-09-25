@@ -31,7 +31,7 @@ class coarse_grid {
   const std::vector<index_t> point_idcs_;
   const std::vector<index_t> grad_point_idcs_;
 
-  const index_t dim_;
+  const int dim_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;

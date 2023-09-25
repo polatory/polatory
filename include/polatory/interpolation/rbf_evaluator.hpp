@@ -37,7 +37,7 @@ class rbf_evaluator {
 
   rbf_evaluator(const model& model, const geometry::points3d& source_points,
                 const geometry::points3d& source_grad_points, const geometry::bbox3d& bbox)
-      : l_(model.poly_basis_size()), dim_(model.poly_dimension()) {
+      : dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
     auto mu = source_points.rows();
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, fmm::fmm_tree_height(mu), bbox);
 
@@ -79,7 +79,7 @@ class rbf_evaluator {
   }
 
   rbf_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
-      : l_(model.poly_basis_size()), dim_(model.poly_dimension()) {
+      : dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
     a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, tree_height, bbox);
 
     if (sigma_ > 0) {
@@ -252,8 +252,8 @@ class rbf_evaluator {
   }
 
  private:
+  const int dim_;
   const index_t l_;
-  const index_t dim_;
   index_t mu_{};
   index_t sigma_{};
   index_t fld_mu_{};

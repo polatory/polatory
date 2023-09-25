@@ -175,7 +175,7 @@ struct rbf_operator : krylov::linear_operator {
 
  private:
   const model& model_;
-  const index_t dim_;
+  const int dim_;
   const index_t l_;
   index_t mu_{};
   index_t sigma_{};
