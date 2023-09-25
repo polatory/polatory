@@ -16,8 +16,6 @@ class fine_grid {
 
   void clear();
 
-  void setup(const geometry::points3d& points_full, const Eigen::MatrixXd& lagrange_pt_full);
-
   void setup(const geometry::points3d& points_full, const geometry::points3d& grad_points_full,
              const Eigen::MatrixXd& lagrange_pt_full);
 

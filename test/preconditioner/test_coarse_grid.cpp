@@ -17,6 +17,7 @@
 using polatory::index_t;
 using polatory::model;
 using polatory::common::valuesd;
+using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::point_cloud::random_points;
@@ -69,7 +70,7 @@ TEST(coarse_grid, trivial) {
 
   auto eval = rbf_direct_evaluator(model, points, grad_points);
   eval.set_weights(sol);
-  eval.set_field_points(points);
+  eval.set_field_points(points, points3d(0, 3));
   valuesd values_fit = eval.evaluate() + sol.head(mu) * model.nugget();
 
   auto max_residual = (rhs.head(mu) - values_fit).lpNorm<Eigen::Infinity>();

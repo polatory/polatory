@@ -16,9 +16,6 @@
 
 namespace polatory::preconditioner {
 
-ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& points)
-    : ras_preconditioner(model, points, geometry::points3d(0, 3)) {}
-
 ras_preconditioner::ras_preconditioner(const model& model, const geometry::points3d& points,
                                        const geometry::points3d& grad_points)
     : model_without_poly_(model.without_poly()),

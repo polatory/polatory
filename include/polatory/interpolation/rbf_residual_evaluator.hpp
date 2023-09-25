@@ -18,9 +18,6 @@ class rbf_residual_evaluator {
   static constexpr index_t chunk_size = 1024;
 
  public:
-  rbf_residual_evaluator(const model& model, const geometry::points3d& points)
-      : rbf_residual_evaluator(model, points, geometry::points3d(0, 3)) {}
-
   rbf_residual_evaluator(const model& model, const geometry::points3d& points,
                          const geometry::points3d& grad_points)
       : model_(model),
@@ -91,10 +88,6 @@ class rbf_residual_evaluator {
     }
 
     return {true, max_residual};
-  }
-
-  void set_points(const geometry::points3d& points) {
-    set_points(points, geometry::points3d(0, 3));
   }
 
   void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {

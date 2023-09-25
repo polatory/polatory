@@ -28,8 +28,6 @@ class ras_preconditioner : public krylov::linear_operator {
   using Evaluator = interpolation::rbf_evaluator<Order>;
 
  public:
-  ras_preconditioner(const model& model, const geometry::points3d& points);
-
   ras_preconditioner(const model& model, const geometry::points3d& points,
                      const geometry::points3d& grad_points);
 

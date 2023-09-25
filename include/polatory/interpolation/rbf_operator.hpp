@@ -20,9 +20,6 @@ namespace polatory::interpolation {
 
 template <int Order = 10>
 struct rbf_operator : krylov::linear_operator {
-  rbf_operator(const model& model, const geometry::points3d& points)
-      : rbf_operator(model, points, geometry::points3d(0, 3)) {}
-
   rbf_operator(const model& model, const geometry::points3d& points,
                const geometry::points3d& grad_points)
       : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
@@ -154,10 +151,6 @@ struct rbf_operator : krylov::linear_operator {
     y.head(mu_) += weights.head(mu_) * model_.nugget();
 
     return y;
-  }
-
-  void set_points(const geometry::points3d& points) {
-    set_points(points, geometry::points3d(0, 3));
   }
 
   void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {

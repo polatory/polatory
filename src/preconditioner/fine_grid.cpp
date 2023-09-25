@@ -26,11 +26,6 @@ void fine_grid::clear() {
 }
 
 void fine_grid::setup(const geometry::points3d& points_full,
-                      const Eigen::MatrixXd& lagrange_pt_full) {
-  setup(points_full, geometry::points3d(0, 3), lagrange_pt_full);
-}
-
-void fine_grid::setup(const geometry::points3d& points_full,
                       const geometry::points3d& grad_points_full,
                       const Eigen::MatrixXd& lagrange_pt_full) {
   auto points = points_full(point_idcs_, Eigen::all);

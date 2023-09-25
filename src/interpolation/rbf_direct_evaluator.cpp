@@ -4,10 +4,6 @@
 namespace polatory::interpolation {
 
 rbf_direct_evaluator::rbf_direct_evaluator(const model& model,
-                                           const geometry::points3d& source_points)
-    : rbf_direct_evaluator(model, source_points, geometry::points3d(0, 3)) {}
-
-rbf_direct_evaluator::rbf_direct_evaluator(const model& model,
                                            const geometry::points3d& source_points,
                                            const geometry::points3d& source_grad_points)
     : model_(model),
@@ -63,10 +59,6 @@ common::valuesd rbf_direct_evaluator::evaluate() const {
   }
 
   return y;
-}
-
-void rbf_direct_evaluator::set_field_points(const geometry::points3d& field_points) {
-  set_field_points(field_points, geometry::points3d(0, 3));
 }
 
 void rbf_direct_evaluator::set_field_points(const geometry::points3d& field_points,

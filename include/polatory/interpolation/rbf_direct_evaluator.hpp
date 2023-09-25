@@ -14,14 +14,10 @@ class rbf_direct_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_direct_evaluator(const model& model, const geometry::points3d& source_points);
-
   rbf_direct_evaluator(const model& model, const geometry::points3d& source_points,
                        const geometry::points3d& source_grad_points);
 
   common::valuesd evaluate() const;
-
-  void set_field_points(const geometry::points3d& field_points);
 
   void set_field_points(const geometry::points3d& field_points,
                         const geometry::points3d& field_grad_points);

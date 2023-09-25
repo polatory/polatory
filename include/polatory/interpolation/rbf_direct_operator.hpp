@@ -17,9 +17,6 @@ class rbf_direct_operator : krylov::linear_operator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_direct_operator(const model& model, const geometry::points3d& points)
-      : rbf_direct_operator(model, points, geometry::points3d(0, 3)) {}
-
   rbf_direct_operator(const model& model, const geometry::points3d& points,
                       const geometry::points3d& grad_points)
       : model_(model),

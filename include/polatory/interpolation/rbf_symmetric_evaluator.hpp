@@ -22,9 +22,6 @@ class rbf_symmetric_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_symmetric_evaluator(const model& model, const geometry::points3d& points)
-      : rbf_symmetric_evaluator(model, points, geometry::points3d(0, 3)) {}
-
   rbf_symmetric_evaluator(const model& model, const geometry::points3d& points,
                           const geometry::points3d& grad_points)
       : dim_(model.poly_dimension()),

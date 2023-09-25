@@ -19,10 +19,6 @@ class polynomial_evaluator {
     return pt.transpose() * weights_;
   }
 
-  void set_field_points(const geometry::points3d& points) {
-    set_field_points(points, geometry::points3d(0, 3));
-  }
-
   void set_field_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
     points_ = points;
     grad_points_ = grad_points;
