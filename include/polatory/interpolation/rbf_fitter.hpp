@@ -16,6 +16,9 @@ class rbf_fitter {
 
   common::valuesd fit(const common::valuesd& values, double absolute_tolerance, int max_iter) const;
 
+  common::valuesd fit(const common::valuesd& values, double absolute_tolerance,
+                      double grad_absolute_tolerance, int max_iter) const;
+
  private:
   rbf_solver solver_;
 };

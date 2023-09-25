@@ -68,14 +68,27 @@ class rbf_solver {
   template <class Derived>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         int max_iter) const {
+    return solve(values, absolute_tolerance, absolute_tolerance, max_iter);
+  }
+
+  template <class Derived>
+  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
+                        double grad_absolute_tolerance, int max_iter) const {
     POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
 
-    return solve_impl(values, absolute_tolerance, max_iter);
+    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
   }
 
   template <class Derived, class Derived2>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         int max_iter, const Eigen::MatrixBase<Derived2>& initial_solution) const {
+    return solve(values, absolute_tolerance, absolute_tolerance, max_iter, initial_solution);
+  }
+
+  template <class Derived, class Derived2>
+  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
+                        double grad_absolute_tolerance, int max_iter,
+                        const Eigen::MatrixBase<Derived2>& initial_solution) const {
     POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
     POLATORY_ASSERT(initial_solution.rows() == mu_ + dim_ * sigma_ + l_);
 
@@ -90,13 +103,13 @@ class rbf_solver {
       }
     }
 
-    return solve_impl(values, absolute_tolerance, max_iter, &ini_sol);
+    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter, &ini_sol);
   }
 
  private:
   template <class Derived, class Derived2 = common::valuesd>
   common::valuesd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                             int max_iter,
+                             double grad_absolute_tolerance, int max_iter,
                              const Eigen::MatrixBase<Derived2>* initial_solution = nullptr) const {
     // The solver does not work when all values are zero.
     if (values.isZero()) {
@@ -125,7 +138,8 @@ class rbf_solver {
       std::cout << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
                 << solver.relative_residual() << std::defaultfloat << std::endl;
 
-      auto convergence = res_eval_->converged(values, solution, absolute_tolerance);
+      auto convergence =
+          res_eval_->converged(values, solution, absolute_tolerance, grad_absolute_tolerance);
       if (convergence.first) {
         std::cout << "Achieved absolute residual: " << convergence.second << std::endl;
         break;

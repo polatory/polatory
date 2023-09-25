@@ -41,7 +41,8 @@ class rbf_residual_evaluator {
   template <class Derived, class Derived2>
   std::pair<bool, double> converged(const Eigen::MatrixBase<Derived>& values,
                                     const Eigen::MatrixBase<Derived2>& weights,
-                                    double absolute_tolerance) const {
+                                    double absolute_tolerance,
+                                    double grad_absolute_tolerance) const {
     POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
     POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
 
@@ -82,7 +83,7 @@ class rbf_residual_evaluator {
 
       auto res =
           (values.segment(mu_ + dim_ * begin, dim_ * (end - begin)) - fit).array().abs().maxCoeff();
-      if (res >= absolute_tolerance) {
+      if (res >= grad_absolute_tolerance) {
         return {false, 0.0};
       }
 

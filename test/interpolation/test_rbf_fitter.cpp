@@ -33,6 +33,8 @@ void test_poly_degree(int poly_degree) {
   index_t n_grad_points = 1024;
 
   auto absolute_tolerance = 1e-4;
+  auto grad_absolute_tolerance = 1e-2;
+  auto max_iter = 32;
 
   auto [points, values] = sample_sdf_data(n_surface_points);
   auto n_points = points.rows();
@@ -51,7 +53,7 @@ void test_poly_degree(int poly_degree) {
   // model.set_nugget(0.01);
 
   rbf_fitter fitter(model, points, grad_points);
-  valuesd weights = fitter.fit(rhs, absolute_tolerance, 32);
+  valuesd weights = fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
   EXPECT_EQ(weights.rows(), n_points + dim * n_grad_points + model.poly_basis_size());
 
@@ -59,8 +61,11 @@ void test_poly_degree(int poly_degree) {
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate();  //+ weights.head(n_points) * model.nugget();
 
-  auto max_residual = (rhs - values_fit).lpNorm<Eigen::Infinity>();
+  auto max_residual = (rhs - values_fit).head(n_points).lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
+
+  auto max_grad_residual = (rhs - values_fit).tail(dim * n_grad_points).lpNorm<Eigen::Infinity>();
+  EXPECT_LT(max_grad_residual, grad_absolute_tolerance);
 }
 
 }  // namespace
