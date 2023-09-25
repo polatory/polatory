@@ -24,30 +24,43 @@ class rbf_solver {
 
  public:
   rbf_solver(const model& model, const geometry::points3d& points)
-      : model_(model), n_poly_basis_(model.poly_basis_size()), n_points_(points.rows()) {
-    op_ = std::make_unique<rbf_operator<>>(model, points);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points);
+      : rbf_solver(model, points, geometry::points3d(0, 3)) {}
 
-    set_points(points);
+  rbf_solver(const model& model, const geometry::points3d& points,
+             const geometry::points3d& grad_points)
+      : model_(model),
+        dim_(model.poly_dimension()),
+        l_(model.poly_basis_size()),
+        mu_(points.rows()),
+        sigma_(grad_points.rows()) {
+    op_ = std::make_unique<rbf_operator<>>(model, points, grad_points);
+    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points, grad_points);
+
+    set_points(points, grad_points);
   }
 
   rbf_solver(const model& model, int tree_height, const geometry::bbox3d& bbox)
-      : model_(model), n_poly_basis_(model.poly_basis_size()) {
+      : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
     op_ = std::make_unique<rbf_operator<>>(model, tree_height, bbox);
     res_eval_ = std::make_unique<rbf_residual_evaluator>(model, tree_height, bbox);
   }
 
   void set_points(const geometry::points3d& points) {
-    n_points_ = points.rows();
+    set_points(points, geometry::points3d(0, 3));
+  }
 
-    op_->set_points(points);
-    res_eval_->set_points(points);
+  void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+    mu_ = points.rows();
+    sigma_ = grad_points.rows();
 
-    pc_ = std::make_unique<Preconditioner>(model_, points);
+    op_->set_points(points, grad_points);
+    res_eval_->set_points(points, grad_points);
 
-    if (n_poly_basis_ > 0) {
-      polynomial::monomial_basis poly(model_.poly_dimension(), model_.poly_degree());
-      p_ = poly.evaluate(points).transpose();
+    pc_ = std::make_unique<Preconditioner>(model_, points, grad_points);
+
+    if (l_ > 0) {
+      polynomial::monomial_basis poly(dim_, model_.poly_degree());
+      p_ = poly.evaluate(points, grad_points).transpose();
       common::orthonormalize_cols(p_);
     }
   }
@@ -55,7 +68,7 @@ class rbf_solver {
   template <class Derived>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         int max_iter) const {
-    POLATORY_ASSERT(values.rows() == n_points_);
+    POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
 
     return solve_impl(values, absolute_tolerance, max_iter);
   }
@@ -63,16 +76,17 @@ class rbf_solver {
   template <class Derived, class Derived2>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         int max_iter, const Eigen::MatrixBase<Derived2>& initial_solution) const {
-    POLATORY_ASSERT(values.rows() == n_points_);
-    POLATORY_ASSERT(initial_solution.rows() == n_points_ + n_poly_basis_);
+    POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
+    POLATORY_ASSERT(initial_solution.rows() == mu_ + dim_ * sigma_ + l_);
 
     common::valuesd ini_sol = initial_solution;
 
-    if (n_poly_basis_ > 0) {
+    if (l_ > 0) {
       // Orthogonalize weights against P.
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
-        ini_sol.head(n_points_) -= p_.col(i).dot(ini_sol.head(n_points_)) * p_.col(i);
+        ini_sol.head(mu_ + dim_ * sigma_) -=
+            p_.col(i).dot(ini_sol.head(mu_ + dim_ * sigma_)) * p_.col(i);
       }
     }
 
@@ -86,12 +100,12 @@ class rbf_solver {
                              const Eigen::MatrixBase<Derived2>* initial_solution = nullptr) const {
     // The solver does not work when all values are zero.
     if (values.isZero()) {
-      return common::valuesd::Zero(n_points_ + n_poly_basis_);
+      return common::valuesd::Zero(mu_ + dim_ * sigma_ + l_);
     }
 
-    common::valuesd rhs(n_points_ + n_poly_basis_);
-    rhs.head(n_points_) = values;
-    rhs.tail(n_poly_basis_) = common::valuesd::Zero(n_poly_basis_);
+    common::valuesd rhs(mu_ + dim_ * sigma_ + l_);
+    rhs.head(mu_ + dim_ * sigma_) = values;
+    rhs.tail(l_) = common::valuesd::Zero(l_);
 
     krylov::fgmres solver(*op_, rhs, max_iter);
     if (initial_solution != nullptr) {
@@ -126,9 +140,11 @@ class rbf_solver {
   }
 
   const model& model_;
-  const index_t n_poly_basis_;
+  const int dim_;
+  const index_t l_;
 
-  index_t n_points_{};
+  index_t mu_{};
+  index_t sigma_{};
   std::unique_ptr<rbf_operator<>> op_;
   std::unique_ptr<Preconditioner> pc_;
   std::unique_ptr<rbf_residual_evaluator> res_eval_;
