@@ -49,11 +49,12 @@ class ras_preconditioner : public krylov::linear_operator {
   }
 
   const model model_without_poly_;
+  const int dim_;
+  const index_t l_;
+  const index_t mu_;
+  const index_t sigma_;
   const geometry::points3d points_;
   const geometry::points3d grad_points_;
-  const index_t n_points_;
-  const index_t n_grad_points_;
-  const index_t n_poly_basis_;
   const std::unique_ptr<interpolation::rbf_symmetric_evaluator<Order>> finest_evaluator_;
 
   Eigen::MatrixXd lagrange_pt_;
