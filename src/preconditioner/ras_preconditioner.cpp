@@ -238,7 +238,7 @@ common::valuesd ras_preconditioner::operator()(const common::valuesd& v) const {
         }
       }
 
-      weights_total.head(mu_) += weights;
+      weights_total.head(mu_ + dim_ * sigma_) += weights;
 
       if (kReportResidual) {
         finest_evaluator_->set_weights(weights_total);
