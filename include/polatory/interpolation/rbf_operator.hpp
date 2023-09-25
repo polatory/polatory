@@ -88,7 +88,7 @@ struct rbf_operator : krylov::linear_operator {
     common::valuesd y = common::valuesd::Zero(size());
 
     a_->set_weights(weights.head(mu_));
-    y.head(mu_) = a_->evaluate();
+    y.head(mu_) += a_->evaluate();
 
     if (sigma_ > 0) {
       switch (dim_) {

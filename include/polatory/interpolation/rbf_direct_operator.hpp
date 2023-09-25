@@ -61,7 +61,7 @@ class rbf_direct_operator : krylov::linear_operator {
       for (index_t j = 0; j < mu_; j++) {
         y.segment(mu_ + dim_ * i, dim_) +=
             w(j) *
-            -rbf.evaluate_gradient(grad_points_.row(i) - points_.row(j)).transpose().head(dim_);
+            -rbf.evaluate_gradient(grad_points_.row(i) - points_.row(j)).head(dim_).transpose();
       }
 
       for (index_t j = 0; j < sigma_; j++) {

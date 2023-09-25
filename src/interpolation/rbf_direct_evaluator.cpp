@@ -22,46 +22,63 @@ rbf_direct_evaluator::rbf_direct_evaluator(const model& model,
   }
 }
 
+// TODO: Use Kahan summation.
 common::valuesd rbf_direct_evaluator::evaluate() const {
-  auto y_accum = std::vector<numeric::kahan_sum_accumulator<double>>(n_fld_points_);
+  common::valuesd y(fld_mu_ + dim_ * fld_sigma_);
 
-  auto weights = weights_.head(mu_);
-  auto grad_weights = weights_.segment(mu_, dim_ * sigma_).reshaped<Eigen::RowMajor>(sigma_, dim_);
+  auto w = weights_.head(mu_);
+  auto grad_w = weights_.segment(mu_, dim_ * sigma_).reshaped<Eigen::RowMajor>(sigma_, dim_);
 
   const auto& rbf = model_.rbf();
-  for (index_t i = 0; i < n_fld_points_; i++) {
+  for (index_t i = 0; i < fld_mu_; i++) {
     for (index_t j = 0; j < mu_; j++) {
-      y_accum.at(i) += weights(j) * rbf.evaluate(fld_points_.row(i) - src_points_.row(j));
+      y(i) += w(j) * rbf.evaluate(fld_points_.row(i) - src_points_.row(j));
     }
 
     for (index_t j = 0; j < sigma_; j++) {
-      y_accum.at(i) += grad_weights.row(j).dot(
+      y(i) += grad_w.row(j).dot(
           -rbf.evaluate_gradient(fld_points_.row(i) - src_grad_points_.row(j)).head(dim_));
+    }
+  }
+
+  for (index_t i = 0; i < fld_sigma_; i++) {
+    for (index_t j = 0; j < mu_; j++) {
+      y.segment(fld_mu_ + dim_ * i, dim_) +=
+          w(j) * -rbf.evaluate_gradient(fld_grad_points_.row(i) - src_points_.row(j))
+                      .transpose()
+                      .head(dim_);
+    }
+
+    for (index_t j = 0; j < sigma_; j++) {
+      y.segment(fld_mu_ + dim_ * i, dim_) +=
+          (grad_w.row(j) * rbf.evaluate_hessian(fld_grad_points_.row(i) - src_grad_points_.row(j))
+                               .topLeftCorner(dim_, dim_))
+              .transpose();
     }
   }
 
   if (l_ > 0) {
     // Add polynomial terms.
-    auto poly_val = p_->evaluate();
-    for (index_t i = 0; i < n_fld_points_; i++) {
-      y_accum.at(i) += poly_val(i);
-    }
-  }
-
-  common::valuesd y(n_fld_points_);
-  for (index_t i = 0; i < n_fld_points_; i++) {
-    y(i) = y_accum.at(i).get();
+    y += p_->evaluate();
   }
 
   return y;
 }
 
 void rbf_direct_evaluator::set_field_points(const geometry::points3d& field_points) {
-  n_fld_points_ = static_cast<index_t>(field_points.rows());
+  set_field_points(field_points, geometry::points3d(0, 3));
+}
+
+void rbf_direct_evaluator::set_field_points(const geometry::points3d& field_points,
+                                            const geometry::points3d& field_grad_points) {
+  fld_mu_ = static_cast<index_t>(field_points.rows());
+  fld_sigma_ = static_cast<index_t>(field_grad_points.rows());
+
   fld_points_ = field_points;
+  fld_grad_points_ = field_grad_points;
 
   if (l_ > 0) {
-    p_->set_field_points(fld_points_);
+    p_->set_field_points(fld_points_, fld_grad_points_);
   }
 }
 

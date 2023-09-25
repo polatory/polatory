@@ -14,12 +14,19 @@ class polynomial_evaluator {
       : basis_(dimension, degree), weights_(common::valuesd::Zero(basis_.basis_size())) {}
 
   common::valuesd evaluate() const {
-    Eigen::MatrixXd pt = basis_.evaluate(points_);
+    Eigen::MatrixXd pt = basis_.evaluate(points_, grad_points_);
 
     return pt.transpose() * weights_;
   }
 
-  void set_field_points(const geometry::points3d& points) { points_ = points; }
+  void set_field_points(const geometry::points3d& points) {
+    set_field_points(points, geometry::points3d(0, 3));
+  }
+
+  void set_field_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+    points_ = points;
+    grad_points_ = grad_points;
+  }
 
   void set_weights(const common::valuesd& weights) {
     POLATORY_ASSERT(weights.rows() == basis_.basis_size());
@@ -31,6 +38,7 @@ class polynomial_evaluator {
   const Basis basis_;
 
   geometry::points3d points_;
+  geometry::points3d grad_points_;
   common::valuesd weights_;
 };
 
