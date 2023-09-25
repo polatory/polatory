@@ -31,7 +31,8 @@ class rbf_symmetric_evaluator {
         l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()) {
-    auto bbox = geometry::bbox3d::from_points(points);
+    auto bbox = geometry::bbox3d::from_points(points).convex_hull(
+        geometry::bbox3d::from_points(grad_points));
     a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(model, fmm::fmm_tree_height(mu_),
                                                                bbox);
     a_->set_points(points);

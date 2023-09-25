@@ -95,11 +95,11 @@ class model {
   }
 
   // This method is for internal use only.
-  model without_poly() const { return model(*rbf_); }
+  model without_poly() const { return model(*rbf_, poly_dimension_); }
 
  private:
-  explicit model(const rbf::rbf_base& rbf)
-      : rbf_(rbf.clone()), poly_dimension_(-1), poly_degree_(-1) {}
+  explicit model(const rbf::rbf_base& rbf, int poly_dimension)
+      : rbf_(rbf.clone()), poly_dimension_(poly_dimension), poly_degree_(-1) {}
 
   std::unique_ptr<rbf::rbf_base> rbf_;
   int poly_dimension_;
