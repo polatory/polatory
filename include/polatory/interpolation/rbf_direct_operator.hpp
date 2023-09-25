@@ -39,12 +39,11 @@ class rbf_direct_operator : krylov::linear_operator {
   common::valuesd operator()(const common::valuesd& weights) const override {
     POLATORY_ASSERT(weights.rows() == size());
 
-    common::valuesd y = common::valuesd::Zero(size());
-
+    const auto& rbf = model_.rbf();
     auto w = weights.head(mu_);
     auto grad_w = weights.segment(mu_, dim_ * sigma_).reshaped<Eigen::RowMajor>(sigma_, dim_);
 
-    const auto& rbf = model_.rbf();
+    common::valuesd y = common::valuesd::Zero(size());
 
     for (index_t i = 0; i < mu_; i++) {
       for (index_t j = 0; j < mu_; j++) {

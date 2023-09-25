@@ -37,7 +37,6 @@ void test_poly_degree(int poly_degree) {
 
   auto points = random_points(sphere3d(), n_points);
   auto grad_points = random_points(sphere3d(), n_grad_points);
-
   valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
 
   rbf_direct_evaluator direct_eval(model, points, grad_points);

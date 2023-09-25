@@ -24,12 +24,12 @@ rbf_direct_evaluator::rbf_direct_evaluator(const model& model,
 
 // TODO: Use Kahan summation.
 common::valuesd rbf_direct_evaluator::evaluate() const {
-  common::valuesd y(fld_mu_ + dim_ * fld_sigma_);
-
+  const auto& rbf = model_.rbf();
   auto w = weights_.head(mu_);
   auto grad_w = weights_.segment(mu_, dim_ * sigma_).reshaped<Eigen::RowMajor>(sigma_, dim_);
 
-  const auto& rbf = model_.rbf();
+  common::valuesd y = common::valuesd::Zero(fld_mu_ + dim_ * fld_sigma_);
+
   for (index_t i = 0; i < fld_mu_; i++) {
     for (index_t j = 0; j < mu_; j++) {
       y(i) += w(j) * rbf.evaluate(fld_points_.row(i) - src_points_.row(j));
