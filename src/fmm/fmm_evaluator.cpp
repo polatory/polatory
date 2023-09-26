@@ -131,7 +131,7 @@ class fmm_evaluator<Order>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials(n_fld_points_);
+    common::valuesd potentials = common::valuesd::Zero(n_fld_points_);
 
     if (trg_tree_) {
       scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),

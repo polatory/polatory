@@ -37,28 +37,32 @@ void test_poly_degree(int poly_degree) {
 
   auto points = random_points(sphere3d(), n_points);
   auto grad_points = random_points(sphere3d(), n_grad_points);
-  valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
 
   rbf_direct_evaluator direct_eval(model, points, grad_points);
-  direct_eval.set_weights(weights);
   direct_eval.set_field_points(points.topRows(n_eval_points),
                                grad_points.topRows(n_eval_grad_points));
 
   rbf_symmetric_evaluator<> eval(model, points, grad_points);
-  eval.set_weights(weights);
 
-  auto direct_values = direct_eval.evaluate();
-  auto values_full = eval.evaluate();
+  for (auto i = 0; i < 2; i++) {
+    valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
 
-  EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
-  EXPECT_EQ(n_points + dim * n_grad_points, values_full.rows());
+    direct_eval.set_weights(weights);
+    eval.set_weights(weights);
 
-  valuesd values(direct_values.size());
-  values << values_full.head(n_eval_points),
-      values_full.segment(n_points, dim * n_eval_grad_points);
+    auto direct_values = direct_eval.evaluate();
+    auto values_full = eval.evaluate();
 
-  auto max_residual = (values - direct_values).template lpNorm<Eigen::Infinity>();
-  EXPECT_LT(max_residual, absolute_tolerance);
+    EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
+    EXPECT_EQ(n_points + dim * n_grad_points, values_full.rows());
+
+    valuesd values(direct_values.size());
+    values << values_full.head(n_eval_points),
+        values_full.segment(n_points, dim * n_eval_grad_points);
+
+    auto max_residual = (values - direct_values).template lpNorm<Eigen::Infinity>();
+    EXPECT_LT(max_residual, absolute_tolerance);
+  }
 }
 
 }  // namespace

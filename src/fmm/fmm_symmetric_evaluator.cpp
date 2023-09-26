@@ -98,7 +98,7 @@ class fmm_symmetric_evaluator<Order>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials(n_points_);
+    common::valuesd potentials = common::valuesd::Zero(n_points_);
 
     if (tree_) {
       auto a = model_.rbf().evaluate(geometry::vector3d::Zero());

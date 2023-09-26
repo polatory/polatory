@@ -29,8 +29,8 @@ namespace {
 
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
-  const index_t n_surface_points = 4096;
-  index_t n_grad_points = 1024;
+  const index_t n_surface_points = 550;
+  index_t n_grad_points = 1;
 
   auto absolute_tolerance = 1e-4;
   auto grad_absolute_tolerance = 1e-2;

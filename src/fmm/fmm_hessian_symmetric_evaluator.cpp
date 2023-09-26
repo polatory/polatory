@@ -102,7 +102,7 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials(Dim * n_points_);
+    common::valuesd potentials = common::valuesd::Zero(Dim * n_points_);
 
     if (tree_) {
       geometry::vectorXd w(Dim);

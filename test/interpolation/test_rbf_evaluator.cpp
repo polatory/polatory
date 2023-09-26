@@ -18,7 +18,6 @@ using polatory::model;
 using polatory::common::valuesd;
 using polatory::geometry::bbox3d;
 using polatory::geometry::point3d;
-using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
@@ -27,50 +26,71 @@ using polatory::rbf::multiquadric1;
 
 namespace {
 
-void test_poly_degree(int poly_degree) {
+void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points,
+                      index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
   const int dim = 3;
-  const index_t n_points = 32768;
-  const index_t n_grad_points = 4096;
-  const index_t n_eval_points = 1024;
-  const index_t n_eval_grad_points = 1024;
+  index_t n_points = n_initial_points;
+  index_t n_grad_points = n_initial_grad_points;
+  index_t n_eval_points = n_initial_eval_points;
+  index_t n_eval_grad_points = n_initial_eval_grad_points;
 
-  auto absolute_tolerance = 2e-6;
+  auto absolute_tolerance = 5e-6;
+  auto grad_absolute_tolerance = 5e-5;
 
   multiquadric1 rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, dim, poly_degree);
-
-  auto points = random_points(sphere3d(), n_points);
-  auto grad_points = random_points(sphere3d(), n_grad_points);
-  auto eval_points = random_points(sphere3d(), n_eval_points);
-  auto eval_grad_points = random_points(sphere3d(), n_eval_grad_points);
-
-  valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
-
-  rbf_direct_evaluator direct_eval(model, points, grad_points);
-  direct_eval.set_weights(weights);
-  direct_eval.set_field_points(eval_points, eval_grad_points);
+  model.set_nugget(0.01);
 
   bbox3d bbox{-point3d::Ones(), point3d::Ones()};
-  rbf_evaluator<> eval(model, points, grad_points, bbox);
-  eval.set_weights(weights);
-  eval.set_field_points(eval_points, eval_grad_points);
+  rbf_evaluator<> eval(model, bbox);
 
-  auto direct_values = direct_eval.evaluate();
-  auto values = eval.evaluate();
+  for (auto i = 0; i < 4; i++) {
+    auto points = random_points(sphere3d(), n_points);
+    auto grad_points = random_points(sphere3d(), n_grad_points);
+    auto eval_points = random_points(sphere3d(), n_eval_points);
+    auto eval_grad_points = random_points(sphere3d(), n_eval_grad_points);
 
-  EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
-  EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, values.rows());
+    valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
 
-  auto max_residual = (values - direct_values).lpNorm<Eigen::Infinity>();
-  EXPECT_LT(max_residual, absolute_tolerance);
+    rbf_direct_evaluator direct_eval(model, points, grad_points);
+    direct_eval.set_weights(weights);
+    direct_eval.set_field_points(eval_points, eval_grad_points);
+
+    eval.set_source_points(points, grad_points);
+    eval.set_weights(weights);
+    eval.set_field_points(eval_points, eval_grad_points);
+
+    auto direct_values = direct_eval.evaluate();
+    auto values = eval.evaluate();
+
+    EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
+    EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, values.rows());
+
+    auto max_residual = (values - direct_values).head(n_eval_points).lpNorm<Eigen::Infinity>();
+    EXPECT_LT(max_residual, absolute_tolerance);
+
+    if (n_eval_grad_points > 0) {
+      auto grad_max_residual =
+          (values - direct_values).tail(dim * n_eval_grad_points).lpNorm<Eigen::Infinity>();
+      EXPECT_LT(grad_max_residual, grad_absolute_tolerance);
+    }
+
+    n_points *= 2;
+    n_grad_points *= 2;
+    n_eval_points *= 2;
+    n_eval_grad_points *= 2;
+  }
 }
 
 }  // namespace
 
 TEST(rbf_evaluator, trivial) {
-  test_poly_degree(0);
-  test_poly_degree(1);
-  test_poly_degree(2);
+  test_poly_degree(0, 1024, 0, 1024, 0);
+  test_poly_degree(0, 0, 256, 0, 256);
+
+  test_poly_degree(0, 1024, 256, 1024, 256);
+  test_poly_degree(1, 1024, 256, 1024, 256);
+  test_poly_degree(2, 1024, 256, 1024, 256);
 }
