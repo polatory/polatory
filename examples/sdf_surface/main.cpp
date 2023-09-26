@@ -13,6 +13,7 @@ using polatory::read_table;
 using polatory::tabled;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
+using polatory::geometry::vectors3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
 using polatory::point_cloud::distance_filter;
@@ -32,6 +33,11 @@ int main(int argc, const char* argv[]) {
       values_ub = table.col(5);
     }
 
+    // Load gradient data.
+    tabled grad_table = read_table(opts.grad_in_file);
+    points3d grad_points = grad_table(Eigen::all, {0, 1, 2});
+    vectors3d grad_values = grad_table(Eigen::all, {3, 4, 5});
+
     // Remove very close points.
     distance_filter filter(points, opts.min_distance);
     std::tie(points, values) = filter(points, values);
@@ -40,11 +46,17 @@ int main(int argc, const char* argv[]) {
       *values_ub = filter(*values_ub);
     }
 
+    distance_filter grad_filter(grad_points, opts.min_distance);
+    std::tie(grad_points, grad_values) = grad_filter(grad_points, grad_values);
+
     // Define the model.
     auto rbf = make_rbf(opts.rbf_name, opts.rbf_params);
     rbf->set_anisotropy(opts.aniso);
     model model(*rbf, 3, opts.poly_degree);
     model.set_nugget(opts.nugget);
+
+    valuesd rhs(values.size() + 3 * grad_values.rows());
+    rhs << values, grad_values.reshaped<Eigen::RowMajor>();
 
     // Fit.
     interpolant interpolant(model);
@@ -54,7 +66,8 @@ int main(int argc, const char* argv[]) {
     } else if (opts.reduce) {
       interpolant.fit_incrementally(points, values, opts.absolute_tolerance, opts.max_iter);
     } else {
-      interpolant.fit(points, values, opts.absolute_tolerance, opts.max_iter);
+      interpolant.fit(points, grad_points, rhs, opts.absolute_tolerance,
+                      opts.grad_absolute_tolerance, opts.max_iter);
     }
 
     // Generate the isosurface.
