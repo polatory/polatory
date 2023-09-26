@@ -34,7 +34,10 @@ int main(int argc, const char* argv[]) {
     }
 
     // Load gradient data.
-    tabled grad_table = read_table(opts.grad_in_file);
+    tabled grad_table(0, 6);
+    if (opts.grad_in_file != "") {
+      grad_table = read_table(opts.grad_in_file);
+    }
     points3d grad_points = grad_table(Eigen::all, {0, 1, 2});
     vectors3d grad_values = grad_table(Eigen::all, {3, 4, 5});
 

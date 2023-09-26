@@ -4,6 +4,7 @@
 #include <boost/program_options.hpp>
 #include <exception>
 #include <iostream>
+#include <optional>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
@@ -37,10 +38,11 @@ inline options parse_options(int argc, const char* argv[]) {
   std::vector<std::string> rbf_vec;
 
   po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()                                                                      //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                         //
-       "Input file in CSV format:\n  X,Y,Z,VAL[,LOWER,UPPER]")                                 //
-      ("grad-in", po::value(&opts.grad_in_file)->required()->value_name("FILE"),               //
+  opts_desc.add_options()                                               //
+      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),  //
+       "Input file in CSV format:\n  X,Y,Z,VAL[,LOWER,UPPER]")          //
+      ("grad-in",
+       po::value(&opts.grad_in_file)->default_value("")->value_name("FILE"),                   //
        "Gradient data input file in CSV format:\n  X,Y,Z,DX,DY,DZ")                            //
       ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("VAL"),     //
        "Minimum separation distance of input points")                                          //

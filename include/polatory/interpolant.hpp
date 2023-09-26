@@ -83,7 +83,6 @@ class interpolant {
     fitted_ = true;
     centers_ = points;
     grad_centers_ = grad_points;
-    std::cout << weights_ << std::endl;
     bbox_ = geometry::bbox3d::from_points(centers_).convex_hull(
         geometry::bbox3d::from_points(grad_points));
   }
