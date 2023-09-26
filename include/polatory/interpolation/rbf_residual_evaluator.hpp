@@ -30,9 +30,9 @@ class rbf_residual_evaluator {
     evaluator_ = std::make_unique<rbf_evaluator<>>(model, points_, grad_points_);
   }
 
-  rbf_residual_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox)
+  rbf_residual_evaluator(const model& model, const geometry::bbox3d& bbox)
       : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    evaluator_ = std::make_unique<rbf_evaluator<>>(model, tree_height, bbox);
+    evaluator_ = std::make_unique<rbf_evaluator<>>(model, bbox);
   }
 
   template <class Derived, class Derived2>

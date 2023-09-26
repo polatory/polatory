@@ -39,10 +39,10 @@ class rbf_solver {
     set_points(points, grad_points);
   }
 
-  rbf_solver(const model& model, int tree_height, const geometry::bbox3d& bbox)
+  rbf_solver(const model& model, const geometry::bbox3d& bbox)
       : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    op_ = std::make_unique<rbf_operator<>>(model, tree_height, bbox);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, tree_height, bbox);
+    op_ = std::make_unique<rbf_operator<>>(model, bbox);
+    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, bbox);
   }
 
   void set_points(const geometry::points3d& points) {

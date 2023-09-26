@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "hessian_kernel.hpp"
+#include "utility.hpp"
 
 namespace polatory::fmm {
 
@@ -37,40 +38,23 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
   using Leaf = scalfmm::component::leaf_view<Particle>;
   using Tree = scalfmm::component::group_tree_view<Cell, Leaf, Box>;
 
- private:
-  Box make_box(const model& model, const geometry::bbox3d& bbox) {
-    auto a_bbox = bbox.transform(model.rbf().anisotropy());
-    auto width = 1.01 * a_bbox.size().maxCoeff();
-    if (width == 0.0) {
-      width = 1.0;
-    }
-    auto center = a_bbox.center();
-    return {width, {center(0), center(1), center(2)}};
-  }
-
  public:
-  impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
+  impl(const model& model, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
         order_(Order + 2),
-        tree_height_(tree_height),
-        box_(make_box(model, bbox)),
-        near_field_(kernel_),
-        interpolator_(kernel_, order_, tree_height, box_.width(0)),
-        far_field_(interpolator_),
-        fmm_operator_(near_field_, far_field_) {}
+        box_(make_box<Box>(model, bbox)),
+        near_field_(kernel_) {}
 
   common::valuesd evaluate() const {
     using namespace scalfmm::algorithms;
 
-    tree_->reset_multipoles();
-    tree_->reset_locals();
-    tree_->reset_outputs();
-
-    // Prevent segfault.
-    if (n_points_ > 0) {
+    if (prepare()) {
+      tree_->reset_multipoles();
+      tree_->reset_locals();
+      tree_->reset_outputs();
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-          *tree_, fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
+          *tree_, *fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
     }
 
     return potentials();
@@ -79,78 +63,137 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
   void set_points(const geometry::points3d& points) {
     n_points_ = points.rows();
 
-    auto a = model_.rbf().anisotropy();
+    particles_.resize(n_points_);
 
-    std::vector<Particle> particles(n_points_);
-    for (index_t i = 0; i < n_points_; i++) {
-      auto& p = particles.at(i);
-      auto ap = geometry::transform_point(a, points.row(i));
+    auto a = model_.rbf().anisotropy();
+    for (index_t idx = 0; idx < n_points_; idx++) {
+      auto& p = particles_.at(idx);
+      auto ap = geometry::transform_point(a, points.row(idx));
       p.position() = Position{ap(0), ap(1), ap(2)};
-      p.variables(i);
+      p.variables(idx);
     }
 
-    tree_ = std::make_unique<Tree>(tree_height_, order_, box_, 10, 10, particles);
+    tree_.reset(nullptr);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     POLATORY_ASSERT(weights.rows() == Dim * n_points_);
 
-    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
-      for (auto p_ref : leaf) {
-        auto p = typename Leaf::proxy_type(p_ref);
-        auto idx = std::get<0>(p.variables());
+    if (!tree_) {
+      for (index_t idx = 0; idx < n_points_; idx++) {
+        auto& p = particles_.at(idx);
         for (auto i = 0; i < Dim; i++) {
           p.inputs(i) = weights(Dim * idx + i);
         }
       }
-    });
+    } else {
+      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
+                                        [&](const auto& leaf) {
+                                          for (auto p_ref : leaf) {
+                                            auto p = typename Leaf::proxy_type(p_ref);
+                                            auto idx = std::get<0>(p.variables());
+                                            for (auto i = 0; i < Dim; i++) {
+                                              p.inputs(i) = weights(Dim * idx + i);
+                                            }
+                                          }
+                                        });
+    }
   }
 
  private:
   common::valuesd potentials() const {
     common::valuesd potentials(Dim * n_points_);
 
-    geometry::vectorXd w(Dim);
-    geometry::matrixXd h =
-        model_.rbf().evaluate_hessian(geometry::vector3d::Zero()).topLeftCorner<Dim, Dim>();
-
-    scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
-                                      [&](const auto& leaf) {
-                                        for (auto p_ref : leaf) {
-                                          auto p = typename Leaf::const_proxy_type(p_ref);
-                                          auto idx = std::get<0>(p.variables());
-                                          for (auto i = 0; i < Dim; i++) {
-                                            potentials(Dim * idx + i) = p.outputs(i);
-                                          }
-                                          for (auto i = 0; i < Dim; i++) {
-                                            w(i) = p.inputs(i);
-                                          }
-                                          potentials.segment<Dim>(Dim * idx) += (w * h).transpose();
-                                        }
-                                      });
+    if (tree_) {
+      geometry::vectorXd w(Dim);
+      geometry::matrixXd h =
+          model_.rbf().evaluate_hessian(geometry::vector3d::Zero()).topLeftCorner<Dim, Dim>();
+      scalfmm::component::for_each_leaf(
+          std::cbegin(*tree_), std::cend(*tree_), [&](const auto& leaf) {
+            for (auto p_ref : leaf) {
+              auto p = typename Leaf::const_proxy_type(p_ref);
+              auto idx = std::get<0>(p.variables());
+              for (auto i = 0; i < Dim; i++) {
+                potentials(Dim * idx + i) = p.outputs(i);
+              }
+              for (auto i = 0; i < Dim; i++) {
+                w(i) = p.inputs(i);
+              }
+              potentials.segment<Dim>(Dim * idx) += (w * h).transpose();
+            }
+          });
+    }
 
     return potentials;
+  }
+
+  bool prepare() const {
+    if (n_points_ == 0) {
+      interpolator_.reset(nullptr);
+      far_field_.reset(nullptr);
+      fmm_operator_.reset(nullptr);
+      tree_.reset(nullptr);
+      return false;
+    }
+
+    auto tree_height = fmm_tree_height(n_points_);
+
+    auto tree_height_changed = tree_height_ != tree_height;
+    tree_height_ = tree_height;
+
+    if (!interpolator_ || tree_height_changed) {
+      interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
+      far_field_ = std::make_unique<FarField>(*interpolator_);
+      fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
+    }
+
+    if (!tree_) {
+      tree_ = std::make_unique<Tree>(tree_height, order_, box_, 10, 10, particles_);
+      particles_.clear();
+      particles_.shrink_to_fit();
+    } else if (tree_height_changed) {
+      std::vector<Particle> particles(n_points_);
+
+      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](auto& leaf) {
+        for (auto p_ref : leaf) {
+          auto p = typename Leaf::proxy_type(p_ref);
+          auto idx = std::get<0>(p.variables());
+          auto& new_p = particles.at(idx);
+          for (auto i = 0; i < 3; i++) {
+            new_p.position(i) = p.position(i);
+          }
+          for (auto i = 0; i < Dim; i++) {
+            new_p.inputs(i) = p.inputs(i);
+          }
+          new_p.variables(idx);
+        }
+      });
+
+      tree_ = std::make_unique<Tree>(tree_height, order_, box_, 10, 10, particles);
+    }
+
+    return true;
   }
 
   const model& model_;
   const Kernel kernel_;
   const int order_;
-  const int tree_height_;
-
-  index_t n_points_{};
-
   const Box box_;
   const NearField near_field_;
-  const Interpolator interpolator_;
-  const FarField far_field_;
-  const FmmOperator fmm_operator_;
+
+  index_t n_points_{};
+  mutable std::vector<Particle> particles_;
+  mutable int tree_height_{};
+  mutable std::unique_ptr<Interpolator> interpolator_;
+  mutable std::unique_ptr<FarField> far_field_;
+  mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<Tree> tree_;
 };
 
 template <int Order, int Dim>
 fmm_hessian_symmetric_evaluator<Order, Dim>::fmm_hessian_symmetric_evaluator(
-    const model& model, int tree_height, const geometry::bbox3d& bbox)
-    : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {}
+    const model& model, const geometry::bbox3d& bbox)
+    : pimpl_(std::make_unique<impl>(model, bbox)) {}
 
 template <int Order, int Dim>
 fmm_hessian_symmetric_evaluator<Order, Dim>::~fmm_hessian_symmetric_evaluator() = default;

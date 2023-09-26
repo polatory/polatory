@@ -3,9 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <iterator>
-#include <memory>
 #include <polatory/common/zip_sort.hpp>
-#include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
@@ -38,9 +36,8 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
   auto n_ineq = static_cast<index_t>(ineq_idcs.size());
   geometry::points3d ineq_points = points_(ineq_idcs, Eigen::all);
 
-  std::unique_ptr<rbf_solver> solver;
-  std::unique_ptr<rbf_evaluator<>> res_eval;
-  auto last_tree_height = 0;
+  rbf_solver solver(model_, bbox_);
+  rbf_evaluator<> res_eval(model_, bbox_);
 
   common::valuesd weights = common::valuesd::Zero(n_points_ + n_poly_basis_);
   auto centers = eq_idcs;
@@ -66,13 +63,6 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
     if (!centers.empty()) {
       auto n_centers = static_cast<index_t>(centers.size());
 
-      auto tree_height = fmm::fmm_tree_height(n_centers);
-      if (tree_height != last_tree_height) {
-        solver = std::make_unique<rbf_solver>(model_, tree_height, bbox_);
-        res_eval = std::make_unique<rbf_evaluator<>>(model_, tree_height, bbox_);
-        last_tree_height = tree_height;
-      }
-
       geometry::points3d center_points = points_(centers, Eigen::all);
 
       common::valuesd center_values = values(centers, Eigen::all);
@@ -85,8 +75,8 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       center_weights.conservativeResize(n_centers + n_poly_basis_);
       center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
 
-      solver->set_points(center_points);
-      center_weights = solver->solve(center_values, absolute_tolerance, max_iter, center_weights);
+      solver.set_points(center_points);
+      center_weights = solver.solve(center_values, absolute_tolerance, max_iter, center_weights);
 
       for (index_t i = 0; i < n_centers; i++) {
         auto idx = centers.at(i);
@@ -94,9 +84,9 @@ std::pair<std::vector<index_t>, common::valuesd> rbf_inequality_fitter::fit(
       }
       weights.tail(n_poly_basis_) = center_weights.tail(n_poly_basis_);
 
-      res_eval->set_source_points(center_points, geometry::points3d(0, 3));
-      res_eval->set_weights(center_weights);
-      values_fit = res_eval->evaluate(ineq_points);
+      res_eval.set_source_points(center_points, geometry::points3d(0, 3));
+      res_eval.set_weights(center_weights);
+      values_fit = res_eval.evaluate(ineq_points);
     } else {
       center_weights = common::valuesd::Zero(n_poly_basis_);
       values_fit = common::valuesd::Zero(n_ineq);

@@ -5,14 +5,13 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
-#include <polatory/types.hpp>
 
 namespace polatory::fmm {
 
 template <int Order>
 class fmm_symmetric_evaluator {
  public:
-  fmm_symmetric_evaluator(const model& model, int tree_height, const geometry::bbox3d& bbox);
+  fmm_symmetric_evaluator(const model& model, const geometry::bbox3d& bbox);
 
   ~fmm_symmetric_evaluator();
 

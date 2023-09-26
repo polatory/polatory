@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "gradient_kernel.hpp"
+#include "utility.hpp"
 
 namespace polatory::fmm {
 
@@ -45,39 +46,29 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
   using SourceTree = scalfmm::component::group_tree_view<Cell, SourceLeaf, Box>;
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
- private:
-  Box make_box(const model& model, const geometry::bbox3d& bbox) {
-    auto a_bbox = bbox.transform(model.rbf().anisotropy());
-    auto width = 1.01 * a_bbox.size().maxCoeff();
-    if (width == 0.0) {
-      width = 1.0;
-    }
-    auto center = a_bbox.center();
-    return {width, {center(0), center(1), center(2)}};
-  }
-
  public:
-  impl(const model& model, int tree_height, const geometry::bbox3d& bbox)
+  impl(const model& model, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
         order_(Order + 2),
-        tree_height_(tree_height),
-        box_(make_box(model, bbox)),
-        near_field_(kernel_, false),
-        interpolator_(kernel_, order_, tree_height, box_.width(0)),
-        far_field_(interpolator_),
-        fmm_operator_(near_field_, far_field_) {}
+        box_(make_box<Box>(model, bbox)),
+        near_field_(kernel_, false) {}
 
   common::valuesd evaluate() const {
     using namespace scalfmm::algorithms;
 
-    trg_tree_->reset_locals();
-    trg_tree_->reset_outputs();
+    if (prepare()) {
+      if (multipole_dirty_) {
+        src_tree_->reset_multipoles();
+        scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](
+            *src_tree_, *fmm_operator_, p2m | m2m);
+        multipole_dirty_ = false;
+      }
 
-    // Prevent segfault.
-    if (n_src_points_ > 0 && n_fld_points_ > 0) {
+      trg_tree_->reset_locals();
+      trg_tree_->reset_outputs();
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-          *src_tree_, *trg_tree_, fmm_operator_, m2l | l2l | l2p | p2p);
+          *src_tree_, *trg_tree_, *fmm_operator_, m2l | l2l | l2p | p2p);
     }
 
     return potentials();
@@ -86,33 +77,33 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
   void set_field_points(const geometry::points3d& points) {
     n_fld_points_ = points.rows();
 
-    auto a = model_.rbf().anisotropy();
+    trg_particles_.resize(n_fld_points_);
 
-    std::vector<TargetParticle> particles(n_fld_points_);
-    for (index_t i = 0; i < n_fld_points_; i++) {
-      auto& p = particles.at(i);
-      auto ap = geometry::transform_point(a, points.row(i));
+    auto a = model_.rbf().anisotropy();
+    for (index_t idx = 0; idx < n_fld_points_; idx++) {
+      auto& p = trg_particles_.at(idx);
+      auto ap = geometry::transform_point(a, points.row(idx));
       p.position() = Position{ap(0), ap(1), ap(2)};
-      p.variables(i);
+      p.variables(idx);
     }
 
-    trg_tree_ = std::make_unique<TargetTree>(tree_height_, order_, box_, 10, 10, particles);
+    trg_tree_.reset(nullptr);
   }
 
   void set_source_points(const geometry::points3d& points) {
     n_src_points_ = points.rows();
 
-    auto a = model_.rbf().anisotropy();
+    src_particles_.resize(n_src_points_);
 
-    std::vector<SourceParticle> particles(n_src_points_);
-    for (index_t i = 0; i < n_src_points_; i++) {
-      auto& p = particles.at(i);
-      auto ap = geometry::transform_point(a, points.row(i));
+    auto a = model_.rbf().anisotropy();
+    for (index_t idx = 0; idx < n_src_points_; idx++) {
+      auto& p = src_particles_.at(idx);
+      auto ap = geometry::transform_point(a, points.row(idx));
       p.position() = Position{ap(0), ap(1), ap(2)};
-      p.variables(i);
+      p.variables(idx);
     }
 
-    src_tree_ = std::make_unique<SourceTree>(tree_height_, order_, box_, 10, 10, particles);
+    src_tree_.reset(nullptr);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
@@ -120,60 +111,144 @@ class fmm_gradient_evaluator<Order, Dim>::impl {
 
     POLATORY_ASSERT(weights.rows() == Dim * n_src_points_);
 
-    scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
-                                      [&](const auto& leaf) {
-                                        for (auto p_ref : leaf) {
-                                          auto p = typename SourceLeaf::proxy_type(p_ref);
-                                          auto idx = std::get<0>(p.variables());
-                                          for (auto i = 0; i < Dim; i++) {
-                                            p.inputs(i) = weights(Dim * idx + i);
+    if (!src_tree_) {
+      for (index_t idx = 0; idx < n_src_points_; idx++) {
+        auto& p = src_particles_.at(idx);
+        for (auto i = 0; i < Dim; i++) {
+          p.inputs(i) = weights(Dim * idx + i);
+        }
+      }
+    } else {
+      scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
+                                        [&](const auto& leaf) {
+                                          for (auto p_ref : leaf) {
+                                            auto p = typename SourceLeaf::proxy_type(p_ref);
+                                            auto idx = std::get<0>(p.variables());
+                                            for (auto i = 0; i < Dim; i++) {
+                                              p.inputs(i) = weights(Dim * idx + i);
+                                            }
                                           }
-                                        }
-                                      });
-
-    src_tree_->reset_multipoles();
-
-    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](*src_tree_, fmm_operator_,
-                                                                          p2m | m2m);
+                                        });
+      multipole_dirty_ = true;
+    }
   }
 
  private:
   common::valuesd potentials() const {
     common::valuesd potentials(n_fld_points_);
 
-    scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
-                                      [&](const auto& leaf) {
-                                        for (auto p_ref : leaf) {
-                                          auto p = typename TargetLeaf::const_proxy_type(p_ref);
-                                          auto idx = std::get<0>(p.variables());
-                                          potentials(idx) = p.outputs(0);
-                                        }
-                                      });
+    if (trg_tree_) {
+      scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
+                                        [&](const auto& leaf) {
+                                          for (auto p_ref : leaf) {
+                                            auto p = typename TargetLeaf::const_proxy_type(p_ref);
+                                            auto idx = std::get<0>(p.variables());
+                                            potentials(idx) = p.outputs(0);
+                                          }
+                                        });
+    }
 
     return potentials;
+  }
+
+  bool prepare() const {
+    if (n_src_points_ == 0 || n_fld_points_ == 0) {
+      interpolator_.reset(nullptr);
+      far_field_.reset(nullptr);
+      fmm_operator_.reset(nullptr);
+      src_tree_.reset(nullptr);
+      trg_tree_.reset(nullptr);
+      return false;
+    }
+
+    auto tree_height = fmm_tree_height(std::max(n_src_points_, n_fld_points_));
+
+    auto tree_height_changed = tree_height_ != tree_height;
+    tree_height_ = tree_height;
+
+    if (!interpolator_ || tree_height_changed) {
+      interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
+      far_field_ = std::make_unique<FarField>(*interpolator_);
+      fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
+    }
+
+    if (!src_tree_) {
+      src_tree_ = std::make_unique<SourceTree>(tree_height, order_, box_, 10, 10, src_particles_);
+      src_particles_.clear();
+      src_particles_.shrink_to_fit();
+      multipole_dirty_ = true;
+    } else if (tree_height_changed) {
+      std::vector<SourceParticle> particles(n_src_points_);
+
+      scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
+                                        [&](auto& leaf) {
+                                          for (auto p_ref : leaf) {
+                                            auto p = typename SourceLeaf::proxy_type(p_ref);
+                                            auto idx = std::get<0>(p.variables());
+                                            auto& new_p = particles.at(idx);
+                                            for (auto i = 0; i < 3; i++) {
+                                              new_p.position(i) = p.position(i);
+                                            }
+                                            for (auto i = 0; i < Dim; i++) {
+                                              new_p.inputs(i) = p.inputs(i);
+                                            }
+                                            new_p.variables(idx);
+                                          }
+                                        });
+
+      src_tree_ = std::make_unique<SourceTree>(tree_height, order_, box_, 10, 10, particles);
+      multipole_dirty_ = true;
+    }
+
+    if (!trg_tree_) {
+      trg_tree_ = std::make_unique<TargetTree>(tree_height, order_, box_, 10, 10, trg_particles_);
+      trg_particles_.clear();
+      trg_particles_.shrink_to_fit();
+    } else if (tree_height_changed) {
+      std::vector<TargetParticle> particles(n_fld_points_);
+
+      scalfmm::component::for_each_leaf(std::begin(*trg_tree_), std::end(*trg_tree_),
+                                        [&](auto& leaf) {
+                                          for (auto p_ref : leaf) {
+                                            auto p = typename TargetLeaf::proxy_type(p_ref);
+                                            auto idx = std::get<0>(p.variables());
+                                            auto& new_p = particles.at(idx);
+                                            for (auto i = 0; i < 3; i++) {
+                                              new_p.position(i) = p.position(i);
+                                            }
+                                            new_p.variables(idx);
+                                          }
+                                        });
+
+      trg_tree_ = std::make_unique<TargetTree>(tree_height, order_, box_, 10, 10, particles);
+    }
+
+    return true;
   }
 
   const model& model_;
   const Kernel kernel_;
   const int order_;
-  const int tree_height_;
+  const Box box_;
+  const NearField near_field_;
 
   index_t n_src_points_{};
   index_t n_fld_points_{};
-
-  const Box box_;
-  const NearField near_field_;
-  const Interpolator interpolator_;
-  const FarField far_field_;
-  const FmmOperator fmm_operator_;
+  mutable std::vector<SourceParticle> src_particles_;
+  mutable std::vector<TargetParticle> trg_particles_;
+  mutable bool multipole_dirty_{};
+  mutable int tree_height_{};
+  mutable std::unique_ptr<Interpolator> interpolator_;
+  mutable std::unique_ptr<FarField> far_field_;
+  mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<SourceTree> src_tree_;
   mutable std::unique_ptr<TargetTree> trg_tree_;
 };
 
 template <int Order, int Dim>
-fmm_gradient_evaluator<Order, Dim>::fmm_gradient_evaluator(const model& model, int tree_height,
+fmm_gradient_evaluator<Order, Dim>::fmm_gradient_evaluator(const model& model,
                                                            const geometry::bbox3d& bbox)
-    : pimpl_(std::make_unique<impl>(model, tree_height, bbox)) {}
+    : pimpl_(std::make_unique<impl>(model, bbox)) {}
 
 template <int Order, int Dim>
 fmm_gradient_evaluator<Order, Dim>::~fmm_gradient_evaluator() = default;
