@@ -99,12 +99,8 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
       for (auto p_ref : leaf) {
         auto p = typename Leaf::proxy_type(p_ref);
         auto idx = std::get<0>(p.variables());
-        p.inputs().at(0).get() = weights(Dim * idx);
-        if (Dim > 1) {
-          p.inputs().at(1).get() = weights(Dim * idx + 1);
-        }
-        if (Dim > 2) {
-          p.inputs().at(2).get() = weights(Dim * idx + 2);
+        for (auto i = 0; i < Dim; i++) {
+          p.inputs(i) = weights(Dim * idx + i);
         }
       }
     });
@@ -114,39 +110,24 @@ class fmm_hessian_symmetric_evaluator<Order, Dim>::impl {
   common::valuesd potentials() const {
     common::valuesd potentials(Dim * n_points_);
 
-    auto h = model_.rbf().evaluate_hessian(geometry::vector3d::Zero());
+    geometry::vectorXd w(Dim);
+    geometry::matrixXd h =
+        model_.rbf().evaluate_hessian(geometry::vector3d::Zero()).topLeftCorner<Dim, Dim>();
 
-    scalfmm::component::for_each_leaf(
-        std::cbegin(*tree_), std::cend(*tree_), [&](const auto& leaf) {
-          for (auto p_ref : leaf) {
-            auto p = typename Leaf::const_proxy_type(p_ref);
-            auto idx = std::get<0>(p.variables());
-            potentials(Dim * idx) = p.outputs().at(0);
-            if (Dim > 1) {
-              potentials(Dim * idx + 1) = p.outputs().at(1);
-            }
-            if (Dim > 2) {
-              potentials(Dim * idx + 2) = p.outputs().at(2);
-            }
-            switch (Dim) {
-              case 1: {
-                auto w = p.inputs().at(0);
-                potentials(idx) += w * h(0, 0);
-                break;
-              }
-              case 2: {
-                geometry::vector2d w{p.inputs().at(0), p.inputs().at(1)};
-                potentials.segment<2>(Dim * idx) += (w * h.topLeftCorner<2, 2>()).transpose();
-                break;
-              }
-              case 3: {
-                geometry::vector3d w{p.inputs().at(0), p.inputs().at(1), p.inputs().at(2)};
-                potentials.segment<3>(Dim * idx) += (w * h).transpose();
-                break;
-              }
-            }
-          }
-        });
+    scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
+                                      [&](const auto& leaf) {
+                                        for (auto p_ref : leaf) {
+                                          auto p = typename Leaf::const_proxy_type(p_ref);
+                                          auto idx = std::get<0>(p.variables());
+                                          for (auto i = 0; i < Dim; i++) {
+                                            potentials(Dim * idx + i) = p.outputs(i);
+                                          }
+                                          for (auto i = 0; i < Dim; i++) {
+                                            w(i) = p.inputs(i);
+                                          }
+                                          potentials.segment<Dim>(Dim * idx) += (w * h).transpose();
+                                        }
+                                      });
 
     return potentials;
   }

@@ -99,7 +99,7 @@ class fmm_symmetric_evaluator<Order>::impl {
       for (auto p_ref : leaf) {
         auto p = typename Leaf::proxy_type(p_ref);
         auto idx = std::get<0>(p.variables());
-        p.inputs().at(0).get() = weights(idx);
+        p.inputs(0) = weights(idx);
       }
     });
   }
@@ -110,14 +110,14 @@ class fmm_symmetric_evaluator<Order>::impl {
 
     auto a = model_.rbf().evaluate(geometry::vector3d::Zero());
 
-    scalfmm::component::for_each_leaf(
-        std::cbegin(*tree_), std::cend(*tree_), [&](const auto& leaf) {
-          for (auto p_ref : leaf) {
-            auto p = typename Leaf::const_proxy_type(p_ref);
-            auto idx = std::get<0>(p.variables());
-            potentials(idx) = p.outputs().at(0) + a * p.inputs().at(0);
-          }
-        });
+    scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
+                                      [&](const auto& leaf) {
+                                        for (auto p_ref : leaf) {
+                                          auto p = typename Leaf::const_proxy_type(p_ref);
+                                          auto idx = std::get<0>(p.variables());
+                                          potentials(idx) = p.outputs(0) + p.inputs(0) * a;
+                                        }
+                                      });
 
     return potentials;
   }

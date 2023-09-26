@@ -11,6 +11,8 @@ using point2d = vector2d;
 
 using vector3d = Eigen::RowVector3d;
 
+using vectorXd = Eigen::RowVectorXd;
+
 using point3d = vector3d;
 
 using vectors3d = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
@@ -18,6 +20,8 @@ using vectors3d = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
 using points3d = vectors3d;
 
 using matrix3d = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
+
+using matrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 using linear_transformation3d = matrix3d;
 

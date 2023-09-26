@@ -125,7 +125,7 @@ class fmm_gradient_transpose_evaluator<Order, Dim>::impl {
                                         for (auto p_ref : leaf) {
                                           auto p = typename SourceLeaf::proxy_type(p_ref);
                                           auto idx = std::get<0>(p.variables());
-                                          p.inputs().at(0).get() = weights(idx);
+                                          p.inputs(0) = weights(idx);
                                         }
                                       });
 
@@ -144,12 +144,8 @@ class fmm_gradient_transpose_evaluator<Order, Dim>::impl {
                                         for (auto p_ref : leaf) {
                                           auto p = typename TargetLeaf::const_proxy_type(p_ref);
                                           auto idx = std::get<0>(p.variables());
-                                          potentials(Dim * idx) = p.outputs().at(0);
-                                          if (Dim > 1) {
-                                            potentials(Dim * idx + 1) = p.outputs().at(1);
-                                          }
-                                          if (Dim > 2) {
-                                            potentials(Dim * idx + 2) = p.outputs().at(2);
+                                          for (int i = 0; i < Dim; i++) {
+                                            potentials(Dim * idx + i) = p.outputs(i);
                                           }
                                         }
                                       });

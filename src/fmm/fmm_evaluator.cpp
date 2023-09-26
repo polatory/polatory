@@ -125,7 +125,7 @@ class fmm_evaluator<Order>::impl {
                                         for (auto p_ref : leaf) {
                                           auto p = typename SourceLeaf::proxy_type(p_ref);
                                           auto idx = std::get<0>(p.variables());
-                                          p.inputs().at(0).get() = weights(idx);
+                                          p.inputs(0) = weights(idx);
                                         }
                                       });
 
@@ -144,7 +144,7 @@ class fmm_evaluator<Order>::impl {
                                         for (auto p_ref : leaf) {
                                           auto p = typename TargetLeaf::const_proxy_type(p_ref);
                                           auto idx = std::get<0>(p.variables());
-                                          potentials(idx) = p.outputs().at(0);
+                                          potentials(idx) = p.outputs(0);
                                         }
                                       });
 
