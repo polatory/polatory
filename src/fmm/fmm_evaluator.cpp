@@ -15,6 +15,7 @@
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
 #include "utility.hpp"
@@ -40,7 +41,7 @@ class fmm_generic_evaluator<Order, Kernel>::impl {
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
+      scalfmm::interpolation::interpolator<double, 3, Kernel, typename Kernel::interpolator_type>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename SourceParticle::position_type;
@@ -55,7 +56,9 @@ class fmm_generic_evaluator<Order, Kernel>::impl {
   impl(const model& model, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order + 2),
+        order_(std::is_same_v<typename Kernel::interpolator_type, scalfmm::options::uniform_<>>
+                   ? Order + 2
+                   : Order),
         box_(make_box<Box>(model, bbox)),
         near_field_(kernel_, false) {}
 
