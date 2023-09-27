@@ -19,6 +19,7 @@
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
+#include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/types.hpp>
 
@@ -39,6 +40,7 @@ using polatory::rbf::cov_spheroidal3;
 using polatory::rbf::cov_spheroidal5;
 using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
+using polatory::rbf::multiquadric1;
 using polatory::rbf::rbf_base;
 
 double estimate_accuracy(const rbf_base& rbf) {
@@ -66,9 +68,9 @@ double estimate_accuracy(const rbf_base& rbf) {
     }
   }
 
-  rbf_direct_evaluator direct_eval(model, points);
+  rbf_direct_evaluator direct_eval(model, points, points3d(0, 3));
   direct_eval.set_weights(weights);
-  direct_eval.set_field_points(eval_points);
+  direct_eval.set_field_points(eval_points, points3d(0, 3));
 
   rbf_evaluator<> eval(model, points);
   eval.set_weights(weights);
@@ -87,6 +89,14 @@ int main() {
   try {
     std::cout << "biharmonic2d: " << estimate_accuracy(biharmonic2d({1.0})) << std::endl;
     std::cout << "biharmonic3d: " << estimate_accuracy(biharmonic3d({1.0})) << std::endl;
+    std::cout << "multiquadric1[scale=0.01]: " << estimate_accuracy(multiquadric1({1.0, 0.01}))
+              << std::endl;
+    std::cout << "multiquadric1[scale=0.1]: " << estimate_accuracy(multiquadric1({1.0, 0.1}))
+              << std::endl;
+    std::cout << "multiquadric1[scale=1.]: " << estimate_accuracy(multiquadric1({1.0, 1.0}))
+              << std::endl;
+    std::cout << "multiquadric1[scale=10.]: " << estimate_accuracy(multiquadric1({1.0, 10.0}))
+              << std::endl;
     std::cout << "cov_exponential[scale=0.01]: " << estimate_accuracy(cov_exponential({1.0, 0.01}))
               << std::endl;
     std::cout << "cov_exponential[scale=0.1]: " << estimate_accuracy(cov_exponential({1.0, 0.1}))
