@@ -1,6 +1,8 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <polatory/fmm/hessian_kernel.hpp>
+#include <polatory/fmm/kernel.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -13,23 +15,24 @@
 #include <tuple>
 #include <vector>
 
-#include "kernel.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
 
-template <int Order>
-class fmm_symmetric_evaluator<Order>::impl {
+template <int Order, class Kernel>
+class fmm_generic_symmetric_evaluator<Order, Kernel>::impl {
+  static constexpr int km{Kernel::km};
+  static constexpr int kn{Kernel::kn};
+
   using Particle = scalfmm::container::particle<
       /* position */ double, 3,
-      /* inputs */ double, 1,
-      /* outputs */ double, 1,
+      /* inputs */ double, km,
+      /* outputs */ double, kn,
       /* variables */ index_t>;
 
-  using Kernel = kernel;
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::chebyshev_<>>;
+      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename Particle::position_type;
@@ -42,7 +45,7 @@ class fmm_symmetric_evaluator<Order>::impl {
   impl(const model& model, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order),
+        order_(Order + 2),
         box_(make_box<Box>(model, bbox)),
         near_field_(kernel_) {}
 
@@ -55,6 +58,7 @@ class fmm_symmetric_evaluator<Order>::impl {
       tree_->reset_outputs();
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
           *tree_, *fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
+      handle_self_interaction();
     }
 
     return potentials();
@@ -77,12 +81,14 @@ class fmm_symmetric_evaluator<Order>::impl {
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
-    POLATORY_ASSERT(weights.rows() == n_points_);
+    POLATORY_ASSERT(weights.rows() == km * n_points_);
 
     if (!tree_) {
       for (index_t idx = 0; idx < n_points_; idx++) {
         auto& p = particles_.at(idx);
-        p.inputs(0) = weights(idx);
+        for (auto i = 0; i < km; i++) {
+          p.inputs(i) = weights(km * idx + i);
+        }
       }
     } else {
       scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
@@ -90,7 +96,9 @@ class fmm_symmetric_evaluator<Order>::impl {
                                           for (auto p_ref : leaf) {
                                             auto p = typename Leaf::proxy_type(p_ref);
                                             auto idx = std::get<0>(p.variables());
-                                            p.inputs(0) = weights(idx);
+                                            for (auto i = 0; i < km; i++) {
+                                              p.inputs(i) = weights(km * idx + i);
+                                            }
                                           }
                                         });
     }
@@ -98,16 +106,17 @@ class fmm_symmetric_evaluator<Order>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials = common::valuesd::Zero(n_points_);
+    common::valuesd potentials = common::valuesd::Zero(kn * n_points_);
 
     if (tree_) {
-      auto a = model_.rbf().evaluate(geometry::vector3d::Zero());
       scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
                                         [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
                                             auto p = typename Leaf::const_proxy_type(p_ref);
                                             auto idx = std::get<0>(p.variables());
-                                            potentials(idx) = p.outputs(0) + p.inputs(0) * a;
+                                            for (auto i = 0; i < kn; i++) {
+                                              potentials(kn * idx + i) = p.outputs(i);
+                                            }
                                           }
                                         });
     }
@@ -142,23 +151,42 @@ class fmm_symmetric_evaluator<Order>::impl {
     } else if (tree_height_changed) {
       std::vector<Particle> particles(n_points_);
 
-      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](auto& leaf) {
-        for (auto p_ref : leaf) {
-          auto p = typename Leaf::proxy_type(p_ref);
-          auto idx = std::get<0>(p.variables());
-          auto& new_p = particles.at(idx);
-          for (auto i = 0; i < 3; i++) {
-            new_p.position(i) = p.position(i);
-          }
-          new_p.inputs(0) = p.inputs(0);
-          new_p.variables(idx);
-        }
-      });
+      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
+                                        [&](const auto& leaf) {
+                                          for (auto p_ref : leaf) {
+                                            auto p = typename Leaf::proxy_type(p_ref);
+                                            auto idx = std::get<0>(p.variables());
+                                            auto& new_p = particles.at(idx);
+                                            for (auto i = 0; i < 3; i++) {
+                                              new_p.position(i) = p.position(i);
+                                            }
+                                            for (auto i = 0; i < km; i++) {
+                                              new_p.inputs(i) = p.inputs(i);
+                                            }
+                                            new_p.variables(idx);
+                                          }
+                                        });
 
       tree_ = std::make_unique<Tree>(tree_height, order_, box_, 10, 10, particles);
     }
 
     return true;
+  }
+
+  void handle_self_interaction() const {
+    scalfmm::container::point<double, 3> x{};
+    auto k = kernel_.evaluate(x, x);
+
+    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
+      for (auto p_ref : leaf) {
+        auto p = typename Leaf::proxy_type(p_ref);
+        for (auto i = 0; i < kn; i++) {
+          for (auto j = 0; j < km; j++) {
+            p.outputs(i) += p.inputs(j) * k.at(km * i + j);
+          }
+        }
+      }
+    });
   }
 
   const model& model_;
@@ -176,30 +204,39 @@ class fmm_symmetric_evaluator<Order>::impl {
   mutable std::unique_ptr<Tree> tree_;
 };
 
-template <int Order>
-fmm_symmetric_evaluator<Order>::fmm_symmetric_evaluator(const model& model,
-                                                        const geometry::bbox3d& bbox)
+template <int Order, class Kernel>
+fmm_generic_symmetric_evaluator<Order, Kernel>::fmm_generic_symmetric_evaluator(
+    const model& model, const geometry::bbox3d& bbox)
     : pimpl_(std::make_unique<impl>(model, bbox)) {}
 
-template <int Order>
-fmm_symmetric_evaluator<Order>::~fmm_symmetric_evaluator() = default;
+template <int Order, class Kernel>
+fmm_generic_symmetric_evaluator<Order, Kernel>::~fmm_generic_symmetric_evaluator() = default;
 
-template <int Order>
-common::valuesd fmm_symmetric_evaluator<Order>::evaluate() const {
+template <int Order, class Kernel>
+common::valuesd fmm_generic_symmetric_evaluator<Order, Kernel>::evaluate() const {
   return pimpl_->evaluate();
 }
 
-template <int Order>
-void fmm_symmetric_evaluator<Order>::set_points(const geometry::points3d& points) {
+template <int Order, class Kernel>
+void fmm_generic_symmetric_evaluator<Order, Kernel>::set_points(const geometry::points3d& points) {
   pimpl_->set_points(points);
 }
 
-template <int Order>
-void fmm_symmetric_evaluator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
+template <int Order, class Kernel>
+void fmm_generic_symmetric_evaluator<Order, Kernel>::set_weights(
+    const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_weights(weights);
 }
 
-template class fmm_symmetric_evaluator<6>;
-template class fmm_symmetric_evaluator<10>;
+#define INSTANTIATE(KERNEL)                                      \
+  template class fmm_generic_symmetric_evaluator<6, KERNEL<1>>;  \
+  template class fmm_generic_symmetric_evaluator<10, KERNEL<1>>; \
+  template class fmm_generic_symmetric_evaluator<6, KERNEL<2>>;  \
+  template class fmm_generic_symmetric_evaluator<10, KERNEL<2>>; \
+  template class fmm_generic_symmetric_evaluator<6, KERNEL<3>>;  \
+  template class fmm_generic_symmetric_evaluator<10, KERNEL<3>>;
+
+INSTANTIATE(kernel)
+INSTANTIATE(hessian_kernel)
 
 }  // namespace polatory::fmm

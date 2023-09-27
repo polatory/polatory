@@ -46,8 +46,8 @@ struct hessian_kernel {
     geometry::matrix3d h = aniso.transpose() * rbf_->evaluate_hessian_isotropic(xx - yy) * aniso;
 
     matrix_type<double> result;
-    for (index_t i = 0; i < Dim; i++) {
-      for (index_t j = 0; j < Dim; j++) {
+    for (auto i = 0; i < Dim; i++) {
+      for (auto j = 0; j < Dim; j++) {
         result.at(Dim * i + j) = h(i, j);
       }
     }
@@ -69,7 +69,7 @@ struct hessian_kernel {
 
     auto aniso = rbf_->anisotropy();
 
-    for (size_t i = 0; i < n; i++) {
+    for (std::size_t i = 0; i < n; i++) {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
       geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
       geometry::matrix3d h = aniso.transpose() * rbf_->evaluate_hessian_isotropic(xx - yy) * aniso;

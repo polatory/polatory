@@ -4,9 +4,6 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
-#include <polatory/fmm/fmm_gradient_evaluator.hpp>
-#include <polatory/fmm/fmm_gradient_transpose_evaluator.hpp>
-#include <polatory/fmm/fmm_hessian_evaluator.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -36,53 +33,30 @@ class rbf_evaluator {
 
   rbf_evaluator(const model& model, const geometry::points3d& source_points,
                 const geometry::points3d& source_grad_points, const geometry::bbox3d& bbox)
-      : dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, bbox);
-
-    switch (dim_) {
-      case 1:
-        f1_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(model, bbox);
-        ft1_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 1>>(model, bbox);
-        h1_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 1>>(model, bbox);
-        break;
-      case 2:
-        f2_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(model, bbox);
-        ft2_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 2>>(model, bbox);
-        h2_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 2>>(model, bbox);
-        break;
-      case 3:
-        f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(model, bbox);
-        ft3_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 3>>(model, bbox);
-        h3_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 3>>(model, bbox);
-        break;
-    }
-
-    if (l_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
-    }
-
+      : rbf_evaluator(model, bbox) {
     set_source_points(source_points, source_grad_points);
   }
 
   rbf_evaluator(const model& model, const geometry::bbox3d& bbox)
       : dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    a_ = std::make_unique<fmm::fmm_evaluator<Order>>(model, bbox);
-
     switch (dim_) {
       case 1:
-        f1_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(model, bbox);
-        ft1_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 1>>(model, bbox);
-        h1_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 1>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Order, 1>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 1>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 1>>(model, bbox);
         break;
       case 2:
-        f2_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(model, bbox);
-        ft2_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 2>>(model, bbox);
-        h2_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 2>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Order, 2>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 2>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 2>>(model, bbox);
         break;
       case 3:
-        f3_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(model, bbox);
-        ft3_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 3>>(model, bbox);
-        h3_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 3>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Order, 3>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 3>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 3>>(model, bbox);
         break;
     }
 
@@ -95,24 +69,9 @@ class rbf_evaluator {
     common::valuesd y = common::valuesd::Zero(fld_mu_ + dim_ * fld_sigma_);
 
     y.head(fld_mu_) += a_->evaluate();
-
-    switch (dim_) {
-      case 1:
-        y.head(fld_mu_) += f1_->evaluate();
-        y.tail(dim_ * fld_sigma_) += ft1_->evaluate();
-        y.tail(dim_ * fld_sigma_) += h1_->evaluate();
-        break;
-      case 2:
-        y.head(fld_mu_) += f2_->evaluate();
-        y.tail(dim_ * fld_sigma_) += ft2_->evaluate();
-        y.tail(dim_ * fld_sigma_) += h2_->evaluate();
-        break;
-      case 3:
-        y.head(fld_mu_) += f3_->evaluate();
-        y.tail(dim_ * fld_sigma_) += ft3_->evaluate();
-        y.tail(dim_ * fld_sigma_) += h3_->evaluate();
-        break;
-    }
+    y.head(fld_mu_) += f_->evaluate();
+    y.tail(dim_ * fld_sigma_) += ft_->evaluate();
+    y.tail(dim_ * fld_sigma_) += h_->evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -142,24 +101,9 @@ class rbf_evaluator {
     fld_sigma_ = grad_points.rows();
 
     a_->set_field_points(points);
-
-    switch (dim_) {
-      case 1:
-        f1_->set_field_points(points);
-        ft1_->set_field_points(grad_points);
-        h1_->set_field_points(grad_points);
-        break;
-      case 2:
-        f2_->set_field_points(points);
-        ft2_->set_field_points(grad_points);
-        h2_->set_field_points(grad_points);
-        break;
-      case 3:
-        f3_->set_field_points(points);
-        ft3_->set_field_points(grad_points);
-        h3_->set_field_points(grad_points);
-        break;
-    }
+    f_->set_field_points(points);
+    ft_->set_field_points(grad_points);
+    h_->set_field_points(grad_points);
 
     if (l_ > 0) {
       p_->set_field_points(points, grad_points);
@@ -171,24 +115,9 @@ class rbf_evaluator {
     sigma_ = grad_points.rows();
 
     a_->set_source_points(points);
-
-    switch (dim_) {
-      case 1:
-        f1_->set_source_points(grad_points);
-        ft1_->set_source_points(points);
-        h1_->set_source_points(grad_points);
-        break;
-      case 2:
-        f2_->set_source_points(grad_points);
-        ft2_->set_source_points(points);
-        h2_->set_source_points(grad_points);
-        break;
-      case 3:
-        f3_->set_source_points(grad_points);
-        ft3_->set_source_points(points);
-        h3_->set_source_points(grad_points);
-        break;
-    }
+    f_->set_source_points(grad_points);
+    ft_->set_source_points(points);
+    h_->set_source_points(grad_points);
   }
 
   template <class Derived>
@@ -196,24 +125,9 @@ class rbf_evaluator {
     POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
 
     a_->set_weights(weights.head(mu_));
-
-    switch (dim_) {
-      case 1:
-        f1_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        ft1_->set_weights(weights.head(mu_));
-        h1_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        break;
-      case 2:
-        f2_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        ft2_->set_weights(weights.head(mu_));
-        h2_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        break;
-      case 3:
-        f3_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        ft3_->set_weights(weights.head(mu_));
-        h3_->set_weights(weights.segment(mu_, dim_ * sigma_));
-        break;
-    }
+    f_->set_weights(weights.segment(mu_, dim_ * sigma_));
+    ft_->set_weights(weights.head(mu_));
+    h_->set_weights(weights.segment(mu_, dim_ * sigma_));
 
     if (l_ > 0) {
       p_->set_weights(weights.tail(l_));
@@ -227,16 +141,10 @@ class rbf_evaluator {
   index_t sigma_{};
   index_t fld_mu_{};
   index_t fld_sigma_{};
-  std::unique_ptr<fmm::fmm_evaluator<Order>> a_;
-  std::unique_ptr<fmm::fmm_gradient_evaluator<Order, 1>> f1_;
-  std::unique_ptr<fmm::fmm_gradient_evaluator<Order, 2>> f2_;
-  std::unique_ptr<fmm::fmm_gradient_evaluator<Order, 3>> f3_;
-  std::unique_ptr<fmm::fmm_gradient_transpose_evaluator<Order, 1>> ft1_;
-  std::unique_ptr<fmm::fmm_gradient_transpose_evaluator<Order, 2>> ft2_;
-  std::unique_ptr<fmm::fmm_gradient_transpose_evaluator<Order, 3>> ft3_;
-  std::unique_ptr<fmm::fmm_hessian_evaluator<Order, 1>> h1_;
-  std::unique_ptr<fmm::fmm_hessian_evaluator<Order, 2>> h2_;
-  std::unique_ptr<fmm::fmm_hessian_evaluator<Order, 3>> h3_;
+  std::unique_ptr<fmm::fmm_base_evaluator> a_;
+  std::unique_ptr<fmm::fmm_base_evaluator> f_;
+  std::unique_ptr<fmm::fmm_base_evaluator> ft_;
+  std::unique_ptr<fmm::fmm_base_evaluator> h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 

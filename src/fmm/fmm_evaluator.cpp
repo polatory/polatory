@@ -1,6 +1,10 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
+#include <polatory/fmm/gradient_kernel.hpp>
+#include <polatory/fmm/gradient_transpose_kernel.hpp>
+#include <polatory/fmm/hessian_kernel.hpp>
+#include <polatory/fmm/kernel.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -13,29 +17,30 @@
 #include <tuple>
 #include <vector>
 
-#include "kernel.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
 
-template <int Order>
-class fmm_evaluator<Order>::impl {
+template <int Order, class Kernel>
+class fmm_generic_evaluator<Order, Kernel>::impl {
+  static constexpr int km{Kernel::km};
+  static constexpr int kn{Kernel::kn};
+
   using SourceParticle = scalfmm::container::particle<
       /* position */ double, 3,
-      /* inputs */ double, 1,
-      /* outputs */ double, 1,  // should be 0
+      /* inputs */ double, km,
+      /* outputs */ double, kn,  // should be 0
       /* variables */ index_t>;
 
   using TargetParticle = scalfmm::container::particle<
       /* position */ double, 3,
-      /* inputs */ double, 1,  // should be 0
-      /* outputs */ double, 1,
+      /* inputs */ double, km,  // should be 0
+      /* outputs */ double, kn,
       /* variables */ index_t>;
 
-  using Kernel = kernel;
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::chebyshev_<>>;
+      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename SourceParticle::position_type;
@@ -50,7 +55,7 @@ class fmm_evaluator<Order>::impl {
   impl(const model& model, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order),
+        order_(Order + 2),
         box_(make_box<Box>(model, bbox)),
         near_field_(kernel_, false) {}
 
@@ -109,12 +114,14 @@ class fmm_evaluator<Order>::impl {
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
     using namespace scalfmm::algorithms;
 
-    POLATORY_ASSERT(weights.rows() == n_src_points_);
+    POLATORY_ASSERT(weights.rows() == km * n_src_points_);
 
     if (!src_tree_) {
       for (index_t idx = 0; idx < n_src_points_; idx++) {
         auto& p = src_particles_.at(idx);
-        p.inputs(0) = weights(idx);
+        for (auto i = 0; i < km; i++) {
+          p.inputs(i) = weights(km * idx + i);
+        }
       }
     } else {
       scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
@@ -122,7 +129,9 @@ class fmm_evaluator<Order>::impl {
                                           for (auto p_ref : leaf) {
                                             auto p = typename SourceLeaf::proxy_type(p_ref);
                                             auto idx = std::get<0>(p.variables());
-                                            p.inputs(0) = weights(idx);
+                                            for (auto i = 0; i < km; i++) {
+                                              p.inputs(i) = weights(km * idx + i);
+                                            }
                                           }
                                         });
       multipole_dirty_ = true;
@@ -131,7 +140,7 @@ class fmm_evaluator<Order>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials = common::valuesd::Zero(n_fld_points_);
+    common::valuesd potentials = common::valuesd::Zero(kn * n_fld_points_);
 
     if (trg_tree_) {
       scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
@@ -139,7 +148,9 @@ class fmm_evaluator<Order>::impl {
                                           for (auto p_ref : leaf) {
                                             auto p = typename TargetLeaf::const_proxy_type(p_ref);
                                             auto idx = std::get<0>(p.variables());
-                                            potentials(idx) = p.outputs(0);
+                                            for (auto i = 0; i < kn; i++) {
+                                              potentials(kn * idx + i) = p.outputs(i);
+                                            }
                                           }
                                         });
     }
@@ -177,7 +188,7 @@ class fmm_evaluator<Order>::impl {
       std::vector<SourceParticle> particles(n_src_points_);
 
       scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
-                                        [&](auto& leaf) {
+                                        [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
                                             auto p = typename SourceLeaf::proxy_type(p_ref);
                                             auto idx = std::get<0>(p.variables());
@@ -185,7 +196,9 @@ class fmm_evaluator<Order>::impl {
                                             for (auto i = 0; i < 3; i++) {
                                               new_p.position(i) = p.position(i);
                                             }
-                                            new_p.inputs(0) = p.inputs(0);
+                                            for (auto i = 0; i < km; i++) {
+                                              new_p.inputs(i) = p.inputs(i);
+                                            }
                                             new_p.variables(idx);
                                           }
                                         });
@@ -202,7 +215,7 @@ class fmm_evaluator<Order>::impl {
       std::vector<TargetParticle> particles(n_fld_points_);
 
       scalfmm::component::for_each_leaf(std::begin(*trg_tree_), std::end(*trg_tree_),
-                                        [&](auto& leaf) {
+                                        [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
                                             auto p = typename TargetLeaf::proxy_type(p_ref);
                                             auto idx = std::get<0>(p.variables());
@@ -239,34 +252,46 @@ class fmm_evaluator<Order>::impl {
   mutable std::unique_ptr<TargetTree> trg_tree_;
 };
 
-template <int Order>
-fmm_evaluator<Order>::fmm_evaluator(const model& model, const geometry::bbox3d& bbox)
+template <int Order, class Kernel>
+fmm_generic_evaluator<Order, Kernel>::fmm_generic_evaluator(const model& model,
+                                                            const geometry::bbox3d& bbox)
     : pimpl_(std::make_unique<impl>(model, bbox)) {}
 
-template <int Order>
-fmm_evaluator<Order>::~fmm_evaluator() = default;
+template <int Order, class Kernel>
+fmm_generic_evaluator<Order, Kernel>::~fmm_generic_evaluator() = default;
 
-template <int Order>
-common::valuesd fmm_evaluator<Order>::evaluate() const {
+template <int Order, class Kernel>
+common::valuesd fmm_generic_evaluator<Order, Kernel>::evaluate() const {
   return pimpl_->evaluate();
 }
 
-template <int Order>
-void fmm_evaluator<Order>::set_field_points(const geometry::points3d& points) {
+template <int Order, class Kernel>
+void fmm_generic_evaluator<Order, Kernel>::set_field_points(const geometry::points3d& points) {
   pimpl_->set_field_points(points);
 }
 
-template <int Order>
-void fmm_evaluator<Order>::set_source_points(const geometry::points3d& points) {
+template <int Order, class Kernel>
+void fmm_generic_evaluator<Order, Kernel>::set_source_points(const geometry::points3d& points) {
   pimpl_->set_source_points(points);
 }
 
-template <int Order>
-void fmm_evaluator<Order>::set_weights(const Eigen::Ref<const common::valuesd>& weights) {
+template <int Order, class Kernel>
+void fmm_generic_evaluator<Order, Kernel>::set_weights(
+    const Eigen::Ref<const common::valuesd>& weights) {
   pimpl_->set_weights(weights);
 }
 
-template class fmm_evaluator<6>;
-template class fmm_evaluator<10>;
+#define INSTANTIATE(KERNEL)                            \
+  template class fmm_generic_evaluator<6, KERNEL<1>>;  \
+  template class fmm_generic_evaluator<10, KERNEL<1>>; \
+  template class fmm_generic_evaluator<6, KERNEL<2>>;  \
+  template class fmm_generic_evaluator<10, KERNEL<2>>; \
+  template class fmm_generic_evaluator<6, KERNEL<3>>;  \
+  template class fmm_generic_evaluator<10, KERNEL<3>>;
+
+INSTANTIATE(kernel)
+INSTANTIATE(gradient_kernel)
+INSTANTIATE(gradient_transpose_kernel)
+INSTANTIATE(hessian_kernel)
 
 }  // namespace polatory::fmm
