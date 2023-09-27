@@ -9,9 +9,11 @@
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
+#include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
+#include "utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -23,6 +25,7 @@ using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
 using polatory::point_cloud::random_points;
 using polatory::rbf::multiquadric1;
+using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
@@ -34,8 +37,8 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   index_t n_eval_points = n_initial_eval_points;
   index_t n_eval_grad_points = n_initial_eval_grad_points;
 
-  auto absolute_tolerance = 5e-6;
-  auto grad_absolute_tolerance = 5e-5;
+  auto rel_tolerance = 1e-8;
+  auto grad_rel_tolerance = 1e-7;
 
   multiquadric1 rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
@@ -68,13 +71,15 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
     EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, values.rows());
 
-    auto max_residual = (values - direct_values).head(n_eval_points).lpNorm<Eigen::Infinity>();
-    EXPECT_LT(max_residual, absolute_tolerance);
+    if (n_eval_points > 0) {
+      EXPECT_LT(relative_error(values.head(n_eval_points), direct_values.head(n_eval_points)),
+                rel_tolerance);
+    }
 
     if (n_eval_grad_points > 0) {
-      auto grad_max_residual =
-          (values - direct_values).tail(dim * n_eval_grad_points).lpNorm<Eigen::Infinity>();
-      EXPECT_LT(grad_max_residual, grad_absolute_tolerance);
+      EXPECT_LT(relative_error(values.tail(dim * n_eval_grad_points),
+                               direct_values.tail(dim * n_eval_grad_points)),
+                grad_rel_tolerance);
     }
 
     n_points *= 2;
@@ -87,10 +92,9 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
 }  // namespace
 
 TEST(rbf_evaluator, trivial) {
-  test_poly_degree(0, 1024, 0, 1024, 0);
-  test_poly_degree(0, 0, 256, 0, 256);
+  test_poly_degree(1, 1024, 0, 1024, 0);
+  test_poly_degree(1, 0, 256, 0, 256);
 
-  test_poly_degree(0, 1024, 256, 1024, 256);
   test_poly_degree(1, 1024, 256, 1024, 256);
   test_poly_degree(2, 1024, 256, 1024, 256);
 }

@@ -9,6 +9,7 @@
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
+#include "utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -21,12 +22,9 @@ using polatory::rbf::multiquadric1;
 
 namespace {
 
-void test_poly_degree(int poly_degree) {
+void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
+                      index_t n_eval_points, index_t n_eval_grad_points) {
   const int dim = 3;
-  const index_t n_points = 32768;
-  const index_t n_grad_points = 4096;
-  const index_t n_eval_points = 1024;
-  const index_t n_eval_grad_points = 1024;
 
   auto absolute_tolerance = 2e-6;
 
@@ -68,7 +66,7 @@ void test_poly_degree(int poly_degree) {
 }  // namespace
 
 TEST(rbf_symmetric_evaluator, trivial) {
-  test_poly_degree(0);
-  test_poly_degree(1);
-  test_poly_degree(2);
+  test_poly_degree(0, 32768, 4096, 1024, 1024);
+  test_poly_degree(1, 32768, 4096, 1024, 1024);
+  test_poly_degree(2, 32768, 4096, 1024, 1024);
 }

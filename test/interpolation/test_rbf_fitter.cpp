@@ -9,10 +9,11 @@
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
+#include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
-#include "sample_data.hpp"
+#include "utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -24,16 +25,17 @@ using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::random_points;
 using polatory::rbf::multiquadric1;
+using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
 void test_poly_degree(int poly_degree) {
   const int dim = 3;
-  const index_t n_surface_points = 550;
-  index_t n_grad_points = 1;
+  const index_t n_surface_points = 10000;
+  index_t n_grad_points = 100;
 
   auto absolute_tolerance = 1e-4;
-  auto grad_absolute_tolerance = 1e-2;
+  auto grad_absolute_tolerance = 1e-3;
   auto max_iter = 32;
 
   auto [points, values] = sample_sdf_data(n_surface_points);
@@ -46,8 +48,8 @@ void test_poly_degree(int poly_degree) {
   valuesd rhs = valuesd(n_points + dim * n_grad_points);
   rhs << values, -grad_points.reshaped<Eigen::RowMajor>();
 
-  multiquadric1 rbf({1.0, 0.001});
-  // rbf.set_anisotropy(random_anisotropy());
+  multiquadric1 rbf({1.0, 1e-3});
+  rbf.set_anisotropy(random_anisotropy());
 
   model model(rbf, dim, poly_degree);
   // model.set_nugget(0.01);

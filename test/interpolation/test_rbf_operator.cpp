@@ -12,6 +12,7 @@
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
+#include "utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -31,9 +32,8 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   index_t n_points = n_initial_points;
   index_t n_grad_points = n_initial_grad_points;
 
-  auto absolute_tolerance = 5e-6;
-  auto grad_absolute_tolerance = 5e-5;
-  auto poly_absolute_tolerance = 1e-10;
+  auto rel_tolerance = 1e-7;
+  auto grad_rel_tolerance = 1e-7;
 
   multiquadric1 rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
@@ -59,19 +59,19 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), direct_op_weights.rows());
     EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), op_weights.rows());
 
-    auto max_residual = (op_weights - direct_op_weights).head(n_points).lpNorm<Eigen::Infinity>();
-    EXPECT_LT(max_residual, absolute_tolerance);
-
-    if (n_grad_points > 0) {
-      auto grad_max_residual = (op_weights - direct_op_weights)
-                                   .segment(n_points, dim * n_grad_points)
-                                   .lpNorm<Eigen::Infinity>();
-      EXPECT_LT(grad_max_residual, grad_absolute_tolerance);
+    if (n_points > 0) {
+      EXPECT_LT(relative_error(op_weights.head(n_points), direct_op_weights.head(n_points)),
+                rel_tolerance);
     }
 
-    auto poly_max_residual =
-        (op_weights - direct_op_weights).tail(model.poly_basis_size()).lpNorm<Eigen::Infinity>();
-    EXPECT_LT(poly_max_residual, poly_absolute_tolerance);
+    if (n_grad_points > 0) {
+      EXPECT_LT(relative_error(op_weights.segment(n_points, dim * n_grad_points),
+                               direct_op_weights.segment(n_points, dim * n_grad_points)),
+                grad_rel_tolerance);
+    }
+
+    EXPECT_EQ(direct_op_weights.tail(model.poly_basis_size()),
+              op_weights.tail(model.poly_basis_size()));
 
     n_points *= 2;
     n_grad_points *= 2;
@@ -81,10 +81,10 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
 }  // namespace
 
 TEST(rbf_operator, trivial) {
-  test_poly_degree(0, 512, 0);
-  test_poly_degree(0, 0, 128);
+  test_poly_degree(0, 1024, 0);
+  test_poly_degree(0, 0, 256);
 
-  test_poly_degree(0, 512, 128);
-  test_poly_degree(1, 512, 128);
-  test_poly_degree(2, 512, 128);
+  test_poly_degree(0, 1024, 256);
+  test_poly_degree(1, 1024, 256);
+  test_poly_degree(2, 1024, 256);
 }

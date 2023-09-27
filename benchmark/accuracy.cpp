@@ -21,6 +21,7 @@
 #include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <polatory/types.hpp>
 
 using polatory::index_t;
@@ -42,6 +43,7 @@ using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::rbf_base;
+using polatory::rbf::reference::triharmonic3d;
 
 double estimate_accuracy(const rbf_base& rbf) {
   auto n_points = 32768;
@@ -87,6 +89,7 @@ double estimate_accuracy(const rbf_base& rbf) {
 
 int main() {
   try {
+    std::cout << "triharmonic3d: " << estimate_accuracy(triharmonic3d({1.0})) << std::endl;
     std::cout << "biharmonic2d: " << estimate_accuracy(biharmonic2d({1.0})) << std::endl;
     std::cout << "biharmonic3d: " << estimate_accuracy(biharmonic3d({1.0})) << std::endl;
     std::cout << "multiquadric1[scale=0.01]: " << estimate_accuracy(multiquadric1({1.0, 0.01}))

@@ -7,7 +7,6 @@
 #include <polatory/rbf/rbf_base.hpp>
 #include <scalfmm/container/point.hpp>
 #include <scalfmm/matrix_kernels/mk_common.hpp>
-#include <scalfmm/options/options.hpp>
 #include <string>
 #include <type_traits>
 
@@ -24,8 +23,6 @@ struct kernel {
   using matrix_type = std::array<ValueType, kn * km>;
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
-
-  using interpolator_type = scalfmm::options::chebyshev_<>;
 
   explicit kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
 

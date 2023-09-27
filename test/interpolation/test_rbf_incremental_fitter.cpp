@@ -10,7 +10,7 @@
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
-#include "sample_data.hpp"
+#include "utility.hpp"
 
 using polatory::index_t;
 using polatory::model;

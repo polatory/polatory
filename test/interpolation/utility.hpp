@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
@@ -43,4 +44,12 @@ inline std::pair<polatory::geometry::points3d, polatory::common::valuesd> sample
   std::tie(points, values) = distance_filter(points, 1e-4)(points, values);
 
   return {std::move(points), std::move(values)};
+}
+
+template <class DerivedApprox, class DerivedExact>
+double relative_error(const Eigen::MatrixBase<DerivedApprox>& approx,
+                      const Eigen::MatrixBase<DerivedExact>& exact) {
+  auto error = (approx - exact).template lpNorm<Eigen::Infinity>();
+  auto scale = exact.template lpNorm<Eigen::Infinity>();
+  return error / scale;
 }

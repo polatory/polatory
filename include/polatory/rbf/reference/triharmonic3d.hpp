@@ -40,6 +40,10 @@ class triharmonic3d final : public rbf_base {
     auto slope = parameters().at(0);
     auto r = diff.norm();
 
+    if (r == 0.0) {
+      return matrix3d::Zero();
+    }
+
     auto coeff = 3.0 * slope * r;
     return coeff * (matrix3d::Identity() + diff.transpose() * diff / (r * r));
   }

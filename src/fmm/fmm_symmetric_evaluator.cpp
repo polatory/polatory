@@ -33,7 +33,7 @@ class fmm_generic_symmetric_evaluator<Order, Kernel>::impl {
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, typename Kernel::interpolator_type>;
+      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename Particle::position_type;
@@ -46,9 +46,7 @@ class fmm_generic_symmetric_evaluator<Order, Kernel>::impl {
   impl(const model& model, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(std::is_same_v<typename Kernel::interpolator_type, scalfmm::options::uniform_<>>
-                   ? Order + 2
-                   : Order),
+        order_(Order + 2),
         box_(make_box<Box>(model, bbox)),
         near_field_(kernel_) {}
 
@@ -108,6 +106,22 @@ class fmm_generic_symmetric_evaluator<Order, Kernel>::impl {
   }
 
  private:
+  void handle_self_interaction() const {
+    scalfmm::container::point<double, 3> x{};
+    auto k = kernel_.evaluate(x, x);
+
+    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
+      for (auto p_ref : leaf) {
+        auto p = typename Leaf::proxy_type(p_ref);
+        for (auto i = 0; i < kn; i++) {
+          for (auto j = 0; j < km; j++) {
+            p.outputs(i) += p.inputs(j) * k.at(km * i + j);
+          }
+        }
+      }
+    });
+  }
+
   common::valuesd potentials() const {
     common::valuesd potentials = common::valuesd::Zero(kn * n_points_);
 
@@ -132,64 +146,52 @@ class fmm_generic_symmetric_evaluator<Order, Kernel>::impl {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
-      tree_.reset(nullptr);
+      reset_tree();
+      tree_height_ = 0;
       return false;
     }
 
     auto tree_height = fmm_tree_height(n_points_);
-
-    auto tree_height_changed = tree_height_ != tree_height;
-    tree_height_ = tree_height;
-
-    if (!interpolator_ || tree_height_changed) {
+    if (tree_height_ != tree_height) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
       far_field_ = std::make_unique<FarField>(*interpolator_);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
+      reset_tree();
+      tree_height_ = tree_height;
     }
 
     if (!tree_) {
       tree_ = std::make_unique<Tree>(tree_height, order_, box_, 10, 10, particles_);
       particles_.clear();
       particles_.shrink_to_fit();
-    } else if (tree_height_changed) {
-      std::vector<Particle> particles(n_points_);
-
-      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
-                                        [&](const auto& leaf) {
-                                          for (auto p_ref : leaf) {
-                                            auto p = typename Leaf::proxy_type(p_ref);
-                                            auto idx = std::get<0>(p.variables());
-                                            auto& new_p = particles.at(idx);
-                                            for (auto i = 0; i < 3; i++) {
-                                              new_p.position(i) = p.position(i);
-                                            }
-                                            for (auto i = 0; i < km; i++) {
-                                              new_p.inputs(i) = p.inputs(i);
-                                            }
-                                            new_p.variables(idx);
-                                          }
-                                        });
-
-      tree_ = std::make_unique<Tree>(tree_height, order_, box_, 10, 10, particles);
     }
 
     return true;
   }
 
-  void handle_self_interaction() const {
-    scalfmm::container::point<double, 3> x{};
-    auto k = kernel_.evaluate(x, x);
+  void reset_tree() const {
+    if (!tree_) {
+      return;
+    }
+
+    particles_.resize(n_points_);
 
     scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
       for (auto p_ref : leaf) {
         auto p = typename Leaf::proxy_type(p_ref);
-        for (auto i = 0; i < kn; i++) {
-          for (auto j = 0; j < km; j++) {
-            p.outputs(i) += p.inputs(j) * k.at(km * i + j);
-          }
+        auto idx = std::get<0>(p.variables());
+        auto& new_p = particles_.at(idx);
+        for (auto i = 0; i < 3; i++) {
+          new_p.position(i) = p.position(i);
         }
+        for (auto i = 0; i < km; i++) {
+          new_p.inputs(i) = p.inputs(i);
+        }
+        new_p.variables(idx);
       }
     });
+
+    tree_.reset(nullptr);
   }
 
   const model& model_;
