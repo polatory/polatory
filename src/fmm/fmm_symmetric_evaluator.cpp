@@ -46,7 +46,7 @@ class fmm_generic_symmetric_evaluator<Order, Kernel>::impl {
   impl(const model& model, const geometry::bbox3d& bbox)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order + 2),
+        order_(Order),
         box_(make_box<Box>(model, bbox)),
         near_field_(kernel_) {}
 

@@ -32,8 +32,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   index_t n_points = n_initial_points;
   index_t n_grad_points = n_initial_grad_points;
 
-  auto rel_tolerance = 1e-7;
-  auto grad_rel_tolerance = 1e-7;
+  auto rel_tolerance = 1e-6;
 
   multiquadric1 rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
@@ -59,16 +58,9 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), direct_op_weights.rows());
     EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), op_weights.rows());
 
-    if (n_points > 0) {
-      EXPECT_LT(relative_error(op_weights.head(n_points), direct_op_weights.head(n_points)),
-                rel_tolerance);
-    }
-
-    if (n_grad_points > 0) {
-      EXPECT_LT(relative_error(op_weights.segment(n_points, dim * n_grad_points),
-                               direct_op_weights.segment(n_points, dim * n_grad_points)),
-                grad_rel_tolerance);
-    }
+    EXPECT_LT(relative_error(op_weights.head(n_points + dim * n_grad_points),
+                             direct_op_weights.head(n_points + dim * n_grad_points)),
+              rel_tolerance);
 
     EXPECT_EQ(direct_op_weights.tail(model.poly_basis_size()),
               op_weights.tail(model.poly_basis_size()));

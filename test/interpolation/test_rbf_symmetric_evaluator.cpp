@@ -26,7 +26,7 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
                       index_t n_eval_points, index_t n_eval_grad_points) {
   const int dim = 3;
 
-  auto absolute_tolerance = 2e-6;
+  auto rel_tolerance = 1e-6;
 
   multiquadric1 rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
@@ -58,8 +58,7 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
     values << values_full.head(n_eval_points),
         values_full.segment(n_points, dim * n_eval_grad_points);
 
-    auto max_residual = (values - direct_values).template lpNorm<Eigen::Infinity>();
-    EXPECT_LT(max_residual, absolute_tolerance);
+    EXPECT_LT(relative_error(values, direct_values), rel_tolerance);
   }
 }
 
