@@ -8,8 +8,8 @@
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
+#include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
@@ -24,8 +24,8 @@ using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::random_points;
-using polatory::rbf::multiquadric1;
 using polatory::rbf::reference::cov_gaussian;
+using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
@@ -49,7 +49,8 @@ void test_poly_degree(int poly_degree) {
   rhs << values, grad_points.reshaped<Eigen::RowMajor>();
 
   cov_gaussian rbf({1.0, 0.01});
-  rbf.set_anisotropy(random_anisotropy());
+  // rbf.set_anisotropy(random_anisotropy());
+  // std::cout << rbf.anisotropy() << std::endl;
 
   model model(rbf, dim, poly_degree);
   // model.set_nugget(0.01);
