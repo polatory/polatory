@@ -6,8 +6,9 @@ file(GLOB_RECURSE SOURCES
 add_library(${TARGET} STATIC ${SOURCES})
 
 if(UNIX)
+    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror)
     # target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror -fsanitize=address)
-    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra)
+    # target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror -fsanitize=undefined)
 elseif(MSVC)
     target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702)
 endif()
@@ -26,8 +27,7 @@ endif()
 target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
-target_include_directories(${TARGET} SYSTEM PRIVATE
-    ${PROJECT_SOURCE_DIR}/third_party/ScalFMM/include
+target_include_directories(${TARGET} SYSTEM PUBLIC
     ${CMAKE_BINARY_DIR}/scalfmm/install/include
 )
 
@@ -52,9 +52,10 @@ endif()
 include(ExternalProject)
 
 if(USE_MKL)
-    # target_compile_definitions(${TARGET} PUBLIC
-    #     -DEIGEN_USE_MKL_ALL
-    # )
+    target_compile_definitions(${TARGET} PUBLIC
+        # -DEIGEN_USE_MKL_ALL
+        -DEIGEN_USE_BLAS
+    )
 
     target_include_directories(${TARGET} PUBLIC
         ${VCPKG_DIR}/include/fftw
@@ -96,6 +97,7 @@ endif()
 
 add_dependencies(polatory scalfmm)
 
-# if(UNIX)
-#     target_link_libraries(${TARGET} PRIVATE -fsanitize=address)
-# endif()
+if(UNIX)
+    # target_link_libraries(${TARGET} PRIVATE -fsanitize=address)
+    # target_link_libraries(${TARGET} PRIVATE -fsanitize=undefined)
+endif()
