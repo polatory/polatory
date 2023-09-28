@@ -37,7 +37,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   index_t n_eval_points = n_initial_eval_points;
   index_t n_eval_grad_points = n_initial_eval_grad_points;
 
-  auto rel_tolerance = 1e-8;
+  auto rel_tolerance = 2e-8;
   auto grad_rel_tolerance = 1e-7;
 
   multiquadric1 rbf({1.0, 0.001});

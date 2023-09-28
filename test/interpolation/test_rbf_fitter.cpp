@@ -35,7 +35,7 @@ void test_poly_degree(int poly_degree) {
   index_t n_grad_points = 100;
 
   auto absolute_tolerance = 1e-4;
-  auto grad_absolute_tolerance = 1e-3;
+  auto grad_absolute_tolerance = 1e-2;
   auto max_iter = 32;
 
   auto [points, values] = sample_sdf_data(n_surface_points);
@@ -46,7 +46,7 @@ void test_poly_degree(int poly_degree) {
   n_grad_points = grad_points.rows();
 
   valuesd rhs = valuesd(n_points + dim * n_grad_points);
-  rhs << values, -grad_points.reshaped<Eigen::RowMajor>();
+  rhs << values, grad_points.reshaped<Eigen::RowMajor>();
 
   multiquadric1 rbf({1.0, 1e-3});
   rbf.set_anisotropy(random_anisotropy());

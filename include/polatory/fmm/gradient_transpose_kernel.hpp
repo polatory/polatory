@@ -46,7 +46,7 @@ struct gradient_transpose_kernel {
 
     matrix_type<double> result;
     for (auto i = 0; i < Dim; i++) {
-      result.at(i) = -g(i);
+      result.at(i) = g(i);
     }
 
     return result;
@@ -65,9 +65,9 @@ struct gradient_transpose_kernel {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
       geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
       geometry::vector3d g = rbf_->evaluate_gradient_isotropic(xx - yy) * rbf_->anisotropy();
-      v0.at(i) = -g(0);
-      v1.at(i) = -g(1);
-      v2.at(i) = -g(2);
+      v0.at(i) = g(0);
+      v1.at(i) = g(1);
+      v2.at(i) = g(2);
     }
 
     matrix_type<decayed_type> result;
