@@ -11,7 +11,7 @@
 namespace polatory::preconditioner {
 
 class domain_divider {
-  static constexpr double overlap_quota = 0.75;
+  static constexpr double overlap_quota = 0.25;
   static constexpr index_t max_leaf_size = 256;
 
  public:
