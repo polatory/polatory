@@ -57,8 +57,15 @@ class fmm_generic_symmetric_evaluator<Order, Kernel>::impl {
       tree_->reset_multipoles();
       tree_->reset_locals();
       tree_->reset_outputs();
+      if (!tree_->is_interaction_m2l_lists_built()) {
+        scalfmm::list::sequential::build_m2l_interaction_list(*tree_, *tree_, 1);
+      }
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-          *tree_, *fmm_operator_, p2m | m2m | m2l | l2l | l2p);
+          *tree_, *fmm_operator_, p2m | m2m);
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
+          *tree_, *fmm_operator_, m2l);
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
+          *tree_, *fmm_operator_, l2l | l2p);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
           *tree_, *fmm_operator_, p2p);
       handle_self_interaction();

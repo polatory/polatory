@@ -73,8 +73,13 @@ class fmm_generic_evaluator<Order, Kernel>::impl {
 
       trg_tree_->reset_locals();
       trg_tree_->reset_outputs();
+      if (!trg_tree_->is_interaction_m2l_lists_built()) {
+        scalfmm::list::sequential::build_m2l_interaction_list(*src_tree_, *trg_tree_, 1);
+      }
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
+          *src_tree_, *trg_tree_, *fmm_operator_, m2l);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-          *src_tree_, *trg_tree_, *fmm_operator_, m2l | l2l | l2p);
+          *src_tree_, *trg_tree_, *fmm_operator_, l2l | l2p);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
           *src_tree_, *trg_tree_, *fmm_operator_, p2p);
     }
@@ -170,6 +175,7 @@ class fmm_generic_evaluator<Order, Kernel>::impl {
       return false;
     }
 
+    std::cout << "src: " << n_src_points_ << ", trg: " << n_fld_points_ << std::endl;
     auto tree_height = fmm_tree_height(std::max(n_src_points_, n_fld_points_));
     if (tree_height_ != tree_height) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
