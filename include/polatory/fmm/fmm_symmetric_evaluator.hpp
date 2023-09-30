@@ -2,26 +2,11 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <polatory/common/macros.hpp>
 #include <polatory/fmm/hessian_kernel.hpp>
 #include <polatory/fmm/kernel.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
-#include <scalfmm/algorithms/fmm.hpp>
-#include <scalfmm/container/particle.hpp>
-#include <scalfmm/interpolation/interpolation.hpp>
-#include <scalfmm/operators/fmm_operators.hpp>
-#include <scalfmm/tree/box.hpp>
-#include <scalfmm/tree/cell.hpp>
-#include <scalfmm/tree/for_each.hpp>
-#include <scalfmm/tree/group_tree_view.hpp>
-#include <scalfmm/tree/leaf_view.hpp>
-#include <tuple>
-#include <type_traits>
-#include <vector>
-
-#include "utility.hpp"
 
 namespace polatory::fmm {
 
@@ -45,202 +30,21 @@ class fmm_base_symmetric_evaluator {
 
 template <class Model, int Order, class Kernel>
 class fmm_generic_symmetric_evaluator : public fmm_base_symmetric_evaluator {
-  static constexpr int km{Kernel::km};
-  static constexpr int kn{Kernel::kn};
-
-  using Particle = scalfmm::container::particle<
-      /* position */ double, 3,
-      /* inputs */ double, km,
-      /* outputs */ double, kn,
-      /* variables */ index_t>;
-
-  using NearField = scalfmm::operators::near_field_operator<Kernel>;
-  using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
-  using FarField = scalfmm::operators::far_field_operator<Interpolator>;
-  using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
-  using Position = typename Particle::position_type;
-  using Box = scalfmm::component::box<Position>;
-  using Cell = scalfmm::component::cell<typename Interpolator::storage_type>;
-  using Leaf = scalfmm::component::leaf_view<Particle>;
-  using Tree = scalfmm::component::group_tree_view<Cell, Leaf, Box>;
-
  public:
-  fmm_generic_symmetric_evaluator(const Model& model, const geometry::bbox3d& bbox)
-      : model_(model),
-        kernel_(model.rbf()),
-        order_(Order),
-        box_(make_box<Model, Box>(model, bbox)),
-        near_field_(kernel_) {}
+  fmm_generic_symmetric_evaluator(const Model& model, const geometry::bbox3d& bbox);
 
-  ~fmm_generic_symmetric_evaluator() override = default;
+  ~fmm_generic_symmetric_evaluator() override;
 
-  common::valuesd evaluate() const override {
-    using namespace scalfmm::algorithms;
+  common::valuesd evaluate() const override;
 
-    if (prepare()) {
-      tree_->reset_multipoles();
-      tree_->reset_locals();
-      tree_->reset_outputs();
-      if (!tree_->is_interaction_m2l_lists_built()) {
-        scalfmm::list::sequential::build_m2l_interaction_list(*tree_, *tree_, 1);
-      }
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-          *tree_, *fmm_operator_, p2m | m2m);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
-          *tree_, *fmm_operator_, m2l);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-          *tree_, *fmm_operator_, l2l | l2p);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
-          *tree_, *fmm_operator_, p2p);
-      handle_self_interaction();
-    }
+  void set_points(const geometry::points3d& points) override;
 
-    return potentials();
-  }
-
-  void set_points(const geometry::points3d& points) override {
-    n_points_ = points.rows();
-
-    particles_.resize(n_points_);
-
-    auto a = model_.rbf().anisotropy();
-    for (index_t idx = 0; idx < n_points_; idx++) {
-      auto& p = particles_.at(idx);
-      auto ap = geometry::transform_point(a, points.row(idx));
-      p.position() = Position{ap(0), ap(1), ap(2)};
-      p.variables(idx);
-    }
-
-    tree_.reset(nullptr);
-  }
-
-  void set_weights(const Eigen::Ref<const common::valuesd>& weights) override {
-    POLATORY_ASSERT(weights.rows() == km * n_points_);
-
-    if (!tree_) {
-      for (index_t idx = 0; idx < n_points_; idx++) {
-        auto& p = particles_.at(idx);
-        for (auto i = 0; i < km; i++) {
-          p.inputs(i) = weights(km * idx + i);
-        }
-      }
-    } else {
-      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
-                                        [&](const auto& leaf) {
-                                          for (auto p_ref : leaf) {
-                                            auto p = typename Leaf::proxy_type(p_ref);
-                                            auto idx = std::get<0>(p.variables());
-                                            for (auto i = 0; i < km; i++) {
-                                              p.inputs(i) = weights(km * idx + i);
-                                            }
-                                          }
-                                        });
-    }
-  }
+  void set_weights(const Eigen::Ref<const common::valuesd>& weights) override;
 
  private:
-  void handle_self_interaction() const {
-    scalfmm::container::point<double, 3> x{};
-    auto k = kernel_.evaluate(x, x);
+  class impl;
 
-    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
-      for (auto p_ref : leaf) {
-        auto p = typename Leaf::proxy_type(p_ref);
-        for (auto i = 0; i < kn; i++) {
-          for (auto j = 0; j < km; j++) {
-            p.outputs(i) += p.inputs(j) * k.at(km * i + j);
-          }
-        }
-      }
-    });
-  }
-
-  common::valuesd potentials() const {
-    common::valuesd potentials = common::valuesd::Zero(kn * n_points_);
-
-    if (tree_) {
-      scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
-                                        [&](const auto& leaf) {
-                                          for (auto p_ref : leaf) {
-                                            auto p = typename Leaf::const_proxy_type(p_ref);
-                                            auto idx = std::get<0>(p.variables());
-                                            for (auto i = 0; i < kn; i++) {
-                                              potentials(kn * idx + i) = p.outputs(i);
-                                            }
-                                          }
-                                        });
-    }
-
-    return potentials;
-  }
-
-  bool prepare() const {
-    if (n_points_ == 0) {
-      interpolator_.reset(nullptr);
-      far_field_.reset(nullptr);
-      fmm_operator_.reset(nullptr);
-      reset_tree();
-      tree_height_ = 0;
-      return false;
-    }
-
-    auto tree_height = fmm_tree_height(n_points_);
-    if (tree_height_ != tree_height) {
-      interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
-      far_field_ = std::make_unique<FarField>(*interpolator_);
-      fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
-      reset_tree();
-      tree_height_ = tree_height;
-    }
-
-    if (!tree_) {
-      tree_ = std::make_unique<Tree>(tree_height, order_, box_, 10, 10, particles_);
-      particles_.clear();
-      particles_.shrink_to_fit();
-    }
-
-    return true;
-  }
-
-  void reset_tree() const {
-    if (!tree_) {
-      return;
-    }
-
-    particles_.resize(n_points_);
-
-    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
-      for (auto p_ref : leaf) {
-        auto p = typename Leaf::proxy_type(p_ref);
-        auto idx = std::get<0>(p.variables());
-        auto& new_p = particles_.at(idx);
-        for (auto i = 0; i < 3; i++) {
-          new_p.position(i) = p.position(i);
-        }
-        for (auto i = 0; i < km; i++) {
-          new_p.inputs(i) = p.inputs(i);
-        }
-        new_p.variables(idx);
-      }
-    });
-
-    tree_.reset(nullptr);
-  }
-
-  const Model& model_;
-  const Kernel kernel_;
-  const int order_;
-  const Box box_;
-  const NearField near_field_;
-
-  index_t n_points_{};
-  mutable std::vector<Particle> particles_;
-  mutable int tree_height_{};
-  mutable std::unique_ptr<Interpolator> interpolator_;
-  mutable std::unique_ptr<FarField> far_field_;
-  mutable std::unique_ptr<FmmOperator> fmm_operator_;
-  mutable std::unique_ptr<Tree> tree_;
+  std::unique_ptr<impl> impl_;
 };
 
 template <class Model, int Order, int Dim>
