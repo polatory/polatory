@@ -29,10 +29,10 @@ using polatory::rbf::multiquadric1;
 namespace {
 
 void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points) {
-  using Rbf = multiquadric1<3>;
+  constexpr int kDim = 3;
+  using Rbf = multiquadric1<kDim>;
   using Model = model<Rbf>;
 
-  const int dim = 3;
   index_t n_points = n_initial_points;
   index_t n_grad_points = n_initial_grad_points;
 
@@ -41,7 +41,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   Rbf rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
 
-  Model model(rbf, dim, poly_degree);
+  Model model(rbf, poly_degree);
   model.set_nugget(0.01);
 
   bbox3d bbox{-point3d::Ones(), point3d::Ones()};
@@ -51,7 +51,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     auto points = random_points(sphere3d(), n_points);
     auto grad_points = random_points(sphere3d(), n_grad_points);
 
-    valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
+    valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
     rbf_direct_operator<Model> direct_op(model, points, grad_points);
     op.set_points(points, grad_points);
@@ -59,11 +59,11 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     valuesd direct_op_weights = direct_op(weights);
     valuesd op_weights = op(weights);
 
-    EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), direct_op_weights.rows());
-    EXPECT_EQ(n_points + dim * n_grad_points + model.poly_basis_size(), op_weights.rows());
+    EXPECT_EQ(n_points + kDim * n_grad_points + model.poly_basis_size(), direct_op_weights.rows());
+    EXPECT_EQ(n_points + kDim * n_grad_points + model.poly_basis_size(), op_weights.rows());
 
-    EXPECT_LT(relative_error(op_weights.head(n_points + dim * n_grad_points),
-                             direct_op_weights.head(n_points + dim * n_grad_points)),
+    EXPECT_LT(relative_error(op_weights.head(n_points + kDim * n_grad_points),
+                             direct_op_weights.head(n_points + kDim * n_grad_points)),
               rel_tolerance);
 
     EXPECT_EQ(direct_op_weights.tail(model.poly_basis_size()),

@@ -21,6 +21,7 @@ namespace polatory {
 
 template <class Model>
 class interpolant {
+  static constexpr int kDim = Model::kDim;
   using Evaluator = interpolation::rbf_evaluator<Model>;
 
  public:
@@ -65,7 +66,7 @@ class interpolant {
                                               std::to_string(min_n_points)));
     }
 
-    auto n_rhs = points.rows() + model_.poly_dimension() * grad_points.rows();
+    auto n_rhs = points.rows() + kDim * grad_points.rows();
     if (values.rows() != n_rhs) {
       throw std::invalid_argument(std::format("values.rows() must be equal to {}.", n_rhs));
     }

@@ -20,7 +20,8 @@ class rbf_symmetric_evaluator {
   static constexpr int kDim = Model::kDim;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
 
  public:
   rbf_symmetric_evaluator(const Model& model, const Points& points, const Points& grad_points,
@@ -37,7 +38,7 @@ class rbf_symmetric_evaluator {
         ft_(model, bbox, prec),
         h_(model, bbox, prec) {
     if (l_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
   }
 

@@ -24,11 +24,11 @@ using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
 
 TEST(rbf_inequality_fitter, inequality_only) {
-  using Rbf = biharmonic3d<3>;
+  constexpr int kDim = 3;
+  using Rbf = biharmonic3d<kDim>;
   using Model = model<Rbf>;
 
   const auto n_points = index_t{4096};
-  const auto poly_dimension = 3;
   const auto poly_degree = 0;
   const auto absolute_tolerance = 1e-4;
 
@@ -41,7 +41,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   Rbf rbf({1.0});
   rbf.set_anisotropy(random_anisotropy());
 
-  Model model(rbf, poly_dimension, poly_degree);
+  Model model(rbf, poly_degree);
 
   rbf_inequality_fitter<Model> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
@@ -60,11 +60,11 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {
-  using Rbf = cov_exponential<3>;
+  constexpr int kDim = 3;
+  using Rbf = cov_exponential<kDim>;
   using Model = model<Rbf>;
 
   const auto n_points = index_t{25};
-  const auto poly_dimension = 1;
   const auto poly_degree = -1;
   const auto absolute_tolerance = 1e-5;
 
@@ -87,7 +87,7 @@ TEST(rbf_inequality_fitter, kostov86) {
       nan, nan, nan, nan, nan, 3;
 
   Rbf rbf({1.0, 3.0});
-  Model model(rbf, poly_dimension, poly_degree);
+  Model model(rbf, poly_degree);
 
   rbf_inequality_fitter<Model> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);

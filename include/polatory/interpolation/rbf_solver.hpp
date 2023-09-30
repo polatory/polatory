@@ -27,6 +27,7 @@ class rbf_solver {
   using Operator = rbf_operator<Model>;
   using Preconditioner = preconditioner::ras_preconditioner<Model>;
   using ResidualEvaluator = rbf_residual_evaluator<Model>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
 
  public:
   rbf_solver(const Model& model, const Points& points)
@@ -57,7 +58,7 @@ class rbf_solver {
     pc_ = std::make_unique<Preconditioner>(model_, points, grad_points);
 
     if (l_ > 0) {
-      polynomial::monomial_basis poly(kDim, model_.poly_degree());
+      MonomialBasis poly(model_.poly_degree());
       p_ = poly.evaluate(points, grad_points).transpose();
       common::orthonormalize_cols(p_);
     }

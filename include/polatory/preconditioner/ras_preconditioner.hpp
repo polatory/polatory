@@ -36,17 +36,19 @@ class ras_preconditioner : public krylov::linear_operator {
   static constexpr bool kReportResidual = false;
   static constexpr double coarse_ratio = 0.125;
   static constexpr index_t n_coarsest_points = 1024;
+  static constexpr int kDim = Model::kDim;
 
   using CoarseGrid = coarse_grid<Model>;
   using FineGrid = fine_grid<Model>;
   using Evaluator = interpolation::rbf_evaluator<Model>;
   using SymmetricEvaluator = interpolation::rbf_symmetric_evaluator<Model>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using LagrangeBasis = polynomial::lagrange_basis<kDim>;
 
  public:
   ras_preconditioner(const Model& model, const geometry::points3d& points,
                      const geometry::points3d& grad_points)
       : model_without_poly_(model.without_poly()),
-        dim_(model.poly_dimension()),
         l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()),
@@ -69,11 +71,10 @@ class ras_preconditioner : public krylov::linear_operator {
       auto level = n_levels_ - 1;
 
       if (l_ > 0) {
-        polynomial::unisolvent_point_set ups(points_, model.poly_dimension(), model.poly_degree());
+        polynomial::unisolvent_point_set<kDim> ups(points_, model.poly_degree());
 
         poly_point_idcs = ups.point_indices();
-        polynomial::lagrange_basis lagrange_basis(model.poly_dimension(), model.poly_degree(),
-                                                  points_(poly_point_idcs, Eigen::all));
+        LagrangeBasis lagrange_basis(model.poly_degree(), points_(poly_point_idcs, Eigen::all));
         lagrange_pt_ = lagrange_basis.evaluate(points_, grad_points_);
 
         point_idcs_.at(level) = poly_point_idcs;
@@ -170,7 +171,7 @@ class ras_preconditioner : public krylov::linear_operator {
     }
 
     if (l_ > 0) {
-      polynomial::monomial_basis poly(model.poly_dimension(), model.poly_degree());
+      MonomialBasis poly(model.poly_degree());
       p_ = poly.evaluate(points_, grad_points_).transpose();
       common::orthonormalize_cols(p_);
 
@@ -189,7 +190,7 @@ class ras_preconditioner : public krylov::linear_operator {
   common::valuesd operator()(const common::valuesd& v) const override {
     POLATORY_ASSERT(v.rows() == size());
 
-    common::valuesd residuals = v.head(mu_ + dim_ * sigma_);
+    common::valuesd residuals = v.head(mu_ + kDim * sigma_);
     common::valuesd weights_total = common::valuesd::Zero(size());
     if (n_levels_ == 1) {
       coarse_->solve(residuals);
@@ -203,7 +204,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       {
-        common::valuesd weights = common::valuesd::Zero(mu_ + dim_ * sigma_);
+        common::valuesd weights = common::valuesd::Zero(mu_ + kDim * sigma_);
 
         // Solve on level `level`.
         auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
@@ -226,13 +227,13 @@ class ras_preconditioner : public krylov::linear_operator {
           const auto& finer_grad_indices = grad_point_idcs_.at(level);
           auto finer_mu = static_cast<index_t>(finer_indices.size());
           auto finer_sigma = static_cast<index_t>(finer_grad_indices.size());
-          common::valuesd finer_weights(finer_mu + dim_ * finer_sigma);
+          common::valuesd finer_weights(finer_mu + kDim * finer_sigma);
           for (index_t i = 0; i < finer_mu; i++) {
             finer_weights(i) = weights(finer_indices.at(i));
           }
           for (index_t i = 0; i < finer_sigma; i++) {
-            finer_weights.segment(finer_mu + dim_ * i, dim_) =
-                weights.segment(mu_ + dim_ * finer_grad_indices.at(i), dim_);
+            finer_weights.segment(finer_mu + kDim * i, kDim) =
+                weights.segment(mu_ + kDim * finer_grad_indices.at(i), kDim);
           }
           evaluator(level, level - 1).set_weights(finer_weights);
         } else {
@@ -248,8 +249,8 @@ class ras_preconditioner : public krylov::linear_operator {
           residuals(indices.at(i)) -= fit(i);
         }
         for (index_t i = 0; i < sigma; i++) {
-          residuals.segment(mu_ + dim_ * grad_indices.at(i), dim_) -=
-              fit.segment(mu + dim_ * i, dim_);
+          residuals.segment(mu_ + kDim * grad_indices.at(i), kDim) -=
+              fit.segment(mu + kDim * i, kDim);
         }
 
         if (l_ > 0) {
@@ -262,12 +263,12 @@ class ras_preconditioner : public krylov::linear_operator {
           }
         }
 
-        weights_total.head(mu_ + dim_ * sigma_) += weights;
+        weights_total.head(mu_ + kDim * sigma_) += weights;
 
         if (kReportResidual) {
           finest_evaluator_->set_weights(weights_total);
           common::valuesd test_residuals =
-              v.head(mu_ + dim_ * sigma_) - finest_evaluator_->evaluate();
+              v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
           std::cout << "Residual after level " << level << ": " << test_residuals.norm()
                     << std::endl;
         }
@@ -286,13 +287,13 @@ class ras_preconditioner : public krylov::linear_operator {
           const auto& coarse_grad_indices = grad_point_idcs_.at(0);
           auto coarse_mu = static_cast<index_t>(coarse_indices.size());
           auto coarse_sigma = static_cast<index_t>(coarse_grad_indices.size());
-          common::valuesd coarse_weights(coarse_mu + dim_ * coarse_sigma + l_);
+          common::valuesd coarse_weights(coarse_mu + kDim * coarse_sigma + l_);
           for (index_t i = 0; i < coarse_mu; i++) {
             coarse_weights(i) = weights(coarse_indices.at(i));
           }
           for (index_t i = 0; i < coarse_sigma; i++) {
-            coarse_weights.segment(coarse_mu + dim_ * i, dim_) =
-                weights.segment(mu_ + dim_ * coarse_grad_indices.at(i), dim_);
+            coarse_weights.segment(coarse_mu + kDim * i, kDim) =
+                weights.segment(mu_ + kDim * coarse_grad_indices.at(i), kDim);
           }
           coarse_weights.tail(l_) = weights.tail(l_);
           evaluator(0, level - 1).set_weights(coarse_weights);
@@ -307,8 +308,8 @@ class ras_preconditioner : public krylov::linear_operator {
             residuals(indices.at(i)) -= fit(i);
           }
           for (index_t i = 0; i < sigma; i++) {
-            residuals.segment(mu_ + dim_ * grad_indices.at(i), dim_) -=
-                fit.segment(mu + dim_ * i, dim_);
+            residuals.segment(mu_ + kDim * grad_indices.at(i), kDim) -=
+                fit.segment(mu + kDim * i, kDim);
           }
         }
 
@@ -317,7 +318,7 @@ class ras_preconditioner : public krylov::linear_operator {
         if (kReportResidual) {
           finest_evaluator_->set_weights(weights_total);
           common::valuesd test_residuals =
-              v.head(mu_ + dim_ * sigma_) - finest_evaluator_->evaluate();
+              v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
           std::cout << "Residual after level 0: " << test_residuals.norm() << std::endl;
         }
       }
@@ -326,7 +327,7 @@ class ras_preconditioner : public krylov::linear_operator {
     return weights_total;
   }
 
-  index_t size() const override { return mu_ + dim_ * sigma_ + l_; }
+  index_t size() const override { return mu_ + kDim * sigma_ + l_; }
 
  private:
   template <class... Args>
@@ -340,7 +341,6 @@ class ras_preconditioner : public krylov::linear_operator {
   }
 
   const Model model_without_poly_;
-  const int dim_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;

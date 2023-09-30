@@ -27,12 +27,12 @@ using polatory::preconditioner::domain;
 using polatory::rbf::multiquadric1;
 
 TEST(coarse_grid, trivial) {
-  using Rbf = multiquadric1<3>;
+  constexpr int kDim = 3;
+  using Rbf = multiquadric1<kDim>;
   using Model = model<Rbf>;
 
   auto mu = index_t{512};
   auto sigma = index_t{256};
-  auto dim = 3;
   auto deg = 0;
   auto absolute_tolerance = 1e-10;
 
@@ -41,7 +41,7 @@ TEST(coarse_grid, trivial) {
 
   Rbf rbf({1.0, 1e-3});
 
-  Model model(rbf, dim, deg);
+  Model model(rbf, deg);
   model.set_nugget(0.01);
   auto l = model.poly_basis_size();
 
@@ -63,14 +63,14 @@ TEST(coarse_grid, trivial) {
   }
 
   coarse_grid<Model> coarse(model, std::move(domain));
-  lagrange_basis lagrange_basis(dim, deg, points.topRows(model.poly_basis_size()));
+  lagrange_basis<kDim> lagrange_basis(deg, points.topRows(model.poly_basis_size()));
   auto lagrange_pt = lagrange_basis.evaluate(points, grad_points);
   coarse.setup(points, grad_points, lagrange_pt);
 
-  valuesd rhs = valuesd::Random(mu + dim * sigma);
+  valuesd rhs = valuesd::Random(mu + kDim * sigma);
   coarse.solve(rhs);
 
-  valuesd sol = valuesd::Zero(mu + dim * sigma + l);
+  valuesd sol = valuesd::Zero(mu + kDim * sigma + l);
   coarse.set_solution_to(sol);
 
   auto eval = rbf_direct_evaluator<Model>(model, points, grad_points);

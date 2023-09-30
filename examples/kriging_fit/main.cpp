@@ -23,7 +23,7 @@ void main_impl(const options& opts) {
 
   // Define the model.
   Rbf rbf(opts.rbf_params);
-  Model model(rbf, -1, -1);
+  Model model(rbf, -1);
   model.set_nugget(opts.nugget);
 
   // Fit model parameters.

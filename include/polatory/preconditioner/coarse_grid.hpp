@@ -18,16 +18,18 @@ namespace polatory::preconditioner {
 
 template <class Model>
 class coarse_grid {
+  static constexpr int kDim = Model::kDim;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
+
  public:
   coarse_grid(const Model& model, domain&& domain)
       : model_(model),
         point_idcs_(std::move(domain.point_indices)),
         grad_point_idcs_(std::move(domain.grad_point_indices)),
-        dim_(model.poly_dimension()),
         l_(model.poly_basis_size()),
         mu_(static_cast<index_t>(point_idcs_.size())),
         sigma_(static_cast<index_t>(grad_point_idcs_.size())),
-        m_(mu_ + dim_ * sigma_) {
+        m_(mu_ + kDim * sigma_) {
     POLATORY_ASSERT(mu_ > l_);
   }
 
@@ -49,10 +51,10 @@ class coarse_grid {
 
     if (l_ > 0) {
       std::vector<index_t> flat_indices(point_idcs_);
-      flat_indices.reserve(mu_ + dim_ * sigma_);
+      flat_indices.reserve(mu_ + kDim * sigma_);
       for (auto i : grad_point_idcs_) {
-        for (index_t j = 0; j < dim_; j++) {
-          flat_indices.push_back(mu_ + dim_ * i + j);
+        for (index_t j = 0; j < kDim; j++) {
+          flat_indices.push_back(mu_ + kDim * i + j);
         }
       }
 
@@ -70,7 +72,7 @@ class coarse_grid {
       // Compute matrices used for solving polynomial part.
       a_top_ = a.topRows(l_);
 
-      polynomial::monomial_basis mono_basis(model_.poly_dimension(), model_.poly_degree());
+      MonomialBasis mono_basis(model_.poly_degree());
       auto head_points = points.topRows(l_);
       Eigen::MatrixXd p_top = mono_basis.evaluate(head_points).transpose();
       lu_of_p_top_ = p_top.fullPivLu();
@@ -85,9 +87,9 @@ class coarse_grid {
   void set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
     weights_full(point_idcs_) = lambda_c_.head(mu_);
 
-    weights_full.segment(mu_full_, dim_ * sigma_full_)
-        .reshaped<Eigen::RowMajor>(sigma_full_, dim_)(grad_point_idcs_, Eigen::all) =
-        lambda_c_.segment(mu_, dim_ * sigma_).reshaped<Eigen::RowMajor>(sigma_, dim_);
+    weights_full.segment(mu_full_, kDim * sigma_full_)
+        .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, Eigen::all) =
+        lambda_c_.segment(mu_, kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim);
 
     weights_full.tail(l_) = lambda_c_.tail(l_);
   }
@@ -95,9 +97,9 @@ class coarse_grid {
   void solve(const Eigen::Ref<const common::valuesd>& values_full) {
     common::valuesd values(m_);
     values.head(mu_) = values_full(point_idcs_);
-    values.tail(dim_ * sigma_).reshaped<Eigen::RowMajor>(sigma_, dim_) =
-        values_full.tail(dim_ * sigma_full_)
-            .reshaped<Eigen::RowMajor>(sigma_full_, dim_)(grad_point_idcs_, Eigen::all);
+    values.tail(kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim) =
+        values_full.tail(kDim * sigma_full_)
+            .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, Eigen::all);
 
     if (l_ > 0) {
       // Compute Q^T d.
@@ -124,7 +126,6 @@ class coarse_grid {
   const std::vector<index_t> point_idcs_;
   const std::vector<index_t> grad_point_idcs_;
 
-  const int dim_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;

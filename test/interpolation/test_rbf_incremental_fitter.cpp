@@ -22,11 +22,11 @@ using polatory::interpolation::rbf_incremental_fitter;
 using polatory::rbf::biharmonic3d;
 
 TEST(rbf_incremental_fitter, trivial) {
-  using Rbf = biharmonic3d<3>;
+  constexpr int kDim = 3;
+  using Rbf = biharmonic3d<kDim>;
   using Model = model<Rbf>;
 
   const auto n_surface_points = index_t{4096};
-  const auto poly_dimension = 3;
   const auto poly_degree = 0;
   const auto absolute_tolerance = 1e-4;
 
@@ -35,7 +35,7 @@ TEST(rbf_incremental_fitter, trivial) {
   Rbf rbf({1.0});
   rbf.set_anisotropy(random_anisotropy());
 
-  Model model(rbf, poly_dimension, poly_degree);
+  Model model(rbf, poly_degree);
 
   rbf_incremental_fitter<Model> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, absolute_tolerance, 32);

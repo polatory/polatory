@@ -17,7 +17,7 @@ template <class Model>
 class rbf_direct_operator : krylov::linear_operator {
   static constexpr int kDim = Model::kDim;
   using Points = geometry::pointsNd<kDim>;
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
 
  public:
   rbf_direct_operator(const Model& model, const Points& points, const Points& grad_points)
@@ -28,7 +28,7 @@ class rbf_direct_operator : krylov::linear_operator {
         points_(points),
         grad_points_(grad_points) {
     if (l_ > 0) {
-      polynomial::monomial_basis basis(model_.poly_dimension(), model_.poly_degree());
+      MonomialBasis basis(model_.poly_degree());
       pt_ = basis.evaluate(points_, grad_points_);
     }
   }

@@ -12,13 +12,21 @@
 
 namespace polatory::polynomial {
 
-class lagrange_basis : public polynomial_basis_base {
+template <int Dim>
+class lagrange_basis : public polynomial_basis_base<Dim> {
   static constexpr double kRCondThreshold = 1e-10;
 
+  using Base = polynomial_basis_base<Dim>;
+  static constexpr int kDim = Dim;
+  using MonomialBasis = monomial_basis<kDim>;
+
  public:
+  using Base::basis_size;
+  using Base::degree;
+
   template <class Derived>
-  lagrange_basis(int dimension, int degree, const Eigen::MatrixBase<Derived>& points)
-      : polynomial_basis_base(dimension, degree), mono_basis_(dimension, degree) {
+  lagrange_basis(int degree, const Eigen::MatrixBase<Derived>& points)
+      : Base(degree), mono_basis_(degree) {
     POLATORY_ASSERT(points.rows() == basis_size());
 
     Eigen::MatrixXd p = mono_basis_.evaluate(points).transpose();
@@ -57,7 +65,7 @@ class lagrange_basis : public polynomial_basis_base {
     return rcond >= kRCondThreshold;
   }
 
-  const monomial_basis mono_basis_;
+  const MonomialBasis mono_basis_;
 
   Eigen::MatrixXd coeffs_;
 };

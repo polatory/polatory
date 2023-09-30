@@ -9,11 +9,12 @@ namespace polatory::preconditioner {
 template <class Model, class DerivedPoints, class DerivedGradPoints>
 Eigen::MatrixXd mat_a(const Model& model, const Eigen::MatrixBase<DerivedPoints>& points,
                       const Eigen::MatrixBase<DerivedGradPoints>& grad_points) {
+  constexpr int kDim = Model::kDim;
+
   const auto& rbf = model.rbf();
-  auto dim = model.poly_dimension();
   auto mu = points.rows();
   auto sigma = grad_points.rows();
-  auto m = mu + dim * sigma;
+  auto m = mu + kDim * sigma;
 
   Eigen::MatrixXd a(m, m);
 
@@ -27,26 +28,27 @@ Eigen::MatrixXd mat_a(const Model& model, const Eigen::MatrixBase<DerivedPoints>
   }
 
   if (sigma > 0) {
-    auto af = a.topRightCorner(mu, dim * sigma);
+    auto af = a.topRightCorner(mu, kDim * sigma);
     for (index_t i = 0; i < mu; i++) {
       for (index_t j = 0; j < sigma; j++) {
-        af.block(i, dim * j, 1, dim) =
-            -rbf.evaluate_gradient(points.row(i) - grad_points.row(j)).head(dim);
+        af.block(i, kDim * j, 1, kDim) =
+            -rbf.evaluate_gradient(points.row(i) - grad_points.row(j)).head(kDim);
       }
     }
-    a.bottomLeftCorner(dim * sigma, mu) = af.transpose();
+    a.bottomLeftCorner(kDim * sigma, mu) = af.transpose();
 
-    auto ah = a.bottomRightCorner(dim * sigma, dim * sigma);
+    auto ah = a.bottomRightCorner(kDim * sigma, kDim * sigma);
     Eigen::MatrixXd ah_diagonal =
-        rbf.evaluate_hessian(geometry::vector3d::Zero()).topLeftCorner(dim, dim);
+        rbf.evaluate_hessian(geometry::vector3d::Zero()).topLeftCorner(kDim, kDim);
     for (index_t i = 0; i < sigma; i++) {
-      ah.block(dim * i, dim * i, dim, dim) = ah_diagonal;
+      ah.block(kDim * i, kDim * i, kDim, kDim) = ah_diagonal;
     }
     for (index_t i = 0; i < sigma - 1; i++) {
       for (index_t j = i + 1; j < sigma; j++) {
-        ah.block(dim * i, dim * j, dim, dim) =
-            rbf.evaluate_hessian(grad_points.row(i) - grad_points.row(j)).topLeftCorner(dim, dim);
-        ah.block(dim * j, dim * i, dim, dim) = ah.block(dim * i, dim * j, dim, dim).transpose();
+        ah.block(kDim * i, kDim * j, kDim, kDim) =
+            rbf.evaluate_hessian(grad_points.row(i) - grad_points.row(j)).topLeftCorner(kDim, kDim);
+        ah.block(kDim * j, kDim * i, kDim, kDim) =
+            ah.block(kDim * i, kDim * j, kDim, kDim).transpose();
       }
     }
   }

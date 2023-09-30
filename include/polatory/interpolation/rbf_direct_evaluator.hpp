@@ -14,7 +14,8 @@ template <class Model>
 class rbf_direct_evaluator {
   static constexpr int kDim = Model::kDim;
   using Points = geometry::pointsNd<kDim>;
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
 
  public:
   rbf_direct_evaluator(const Model& model, const Points& source_points,
@@ -26,7 +27,7 @@ class rbf_direct_evaluator {
         src_points_(source_points),
         src_grad_points_(source_grad_points) {
     if (l_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
   }
 

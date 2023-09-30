@@ -17,12 +17,7 @@ class model {
 
   static constexpr int kDim = Rbf::kDim;
 
-  model(const Rbf& rbf, int poly_dimension, int poly_degree)
-      : rbf_(rbf), poly_dimension_(poly_dimension), poly_degree_(poly_degree) {
-    if (poly_dimension < 0 || poly_dimension > 3) {
-      throw std::invalid_argument("poly_dimension must be within the range of 0 to 3.");
-    }
-
+  model(const Rbf& rbf, int poly_degree) : rbf_(rbf), poly_degree_(poly_degree) {
     if (poly_degree < rbf.cpd_order() - 1 || poly_degree > 2) {
       throw std::invalid_argument(
           "poly_degree must be within the range of rbf.cpd_order() - 1 to 2.");
@@ -32,10 +27,7 @@ class model {
   ~model() = default;
 
   model(const model& model)
-      : rbf_(model.rbf_),
-        poly_dimension_(model.poly_dimension_),
-        poly_degree_(model.poly_degree_),
-        nugget_(model.nugget_) {}
+      : rbf_(model.rbf_), poly_degree_(model.poly_degree_), nugget_(model.nugget_) {}
 
   model(model&& model) = default;
 
@@ -71,12 +63,10 @@ class model {
   }
 
   index_t poly_basis_size() const {
-    return polynomial::polynomial_basis_base::basis_size(poly_dimension_, poly_degree_);
+    return polynomial::polynomial_basis_base<kDim>::basis_size(poly_degree_);
   }
 
   int poly_degree() const { return poly_degree_; }
-
-  int poly_dimension() const { return poly_dimension_; }
 
   const Rbf& rbf() const { return rbf_; }
 
@@ -100,14 +90,12 @@ class model {
   }
 
   // This method is for internal use only.
-  model without_poly() const { return model(rbf_, poly_dimension_); }
+  model without_poly() const { return model(rbf_); }
 
  private:
-  explicit model(const Rbf& rbf, int poly_dimension)
-      : rbf_(rbf), poly_dimension_(poly_dimension), poly_degree_(-1) {}
+  explicit model(const Rbf& rbf) : rbf_(rbf), poly_degree_(-1) {}
 
   Rbf rbf_;
-  int poly_dimension_;
   int poly_degree_;
   double nugget_{};
 };

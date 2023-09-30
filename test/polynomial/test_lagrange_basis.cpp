@@ -12,13 +12,14 @@ using polatory::polynomial::lagrange_basis;
 
 namespace {
 
-void test_degree(int dimension, int degree) {
-  auto n_points = lagrange_basis::basis_size(dimension, degree);
+template <int kDim>
+void test_degree(int degree) {
+  auto n_points = lagrange_basis<kDim>::basis_size(degree);
 
   // A constant seed is used as this test occasionally fails.
   auto points = random_points(cuboid3d(), n_points, 0);
 
-  lagrange_basis basis(dimension, degree, points);
+  lagrange_basis<kDim> basis(degree, points);
   auto pt = basis.evaluate(points);
 
   EXPECT_EQ(basis.basis_size(), pt.rows());
@@ -32,9 +33,9 @@ void test_degree(int dimension, int degree) {
 }  // namespace
 
 TEST(lagrange_basis, trivial) {
-  for (auto dim = 1; dim <= 3; dim++) {
-    for (auto deg = 0; deg <= 2; deg++) {
-      test_degree(dim, deg);
-    }
+  for (auto deg = 0; deg <= 2; deg++) {
+    test_degree<1>(deg);
+    test_degree<2>(deg);
+    test_degree<3>(deg);
   }
 }

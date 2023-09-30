@@ -46,13 +46,13 @@ double estimate_accuracy(const std::vector<double>& rbf_params) {
   Rbf rbf(rbf_params);
 
   auto poly_degree = rbf.cpd_order() - 1;
-  Model model(rbf, 3, poly_degree);
+  Model model(rbf, poly_degree);
 
   valuesd weights = valuesd::Zero(n_points + model.poly_basis_size());
   weights.head(n_points) = valuesd::Random(n_points);
 
   if (poly_degree >= 0) {
-    monomial_basis poly(model.poly_dimension(), model.poly_degree());
+    monomial_basis<3> poly(model.poly_degree());
     Eigen::MatrixXd p = poly.evaluate(points).transpose();
     orthonormalize_cols(p);
 

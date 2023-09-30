@@ -31,10 +31,10 @@ using polatory::rbf::reference::triharmonic3d;
 namespace {
 
 void test_poly_degree(int poly_degree) {
-  using Rbf = cov_gaussian<3>;
+  constexpr int kDim = 3;
+  using Rbf = cov_gaussian<kDim>;
   using Model = model<Rbf>;
 
-  const int dim = 3;
   const index_t n_surface_points = 10000;
   index_t n_grad_points = 100;
 
@@ -49,20 +49,20 @@ void test_poly_degree(int poly_degree) {
   grad_points = distance_filter(grad_points, 1e-4)(grad_points);
   n_grad_points = grad_points.rows();
 
-  valuesd rhs = valuesd(n_points + dim * n_grad_points);
+  valuesd rhs = valuesd(n_points + kDim * n_grad_points);
   rhs << values, grad_points.reshaped<Eigen::RowMajor>();
 
   Rbf rbf({1.0, 0.01});
   // rbf.set_anisotropy(random_anisotropy());
   // std::cout << rbf.anisotropy() << std::endl;
 
-  Model model(rbf, dim, poly_degree);
+  Model model(rbf, poly_degree);
   // model.set_nugget(0.01);
 
   rbf_fitter fitter(model, points, grad_points);
   valuesd weights = fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
-  EXPECT_EQ(weights.rows(), n_points + dim * n_grad_points + model.poly_basis_size());
+  EXPECT_EQ(weights.rows(), n_points + kDim * n_grad_points + model.poly_basis_size());
 
   rbf_symmetric_evaluator<Model> eval(model, points, grad_points, precision::kPrecise);
   eval.set_weights(weights);
@@ -71,7 +71,7 @@ void test_poly_degree(int poly_degree) {
   auto max_residual = (rhs - values_fit).head(n_points).lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
 
-  auto max_grad_residual = (rhs - values_fit).tail(dim * n_grad_points).lpNorm<Eigen::Infinity>();
+  auto max_grad_residual = (rhs - values_fit).tail(kDim * n_grad_points).lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_grad_residual, grad_absolute_tolerance);
 }
 

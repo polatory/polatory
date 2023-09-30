@@ -30,10 +30,10 @@ namespace {
 
 void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points,
                       index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
-  using Rbf = cov_gaussian<3>;
+  constexpr int kDim = 3;
+  using Rbf = cov_gaussian<kDim>;
   using Model = model<Rbf>;
 
-  const int dim = 3;
   index_t n_points = n_initial_points;
   index_t n_grad_points = n_initial_grad_points;
   index_t n_eval_points = n_initial_eval_points;
@@ -44,7 +44,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   Rbf rbf({1.0, 0.01});
   rbf.set_anisotropy(random_anisotropy());
 
-  Model model(rbf, dim, poly_degree);
+  Model model(rbf, poly_degree);
   model.set_nugget(0.01);
 
   bbox3d bbox{-point3d::Ones(), point3d::Ones()};
@@ -56,7 +56,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     auto eval_points = random_points(sphere3d(), n_eval_points);
     auto eval_grad_points = random_points(sphere3d(), n_eval_grad_points);
 
-    valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());
+    valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
     rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
     direct_eval.set_weights(weights);
@@ -69,8 +69,8 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     auto direct_values = direct_eval.evaluate();
     auto values = eval.evaluate();
 
-    EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
-    EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, values.rows());
+    EXPECT_EQ(n_eval_points + kDim * n_eval_grad_points, direct_values.rows());
+    EXPECT_EQ(n_eval_points + kDim * n_eval_grad_points, values.rows());
 
     EXPECT_LT(relative_error(values, direct_values), rel_tolerance);
 

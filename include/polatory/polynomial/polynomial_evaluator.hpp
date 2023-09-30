@@ -10,8 +10,8 @@ namespace polatory::polynomial {
 template <class Basis>
 class polynomial_evaluator {
  public:
-  explicit polynomial_evaluator(int dimension, int degree)
-      : basis_(dimension, degree), weights_(common::valuesd::Zero(basis_.basis_size())) {}
+  explicit polynomial_evaluator(int degree)
+      : basis_(degree), weights_(common::valuesd::Zero(basis_.basis_size())) {}
 
   common::valuesd evaluate() const {
     Eigen::MatrixXd pt = basis_.evaluate(points_, grad_points_);

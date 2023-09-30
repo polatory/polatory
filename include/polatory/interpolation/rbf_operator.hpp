@@ -21,6 +21,7 @@ class rbf_operator : public krylov::linear_operator {
   static constexpr int kDim = Model::kDim;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
 
  public:
   rbf_operator(const Model& model, const Points& points, const Points& grad_points, precision prec)
@@ -37,8 +38,7 @@ class rbf_operator : public krylov::linear_operator {
         ft_(model, bbox, prec),
         h_(model, bbox, prec) {
     if (l_ > 0) {
-      poly_basis_ =
-          std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
+      poly_basis_ = std::make_unique<MonomialBasis>(model.poly_degree());
     }
   }
 
@@ -96,7 +96,7 @@ class rbf_operator : public krylov::linear_operator {
   mutable fmm::fmm_gradient_evaluator<Model> f_;
   mutable fmm::fmm_gradient_transpose_evaluator<Model> ft_;
   mutable fmm::fmm_hessian_symmetric_evaluator<Model> h_;
-  std::unique_ptr<polynomial::monomial_basis> poly_basis_;
+  std::unique_ptr<MonomialBasis> poly_basis_;
   Eigen::MatrixXd pt_;
 };
 

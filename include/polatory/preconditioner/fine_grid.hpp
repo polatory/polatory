@@ -16,6 +16,8 @@ namespace polatory::preconditioner {
 
 template <class Model>
 class fine_grid {
+  static constexpr int kDim = Model::kDim;
+
  public:
   fine_grid(const Model& model, domain&& domain)
       : model_(model),
@@ -23,11 +25,10 @@ class fine_grid {
         grad_point_idcs_(std::move(domain.grad_point_indices)),
         inner_point_(std::move(domain.inner_point)),
         inner_grad_point_(std::move(domain.inner_grad_point)),
-        dim_(model.poly_dimension()),
         l_(model.poly_basis_size()),
         mu_(static_cast<index_t>(point_idcs_.size())),
         sigma_(static_cast<index_t>(grad_point_idcs_.size())),
-        m_(mu_ + dim_ * sigma_) {
+        m_(mu_ + kDim * sigma_) {
     POLATORY_ASSERT(mu_ > l_);
   }
 
@@ -46,10 +47,10 @@ class fine_grid {
 
     if (l_ > 0) {
       std::vector<index_t> flat_indices(point_idcs_);
-      flat_indices.reserve(mu_ + dim_ * sigma_);
+      flat_indices.reserve(mu_ + kDim * sigma_);
       for (auto i : grad_point_idcs_) {
-        for (index_t j = 0; j < dim_; j++) {
-          flat_indices.push_back(mu_ + dim_ * i + j);
+        for (index_t j = 0; j < kDim; j++) {
+          flat_indices.push_back(mu_ + kDim * i + j);
         }
       }
 
@@ -81,8 +82,8 @@ class fine_grid {
 
     for (index_t i = 0; i < sigma_; i++) {
       if (inner_grad_point_.at(i)) {
-        weights_full.segment(mu_full_ + dim_ * grad_point_idcs_.at(i), dim_) =
-            lambda_.segment(mu_ + dim_ * i, dim_);
+        weights_full.segment(mu_full_ + kDim * grad_point_idcs_.at(i), kDim) =
+            lambda_.segment(mu_ + kDim * i, kDim);
       }
     }
   }
@@ -90,9 +91,9 @@ class fine_grid {
   void solve(const common::valuesd& values_full) {
     common::valuesd values(m_);
     values.head(mu_) = values_full(point_idcs_);
-    values.tail(dim_ * sigma_).reshaped<Eigen::RowMajor>(sigma_, dim_) =
-        values_full.tail(dim_ * sigma_full_)
-            .reshaped<Eigen::RowMajor>(sigma_full_, dim_)(grad_point_idcs_, Eigen::all);
+    values.tail(kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim) =
+        values_full.tail(kDim * sigma_full_)
+            .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, Eigen::all);
 
     if (l_ > 0) {
       // Compute Q^T d.
@@ -117,7 +118,6 @@ class fine_grid {
   const std::vector<bool> inner_point_;
   const std::vector<bool> inner_grad_point_;
 
-  const int dim_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;
