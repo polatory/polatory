@@ -21,6 +21,8 @@ namespace polatory {
 
 template <class Model>
 class interpolant {
+  using Evaluator = interpolation::rbf_evaluator<Model>;
+
  public:
   explicit interpolant(const Model& model) : model_(std::move(model)) {}
 
@@ -161,8 +163,7 @@ class interpolant {
 
     auto union_bbox = bbox.convex_hull(bbox_);
 
-    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(model_, centers_, grad_centers_,
-                                                                  union_bbox);
+    evaluator_ = std::make_unique<Evaluator>(model_, centers_, grad_centers_, union_bbox);
     evaluator_->set_weights(weights_);
   }
 
@@ -195,7 +196,7 @@ class interpolant {
   geometry::bbox3d bbox_;
   common::valuesd weights_;
 
-  std::unique_ptr<interpolation::rbf_evaluator<>> evaluator_;
+  std::unique_ptr<Evaluator> evaluator_;
 };
 
 }  // namespace polatory

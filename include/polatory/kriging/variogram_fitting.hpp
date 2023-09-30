@@ -12,52 +12,9 @@
 
 namespace polatory::kriging {
 
-namespace detail {
-
 template <class Model>
-struct residual {
-  residual(Model* model, index_t n_pairs, double distance, double gamma,
-           const weight_function& weight_fn)
-      : model_(model),
-        n_pairs_(n_pairs),
-        distance_(distance),
-        gamma_(gamma),
-        weight_fn_(weight_fn) {}
-
-  bool operator()(const double* const* param_blocks, double* residuals) const {
-    const auto* params = param_blocks[0];
-    auto sill = params[0] + params[1];
-    model_->set_parameters(std::vector<double>(params, params + model_->num_parameters()));
-    auto model_gamma =
-        sill - model_->rbf().evaluate_isotropic(geometry::vector3d{distance_, 0.0, 0.0});
-    residuals[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
-
-    return true;
-  }
-
- private:
-  Model* model_;
-  const index_t n_pairs_;
-  const double distance_;
-  const double gamma_;
-  const weight_function& weight_fn_;
-};
-
-template <class Model>
-ceres::CostFunction* create_cost_function(Model* model, index_t n_pairs, double distance,
-                                          double gamma, const weight_function& weight_fn) {
-  auto* cost_fn = new ceres::DynamicNumericDiffCostFunction<residual>(
-      new residual<Model>(model, n_pairs, distance, gamma, weight_fn));
-  cost_fn->AddParameterBlock(model->num_parameters());
-  cost_fn->SetNumResiduals(1);
-  return cost_fn;
-}
-
-}  // namespace detail
-
 class variogram_fitting {
  public:
-  template <class Model>
   variogram_fitting(const empirical_variogram& emp_variog, const Model& model,
                     const weight_function& weight_fn) {
     Model model2(model);
@@ -106,6 +63,43 @@ class variogram_fitting {
   const std::vector<double>& parameters() const { return params_; }
 
  private:
+  struct residual {
+    residual(Model* model, index_t n_pairs, double distance, double gamma,
+             const weight_function& weight_fn)
+        : model_(model),
+          n_pairs_(n_pairs),
+          distance_(distance),
+          gamma_(gamma),
+          weight_fn_(weight_fn) {}
+
+    bool operator()(const double* const* param_blocks, double* residuals) const {
+      const auto* params = param_blocks[0];
+      auto sill = params[0] + params[1];
+      model_->set_parameters(std::vector<double>(params, params + model_->num_parameters()));
+      auto model_gamma =
+          sill - model_->rbf().evaluate_isotropic(geometry::vector3d{distance_, 0.0, 0.0});
+      residuals[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
+
+      return true;
+    }
+
+   private:
+    Model* model_;
+    const index_t n_pairs_;
+    const double distance_;
+    const double gamma_;
+    const weight_function& weight_fn_;
+  };
+
+  ceres::CostFunction* create_cost_function(Model* model, index_t n_pairs, double distance,
+                                            double gamma, const weight_function& weight_fn) {
+    auto* cost_fn = new ceres::DynamicNumericDiffCostFunction<residual>(
+        new residual(model, n_pairs, distance, gamma, weight_fn));
+    cost_fn->AddParameterBlock(model->num_parameters());
+    cost_fn->SetNumResiduals(1);
+    return cost_fn;
+  }
+
   std::vector<double> params_;
 };
 

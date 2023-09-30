@@ -1,2 +1,1 @@
-include(polatory_enable_ipo)
 include(polatory_target_contents)
