@@ -15,7 +15,7 @@
 namespace polatory::interpolation {
 
 class rbf_residual_evaluator {
-  static constexpr index_t chunk_size = 1024;
+  static constexpr index_t kInitialChunkSize = 1024;
 
  public:
   rbf_residual_evaluator(const model& model, const geometry::points3d& points,
@@ -47,9 +47,10 @@ class rbf_residual_evaluator {
 
     auto max_residual = 0.0;
 
+    auto chunk_size = kInitialChunkSize;
+
     auto nugget = model_.nugget();
-    for (index_t i = 0; i < mu_ / chunk_size + 1; i++) {
-      auto begin = i * chunk_size;
+    for (auto begin = 0;;) {
       auto end = std::min(mu_, begin + chunk_size);
       if (begin == end) {
         break;
@@ -65,10 +66,12 @@ class rbf_residual_evaluator {
       }
 
       max_residual = std::max(max_residual, res);
+
+      begin = end;
+      chunk_size *= 2;
     }
 
-    for (index_t i = 0; i < sigma_ / chunk_size + 1; i++) {
-      auto begin = i * chunk_size;
+    for (auto begin = 0;;) {
       auto end = std::min(sigma_, begin + chunk_size);
       if (begin == end) {
         break;
@@ -85,6 +88,9 @@ class rbf_residual_evaluator {
       }
 
       max_residual = std::max(max_residual, res);
+
+      begin = end;
+      chunk_size *= 2;
     }
 
     return {true, max_residual};

@@ -10,7 +10,7 @@
 namespace polatory::fmm {
 
 inline int fmm_tree_height(index_t points_estimated) {
-  return std::max(3, static_cast<int>(std::floor(std::log(points_estimated) / std::log(8))));
+  return std::max(3, static_cast<int>(std::round(std::log(points_estimated) / std::log(8))));
 }
 
 template <class Box>

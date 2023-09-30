@@ -47,9 +47,10 @@ void fine_grid::setup(const geometry::points3d& points_full,
     auto lagrange_pt = lagrange_pt_full(Eigen::all, flat_indices);
     me_ = -lagrange_pt.rightCols(m_ - l_);
 
+    Eigen::MatrixXd met = me_.transpose();
+
     // Compute decomposition of Q^T A Q.
-    ldlt_of_qtaq_ = (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
-                     me_.transpose() * a.topRightCorner(l_, m_ - l_) +
+    ldlt_of_qtaq_ = (met * a.topLeftCorner(l_, l_) * me_ + met * a.topRightCorner(l_, m_ - l_) +
                      a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_))
                         .ldlt();
   } else {
