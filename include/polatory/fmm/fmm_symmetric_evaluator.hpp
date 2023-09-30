@@ -11,36 +11,18 @@
 
 namespace polatory::fmm {
 
-class fmm_base_symmetric_evaluator {
- public:
-  fmm_base_symmetric_evaluator() = default;
-
-  virtual ~fmm_base_symmetric_evaluator() = default;
-
-  fmm_base_symmetric_evaluator(const fmm_base_symmetric_evaluator&) = delete;
-  fmm_base_symmetric_evaluator(fmm_base_symmetric_evaluator&&) = delete;
-  fmm_base_symmetric_evaluator& operator=(const fmm_base_symmetric_evaluator&) = delete;
-  fmm_base_symmetric_evaluator& operator=(fmm_base_symmetric_evaluator&&) = delete;
-
-  virtual common::valuesd evaluate() const = 0;
-
-  virtual void set_points(const geometry::points3d& points) = 0;
-
-  virtual void set_weights(const Eigen::Ref<const common::valuesd>& weights) = 0;
-};
-
 template <class Model, class Kernel>
-class fmm_generic_symmetric_evaluator : public fmm_base_symmetric_evaluator {
+class fmm_generic_symmetric_evaluator {
  public:
   fmm_generic_symmetric_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec);
 
-  ~fmm_generic_symmetric_evaluator() override;
+  ~fmm_generic_symmetric_evaluator();
 
-  common::valuesd evaluate() const override;
+  common::valuesd evaluate() const;
 
-  void set_points(const geometry::points3d& points) override;
+  void set_points(const geometry::points3d& points);
 
-  void set_weights(const Eigen::Ref<const common::valuesd>& weights) override;
+  void set_weights(const Eigen::Ref<const common::valuesd>& weights);
 
  private:
   class impl;

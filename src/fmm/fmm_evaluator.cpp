@@ -32,6 +32,7 @@ template <class Model, class Kernel>
 class fmm_generic_evaluator<Model, Kernel>::impl {
   static constexpr int kDim{Model::kDim};
   using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
@@ -94,7 +95,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     return potentials();
   }
 
-  void set_field_points(const geometry::points3d& points) {
+  void set_field_points(const Points& points) {
     n_fld_points_ = points.rows();
 
     trg_particles_.resize(n_fld_points_);
@@ -110,7 +111,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     trg_tree_.reset(nullptr);
   }
 
-  void set_source_points(const geometry::points3d& points) {
+  void set_source_points(const Points& points) {
     n_src_points_ = points.rows();
 
     src_particles_.resize(n_src_points_);

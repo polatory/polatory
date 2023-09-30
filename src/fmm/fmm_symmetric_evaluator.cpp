@@ -32,6 +32,9 @@ namespace polatory::fmm {
 template <class Model, class Kernel>
 class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
   static constexpr int kDim{Model::kDim};
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 
@@ -53,7 +56,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
   using Tree = scalfmm::component::group_tree_view<Cell, Leaf, Box>;
 
  public:
-  impl(const Model& model, const geometry::bbox3d& bbox, precision prec)
+  impl(const Model& model, const Bbox& bbox, precision prec)
       : model_(model),
         kernel_(model.rbf()),
         order_(static_cast<int>(prec)),
@@ -82,7 +85,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
     return potentials();
   }
 
-  void set_points(const geometry::points3d& points) {
+  void set_points(const Points& points) {
     n_points_ = points.rows();
 
     particles_.resize(n_points_);

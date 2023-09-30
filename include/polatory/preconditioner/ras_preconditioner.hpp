@@ -38,6 +38,8 @@ class ras_preconditioner : public krylov::linear_operator {
   static constexpr index_t n_coarsest_points = 1024;
   static constexpr int kDim = Model::kDim;
 
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using CoarseGrid = coarse_grid<Model>;
   using FineGrid = fine_grid<Model>;
   using Evaluator = interpolation::rbf_evaluator<Model>;
@@ -46,8 +48,7 @@ class ras_preconditioner : public krylov::linear_operator {
   using LagrangeBasis = polynomial::lagrange_basis<kDim>;
 
  public:
-  ras_preconditioner(const Model& model, const geometry::points3d& points,
-                     const geometry::points3d& grad_points)
+  ras_preconditioner(const Model& model, const Points& points, const Points& grad_points)
       : model_without_poly_(model.without_poly()),
         l_(model.poly_basis_size()),
         mu_(points.rows()),
@@ -147,8 +148,7 @@ class ras_preconditioner : public krylov::linear_operator {
       return;
     }
 
-    auto bbox = geometry::bbox3d::from_points(points_).convex_hull(
-        geometry::bbox3d::from_points(grad_points_));
+    auto bbox = Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_));
     for (auto level = 1; level < n_levels_; level++) {
       if (level == n_levels_ - 1) {
         add_evaluator(level, level - 1, model_without_poly_, points_, grad_points_, bbox,
@@ -344,8 +344,8 @@ class ras_preconditioner : public krylov::linear_operator {
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;
-  const geometry::points3d points_;
-  const geometry::points3d grad_points_;
+  const Points points_;
+  const Points grad_points_;
   const std::unique_ptr<SymmetricEvaluator> finest_evaluator_;
 
   Eigen::MatrixXd lagrange_pt_;

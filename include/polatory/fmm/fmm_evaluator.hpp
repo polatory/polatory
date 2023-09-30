@@ -13,40 +13,20 @@
 
 namespace polatory::fmm {
 
-class fmm_base_evaluator {
- public:
-  fmm_base_evaluator() = default;
-
-  virtual ~fmm_base_evaluator() = default;
-
-  fmm_base_evaluator(const fmm_base_evaluator&) = delete;
-  fmm_base_evaluator(fmm_base_evaluator&&) = delete;
-  fmm_base_evaluator& operator=(const fmm_base_evaluator&) = delete;
-  fmm_base_evaluator& operator=(fmm_base_evaluator&&) = delete;
-
-  virtual common::valuesd evaluate() const = 0;
-
-  virtual void set_field_points(const geometry::points3d& points) = 0;
-
-  virtual void set_source_points(const geometry::points3d& points) = 0;
-
-  virtual void set_weights(const Eigen::Ref<const common::valuesd>& weights) = 0;
-};
-
 template <class Model, class Kernel>
-class fmm_generic_evaluator : public fmm_base_evaluator {
+class fmm_generic_evaluator {
  public:
   fmm_generic_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec);
 
-  ~fmm_generic_evaluator() override;
+  ~fmm_generic_evaluator();
 
-  common::valuesd evaluate() const override;
+  common::valuesd evaluate() const;
 
-  void set_field_points(const geometry::points3d& points) override;
+  void set_field_points(const geometry::points3d& points);
 
-  void set_source_points(const geometry::points3d& points) override;
+  void set_source_points(const geometry::points3d& points);
 
-  void set_weights(const Eigen::Ref<const common::valuesd>& weights) override;
+  void set_weights(const Eigen::Ref<const common::valuesd>& weights);
 
  private:
   class impl;

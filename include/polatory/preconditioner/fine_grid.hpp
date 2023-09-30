@@ -17,6 +17,7 @@ namespace polatory::preconditioner {
 template <class Model>
 class fine_grid {
   static constexpr int kDim = Model::kDim;
+  using Points = geometry::pointsNd<kDim>;
 
  public:
   fine_grid(const Model& model, domain&& domain)
@@ -37,7 +38,7 @@ class fine_grid {
     ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
   }
 
-  void setup(const geometry::points3d& points_full, const geometry::points3d& grad_points_full,
+  void setup(const Points& points_full, const Points& grad_points_full,
              const Eigen::MatrixXd& lagrange_pt_full) {
     auto points = points_full(point_idcs_, Eigen::all);
     auto grad_points = grad_points_full(grad_point_idcs_, Eigen::all);
