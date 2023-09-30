@@ -25,7 +25,7 @@ namespace {
 
 void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
                       index_t n_eval_points, index_t n_eval_grad_points) {
-  using Rbf = multiquadric1;
+  using Rbf = multiquadric1<3>;
   using Model = model<Rbf>;
 
   const int dim = 3;

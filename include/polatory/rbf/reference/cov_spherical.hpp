@@ -10,23 +10,28 @@ namespace polatory {
 namespace rbf {
 namespace reference {
 
-class cov_spherical final : public covariance_function_base {
- public:
-  using covariance_function_base::covariance_function_base;
+template <int Dim>
+class cov_spherical final : public covariance_function_base<Dim> {
+  using Base = covariance_function_base<Dim>;
+  using matrix3d = Base::matrix3d;
+  using vector3d = Base::vector3d;
 
-  explicit cov_spherical(const std::vector<double>& params) { set_parameters(params); }
+ public:
+  using Base::Base;
+
+  explicit cov_spherical(const std::vector<double>& params) { Base::set_parameters(params); }
 
   double evaluate_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
 
     return r < range ? psill * (1.0 - 1.5 * r / range + 0.5 * std::pow(r / range, 3.0)) : 0.0;
   }
 
   vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
 
     if (r < range) {

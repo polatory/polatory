@@ -76,21 +76,21 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
 
     if (opts.rbf_name == "bh2") {
-      main_impl<biharmonic2d>(opts);
+      main_impl<biharmonic2d<3>>(opts);
     } else if (opts.rbf_name == "bh3") {
-      main_impl<biharmonic3d>(opts);
+      main_impl<biharmonic3d<3>>(opts);
     } else if (opts.rbf_name == "exp") {
-      main_impl<cov_exponential>(opts);
+      main_impl<cov_exponential<3>>(opts);
     } else if (opts.rbf_name == "sp3") {
-      main_impl<cov_spheroidal3>(opts);
+      main_impl<cov_spheroidal3<3>>(opts);
     } else if (opts.rbf_name == "sp5") {
-      main_impl<cov_spheroidal5>(opts);
+      main_impl<cov_spheroidal5<3>>(opts);
     } else if (opts.rbf_name == "sp7") {
-      main_impl<cov_spheroidal7>(opts);
+      main_impl<cov_spheroidal7<3>>(opts);
     } else if (opts.rbf_name == "sp9") {
-      main_impl<cov_spheroidal9>(opts);
+      main_impl<cov_spheroidal9<3>>(opts);
     } else if (opts.rbf_name == "mq1") {
-      main_impl<multiquadric1>(opts);
+      main_impl<multiquadric1<3>>(opts);
     }
 
     return 0;

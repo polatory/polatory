@@ -8,8 +8,7 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/rbf/multiquadric1.hpp>
-#include <polatory/rbf/reference/triharmonic3d.hpp>
+#include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
@@ -25,14 +24,13 @@ using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
 using polatory::point_cloud::random_points;
-using polatory::rbf::multiquadric1;
-using polatory::rbf::reference::triharmonic3d;
+using polatory::rbf::reference::cov_gaussian;
 
 namespace {
 
 void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points,
                       index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
-  using Rbf = multiquadric1;
+  using Rbf = cov_gaussian<3>;
   using Model = model<Rbf>;
 
   const int dim = 3;
@@ -41,10 +39,9 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   index_t n_eval_points = n_initial_eval_points;
   index_t n_eval_grad_points = n_initial_eval_grad_points;
 
-  auto rel_tolerance = 2e-8;
-  auto grad_rel_tolerance = 1e-7;
+  auto rel_tolerance = 1e-10;
 
-  Rbf rbf({1.0, 0.001});
+  Rbf rbf({1.0, 0.01});
   rbf.set_anisotropy(random_anisotropy());
 
   Model model(rbf, dim, poly_degree);
@@ -53,7 +50,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   bbox3d bbox{-point3d::Ones(), point3d::Ones()};
   rbf_evaluator<Model> eval(model, bbox, precision::kPrecise);
 
-  for (auto i = 0; i < 4; i++) {
+  for (auto i = 0; i < 2; i++) {
     auto points = random_points(sphere3d(), n_points);
     auto grad_points = random_points(sphere3d(), n_grad_points);
     auto eval_points = random_points(sphere3d(), n_eval_points);
@@ -75,30 +72,22 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
     EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, direct_values.rows());
     EXPECT_EQ(n_eval_points + dim * n_eval_grad_points, values.rows());
 
-    if (n_eval_points > 0) {
-      EXPECT_LT(relative_error(values.head(n_eval_points), direct_values.head(n_eval_points)),
-                rel_tolerance);
-    }
+    EXPECT_LT(relative_error(values, direct_values), rel_tolerance);
 
-    if (n_eval_grad_points > 0) {
-      EXPECT_LT(relative_error(values.tail(dim * n_eval_grad_points),
-                               direct_values.tail(dim * n_eval_grad_points)),
-                grad_rel_tolerance);
-    }
-
-    n_points *= 2;
-    n_grad_points *= 2;
-    n_eval_points *= 2;
-    n_eval_grad_points *= 2;
+    n_points *= 8;
+    n_grad_points *= 8;
+    n_eval_points *= 8;
+    n_eval_grad_points *= 8;
   }
 }
 
 }  // namespace
 
 TEST(rbf_evaluator, trivial) {
-  test_poly_degree(1, 1024, 0, 1024, 0);
-  test_poly_degree(1, 0, 256, 0, 256);
-
+  test_poly_degree(-1, 1024, 0, 1024, 0);
+  test_poly_degree(-1, 0, 256, 0, 256);
+  test_poly_degree(-1, 1024, 256, 1024, 256);
+  test_poly_degree(0, 1024, 256, 1024, 256);
   test_poly_degree(1, 1024, 256, 1024, 256);
   test_poly_degree(2, 1024, 256, 1024, 256);
 }

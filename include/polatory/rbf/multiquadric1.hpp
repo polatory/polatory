@@ -8,25 +8,30 @@
 
 namespace polatory::rbf {
 
-class multiquadric1 final : public rbf_base {
- public:
-  using rbf_base::rbf_base;
+template <int Dim>
+class multiquadric1 final : public rbf_base<Dim> {
+  using Base = rbf_base<Dim>;
+  using matrix3d = Base::matrix3d;
+  using vector3d = Base::vector3d;
 
-  explicit multiquadric1(const std::vector<double>& params) { set_parameters(params); }
+ public:
+  using Base::Base;
+
+  explicit multiquadric1(const std::vector<double>& params) { Base::set_parameters(params); }
 
   int cpd_order() const override { return 1; }
 
   double evaluate_isotropic(const vector3d& diff) const override {
-    auto slope = parameters().at(0);
-    auto c = parameters().at(1);
+    auto slope = Base::parameters().at(0);
+    auto c = Base::parameters().at(1);
     auto r = diff.norm();
 
     return -slope * std::hypot(r, c);
   }
 
   vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
-    auto slope = parameters().at(0);
-    auto c = parameters().at(1);
+    auto slope = Base::parameters().at(0);
+    auto c = Base::parameters().at(1);
     auto r = diff.norm();
 
     auto coeff = -slope / std::hypot(r, c);
@@ -34,8 +39,8 @@ class multiquadric1 final : public rbf_base {
   }
 
   matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
-    auto slope = parameters().at(0);
-    auto c = parameters().at(1);
+    auto slope = Base::parameters().at(0);
+    auto c = Base::parameters().at(1);
     auto r = diff.norm();
 
     auto coeff = -slope / std::hypot(r, c);

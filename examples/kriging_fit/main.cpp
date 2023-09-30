@@ -42,15 +42,15 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
 
     if (opts.rbf_name == "exp") {
-      main_impl<cov_exponential>(opts);
+      main_impl<cov_exponential<3>>(opts);
     } else if (opts.rbf_name == "sp3") {
-      main_impl<cov_spheroidal3>(opts);
+      main_impl<cov_spheroidal3<3>>(opts);
     } else if (opts.rbf_name == "sp5") {
-      main_impl<cov_spheroidal5>(opts);
+      main_impl<cov_spheroidal5<3>>(opts);
     } else if (opts.rbf_name == "sp7") {
-      main_impl<cov_spheroidal7>(opts);
+      main_impl<cov_spheroidal7<3>>(opts);
     } else if (opts.rbf_name == "sp9") {
-      main_impl<cov_spheroidal9>(opts);
+      main_impl<cov_spheroidal9<3>>(opts);
     }
 
     return 0;

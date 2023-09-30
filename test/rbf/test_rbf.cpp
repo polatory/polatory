@@ -37,7 +37,7 @@ using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
-vector3d gradient_approx(const rbf_base& rbf, const vector3d& v, double h) {
+vector3d gradient_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
   // First-order central difference.
 
   auto xm = vector3d{v(0) - h, v(1), v(2)};
@@ -54,7 +54,7 @@ vector3d gradient_approx(const rbf_base& rbf, const vector3d& v, double h) {
          (2.0 * h);
 }
 
-matrix3d hessian_approx(const rbf_base& rbf, const vector3d& v, double h) {
+matrix3d hessian_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
   auto xm = vector3d{v(0) - h, v(1), v(2)};
   auto ym = vector3d{v(0), v(1) - h, v(2)};
   auto zm = vector3d{v(0), v(1), v(2) - h};
@@ -72,7 +72,7 @@ matrix3d hessian_approx(const rbf_base& rbf, const vector3d& v, double h) {
   return m;
 }
 
-void test_gradient(const rbf_base& rbf) {
+void test_gradient(const rbf_base<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-5;
 
@@ -93,7 +93,7 @@ void test_gradient(const rbf_base& rbf) {
   }
 }
 
-void test_hessian(const rbf_base& rbf) {
+void test_hessian(const rbf_base<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-5;
 
@@ -120,40 +120,40 @@ TEST(rbf, anisotropy) {
   auto a = random_anisotropy();
   vector3d v({1.0, 1.0, 1.0});
 
-  biharmonic3d rbf_iso({1.0});
+  biharmonic3d<3> rbf_iso({1.0});
 
-  biharmonic3d rbf_aniso({1.0});
+  biharmonic3d<3> rbf_aniso({1.0});
   rbf_aniso.set_anisotropy(a);
 
   ASSERT_EQ(rbf_iso.evaluate(transform_vector(a, v)), rbf_aniso.evaluate(v));
 }
 
 TEST(rbf, gradient) {
-  test_gradient(biharmonic2d({1.1}));
-  // test_gradient(biharmonic3d({1.1}));
-  test_gradient(cov_exponential({1.1, 0.9}));
-  test_gradient(cov_spheroidal3({1.1, 0.9}));
-  test_gradient(cov_spheroidal5({1.1, 0.9}));
-  test_gradient(cov_spheroidal7({1.1, 0.9}));
-  test_gradient(cov_spheroidal9({1.1, 0.9}));
-  test_gradient(multiquadric1({1.1, 0.1}));
+  test_gradient(biharmonic2d<3>({1.1}));
+  // test_gradient(biharmonic3d<3>({1.1}));
+  test_gradient(cov_exponential<3>({1.1, 0.9}));
+  test_gradient(cov_spheroidal3<3>({1.1, 0.9}));
+  test_gradient(cov_spheroidal5<3>({1.1, 0.9}));
+  test_gradient(cov_spheroidal7<3>({1.1, 0.9}));
+  test_gradient(cov_spheroidal9<3>({1.1, 0.9}));
+  test_gradient(multiquadric1<3>({1.1, 0.1}));
 
-  test_gradient(cov_gaussian({1.1, 0.9}));
-  test_gradient(cov_spherical({1.1, 0.9}));
-  test_gradient(triharmonic3d({1.1}));
+  test_gradient(cov_gaussian<3>({1.1, 0.9}));
+  test_gradient(cov_spherical<3>({1.1, 0.9}));
+  test_gradient(triharmonic3d<3>({1.1}));
 }
 
 TEST(rbf, hessian) {
-  // test_hessian(biharmonic2d({1.1}));
-  // test_hessian(biharmonic3d({1.1}));
-  test_hessian(cov_exponential({1.1, 0.9}));
-  test_hessian(cov_spheroidal3({1.1, 0.9}));
-  test_hessian(cov_spheroidal5({1.1, 0.9}));
-  test_hessian(cov_spheroidal7({1.1, 0.9}));
-  test_hessian(cov_spheroidal9({1.1, 0.9}));
-  test_hessian(multiquadric1({1.1, 0.1}));
+  // test_hessian(biharmonic2d<3>({1.1}));
+  // test_hessian(biharmonic3d<3>({1.1}));
+  test_hessian(cov_exponential<3>({1.1, 0.9}));
+  test_hessian(cov_spheroidal3<3>({1.1, 0.9}));
+  test_hessian(cov_spheroidal5<3>({1.1, 0.9}));
+  test_hessian(cov_spheroidal7<3>({1.1, 0.9}));
+  test_hessian(cov_spheroidal9<3>({1.1, 0.9}));
+  test_hessian(multiquadric1<3>({1.1, 0.1}));
 
-  test_hessian(cov_gaussian({1.1, 0.9}));
-  // test_hessian(cov_spherical({1.1, 0.9}));
-  test_hessian(triharmonic3d({1.1}));
+  test_hessian(cov_gaussian<3>({1.1, 0.9}));
+  // test_hessian(cov_spherical<3>({1.1, 0.9}));
+  test_hessian(triharmonic3d<3>({1.1}));
 }

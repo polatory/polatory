@@ -9,23 +9,28 @@ namespace polatory {
 namespace rbf {
 namespace reference {
 
-class triharmonic3d final : public rbf_base {
- public:
-  using rbf_base::rbf_base;
+template <int Dim>
+class triharmonic3d final : public rbf_base<Dim> {
+  using Base = rbf_base<Dim>;
+  using matrix3d = Base::matrix3d;
+  using vector3d = Base::vector3d;
 
-  explicit triharmonic3d(const std::vector<double>& params) { set_parameters(params); }
+ public:
+  using Base::Base;
+
+  explicit triharmonic3d(const std::vector<double>& params) { Base::set_parameters(params); }
 
   int cpd_order() const override { return 2; }
 
   double evaluate_isotropic(const vector3d& diff) const override {
-    auto slope = parameters().at(0);
+    auto slope = Base::parameters().at(0);
     auto r = diff.norm();
 
     return slope * r * r * r;
   }
 
   vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
-    auto slope = parameters().at(0);
+    auto slope = Base::parameters().at(0);
     auto r = diff.norm();
 
     auto coeff = 3.0 * slope * r;
@@ -33,7 +38,7 @@ class triharmonic3d final : public rbf_base {
   }
 
   matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
-    auto slope = parameters().at(0);
+    auto slope = Base::parameters().at(0);
     auto r = diff.norm();
 
     if (r == 0.0) {

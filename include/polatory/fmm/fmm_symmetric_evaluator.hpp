@@ -48,12 +48,12 @@ class fmm_generic_symmetric_evaluator : public fmm_base_symmetric_evaluator {
   std::unique_ptr<impl> impl_;
 };
 
-template <class Model, int Dim>
+template <class Model>
 using fmm_symmetric_evaluator =
-    fmm_generic_symmetric_evaluator<Model, kernel<typename Model::rbf_type, Dim>>;
+    fmm_generic_symmetric_evaluator<Model, kernel<typename Model::rbf_type>>;
 
-template <class Model, int Dim>
+template <class Model>
 using fmm_hessian_symmetric_evaluator =
-    fmm_generic_symmetric_evaluator<Model, hessian_kernel<typename Model::rbf_type, Dim>>;
+    fmm_generic_symmetric_evaluator<Model, hessian_kernel<typename Model::rbf_type>>;
 
 }  // namespace polatory::fmm

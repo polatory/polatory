@@ -24,7 +24,7 @@ using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
 
 TEST(rbf_inequality_fitter, inequality_only) {
-  using Rbf = biharmonic3d;
+  using Rbf = biharmonic3d<3>;
   using Model = model<Rbf>;
 
   const auto n_points = index_t{4096};
@@ -60,7 +60,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {
-  using Rbf = cov_exponential;
+  using Rbf = cov_exponential<3>;
   using Model = model<Rbf>;
 
   const auto n_points = index_t{25};

@@ -8,12 +8,15 @@
 
 namespace polatory::rbf {
 
+template <int Dim>
 class rbf_base {
  protected:
-  using matrix3d = geometry::matrix3d;
-  using vector3d = geometry::vector3d;
+  using matrix3d = geometry::matrixNd<Dim>;
+  using vector3d = geometry::vectorNd<Dim>;
 
  public:
+  static constexpr int dimension = Dim;
+
   virtual ~rbf_base() = default;
 
   rbf_base(const rbf_base&) = default;

@@ -22,54 +22,32 @@ class rbf_symmetric_evaluator {
  public:
   rbf_symmetric_evaluator(const Model& model, const geometry::points3d& points,
                           const geometry::points3d& grad_points, precision prec)
+      : rbf_symmetric_evaluator(model,
+                                geometry::bbox3d::from_points(points).convex_hull(
+                                    geometry::bbox3d::from_points(grad_points)),
+                                prec) {
+    set_points(points, grad_points);
+  }
+
+  rbf_symmetric_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec)
       : dim_(model.poly_dimension()),
         l_(model.poly_basis_size()),
-        mu_(points.rows()),
-        sigma_(grad_points.rows()) {
-    auto bbox = geometry::bbox3d::from_points(points).convex_hull(
-        geometry::bbox3d::from_points(grad_points));
-
-    switch (dim_) {
-      case 1:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, 1>>(model, bbox, prec);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 1>>(model, bbox, prec);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 1>>(model, bbox, prec);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, 1>>(model, bbox, prec);
-        break;
-      case 2:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, 2>>(model, bbox, prec);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 2>>(model, bbox, prec);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 2>>(model, bbox, prec);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, 2>>(model, bbox, prec);
-        break;
-      case 3:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, 3>>(model, bbox, prec);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 3>>(model, bbox, prec);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 3>>(model, bbox, prec);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, 3>>(model, bbox, prec);
-        break;
-    }
-
-    a_->set_points(points);
-    f_->set_source_points(grad_points);
-    f_->set_field_points(points);
-    ft_->set_source_points(points);
-    ft_->set_field_points(grad_points);
-    h_->set_points(grad_points);
-
+        a_(model, bbox, prec),
+        f_(model, bbox, prec),
+        ft_(model, bbox, prec),
+        h_(model, bbox, prec) {
     if (l_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
-      p_->set_field_points(points, grad_points);
     }
   }
 
   common::valuesd evaluate() const {
     common::valuesd y = common::valuesd::Zero(mu_ + dim_ * sigma_);
 
-    y.head(mu_) += a_->evaluate();
-    y.head(mu_) += f_->evaluate();
-    y.tail(dim_ * sigma_) += ft_->evaluate();
-    y.tail(dim_ * sigma_) += h_->evaluate();
+    y.head(mu_) += a_.evaluate();
+    y.head(mu_) += f_.evaluate();
+    y.tail(dim_ * sigma_) += ft_.evaluate();
+    y.tail(dim_ * sigma_) += h_.evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -79,14 +57,30 @@ class rbf_symmetric_evaluator {
     return y;
   }
 
+  void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+    mu_ = points.rows();
+    sigma_ = grad_points.rows();
+
+    a_.set_points(points);
+    f_.set_source_points(grad_points);
+    f_.set_field_points(points);
+    ft_.set_source_points(points);
+    ft_.set_field_points(grad_points);
+    h_.set_points(grad_points);
+
+    if (l_ > 0) {
+      p_->set_field_points(points, grad_points);
+    }
+  }
+
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
     POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
 
-    a_->set_weights(weights.head(mu_));
-    f_->set_weights(weights.segment(mu_, dim_ * sigma_));
-    ft_->set_weights(weights.head(mu_));
-    h_->set_weights(weights.segment(mu_, dim_ * sigma_));
+    a_.set_weights(weights.head(mu_));
+    f_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    ft_.set_weights(weights.head(mu_));
+    h_.set_weights(weights.segment(mu_, dim_ * sigma_));
 
     if (l_ > 0) {
       p_->set_weights(weights.tail(l_));
@@ -96,13 +90,13 @@ class rbf_symmetric_evaluator {
  private:
   const int dim_;
   const index_t l_;
-  const index_t mu_;
-  const index_t sigma_;
+  index_t mu_{};
+  index_t sigma_{};
 
-  std::unique_ptr<fmm::fmm_base_symmetric_evaluator> a_;
-  std::unique_ptr<fmm::fmm_base_evaluator> f_;
-  std::unique_ptr<fmm::fmm_base_evaluator> ft_;
-  std::unique_ptr<fmm::fmm_base_symmetric_evaluator> h_;
+  fmm::fmm_symmetric_evaluator<Model> a_;
+  fmm::fmm_gradient_evaluator<Model> f_;
+  fmm::fmm_gradient_transpose_evaluator<Model> ft_;
+  fmm::fmm_hessian_symmetric_evaluator<Model> h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 

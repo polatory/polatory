@@ -31,18 +31,19 @@ namespace polatory::fmm {
 
 template <class Model, class Kernel>
 class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
+  static constexpr int dimension{Model::dimension};
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 
   using Particle = scalfmm::container::particle<
-      /* position */ double, 3,
+      /* position */ double, dimension,
       /* inputs */ double, km,
       /* outputs */ double, kn,
       /* variables */ index_t>;
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, 3, Kernel, scalfmm::options::uniform_<>>;
+      scalfmm::interpolation::interpolator<double, dimension, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename Particle::position_type;
@@ -123,7 +124,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
 
  private:
   void handle_self_interaction() const {
-    scalfmm::container::point<double, 3> x{};
+    scalfmm::container::point<double, dimension> x{};
     auto k = kernel_.evaluate(x, x);
 
     scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
@@ -197,7 +198,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
         auto p = typename Leaf::proxy_type(p_ref);
         auto idx = std::get<0>(p.variables());
         auto& new_p = particles_.at(idx);
-        for (auto i = 0; i < 3; i++) {
+        for (auto i = 0; i < dimension; i++) {
           new_p.position(i) = p.position(i);
         }
         for (auto i = 0; i < km; i++) {
@@ -249,26 +250,22 @@ void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT2(MODEL, DIM)                                                                  \
-  template class fmm_generic_symmetric_evaluator<MODEL, kernel<typename MODEL::rbf_type, DIM>>; \
-  template class fmm_generic_symmetric_evaluator<MODEL,                                         \
-                                                 hessian_kernel<typename MODEL::rbf_type, DIM>>;
+#define IMPLEMENT2(MODEL)                                                                  \
+  template class fmm_generic_symmetric_evaluator<MODEL, kernel<typename MODEL::rbf_type>>; \
+  template class fmm_generic_symmetric_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type>>;
 
-#define IMPLEMENT(MODEL) \
-  IMPLEMENT2(MODEL, 1);  \
-  IMPLEMENT2(MODEL, 2);  \
-  IMPLEMENT2(MODEL, 3);
+#define IMPLEMENT(RBF) IMPLEMENT2(model<RBF<3>>);
 
-IMPLEMENT(model<rbf::biharmonic2d>);
-IMPLEMENT(model<rbf::biharmonic3d>);
-IMPLEMENT(model<rbf::cov_exponential>);
-IMPLEMENT(model<rbf::cov_spheroidal3>);
-IMPLEMENT(model<rbf::cov_spheroidal5>);
-IMPLEMENT(model<rbf::cov_spheroidal7>);
-IMPLEMENT(model<rbf::cov_spheroidal9>);
-IMPLEMENT(model<rbf::multiquadric1>);
-IMPLEMENT(model<rbf::reference::cov_gaussian>);
-IMPLEMENT(model<rbf::reference::cov_spherical>);
-IMPLEMENT(model<rbf::reference::triharmonic3d>);
+IMPLEMENT(rbf::biharmonic2d);
+IMPLEMENT(rbf::biharmonic3d);
+IMPLEMENT(rbf::cov_exponential);
+IMPLEMENT(rbf::cov_spheroidal3);
+IMPLEMENT(rbf::cov_spheroidal5);
+IMPLEMENT(rbf::cov_spheroidal7);
+IMPLEMENT(rbf::cov_spheroidal9);
+IMPLEMENT(rbf::multiquadric1);
+IMPLEMENT(rbf::reference::cov_gaussian);
+IMPLEMENT(rbf::reference::cov_spherical);
+IMPLEMENT(rbf::reference::triharmonic3d);
 
 }  // namespace polatory::fmm

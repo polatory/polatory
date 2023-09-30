@@ -27,7 +27,7 @@ using polatory::preconditioner::domain;
 using polatory::rbf::multiquadric1;
 
 TEST(coarse_grid, trivial) {
-  using Rbf = multiquadric1;
+  using Rbf = multiquadric1<3>;
   using Model = model<Rbf>;
 
   auto mu = index_t{512};

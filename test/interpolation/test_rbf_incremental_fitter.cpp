@@ -22,7 +22,7 @@ using polatory::interpolation::rbf_incremental_fitter;
 using polatory::rbf::biharmonic3d;
 
 TEST(rbf_incremental_fitter, trivial) {
-  using Rbf = biharmonic3d;
+  using Rbf = biharmonic3d<3>;
   using Model = model<Rbf>;
 
   const auto n_surface_points = index_t{4096};

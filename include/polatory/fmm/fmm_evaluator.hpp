@@ -54,19 +54,19 @@ class fmm_generic_evaluator : public fmm_base_evaluator {
   std::unique_ptr<impl> impl_;
 };
 
-template <class Model, int Dim>
-using fmm_evaluator = fmm_generic_evaluator<Model, kernel<typename Model::rbf_type, Dim>>;
+template <class Model>
+using fmm_evaluator = fmm_generic_evaluator<Model, kernel<typename Model::rbf_type>>;
 
-template <class Model, int Dim>
+template <class Model>
 using fmm_gradient_evaluator =
-    fmm_generic_evaluator<Model, gradient_kernel<typename Model::rbf_type, Dim>>;
+    fmm_generic_evaluator<Model, gradient_kernel<typename Model::rbf_type>>;
 
-template <class Model, int Dim>
+template <class Model>
 using fmm_gradient_transpose_evaluator =
-    fmm_generic_evaluator<Model, gradient_transpose_kernel<typename Model::rbf_type, Dim>>;
+    fmm_generic_evaluator<Model, gradient_transpose_kernel<typename Model::rbf_type>>;
 
-template <class Model, int Dim>
+template <class Model>
 using fmm_hessian_evaluator =
-    fmm_generic_evaluator<Model, hessian_kernel<typename Model::rbf_type, Dim>>;
+    fmm_generic_evaluator<Model, hessian_kernel<typename Model::rbf_type>>;
 
 }  // namespace polatory::fmm

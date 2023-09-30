@@ -29,7 +29,7 @@ using polatory::rbf::multiquadric1;
 namespace {
 
 void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points) {
-  using Rbf = multiquadric1;
+  using Rbf = multiquadric1<3>;
   using Model = model<Rbf>;
 
   const int dim = 3;

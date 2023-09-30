@@ -5,21 +5,30 @@
 
 namespace polatory::geometry {
 
-using vector2d = Eigen::RowVector2d;
+template <int Dim>
+using vectorNd = Eigen::Matrix<double, 1, Dim>;
+
+template <int Dim>
+using matrixNd = Eigen::Matrix<double, Dim, Dim, Eigen::RowMajor>;
+
+template <int Dim>
+using vectorsNd = Eigen::Matrix<double, Eigen::Dynamic, Dim, Eigen::RowMajor>;
+
+using vector2d = vectorNd<2>;
 
 using point2d = vector2d;
 
-using vector3d = Eigen::RowVector3d;
-
-using vectorXd = Eigen::RowVectorXd;
+using vector3d = vectorNd<3>;
 
 using point3d = vector3d;
 
-using vectors3d = Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>;
+using vectors3d = vectorsNd<3>;
 
 using points3d = vectors3d;
 
-using matrix3d = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
+using matrix3d = matrixNd<3>;
+
+using vectorXd = Eigen::RowVectorXd;
 
 using matrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 

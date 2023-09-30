@@ -28,28 +28,13 @@ struct rbf_operator : krylov::linear_operator {
   }
 
   rbf_operator(const Model& model, const geometry::bbox3d& bbox, precision prec)
-      : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    switch (dim_) {
-      case 1:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, 1>>(model, bbox, prec);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 1>>(model, bbox, prec);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 1>>(model, bbox, prec);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, 1>>(model, bbox, prec);
-        break;
-      case 2:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, 2>>(model, bbox, prec);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 2>>(model, bbox, prec);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 2>>(model, bbox, prec);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, 2>>(model, bbox, prec);
-        break;
-      case 3:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, 3>>(model, bbox, prec);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 3>>(model, bbox, prec);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 3>>(model, bbox, prec);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, 3>>(model, bbox, prec);
-        break;
-    }
-
+      : model_(model),
+        dim_(model.poly_dimension()),
+        l_(model.poly_basis_size()),
+        a_(model, bbox, prec),
+        f_(model, bbox, prec),
+        ft_(model, bbox, prec),
+        h_(model, bbox, prec) {
     if (l_ > 0) {
       poly_basis_ =
           std::make_unique<polynomial::monomial_basis>(model.poly_dimension(), model.poly_degree());
@@ -61,15 +46,15 @@ struct rbf_operator : krylov::linear_operator {
 
     common::valuesd y = common::valuesd::Zero(size());
 
-    a_->set_weights(weights.head(mu_));
-    f_->set_weights(weights.segment(mu_, dim_ * sigma_));
-    ft_->set_weights(weights.head(mu_));
-    h_->set_weights(weights.segment(mu_, dim_ * sigma_));
+    a_.set_weights(weights.head(mu_));
+    f_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    ft_.set_weights(weights.head(mu_));
+    h_.set_weights(weights.segment(mu_, dim_ * sigma_));
 
-    y.head(mu_) += a_->evaluate();
-    y.head(mu_) += f_->evaluate();
-    y.segment(mu_, dim_ * sigma_) += ft_->evaluate();
-    y.segment(mu_, dim_ * sigma_) += h_->evaluate();
+    y.head(mu_) += a_.evaluate();
+    y.head(mu_) += f_.evaluate();
+    y.segment(mu_, dim_ * sigma_) += ft_.evaluate();
+    y.segment(mu_, dim_ * sigma_) += h_.evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -86,12 +71,12 @@ struct rbf_operator : krylov::linear_operator {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
-    a_->set_points(points);
-    f_->set_source_points(grad_points);
-    f_->set_field_points(points);
-    ft_->set_source_points(points);
-    ft_->set_field_points(grad_points);
-    h_->set_points(grad_points);
+    a_.set_points(points);
+    f_.set_source_points(grad_points);
+    f_.set_field_points(points);
+    ft_.set_source_points(points);
+    ft_.set_field_points(grad_points);
+    h_.set_points(grad_points);
 
     if (l_ > 0) {
       pt_ = poly_basis_->evaluate(points, grad_points);
@@ -107,10 +92,10 @@ struct rbf_operator : krylov::linear_operator {
   index_t mu_{};
   index_t sigma_{};
 
-  std::unique_ptr<fmm::fmm_base_symmetric_evaluator> a_;
-  std::unique_ptr<fmm::fmm_base_evaluator> f_;
-  std::unique_ptr<fmm::fmm_base_evaluator> ft_;
-  std::unique_ptr<fmm::fmm_base_symmetric_evaluator> h_;
+  mutable fmm::fmm_symmetric_evaluator<Model> a_;
+  mutable fmm::fmm_gradient_evaluator<Model> f_;
+  mutable fmm::fmm_gradient_transpose_evaluator<Model> ft_;
+  mutable fmm::fmm_hessian_symmetric_evaluator<Model> h_;
   std::unique_ptr<polynomial::monomial_basis> poly_basis_;
   Eigen::MatrixXd pt_;
 };

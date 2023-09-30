@@ -8,16 +8,21 @@
 
 namespace polatory::rbf {
 
-class biharmonic3d final : public rbf_base {
- public:
-  using rbf_base::rbf_base;
+template <int Dim>
+class biharmonic3d final : public rbf_base<Dim> {
+  using Base = rbf_base<Dim>;
+  using matrix3d = Base::matrix3d;
+  using vector3d = Base::vector3d;
 
-  explicit biharmonic3d(const std::vector<double>& params) { set_parameters(params); }
+ public:
+  using Base::Base;
+
+  explicit biharmonic3d(const std::vector<double>& params) { Base::set_parameters(params); }
 
   int cpd_order() const override { return 1; }
 
   double evaluate_isotropic(const vector3d& diff) const override {
-    auto slope = parameters().at(0);
+    auto slope = Base::parameters().at(0);
     auto r = diff.norm();
 
     return -slope * r;

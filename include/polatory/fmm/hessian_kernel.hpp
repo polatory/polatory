@@ -12,8 +12,9 @@
 namespace polatory {
 namespace fmm {
 
-template <class Rbf, int Dim>
+template <class Rbf>
 struct hessian_kernel {
+  static constexpr int Dim = Rbf::dimension;
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::symmetric};
   static constexpr std::size_t km{Dim};
@@ -36,8 +37,9 @@ struct hessian_kernel {
     return mc;
   }
 
-  [[nodiscard]] inline auto evaluate(scalfmm::container::point<double, 3> const& x,
-                                     scalfmm::container::point<double, 3> const& y) const noexcept {
+  [[nodiscard]] inline auto evaluate(
+      scalfmm::container::point<double, Dim> const& x,
+      scalfmm::container::point<double, Dim> const& y) const noexcept {
     geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
     geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
 
@@ -55,8 +57,8 @@ struct hessian_kernel {
   }
 
   [[nodiscard]] inline auto evaluate(
-      scalfmm::container::point<xsimd::batch<double>, 3> const& x,
-      scalfmm::container::point<xsimd::batch<double>, 3> const& y) const noexcept {
+      scalfmm::container::point<xsimd::batch<double>, Dim> const& x,
+      scalfmm::container::point<xsimd::batch<double>, Dim> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
     auto n = x.at(0).size;
     std::array<double, 4> v00;

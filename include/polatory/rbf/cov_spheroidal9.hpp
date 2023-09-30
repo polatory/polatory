@@ -7,20 +7,25 @@
 
 namespace polatory::rbf {
 
-class cov_spheroidal9 final : public covariance_function_base {
+template <int Dim>
+class cov_spheroidal9 final : public covariance_function_base<Dim> {
+  using Base = covariance_function_base<Dim>;
+  using matrix3d = Base::matrix3d;
+  using vector3d = Base::vector3d;
+
   static constexpr double kRho0 = 0.31622776601683794;
   static constexpr double kA = 1.4230249470757708;
   static constexpr double kB = 0.8445585690332554;
   static constexpr double kD = 7.601027121299299;
 
  public:
-  using covariance_function_base::covariance_function_base;
+  using Base::Base;
 
-  explicit cov_spheroidal9(const std::vector<double>& params) { set_parameters(params); }
+  explicit cov_spheroidal9(const std::vector<double>& params) { Base::set_parameters(params); }
 
   double evaluate_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
     auto rho = r / range;
 
@@ -28,8 +33,8 @@ class cov_spheroidal9 final : public covariance_function_base {
   }
 
   vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
     auto rho = r / range;
 
@@ -40,8 +45,8 @@ class cov_spheroidal9 final : public covariance_function_base {
   }
 
   matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
     auto rho = r / range;
 

@@ -31,7 +31,7 @@ using polatory::rbf::reference::triharmonic3d;
 namespace {
 
 void test_poly_degree(int poly_degree) {
-  using Rbf = cov_gaussian;
+  using Rbf = cov_gaussian<3>;
   using Model = model<Rbf>;
 
   const int dim = 3;
