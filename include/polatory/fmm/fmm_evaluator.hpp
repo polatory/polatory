@@ -15,16 +15,20 @@ namespace polatory::fmm {
 
 template <class Model, class Kernel>
 class fmm_generic_evaluator {
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+
  public:
-  fmm_generic_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec);
+  fmm_generic_evaluator(const Model& model, const Bbox& bbox, precision prec);
 
   ~fmm_generic_evaluator();
 
   common::valuesd evaluate() const;
 
-  void set_field_points(const geometry::points3d& points);
+  void set_field_points(const Points& points);
 
-  void set_source_points(const geometry::points3d& points);
+  void set_source_points(const Points& points);
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights);
 

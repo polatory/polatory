@@ -104,7 +104,9 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     for (index_t idx = 0; idx < n_fld_points_; idx++) {
       auto& p = trg_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
-      p.position() = Position{ap(0), ap(1), ap(2)};
+      for (auto i = 0; i < kDim; i++) {
+        p.position(i) = ap(i);
+      }
       p.variables(idx);
     }
 
@@ -120,7 +122,9 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     for (index_t idx = 0; idx < n_src_points_; idx++) {
       auto& p = src_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
-      p.position() = Position{ap(0), ap(1), ap(2)};
+      for (auto i = 0; i < kDim; i++) {
+        p.position(i) = ap(i);
+      }
       p.variables(idx);
     }
 
@@ -278,8 +282,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
 };
 
 template <class Model, class Kernel>
-fmm_generic_evaluator<Model, Kernel>::fmm_generic_evaluator(const Model& model,
-                                                            const geometry::bbox3d& bbox,
+fmm_generic_evaluator<Model, Kernel>::fmm_generic_evaluator(const Model& model, const Bbox& bbox,
                                                             precision prec)
     : impl_(std::make_unique<impl>(model, bbox, prec)) {}
 
@@ -292,12 +295,12 @@ common::valuesd fmm_generic_evaluator<Model, Kernel>::evaluate() const {
 }
 
 template <class Model, class Kernel>
-void fmm_generic_evaluator<Model, Kernel>::set_field_points(const geometry::points3d& points) {
+void fmm_generic_evaluator<Model, Kernel>::set_field_points(const Points& points) {
   impl_->set_field_points(points);
 }
 
 template <class Model, class Kernel>
-void fmm_generic_evaluator<Model, Kernel>::set_source_points(const geometry::points3d& points) {
+void fmm_generic_evaluator<Model, Kernel>::set_source_points(const Points& points) {
   impl_->set_source_points(points);
 }
 
