@@ -27,6 +27,9 @@ using polatory::preconditioner::domain;
 using polatory::rbf::multiquadric1;
 
 TEST(coarse_grid, trivial) {
+  using Rbf = multiquadric1;
+  using Model = model<Rbf>;
+
   auto mu = index_t{512};
   auto sigma = index_t{256};
   auto dim = 3;
@@ -36,7 +39,9 @@ TEST(coarse_grid, trivial) {
   auto points = random_points(sphere3d(), mu);
   auto grad_points = random_points(sphere3d(), sigma);
 
-  model model(multiquadric1({1.0, 1e-3}), dim, deg);
+  Rbf rbf({1.0, 1e-3});
+
+  Model model(rbf, dim, deg);
   model.set_nugget(0.01);
   auto l = model.poly_basis_size();
 
@@ -57,7 +62,7 @@ TEST(coarse_grid, trivial) {
     domain.grad_point_indices = std::move(grad_indices);
   }
 
-  coarse_grid coarse(model, std::move(domain));
+  coarse_grid<Model> coarse(model, std::move(domain));
   lagrange_basis lagrange_basis(dim, deg, points.topRows(model.poly_basis_size()));
   auto lagrange_pt = lagrange_basis.evaluate(points, grad_points);
   coarse.setup(points, grad_points, lagrange_pt);
@@ -68,7 +73,7 @@ TEST(coarse_grid, trivial) {
   valuesd sol = valuesd::Zero(mu + dim * sigma + l);
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_evaluator(model, points, grad_points);
+  auto eval = rbf_direct_evaluator<Model>(model, points, grad_points);
   eval.set_weights(sol);
   eval.set_field_points(points, points3d(0, 3));
   valuesd values_fit = eval.evaluate() + sol.head(mu) * model.nugget();

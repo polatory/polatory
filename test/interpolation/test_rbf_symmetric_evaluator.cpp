@@ -24,23 +24,26 @@ namespace {
 
 void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
                       index_t n_eval_points, index_t n_eval_grad_points) {
+  using Rbf = multiquadric1;
+  using Model = model<Rbf>;
+
   const int dim = 3;
 
   auto rel_tolerance = 1e-6;
 
-  multiquadric1 rbf({1.0, 0.001});
+  Rbf rbf({1.0, 0.001});
   rbf.set_anisotropy(random_anisotropy());
 
-  model model(rbf, dim, poly_degree);
+  Model model(rbf, dim, poly_degree);
 
   auto points = random_points(sphere3d(), n_points);
   auto grad_points = random_points(sphere3d(), n_grad_points);
 
-  rbf_direct_evaluator direct_eval(model, points, grad_points);
+  rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
   direct_eval.set_field_points(points.topRows(n_eval_points),
                                grad_points.topRows(n_eval_grad_points));
 
-  rbf_symmetric_evaluator<> eval(model, points, grad_points);
+  rbf_symmetric_evaluator<Model> eval(model, points, grad_points);
 
   for (auto i = 0; i < 2; i++) {
     valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());

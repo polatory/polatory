@@ -13,11 +13,12 @@
 
 namespace polatory::interpolation {
 
+template <class Model>
 class rbf_direct_operator : krylov::linear_operator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_direct_operator(const model& model, const geometry::points3d& points,
+  rbf_direct_operator(const Model& model, const geometry::points3d& points,
                       const geometry::points3d& grad_points)
       : model_(model),
         dim_(model.poly_dimension()),
@@ -81,7 +82,7 @@ class rbf_direct_operator : krylov::linear_operator {
   index_t size() const override { return mu_ + dim_ * sigma_ + l_; }
 
  private:
-  const model& model_;
+  const Model& model_;
   const int dim_;
   const index_t l_;
   const index_t mu_;

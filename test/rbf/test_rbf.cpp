@@ -120,10 +120,12 @@ TEST(rbf, anisotropy) {
   auto a = random_anisotropy();
   vector3d v({1.0, 1.0, 1.0});
 
-  biharmonic3d rbf({1.0});
-  rbf.set_anisotropy(a);
+  biharmonic3d rbf_iso({1.0});
 
-  ASSERT_EQ(rbf.evaluate(transform_vector(a, v)), rbf.evaluate(v));
+  biharmonic3d rbf_aniso({1.0});
+  rbf_aniso.set_anisotropy(a);
+
+  ASSERT_EQ(rbf_iso.evaluate(transform_vector(a, v)), rbf_aniso.evaluate(v));
 }
 
 TEST(rbf, gradient) {
