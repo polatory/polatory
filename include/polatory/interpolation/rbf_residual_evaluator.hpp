@@ -18,13 +18,14 @@ template <class Model>
 class rbf_residual_evaluator {
   static constexpr index_t kInitialChunkSize = 1024;
 
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using Evaluator = rbf_evaluator<Model>;
 
  public:
-  rbf_residual_evaluator(const Model& model, const geometry::points3d& points,
-                         const geometry::points3d& grad_points)
+  rbf_residual_evaluator(const Model& model, const Points& points, const Points& grad_points)
       : model_(model),
-        dim_(model.poly_dimension()),
         l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()),
@@ -33,8 +34,8 @@ class rbf_residual_evaluator {
     evaluator_ = std::make_unique<Evaluator>(model, points_, grad_points_, precision::kPrecise);
   }
 
-  rbf_residual_evaluator(const Model& model, const geometry::bbox3d& bbox)
-      : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
+  rbf_residual_evaluator(const Model& model, const Bbox& bbox)
+      : model_(model), l_(model.poly_basis_size()) {
     evaluator_ = std::make_unique<Evaluator>(model, bbox, precision::kPrecise);
   }
 
@@ -43,8 +44,8 @@ class rbf_residual_evaluator {
                                     const Eigen::MatrixBase<Derived2>& weights,
                                     double absolute_tolerance,
                                     double grad_absolute_tolerance) const {
-    POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
-    POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
+    POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
+    POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
     evaluator_->set_weights(weights);
 
@@ -81,11 +82,11 @@ class rbf_residual_evaluator {
       }
 
       auto grad_points = grad_points_.middleRows(begin, end - begin);
-      evaluator_->set_field_points(geometry::points3d(0, 3), grad_points);
+      evaluator_->set_field_points(Points(0, kDim), grad_points);
       auto fit = evaluator_->evaluate();
 
       auto res =
-          (values.segment(mu_ + dim_ * begin, dim_ * (end - begin)) - fit).array().abs().maxCoeff();
+          (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit).array().abs().maxCoeff();
       if (res >= grad_absolute_tolerance) {
         return {false, 0.0};
       }
@@ -99,7 +100,7 @@ class rbf_residual_evaluator {
     return {true, max_residual};
   }
 
-  void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+  void set_points(const Points& points, const Points& grad_points) {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
     points_ = points;
@@ -110,13 +111,12 @@ class rbf_residual_evaluator {
 
  private:
   const Model& model_;
-  const int dim_;
   const index_t l_;
 
   index_t mu_{};
   index_t sigma_{};
-  geometry::points3d points_;
-  geometry::points3d grad_points_;
+  Points points_;
+  Points grad_points_;
 
   std::unique_ptr<Evaluator> evaluator_;
 };

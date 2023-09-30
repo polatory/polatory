@@ -17,19 +17,20 @@
 namespace polatory::interpolation {
 
 template <class Model>
-struct rbf_operator : krylov::linear_operator {
-  rbf_operator(const Model& model, const geometry::points3d& points,
-               const geometry::points3d& grad_points, precision prec)
-      : rbf_operator(model,
-                     geometry::bbox3d::from_points(points).convex_hull(
-                         geometry::bbox3d::from_points(grad_points)),
+class rbf_operator : public krylov::linear_operator {
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+
+ public:
+  rbf_operator(const Model& model, const Points& points, const Points& grad_points, precision prec)
+      : rbf_operator(model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
                      prec) {
     set_points(points, grad_points);
   }
 
-  rbf_operator(const Model& model, const geometry::bbox3d& bbox, precision prec)
+  rbf_operator(const Model& model, const Bbox& bbox, precision prec)
       : model_(model),
-        dim_(model.poly_dimension()),
         l_(model.poly_basis_size()),
         a_(model, bbox, prec),
         f_(model, bbox, prec),
@@ -47,19 +48,19 @@ struct rbf_operator : krylov::linear_operator {
     common::valuesd y = common::valuesd::Zero(size());
 
     a_.set_weights(weights.head(mu_));
-    f_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    f_.set_weights(weights.segment(mu_, kDim * sigma_));
     ft_.set_weights(weights.head(mu_));
-    h_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    h_.set_weights(weights.segment(mu_, kDim * sigma_));
 
     y.head(mu_) += a_.evaluate();
     y.head(mu_) += f_.evaluate();
-    y.segment(mu_, dim_ * sigma_) += ft_.evaluate();
-    y.segment(mu_, dim_ * sigma_) += h_.evaluate();
+    y.segment(mu_, kDim * sigma_) += ft_.evaluate();
+    y.segment(mu_, kDim * sigma_) += h_.evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
-      y.head(mu_ + dim_ * sigma_) += pt_.transpose() * weights.tail(l_);
-      y.tail(l_) += pt_ * weights.head(mu_ + dim_ * sigma_);
+      y.head(mu_ + kDim * sigma_) += pt_.transpose() * weights.tail(l_);
+      y.tail(l_) += pt_ * weights.head(mu_ + kDim * sigma_);
     }
 
     y.head(mu_) += weights.head(mu_) * model_.nugget();
@@ -67,7 +68,7 @@ struct rbf_operator : krylov::linear_operator {
     return y;
   }
 
-  void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+  void set_points(const Points& points, const Points& grad_points) {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
@@ -83,11 +84,10 @@ struct rbf_operator : krylov::linear_operator {
     }
   }
 
-  index_t size() const override { return mu_ + dim_ * sigma_ + l_; }
+  index_t size() const override { return mu_ + kDim * sigma_ + l_; }
 
  private:
   const Model& model_;
-  const int dim_;
   const index_t l_;
   index_t mu_{};
   index_t sigma_{};

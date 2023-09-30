@@ -19,16 +19,19 @@ namespace polatory::interpolation {
 
 template <class Model>
 class rbf_incremental_fitter {
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using Solver = rbf_solver<Model>;
   using Evaluator = rbf_evaluator<Model>;
 
  public:
-  rbf_incremental_fitter(const Model& model, const geometry::points3d& points)
+  rbf_incremental_fitter(const Model& model, const Points& points)
       : model_(model),
         points_(points),
         n_points_(points.rows()),
         n_poly_basis_(model.poly_basis_size()),
-        bbox_(geometry::bbox3d::from_points(points)) {}
+        bbox_(Bbox::from_points(points)) {}
 
   std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
                                                        double absolute_tolerance,
@@ -45,7 +48,7 @@ class rbf_incremental_fitter {
     while (true) {
       std::cout << "Number of RBF centers: " << n_centers << " / " << n_points_ << std::endl;
 
-      geometry::points3d center_points = points_(centers, Eigen::all);
+      Points center_points = points_(centers, Eigen::all);
 
       solver.set_points(center_points);
       center_weights =
@@ -58,9 +61,9 @@ class rbf_incremental_fitter {
       // Evaluate residuals at remaining points.
 
       auto c_centers = complementary_indices(centers);
-      geometry::points3d c_center_points = points_(c_centers, Eigen::all);
+      Points c_center_points = points_(c_centers, Eigen::all);
 
-      res_eval.set_source_points(center_points, geometry::points3d(0, 3));
+      res_eval.set_source_points(center_points, Points(0, kDim));
       res_eval.set_weights(center_weights);
 
       auto c_values_fit = res_eval.evaluate(c_center_points);
@@ -126,12 +129,12 @@ class rbf_incremental_fitter {
   }
 
   const Model& model_;
-  const geometry::points3d& points_;
+  const Points& points_;
 
   const index_t n_points_;
   const index_t n_poly_basis_;
 
-  const geometry::bbox3d bbox_;
+  const Bbox bbox_;
 };
 
 }  // namespace polatory::interpolation

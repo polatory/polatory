@@ -21,16 +21,19 @@ namespace polatory::interpolation {
 
 template <class Model>
 class rbf_inequality_fitter {
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using Solver = rbf_solver<Model>;
   using Evaluator = rbf_evaluator<Model>;
 
  public:
-  rbf_inequality_fitter(const Model& model, const geometry::points3d& points)
+  rbf_inequality_fitter(const Model& model, const Points& points)
       : model_(model),
         points_(points),
         n_points_(points.rows()),
         n_poly_basis_(model.poly_basis_size()),
-        bbox_(geometry::bbox3d::from_points(points)) {}
+        bbox_(Bbox::from_points(points)) {}
 
   std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
                                                        const common::valuesd& values_lb,
@@ -49,7 +52,7 @@ class rbf_inequality_fitter {
     std::set_union(lb_idcs.begin(), lb_idcs.end(), ub_idcs.begin(), ub_idcs.end(),
                    std::back_inserter(ineq_idcs));
     auto n_ineq = static_cast<index_t>(ineq_idcs.size());
-    geometry::points3d ineq_points = points_(ineq_idcs, Eigen::all);
+    Points ineq_points = points_(ineq_idcs, Eigen::all);
 
     Solver solver(model_, bbox_);
     Evaluator res_eval(model_, bbox_, precision::kPrecise);
@@ -78,7 +81,7 @@ class rbf_inequality_fitter {
       if (!centers.empty()) {
         auto n_centers = static_cast<index_t>(centers.size());
 
-        geometry::points3d center_points = points_(centers, Eigen::all);
+        Points center_points = points_(centers, Eigen::all);
 
         common::valuesd center_values = values(centers, Eigen::all);
         for (index_t i = n_eq; i < n_centers; i++) {
@@ -99,7 +102,7 @@ class rbf_inequality_fitter {
         }
         weights.tail(n_poly_basis_) = center_weights.tail(n_poly_basis_);
 
-        res_eval.set_source_points(center_points, geometry::points3d(0, 3));
+        res_eval.set_source_points(center_points, Points(0, kDim));
         res_eval.set_weights(center_weights);
         values_fit = res_eval.evaluate(ineq_points);
       } else {
@@ -202,12 +205,12 @@ class rbf_inequality_fitter {
   }
 
   const Model& model_;
-  const geometry::points3d& points_;
+  const Points& points_;
 
   const index_t n_points_;
   const index_t n_poly_basis_;
 
-  const geometry::bbox3d bbox_;
+  const Bbox bbox_;
 };
 
 }  // namespace polatory::interpolation

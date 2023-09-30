@@ -9,14 +9,15 @@ namespace polatory::interpolation {
 
 template <class Model>
 class rbf_fitter {
+  static constexpr int kDim = Model::kDim;
+  using Points = geometry::pointsNd<kDim>;
   using RbfSolver = rbf_solver<Model>;
 
  public:
-  rbf_fitter(const Model& model, const geometry::points3d& points)
-      : rbf_fitter(model, points, geometry::points3d(0, 3)) {}
+  rbf_fitter(const Model& model, const Points& points)
+      : rbf_fitter(model, points, Points(0, kDim)) {}
 
-  rbf_fitter(const Model& model, const geometry::points3d& points,
-             const geometry::points3d& grad_points)
+  rbf_fitter(const Model& model, const Points& points, const Points& grad_points)
       : solver_(model, points, grad_points) {}
 
   common::valuesd fit(const common::valuesd& values, double absolute_tolerance,

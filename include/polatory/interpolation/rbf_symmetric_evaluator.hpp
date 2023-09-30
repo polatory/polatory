@@ -17,21 +17,21 @@ namespace polatory::interpolation {
 
 template <class Model>
 class rbf_symmetric_evaluator {
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_symmetric_evaluator(const Model& model, const geometry::points3d& points,
-                          const geometry::points3d& grad_points, precision prec)
-      : rbf_symmetric_evaluator(model,
-                                geometry::bbox3d::from_points(points).convex_hull(
-                                    geometry::bbox3d::from_points(grad_points)),
-                                prec) {
+  rbf_symmetric_evaluator(const Model& model, const Points& points, const Points& grad_points,
+                          precision prec)
+      : rbf_symmetric_evaluator(
+            model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)), prec) {
     set_points(points, grad_points);
   }
 
-  rbf_symmetric_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec)
-      : dim_(model.poly_dimension()),
-        l_(model.poly_basis_size()),
+  rbf_symmetric_evaluator(const Model& model, const Bbox& bbox, precision prec)
+      : l_(model.poly_basis_size()),
         a_(model, bbox, prec),
         f_(model, bbox, prec),
         ft_(model, bbox, prec),
@@ -42,12 +42,12 @@ class rbf_symmetric_evaluator {
   }
 
   common::valuesd evaluate() const {
-    common::valuesd y = common::valuesd::Zero(mu_ + dim_ * sigma_);
+    common::valuesd y = common::valuesd::Zero(mu_ + kDim * sigma_);
 
     y.head(mu_) += a_.evaluate();
     y.head(mu_) += f_.evaluate();
-    y.tail(dim_ * sigma_) += ft_.evaluate();
-    y.tail(dim_ * sigma_) += h_.evaluate();
+    y.tail(kDim * sigma_) += ft_.evaluate();
+    y.tail(kDim * sigma_) += h_.evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -57,7 +57,7 @@ class rbf_symmetric_evaluator {
     return y;
   }
 
-  void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+  void set_points(const Points& points, const Points& grad_points) {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
@@ -75,12 +75,12 @@ class rbf_symmetric_evaluator {
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
+    POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
     a_.set_weights(weights.head(mu_));
-    f_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    f_.set_weights(weights.segment(mu_, kDim * sigma_));
     ft_.set_weights(weights.head(mu_));
-    h_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    h_.set_weights(weights.segment(mu_, kDim * sigma_));
 
     if (l_ > 0) {
       p_->set_weights(weights.tail(l_));
@@ -88,7 +88,6 @@ class rbf_symmetric_evaluator {
   }
 
  private:
-  const int dim_;
   const index_t l_;
   index_t mu_{};
   index_t sigma_{};

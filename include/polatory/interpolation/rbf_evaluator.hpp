@@ -16,33 +16,33 @@ namespace polatory::interpolation {
 
 template <class Model>
 class rbf_evaluator {
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_evaluator(const Model& model, const geometry::points3d& source_points, precision prec)
-      : rbf_evaluator(model, source_points, geometry::points3d(0, 3), prec) {}
+  rbf_evaluator(const Model& model, const Points& source_points, precision prec)
+      : rbf_evaluator(model, source_points, Points(0, kDim), prec) {}
 
-  rbf_evaluator(const Model& model, const geometry::points3d& source_points,
-                const geometry::points3d& source_grad_points, precision prec)
-      : rbf_evaluator(model, source_points, source_grad_points,
-                      geometry::bbox3d::from_points(source_points)
-                          .convex_hull(geometry::bbox3d::from_points(source_grad_points)),
-                      prec) {}
-
-  rbf_evaluator(const Model& model, const geometry::points3d& source_points,
-                const geometry::bbox3d& bbox, precision prec)
-      : rbf_evaluator(model, source_points, geometry::points3d(0, 3), bbox, prec) {}
-
-  rbf_evaluator(const Model& model, const geometry::points3d& source_points,
-                const geometry::points3d& source_grad_points, const geometry::bbox3d& bbox,
+  rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
                 precision prec)
+      : rbf_evaluator(
+            model, source_points, source_grad_points,
+            Bbox::from_points(source_points).convex_hull(Bbox::from_points(source_grad_points)),
+            prec) {}
+
+  rbf_evaluator(const Model& model, const Points& source_points, const Bbox& bbox, precision prec)
+      : rbf_evaluator(model, source_points, Points(0, kDim), bbox, prec) {}
+
+  rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
+                const Bbox& bbox, precision prec)
       : rbf_evaluator(model, bbox, prec) {
     set_source_points(source_points, source_grad_points);
   }
 
-  rbf_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec)
-      : dim_(model.poly_dimension()),
-        l_(model.poly_basis_size()),
+  rbf_evaluator(const Model& model, const Bbox& bbox, precision prec)
+      : l_(model.poly_basis_size()),
         a_(model, bbox, prec),
         f_(model, bbox, prec),
         ft_(model, bbox, prec),
@@ -53,12 +53,12 @@ class rbf_evaluator {
   }
 
   common::valuesd evaluate() const {
-    common::valuesd y = common::valuesd::Zero(fld_mu_ + dim_ * fld_sigma_);
+    common::valuesd y = common::valuesd::Zero(fld_mu_ + kDim * fld_sigma_);
 
     y.head(fld_mu_) += a_.evaluate();
     y.head(fld_mu_) += f_.evaluate();
-    y.tail(dim_ * fld_sigma_) += ft_.evaluate();
-    y.tail(dim_ * fld_sigma_) += h_.evaluate();
+    y.tail(kDim * fld_sigma_) += ft_.evaluate();
+    y.tail(kDim * fld_sigma_) += h_.evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -68,22 +68,19 @@ class rbf_evaluator {
     return y;
   }
 
-  common::valuesd evaluate(const geometry::points3d& field_points) {
-    return evaluate(field_points, geometry::points3d(0, 3));
+  common::valuesd evaluate(const Points& field_points) {
+    return evaluate(field_points, Points(0, 3));
   }
 
-  common::valuesd evaluate(const geometry::points3d& field_points,
-                           const geometry::points3d& field_grad_points) {
+  common::valuesd evaluate(const Points& field_points, const Points& field_grad_points) {
     set_field_points(field_points, field_grad_points);
 
     return evaluate();
   }
 
-  void set_field_points(const geometry::points3d& points) {
-    set_field_points(points, geometry::points3d(0, 3));
-  }
+  void set_field_points(const Points& points) { set_field_points(points, Points(0, kDim)); }
 
-  void set_field_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+  void set_field_points(const Points& points, const Points& grad_points) {
     fld_mu_ = points.rows();
     fld_sigma_ = grad_points.rows();
 
@@ -97,7 +94,7 @@ class rbf_evaluator {
     }
   }
 
-  void set_source_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+  void set_source_points(const Points& points, const Points& grad_points) {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
@@ -109,12 +106,12 @@ class rbf_evaluator {
 
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    POLATORY_ASSERT(weights.rows() == mu_ + dim_ * sigma_ + l_);
+    POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
     a_.set_weights(weights.head(mu_));
-    f_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    f_.set_weights(weights.segment(mu_, kDim * sigma_));
     ft_.set_weights(weights.head(mu_));
-    h_.set_weights(weights.segment(mu_, dim_ * sigma_));
+    h_.set_weights(weights.segment(mu_, kDim * sigma_));
 
     if (l_ > 0) {
       p_->set_weights(weights.tail(l_));
@@ -122,7 +119,6 @@ class rbf_evaluator {
   }
 
  private:
-  const int dim_;
   const index_t l_;
   index_t mu_{};
   index_t sigma_{};

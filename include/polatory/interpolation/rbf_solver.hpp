@@ -21,38 +21,33 @@ namespace polatory::interpolation {
 
 template <class Model>
 class rbf_solver {
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using Operator = rbf_operator<Model>;
   using Preconditioner = preconditioner::ras_preconditioner<Model>;
   using ResidualEvaluator = rbf_residual_evaluator<Model>;
 
  public:
-  rbf_solver(const Model& model, const geometry::points3d& points)
-      : rbf_solver(model, points, geometry::points3d(0, 3)) {}
+  rbf_solver(const Model& model, const Points& points)
+      : rbf_solver(model, points, Points(0, kDim)) {}
 
-  rbf_solver(const Model& model, const geometry::points3d& points,
-             const geometry::points3d& grad_points)
-      : model_(model),
-        dim_(model.poly_dimension()),
-        l_(model.poly_basis_size()),
-        mu_(points.rows()),
-        sigma_(grad_points.rows()) {
+  rbf_solver(const Model& model, const Points& points, const Points& grad_points)
+      : model_(model), l_(model.poly_basis_size()), mu_(points.rows()), sigma_(grad_points.rows()) {
     op_ = std::make_unique<Operator>(model, points, grad_points, precision::kPrecise);
     res_eval_ = std::make_unique<ResidualEvaluator>(model, points, grad_points);
 
     set_points(points, grad_points);
   }
 
-  rbf_solver(const Model& model, const geometry::bbox3d& bbox)
-      : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
+  rbf_solver(const Model& model, const Bbox& bbox) : model_(model), l_(model.poly_basis_size()) {
     op_ = std::make_unique<Operator>(model, bbox, precision::kPrecise);
     res_eval_ = std::make_unique<ResidualEvaluator>(model, bbox);
   }
 
-  void set_points(const geometry::points3d& points) {
-    set_points(points, geometry::points3d(0, 3));
-  }
+  void set_points(const Points& points) { set_points(points, Points(0, kDim)); }
 
-  void set_points(const geometry::points3d& points, const geometry::points3d& grad_points) {
+  void set_points(const Points& points, const Points& grad_points) {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
@@ -62,7 +57,7 @@ class rbf_solver {
     pc_ = std::make_unique<Preconditioner>(model_, points, grad_points);
 
     if (l_ > 0) {
-      polynomial::monomial_basis poly(dim_, model_.poly_degree());
+      polynomial::monomial_basis poly(kDim, model_.poly_degree());
       p_ = poly.evaluate(points, grad_points).transpose();
       common::orthonormalize_cols(p_);
     }
@@ -77,7 +72,7 @@ class rbf_solver {
   template <class Derived>
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         double grad_absolute_tolerance, int max_iter) const {
-    POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
+    POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
 
     return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
   }
@@ -92,8 +87,8 @@ class rbf_solver {
   common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                         double grad_absolute_tolerance, int max_iter,
                         const Eigen::MatrixBase<Derived2>& initial_solution) const {
-    POLATORY_ASSERT(values.rows() == mu_ + dim_ * sigma_);
-    POLATORY_ASSERT(initial_solution.rows() == mu_ + dim_ * sigma_ + l_);
+    POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
+    POLATORY_ASSERT(initial_solution.rows() == mu_ + kDim * sigma_ + l_);
 
     common::valuesd ini_sol = initial_solution;
 
@@ -101,8 +96,8 @@ class rbf_solver {
       // Orthogonalize weights against P.
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
-        ini_sol.head(mu_ + dim_ * sigma_) -=
-            p_.col(i).dot(ini_sol.head(mu_ + dim_ * sigma_)) * p_.col(i);
+        ini_sol.head(mu_ + kDim * sigma_) -=
+            p_.col(i).dot(ini_sol.head(mu_ + kDim * sigma_)) * p_.col(i);
       }
     }
 
@@ -116,11 +111,11 @@ class rbf_solver {
                              const Eigen::MatrixBase<Derived2>* initial_solution = nullptr) const {
     // The solver does not work when all values are zero.
     if (values.isZero()) {
-      return common::valuesd::Zero(mu_ + dim_ * sigma_ + l_);
+      return common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
     }
 
-    common::valuesd rhs(mu_ + dim_ * sigma_ + l_);
-    rhs.head(mu_ + dim_ * sigma_) = values;
+    common::valuesd rhs(mu_ + kDim * sigma_ + l_);
+    rhs.head(mu_ + kDim * sigma_) = values;
     rhs.tail(l_) = common::valuesd::Zero(l_);
 
     krylov::fgmres solver(*op_, rhs, max_iter);
@@ -157,7 +152,6 @@ class rbf_solver {
   }
 
   const Model& model_;
-  const int dim_;
   const index_t l_;
 
   index_t mu_{};
