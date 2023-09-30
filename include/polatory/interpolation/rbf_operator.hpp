@@ -15,35 +15,35 @@
 
 namespace polatory::interpolation {
 
-template <int Order = 10>
+template <class Model, int Order = 10>
 struct rbf_operator : krylov::linear_operator {
-  rbf_operator(const model& model, const geometry::points3d& points,
+  rbf_operator(const Model& model, const geometry::points3d& points,
                const geometry::points3d& grad_points)
       : rbf_operator(model, geometry::bbox3d::from_points(points).convex_hull(
                                 geometry::bbox3d::from_points(grad_points))) {
     set_points(points, grad_points);
   }
 
-  rbf_operator(const model& model, const geometry::bbox3d& bbox)
+  rbf_operator(const Model& model, const geometry::bbox3d& bbox)
       : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
     switch (dim_) {
       case 1:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order, 1>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 1>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 1>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, Order, 1>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 1>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 1>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, Order, 1>>(model, bbox);
         break;
       case 2:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order, 2>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 2>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 2>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, Order, 2>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 2>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 2>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, Order, 2>>(model, bbox);
         break;
       case 3:
-        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order, 3>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 3>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Order, 3>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Model, Order, 3>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 3>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 3>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_symmetric_evaluator<Model, Order, 3>>(model, bbox);
         break;
     }
 
@@ -98,7 +98,7 @@ struct rbf_operator : krylov::linear_operator {
   index_t size() const override { return mu_ + dim_ * sigma_ + l_; }
 
  private:
-  const model& model_;
+  const Model& model_;
   const int dim_;
   const index_t l_;
   index_t mu_{};

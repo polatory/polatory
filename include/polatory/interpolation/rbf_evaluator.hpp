@@ -13,50 +13,50 @@
 
 namespace polatory::interpolation {
 
-template <int Order = 10>
+template <class Model, int Order = 10>
 class rbf_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_evaluator(const model& model, const geometry::points3d& source_points)
+  rbf_evaluator(const Model& model, const geometry::points3d& source_points)
       : rbf_evaluator(model, source_points, geometry::points3d(0, 3)) {}
 
-  rbf_evaluator(const model& model, const geometry::points3d& source_points,
+  rbf_evaluator(const Model& model, const geometry::points3d& source_points,
                 const geometry::points3d& source_grad_points)
       : rbf_evaluator(model, source_points, source_grad_points,
                       geometry::bbox3d::from_points(source_points)
                           .convex_hull(geometry::bbox3d::from_points(source_grad_points))) {}
 
-  rbf_evaluator(const model& model, const geometry::points3d& source_points,
+  rbf_evaluator(const Model& model, const geometry::points3d& source_points,
                 const geometry::bbox3d& bbox)
       : rbf_evaluator(model, source_points, geometry::points3d(0, 3), bbox) {}
 
-  rbf_evaluator(const model& model, const geometry::points3d& source_points,
+  rbf_evaluator(const Model& model, const geometry::points3d& source_points,
                 const geometry::points3d& source_grad_points, const geometry::bbox3d& bbox)
       : rbf_evaluator(model, bbox) {
     set_source_points(source_points, source_grad_points);
   }
 
-  rbf_evaluator(const model& model, const geometry::bbox3d& bbox)
+  rbf_evaluator(const Model& model, const geometry::bbox3d& bbox)
       : dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
     switch (dim_) {
       case 1:
-        a_ = std::make_unique<fmm::fmm_evaluator<Order, 1>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 1>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 1>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 1>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Model, Order, 1>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 1>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 1>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, Order, 1>>(model, bbox);
         break;
       case 2:
-        a_ = std::make_unique<fmm::fmm_evaluator<Order, 2>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 2>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 2>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 2>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Model, Order, 2>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 2>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 2>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, Order, 2>>(model, bbox);
         break;
       case 3:
-        a_ = std::make_unique<fmm::fmm_evaluator<Order, 3>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Order, 3>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Order, 3>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Order, 3>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Model, Order, 3>>(model, bbox);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 3>>(model, bbox);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 3>>(model, bbox);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, Order, 3>>(model, bbox);
         break;
     }
 

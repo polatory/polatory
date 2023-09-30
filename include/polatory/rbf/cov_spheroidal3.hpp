@@ -20,10 +20,6 @@ class cov_spheroidal3 final : public covariance_function_base {
 
   explicit cov_spheroidal3(const std::vector<double>& params) { set_parameters(params); }
 
-  std::unique_ptr<rbf_base> clone() const override {
-    return std::make_unique<cov_spheroidal3>(*this);
-  }
-
   double evaluate_isotropic(const vector3d& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);

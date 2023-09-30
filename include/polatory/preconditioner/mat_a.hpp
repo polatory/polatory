@@ -6,8 +6,8 @@
 
 namespace polatory::preconditioner {
 
-template <class DerivedPoints, class DerivedGradPoints>
-Eigen::MatrixXd mat_a(const model& model, const Eigen::MatrixBase<DerivedPoints>& points,
+template <class Model, class DerivedPoints, class DerivedGradPoints>
+Eigen::MatrixXd mat_a(const Model& model, const Eigen::MatrixBase<DerivedPoints>& points,
                       const Eigen::MatrixBase<DerivedGradPoints>& grad_points) {
   const auto& rbf = model.rbf();
   auto dim = model.poly_dimension();

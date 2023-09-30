@@ -30,6 +30,9 @@ using polatory::rbf::reference::triharmonic3d;
 namespace {
 
 void test_poly_degree(int poly_degree) {
+  using Rbf = cov_gaussian;
+  using Model = model<Rbf>;
+
   const int dim = 3;
   const index_t n_surface_points = 10000;
   index_t n_grad_points = 100;
@@ -48,11 +51,11 @@ void test_poly_degree(int poly_degree) {
   valuesd rhs = valuesd(n_points + dim * n_grad_points);
   rhs << values, grad_points.reshaped<Eigen::RowMajor>();
 
-  cov_gaussian rbf({1.0, 0.01});
+  Rbf rbf({1.0, 0.01});
   // rbf.set_anisotropy(random_anisotropy());
   // std::cout << rbf.anisotropy() << std::endl;
 
-  model model(rbf, dim, poly_degree);
+  Model model(rbf, dim, poly_degree);
   // model.set_nugget(0.01);
 
   rbf_fitter fitter(model, points, grad_points);
@@ -60,7 +63,7 @@ void test_poly_degree(int poly_degree) {
 
   EXPECT_EQ(weights.rows(), n_points + dim * n_grad_points + model.poly_basis_size());
 
-  rbf_symmetric_evaluator<> eval(model, points, grad_points);
+  rbf_symmetric_evaluator<Model> eval(model, points, grad_points);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate();  //+ weights.head(n_points) * model.nugget();
 

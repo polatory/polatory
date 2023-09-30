@@ -19,30 +19,33 @@
 
 namespace polatory::interpolation {
 
+template <class Model>
 class rbf_solver {
-  using Preconditioner = preconditioner::ras_preconditioner;
+  using Operator = rbf_operator<Model>;
+  using Preconditioner = preconditioner::ras_preconditioner<Model>;
+  using ResidualEvaluator = rbf_residual_evaluator<Model>;
 
  public:
-  rbf_solver(const model& model, const geometry::points3d& points)
+  rbf_solver(const Model& model, const geometry::points3d& points)
       : rbf_solver(model, points, geometry::points3d(0, 3)) {}
 
-  rbf_solver(const model& model, const geometry::points3d& points,
+  rbf_solver(const Model& model, const geometry::points3d& points,
              const geometry::points3d& grad_points)
       : model_(model),
         dim_(model.poly_dimension()),
         l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()) {
-    op_ = std::make_unique<rbf_operator<>>(model, points, grad_points);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, points, grad_points);
+    op_ = std::make_unique<Operator>(model, points, grad_points);
+    res_eval_ = std::make_unique<ResidualEvaluator>(model, points, grad_points);
 
     set_points(points, grad_points);
   }
 
-  rbf_solver(const model& model, const geometry::bbox3d& bbox)
+  rbf_solver(const Model& model, const geometry::bbox3d& bbox)
       : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    op_ = std::make_unique<rbf_operator<>>(model, bbox);
-    res_eval_ = std::make_unique<rbf_residual_evaluator>(model, bbox);
+    op_ = std::make_unique<Operator>(model, bbox);
+    res_eval_ = std::make_unique<ResidualEvaluator>(model, bbox);
   }
 
   void set_points(const geometry::points3d& points) {
@@ -153,15 +156,15 @@ class rbf_solver {
     return solution;
   }
 
-  const model& model_;
+  const Model& model_;
   const int dim_;
   const index_t l_;
 
   index_t mu_{};
   index_t sigma_{};
-  std::unique_ptr<rbf_operator<>> op_;
+  std::unique_ptr<Operator> op_;
   std::unique_ptr<Preconditioner> pc_;
-  std::unique_ptr<rbf_residual_evaluator> res_eval_;
+  std::unique_ptr<ResidualEvaluator> res_eval_;
   Eigen::MatrixXd p_;
 };
 

@@ -14,8 +14,6 @@ class biharmonic3d final : public rbf_base {
 
   explicit biharmonic3d(const std::vector<double>& params) { set_parameters(params); }
 
-  std::unique_ptr<rbf_base> clone() const override { return std::make_unique<biharmonic3d>(*this); }
-
   int cpd_order() const override { return 1; }
 
   double evaluate_isotropic(const vector3d& diff) const override {

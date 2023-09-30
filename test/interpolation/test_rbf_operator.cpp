@@ -41,7 +41,7 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
   model.set_nugget(0.01);
 
   bbox3d bbox{-point3d::Ones(), point3d::Ones()};
-  rbf_operator<> op(model, bbox);
+  rbf_operator<Model> op(model, bbox);
 
   for (auto i = 0; i < 4; i++) {
     auto points = random_points(sphere3d(), n_points);

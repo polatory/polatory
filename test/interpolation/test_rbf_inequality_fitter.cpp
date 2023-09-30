@@ -23,6 +23,9 @@ using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
 
 TEST(rbf_inequality_fitter, inequality_only) {
+  using Rbf = biharmonic3d;
+  using Model = model<Rbf>;
+
   const auto n_points = index_t{4096};
   const auto poly_dimension = 3;
   const auto poly_degree = 0;
@@ -34,17 +37,17 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.5;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  biharmonic3d rbf({1.0});
+  Rbf rbf({1.0});
   rbf.set_anisotropy(random_anisotropy());
 
-  model model(rbf, poly_dimension, poly_degree);
+  Model model(rbf, poly_dimension, poly_degree);
 
-  rbf_inequality_fitter fitter(model, points);
+  rbf_inequality_fitter<Model> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<> eval(model, points(indices, Eigen::all));
+  rbf_evaluator<Model> eval(model, points(indices, Eigen::all));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 
@@ -56,6 +59,9 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {
+  using Rbf = cov_exponential;
+  using Model = model<Rbf>;
+
   const auto n_points = index_t{25};
   const auto poly_dimension = 1;
   const auto poly_degree = -1;
@@ -79,12 +85,13 @@ TEST(rbf_inequality_fitter, kostov86) {
   values_ub << nan, nan, nan, 4, nan, 4, nan, nan, nan, nan, nan, 1, nan, nan, nan, nan, 4, 7, nan,
       nan, nan, nan, nan, nan, 3;
 
-  model model(cov_exponential({1.0, 3.0}), poly_dimension, poly_degree);
+  Rbf rbf({1.0, 3.0});
+  Model model(rbf, poly_dimension, poly_degree);
 
-  rbf_inequality_fitter fitter(model, points);
+  rbf_inequality_fitter<Model> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
-  rbf_evaluator<> eval(model, points(indices, Eigen::all));
+  rbf_evaluator<Model> eval(model, points(indices, Eigen::all));
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 

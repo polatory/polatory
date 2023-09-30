@@ -16,13 +16,12 @@ class rbf_base {
  public:
   virtual ~rbf_base() = default;
 
-  rbf_base(rbf_base&&) = delete;
-  rbf_base& operator=(const rbf_base&) = delete;
-  rbf_base& operator=(rbf_base&&) = delete;
+  rbf_base(const rbf_base&) = default;
+  rbf_base(rbf_base&&) = default;
+  rbf_base& operator=(const rbf_base&) = default;
+  rbf_base& operator=(rbf_base&&) = default;
 
   const geometry::linear_transformation3d& anisotropy() const { return aniso_; }
-
-  virtual std::unique_ptr<rbf_base> clone() const = 0;
 
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;
@@ -75,8 +74,6 @@ class rbf_base {
 
  protected:
   rbf_base() : aniso_(geometry::linear_transformation3d::Identity()) {}
-
-  rbf_base(const rbf_base&) = default;
 
  private:
   std::vector<double> params_;

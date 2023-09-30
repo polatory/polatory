@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <array>
-#include <memory>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <scalfmm/container/point.hpp>
@@ -13,7 +12,7 @@
 namespace polatory {
 namespace fmm {
 
-template <int Dim>
+template <class Rbf, int Dim>
 struct hessian_kernel {
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::symmetric};
@@ -24,9 +23,9 @@ struct hessian_kernel {
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
 
-  explicit hessian_kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
+  explicit hessian_kernel(const Rbf& rbf) : rbf_(rbf) {}
 
-  hessian_kernel(const hessian_kernel& other) : rbf_(other.rbf_->clone()) {}
+  hessian_kernel(const hessian_kernel&) = default;
 
   const std::string name() const { return std::string(""); }
 
@@ -42,8 +41,8 @@ struct hessian_kernel {
     geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
     geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
 
-    auto aniso = rbf_->anisotropy();
-    geometry::matrix3d h = aniso.transpose() * rbf_->evaluate_hessian_isotropic(xx - yy) * aniso;
+    auto aniso = rbf_.anisotropy();
+    geometry::matrix3d h = aniso.transpose() * rbf_.evaluate_hessian_isotropic(xx - yy) * aniso;
 
     matrix_type<double> result;
     for (auto i = 0; i < Dim; i++) {
@@ -67,12 +66,12 @@ struct hessian_kernel {
     std::array<double, 4> v12;
     std::array<double, 4> v22;
 
-    auto aniso = rbf_->anisotropy();
+    auto aniso = rbf_.anisotropy();
 
     for (std::size_t i = 0; i < n; i++) {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
       geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
-      geometry::matrix3d h = aniso.transpose() * rbf_->evaluate_hessian_isotropic(xx - yy) * aniso;
+      geometry::matrix3d h = aniso.transpose() * rbf_.evaluate_hessian_isotropic(xx - yy) * aniso;
       v00.at(i) = h(0, 0);
       v01.at(i) = h(0, 1);
       v02.at(i) = h(0, 2);
@@ -102,7 +101,7 @@ struct hessian_kernel {
   static constexpr int separation_criterion{1};
 
  private:
-  const std::unique_ptr<rbf::rbf_base> rbf_;
+  const Rbf rbf_;
 };
 
 }  // namespace fmm

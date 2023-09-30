@@ -72,17 +72,6 @@ matrix3d hessian_approx(const rbf_base& rbf, const vector3d& v, double h) {
   return m;
 }
 
-template <class T>
-void test_clone(const std::vector<double>& params) {
-  T rbf(params);
-  rbf.set_anisotropy(random_anisotropy());
-
-  auto cloned = rbf.clone();
-
-  ASSERT_EQ(rbf.anisotropy(), cloned->anisotropy());
-  ASSERT_EQ(rbf.parameters(), cloned->parameters());
-}
-
 void test_gradient(const rbf_base& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-5;
@@ -132,26 +121,9 @@ TEST(rbf, anisotropy) {
   vector3d v({1.0, 1.0, 1.0});
 
   biharmonic3d rbf({1.0});
+  rbf.set_anisotropy(a);
 
-  auto cloned = rbf.clone();
-  cloned->set_anisotropy(a);
-
-  ASSERT_EQ(rbf.evaluate(transform_vector(a, v)), cloned->evaluate(v));
-}
-
-TEST(rbf, clone) {
-  test_clone<biharmonic2d>({1.1});
-  test_clone<biharmonic3d>({1.1});
-  test_clone<cov_exponential>({1.1, 0.9});
-  test_clone<cov_spheroidal3>({1.1, 0.9});
-  test_clone<cov_spheroidal5>({1.1, 0.9});
-  test_clone<cov_spheroidal7>({1.1, 0.9});
-  test_clone<cov_spheroidal9>({1.1, 0.9});
-  test_clone<multiquadric1>({1.1, 0.1});
-
-  test_clone<cov_gaussian>({1.1, 0.9});
-  test_clone<cov_spherical>({1.1, 0.9});
-  test_clone<triharmonic3d>({1.1});
+  ASSERT_EQ(rbf.evaluate(transform_vector(a, v)), rbf.evaluate(v));
 }
 
 TEST(rbf, gradient) {

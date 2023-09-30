@@ -14,11 +14,14 @@
 
 namespace polatory::interpolation {
 
+template <class Model>
 class rbf_residual_evaluator {
   static constexpr index_t kInitialChunkSize = 1024;
 
+  using RbfEvaluator = rbf_evaluator<Model>;
+
  public:
-  rbf_residual_evaluator(const model& model, const geometry::points3d& points,
+  rbf_residual_evaluator(const Model& model, const geometry::points3d& points,
                          const geometry::points3d& grad_points)
       : model_(model),
         dim_(model.poly_dimension()),
@@ -27,12 +30,12 @@ class rbf_residual_evaluator {
         sigma_(grad_points.rows()),
         points_(points),
         grad_points_(grad_points) {
-    evaluator_ = std::make_unique<rbf_evaluator<>>(model, points_, grad_points_);
+    evaluator_ = std::make_unique<RbfEvaluator>(model, points_, grad_points_);
   }
 
-  rbf_residual_evaluator(const model& model, const geometry::bbox3d& bbox)
+  rbf_residual_evaluator(const Model& model, const geometry::bbox3d& bbox)
       : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    evaluator_ = std::make_unique<rbf_evaluator<>>(model, bbox);
+    evaluator_ = std::make_unique<RbfEvaluator>(model, bbox);
   }
 
   template <class Derived, class Derived2>
@@ -106,7 +109,7 @@ class rbf_residual_evaluator {
   }
 
  private:
-  const model& model_;
+  const Model& model_;
   const int dim_;
   const index_t l_;
 
@@ -115,7 +118,7 @@ class rbf_residual_evaluator {
   geometry::points3d points_;
   geometry::points3d grad_points_;
 
-  std::unique_ptr<rbf_evaluator<>> evaluator_;
+  std::unique_ptr<RbfEvaluator> evaluator_;
 };
 
 }  // namespace polatory::interpolation

@@ -19,9 +19,10 @@
 
 namespace polatory {
 
+template <class Model>
 class interpolant {
  public:
-  explicit interpolant(model model) : model_(std::move(model)) {}
+  explicit interpolant(const Model& model) : model_(std::move(model)) {}
 
   const geometry::points3d& centers() const {
     throw_if_not_fitted();
@@ -186,7 +187,7 @@ class interpolant {
     }
   }
 
-  const model model_;
+  const Model model_;
 
   bool fitted_{};
   geometry::points3d centers_;

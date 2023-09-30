@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <array>
-#include <memory>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <scalfmm/container/point.hpp>
@@ -13,7 +12,7 @@
 namespace polatory {
 namespace fmm {
 
-template <int Dim>
+template <class Rbf, int Dim>
 struct kernel {
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::symmetric};
@@ -24,9 +23,9 @@ struct kernel {
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
 
-  explicit kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
+  explicit kernel(const Rbf& rbf) : rbf_(rbf) {}
 
-  kernel(const kernel& other) : rbf_(other.rbf_->clone()) {}
+  kernel(const kernel&) = default;
 
   const std::string name() const { return std::string(""); }
 
@@ -41,7 +40,7 @@ struct kernel {
     geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
     geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
 
-    return matrix_type<double>{rbf_->evaluate_isotropic(xx - yy)};
+    return matrix_type<double>{rbf_.evaluate_isotropic(xx - yy)};
   }
 
   [[nodiscard]] inline auto evaluate(
@@ -54,7 +53,7 @@ struct kernel {
     for (std::size_t i = 0; i < n; i++) {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
       geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
-      v.at(i) = rbf_->evaluate_isotropic(xx - yy);
+      v.at(i) = rbf_.evaluate_isotropic(xx - yy);
     }
 
     return matrix_type<decayed_type>{decayed_type::load(v.data(), xsimd::unaligned_mode{})};
@@ -63,7 +62,7 @@ struct kernel {
   static constexpr int separation_criterion{1};
 
  private:
-  const std::unique_ptr<rbf::rbf_base> rbf_;
+  const Rbf rbf_;
 };
 
 }  // namespace fmm

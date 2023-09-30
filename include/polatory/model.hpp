@@ -10,10 +10,13 @@
 
 namespace polatory {
 
+template <class Rbf>
 class model {
  public:
-  model(const rbf::rbf_base& rbf, int poly_dimension, int poly_degree)
-      : rbf_(rbf.clone()), poly_dimension_(poly_dimension), poly_degree_(poly_degree) {
+  using rbf_type = Rbf;
+
+  model(const Rbf& rbf, int poly_dimension, int poly_degree)
+      : rbf_(rbf), poly_dimension_(poly_dimension), poly_degree_(poly_degree) {
     if (poly_dimension < 0 || poly_dimension > 3) {
       throw std::invalid_argument("poly_dimension must be within the range of 0 to 3.");
     }
@@ -27,7 +30,7 @@ class model {
   ~model() = default;
 
   model(const model& model)
-      : rbf_(model.rbf_->clone()),
+      : rbf_(model.rbf_),
         poly_dimension_(model.poly_dimension_),
         poly_degree_(model.poly_degree_),
         nugget_(model.nugget_) {}
@@ -40,28 +43,28 @@ class model {
   double nugget() const { return nugget_; }
 
   // Experimental function.
-  int num_parameters() const { return 1 + rbf_->num_parameters(); }
+  int num_parameters() const { return 1 + rbf_.num_parameters(); }
 
   // Experimental function.
   std::vector<double> parameter_lower_bounds() const {
     std::vector<double> lower_bounds{0.0};
-    lower_bounds.insert(lower_bounds.end(), rbf_->parameter_lower_bounds().begin(),
-                        rbf_->parameter_lower_bounds().end());
+    lower_bounds.insert(lower_bounds.end(), rbf_.parameter_lower_bounds().begin(),
+                        rbf_.parameter_lower_bounds().end());
     return lower_bounds;
   }
 
   // Experimental function.
   std::vector<double> parameter_upper_bounds() const {
     std::vector<double> upper_bounds{std::numeric_limits<double>::infinity()};
-    upper_bounds.insert(upper_bounds.end(), rbf_->parameter_upper_bounds().begin(),
-                        rbf_->parameter_upper_bounds().end());
+    upper_bounds.insert(upper_bounds.end(), rbf_.parameter_upper_bounds().begin(),
+                        rbf_.parameter_upper_bounds().end());
     return upper_bounds;
   }
 
   // Experimental function.
   std::vector<double> parameters() const {
     std::vector<double> params{nugget()};
-    params.insert(params.end(), rbf_->parameters().begin(), rbf_->parameters().end());
+    params.insert(params.end(), rbf_.parameters().begin(), rbf_.parameters().end());
     return params;
   }
 
@@ -73,7 +76,7 @@ class model {
 
   int poly_dimension() const { return poly_dimension_; }
 
-  const rbf::rbf_base& rbf() const { return *rbf_; }
+  const Rbf& rbf() const { return rbf_; }
 
   void set_nugget(double nugget) {
     if (nugget < 0.0) {
@@ -91,17 +94,17 @@ class model {
     }
 
     set_nugget(params[0]);
-    rbf_->set_parameters(std::vector<double>(params.begin() + 1, params.end()));
+    rbf_.set_parameters(std::vector<double>(params.begin() + 1, params.end()));
   }
 
   // This method is for internal use only.
-  model without_poly() const { return model(*rbf_, poly_dimension_); }
+  model without_poly() const { return model(rbf_, poly_dimension_); }
 
  private:
-  explicit model(const rbf::rbf_base& rbf, int poly_dimension)
-      : rbf_(rbf.clone()), poly_dimension_(poly_dimension), poly_degree_(-1) {}
+  explicit model(const Rbf& rbf, int poly_dimension)
+      : rbf_(rbf), poly_dimension_(poly_dimension), poly_degree_(-1) {}
 
-  std::unique_ptr<rbf::rbf_base> rbf_;
+  Rbf rbf_;
   int poly_dimension_;
   int poly_degree_;
   double nugget_{};

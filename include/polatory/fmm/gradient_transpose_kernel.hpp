@@ -13,7 +13,7 @@
 namespace polatory {
 namespace fmm {
 
-template <int Dim>
+template <class Rbf, int Dim>
 struct gradient_transpose_kernel {
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::non_symmetric};
@@ -24,9 +24,9 @@ struct gradient_transpose_kernel {
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
 
-  explicit gradient_transpose_kernel(const rbf::rbf_base& rbf) : rbf_(rbf.clone()) {}
+  explicit gradient_transpose_kernel(const Rbf& rbf) : rbf_(rbf) {}
 
-  gradient_transpose_kernel(const gradient_transpose_kernel& other) : rbf_(other.rbf_->clone()) {}
+  gradient_transpose_kernel(const gradient_transpose_kernel&) = default;
 
   const std::string name() const { return std::string(""); }
 
@@ -42,7 +42,7 @@ struct gradient_transpose_kernel {
     geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
     geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
 
-    geometry::vector3d g = rbf_->evaluate_gradient_isotropic(xx - yy) * rbf_->anisotropy();
+    geometry::vector3d g = rbf_.evaluate_gradient_isotropic(xx - yy) * rbf_.anisotropy();
 
     matrix_type<double> result;
     for (auto i = 0; i < Dim; i++) {
@@ -64,7 +64,7 @@ struct gradient_transpose_kernel {
     for (std::size_t i = 0; i < n; i++) {
       geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
       geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
-      geometry::vector3d g = rbf_->evaluate_gradient_isotropic(xx - yy) * rbf_->anisotropy();
+      geometry::vector3d g = rbf_.evaluate_gradient_isotropic(xx - yy) * rbf_.anisotropy();
       v0.at(i) = g(0);
       v1.at(i) = g(1);
       v2.at(i) = g(2);
@@ -85,7 +85,7 @@ struct gradient_transpose_kernel {
   static constexpr int separation_criterion{1};
 
  private:
-  const std::unique_ptr<rbf::rbf_base> rbf_;
+  const Rbf rbf_;
 };
 
 }  // namespace fmm
