@@ -15,6 +15,7 @@
 
 using polatory::index_t;
 using polatory::model;
+using polatory::precision;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
@@ -47,7 +48,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<Model> eval(model, points(indices, Eigen::all));
+  rbf_evaluator<Model> eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 
@@ -91,7 +92,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   rbf_inequality_fitter<Model> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
-  rbf_evaluator<Model> eval(model, points(indices, Eigen::all));
+  rbf_evaluator<Model> eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 

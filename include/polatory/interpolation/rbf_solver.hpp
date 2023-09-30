@@ -36,7 +36,7 @@ class rbf_solver {
         l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()) {
-    op_ = std::make_unique<Operator>(model, points, grad_points);
+    op_ = std::make_unique<Operator>(model, points, grad_points, precision::kPrecise);
     res_eval_ = std::make_unique<ResidualEvaluator>(model, points, grad_points);
 
     set_points(points, grad_points);
@@ -44,7 +44,7 @@ class rbf_solver {
 
   rbf_solver(const Model& model, const geometry::bbox3d& bbox)
       : model_(model), dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
-    op_ = std::make_unique<Operator>(model, bbox);
+    op_ = std::make_unique<Operator>(model, bbox, precision::kPrecise);
     res_eval_ = std::make_unique<ResidualEvaluator>(model, bbox);
   }
 

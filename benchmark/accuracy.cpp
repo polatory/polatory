@@ -4,29 +4,16 @@
 #include <Eigen/Core>
 #include <exception>
 #include <iostream>
-#include <polatory/common/orthonormalize.hpp>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/geometry/sphere3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
-#include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/rbf/biharmonic2d.hpp>
-#include <polatory/rbf/biharmonic3d.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/rbf/cov_spheroidal3.hpp>
-#include <polatory/rbf/cov_spheroidal5.hpp>
-#include <polatory/rbf/cov_spheroidal7.hpp>
-#include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/multiquadric1.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/polatory.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/triharmonic3d.hpp>
-#include <polatory/types.hpp>
 
 using polatory::index_t;
 using polatory::model;
+using polatory::precision;
 using polatory::common::orthonormalize_cols;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
@@ -81,7 +68,7 @@ double estimate_accuracy(const std::vector<double>& rbf_params) {
   direct_eval.set_weights(weights);
   direct_eval.set_field_points(eval_points, points3d(0, 3));
 
-  rbf_evaluator<Model> eval(model, points);
+  rbf_evaluator<Model> eval(model, points, precision::kPrecise);
   eval.set_weights(weights);
   eval.set_field_points(eval_points);
 

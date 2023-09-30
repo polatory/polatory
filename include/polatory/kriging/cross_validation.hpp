@@ -60,7 +60,7 @@ common::valuesd k_fold_cross_validation(const Model& model, const geometry::poin
     interpolation::rbf_fitter<Model> fitter(model, train_points);
     auto weights = fitter.fit(train_values, absolute_tolerance, max_iter);
 
-    interpolation::rbf_evaluator<Model> eval(model, train_points, bbox);
+    interpolation::rbf_evaluator<Model> eval(model, train_points, bbox, precision::kPrecise);
     eval.set_weights(weights);
     auto test_values_fit = eval.evaluate(test_points);
 

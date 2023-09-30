@@ -14,6 +14,7 @@
 
 using polatory::index_t;
 using polatory::model;
+using polatory::precision;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
@@ -41,7 +42,7 @@ TEST(rbf_incremental_fitter, trivial) {
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<Model> eval(model, points(indices, Eigen::all));
+  rbf_evaluator<Model> eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 

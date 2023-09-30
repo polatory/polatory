@@ -9,54 +9,57 @@
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::interpolation {
 
-template <class Model, int Order = 10>
+template <class Model>
 class rbf_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
 
  public:
-  rbf_evaluator(const Model& model, const geometry::points3d& source_points)
-      : rbf_evaluator(model, source_points, geometry::points3d(0, 3)) {}
+  rbf_evaluator(const Model& model, const geometry::points3d& source_points, precision prec)
+      : rbf_evaluator(model, source_points, geometry::points3d(0, 3), prec) {}
 
   rbf_evaluator(const Model& model, const geometry::points3d& source_points,
-                const geometry::points3d& source_grad_points)
+                const geometry::points3d& source_grad_points, precision prec)
       : rbf_evaluator(model, source_points, source_grad_points,
                       geometry::bbox3d::from_points(source_points)
-                          .convex_hull(geometry::bbox3d::from_points(source_grad_points))) {}
+                          .convex_hull(geometry::bbox3d::from_points(source_grad_points)),
+                      prec) {}
 
   rbf_evaluator(const Model& model, const geometry::points3d& source_points,
-                const geometry::bbox3d& bbox)
-      : rbf_evaluator(model, source_points, geometry::points3d(0, 3), bbox) {}
+                const geometry::bbox3d& bbox, precision prec)
+      : rbf_evaluator(model, source_points, geometry::points3d(0, 3), bbox, prec) {}
 
   rbf_evaluator(const Model& model, const geometry::points3d& source_points,
-                const geometry::points3d& source_grad_points, const geometry::bbox3d& bbox)
-      : rbf_evaluator(model, bbox) {
+                const geometry::points3d& source_grad_points, const geometry::bbox3d& bbox,
+                precision prec)
+      : rbf_evaluator(model, bbox, prec) {
     set_source_points(source_points, source_grad_points);
   }
 
-  rbf_evaluator(const Model& model, const geometry::bbox3d& bbox)
+  rbf_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec)
       : dim_(model.poly_dimension()), l_(model.poly_basis_size()) {
     switch (dim_) {
       case 1:
-        a_ = std::make_unique<fmm::fmm_evaluator<Model, Order, 1>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 1>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 1>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, Order, 1>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Model, 1>>(model, bbox, prec);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 1>>(model, bbox, prec);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 1>>(model, bbox, prec);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, 1>>(model, bbox, prec);
         break;
       case 2:
-        a_ = std::make_unique<fmm::fmm_evaluator<Model, Order, 2>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 2>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 2>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, Order, 2>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Model, 2>>(model, bbox, prec);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 2>>(model, bbox, prec);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 2>>(model, bbox, prec);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, 2>>(model, bbox, prec);
         break;
       case 3:
-        a_ = std::make_unique<fmm::fmm_evaluator<Model, Order, 3>>(model, bbox);
-        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, Order, 3>>(model, bbox);
-        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, Order, 3>>(model, bbox);
-        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, Order, 3>>(model, bbox);
+        a_ = std::make_unique<fmm::fmm_evaluator<Model, 3>>(model, bbox, prec);
+        f_ = std::make_unique<fmm::fmm_gradient_evaluator<Model, 3>>(model, bbox, prec);
+        ft_ = std::make_unique<fmm::fmm_gradient_transpose_evaluator<Model, 3>>(model, bbox, prec);
+        h_ = std::make_unique<fmm::fmm_hessian_evaluator<Model, 3>>(model, bbox, prec);
         break;
     }
 

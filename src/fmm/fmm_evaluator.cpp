@@ -28,8 +28,8 @@
 
 namespace polatory::fmm {
 
-template <class Model, int Order, class Kernel>
-class fmm_generic_evaluator<Model, Order, Kernel>::impl {
+template <class Model, class Kernel>
+class fmm_generic_evaluator<Model, Kernel>::impl {
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 
@@ -59,10 +59,10 @@ class fmm_generic_evaluator<Model, Order, Kernel>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  public:
-  impl(const Model& model, const geometry::bbox3d& bbox)
+  impl(const Model& model, const geometry::bbox3d& bbox, precision prec)
       : model_(model),
         kernel_(model.rbf()),
-        order_(Order),
+        order_(static_cast<int>(prec)),
         box_(make_box<Model, Box>(model, bbox)),
         near_field_(kernel_, false) {}
 
@@ -273,63 +273,58 @@ class fmm_generic_evaluator<Model, Order, Kernel>::impl {
   mutable std::unique_ptr<TargetTree> trg_tree_;
 };
 
-template <class Model, int Order, class Kernel>
-fmm_generic_evaluator<Model, Order, Kernel>::fmm_generic_evaluator(const Model& model,
-                                                                   const geometry::bbox3d& bbox)
-    : impl_(std::make_unique<impl>(model, bbox)) {}
+template <class Model, class Kernel>
+fmm_generic_evaluator<Model, Kernel>::fmm_generic_evaluator(const Model& model,
+                                                            const geometry::bbox3d& bbox,
+                                                            precision prec)
+    : impl_(std::make_unique<impl>(model, bbox, prec)) {}
 
-template <class Model, int Order, class Kernel>
-fmm_generic_evaluator<Model, Order, Kernel>::~fmm_generic_evaluator() = default;
+template <class Model, class Kernel>
+fmm_generic_evaluator<Model, Kernel>::~fmm_generic_evaluator() = default;
 
-template <class Model, int Order, class Kernel>
-common::valuesd fmm_generic_evaluator<Model, Order, Kernel>::evaluate() const {
+template <class Model, class Kernel>
+common::valuesd fmm_generic_evaluator<Model, Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
-template <class Model, int Order, class Kernel>
-void fmm_generic_evaluator<Model, Order, Kernel>::set_field_points(
-    const geometry::points3d& points) {
+template <class Model, class Kernel>
+void fmm_generic_evaluator<Model, Kernel>::set_field_points(const geometry::points3d& points) {
   impl_->set_field_points(points);
 }
 
-template <class Model, int Order, class Kernel>
-void fmm_generic_evaluator<Model, Order, Kernel>::set_source_points(
-    const geometry::points3d& points) {
+template <class Model, class Kernel>
+void fmm_generic_evaluator<Model, Kernel>::set_source_points(const geometry::points3d& points) {
   impl_->set_source_points(points);
 }
 
-template <class Model, int Order, class Kernel>
-void fmm_generic_evaluator<Model, Order, Kernel>::set_weights(
+template <class Model, class Kernel>
+void fmm_generic_evaluator<Model, Kernel>::set_weights(
     const Eigen::Ref<const common::valuesd>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT3(MODEL, DIM, ORDER)                                                             \
-  template class fmm_generic_evaluator<MODEL, ORDER, kernel<typename MODEL::rbf_type, DIM>>;      \
-  template class fmm_generic_evaluator<MODEL, ORDER,                                              \
-                                       gradient_kernel<typename MODEL::rbf_type, DIM>>;           \
-  template class fmm_generic_evaluator<MODEL, ORDER,                                              \
+#define IMPLEMENT2(MODEL, DIM)                                                                    \
+  template class fmm_generic_evaluator<MODEL, kernel<typename MODEL::rbf_type, DIM>>;             \
+  template class fmm_generic_evaluator<MODEL, gradient_kernel<typename MODEL::rbf_type, DIM>>;    \
+  template class fmm_generic_evaluator<MODEL,                                                     \
                                        gradient_transpose_kernel<typename MODEL::rbf_type, DIM>>; \
-  template class fmm_generic_evaluator<MODEL, ORDER, hessian_kernel<typename MODEL::rbf_type, DIM>>;
+  template class fmm_generic_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type, DIM>>;
 
-#define IMPLEMENT1(MODEL)   \
-  IMPLEMENT3(MODEL, 1, 6);  \
-  IMPLEMENT3(MODEL, 2, 6);  \
-  IMPLEMENT3(MODEL, 3, 6);  \
-  IMPLEMENT3(MODEL, 1, 10); \
-  IMPLEMENT3(MODEL, 2, 10); \
-  IMPLEMENT3(MODEL, 3, 10);
+#define IMPLEMENT(MODEL) \
+  IMPLEMENT2(MODEL, 1);  \
+  IMPLEMENT2(MODEL, 2);  \
+  IMPLEMENT2(MODEL, 3);
 
-IMPLEMENT1(model<rbf::biharmonic2d>);
-IMPLEMENT1(model<rbf::biharmonic3d>);
-IMPLEMENT1(model<rbf::cov_exponential>);
-IMPLEMENT1(model<rbf::cov_spheroidal3>);
-IMPLEMENT1(model<rbf::cov_spheroidal5>);
-IMPLEMENT1(model<rbf::cov_spheroidal7>);
-IMPLEMENT1(model<rbf::cov_spheroidal9>);
-IMPLEMENT1(model<rbf::multiquadric1>);
-IMPLEMENT1(model<rbf::reference::cov_gaussian>);
-IMPLEMENT1(model<rbf::reference::cov_spherical>);
-IMPLEMENT1(model<rbf::reference::triharmonic3d>);
+IMPLEMENT(model<rbf::biharmonic2d>);
+IMPLEMENT(model<rbf::biharmonic3d>);
+IMPLEMENT(model<rbf::cov_exponential>);
+IMPLEMENT(model<rbf::cov_spheroidal3>);
+IMPLEMENT(model<rbf::cov_spheroidal5>);
+IMPLEMENT(model<rbf::cov_spheroidal7>);
+IMPLEMENT(model<rbf::cov_spheroidal9>);
+IMPLEMENT(model<rbf::multiquadric1>);
+IMPLEMENT(model<rbf::reference::cov_gaussian>);
+IMPLEMENT(model<rbf::reference::cov_spherical>);
+IMPLEMENT(model<rbf::reference::triharmonic3d>);
 
 }  // namespace polatory::fmm

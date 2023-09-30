@@ -17,6 +17,7 @@
 
 using polatory::index_t;
 using polatory::model;
+using polatory::precision;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
@@ -63,7 +64,7 @@ void test_poly_degree(int poly_degree) {
 
   EXPECT_EQ(weights.rows(), n_points + dim * n_grad_points + model.poly_basis_size());
 
-  rbf_symmetric_evaluator<Model> eval(model, points, grad_points);
+  rbf_symmetric_evaluator<Model> eval(model, points, grad_points, precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate();  //+ weights.head(n_points) * model.nugget();
 

@@ -13,6 +13,7 @@
 
 using polatory::index_t;
 using polatory::model;
+using polatory::precision;
 using polatory::common::valuesd;
 using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
@@ -43,7 +44,7 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
   direct_eval.set_field_points(points.topRows(n_eval_points),
                                grad_points.topRows(n_eval_grad_points));
 
-  rbf_symmetric_evaluator<Model> eval(model, points, grad_points);
+  rbf_symmetric_evaluator<Model> eval(model, points, grad_points, precision::kPrecise);
 
   for (auto i = 0; i < 2; i++) {
     valuesd weights = valuesd::Random(n_points + dim * n_grad_points + model.poly_basis_size());

@@ -16,6 +16,7 @@
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/offset_points_generator.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>

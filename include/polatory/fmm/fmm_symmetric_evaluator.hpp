@@ -7,6 +7,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/precision.hpp>
 
 namespace polatory::fmm {
 
@@ -28,10 +29,10 @@ class fmm_base_symmetric_evaluator {
   virtual void set_weights(const Eigen::Ref<const common::valuesd>& weights) = 0;
 };
 
-template <class Model, int Order, class Kernel>
+template <class Model, class Kernel>
 class fmm_generic_symmetric_evaluator : public fmm_base_symmetric_evaluator {
  public:
-  fmm_generic_symmetric_evaluator(const Model& model, const geometry::bbox3d& bbox);
+  fmm_generic_symmetric_evaluator(const Model& model, const geometry::bbox3d& bbox, precision prec);
 
   ~fmm_generic_symmetric_evaluator() override;
 
@@ -47,12 +48,12 @@ class fmm_generic_symmetric_evaluator : public fmm_base_symmetric_evaluator {
   std::unique_ptr<impl> impl_;
 };
 
-template <class Model, int Order, int Dim>
+template <class Model, int Dim>
 using fmm_symmetric_evaluator =
-    fmm_generic_symmetric_evaluator<Model, Order, kernel<typename Model::rbf_type, Dim>>;
+    fmm_generic_symmetric_evaluator<Model, kernel<typename Model::rbf_type, Dim>>;
 
-template <class Model, int Order, int Dim>
+template <class Model, int Dim>
 using fmm_hessian_symmetric_evaluator =
-    fmm_generic_symmetric_evaluator<Model, Order, hessian_kernel<typename Model::rbf_type, Dim>>;
+    fmm_generic_symmetric_evaluator<Model, hessian_kernel<typename Model::rbf_type, Dim>>;
 
 }  // namespace polatory::fmm

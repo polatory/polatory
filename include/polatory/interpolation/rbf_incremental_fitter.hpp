@@ -40,7 +40,7 @@ class rbf_incremental_fitter {
     common::valuesd center_weights = common::valuesd::Zero(n_centers + n_poly_basis_);
 
     Solver solver(model_, bbox_);
-    Evaluator res_eval(model_, bbox_);
+    Evaluator res_eval(model_, bbox_, precision::kPrecise);
 
     while (true) {
       std::cout << "Number of RBF centers: " << n_centers << " / " << n_points_ << std::endl;

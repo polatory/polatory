@@ -52,7 +52,7 @@ class rbf_inequality_fitter {
     geometry::points3d ineq_points = points_(ineq_idcs, Eigen::all);
 
     Solver solver(model_, bbox_);
-    Evaluator res_eval(model_, bbox_);
+    Evaluator res_eval(model_, bbox_, precision::kPrecise);
 
     common::valuesd weights = common::valuesd::Zero(n_points_ + n_poly_basis_);
     auto centers = eq_idcs;

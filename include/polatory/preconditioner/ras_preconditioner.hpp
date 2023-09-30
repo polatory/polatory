@@ -34,14 +34,13 @@ template <class Model>
 class ras_preconditioner : public krylov::linear_operator {
   static constexpr bool kRecomputeAndClear = true;
   static constexpr bool kReportResidual = false;
-  static constexpr int Order = 6;
   static constexpr double coarse_ratio = 0.125;
   static constexpr index_t n_coarsest_points = 1024;
 
   using CoarseGrid = coarse_grid<Model>;
   using FineGrid = fine_grid<Model>;
-  using Evaluator = interpolation::rbf_evaluator<Model, Order>;
-  using SymmetricEvaluator = interpolation::rbf_symmetric_evaluator<Model, Order>;
+  using Evaluator = interpolation::rbf_evaluator<Model>;
+  using SymmetricEvaluator = interpolation::rbf_symmetric_evaluator<Model>;
 
  public:
   ras_preconditioner(const Model& model, const geometry::points3d& points,
@@ -53,9 +52,9 @@ class ras_preconditioner : public krylov::linear_operator {
         sigma_(grad_points.rows()),
         points_(points),
         grad_points_(grad_points),
-        finest_evaluator_(kReportResidual
-                              ? std::make_unique<SymmetricEvaluator>(model, points_, grad_points_)
-                              : nullptr) {
+        finest_evaluator_(kReportResidual ? std::make_unique<SymmetricEvaluator>(
+                                                model, points_, grad_points_, precision::kFast)
+                                          : nullptr) {
     auto n_fine_levels =
         std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(mu_ + sigma_) /
                                                         static_cast<double>(n_coarsest_points)) /
@@ -151,11 +150,12 @@ class ras_preconditioner : public krylov::linear_operator {
         geometry::bbox3d::from_points(grad_points_));
     for (auto level = 1; level < n_levels_; level++) {
       if (level == n_levels_ - 1) {
-        add_evaluator(level, level - 1, model_without_poly_, points_, grad_points_, bbox);
+        add_evaluator(level, level - 1, model_without_poly_, points_, grad_points_, bbox,
+                      precision::kFast);
       } else {
         add_evaluator(level, level - 1, model_without_poly_,
                       points_(point_idcs_.at(level), Eigen::all),
-                      grad_points_(grad_point_idcs_.at(level), Eigen::all), bbox);
+                      grad_points_(grad_point_idcs_.at(level), Eigen::all), bbox, precision::kFast);
       }
       evaluator(level, level - 1)
           .set_field_points(points_(point_idcs_.at(level - 1), Eigen::all),
@@ -164,7 +164,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
     for (auto level = 1; level < n_levels_ - 1; level++) {
       add_evaluator(0, level, model, points_(point_idcs_.at(0), Eigen::all),
-                    grad_points_(grad_point_idcs_.at(0), Eigen::all), bbox);
+                    grad_points_(grad_point_idcs_.at(0), Eigen::all), bbox, precision::kFast);
       evaluator(0, level).set_field_points(points_(point_idcs_.at(level), Eigen::all),
                                            grad_points_(grad_point_idcs_.at(level), Eigen::all));
     }
@@ -176,7 +176,8 @@ class ras_preconditioner : public krylov::linear_operator {
 
       ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
-      auto finest_evaluator = SymmetricEvaluator(model_without_poly_, points_, grad_points_);
+      auto finest_evaluator =
+          SymmetricEvaluator(model_without_poly_, points_, grad_points_, precision::kFast);
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
         finest_evaluator.set_weights(p_.col(i));
