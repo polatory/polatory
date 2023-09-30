@@ -15,6 +15,8 @@ namespace fmm {
 template <class Rbf>
 struct kernel {
   static constexpr int kDim = Rbf::kDim;
+  using Vector = geometry::vectorNd<kDim>;
+
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::symmetric};
   static constexpr std::size_t km{1};
@@ -39,23 +41,27 @@ struct kernel {
   [[nodiscard]] inline auto evaluate(
       scalfmm::container::point<double, kDim> const& x,
       scalfmm::container::point<double, kDim> const& y) const noexcept {
-    geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
-    geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
+    Vector diff;
+    for (auto i = 0; i < kDim; i++) {
+      diff(i) = x.at(i) - y.at(i);
+    }
 
-    return matrix_type<double>{rbf_.evaluate_isotropic(xx - yy)};
+    return matrix_type<double>{rbf_.evaluate_isotropic(diff)};
   }
 
   [[nodiscard]] inline auto evaluate(
       scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
       scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
-    auto n = x.at(0).size;
-    std::array<double, 4> v;
 
-    for (std::size_t i = 0; i < n; i++) {
-      geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
-      geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
-      v.at(i) = rbf_.evaluate_isotropic(xx - yy);
+    std::array<double, 4> v;
+    for (std::size_t i = 0; i < x.at(0).size; i++) {
+      Vector diff;
+      for (auto j = 0; j < kDim; j++) {
+        diff(j) = x.at(j).get(i) - y.at(j).get(i);
+      }
+
+      v.at(i) = rbf_.evaluate_isotropic(diff);
     }
 
     return matrix_type<decayed_type>{decayed_type::load(v.data(), xsimd::unaligned_mode{})};

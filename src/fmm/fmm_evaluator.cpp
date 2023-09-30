@@ -31,6 +31,8 @@ namespace polatory::fmm {
 template <class Model, class Kernel>
 class fmm_generic_evaluator<Model, Kernel>::impl {
   static constexpr int kDim{Model::kDim};
+  using Bbox = geometry::bboxNd<kDim>;
+
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 
@@ -60,7 +62,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  public:
-  impl(const Model& model, const geometry::bbox3d& bbox, precision prec)
+  impl(const Model& model, const Bbox& bbox, precision prec)
       : model_(model),
         kernel_(model.rbf()),
         order_(static_cast<int>(prec)),

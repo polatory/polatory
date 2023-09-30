@@ -15,6 +15,9 @@ namespace fmm {
 template <class Rbf>
 struct gradient_kernel {
   static constexpr int kDim = Rbf::kDim;
+  using Vector = geometry::vectorNd<kDim>;
+  using Matrix = geometry::matrixNd<kDim>;
+
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::non_symmetric};
   static constexpr std::size_t km{kDim};
@@ -39,10 +42,12 @@ struct gradient_kernel {
   [[nodiscard]] inline auto evaluate(
       scalfmm::container::point<double, kDim> const& x,
       scalfmm::container::point<double, kDim> const& y) const noexcept {
-    geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
-    geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
+    Vector diff;
+    for (auto i = 0; i < kDim; i++) {
+      diff(i) = x.at(i) - y.at(i);
+    }
 
-    geometry::vector3d g = rbf_.evaluate_gradient_isotropic(xx - yy) * rbf_.anisotropy();
+    Vector g = rbf_.evaluate_gradient_isotropic(diff) * rbf_.anisotropy();
 
     matrix_type<double> result;
     for (auto i = 0; i < kDim; i++) {
@@ -56,15 +61,19 @@ struct gradient_kernel {
       scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
       scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
-    auto n = x.at(0).size;
+
     std::array<double, 4> v0;
     std::array<double, 4> v1;
     std::array<double, 4> v2;
 
-    for (std::size_t i = 0; i < n; i++) {
-      geometry::point3d xx{x.at(0).get(i), x.at(1).get(i), x.at(2).get(i)};
-      geometry::point3d yy{y.at(0).get(i), y.at(1).get(i), y.at(2).get(i)};
-      geometry::vector3d g = rbf_.evaluate_gradient_isotropic(xx - yy) * rbf_.anisotropy();
+    for (std::size_t i = 0; i < x.at(0).size; i++) {
+      Vector diff;
+      for (auto j = 0; j < kDim; j++) {
+        diff(j) = x.at(j).get(i) - y.at(j).get(i);
+      }
+
+      Vector g = rbf_.evaluate_gradient_isotropic(diff) * rbf_.anisotropy();
+
       v0.at(i) = -g(0);
       v1.at(i) = -g(1);
       v2.at(i) = -g(2);
@@ -72,10 +81,10 @@ struct gradient_kernel {
 
     matrix_type<decayed_type> result;
     result.at(0) = decayed_type::load(v0.data(), xsimd::unaligned_mode{});
-    if (kDim > 1) {
+    if constexpr (kDim > 1) {
       result.at(1) = decayed_type::load(v1.data(), xsimd::unaligned_mode{});
     }
-    if (kDim > 2) {
+    if constexpr (kDim > 2) {
       result.at(2) = decayed_type::load(v2.data(), xsimd::unaligned_mode{});
     }
 
