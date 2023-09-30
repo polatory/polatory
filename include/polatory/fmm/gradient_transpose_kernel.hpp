@@ -15,11 +15,11 @@ namespace fmm {
 
 template <class Rbf>
 struct gradient_transpose_kernel {
-  static constexpr int Dim = Rbf::dimension;
+  static constexpr int kDim = Rbf::kDim;
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::non_symmetric};
   static constexpr std::size_t km{1};
-  static constexpr std::size_t kn{Dim};
+  static constexpr std::size_t kn{kDim};
   template <typename ValueType>
   using matrix_type = std::array<ValueType, kn * km>;
   template <typename ValueType>
@@ -39,15 +39,15 @@ struct gradient_transpose_kernel {
   }
 
   [[nodiscard]] inline auto evaluate(
-      scalfmm::container::point<double, Dim> const& x,
-      scalfmm::container::point<double, Dim> const& y) const noexcept {
+      scalfmm::container::point<double, kDim> const& x,
+      scalfmm::container::point<double, kDim> const& y) const noexcept {
     geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
     geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
 
     geometry::vector3d g = rbf_.evaluate_gradient_isotropic(xx - yy) * rbf_.anisotropy();
 
     matrix_type<double> result;
-    for (auto i = 0; i < Dim; i++) {
+    for (auto i = 0; i < kDim; i++) {
       result.at(i) = g(i);
     }
 
@@ -55,8 +55,8 @@ struct gradient_transpose_kernel {
   }
 
   [[nodiscard]] inline auto evaluate(
-      scalfmm::container::point<xsimd::batch<double>, Dim> const& x,
-      scalfmm::container::point<xsimd::batch<double>, Dim> const& y) const noexcept {
+      scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
+      scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
     auto n = x.at(0).size;
     std::array<double, 4> v0;
@@ -74,10 +74,10 @@ struct gradient_transpose_kernel {
 
     matrix_type<decayed_type> result;
     result.at(0) = decayed_type::load(v0.data(), xsimd::unaligned_mode{});
-    if (Dim > 1) {
+    if (kDim > 1) {
       result.at(1) = decayed_type::load(v1.data(), xsimd::unaligned_mode{});
     }
-    if (Dim > 2) {
+    if (kDim > 2) {
       result.at(2) = decayed_type::load(v2.data(), xsimd::unaligned_mode{});
     }
 

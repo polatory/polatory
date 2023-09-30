@@ -15,7 +15,7 @@ class model {
  public:
   using rbf_type = Rbf;
 
-  static constexpr int dimension = Rbf::dimension;
+  static constexpr int kDim = Rbf::kDim;
 
   model(const Rbf& rbf, int poly_dimension, int poly_degree)
       : rbf_(rbf), poly_dimension_(poly_dimension), poly_degree_(poly_degree) {

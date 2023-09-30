@@ -11,8 +11,8 @@ class covariance_function_base : public rbf_base<Dim> {
   using Base = rbf_base<Dim>;
 
  protected:
-  using matrix3d = Base::matrix3d;
-  using vector3d = Base::vector3d;
+  using Matrix = Base::Matrix;
+  using Vector = Base::Vector;
 
  public:
   using Base::Base;

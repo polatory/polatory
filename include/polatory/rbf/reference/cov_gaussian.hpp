@@ -12,15 +12,15 @@ namespace reference {
 template <int Dim>
 class cov_gaussian final : public covariance_function_base<Dim> {
   using Base = covariance_function_base<Dim>;
-  using matrix3d = Base::matrix3d;
-  using vector3d = Base::vector3d;
+  using Matrix = Base::Matrix;
+  using Vector = Base::Vector;
 
  public:
   using Base::Base;
 
   explicit cov_gaussian(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  double evaluate_isotropic(const vector3d& diff) const override {
+  double evaluate_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
@@ -28,7 +28,7 @@ class cov_gaussian final : public covariance_function_base<Dim> {
     return psill * std::exp(-r * r / (range * range));
   }
 
-  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
+  Vector evaluate_gradient_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
@@ -37,13 +37,13 @@ class cov_gaussian final : public covariance_function_base<Dim> {
     return coeff * diff;
   }
 
-  matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
+  Matrix evaluate_hessian_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
 
     auto coeff = -2.0 * psill * std::exp(-r * r / (range * range)) / (range * range);
-    return coeff * (matrix3d::Identity() - 2.0 * diff.transpose() * diff / (range * range));
+    return coeff * (Matrix::Identity() - 2.0 * diff.transpose() * diff / (range * range));
   }
 };
 

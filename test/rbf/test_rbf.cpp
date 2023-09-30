@@ -125,7 +125,7 @@ TEST(rbf, anisotropy) {
   biharmonic3d<3> rbf_aniso({1.0});
   rbf_aniso.set_anisotropy(a);
 
-  ASSERT_EQ(rbf_iso.evaluate(transform_vector(a, v)), rbf_aniso.evaluate(v));
+  ASSERT_EQ(rbf_iso.evaluate(transform_vector<3>(a, v)), rbf_aniso.evaluate(v));
 }
 
 TEST(rbf, gradient) {

@@ -13,15 +13,15 @@ namespace reference {
 template <int Dim>
 class cov_spherical final : public covariance_function_base<Dim> {
   using Base = covariance_function_base<Dim>;
-  using matrix3d = Base::matrix3d;
-  using vector3d = Base::vector3d;
+  using Matrix = Base::Matrix;
+  using Vector = Base::Vector;
 
  public:
   using Base::Base;
 
   explicit cov_spherical(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  double evaluate_isotropic(const vector3d& diff) const override {
+  double evaluate_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
@@ -29,7 +29,7 @@ class cov_spherical final : public covariance_function_base<Dim> {
     return r < range ? psill * (1.0 - 1.5 * r / range + 0.5 * std::pow(r / range, 3.0)) : 0.0;
   }
 
-  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
+  Vector evaluate_gradient_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
@@ -39,10 +39,10 @@ class cov_spherical final : public covariance_function_base<Dim> {
       return coeff * diff;
     }
 
-    return vector3d::Zero();
+    return Vector::Zero();
   }
 
-  matrix3d evaluate_hessian_isotropic(const vector3d& /*diff*/) const override {
+  Matrix evaluate_hessian_isotropic(const Vector& /*diff*/) const override {
     throw std::runtime_error("cov_spherical::evaluate_hessian_isotropic is not implemented");
   }
 };

@@ -10,8 +10,8 @@ namespace polatory::rbf {
 template <int Dim>
 class cov_spheroidal9 final : public covariance_function_base<Dim> {
   using Base = covariance_function_base<Dim>;
-  using matrix3d = Base::matrix3d;
-  using vector3d = Base::vector3d;
+  using Matrix = Base::Matrix;
+  using Vector = Base::Vector;
 
   static constexpr double kRho0 = 0.31622776601683794;
   static constexpr double kA = 1.4230249470757708;
@@ -23,7 +23,7 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
 
   explicit cov_spheroidal9(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  double evaluate_isotropic(const vector3d& diff) const override {
+  double evaluate_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
@@ -32,7 +32,7 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
     return rho < kRho0 ? psill * (1.0 - kA * rho) : psill * kB * std::pow(1.0 + (rho * rho), -4.5);
   }
 
-  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
+  Vector evaluate_gradient_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
@@ -44,7 +44,7 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
     return coeff * diff;
   }
 
-  matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
+  Matrix evaluate_hessian_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
@@ -53,7 +53,7 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
     auto coeff =
         (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + (rho * rho), -5.5)) /
         (range * range);
-    return coeff * (matrix3d::Identity() -
+    return coeff * (Matrix::Identity() -
                     diff.transpose() * diff *
                         (rho < kRho0 ? 1.0 / (r * r) : 11.0 / (r * r + range * range)));
   }

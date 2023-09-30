@@ -31,19 +31,19 @@ namespace polatory::fmm {
 
 template <class Model, class Kernel>
 class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
-  static constexpr int dimension{Model::dimension};
+  static constexpr int kDim{Model::kDim};
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 
   using Particle = scalfmm::container::particle<
-      /* position */ double, dimension,
+      /* position */ double, kDim,
       /* inputs */ double, km,
       /* outputs */ double, kn,
       /* variables */ index_t>;
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
-      scalfmm::interpolation::interpolator<double, dimension, Kernel, scalfmm::options::uniform_<>>;
+      scalfmm::interpolation::interpolator<double, kDim, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename Particle::position_type;
@@ -90,7 +90,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
     auto a = model_.rbf().anisotropy();
     for (index_t idx = 0; idx < n_points_; idx++) {
       auto& p = particles_.at(idx);
-      auto ap = geometry::transform_point(a, points.row(idx));
+      auto ap = geometry::transform_point<kDim>(a, points.row(idx));
       p.position() = Position{ap(0), ap(1), ap(2)};
       p.variables(idx);
     }
@@ -124,7 +124,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
 
  private:
   void handle_self_interaction() const {
-    scalfmm::container::point<double, dimension> x{};
+    scalfmm::container::point<double, kDim> x{};
     auto k = kernel_.evaluate(x, x);
 
     scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
@@ -198,7 +198,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
         auto p = typename Leaf::proxy_type(p_ref);
         auto idx = std::get<0>(p.variables());
         auto& new_p = particles_.at(idx);
-        for (auto i = 0; i < dimension; i++) {
+        for (auto i = 0; i < kDim; i++) {
           new_p.position(i) = p.position(i);
         }
         for (auto i = 0; i < km; i++) {

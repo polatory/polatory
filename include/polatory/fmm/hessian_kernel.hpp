@@ -14,11 +14,11 @@ namespace fmm {
 
 template <class Rbf>
 struct hessian_kernel {
-  static constexpr int Dim = Rbf::dimension;
+  static constexpr int kDim = Rbf::kDim;
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::symmetric};
-  static constexpr std::size_t km{Dim};
-  static constexpr std::size_t kn{Dim};
+  static constexpr std::size_t km{kDim};
+  static constexpr std::size_t kn{kDim};
   template <typename ValueType>
   using matrix_type = std::array<ValueType, kn * km>;
   template <typename ValueType>
@@ -38,8 +38,8 @@ struct hessian_kernel {
   }
 
   [[nodiscard]] inline auto evaluate(
-      scalfmm::container::point<double, Dim> const& x,
-      scalfmm::container::point<double, Dim> const& y) const noexcept {
+      scalfmm::container::point<double, kDim> const& x,
+      scalfmm::container::point<double, kDim> const& y) const noexcept {
     geometry::point3d xx{x.at(0), x.at(1), x.at(2)};
     geometry::point3d yy{y.at(0), y.at(1), y.at(2)};
 
@@ -47,9 +47,9 @@ struct hessian_kernel {
     geometry::matrix3d h = aniso.transpose() * rbf_.evaluate_hessian_isotropic(xx - yy) * aniso;
 
     matrix_type<double> result;
-    for (auto i = 0; i < Dim; i++) {
-      for (auto j = 0; j < Dim; j++) {
-        result.at(Dim * i + j) = h(i, j);
+    for (auto i = 0; i < kDim; i++) {
+      for (auto j = 0; j < kDim; j++) {
+        result.at(kDim * i + j) = h(i, j);
       }
     }
 
@@ -57,8 +57,8 @@ struct hessian_kernel {
   }
 
   [[nodiscard]] inline auto evaluate(
-      scalfmm::container::point<xsimd::batch<double>, Dim> const& x,
-      scalfmm::container::point<xsimd::batch<double>, Dim> const& y) const noexcept {
+      scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
+      scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
     auto n = x.at(0).size;
     std::array<double, 4> v00;
@@ -83,18 +83,18 @@ struct hessian_kernel {
     }
 
     matrix_type<decayed_type> result;
-    result.at(Dim * 0 + 0) = decayed_type::load(v00.data(), xsimd::unaligned_mode{});
-    if (Dim > 1) {
-      result.at(Dim * 0 + 1) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});
-      result.at(Dim * 1 + 0) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});
-      result.at(Dim * 1 + 1) = decayed_type::load(v11.data(), xsimd::unaligned_mode{});
+    result.at(kDim * 0 + 0) = decayed_type::load(v00.data(), xsimd::unaligned_mode{});
+    if (kDim > 1) {
+      result.at(kDim * 0 + 1) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});
+      result.at(kDim * 1 + 0) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});
+      result.at(kDim * 1 + 1) = decayed_type::load(v11.data(), xsimd::unaligned_mode{});
     }
-    if (Dim > 2) {
-      result.at(Dim * 0 + 2) = decayed_type::load(v02.data(), xsimd::unaligned_mode{});
-      result.at(Dim * 1 + 2) = decayed_type::load(v12.data(), xsimd::unaligned_mode{});
-      result.at(Dim * 2 + 0) = decayed_type::load(v02.data(), xsimd::unaligned_mode{});
-      result.at(Dim * 2 + 1) = decayed_type::load(v12.data(), xsimd::unaligned_mode{});
-      result.at(Dim * 2 + 2) = decayed_type::load(v22.data(), xsimd::unaligned_mode{});
+    if (kDim > 2) {
+      result.at(kDim * 0 + 2) = decayed_type::load(v02.data(), xsimd::unaligned_mode{});
+      result.at(kDim * 1 + 2) = decayed_type::load(v12.data(), xsimd::unaligned_mode{});
+      result.at(kDim * 2 + 0) = decayed_type::load(v02.data(), xsimd::unaligned_mode{});
+      result.at(kDim * 2 + 1) = decayed_type::load(v12.data(), xsimd::unaligned_mode{});
+      result.at(kDim * 2 + 2) = decayed_type::load(v22.data(), xsimd::unaligned_mode{});
     }
 
     return result;

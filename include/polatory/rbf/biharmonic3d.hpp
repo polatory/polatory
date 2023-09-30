@@ -11,8 +11,8 @@ namespace polatory::rbf {
 template <int Dim>
 class biharmonic3d final : public rbf_base<Dim> {
   using Base = rbf_base<Dim>;
-  using matrix3d = Base::matrix3d;
-  using vector3d = Base::vector3d;
+  using Matrix = Base::Matrix;
+  using Vector = Base::Vector;
 
  public:
   using Base::Base;
@@ -21,18 +21,18 @@ class biharmonic3d final : public rbf_base<Dim> {
 
   int cpd_order() const override { return 1; }
 
-  double evaluate_isotropic(const vector3d& diff) const override {
+  double evaluate_isotropic(const Vector& diff) const override {
     auto slope = Base::parameters().at(0);
     auto r = diff.norm();
 
     return -slope * r;
   }
 
-  vector3d evaluate_gradient_isotropic(const vector3d& /*diff*/) const override {
+  Vector evaluate_gradient_isotropic(const Vector& /*diff*/) const override {
     throw std::runtime_error("biharmonic3d::evaluate_gradient_isotropic() is not implemented");
   }
 
-  matrix3d evaluate_hessian_isotropic(const vector3d& /*diff*/) const override {
+  Matrix evaluate_hessian_isotropic(const Vector& /*diff*/) const override {
     throw std::runtime_error("biharmonic3d::evaluate_hessian_isotropic() is not implemented");
   }
 

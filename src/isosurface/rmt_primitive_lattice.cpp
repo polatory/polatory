@@ -6,14 +6,20 @@ namespace polatory::isosurface {
 namespace detail {
 
 lattice_vectors::lattice_vectors()
-    : base{{geometry::transform_vector(rotation(), {1.0, 1.0, -1.0}) / std::numbers::sqrt2,
-            geometry::transform_vector(rotation(), {1.0, -1.0, 1.0}) / std::numbers::sqrt2,
-            geometry::transform_vector(rotation(), {-1.0, 1.0, 1.0}) / std::numbers::sqrt2}} {}
+    : base{{geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 1.0, -1.0}) /
+                std::numbers::sqrt2,
+            geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, -1.0, 1.0}) /
+                std::numbers::sqrt2,
+            geometry::transform_vector<3>(rotation(), geometry::vector3d{-1.0, 1.0, 1.0}) /
+                std::numbers::sqrt2}} {}
 
 dual_lattice_vectors::dual_lattice_vectors()
-    : base{{geometry::transform_vector(rotation(), {1.0, 1.0, 0.0}) / std::numbers::sqrt2,
-            geometry::transform_vector(rotation(), {1.0, 0.0, 1.0}) / std::numbers::sqrt2,
-            geometry::transform_vector(rotation(), {0.0, 1.0, 1.0}) / std::numbers::sqrt2}} {}
+    : base{{geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 1.0, 0.0}) /
+                std::numbers::sqrt2,
+            geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 0.0, 1.0}) /
+                std::numbers::sqrt2,
+            geometry::transform_vector<3>(rotation(), geometry::vector3d{0.0, 1.0, 1.0}) /
+                std::numbers::sqrt2}} {}
 
 }  // namespace detail
 
