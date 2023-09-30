@@ -9,6 +9,9 @@
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
+#include <polatory/rbf/reference/cov_gaussian.hpp>
+#include <polatory/rbf/reference/cov_spherical.hpp>
+#include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -269,5 +272,8 @@ IMPLEMENT1(model<rbf::cov_spheroidal5>);
 IMPLEMENT1(model<rbf::cov_spheroidal7>);
 IMPLEMENT1(model<rbf::cov_spheroidal9>);
 IMPLEMENT1(model<rbf::multiquadric1>);
+IMPLEMENT1(model<rbf::reference::cov_gaussian>);
+IMPLEMENT1(model<rbf::reference::cov_spherical>);
+IMPLEMENT1(model<rbf::reference::triharmonic3d>);
 
 }  // namespace polatory::fmm
