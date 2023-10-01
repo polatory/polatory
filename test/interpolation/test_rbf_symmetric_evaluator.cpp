@@ -8,8 +8,7 @@
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/types.hpp>
 
-#include "../random_anisotropy.hpp"
-#include "utility.hpp"
+#include "../utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -23,16 +22,16 @@ using polatory::rbf::reference::cov_gaussian;
 
 namespace {
 
+template <int Dim>
 void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_eval_points,
           index_t n_eval_grad_points) {
-  constexpr int kDim = 3;
-  using Rbf = cov_gaussian<kDim>;
+  using Rbf = cov_gaussian<Dim>;
   using Model = model<Rbf>;
 
   auto rel_tolerance = 1e-10;
 
   Rbf rbf({1.0, 0.01});
-  rbf.set_anisotropy(random_anisotropy());
+  rbf.set_anisotropy(random_anisotropy<Dim>());
 
   Model model(rbf, poly_degree);
 
@@ -41,12 +40,12 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
 
   rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
   direct_eval.set_target_points(points.topRows(n_eval_points),
-                               grad_points.topRows(n_eval_grad_points));
+                                grad_points.topRows(n_eval_grad_points));
 
   rbf_symmetric_evaluator<Model> eval(model, points, grad_points, precision::kPrecise);
 
   for (auto i = 0; i < 2; i++) {
-    valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
+    valuesd weights = valuesd::Random(n_points + Dim * n_grad_points + model.poly_basis_size());
 
     direct_eval.set_weights(weights);
     eval.set_weights(weights);
@@ -54,12 +53,12 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
     auto direct_values = direct_eval.evaluate();
     auto values_full = eval.evaluate();
 
-    EXPECT_EQ(n_eval_points + kDim * n_eval_grad_points, direct_values.rows());
-    EXPECT_EQ(n_points + kDim * n_grad_points, values_full.rows());
+    EXPECT_EQ(n_eval_points + Dim * n_eval_grad_points, direct_values.rows());
+    EXPECT_EQ(n_points + Dim * n_grad_points, values_full.rows());
 
     valuesd values(direct_values.size());
     values << values_full.head(n_eval_points),
-        values_full.segment(n_points, kDim * n_eval_grad_points);
+        values_full.segment(n_points, Dim * n_eval_grad_points);
 
     EXPECT_LT(relative_error(values, direct_values), rel_tolerance);
   }
@@ -69,6 +68,6 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
 
 TEST(rbf_symmetric_evaluator, trivial) {
   for (auto deg = -1; deg <= 2; deg++) {
-    test(deg, 32768, 4096, 1024, 1024);
+    test<3>(deg, 32768, 4096, 1024, 1024);
   }
 }

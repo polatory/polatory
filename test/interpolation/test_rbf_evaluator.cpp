@@ -11,8 +11,7 @@
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/types.hpp>
 
-#include "../random_anisotropy.hpp"
-#include "utility.hpp"
+#include "../utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -28,10 +27,10 @@ using polatory::rbf::reference::cov_gaussian;
 
 namespace {
 
+template <int Dim>
 void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points,
           index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
-  constexpr int kDim = 3;
-  using Rbf = cov_gaussian<kDim>;
+  using Rbf = cov_gaussian<Dim>;
   using Model = model<Rbf>;
 
   index_t n_points = n_initial_points;
@@ -42,7 +41,7 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
   auto rel_tolerance = 1e-10;
 
   Rbf rbf({1.0, 0.01});
-  rbf.set_anisotropy(random_anisotropy());
+  rbf.set_anisotropy(random_anisotropy<Dim>());
 
   Model model(rbf, poly_degree);
   model.set_nugget(0.01);
@@ -56,7 +55,7 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
     auto eval_points = random_points(sphere3d(), n_eval_points);
     auto eval_grad_points = random_points(sphere3d(), n_eval_grad_points);
 
-    valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
+    valuesd weights = valuesd::Random(n_points + Dim * n_grad_points + model.poly_basis_size());
 
     rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
     direct_eval.set_weights(weights);
@@ -69,8 +68,8 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
     auto direct_values = direct_eval.evaluate();
     auto values = eval.evaluate();
 
-    EXPECT_EQ(n_eval_points + kDim * n_eval_grad_points, direct_values.rows());
-    EXPECT_EQ(n_eval_points + kDim * n_eval_grad_points, values.rows());
+    EXPECT_EQ(n_eval_points + Dim * n_eval_grad_points, direct_values.rows());
+    EXPECT_EQ(n_eval_points + Dim * n_eval_grad_points, values.rows());
 
     EXPECT_LT(relative_error(values, direct_values), rel_tolerance);
 
@@ -84,10 +83,10 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
 }  // namespace
 
 TEST(rbf_evaluator, trivial) {
-  test(-1, 1024, 0, 1024, 0);
-  test(-1, 0, 256, 0, 256);
+  test<3>(-1, 1024, 0, 1024, 0);
+  test<3>(-1, 0, 256, 0, 256);
 
   for (auto deg = -1; deg <= 2; deg++) {
-    test(deg, 1024, 256, 1024, 256);
+    test<3>(deg, 1024, 256, 1024, 256);
   }
 }

@@ -11,8 +11,7 @@
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/types.hpp>
 
-#include "../random_anisotropy.hpp"
-#include "utility.hpp"
+#include "../utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -39,7 +38,7 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
   auto rel_tolerance = 1e-10;
 
   Rbf rbf({1.0, 0.01});
-  rbf.set_anisotropy(random_anisotropy());
+  rbf.set_anisotropy(random_anisotropy<kDim>());
 
   Model model(rbf, poly_degree);
   model.set_nugget(0.01);

@@ -14,6 +14,8 @@ using polatory::point_cloud::random_points;
 using polatory::preconditioner::domain_divider;
 
 TEST(domain_divider, trivial) {
+  constexpr int kDim = 3;
+
   auto n_points = index_t{10000};
   auto n_grad_points = index_t{10000};
   auto n_poly_points = index_t{10};
@@ -28,7 +30,7 @@ TEST(domain_divider, trivial) {
 
   std::vector<index_t> poly_point_idcs(point_idcs.begin(), point_idcs.begin() + n_poly_points);
 
-  domain_divider divider(points, grad_points, point_idcs, grad_point_idcs, poly_point_idcs);
+  domain_divider<kDim> divider(points, grad_points, point_idcs, grad_point_idcs, poly_point_idcs);
 
   std::vector<index_t> inner_points;
   std::vector<index_t> inner_grad_points;

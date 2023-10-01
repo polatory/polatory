@@ -16,7 +16,7 @@
 #include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <random>
 
-#include "../random_anisotropy.hpp"
+#include "../utility.hpp"
 
 using polatory::geometry::matrix3d;
 using polatory::geometry::transform_vector;
@@ -116,7 +116,7 @@ void test_hessian(const rbf_base<3>& rbf) {
 }  // namespace
 
 TEST(rbf, anisotropy) {
-  auto a = random_anisotropy();
+  auto a = random_anisotropy<3>();
   vector3d v({1.0, 1.0, 1.0});
 
   biharmonic3d<3> rbf_iso({1.0});

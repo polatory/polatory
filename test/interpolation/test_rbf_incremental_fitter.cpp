@@ -9,8 +9,7 @@
 #include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/types.hpp>
 
-#include "../random_anisotropy.hpp"
-#include "utility.hpp"
+#include "../utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -21,19 +20,21 @@ using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_incremental_fitter;
 using polatory::rbf::biharmonic3d;
 
-TEST(rbf_incremental_fitter, trivial) {
-  constexpr int kDim = 3;
-  using Rbf = biharmonic3d<kDim>;
+namespace {
+
+template <int Dim>
+void test(int poly_degree) {
+  using Rbf = biharmonic3d<Dim>;
   using Model = model<Rbf>;
 
-  const auto n_surface_points = index_t{4096};
-  const auto poly_degree = 0;
+  const auto n_points = index_t{4096};
   const auto absolute_tolerance = 1e-4;
 
-  auto [points, values] = sample_sdf_data(n_surface_points);
+  auto aniso = random_anisotropy<Dim>();
+  auto [points, values] = sample_data(n_points, aniso);
 
   Rbf rbf({1.0});
-  rbf.set_anisotropy(random_anisotropy());
+  rbf.set_anisotropy(aniso);
 
   Model model(rbf, poly_degree);
 
@@ -46,8 +47,12 @@ TEST(rbf_incremental_fitter, trivial) {
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 
-  auto max_residual = (values - values_fit).lpNorm<Eigen::Infinity>();
+  auto max_residual = (values - values_fit).template lpNorm<Eigen::Infinity>();
   std::cout << "Maximum residual:" << std::endl << "  " << max_residual << std::endl;
 
   EXPECT_LT(max_residual, absolute_tolerance);
 }
+
+}  // namespace
+
+TEST(rbf_incremental_fitter, trivial) { test<3>(0); }

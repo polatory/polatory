@@ -10,8 +10,7 @@
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/types.hpp>
 
-#include "../random_anisotropy.hpp"
-#include "utility.hpp"
+#include "../utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
@@ -24,23 +23,25 @@ using polatory::interpolation::rbf_inequality_fitter;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
 
-TEST(rbf_inequality_fitter, inequality_only) {
-  constexpr int kDim = 3;
-  using Rbf = biharmonic3d<kDim>;
+namespace {
+
+template <int Dim>
+void test(int poly_degree) {
+  using Rbf = biharmonic3d<Dim>;
   using Model = model<Rbf>;
 
   const auto n_points = index_t{4096};
-  const auto poly_degree = 0;
   const auto absolute_tolerance = 1e-4;
 
-  auto [points, values] = sample_numerical_data(n_points);
+  auto aniso = random_anisotropy<Dim>();
+  auto [points, values] = sample_data(n_points, aniso);
 
-  valuesd values_lb = values.array() - 0.5;
-  valuesd values_ub = values.array() + 0.5;
+  valuesd values_lb = values.array() - 0.001;
+  valuesd values_ub = values.array() + 0.001;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
   Rbf rbf({1.0});
-  rbf.set_anisotropy(random_anisotropy());
+  rbf.set_anisotropy(aniso);
 
   Model model(rbf, poly_degree);
 
@@ -58,6 +59,10 @@ TEST(rbf_inequality_fitter, inequality_only) {
     EXPECT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
   }
 }
+
+}  // namespace
+
+TEST(rbf_inequality_fitter, inequality_only) { test<3>(0); }
 
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {

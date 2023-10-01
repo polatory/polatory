@@ -26,7 +26,9 @@ class domain_divider {
   using Domain = domain<Dim>;
 
  public:
-  domain_divider(const Points& points, const Points& grad_points,
+  template <class DerivedPoints, class DerivedGradPoints>
+  domain_divider(const Eigen::MatrixBase<DerivedPoints>& points,
+                 const Eigen::MatrixBase<DerivedGradPoints>& grad_points,
                  const std::vector<index_t>& point_indices,
                  const std::vector<index_t>& grad_point_indices,
                  const std::vector<index_t>& poly_point_indices)
@@ -205,8 +207,8 @@ class domain_divider {
     return std::ceil((d - 0.5) / 2.0) + std::floor((d + 0.5) / 2.0);
   }
 
-  const Points& points_;
-  const Points& grad_points_;
+  const Points points_;
+  const Points grad_points_;
 
   index_t mixed_size_of_root_;
   double longest_side_length_of_root_;
