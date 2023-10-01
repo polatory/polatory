@@ -40,6 +40,8 @@ class ras_preconditioner : public krylov::linear_operator {
 
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
+  using Domain = domain<kDim>;
+  using DomainDivider = domain_divider<kDim>;
   using CoarseGrid = coarse_grid<Model>;
   using FineGrid = fine_grid<Model>;
   using Evaluator = interpolation::rbf_evaluator<Model>;
@@ -103,8 +105,8 @@ class ras_preconditioner : public krylov::linear_operator {
       auto n_mixed_points =
           static_cast<index_t>(point_idcs_.at(level).size() + grad_point_idcs_.at(level).size());
 
-      auto divider = std::make_unique<domain_divider>(points_, grad_points_, point_idcs_.at(level),
-                                                      grad_point_idcs_.at(level), poly_point_idcs);
+      auto divider = std::make_unique<DomainDivider>(points_, grad_points_, point_idcs_.at(level),
+                                                     grad_point_idcs_.at(level), poly_point_idcs);
 
       auto ratio =
           level == 1 ? static_cast<double>(n_coarsest_points) / static_cast<double>(n_mixed_points)
@@ -133,7 +135,7 @@ class ras_preconditioner : public krylov::linear_operator {
       auto n_mixed_points =
           static_cast<index_t>(point_idcs_.at(0).size() + grad_point_idcs_.at(0).size());
 
-      domain coarse_domain;
+      Domain coarse_domain;
       coarse_domain.point_indices = point_idcs_.at(0);
       coarse_domain.grad_point_indices = grad_point_idcs_.at(0);
 

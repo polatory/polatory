@@ -30,6 +30,7 @@ TEST(coarse_grid, trivial) {
   constexpr int kDim = 3;
   using Rbf = multiquadric1<kDim>;
   using Model = model<Rbf>;
+  using Domain = domain<kDim>;
 
   auto mu = index_t{512};
   auto sigma = index_t{256};
@@ -45,7 +46,7 @@ TEST(coarse_grid, trivial) {
   model.set_nugget(0.01);
   auto l = model.poly_basis_size();
 
-  domain domain;
+  Domain domain;
   {
     std::random_device rd;
     std::mt19937 gen(rd());
