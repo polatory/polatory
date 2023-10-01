@@ -2,6 +2,8 @@
 
 #include <Eigen/Core>
 #include <cmath>
+#include <numbers>
+#include <polatory/common/orthonormalize.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/types.hpp>
@@ -9,12 +11,19 @@
 
 template <int Dim>
 polatory::geometry::matrixNd<Dim> random_anisotropy() {
+  using polatory::common::orthonormalize_cols;
+  using Vector = polatory::geometry::vectorNd<Dim>;
   using Matrix = polatory::geometry::matrixNd<Dim>;
 
+  // Rotation.
   Matrix a = Matrix::Random();
+  orthonormalize_cols(a);
   if (a.determinant() < 0.0) {
     a.col(0) *= -1.0;
   }
+
+  // Scaling.
+  a.diagonal().array() *= pow(10.0, Vector::Random().array());
 
   return a;
 }
@@ -29,7 +38,7 @@ double relative_error(const Eigen::MatrixBase<DerivedApprox>& approx,
 
 template <int Dim>
 std::pair<polatory::geometry::pointsNd<Dim>, polatory::common::valuesd> sample_data(
-    polatory::index_t n_points, const polatory::geometry::matrixNd<Dim>& aniso) {
+    polatory::index_t& n_points, const polatory::geometry::matrixNd<Dim>& aniso) {
   using polatory::index_t;
   using polatory::common::valuesd;
   using polatory::point_cloud::distance_filter;
@@ -45,7 +54,7 @@ std::pair<polatory::geometry::pointsNd<Dim>, polatory::common::valuesd> sample_d
     auto p = points.row(i);
     Point ap = p * aniso.transpose();
     for (auto j = 0; j < Dim; j++) {
-      values(i) += std::sin(ap(j));
+      values(i) += std::sin(std::numbers::pi * ap(j));
     }
   }
 
@@ -53,8 +62,8 @@ std::pair<polatory::geometry::pointsNd<Dim>, polatory::common::valuesd> sample_d
 }
 
 template <int Dim>
-std::pair<polatory::geometry::pointNd<Dim>, polatory::geometry::vectorNd<Dim>> sample_grad_data(
-    polatory::index_t n_points, const polatory::geometry::matrixNd<Dim>& aniso) {
+std::pair<polatory::geometry::pointsNd<Dim>, polatory::geometry::vectorsNd<Dim>> sample_grad_data(
+    polatory::index_t& n_points, const polatory::geometry::matrixNd<Dim>& aniso) {
   using polatory::index_t;
   using polatory::point_cloud::distance_filter;
   using Point = polatory::geometry::pointNd<Dim>;
@@ -70,7 +79,7 @@ std::pair<polatory::geometry::pointNd<Dim>, polatory::geometry::vectorNd<Dim>> s
     auto p = points.row(i);
     Point ap = p * aniso.transpose();
     for (auto j = 0; j < Dim; j++) {
-      grads(i, j) = std::cos(ap(j));
+      grads(i, j) = std::numbers::pi * std::cos(std::numbers::pi * ap(j));
     }
     grads.row(i) *= aniso;
   }

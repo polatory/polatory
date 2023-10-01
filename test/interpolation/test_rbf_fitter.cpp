@@ -1,15 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
+#include <format>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/geometry/sphere3d.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/point_cloud/distance_filter.hpp>
-#include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
-#include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <polatory/types.hpp>
 
 #include "../utility.hpp"
@@ -18,22 +15,20 @@ using polatory::index_t;
 using polatory::model;
 using polatory::precision;
 using polatory::common::valuesd;
-using polatory::geometry::points3d;
-using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
-using polatory::point_cloud::distance_filter;
-using polatory::point_cloud::random_points;
 using polatory::rbf::reference::cov_gaussian;
 
 namespace {
 
 template <int Dim>
 void test(int poly_degree) {
+  std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
+
   using Rbf = cov_gaussian<Dim>;
   using Model = model<Rbf>;
 
-  index_t n_points = 10000;
+  index_t n_points = 1000;
   index_t n_grad_points = 100;
 
   auto absolute_tolerance = 1e-4;
@@ -43,10 +38,7 @@ void test(int poly_degree) {
   auto aniso = random_anisotropy<Dim>();
 
   auto [points, values] = sample_data(n_points, aniso);
-  n_points = points.rows();
-
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
-  n_grad_points = grad_points.rows();
 
   valuesd rhs = valuesd(n_points + Dim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();

@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/point_cloud/random_points.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/types.hpp>
 
@@ -14,10 +14,9 @@ using polatory::index_t;
 using polatory::model;
 using polatory::precision;
 using polatory::common::valuesd;
-using polatory::geometry::sphere3d;
+using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_symmetric_evaluator;
-using polatory::point_cloud::random_points;
 using polatory::rbf::reference::cov_gaussian;
 
 namespace {
@@ -27,6 +26,7 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
           index_t n_eval_grad_points) {
   using Rbf = cov_gaussian<Dim>;
   using Model = model<Rbf>;
+  using Points = pointsNd<Dim>;
 
   auto rel_tolerance = 1e-10;
 
@@ -35,8 +35,8 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
 
   Model model(rbf, poly_degree);
 
-  auto points = random_points(sphere3d(), n_points);
-  auto grad_points = random_points(sphere3d(), n_grad_points);
+  Points points = Points::Random(n_points, Dim);
+  Points grad_points = Points::Random(n_grad_points, Dim);
 
   rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
   direct_eval.set_target_points(points.topRows(n_eval_points),
@@ -68,6 +68,8 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
 
 TEST(rbf_symmetric_evaluator, trivial) {
   for (auto deg = -1; deg <= 2; deg++) {
+    test<1>(deg, 32768, 4096, 1024, 1024);
+    test<2>(deg, 32768, 4096, 1024, 1024);
     test<3>(deg, 32768, 4096, 1024, 1024);
   }
 }

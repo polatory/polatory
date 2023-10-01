@@ -27,8 +27,9 @@ void test(int poly_degree) {
   using Rbf = biharmonic3d<Dim>;
   using Model = model<Rbf>;
 
-  const auto n_points = index_t{4096};
-  const auto absolute_tolerance = 1e-4;
+  index_t n_points = 4096;
+
+  auto absolute_tolerance = 1e-4;
 
   auto aniso = random_anisotropy<Dim>();
   auto [points, values] = sample_data(n_points, aniso);
@@ -55,4 +56,8 @@ void test(int poly_degree) {
 
 }  // namespace
 
-TEST(rbf_incremental_fitter, trivial) { test<3>(0); }
+TEST(rbf_incremental_fitter, trivial) {
+  test<1>(0);
+  test<2>(0);
+  test<3>(0);
+}

@@ -30,8 +30,9 @@ void test(int poly_degree) {
   using Rbf = biharmonic3d<Dim>;
   using Model = model<Rbf>;
 
-  const auto n_points = index_t{4096};
-  const auto absolute_tolerance = 1e-4;
+  index_t n_points = 4096;
+
+  auto absolute_tolerance = 1e-4;
 
   auto aniso = random_anisotropy<Dim>();
   auto [points, values] = sample_data(n_points, aniso);
@@ -62,7 +63,11 @@ void test(int poly_degree) {
 
 }  // namespace
 
-TEST(rbf_inequality_fitter, inequality_only) { test<3>(0); }
+TEST(rbf_inequality_fitter, inequality_only) {
+  test<1>(0);
+  test<2>(0);
+  test<3>(0);
+}
 
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {
