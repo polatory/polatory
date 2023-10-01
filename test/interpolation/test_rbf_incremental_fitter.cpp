@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
+#include <format>
 #include <iostream>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -24,6 +25,8 @@ namespace {
 
 template <int Dim>
 void test(int poly_degree) {
+  std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
+
   using Rbf = biharmonic3d<Dim>;
   using Model = model<Rbf>;
 
@@ -57,7 +60,9 @@ void test(int poly_degree) {
 }  // namespace
 
 TEST(rbf_incremental_fitter, trivial) {
-  test<1>(0);
-  test<2>(0);
-  test<3>(0);
+  for (auto deg = 0; deg <= 2; deg++) {
+    test<1>(deg);
+    test<2>(deg);
+    test<3>(deg);
+  }
 }
