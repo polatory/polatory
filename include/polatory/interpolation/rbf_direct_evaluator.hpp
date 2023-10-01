@@ -14,6 +14,7 @@ template <class Model>
 class rbf_direct_evaluator {
   static constexpr int kDim = Model::kDim;
   using Points = geometry::pointsNd<kDim>;
+  using Vector = geometry::vectorNd<kDim>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
   using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
 
@@ -40,28 +41,26 @@ class rbf_direct_evaluator {
 
     for (index_t i = 0; i < fld_mu_; i++) {
       for (index_t j = 0; j < mu_; j++) {
-        y(i) += w(j) * rbf.evaluate(fld_points_.row(i) - src_points_.row(j));
+        Vector diff = fld_points_.row(i) - src_points_.row(j);
+        y(i) += w(j) * rbf.evaluate(diff);
       }
 
       for (index_t j = 0; j < sigma_; j++) {
-        y(i) += grad_w.row(j).dot(
-            -rbf.evaluate_gradient(fld_points_.row(i) - src_grad_points_.row(j)).head(kDim));
+        Vector diff = fld_points_.row(i) - src_grad_points_.row(j);
+        y(i) += grad_w.row(j).dot(-rbf.evaluate_gradient(diff));
       }
     }
 
     for (index_t i = 0; i < fld_sigma_; i++) {
       for (index_t j = 0; j < mu_; j++) {
-        y.segment(fld_mu_ + kDim * i, kDim) +=
-            w(j) * rbf.evaluate_gradient(fld_grad_points_.row(i) - src_points_.row(j))
-                       .head(kDim)
-                       .transpose();
+        Vector diff = fld_grad_points_.row(i) - src_points_.row(j);
+        y.segment(fld_mu_ + kDim * i, kDim) += w(j) * rbf.evaluate_gradient(diff).transpose();
       }
 
       for (index_t j = 0; j < sigma_; j++) {
+        Vector diff = fld_grad_points_.row(i) - src_grad_points_.row(j);
         y.segment(fld_mu_ + kDim * i, kDim) +=
-            (grad_w.row(j) * rbf.evaluate_hessian(fld_grad_points_.row(i) - src_grad_points_.row(j))
-                                 .topLeftCorner(kDim, kDim))
-                .transpose();
+            (grad_w.row(j) * rbf.evaluate_hessian(diff)).transpose();
       }
     }
 
