@@ -19,7 +19,6 @@
 #include "../random_anisotropy.hpp"
 
 using polatory::geometry::matrix3d;
-using polatory::geometry::to_linear_transformation3d;
 using polatory::geometry::transform_vector;
 using polatory::geometry::vector3d;
 using polatory::rbf::biharmonic2d;

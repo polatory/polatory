@@ -29,8 +29,8 @@ class dual_lattice_vectors : public std::array<geometry::vector3d, 3> {
 
 }  // namespace detail
 
-inline geometry::linear_transformation3d rotation() {
-  return geometry::to_linear_transformation3d(
+inline geometry::matrix3d rotation() {
+  return geometry::to_matrix3d(
       Eigen::AngleAxisd(-std::numbers::pi / 2.0, geometry::vector3d::UnitZ()) *
       Eigen::AngleAxisd(-std::numbers::pi / 4.0, geometry::vector3d::UnitY()));
 }

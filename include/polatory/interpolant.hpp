@@ -180,7 +180,7 @@ class interpolant {
     fitted_ = false;
     centers_ = Points();
     grad_centers_ = Points();
-    bbox_ = geometry::bbox3d();
+    bbox_ = Bbox();
     weights_ = common::valuesd();
   }
 

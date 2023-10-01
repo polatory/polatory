@@ -65,6 +65,8 @@ class bboxNd {
   Point max_;
 };
 
+using bbox1d = bboxNd<1>;
+using bbox2d = bboxNd<2>;
 using bbox3d = bboxNd<3>;
 
 }  // namespace polatory::geometry

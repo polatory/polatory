@@ -12,14 +12,14 @@
 namespace Eigen {
 
 inline void validate(boost::any& v, const std::vector<std::string>& values,
-                     polatory::geometry::linear_transformation3d*, int) {
+                     polatory::geometry::matrix3d*, int) {
   namespace po = boost::program_options;
 
   if (values.size() != 9) {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  polatory::geometry::linear_transformation3d aniso;
+  polatory::geometry::matrix3d aniso;
   aniso << boost::lexical_cast<double>(values[0]), boost::lexical_cast<double>(values[1]),
       boost::lexical_cast<double>(values[2]), boost::lexical_cast<double>(values[3]),
       boost::lexical_cast<double>(values[4]), boost::lexical_cast<double>(values[5]),

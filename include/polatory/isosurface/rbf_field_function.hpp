@@ -10,6 +10,8 @@ namespace polatory::isosurface {
 
 template <class Model>
 class rbf_field_function : public field_function {
+  static_assert(Model::kDim == 3, "Model must be three-dimensional.");
+
   using Interpolant = interpolant<Model>;
 
  public:

@@ -11,6 +11,7 @@ using polatory::read_table;
 using polatory::tabled;
 using polatory::common::concatenate_cols;
 using polatory::common::valuesd;
+using polatory::geometry::points2d;
 using polatory::geometry::points3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function_25d;
@@ -30,7 +31,7 @@ void main_impl(const options& opts) {
 
   // Load points (x,y,0) and values (z).
   tabled table = read_table(opts.in_file);
-  points3d points = concatenate_cols(table(Eigen::all, {0, 1}), valuesd::Zero(table.rows()));
+  points2d points = table(Eigen::all, {0, 1});
   valuesd values = table.col(2);
 
   // Remove very close points.
@@ -53,8 +54,8 @@ void main_impl(const options& opts) {
   isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
   rbf_field_function_25d<Model> field_fn(interpolant);
 
-  points.col(2) = values;
-  isosurf.generate_from_seed_points(points, field_fn).export_obj(opts.mesh_file);
+  points3d points_3d = concatenate_cols(points, values);
+  isosurf.generate_from_seed_points(points_3d, field_fn).export_obj(opts.mesh_file);
 }
 
 int main(int argc, const char* argv[]) {
@@ -62,21 +63,21 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
 
     if (opts.rbf_name == "bh2") {
-      main_impl<biharmonic2d<3>>(opts);
+      main_impl<biharmonic2d<2>>(opts);
     } else if (opts.rbf_name == "bh3") {
-      main_impl<biharmonic3d<3>>(opts);
+      main_impl<biharmonic3d<2>>(opts);
     } else if (opts.rbf_name == "exp") {
-      main_impl<cov_exponential<3>>(opts);
+      main_impl<cov_exponential<2>>(opts);
     } else if (opts.rbf_name == "sp3") {
-      main_impl<cov_spheroidal3<3>>(opts);
+      main_impl<cov_spheroidal3<2>>(opts);
     } else if (opts.rbf_name == "sp5") {
-      main_impl<cov_spheroidal5<3>>(opts);
+      main_impl<cov_spheroidal5<2>>(opts);
     } else if (opts.rbf_name == "sp7") {
-      main_impl<cov_spheroidal7<3>>(opts);
+      main_impl<cov_spheroidal7<2>>(opts);
     } else if (opts.rbf_name == "sp9") {
-      main_impl<cov_spheroidal9<3>>(opts);
+      main_impl<cov_spheroidal9<2>>(opts);
     } else if (opts.rbf_name == "mq1") {
-      main_impl<multiquadric1<3>>(opts);
+      main_impl<multiquadric1<2>>(opts);
     }
 
     return 0;
