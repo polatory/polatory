@@ -75,7 +75,7 @@ class rbf_base {
   }
 
  protected:
-  rbf_base() : aniso_(geometry::linear_transformation3d::Identity()) {}
+  rbf_base() : aniso_(Matrix::Identity()) {}
 
  private:
   std::vector<double> params_;

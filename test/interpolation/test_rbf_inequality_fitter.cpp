@@ -17,6 +17,7 @@ using polatory::index_t;
 using polatory::model;
 using polatory::precision;
 using polatory::common::valuesd;
+using polatory::geometry::points1d;
 using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
@@ -60,7 +61,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {
-  constexpr int kDim = 3;
+  constexpr int kDim = 1;
   using Rbf = cov_exponential<kDim>;
   using Model = model<Rbf>;
 
@@ -68,7 +69,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   const auto poly_degree = -1;
   const auto absolute_tolerance = 1e-5;
 
-  points3d points = points3d::Zero(n_points, 3);
+  points1d points = points1d::Zero(n_points, kDim);
   for (index_t i = 0; i < n_points; i++) {
     points(i, 0) = static_cast<double>(i);
   }

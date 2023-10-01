@@ -11,6 +11,7 @@ namespace polatory::polynomial {
 template <int Dim>
 class monomial_basis : public polynomial_basis_base<Dim> {
   using Base = polynomial_basis_base<Dim>;
+  using Points = geometry::pointsNd<Dim>;
 
  public:
   using Base::basis_size;
@@ -24,7 +25,7 @@ class monomial_basis : public polynomial_basis_base<Dim> {
 
   template <class DerivedPoints>
   Eigen::MatrixXd evaluate(const Eigen::MatrixBase<DerivedPoints>& points) const {
-    return evaluate(points, geometry::points3d(0, 3));
+    return evaluate(points, Points(0, Dim));
   }
 
   template <class DerivedPoints, class DerivedGradPoints>

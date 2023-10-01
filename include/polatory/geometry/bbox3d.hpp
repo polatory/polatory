@@ -9,6 +9,7 @@ namespace polatory::geometry {
 template <int Dim>
 class bboxNd {
   using Point = pointNd<Dim>;
+  using Points = pointsNd<Dim>;
   using Vector = vectorNd<Dim>;
   using Matrix = matrixNd<Dim>;
 
@@ -38,7 +39,7 @@ class bboxNd {
   Vector size() const { return max_ - min_; }
 
   bboxNd transform(const Matrix& t) const {
-    geometry::pointsNd<Dim> corners(1 << Dim, Dim);
+    Points corners(1 << Dim, Dim);
 
     for (auto i = 0; i < (1 << Dim); ++i) {
       for (auto j = 0; j < Dim; ++j) {

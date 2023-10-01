@@ -9,13 +9,16 @@ using pop_t = unsigned long long;
 
 namespace polatory::point_cloud {
 
-class kdtree::impl {
+template <int Dim>
+class kdtree<Dim>::impl {
+  using Point = geometry::pointNd<Dim>;
+  using Points = geometry::pointsNd<Dim>;
   using FlannIndex = flann::Index<flann::L2<double>>;
 
  public:
-  impl(const geometry::points3d& points, bool use_exact_search) {
+  impl(const Points& points, bool use_exact_search) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(), 3);
+    flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(), Dim);
 
     flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
     flann_index_->buildIndex();
@@ -26,10 +29,10 @@ class kdtree::impl {
     }
   }
 
-  void knn_search(const geometry::point3d& point, index_t k, std::vector<index_t>& indices,
+  void knn_search(const Point& point, index_t k, std::vector<index_t>& indices,
                   std::vector<double>& distances) const {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, 3);
+    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, Dim);
 
     (void)flann_index_->knnSearch(point_mat, indices_v_, distances_v_, k, params_knn_);
 
@@ -43,10 +46,10 @@ class kdtree::impl {
                    [](auto d) { return std::sqrt(d); });
   }
 
-  void radius_search(const geometry::point3d& point, double radius, std::vector<index_t>& indices,
+  void radius_search(const Point& point, double radius, std::vector<index_t>& indices,
                      std::vector<double>& distances) const {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, 3);
+    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, Dim);
 
     auto radius_sq = static_cast<float>(radius * radius);
     (void)flann_index_->radiusSearch(point_mat, indices_v_, distances_v_, radius_sq,
@@ -70,13 +73,16 @@ class kdtree::impl {
   std::unique_ptr<FlannIndex> flann_index_;
 };
 
-kdtree::kdtree(const geometry::points3d& points, bool use_exact_search)
+template <int Dim>
+kdtree<Dim>::kdtree(const Points& points, bool use_exact_search)
     : pimpl_(points.rows() == 0 ? nullptr : std::make_unique<impl>(points, use_exact_search)) {}
 
-kdtree::~kdtree() = default;
+template <int Dim>
+kdtree<Dim>::~kdtree() = default;
 
-void kdtree::knn_search(const geometry::point3d& point, index_t k, std::vector<index_t>& indices,
-                        std::vector<double>& distances) const {
+template <int Dim>
+void kdtree<Dim>::knn_search(const Point& point, index_t k, std::vector<index_t>& indices,
+                             std::vector<double>& distances) const {
   if (k <= 0) {
     throw std::invalid_argument("k must be greater than 0.");
   }
@@ -88,8 +94,9 @@ void kdtree::knn_search(const geometry::point3d& point, index_t k, std::vector<i
   pimpl_->knn_search(point, k, indices, distances);
 }
 
-void kdtree::radius_search(const geometry::point3d& point, double radius,
-                           std::vector<index_t>& indices, std::vector<double>& distances) const {
+template <int Dim>
+void kdtree<Dim>::radius_search(const Point& point, double radius, std::vector<index_t>& indices,
+                                std::vector<double>& distances) const {
   if (radius <= 0.0) {
     throw std::invalid_argument("radius must be greater than 0.0.");
   }
@@ -100,5 +107,9 @@ void kdtree::radius_search(const geometry::point3d& point, double radius,
 
   pimpl_->radius_search(point, radius, indices, distances);
 }
+
+template class kdtree<1>;
+template class kdtree<2>;
+template class kdtree<3>;
 
 }  // namespace polatory::point_cloud

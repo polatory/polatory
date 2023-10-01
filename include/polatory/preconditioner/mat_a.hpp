@@ -10,6 +10,7 @@ template <class Model, class DerivedPoints, class DerivedGradPoints>
 Eigen::MatrixXd mat_a(const Model& model, const Eigen::MatrixBase<DerivedPoints>& points,
                       const Eigen::MatrixBase<DerivedGradPoints>& grad_points) {
   constexpr int kDim = Model::kDim;
+  using Vector = geometry::vectorNd<kDim>;
 
   const auto& rbf = model.rbf();
   auto mu = points.rows();
@@ -19,7 +20,7 @@ Eigen::MatrixXd mat_a(const Model& model, const Eigen::MatrixBase<DerivedPoints>
   Eigen::MatrixXd a(m, m);
 
   auto aa = a.topLeftCorner(mu, mu);
-  aa.diagonal().array() = rbf.evaluate(geometry::vector3d::Zero()) + model.nugget();
+  aa.diagonal().array() = rbf.evaluate(Vector::Zero()) + model.nugget();
   for (index_t i = 0; i < mu - 1; i++) {
     for (index_t j = i + 1; j < mu; j++) {
       aa(i, j) = rbf.evaluate(points.row(i) - points.row(j));
@@ -38,8 +39,7 @@ Eigen::MatrixXd mat_a(const Model& model, const Eigen::MatrixBase<DerivedPoints>
     a.bottomLeftCorner(kDim * sigma, mu) = af.transpose();
 
     auto ah = a.bottomRightCorner(kDim * sigma, kDim * sigma);
-    Eigen::MatrixXd ah_diagonal =
-        rbf.evaluate_hessian(geometry::vector3d::Zero()).topLeftCorner(kDim, kDim);
+    Eigen::MatrixXd ah_diagonal = rbf.evaluate_hessian(Vector::Zero()).topLeftCorner(kDim, kDim);
     for (index_t i = 0; i < sigma; i++) {
       ah.block(kDim * i, kDim * i, kDim, kDim) = ah_diagonal;
     }

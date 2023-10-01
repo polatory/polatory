@@ -12,13 +12,23 @@ template <int Dim>
 using pointNd = Eigen::Matrix<double, 1, Dim>;
 
 template <int Dim>
-using matrixNd = Eigen::Matrix<double, Dim, Dim, Eigen::RowMajor>;
+using matrixNd = Eigen::Matrix<double, Dim, Dim, Dim == 1 ? Eigen::ColMajor : Eigen::RowMajor>;
 
 template <int Dim>
-using vectorsNd = Eigen::Matrix<double, Eigen::Dynamic, Dim, Eigen::RowMajor>;
+using vectorsNd =
+    Eigen::Matrix<double, Eigen::Dynamic, Dim, Dim == 1 ? Eigen::ColMajor : Eigen::RowMajor>;
 
 template <int Dim>
-using pointsNd = Eigen::Matrix<double, Eigen::Dynamic, Dim, Eigen::RowMajor>;
+using pointsNd =
+    Eigen::Matrix<double, Eigen::Dynamic, Dim, Dim == 1 ? Eigen::ColMajor : Eigen::RowMajor>;
+
+using vector1d = vectorNd<1>;
+
+using point1d = pointNd<1>;
+
+using vectors1d = vectorsNd<1>;
+
+using points1d = pointsNd<1>;
 
 using vector2d = vectorNd<2>;
 

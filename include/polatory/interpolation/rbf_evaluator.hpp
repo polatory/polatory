@@ -70,7 +70,7 @@ class rbf_evaluator {
   }
 
   common::valuesd evaluate(const Points& field_points) {
-    return evaluate(field_points, Points(0, 3));
+    return evaluate(field_points, Points(0, kDim));
   }
 
   common::valuesd evaluate(const Points& field_points, const Points& field_grad_points) {

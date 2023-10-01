@@ -317,7 +317,10 @@ void fmm_generic_evaluator<Model, Kernel>::set_weights(
                                        gradient_transpose_kernel<typename MODEL::rbf_type>>; \
   template class fmm_generic_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type>>;
 
-#define IMPLEMENT(RBF) IMPLEMENT2(model<RBF<3>>);
+#define IMPLEMENT(RBF)       \
+  IMPLEMENT2(model<RBF<1>>); \
+  IMPLEMENT2(model<RBF<2>>); \
+  IMPLEMENT2(model<RBF<3>>);
 
 IMPLEMENT(rbf::biharmonic2d);
 IMPLEMENT(rbf::biharmonic3d);

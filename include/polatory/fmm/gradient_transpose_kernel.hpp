@@ -49,7 +49,7 @@ struct gradient_transpose_kernel {
       diff(i) = x.at(i) - y.at(i);
     }
 
-    geometry::vector3d g = rbf_.evaluate_gradient_isotropic(diff) * rbf_.anisotropy();
+    Vector g = rbf_.evaluate_gradient_isotropic(diff) * rbf_.anisotropy();
 
     matrix_type<double> result;
     for (auto i = 0; i < kDim; i++) {

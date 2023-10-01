@@ -27,7 +27,7 @@ class normal_estimator {
  private:
   const index_t n_points_;
   const geometry::points3d points_;  // Do not hold a reference to a temporary object.
-  kdtree tree_;
+  kdtree<3> tree_;
 
   geometry::vectors3d normals_;
 };

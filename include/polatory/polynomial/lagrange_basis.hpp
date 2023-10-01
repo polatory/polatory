@@ -17,8 +17,8 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
   static constexpr double kRCondThreshold = 1e-10;
 
   using Base = polynomial_basis_base<Dim>;
-  static constexpr int kDim = Dim;
-  using MonomialBasis = monomial_basis<kDim>;
+  using Points = geometry::pointsNd<Dim>;
+  using MonomialBasis = monomial_basis<Dim>;
 
  public:
   using Base::basis_size;
@@ -42,7 +42,7 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
 
   template <class Derived>
   Eigen::MatrixXd evaluate(const Eigen::MatrixBase<Derived>& points) const {
-    return evaluate(points, geometry::points3d(0, 3));
+    return evaluate(points, Points(0, Dim));
   }
 
   template <class DerivedPoints, class DerivedGradPoints>

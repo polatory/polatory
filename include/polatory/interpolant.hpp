@@ -22,44 +22,45 @@ namespace polatory {
 template <class Model>
 class interpolant {
   static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using Evaluator = interpolation::rbf_evaluator<Model>;
 
  public:
   explicit interpolant(const Model& model) : model_(std::move(model)) {}
 
-  const geometry::points3d& centers() const {
+  const Points& centers() const {
     throw_if_not_fitted();
 
     return centers_;
   }
 
-  const geometry::points3d& grad_centers() const {
+  const Points& grad_centers() const {
     throw_if_not_fitted();
 
     return centers_;
   }
 
-  common::valuesd evaluate(const geometry::points3d& points) {
+  common::valuesd evaluate(const Points& points) {
     throw_if_not_fitted();
 
-    set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
+    set_evaluation_bbox_impl(Bbox::from_points(points));
     return evaluate_impl(points);
   }
 
-  common::valuesd evaluate_impl(const geometry::points3d& points) const {
+  common::valuesd evaluate_impl(const Points& points) const {
     throw_if_not_fitted();
 
     return evaluator_->evaluate(points);
   }
 
-  void fit(const geometry::points3d& points, const common::valuesd& values,
-           double absolute_tolerance, int max_iter = 32) {
-    fit(points, geometry::points3d(0, 3), values, absolute_tolerance, absolute_tolerance, max_iter);
+  void fit(const Points& points, const common::valuesd& values, double absolute_tolerance,
+           int max_iter = 32) {
+    fit(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance, max_iter);
   }
 
-  void fit(const geometry::points3d& points, const geometry::points3d& grad_points,
-           const common::valuesd& values, double absolute_tolerance, double grad_absolute_tolerance,
-           int max_iter = 32) {
+  void fit(const Points& points, const Points& grad_points, const common::valuesd& values,
+           double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 32) {
     auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
     if (points.rows() < min_n_points) {
       throw std::invalid_argument(std::format("points.rows() must be greater than or equal to {}.",
@@ -87,11 +88,10 @@ class interpolant {
     fitted_ = true;
     centers_ = points;
     grad_centers_ = grad_points;
-    bbox_ = geometry::bbox3d::from_points(centers_).convex_hull(
-        geometry::bbox3d::from_points(grad_points));
+    bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_points));
   }
 
-  void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
+  void fit_incrementally(const Points& points, const common::valuesd& values,
                          double absolute_tolerance, int max_iter = 32) {
     auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
     if (points.rows() < min_n_points) {
@@ -115,10 +115,10 @@ class interpolant {
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
-    bbox_ = geometry::bbox3d::from_points(centers_);
+    bbox_ = Bbox::from_points(centers_);
   }
 
-  void fit_inequality(const geometry::points3d& points, const common::valuesd& values,
+  void fit_inequality(const Points& points, const common::valuesd& values,
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
                       double absolute_tolerance, int max_iter = 32) {
     if (model_.nugget() > 0.0) {
@@ -156,10 +156,10 @@ class interpolant {
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
-    bbox_ = geometry::bbox3d::from_points(centers_);
+    bbox_ = Bbox::from_points(centers_);
   }
 
-  void set_evaluation_bbox_impl(const geometry::bbox3d& bbox) {
+  void set_evaluation_bbox_impl(const Bbox& bbox) {
     throw_if_not_fitted();
 
     auto union_bbox = bbox.convex_hull(bbox_);
@@ -178,8 +178,8 @@ class interpolant {
  private:
   void clear() {
     fitted_ = false;
-    centers_ = geometry::points3d();
-    grad_centers_ = geometry::points3d();
+    centers_ = Points();
+    grad_centers_ = Points();
     bbox_ = geometry::bbox3d();
     weights_ = common::valuesd();
   }
@@ -193,9 +193,9 @@ class interpolant {
   const Model model_;
 
   bool fitted_{};
-  geometry::points3d centers_;
-  geometry::points3d grad_centers_;
-  geometry::bbox3d bbox_;
+  Points centers_;
+  Points grad_centers_;
+  Bbox bbox_;
   common::valuesd weights_;
 
   std::unique_ptr<Evaluator> evaluator_;
