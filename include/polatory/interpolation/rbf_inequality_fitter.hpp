@@ -40,7 +40,7 @@ class rbf_inequality_fitter {
                                                        const common::valuesd& values_ub,
                                                        double absolute_tolerance,
                                                        int max_iter) const {
-    double filtering_distance = bbox_.size().mean() / 4.0;
+    double filtering_distance = bbox_.width().mean() / 4.0;
 
     auto not_nan = [](double d) { return !std::isnan(d); };
     auto eq_idcs = arg_where(values, not_nan);

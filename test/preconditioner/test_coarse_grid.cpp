@@ -76,7 +76,7 @@ TEST(coarse_grid, trivial) {
 
   auto eval = rbf_direct_evaluator<Model>(model, points, grad_points);
   eval.set_weights(sol);
-  eval.set_field_points(points, points3d(0, 3));
+  eval.set_field_points(points, points3d(0, kDim));
   valuesd values_fit = eval.evaluate() + sol.head(mu) * model.nugget();
 
   auto max_residual = (rhs.head(mu) - values_fit).lpNorm<Eigen::Infinity>();

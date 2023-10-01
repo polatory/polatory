@@ -22,7 +22,7 @@ class bboxNd {
 
   bool operator==(const bboxNd& other) const = default;
 
-  Point center() const { return min_ + size() / 2.0; }
+  Point center() const { return min_ + width() / 2.0; }
 
   bool contains(const Point& p) const {
     return (p.array() >= min_.array()).all() && (p.array() <= max_.array()).all();
@@ -36,7 +36,14 @@ class bboxNd {
 
   const Point& min() const { return min_; }
 
-  Vector size() const { return max_ - min_; }
+  template <class Derived>
+  static bboxNd from_points(const Eigen::MatrixBase<Derived>& points) {
+    if (points.rows() == 0) {
+      return {};
+    }
+
+    return {points.colwise().minCoeff(), points.colwise().maxCoeff()};
+  }
 
   bboxNd transform(const Matrix& t) const {
     Points corners(1 << Dim, Dim);
@@ -51,14 +58,7 @@ class bboxNd {
     return from_points(corners);
   }
 
-  template <class Derived>
-  static bboxNd from_points(const Eigen::MatrixBase<Derived>& points) {
-    if (points.rows() == 0) {
-      return {};
-    }
-
-    return {points.colwise().minCoeff(), points.colwise().maxCoeff()};
-  }
+  Vector width() const { return max_ - min_; }
 
  private:
   Point min_;

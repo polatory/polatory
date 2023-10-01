@@ -36,7 +36,7 @@ class rbf_incremental_fitter {
   std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
                                                        double absolute_tolerance,
                                                        int max_iter) const {
-    auto filtering_distance = bbox_.size().mean() / 4.0;
+    auto filtering_distance = bbox_.width().mean() / 4.0;
 
     auto centers = point_cloud::distance_filter(points_, filtering_distance).filtered_indices();
     auto n_centers = static_cast<index_t>(centers.size());

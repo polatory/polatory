@@ -43,7 +43,7 @@ class domain_divider {
     root.inner_grad_point = std::vector<bool>(grad_point_indices.size(), true);
 
     root.bbox_ = domain_bbox(root);
-    longest_side_length_of_root_ = root.bbox_.size().maxCoeff();
+    longest_side_length_of_root_ = root.bbox_.width().maxCoeff();
 
     domains_.push_back(std::move(root));
 
@@ -114,7 +114,7 @@ class domain_divider {
     }
 
     auto split_axis = index_t{0};
-    auto longest_side_length = d.bbox_.size().maxCoeff(&split_axis);
+    auto longest_side_length = d.bbox_.width().maxCoeff(&split_axis);
 
     // TODO(mizuno): Sort all points along each axis and cache the result as a permutation.
     std::sort(mixed_points.begin(), mixed_points.end(),
