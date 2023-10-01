@@ -187,7 +187,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       return false;
     }
 
-    auto tree_height = fmm_tree_height(std::max(n_src_points_, n_fld_points_));
+    auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_fld_points_));
     if (tree_height_ != tree_height) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
       far_field_ = std::make_unique<FarField>(*interpolator_);
