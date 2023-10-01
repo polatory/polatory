@@ -34,8 +34,8 @@ template <class Model>
 class ras_preconditioner : public krylov::linear_operator {
   static constexpr bool kRecomputeAndClear = true;
   static constexpr bool kReportResidual = false;
-  static constexpr double coarse_ratio = 0.125;
-  static constexpr index_t n_coarsest_points = 1024;
+  static constexpr double kCoarseRatio = 0.125;
+  static constexpr index_t kNCoarsestPoints = 1024;
   static constexpr int kDim = Model::kDim;
 
   using Bbox = geometry::bboxNd<kDim>;
@@ -62,8 +62,8 @@ class ras_preconditioner : public krylov::linear_operator {
                                           : nullptr) {
     auto n_fine_levels =
         std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(mu_ + sigma_) /
-                                                        static_cast<double>(n_coarsest_points)) /
-                                               log(1.0 / coarse_ratio))));
+                                                        static_cast<double>(kNCoarsestPoints)) /
+                                               log(1.0 / kCoarseRatio))));
     n_levels_ = n_fine_levels + 1;
 
     point_idcs_.resize(n_levels_);
@@ -108,9 +108,9 @@ class ras_preconditioner : public krylov::linear_operator {
       auto divider = std::make_unique<DomainDivider>(points_, grad_points_, point_idcs_.at(level),
                                                      grad_point_idcs_.at(level), poly_point_idcs);
 
-      auto ratio =
-          level == 1 ? static_cast<double>(n_coarsest_points) / static_cast<double>(n_mixed_points)
-                     : coarse_ratio;
+      auto ratio = level == 1
+                       ? static_cast<double>(kNCoarsestPoints) / static_cast<double>(n_mixed_points)
+                       : kCoarseRatio;
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
           divider->choose_coarse_points(ratio);
 
@@ -162,14 +162,14 @@ class ras_preconditioner : public krylov::linear_operator {
       }
       evaluator(level, level - 1)
           .set_target_points(points_(point_idcs_.at(level - 1), Eigen::all),
-                            grad_points_(grad_point_idcs_.at(level - 1), Eigen::all));
+                             grad_points_(grad_point_idcs_.at(level - 1), Eigen::all));
     }
 
     for (auto level = 1; level < n_levels_ - 1; level++) {
       add_evaluator(0, level, model, points_(point_idcs_.at(0), Eigen::all),
                     grad_points_(grad_point_idcs_.at(0), Eigen::all), bbox, precision::kFast);
       evaluator(0, level).set_target_points(points_(point_idcs_.at(level), Eigen::all),
-                                           grad_points_(grad_point_idcs_.at(level), Eigen::all));
+                                            grad_points_(grad_point_idcs_.at(level), Eigen::all));
     }
 
     if (l_ > 0) {

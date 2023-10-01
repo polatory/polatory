@@ -18,8 +18,8 @@ namespace polatory::preconditioner {
 
 template <int Dim>
 class domain_divider {
-  static constexpr double overlap_quota = 0.25;
-  static constexpr index_t max_leaf_size = 256;
+  static constexpr double kOverlapQuota = 0.25;
+  static constexpr index_t kMaxLeafSize = 256;
 
   using Bbox = geometry::bboxNd<Dim>;
   using Points = geometry::pointsNd<Dim>;
@@ -125,8 +125,8 @@ class domain_divider {
 
     auto q =
         longest_side_length_of_root_ / longest_side_length *
-        std::sqrt(static_cast<double>(max_leaf_size) / static_cast<double>(mixed_size_of_root_)) *
-        overlap_quota;
+        std::sqrt(static_cast<double>(kMaxLeafSize) / static_cast<double>(mixed_size_of_root_)) *
+        kOverlapQuota;
     q = std::min(0.5, q);
 
     auto n_pts = d.mixed_size();
@@ -179,7 +179,7 @@ class domain_divider {
 
     while (it != domains_.end()) {
       auto& d = *it;
-      if (d.mixed_size() <= max_leaf_size) {
+      if (d.mixed_size() <= kMaxLeafSize) {
         ++it;
         continue;
       }
