@@ -26,11 +26,10 @@ using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::point_cloud::distance_filter;
 using polatory::point_cloud::random_points;
 using polatory::rbf::reference::cov_gaussian;
-using polatory::rbf::reference::triharmonic3d;
 
 namespace {
 
-void test_poly_degree(int poly_degree) {
+void test(int poly_degree) {
   constexpr int kDim = 3;
   using Rbf = cov_gaussian<kDim>;
   using Model = model<Rbf>;
@@ -78,8 +77,7 @@ void test_poly_degree(int poly_degree) {
 }  // namespace
 
 TEST(rbf_fitter, trivial) {
-  test_poly_degree(-1);
-  test_poly_degree(0);
-  test_poly_degree(1);
-  test_poly_degree(2);
+  for (auto deg = -1; deg <= 2; deg++) {
+    test(deg);
+  }
 }

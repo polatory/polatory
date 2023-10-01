@@ -28,8 +28,8 @@ using polatory::rbf::reference::cov_gaussian;
 
 namespace {
 
-void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points,
-                      index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
+void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points,
+          index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
   constexpr int kDim = 3;
   using Rbf = cov_gaussian<kDim>;
   using Model = model<Rbf>;
@@ -84,10 +84,10 @@ void test_poly_degree(int poly_degree, index_t n_initial_points, index_t n_initi
 }  // namespace
 
 TEST(rbf_evaluator, trivial) {
-  test_poly_degree(-1, 1024, 0, 1024, 0);
-  test_poly_degree(-1, 0, 256, 0, 256);
-  test_poly_degree(-1, 1024, 256, 1024, 256);
-  test_poly_degree(0, 1024, 256, 1024, 256);
-  test_poly_degree(1, 1024, 256, 1024, 256);
-  test_poly_degree(2, 1024, 256, 1024, 256);
+  test(-1, 1024, 0, 1024, 0);
+  test(-1, 0, 256, 0, 256);
+
+  for (auto deg = -1; deg <= 2; deg++) {
+    test(deg, 1024, 256, 1024, 256);
+  }
 }

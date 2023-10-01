@@ -5,7 +5,7 @@
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/rbf/multiquadric1.hpp>
+#include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/types.hpp>
 
 #include "../random_anisotropy.hpp"
@@ -19,19 +19,19 @@ using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::point_cloud::random_points;
-using polatory::rbf::multiquadric1;
+using polatory::rbf::reference::cov_gaussian;
 
 namespace {
 
-void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
-                      index_t n_eval_points, index_t n_eval_grad_points) {
+void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_eval_points,
+          index_t n_eval_grad_points) {
   constexpr int kDim = 3;
-  using Rbf = multiquadric1<kDim>;
+  using Rbf = cov_gaussian<kDim>;
   using Model = model<Rbf>;
 
-  auto rel_tolerance = 1e-6;
+  auto rel_tolerance = 1e-10;
 
-  Rbf rbf({1.0, 0.001});
+  Rbf rbf({1.0, 0.01});
   rbf.set_anisotropy(random_anisotropy());
 
   Model model(rbf, poly_degree);
@@ -68,7 +68,7 @@ void test_poly_degree(int poly_degree, index_t n_points, index_t n_grad_points,
 }  // namespace
 
 TEST(rbf_symmetric_evaluator, trivial) {
-  test_poly_degree(0, 32768, 4096, 1024, 1024);
-  test_poly_degree(1, 32768, 4096, 1024, 1024);
-  test_poly_degree(2, 32768, 4096, 1024, 1024);
+  for (auto deg = -1; deg <= 2; deg++) {
+    test(deg, 32768, 4096, 1024, 1024);
+  }
 }
