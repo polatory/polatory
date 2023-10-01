@@ -1,9 +1,9 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/range/irange.hpp>
 #include <iostream>
 #include <iterator>
+#include <polatory/common/complementary_indices.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -60,7 +60,7 @@ class rbf_incremental_fitter {
 
       // Evaluate residuals at remaining points.
 
-      auto c_centers = complementary_indices(centers);
+      auto c_centers = common::complementary_indices(centers, n_points_);
       Points c_center_points = points_(c_centers, Eigen::all);
 
       res_eval.set_source_points(center_points, Points(0, kDim));
@@ -117,17 +117,6 @@ class rbf_incremental_fitter {
   }
 
  private:
-  std::vector<index_t> complementary_indices(const std::vector<index_t>& indices) const {
-    std::vector<index_t> c_idcs(n_points_ - indices.size());
-
-    auto universe = boost::irange<index_t>(index_t{0}, n_points_);
-    auto idcs = indices;
-    std::sort(idcs.begin(), idcs.end());
-    std::set_difference(universe.begin(), universe.end(), idcs.begin(), idcs.end(), c_idcs.begin());
-
-    return c_idcs;
-  }
-
   const Model& model_;
   const Points& points_;
 

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <algorithm>
-#include <boost/range/irange.hpp>
 #include <cmath>
 #include <iostream>
 #include <iterator>
+#include <polatory/common/complementary_indices.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -112,7 +112,7 @@ class rbf_inequality_fitter {
 
       // Incorporate inactive inequality points with large residuals.
 
-      auto indices = complementary_indices(centers);
+      auto indices = common::complementary_indices(centers, n_points_);
       auto n_indices = static_cast<index_t>(indices.size());
       common::valuesd residuals = common::valuesd::Zero(n_indices);
       for (index_t i = 0; i < n_indices; i++) {
@@ -191,17 +191,6 @@ class rbf_inequality_fitter {
     }
 
     return idcs;
-  }
-
-  std::vector<index_t> complementary_indices(const std::vector<index_t>& indices) const {
-    std::vector<index_t> c_idcs(n_points_ - indices.size());
-
-    auto universe = boost::irange<index_t>(index_t{0}, n_points_);
-    auto idcs = indices;
-    std::sort(idcs.begin(), idcs.end());
-    std::set_difference(universe.begin(), universe.end(), idcs.begin(), idcs.end(), c_idcs.begin());
-
-    return c_idcs;
   }
 
   const Model& model_;
