@@ -161,14 +161,14 @@ class ras_preconditioner : public krylov::linear_operator {
                       grad_points_(grad_point_idcs_.at(level), Eigen::all), bbox, precision::kFast);
       }
       evaluator(level, level - 1)
-          .set_field_points(points_(point_idcs_.at(level - 1), Eigen::all),
+          .set_target_points(points_(point_idcs_.at(level - 1), Eigen::all),
                             grad_points_(grad_point_idcs_.at(level - 1), Eigen::all));
     }
 
     for (auto level = 1; level < n_levels_ - 1; level++) {
       add_evaluator(0, level, model, points_(point_idcs_.at(0), Eigen::all),
                     grad_points_(grad_point_idcs_.at(0), Eigen::all), bbox, precision::kFast);
-      evaluator(0, level).set_field_points(points_(point_idcs_.at(level), Eigen::all),
+      evaluator(0, level).set_target_points(points_(point_idcs_.at(level), Eigen::all),
                                            grad_points_(grad_point_idcs_.at(level), Eigen::all));
     }
 

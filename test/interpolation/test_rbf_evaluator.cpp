@@ -60,11 +60,11 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
 
     rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
     direct_eval.set_weights(weights);
-    direct_eval.set_field_points(eval_points, eval_grad_points);
+    direct_eval.set_target_points(eval_points, eval_grad_points);
 
     eval.set_source_points(points, grad_points);
     eval.set_weights(weights);
-    eval.set_field_points(eval_points, eval_grad_points);
+    eval.set_target_points(eval_points, eval_grad_points);
 
     auto direct_values = direct_eval.evaluate();
     auto values = eval.evaluate();

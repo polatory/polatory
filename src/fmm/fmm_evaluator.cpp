@@ -95,24 +95,6 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     return potentials();
   }
 
-  void set_field_points(const Points& points) {
-    n_fld_points_ = points.rows();
-
-    trg_particles_.resize(n_fld_points_);
-
-    auto a = model_.rbf().anisotropy();
-    for (index_t idx = 0; idx < n_fld_points_; idx++) {
-      auto& p = trg_particles_.at(idx);
-      auto ap = geometry::transform_point<kDim>(a, points.row(idx));
-      for (auto i = 0; i < kDim; i++) {
-        p.position(i) = ap(i);
-      }
-      p.variables(idx);
-    }
-
-    trg_tree_.reset(nullptr);
-  }
-
   void set_source_points(const Points& points) {
     n_src_points_ = points.rows();
 
@@ -129,6 +111,24 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     }
 
     src_tree_.reset(nullptr);
+  }
+
+  void set_target_points(const Points& points) {
+    n_trg_points_ = points.rows();
+
+    trg_particles_.resize(n_trg_points_);
+
+    auto a = model_.rbf().anisotropy();
+    for (index_t idx = 0; idx < n_trg_points_; idx++) {
+      auto& p = trg_particles_.at(idx);
+      auto ap = geometry::transform_point<kDim>(a, points.row(idx));
+      for (auto i = 0; i < kDim; i++) {
+        p.position(i) = ap(i);
+      }
+      p.variables(idx);
+    }
+
+    trg_tree_.reset(nullptr);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
@@ -158,7 +158,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
 
  private:
   common::valuesd potentials() const {
-    common::valuesd potentials = common::valuesd::Zero(kn * n_fld_points_);
+    common::valuesd potentials = common::valuesd::Zero(kn * n_trg_points_);
 
     if (trg_tree_) {
       scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
@@ -177,7 +177,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
   }
 
   bool prepare() const {
-    if (n_src_points_ == 0 || n_fld_points_ == 0) {
+    if (n_src_points_ == 0 || n_trg_points_ == 0) {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
@@ -187,7 +187,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       return false;
     }
 
-    auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_fld_points_));
+    auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_trg_points_));
     if (tree_height_ != tree_height) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
       far_field_ = std::make_unique<FarField>(*interpolator_);
@@ -244,7 +244,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       return;
     }
 
-    trg_particles_.resize(n_fld_points_);
+    trg_particles_.resize(n_trg_points_);
 
     scalfmm::component::for_each_leaf(std::begin(*trg_tree_), std::end(*trg_tree_),
                                       [&](const auto& leaf) {
@@ -269,7 +269,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
   const NearField near_field_;
 
   index_t n_src_points_{};
-  index_t n_fld_points_{};
+  index_t n_trg_points_{};
   mutable std::vector<SourceParticle> src_particles_;
   mutable std::vector<TargetParticle> trg_particles_;
   mutable bool multipole_dirty_{};
@@ -295,8 +295,8 @@ common::valuesd fmm_generic_evaluator<Model, Kernel>::evaluate() const {
 }
 
 template <class Model, class Kernel>
-void fmm_generic_evaluator<Model, Kernel>::set_field_points(const Points& points) {
-  impl_->set_field_points(points);
+void fmm_generic_evaluator<Model, Kernel>::set_target_points(const Points& points) {
+  impl_->set_target_points(points);
 }
 
 template <class Model, class Kernel>

@@ -64,13 +64,13 @@ class rbf_symmetric_evaluator {
 
     a_.set_points(points);
     f_.set_source_points(grad_points);
-    f_.set_field_points(points);
+    f_.set_target_points(points);
     ft_.set_source_points(points);
-    ft_.set_field_points(grad_points);
+    ft_.set_target_points(grad_points);
     h_.set_points(grad_points);
 
     if (l_ > 0) {
-      p_->set_field_points(points, grad_points);
+      p_->set_target_points(points, grad_points);
     }
   }
 

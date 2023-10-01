@@ -54,12 +54,12 @@ class rbf_evaluator {
   }
 
   common::valuesd evaluate() const {
-    common::valuesd y = common::valuesd::Zero(fld_mu_ + kDim * fld_sigma_);
+    common::valuesd y = common::valuesd::Zero(trg_mu_ + kDim * trg_sigma_);
 
-    y.head(fld_mu_) += a_.evaluate();
-    y.head(fld_mu_) += f_.evaluate();
-    y.tail(kDim * fld_sigma_) += ft_.evaluate();
-    y.tail(kDim * fld_sigma_) += h_.evaluate();
+    y.head(trg_mu_) += a_.evaluate();
+    y.head(trg_mu_) += f_.evaluate();
+    y.tail(kDim * trg_sigma_) += ft_.evaluate();
+    y.tail(kDim * trg_sigma_) += h_.evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -69,30 +69,14 @@ class rbf_evaluator {
     return y;
   }
 
-  common::valuesd evaluate(const Points& field_points) {
-    return evaluate(field_points, Points(0, kDim));
+  common::valuesd evaluate(const Points& target_points) {
+    return evaluate(target_points, Points(0, kDim));
   }
 
-  common::valuesd evaluate(const Points& field_points, const Points& field_grad_points) {
-    set_field_points(field_points, field_grad_points);
+  common::valuesd evaluate(const Points& target_points, const Points& target_grad_points) {
+    set_target_points(target_points, target_grad_points);
 
     return evaluate();
-  }
-
-  void set_field_points(const Points& points) { set_field_points(points, Points(0, kDim)); }
-
-  void set_field_points(const Points& points, const Points& grad_points) {
-    fld_mu_ = points.rows();
-    fld_sigma_ = grad_points.rows();
-
-    a_.set_field_points(points);
-    f_.set_field_points(points);
-    ft_.set_field_points(grad_points);
-    h_.set_field_points(grad_points);
-
-    if (l_ > 0) {
-      p_->set_field_points(points, grad_points);
-    }
   }
 
   void set_source_points(const Points& points, const Points& grad_points) {
@@ -103,6 +87,22 @@ class rbf_evaluator {
     f_.set_source_points(grad_points);
     ft_.set_source_points(points);
     h_.set_source_points(grad_points);
+  }
+
+  void set_target_points(const Points& points) { set_target_points(points, Points(0, kDim)); }
+
+  void set_target_points(const Points& points, const Points& grad_points) {
+    trg_mu_ = points.rows();
+    trg_sigma_ = grad_points.rows();
+
+    a_.set_target_points(points);
+    f_.set_target_points(points);
+    ft_.set_target_points(grad_points);
+    h_.set_target_points(grad_points);
+
+    if (l_ > 0) {
+      p_->set_target_points(points, grad_points);
+    }
   }
 
   template <class Derived>
@@ -123,8 +123,8 @@ class rbf_evaluator {
   const index_t l_;
   index_t mu_{};
   index_t sigma_{};
-  index_t fld_mu_{};
-  index_t fld_sigma_{};
+  index_t trg_mu_{};
+  index_t trg_sigma_{};
 
   fmm::fmm_evaluator<Model> a_;
   fmm::fmm_gradient_evaluator<Model> f_;

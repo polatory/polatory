@@ -61,7 +61,7 @@ class rbf_residual_evaluator {
       }
 
       auto points = points_.middleRows(begin, end - begin);
-      evaluator_->set_field_points(points);
+      evaluator_->set_target_points(points);
       common::valuesd fit = evaluator_->evaluate() + weights.segment(begin, end - begin) * nugget;
 
       auto res = (values.segment(begin, end - begin) - fit).array().abs().maxCoeff();
@@ -82,7 +82,7 @@ class rbf_residual_evaluator {
       }
 
       auto grad_points = grad_points_.middleRows(begin, end - begin);
-      evaluator_->set_field_points(Points(0, kDim), grad_points);
+      evaluator_->set_target_points(Points(0, kDim), grad_points);
       auto fit = evaluator_->evaluate();
 
       auto res =

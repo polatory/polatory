@@ -37,29 +37,29 @@ class rbf_direct_evaluator {
     auto w = weights_.head(mu_);
     auto grad_w = weights_.segment(mu_, kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim);
 
-    common::valuesd y = common::valuesd::Zero(fld_mu_ + kDim * fld_sigma_);
+    common::valuesd y = common::valuesd::Zero(trg_mu_ + kDim * trg_sigma_);
 
-    for (index_t i = 0; i < fld_mu_; i++) {
+    for (index_t i = 0; i < trg_mu_; i++) {
       for (index_t j = 0; j < mu_; j++) {
-        Vector diff = fld_points_.row(i) - src_points_.row(j);
+        Vector diff = trg_points_.row(i) - src_points_.row(j);
         y(i) += w(j) * rbf.evaluate(diff);
       }
 
       for (index_t j = 0; j < sigma_; j++) {
-        Vector diff = fld_points_.row(i) - src_grad_points_.row(j);
+        Vector diff = trg_points_.row(i) - src_grad_points_.row(j);
         y(i) += grad_w.row(j).dot(-rbf.evaluate_gradient(diff));
       }
     }
 
-    for (index_t i = 0; i < fld_sigma_; i++) {
+    for (index_t i = 0; i < trg_sigma_; i++) {
       for (index_t j = 0; j < mu_; j++) {
-        Vector diff = fld_grad_points_.row(i) - src_points_.row(j);
-        y.segment(fld_mu_ + kDim * i, kDim) += w(j) * rbf.evaluate_gradient(diff).transpose();
+        Vector diff = trg_grad_points_.row(i) - src_points_.row(j);
+        y.segment(trg_mu_ + kDim * i, kDim) += w(j) * rbf.evaluate_gradient(diff).transpose();
       }
 
       for (index_t j = 0; j < sigma_; j++) {
-        Vector diff = fld_grad_points_.row(i) - src_grad_points_.row(j);
-        y.segment(fld_mu_ + kDim * i, kDim) +=
+        Vector diff = trg_grad_points_.row(i) - src_grad_points_.row(j);
+        y.segment(trg_mu_ + kDim * i, kDim) +=
             (grad_w.row(j) * rbf.evaluate_hessian(diff)).transpose();
       }
     }
@@ -72,15 +72,15 @@ class rbf_direct_evaluator {
     return y;
   }
 
-  void set_field_points(const Points& field_points, const Points& field_grad_points) {
-    fld_mu_ = static_cast<index_t>(field_points.rows());
-    fld_sigma_ = static_cast<index_t>(field_grad_points.rows());
+  void set_target_points(const Points& target_points, const Points& target_grad_points) {
+    trg_mu_ = static_cast<index_t>(target_points.rows());
+    trg_sigma_ = static_cast<index_t>(target_grad_points.rows());
 
-    fld_points_ = field_points;
-    fld_grad_points_ = field_grad_points;
+    trg_points_ = target_points;
+    trg_grad_points_ = target_grad_points;
 
     if (l_ > 0) {
-      p_->set_field_points(fld_points_, fld_grad_points_);
+      p_->set_target_points(trg_points_, trg_grad_points_);
     }
   }
 
@@ -105,10 +105,10 @@ class rbf_direct_evaluator {
 
   std::unique_ptr<PolynomialEvaluator> p_;
 
-  index_t fld_mu_{};
-  index_t fld_sigma_{};
-  Points fld_points_;
-  Points fld_grad_points_;
+  index_t trg_mu_{};
+  index_t trg_sigma_{};
+  Points trg_points_;
+  Points trg_grad_points_;
   common::valuesd weights_;
 };
 

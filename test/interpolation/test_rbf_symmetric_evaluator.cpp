@@ -40,7 +40,7 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
   auto grad_points = random_points(sphere3d(), n_grad_points);
 
   rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
-  direct_eval.set_field_points(points.topRows(n_eval_points),
+  direct_eval.set_target_points(points.topRows(n_eval_points),
                                grad_points.topRows(n_eval_grad_points));
 
   rbf_symmetric_evaluator<Model> eval(model, points, grad_points, precision::kPrecise);

@@ -66,11 +66,11 @@ double estimate_accuracy(const std::vector<double>& rbf_params) {
 
   rbf_direct_evaluator<Model> direct_eval(model, points, points3d(0, 3));
   direct_eval.set_weights(weights);
-  direct_eval.set_field_points(eval_points, points3d(0, 3));
+  direct_eval.set_target_points(eval_points, points3d(0, 3));
 
   rbf_evaluator<Model> eval(model, points, precision::kPrecise);
   eval.set_weights(weights);
-  eval.set_field_points(eval_points);
+  eval.set_target_points(eval_points);
 
   auto direct_values = direct_eval.evaluate();
   auto values = eval.evaluate();

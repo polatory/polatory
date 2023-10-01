@@ -26,9 +26,9 @@ class fmm_generic_evaluator {
 
   common::valuesd evaluate() const;
 
-  void set_field_points(const Points& points);
-
   void set_source_points(const Points& points);
+
+  void set_target_points(const Points& points);
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights);
 

@@ -22,7 +22,7 @@ class polynomial_evaluator {
     return pt.transpose() * weights_;
   }
 
-  void set_field_points(const Points& points, const Points& grad_points) {
+  void set_target_points(const Points& points, const Points& grad_points) {
     points_ = points;
     grad_points_ = grad_points;
   }
