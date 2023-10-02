@@ -1,3 +1,5 @@
+#pragma once
+
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/rbf/biharmonic2d.hpp>
@@ -313,28 +315,24 @@ void fmm_generic_evaluator<Model, Kernel>::set_weights(
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT2(MODEL)                                                                    \
+#define IMPLEMENT_MODEL(MODEL)                                                               \
   template class fmm_generic_evaluator<MODEL, kernel<typename MODEL::rbf_type>>;             \
   template class fmm_generic_evaluator<MODEL, gradient_kernel<typename MODEL::rbf_type>>;    \
   template class fmm_generic_evaluator<MODEL,                                                \
                                        gradient_transpose_kernel<typename MODEL::rbf_type>>; \
   template class fmm_generic_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type>>;
 
-#define IMPLEMENT(RBF)       \
-  IMPLEMENT2(model<RBF<1>>); \
-  IMPLEMENT2(model<RBF<2>>); \
-  IMPLEMENT2(model<RBF<3>>);
-
-IMPLEMENT(rbf::biharmonic2d);
-IMPLEMENT(rbf::biharmonic3d);
-IMPLEMENT(rbf::cov_exponential);
-IMPLEMENT(rbf::cov_spheroidal3);
-IMPLEMENT(rbf::cov_spheroidal5);
-IMPLEMENT(rbf::cov_spheroidal7);
-IMPLEMENT(rbf::cov_spheroidal9);
-IMPLEMENT(rbf::multiquadric1);
-IMPLEMENT(rbf::reference::cov_gaussian);
-IMPLEMENT(rbf::reference::cov_spherical);
-IMPLEMENT(rbf::reference::triharmonic3d);
+#define IMPLEMENT_DIM(DIM)                                    \
+  IMPLEMENT_MODEL(model<rbf::biharmonic2d<DIM>>);             \
+  IMPLEMENT_MODEL(model<rbf::biharmonic3d<DIM>>);             \
+  IMPLEMENT_MODEL(model<rbf::cov_exponential<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal3<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal5<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal7<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal9<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);            \
+  IMPLEMENT_MODEL(model<rbf::reference::cov_gaussian<DIM>>);  \
+  IMPLEMENT_MODEL(model<rbf::reference::cov_spherical<DIM>>); \
+  IMPLEMENT_MODEL(model<rbf::reference::triharmonic3d<DIM>>);
 
 }  // namespace polatory::fmm
