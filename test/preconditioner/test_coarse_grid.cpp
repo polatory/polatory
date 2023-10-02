@@ -9,7 +9,7 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
-#include <polatory/rbf/multiquadric1.hpp>
+#include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/types.hpp>
 #include <random>
 #include <utility>
@@ -26,7 +26,7 @@ using polatory::interpolation::rbf_direct_evaluator;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
-using polatory::rbf::multiquadric1;
+using polatory::rbf::reference::cov_gaussian;
 
 namespace {
 
@@ -34,7 +34,7 @@ template <int Dim>
 void test(int poly_degree) {
   std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
 
-  using Rbf = multiquadric1<Dim>;
+  using Rbf = cov_gaussian<Dim>;
   using Model = model<Rbf>;
   using Points = pointsNd<Dim>;
   using Matrix = matrixNd<Dim>;
@@ -50,7 +50,7 @@ void test(int poly_degree) {
   auto [points, values] = sample_data(mu, aniso);
   auto [grad_points, grad_values] = sample_grad_data(sigma, aniso);
 
-  Rbf rbf({1.0, 1e-3});
+  Rbf rbf({1.0, 0.01});
 
   Model model(rbf, poly_degree);
   model.set_nugget(0.01);
@@ -77,8 +77,11 @@ void test(int poly_degree) {
                                           domain.point_indices.begin() + l);
 
   coarse_grid<Model> coarse(model, std::move(domain));
-  LagrangeBasis lagrange_basis(poly_degree, points(poly_point_indices, Eigen::all));
-  auto lagrange_pt = lagrange_basis.evaluate(points, grad_points);
+  Eigen::MatrixXd lagrange_pt;
+  if (poly_degree >= 0) {
+    LagrangeBasis lagrange_basis(poly_degree, points(poly_point_indices, Eigen::all));
+    lagrange_pt = lagrange_basis.evaluate(points, grad_points);
+  }
   coarse.setup(points, grad_points, lagrange_pt);
 
   valuesd rhs = valuesd(mu + Dim * sigma);
@@ -100,7 +103,7 @@ void test(int poly_degree) {
 }  // namespace
 
 TEST(coarse_grid, trivial) {
-  for (auto deg = 0; deg <= 2; deg++) {
+  for (auto deg = -1; deg <= 2; deg++) {
     test<1>(deg);
     test<2>(deg);
     test<3>(deg);
