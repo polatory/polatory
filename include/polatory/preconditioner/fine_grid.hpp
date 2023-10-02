@@ -60,6 +60,7 @@ class fine_grid {
       auto lagrange_pt = lagrange_pt_full(Eigen::all, flat_indices);
       me_ = -lagrange_pt.rightCols(m_ - l_);
 
+      // To avoid segfault on Apple M1. (Why?)
       Eigen::MatrixXd met = me_.transpose();
 
       // Compute decomposition of Q^T A Q.
