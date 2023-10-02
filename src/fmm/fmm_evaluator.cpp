@@ -86,6 +86,9 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       if (!trg_tree_->is_interaction_m2l_lists_built()) {
         scalfmm::list::sequential::build_m2l_interaction_list(*src_tree_, *trg_tree_, 1);
       }
+      if (!trg_tree_->is_interaction_p2p_lists_built()) {
+        scalfmm::list::sequential::build_p2p_interaction_list(*src_tree_, *trg_tree_, 1, false);
+      }
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
           *src_tree_, *trg_tree_, *fmm_operator_, m2l | p2p);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //

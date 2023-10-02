@@ -73,6 +73,9 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
       if (!tree_->is_interaction_m2l_lists_built()) {
         scalfmm::list::sequential::build_m2l_interaction_list(*tree_, *tree_, 1);
       }
+      if (!tree_->is_interaction_p2p_lists_built()) {
+        scalfmm::list::sequential::build_p2p_interaction_list(*tree_, *tree_, 1, true);
+      }
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
           *tree_, *fmm_operator_, p2m | m2m);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
