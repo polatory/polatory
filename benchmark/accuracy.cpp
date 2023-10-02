@@ -4,9 +4,7 @@
 #include <Eigen/Core>
 #include <exception>
 #include <iostream>
-#include <polatory/geometry/sphere3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
-#include <polatory/point_cloud/random_points.hpp>
 #include <polatory/polatory.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/triharmonic3d.hpp>
@@ -16,11 +14,9 @@ using polatory::model;
 using polatory::precision;
 using polatory::common::orthonormalize_cols;
 using polatory::common::valuesd;
-using polatory::geometry::points3d;
-using polatory::geometry::sphere3d;
+using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
-using polatory::point_cloud::random_points;
 using polatory::polynomial::monomial_basis;
 using polatory::rbf::biharmonic2d;
 using polatory::rbf::biharmonic3d;
@@ -36,12 +32,14 @@ using polatory::rbf::reference::triharmonic3d;
 
 template <class Rbf>
 double estimate_accuracy(const std::vector<double>& rbf_params) {
+  constexpr int kDim = Rbf::kDim;
   using Model = model<Rbf>;
+  using Points = pointsNd<kDim>;
 
   auto n_points = 32768;
   auto n_eval_points = 1024;
-  auto points = random_points(sphere3d(), n_points);
-  points3d eval_points = points.topRows(n_eval_points);
+  Points points = Points::Random(n_points, kDim);
+  Points eval_points = points.topRows(n_eval_points);
 
   Rbf rbf(rbf_params);
 
@@ -64,9 +62,9 @@ double estimate_accuracy(const std::vector<double>& rbf_params) {
     }
   }
 
-  rbf_direct_evaluator<Model> direct_eval(model, points, points3d(0, 3));
+  rbf_direct_evaluator<Model> direct_eval(model, points, Points(0, kDim));
   direct_eval.set_weights(weights);
-  direct_eval.set_target_points(eval_points, points3d(0, 3));
+  direct_eval.set_target_points(eval_points, Points(0, kDim));
 
   rbf_evaluator<Model> eval(model, points, precision::kPrecise);
   eval.set_weights(weights);
