@@ -63,19 +63,22 @@ class domain_divider {
     for (const auto& d : domains_) {
       std::vector<mixed_point> mixed_points;
       for (index_t i = n_poly_points; i < d.size(); i++) {
-        mixed_points.emplace_back(d.point_indices.at(i), d.inner_point.at(i), false);
+        if (d.inner_point.at(i)) {
+          mixed_points.emplace_back(d.point_indices.at(i), true, false);
+        }
       }
       for (index_t i = 0; i < d.grad_size(); i++) {
-        mixed_points.emplace_back(d.grad_point_indices.at(i), d.inner_grad_point.at(i), true);
+        if (d.inner_grad_point.at(i)) {
+          mixed_points.emplace_back(d.grad_point_indices.at(i), true, true);
+        }
       }
 
       std::shuffle(mixed_points.begin(), mixed_points.end(), gen);
 
       auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true) +
                          std::count(d.inner_grad_point.begin(), d.inner_grad_point.end(), true);
-      auto n_coarse = std::max(
-          index_t{1},
-          static_cast<index_t>(round_half_to_even(ratio * static_cast<double>(n_inner_pts))));
+      auto n_coarse =
+          static_cast<index_t>(round_half_to_even(ratio * static_cast<double>(n_inner_pts)));
 
       auto count = index_t{0};
       for (const auto& p : mixed_points) {
@@ -83,10 +86,8 @@ class domain_divider {
           break;
         }
 
-        if (p.inner) {
-          (p.grad ? grad_idcs : idcs).push_back(p.index);
-          count++;
-        }
+        (p.grad ? grad_idcs : idcs).push_back(p.index);
+        count++;
       }
     }
 
@@ -191,8 +192,25 @@ class domain_divider {
       it = domains_.erase(it);
     }
 
+    remove_domains_with_no_inner_points();
+
     for (auto& d : domains_) {
       d.merge_poly_points(poly_point_idcs_);
+    }
+  }
+
+  void remove_domains_with_no_inner_points() {
+    auto it = domains_.begin();
+
+    while (it != domains_.end()) {
+      auto& d = *it;
+      auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true) +
+                         std::count(d.inner_grad_point.begin(), d.inner_grad_point.end(), true);
+      if (n_inner_pts == 0) {
+        it = domains_.erase(it);
+      } else {
+        ++it;
+      }
     }
   }
 
