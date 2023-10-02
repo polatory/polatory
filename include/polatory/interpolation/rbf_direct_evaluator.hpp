@@ -21,12 +21,11 @@ class rbf_direct_evaluator {
  public:
   rbf_direct_evaluator(const Model& model, const Points& source_points,
                        const Points& source_grad_points)
-      : model_(model),
-        l_(model.poly_basis_size()),
-        mu_(source_points.rows()),
-        sigma_(source_grad_points.rows()),
-        src_points_(source_points),
-        src_grad_points_(source_grad_points) {
+      : rbf_direct_evaluator(model) {
+    set_source_points(source_points, source_grad_points);
+  }
+
+  rbf_direct_evaluator(const Model& model) : model_(model), l_(model.poly_basis_size()) {
     if (l_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
@@ -72,6 +71,18 @@ class rbf_direct_evaluator {
     return y;
   }
 
+  void set_source_points(const Points& source_points, const Points& source_grad_points) {
+    mu_ = static_cast<index_t>(source_points.rows());
+    sigma_ = static_cast<index_t>(source_grad_points.rows());
+
+    src_points_ = source_points;
+    src_grad_points_ = source_grad_points;
+  }
+
+  void set_target_points(const Points& target_points) {
+    set_target_points(target_points, Points(0, kDim));
+  }
+
   void set_target_points(const Points& target_points, const Points& target_grad_points) {
     trg_mu_ = static_cast<index_t>(target_points.rows());
     trg_sigma_ = static_cast<index_t>(target_grad_points.rows());
@@ -98,15 +109,14 @@ class rbf_direct_evaluator {
  private:
   const Model& model_;
   const index_t l_;
-  const index_t mu_;
-  const index_t sigma_;
-  const Points src_points_;
-  const Points src_grad_points_;
-
   std::unique_ptr<PolynomialEvaluator> p_;
 
+  index_t mu_;
+  index_t sigma_;
   index_t trg_mu_{};
   index_t trg_sigma_{};
+  Points src_points_;
+  Points src_grad_points_;
   Points trg_points_;
   Points trg_grad_points_;
   common::valuesd weights_;

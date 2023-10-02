@@ -64,7 +64,7 @@ class rbf_residual_evaluator {
       evaluator_->set_target_points(points);
       common::valuesd fit = evaluator_->evaluate() + weights.segment(begin, end - begin) * nugget;
 
-      auto res = (values.segment(begin, end - begin) - fit).array().abs().maxCoeff();
+      auto res = (values.segment(begin, end - begin) - fit).template lpNorm<Eigen::Infinity>();
       if (res >= absolute_tolerance) {
         return {false, 0.0};
       }
@@ -85,8 +85,8 @@ class rbf_residual_evaluator {
       evaluator_->set_target_points(Points(0, kDim), grad_points);
       auto fit = evaluator_->evaluate();
 
-      auto res =
-          (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit).array().abs().maxCoeff();
+      auto res = (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit)
+                     .template lpNorm<Eigen::Infinity>();
       if (res >= grad_absolute_tolerance) {
         return {false, 0.0};
       }

@@ -14,7 +14,7 @@
 namespace polatory::interpolation {
 
 template <class Model>
-class rbf_direct_operator : krylov::linear_operator {
+class rbf_direct_operator : public krylov::linear_operator {
   static constexpr int kDim = Model::kDim;
   using Points = geometry::pointsNd<kDim>;
   using Vector = geometry::vectorNd<kDim>;
@@ -22,17 +22,11 @@ class rbf_direct_operator : krylov::linear_operator {
 
  public:
   rbf_direct_operator(const Model& model, const Points& points, const Points& grad_points)
-      : model_(model),
-        l_(model.poly_basis_size()),
-        mu_(points.rows()),
-        sigma_(grad_points.rows()),
-        points_(points),
-        grad_points_(grad_points) {
-    if (l_ > 0) {
-      MonomialBasis basis(model_.poly_degree());
-      pt_ = basis.evaluate(points_, grad_points_);
-    }
+      : rbf_direct_operator(model) {
+    set_points(points, grad_points);
   }
+
+  rbf_direct_operator(const Model& model) : model_(model), l_(model.poly_basis_size()) {}
 
   common::valuesd operator()(const common::valuesd& weights) const override {
     POLATORY_ASSERT(weights.rows() == size());
@@ -78,15 +72,27 @@ class rbf_direct_operator : krylov::linear_operator {
     return y;
   }
 
+  void set_points(const Points& points, const Points& grad_points) {
+    mu_ = points.rows();
+    sigma_ = grad_points.rows();
+    points_ = points;
+    grad_points_ = grad_points;
+
+    if (l_ > 0) {
+      MonomialBasis basis(model_.poly_degree());
+      pt_ = basis.evaluate(points_, grad_points_);
+    }
+  }
+
   index_t size() const override { return mu_ + kDim * sigma_ + l_; }
 
  private:
   const Model& model_;
   const index_t l_;
-  const index_t mu_;
-  const index_t sigma_;
-  const Points points_;
-  const Points grad_points_;
+  index_t mu_;
+  index_t sigma_;
+  Points points_;
+  Points grad_points_;
 
   Eigen::MatrixXd pt_;
 };
