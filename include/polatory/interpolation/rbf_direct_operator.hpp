@@ -57,7 +57,8 @@ class rbf_direct_operator : public krylov::linear_operator {
 
       for (index_t j = 0; j < sigma_; j++) {
         Vector diff = grad_points_.row(i) - grad_points_.row(j);
-        y.segment(mu_ + kDim * i, kDim) += (grad_w.row(j) * rbf.evaluate_hessian(diff)).transpose();
+        y.segment(mu_ + kDim * i, kDim) +=
+            (grad_w.row(j) * -rbf.evaluate_hessian(diff)).transpose();
       }
     }
 

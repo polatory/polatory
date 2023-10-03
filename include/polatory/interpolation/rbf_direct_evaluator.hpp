@@ -59,7 +59,7 @@ class rbf_direct_evaluator {
       for (index_t j = 0; j < sigma_; j++) {
         Vector diff = trg_grad_points_.row(i) - src_grad_points_.row(j);
         y.segment(trg_mu_ + kDim * i, kDim) +=
-            (grad_w.row(j) * rbf.evaluate_hessian(diff)).transpose();
+            (grad_w.row(j) * -rbf.evaluate_hessian(diff)).transpose();
       }
     }
 

@@ -54,7 +54,7 @@ struct hessian_kernel {
     matrix_type<double> result;
     for (auto i = 0; i < kDim; i++) {
       for (auto j = 0; j < kDim; j++) {
-        result.at(kDim * i + j) = h(i, j);
+        result.at(kDim * i + j) = -h(i, j);
       }
     }
 
@@ -66,12 +66,7 @@ struct hessian_kernel {
       scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
 
-    std::array<double, 4> v00;
-    std::array<double, 4> v01;
-    std::array<double, 4> v02;
-    std::array<double, 4> v11;
-    std::array<double, 4> v12;
-    std::array<double, 4> v22;
+    std::array<std::array<double, 4>, kDim * kDim> v;
 
     auto a = rbf_.anisotropy();
     for (std::size_t i = 0; i < x.at(0).size; i++) {
@@ -82,27 +77,16 @@ struct hessian_kernel {
 
       Matrix h = a.transpose() * rbf_.evaluate_hessian_isotropic(diff) * a;
 
-      v00.at(i) = h(0, 0);
-      v01.at(i) = h(0, 1);
-      v02.at(i) = h(0, 2);
-      v11.at(i) = h(1, 1);
-      v12.at(i) = h(1, 2);
-      v22.at(i) = h(2, 2);
+      for (auto j = 0; j < kDim; j++) {
+        for (auto k = 0; k < kDim; k++) {
+          v.at(kDim * j + k).at(i) = -h(j, k);
+        }
+      }
     }
 
     matrix_type<decayed_type> result;
-    result.at(kDim * 0 + 0) = decayed_type::load(v00.data(), xsimd::unaligned_mode{});
-    if constexpr (kDim > 1) {
-      result.at(kDim * 0 + 1) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});
-      result.at(kDim * 1 + 0) = decayed_type::load(v01.data(), xsimd::unaligned_mode{});
-      result.at(kDim * 1 + 1) = decayed_type::load(v11.data(), xsimd::unaligned_mode{});
-    }
-    if constexpr (kDim > 2) {
-      result.at(kDim * 0 + 2) = decayed_type::load(v02.data(), xsimd::unaligned_mode{});
-      result.at(kDim * 1 + 2) = decayed_type::load(v12.data(), xsimd::unaligned_mode{});
-      result.at(kDim * 2 + 0) = decayed_type::load(v02.data(), xsimd::unaligned_mode{});
-      result.at(kDim * 2 + 1) = decayed_type::load(v12.data(), xsimd::unaligned_mode{});
-      result.at(kDim * 2 + 2) = decayed_type::load(v22.data(), xsimd::unaligned_mode{});
+    for (auto i = 0; i < kDim * kDim; i++) {
+      result.at(i) = decayed_type::load(v.at(i).data(), xsimd::unaligned_mode{});
     }
 
     return result;

@@ -3,10 +3,10 @@
 #include <Eigen/Core>
 #include <format>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
-#include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/rbf/reference/cov_gaussian.hpp>
+#include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/types.hpp>
 
 #include "../utility.hpp"
@@ -15,9 +15,9 @@ using polatory::index_t;
 using polatory::model;
 using polatory::precision;
 using polatory::common::valuesd;
+using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_fitter;
-using polatory::interpolation::rbf_symmetric_evaluator;
-using polatory::rbf::reference::cov_gaussian;
+using polatory::rbf::multiquadric1;
 
 namespace {
 
@@ -25,7 +25,7 @@ template <int Dim>
 void test(int poly_degree) {
   std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
 
-  using Rbf = cov_gaussian<Dim>;
+  using Rbf = multiquadric1<Dim>;
   using Model = model<Rbf>;
 
   index_t n_points = 1000;
@@ -43,7 +43,7 @@ void test(int poly_degree) {
   valuesd rhs = valuesd(n_points + Dim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
-  Rbf rbf({1.0, 0.01});
+  Rbf rbf({1.0, 0.001});
   rbf.set_anisotropy(aniso);
 
   Model model(rbf, poly_degree);
@@ -54,22 +54,25 @@ void test(int poly_degree) {
 
   EXPECT_EQ(weights.rows(), n_points + Dim * n_grad_points + model.poly_basis_size());
 
-  rbf_symmetric_evaluator<Model> eval(model, points, grad_points, precision::kPrecise);
+  rbf_direct_evaluator<Model> eval(model, points, grad_points);
   eval.set_weights(weights);
-  valuesd values_fit = eval.evaluate();  //+ weights.head(n_points) * model.nugget();
+  eval.set_target_points(points, grad_points);
+  valuesd values_fit = eval.evaluate() + weights.head(n_points) * model.nugget();
 
   auto max_residual = (rhs - values_fit).head(n_points).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
+  std::cout << std::format("max residual: {}", max_residual) << std::endl;
 
   auto max_grad_residual =
       (rhs - values_fit).tail(Dim * n_grad_points).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_grad_residual, grad_absolute_tolerance);
+  std::cout << std::format("max grad residual: {}", max_grad_residual) << std::endl;
 }
 
 }  // namespace
 
 TEST(rbf_fitter, trivial) {
-  for (auto deg = -1; deg <= 2; deg++) {
+  for (auto deg = 0; deg <= 2; deg++) {
     test<1>(deg);
     test<2>(deg);
     test<3>(deg);

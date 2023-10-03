@@ -64,9 +64,7 @@ struct gradient_transpose_kernel {
       scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const noexcept {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
 
-    std::array<double, 4> v0;
-    std::array<double, 4> v1;
-    std::array<double, 4> v2;
+    std::array<std::array<double, 4>, kDim> v;
 
     for (std::size_t i = 0; i < x.at(0).size; i++) {
       Vector diff;
@@ -76,18 +74,14 @@ struct gradient_transpose_kernel {
 
       Vector g = rbf_.evaluate_gradient_isotropic(diff) * rbf_.anisotropy();
 
-      v0.at(i) = g(0);
-      v1.at(i) = g(1);
-      v2.at(i) = g(2);
+      for (auto j = 0; j < kDim; j++) {
+        v.at(j).at(i) = g(j);
+      }
     }
 
     matrix_type<decayed_type> result;
-    result.at(0) = decayed_type::load(v0.data(), xsimd::unaligned_mode{});
-    if constexpr (kDim > 1) {
-      result.at(1) = decayed_type::load(v1.data(), xsimd::unaligned_mode{});
-    }
-    if constexpr (kDim > 2) {
-      result.at(2) = decayed_type::load(v2.data(), xsimd::unaligned_mode{});
+    for (auto i = 0; i < kDim; i++) {
+      result.at(i) = decayed_type::load(v.at(i).data(), xsimd::unaligned_mode{});
     }
 
     return result;
