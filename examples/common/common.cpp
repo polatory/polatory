@@ -7,7 +7,8 @@ Positive definite
   sp3 VAR SCALE  (cov_spheroidal3)
   sp5 VAR SCALE  (cov_spheroidal5)
   sp7 VAR SCALE  (cov_spheroidal7)
-  sp9 VAR SCALE  (cov_spheroidal9))";
+  sp9 VAR SCALE  (cov_spheroidal9)
+  imq1 VAR C     (inverse_multiquadric1))";
 
 const char* const rbf_cov_list =
     R"(RBF/covariance function, one of:
@@ -17,6 +18,7 @@ Positive definite
   sp5 VAR SCALE  (cov_spheroidal5)
   sp7 VAR SCALE  (cov_spheroidal7)
   sp9 VAR SCALE  (cov_spheroidal9)
+  imq1 VAR C     (inverse_multiquadric1)
 Conditionally positive definite of order 1
   bh3 VAR        (biharmonic3d)
   mq1 VAR C      (multiquadric1)

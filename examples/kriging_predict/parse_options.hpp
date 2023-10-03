@@ -13,6 +13,7 @@
 
 struct options {
   std::string in_file;
+  std::string grad_in_file;
   double min_distance;
   std::string rbf_name;
   std::vector<double> rbf_params;
@@ -20,6 +21,7 @@ struct options {
   double nugget;
   int poly_degree;
   double absolute_tolerance;
+  double grad_absolute_tolerance;
   int max_iter;
   bool ineq;
   polatory::geometry::bbox3d mesh_bbox;
@@ -36,9 +38,12 @@ inline options parse_options(int argc, const char* argv[]) {
   std::vector<std::string> mesh_files_vec;
 
   po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()                                                                   //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                      //
-       "Input file in CSV format:\n  X,Y,Z,VAL[,LOWER,UPPER]")                              //
+  opts_desc.add_options()                                                      //
+      ("in", po::value(&opts.in_file)->default_value("")->value_name("FILE"),  //
+       "Input file in CSV format:\n  X,Y,Z,VAL[,LOWER,UPPER]")                 //
+      ("grad-in",
+       po::value(&opts.grad_in_file)->default_value("")->value_name("FILE"),                //
+       "Gradient data input file in CSV format:\n  X,Y,Z,DX,DY,DZ")                         //
       ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("VAL"),  //
        "Minimum separation distance of input points")                                       //
       ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."),             //
@@ -48,18 +53,20 @@ inline options parse_options(int argc, const char* argv[]) {
            ->multitoken()
            ->default_value(polatory::geometry::matrix3d::Identity(),
                            "1. 0. 0. 0. 1. 0. 0. 0. 1.")
-           ->value_name("A11 A12 A13 A21 A22 A23 A31 A32 A33"),                        //
-       "Elements of the anisotropy matrix")                                            //
-      ("nugget", po::value(&opts.nugget)->default_value(0, "0.")->value_name("VAL"),   //
-       "Nugget of the model")                                                          //
-      ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),  //
-       "Degree of the drift polynomial")                                               //
-      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),      //
-       "Absolute tolerance of the fitting")                                            //
-      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),      //
-       "Maximum number of iterations")                                                 //
-      ("ineq", po::bool_switch(&opts.ineq),                                            //
-       "Use inequality constraints")                                                   //
+           ->value_name("A11 A12 A13 A21 A22 A23 A31 A32 A33"),                              //
+       "Elements of the anisotropy matrix")                                                  //
+      ("nugget", po::value(&opts.nugget)->default_value(0, "0.")->value_name("VAL"),         //
+       "Nugget of the model")                                                                //
+      ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),        //
+       "Degree of the drift polynomial")                                                     //
+      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),            //
+       "Absolute tolerance of the fitting")                                                  //
+      ("grad-tol", po::value(&opts.grad_absolute_tolerance)->required()->value_name("VAL"),  //
+       "Gradient data absolute tolerance of the fitting")                                    //
+      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),            //
+       "Maximum number of iterations")                                                       //
+      ("ineq", po::bool_switch(&opts.ineq),                                                  //
+       "Use inequality constraints")                                                         //
       ("mesh-bbox",
        po::value(&opts.mesh_bbox)
            ->multitoken()

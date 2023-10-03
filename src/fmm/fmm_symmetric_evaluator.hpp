@@ -10,6 +10,7 @@
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
+#include <polatory/rbf/inverse_multiquadric1.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/cov_spherical.hpp>
@@ -275,6 +276,7 @@ void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal5<DIM>>);          \
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal7<DIM>>);          \
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal9<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::inverse_multiquadric1<DIM>>);    \
   IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);            \
   IMPLEMENT_MODEL(model<rbf::reference::cov_gaussian<DIM>>);  \
   IMPLEMENT_MODEL(model<rbf::reference::cov_spherical<DIM>>); \
