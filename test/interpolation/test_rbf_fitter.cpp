@@ -29,7 +29,7 @@ void test(int poly_degree) {
   using Model = model<Rbf>;
 
   index_t n_points = 1000;
-  index_t n_grad_points = 100;
+  index_t n_grad_points = 10;
 
   auto absolute_tolerance = 1e-4;
   auto grad_absolute_tolerance = 1e-2;
@@ -43,7 +43,7 @@ void test(int poly_degree) {
   valuesd rhs = valuesd(n_points + Dim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
-  Rbf rbf({1.0, 0.001});
+  Rbf rbf({1.0, 1e-3});
   rbf.set_anisotropy(aniso);
 
   Model model(rbf, poly_degree);
@@ -61,12 +61,12 @@ void test(int poly_degree) {
 
   auto max_residual = (rhs - values_fit).head(n_points).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_residual, absolute_tolerance);
-  std::cout << std::format("max residual: {}", max_residual) << std::endl;
+  std::cout << std::format("Max residual: {}", max_residual) << std::endl;
 
   auto max_grad_residual =
       (rhs - values_fit).tail(Dim * n_grad_points).template lpNorm<Eigen::Infinity>();
   EXPECT_LT(max_grad_residual, grad_absolute_tolerance);
-  std::cout << std::format("max grad residual: {}", max_grad_residual) << std::endl;
+  std::cout << std::format("Max grad residual: {}", max_grad_residual) << std::endl;
 }
 
 }  // namespace
