@@ -137,10 +137,15 @@ class rbf_solver {
       std::cout << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
                 << solver.relative_residual() << std::defaultfloat << std::endl;
 
-      auto convergence =
+      auto [converged, res, grad_res] =
           res_eval_->converged(values, solution, absolute_tolerance, grad_absolute_tolerance);
-      if (convergence.first) {
-        std::cout << "Achieved absolute residual: " << convergence.second << std::endl;
+      if (converged) {
+        if (mu_ > 0) {
+          std::cout << "Achieved absolute residual: " << res << std::endl;
+        }
+        if (sigma_ > 0) {
+          std::cout << "Achieved absolute grad residual: " << grad_res << std::endl;
+        }
         break;
       }
 

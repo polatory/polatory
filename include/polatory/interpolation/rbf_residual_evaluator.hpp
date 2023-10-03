@@ -10,7 +10,7 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
-#include <utility>
+#include <tuple>
 
 namespace polatory::interpolation {
 
@@ -40,18 +40,18 @@ class rbf_residual_evaluator {
   }
 
   template <class Derived, class Derived2>
-  std::pair<bool, double> converged(const Eigen::MatrixBase<Derived>& values,
-                                    const Eigen::MatrixBase<Derived2>& weights,
-                                    double absolute_tolerance,
-                                    double grad_absolute_tolerance) const {
+  std::tuple<bool, double, double> converged(const Eigen::MatrixBase<Derived>& values,
+                                             const Eigen::MatrixBase<Derived2>& weights,
+                                             double absolute_tolerance,
+                                             double grad_absolute_tolerance) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
     evaluator_->set_weights(weights);
 
-    auto max_residual = 0.0;
-
     auto chunk_size = kInitialChunkSize;
+    auto max_residual = 0.0;
+    auto max_grad_residual = 0.0;
 
     auto nugget = model_.nugget();
     for (auto begin = 0;;) {
@@ -66,7 +66,7 @@ class rbf_residual_evaluator {
 
       auto res = (values.segment(begin, end - begin) - fit).template lpNorm<Eigen::Infinity>();
       if (res >= absolute_tolerance) {
-        return {false, 0.0};
+        return {false, 0.0, 0.0};
       }
 
       max_residual = std::max(max_residual, res);
@@ -88,16 +88,16 @@ class rbf_residual_evaluator {
       auto res = (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit)
                      .template lpNorm<Eigen::Infinity>();
       if (res >= grad_absolute_tolerance) {
-        return {false, 0.0};
+        return {false, 0.0, 0.0};
       }
 
-      max_residual = std::max(max_residual, res);
+      max_grad_residual = std::max(max_grad_residual, res);
 
       begin = end;
       chunk_size *= 2;
     }
 
-    return {true, max_residual};
+    return {true, max_residual, max_grad_residual};
   }
 
   void set_points(const Points& points, const Points& grad_points) {
