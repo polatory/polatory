@@ -24,6 +24,7 @@ using polatory::rbf::cov_spheroidal3;
 using polatory::rbf::cov_spheroidal5;
 using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
+using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
 
 template <class Rbf>
@@ -75,7 +76,8 @@ void main_impl(const options& opts) {
     interpolant.fit_inequality(points, values, *values_lb, *values_ub, opts.absolute_tolerance,
                                opts.max_iter);
   } else if (opts.reduce) {
-    interpolant.fit_incrementally(points, values, opts.absolute_tolerance, opts.max_iter);
+    interpolant.fit_incrementally(points, grad_points, values, opts.absolute_tolerance,
+                                  opts.grad_absolute_tolerance, opts.max_iter);
   } else {
     interpolant.fit(points, grad_points, rhs, opts.absolute_tolerance, opts.grad_absolute_tolerance,
                     opts.max_iter);
@@ -115,6 +117,8 @@ int main(int argc, const char* argv[]) {
       main_impl<cov_spheroidal7<3>>(opts);
     } else if (opts.rbf_name == "sp9") {
       main_impl<cov_spheroidal9<3>>(opts);
+    } else if (opts.rbf_name == "imq1") {
+      main_impl<inverse_multiquadric1<3>>(opts);
     } else if (opts.rbf_name == "mq1") {
       main_impl<multiquadric1<3>>(opts);
     }

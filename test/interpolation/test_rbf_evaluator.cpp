@@ -7,7 +7,7 @@
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/rbf/reference/cov_gaussian.hpp>
+#include <polatory/rbf/inverse_multiquadric1.hpp>
 #include <polatory/types.hpp>
 
 #include "../utility.hpp"
@@ -21,7 +21,7 @@ using polatory::geometry::pointNd;
 using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
-using polatory::rbf::reference::cov_gaussian;
+using polatory::rbf::inverse_multiquadric1;
 
 namespace {
 
@@ -30,7 +30,7 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
           index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
   std::cout << std::format("dim = {}, deg = {}", Dim, poly_degree) << std::endl;
 
-  using Rbf = cov_gaussian<Dim>;
+  using Rbf = inverse_multiquadric1<Dim>;
   using Model = model<Rbf>;
   using Bbox = bboxNd<Dim>;
   using Point = pointNd<Dim>;

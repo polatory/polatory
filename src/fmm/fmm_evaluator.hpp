@@ -11,9 +11,6 @@
 #include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/rbf/inverse_multiquadric1.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
-#include <polatory/rbf/reference/cov_gaussian.hpp>
-#include <polatory/rbf/reference/cov_spherical.hpp>
-#include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -325,18 +322,15 @@ void fmm_generic_evaluator<Model, Kernel>::set_weights(
                                        gradient_transpose_kernel<typename MODEL::rbf_type>>; \
   template class fmm_generic_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type>>;
 
-#define IMPLEMENT_DIM(DIM)                                    \
-  IMPLEMENT_MODEL(model<rbf::biharmonic2d<DIM>>);             \
-  IMPLEMENT_MODEL(model<rbf::biharmonic3d<DIM>>);             \
-  IMPLEMENT_MODEL(model<rbf::cov_exponential<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal3<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal5<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal7<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal9<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::inverse_multiquadric1<DIM>>);    \
-  IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);            \
-  IMPLEMENT_MODEL(model<rbf::reference::cov_gaussian<DIM>>);  \
-  IMPLEMENT_MODEL(model<rbf::reference::cov_spherical<DIM>>); \
-  IMPLEMENT_MODEL(model<rbf::reference::triharmonic3d<DIM>>);
+#define IMPLEMENT_DIM(DIM)                                 \
+  IMPLEMENT_MODEL(model<rbf::biharmonic2d<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::biharmonic3d<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::cov_exponential<DIM>>);       \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal3<DIM>>);       \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal5<DIM>>);       \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal7<DIM>>);       \
+  IMPLEMENT_MODEL(model<rbf::cov_spheroidal9<DIM>>);       \
+  IMPLEMENT_MODEL(model<rbf::inverse_multiquadric1<DIM>>); \
+  IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);
 
 }  // namespace polatory::fmm

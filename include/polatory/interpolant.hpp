@@ -92,29 +92,44 @@ class interpolant {
 
   void fit_incrementally(const Points& points, const common::valuesd& values,
                          double absolute_tolerance, int max_iter = 32) {
+    fit_incrementally(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance,
+                      max_iter);
+  }
+
+  void fit_incrementally(const Points& points, const Points& grad_points,
+                         const common::valuesd& values, double absolute_tolerance,
+                         double grad_absolute_tolerance, int max_iter = 32) {
     auto min_n_points = model_.poly_basis_size();
     if (points.rows() < min_n_points) {
       throw std::invalid_argument(
           std::format("points.rows() must be greater than or equal to {}.", min_n_points));
     }
 
-    if (values.rows() != points.rows()) {
-      throw std::invalid_argument("values.rows() must be equal to points.rows().");
+    if (values.rows() != points.rows() + kDim * grad_points.rows()) {
+      throw std::invalid_argument(std::format("values.rows() must be equal to {}.",
+                                              points.rows() + kDim * grad_points.rows()));
     }
 
     if (absolute_tolerance <= 0.0) {
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
     }
 
+    if (grad_absolute_tolerance <= 0.0) {
+      throw std::invalid_argument("grad_absolute_tolerance must be greater than 0.0.");
+    }
+
     clear();
 
-    interpolation::rbf_incremental_fitter fitter(model_, points);
+    interpolation::rbf_incremental_fitter fitter(model_, points, grad_points);
     std::vector<index_t> center_indices;
-    std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance, max_iter);
+    std::vector<index_t> grad_center_indices;
+    std::tie(center_indices, grad_center_indices, weights_) =
+        fitter.fit(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
-    bbox_ = Bbox::from_points(centers_);
+    grad_centers_ = grad_points(grad_center_indices, Eigen::all);
+    bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
   void fit_inequality(const Points& points, const common::valuesd& values,

@@ -8,7 +8,7 @@
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/rbf/reference/cov_gaussian.hpp>
+#include <polatory/rbf/inverse_multiquadric1.hpp>
 #include <polatory/types.hpp>
 
 #include "../utility.hpp"
@@ -23,13 +23,13 @@ using polatory::geometry::sphere3d;
 using polatory::interpolation::rbf_direct_operator;
 using polatory::interpolation::rbf_operator;
 using polatory::point_cloud::random_points;
-using polatory::rbf::reference::cov_gaussian;
+using polatory::rbf::inverse_multiquadric1;
 
 namespace {
 
 void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points) {
   constexpr int kDim = 3;
-  using Rbf = cov_gaussian<kDim>;
+  using Rbf = inverse_multiquadric1<kDim>;
   using Model = model<Rbf>;
 
   index_t n_points = n_initial_points;

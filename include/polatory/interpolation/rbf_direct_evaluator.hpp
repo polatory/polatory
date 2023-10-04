@@ -74,6 +74,16 @@ class rbf_direct_evaluator {
     return y;
   }
 
+  common::valuesd evaluate(const Points& target_points) {
+    return evaluate(target_points, Points(0, kDim));
+  }
+
+  common::valuesd evaluate(const Points& target_points, const Points& target_grad_points) {
+    set_target_points(target_points, target_grad_points);
+
+    return evaluate();
+  }
+
   void set_source_points(const Points& source_points, const Points& source_grad_points) {
     mu_ = static_cast<index_t>(source_points.rows());
     sigma_ = static_cast<index_t>(source_grad_points.rows());

@@ -9,6 +9,7 @@
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
+#include <polatory/rbf/inverse_multiquadric1.hpp>
 #include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
@@ -28,6 +29,7 @@ using polatory::rbf::cov_spheroidal3;
 using polatory::rbf::cov_spheroidal5;
 using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
+using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::rbf_base;
 using polatory::rbf::reference::cov_gaussian;
@@ -135,6 +137,7 @@ TEST(rbf, gradient) {
   test_gradient(cov_spheroidal5<3>({1.1, 0.9}));
   test_gradient(cov_spheroidal7<3>({1.1, 0.9}));
   test_gradient(cov_spheroidal9<3>({1.1, 0.9}));
+  test_gradient(inverse_multiquadric1<3>({1.1, 0.1}));
   test_gradient(multiquadric1<3>({1.1, 0.1}));
 
   test_gradient(cov_gaussian<3>({1.1, 0.9}));
@@ -150,6 +153,7 @@ TEST(rbf, hessian) {
   test_hessian(cov_spheroidal5<3>({1.1, 0.9}));
   test_hessian(cov_spheroidal7<3>({1.1, 0.9}));
   test_hessian(cov_spheroidal9<3>({1.1, 0.9}));
+  test_hessian(inverse_multiquadric1<3>({1.1, 0.1}));
   test_hessian(multiquadric1<3>({1.1, 0.1}));
 
   test_hessian(cov_gaussian<3>({1.1, 0.9}));

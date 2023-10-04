@@ -9,7 +9,7 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
-#include <polatory/rbf/reference/cov_gaussian.hpp>
+#include <polatory/rbf/inverse_multiquadric1.hpp>
 #include <polatory/types.hpp>
 #include <random>
 #include <utility>
@@ -26,7 +26,7 @@ using polatory::interpolation::rbf_direct_evaluator;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
-using polatory::rbf::reference::cov_gaussian;
+using polatory::rbf::inverse_multiquadric1;
 
 namespace {
 
@@ -34,15 +34,15 @@ template <int Dim>
 void test(int poly_degree) {
   std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
 
-  using Rbf = cov_gaussian<Dim>;
+  using Rbf = inverse_multiquadric1<Dim>;
   using Model = model<Rbf>;
   using Points = pointsNd<Dim>;
   using Matrix = matrixNd<Dim>;
   using Domain = domain<Dim>;
   using LagrangeBasis = lagrange_basis<Dim>;
 
-  index_t mu = 1024;
-  index_t sigma = 0;
+  index_t mu = 1000;
+  index_t sigma = 10;
   auto absolute_tolerance = 1e-10;
 
   Matrix aniso = Matrix::Identity();
@@ -53,7 +53,7 @@ void test(int poly_degree) {
   Rbf rbf({1.0, 0.01});
 
   Model model(rbf, poly_degree);
-  model.set_nugget(0.01);
+  // model.set_nugget(0.01);
   auto l = model.poly_basis_size();
 
   Domain domain;

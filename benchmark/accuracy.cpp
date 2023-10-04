@@ -6,8 +6,6 @@
 #include <iostream>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/polatory.hpp>
-#include <polatory/rbf/reference/cov_gaussian.hpp>
-#include <polatory/rbf/reference/triharmonic3d.hpp>
 
 using polatory::index_t;
 using polatory::model;
@@ -27,8 +25,6 @@ using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::rbf_base;
-using polatory::rbf::reference::cov_gaussian;
-using polatory::rbf::reference::triharmonic3d;
 
 template <class Rbf>
 double estimate_accuracy(const std::vector<double>& rbf_params) {
@@ -81,17 +77,6 @@ double estimate_accuracy(const std::vector<double>& rbf_params) {
 
 int main() {
   try {
-    std::cout << "cov_gaussian[scale=0.001]: " << estimate_accuracy<cov_gaussian<3>>({1.0, 0.01})
-              << std::endl;
-    std::cout << "cov_gaussian[scale=0.01]: " << estimate_accuracy<cov_gaussian<3>>({1.0, 0.01})
-              << std::endl;
-    std::cout << "cov_gaussian[scale=0.1]: " << estimate_accuracy<cov_gaussian<3>>({1.0, 0.1})
-              << std::endl;
-    std::cout << "cov_gaussian[scale=1.]: " << estimate_accuracy<cov_gaussian<3>>({1.0, 1.0})
-              << std::endl;
-    std::cout << "cov_gaussian[scale=10.]: " << estimate_accuracy<cov_gaussian<3>>({1.0, 10.0})
-              << std::endl;
-    std::cout << "triharmonic3d: " << estimate_accuracy<triharmonic3d<3>>({1.0}) << std::endl;
     std::cout << "biharmonic2d: " << estimate_accuracy<biharmonic2d<3>>({1.0}) << std::endl;
     std::cout << "biharmonic3d: " << estimate_accuracy<biharmonic3d<3>>({1.0}) << std::endl;
     std::cout << "multiquadric1[scale=0.01]: " << estimate_accuracy<multiquadric1<3>>({1.0, 0.01})
