@@ -63,9 +63,13 @@ class rbf_incremental_fitter {
     Evaluator res_eval(model_, bbox_, precision::kPrecise);
 
     while (true) {
-      std::cout << std::format("Number of RBF centers: {} / {}", mu, mu_full_) << std::endl;
-      std::cout << std::format("Number of grad RBF centers: {} / {}", sigma, sigma_full_)
-                << std::endl;
+      if (mu_full_ > 0) {
+        std::cout << std::format("Number of RBF centers: {} / {}", mu, mu_full_) << std::endl;
+      }
+      if (sigma_full_ > 0) {
+        std::cout << std::format("Number of grad RBF centers: {} / {}", sigma, sigma_full_)
+                  << std::endl;
+      }
 
       Points points = points_full_(centers, Eigen::all);
       Points grad_points = grad_points_full_(grad_centers, Eigen::all);
@@ -111,13 +115,17 @@ class rbf_incremental_fitter {
 
       auto lb = std::lower_bound(c_residuals.begin(), c_residuals.end(), absolute_tolerance);
       auto n_points_need_fitting = static_cast<index_t>(std::distance(lb, c_residuals.end()));
-      std::cout << "Number of points to fit: " << n_points_need_fitting << std::endl;
+      if (mu_full_ > 0) {
+        std::cout << "Number of points to fit: " << n_points_need_fitting << std::endl;
+      }
 
       auto grad_lb = std::lower_bound(c_grad_residuals.begin(), c_grad_residuals.end(),
                                       grad_absolute_tolerance);
       auto n_grad_points_need_fitting =
           static_cast<index_t>(std::distance(grad_lb, c_grad_residuals.end()));
-      std::cout << "Number of grad points to fit: " << n_grad_points_need_fitting << std::endl;
+      if (sigma_full_ > 0) {
+        std::cout << "Number of grad points to fit: " << n_grad_points_need_fitting << std::endl;
+      }
 
       if (n_points_need_fitting == 0 && n_grad_points_need_fitting == 0) {
         break;
