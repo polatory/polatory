@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <format>
 #include <memory>
 #include <polatory/geometry/bbox3d.hpp>
@@ -27,7 +26,7 @@ class interpolant {
   using Evaluator = interpolation::rbf_evaluator<Model>;
 
  public:
-  explicit interpolant(const Model& model) : model_(std::move(model)) {}
+  explicit interpolant(const Model& model) : model_(model) {}
 
   const Points& centers() const {
     throw_if_not_fitted();
@@ -61,10 +60,10 @@ class interpolant {
 
   void fit(const Points& points, const Points& grad_points, const common::valuesd& values,
            double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 32) {
-    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
+    auto min_n_points = model_.poly_basis_size();
     if (points.rows() < min_n_points) {
-      throw std::invalid_argument(std::format("points.rows() must be greater than or equal to {}.",
-                                              std::to_string(min_n_points)));
+      throw std::invalid_argument(
+          std::format("points.rows() must be greater than or equal to {}.", min_n_points));
     }
 
     auto n_rhs = points.rows() + kDim * grad_points.rows();
@@ -93,10 +92,10 @@ class interpolant {
 
   void fit_incrementally(const Points& points, const common::valuesd& values,
                          double absolute_tolerance, int max_iter = 32) {
-    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
+    auto min_n_points = model_.poly_basis_size();
     if (points.rows() < min_n_points) {
-      throw std::invalid_argument("points.rows() must be greater than or equal to " +
-                                  std::to_string(min_n_points) + ".");
+      throw std::invalid_argument(
+          std::format("points.rows() must be greater than or equal to {}.", min_n_points));
     }
 
     if (values.rows() != points.rows()) {
@@ -125,10 +124,10 @@ class interpolant {
       throw std::runtime_error("Non-zero nugget is not supported.");
     }
 
-    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
+    auto min_n_points = model_.poly_basis_size();
     if (points.rows() < min_n_points) {
-      throw std::invalid_argument("points.rows() must be greater than or equal to " +
-                                  std::to_string(min_n_points) + ".");
+      throw std::invalid_argument(
+          std::format("points.rows() must be greater than or equal to {}.", min_n_points));
     }
 
     if (values.rows() != points.rows()) {

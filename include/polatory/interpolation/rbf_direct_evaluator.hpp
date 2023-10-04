@@ -19,6 +19,9 @@ class rbf_direct_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
 
  public:
+  rbf_direct_evaluator(const Model& model, const Points& source_points)
+      : rbf_direct_evaluator(model, source_points, Points(0, kDim)) {}
+
   rbf_direct_evaluator(const Model& model, const Points& source_points,
                        const Points& source_grad_points)
       : rbf_direct_evaluator(model) {
