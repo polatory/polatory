@@ -48,6 +48,7 @@ class ras_preconditioner : public krylov::linear_operator {
   using SymmetricEvaluator = interpolation::rbf_symmetric_evaluator<Model>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
   using LagrangeBasis = polynomial::lagrange_basis<kDim>;
+  using UnisolventPointSet = polynomial::unisolvent_point_set<kDim>;
 
  public:
   ras_preconditioner(const Model& model, const Points& points, const Points& grad_points)
@@ -74,11 +75,18 @@ class ras_preconditioner : public krylov::linear_operator {
       auto level = n_levels_ - 1;
 
       if (l_ > 0) {
-        polynomial::unisolvent_point_set<kDim> ups(points_, model.poly_degree());
-
-        poly_point_idcs = ups.point_indices();
-        LagrangeBasis lagrange_basis(model.poly_degree(), points_(poly_point_idcs, Eigen::all));
-        lagrange_pt_ = lagrange_basis.evaluate(points_, grad_points_);
+        if (model.poly_degree() == 1 && mu_ == 1 && sigma_ >= 1) {
+          // The special case.
+          poly_point_idcs = {0};
+          LagrangeBasis lagrange_basis(model.poly_degree(), points_, grad_points_.topRows(1));
+          lagrange_pt_ = lagrange_basis.evaluate(points_, grad_points_);
+        } else {
+          // The ordinary case.
+          UnisolventPointSet ups(points_, model.poly_degree());
+          poly_point_idcs = ups.point_indices();
+          LagrangeBasis lagrange_basis(model.poly_degree(), points_(poly_point_idcs, Eigen::all));
+          lagrange_pt_ = lagrange_basis.evaluate(points_, grad_points_);
+        }
 
         point_idcs_.at(level) = poly_point_idcs;
         point_idcs_.at(level).reserve(mu_);

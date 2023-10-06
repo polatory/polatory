@@ -60,11 +60,7 @@ class interpolant {
 
   void fit(const Points& points, const Points& grad_points, const common::valuesd& values,
            double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 32) {
-    auto min_n_points = model_.poly_basis_size();
-    if (points.rows() < min_n_points) {
-      throw std::invalid_argument(
-          std::format("points.rows() must be greater than or equal to {}.", min_n_points));
-    }
+    check_num_points(points, grad_points);
 
     auto n_rhs = points.rows() + kDim * grad_points.rows();
     if (values.rows() != n_rhs) {
@@ -99,11 +95,7 @@ class interpolant {
   void fit_incrementally(const Points& points, const Points& grad_points,
                          const common::valuesd& values, double absolute_tolerance,
                          double grad_absolute_tolerance, int max_iter = 32) {
-    auto min_n_points = model_.poly_basis_size();
-    if (points.rows() < min_n_points) {
-      throw std::invalid_argument(
-          std::format("points.rows() must be greater than or equal to {}.", min_n_points));
-    }
+    check_num_points(points, grad_points);
 
     if (values.rows() != points.rows() + kDim * grad_points.rows()) {
       throw std::invalid_argument(std::format("values.rows() must be equal to {}.",
@@ -190,6 +182,22 @@ class interpolant {
   }
 
  private:
+  void check_num_points(const Points& points, const Points& grad_points) const {
+    auto l = model_.poly_basis_size();
+    auto mu = points.rows();
+    auto sigma = grad_points.rows();
+
+    if (model_.poly_degree() == 1 && mu == 1 && sigma >= 1) {
+      // The special case.
+      return;
+    }
+
+    if (mu < l) {
+      throw std::invalid_argument(
+          std::format("points.rows() must be greater than or equal to {}.", l));
+    }
+  }
+
   void clear() {
     fitted_ = false;
     centers_ = Points();
