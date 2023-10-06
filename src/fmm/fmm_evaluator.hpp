@@ -13,6 +13,7 @@
 #include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
+#include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
 #include <scalfmm/operators/fmm_operators.hpp>
@@ -76,7 +77,9 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
   common::valuesd evaluate() const {
     using namespace scalfmm::algorithms;
 
-    if (prepare()) {
+    prepare();
+
+    if (tree_height_ > 0) {
       if (multipole_dirty_) {
         src_tree_->reset_multipoles();
         scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](
@@ -96,6 +99,13 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
           *src_tree_, *trg_tree_, *fmm_operator_, m2l | p2p);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
           *src_tree_, *trg_tree_, *fmm_operator_, l2l | l2p);
+    } else {
+      for (auto& p : trg_particles_) {
+        for (auto i = 0; i < kn; i++) {
+          p.outputs(i) = 0.0;
+        }
+      }
+      scalfmm::algorithms::full_direct(src_particles_, trg_particles_, kernel_);
     }
 
     return potentials();
@@ -166,7 +176,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
   common::valuesd potentials() const {
     common::valuesd potentials = common::valuesd::Zero(kn * n_trg_points_);
 
-    if (trg_tree_) {
+    if (tree_height_ > 0) {
       scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
                                         [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
@@ -177,20 +187,27 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
                                             }
                                           }
                                         });
+    } else {
+      for (index_t idx = 0; idx < n_trg_points_; idx++) {
+        const auto& p = trg_particles_.at(idx);
+        for (auto i = 0; i < kn; i++) {
+          potentials(kn * idx + i) = p.outputs(i);
+        }
+      }
     }
 
     return potentials;
   }
 
-  bool prepare() const {
-    if (n_src_points_ == 0 || n_trg_points_ == 0) {
+  void prepare() const {
+    if (n_src_points_ * n_trg_points_ < 1024 * 1024) {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
       reset_src_tree();
       reset_trg_tree();
       tree_height_ = 0;
-      return false;
+      return;
     }
 
     auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_trg_points_));
@@ -215,8 +232,6 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       trg_particles_.clear();
       trg_particles_.shrink_to_fit();
     }
-
-    return true;
   }
 
   void reset_src_tree() const {

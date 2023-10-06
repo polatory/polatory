@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
+#include <format>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
@@ -24,6 +25,8 @@ namespace {
 template <int Dim>
 void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_eval_points,
           index_t n_eval_grad_points) {
+  std::cout << std::format("dim = {}, deg = {}", Dim, poly_degree) << std::endl;
+
   using Rbf = inverse_multiquadric1<Dim>;
   using Model = model<Rbf>;
   using Points = pointsNd<Dim>;

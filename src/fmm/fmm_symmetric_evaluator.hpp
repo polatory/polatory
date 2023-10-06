@@ -14,6 +14,7 @@
 #include <polatory/rbf/multiquadric1.hpp>
 #include <polatory/rbf/reference/triharmonic3d.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
+#include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
 #include <scalfmm/operators/fmm_operators.hpp>
@@ -69,7 +70,9 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
   common::valuesd evaluate() const {
     using namespace scalfmm::algorithms;
 
-    if (prepare()) {
+    prepare();
+
+    if (tree_height_ > 0) {
       tree_->reset_multipoles();
       tree_->reset_locals();
       tree_->reset_outputs();
@@ -85,8 +88,16 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
           *tree_, *fmm_operator_, m2l | p2p);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
           *tree_, *fmm_operator_, l2l | l2p);
-      handle_self_interaction();
+    } else {
+      for (auto& p : particles_) {
+        for (auto i = 0; i < kn; i++) {
+          p.outputs(i) = 0.0;
+        }
+      }
+      scalfmm::algorithms::full_direct(particles_, kernel_);
     }
+
+    handle_self_interaction();
 
     return potentials();
   }
@@ -138,22 +149,33 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
     scalfmm::container::point<double, kDim> x{};
     auto k = kernel_.evaluate(x, x);
 
-    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
-      for (auto p_ref : leaf) {
-        auto p = typename Leaf::proxy_type(p_ref);
+    if (tree_height_ > 0) {
+      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
+                                        [&](const auto& leaf) {
+                                          for (auto p_ref : leaf) {
+                                            auto p = typename Leaf::proxy_type(p_ref);
+                                            for (auto i = 0; i < kn; i++) {
+                                              for (auto j = 0; j < km; j++) {
+                                                p.outputs(i) += p.inputs(j) * k.at(km * i + j);
+                                              }
+                                            }
+                                          }
+                                        });
+    } else {
+      for (auto& p : particles_) {
         for (auto i = 0; i < kn; i++) {
           for (auto j = 0; j < km; j++) {
             p.outputs(i) += p.inputs(j) * k.at(km * i + j);
           }
         }
       }
-    });
+    }
   }
 
   common::valuesd potentials() const {
     common::valuesd potentials = common::valuesd::Zero(kn * n_points_);
 
-    if (tree_) {
+    if (tree_height_ > 0) {
       scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
                                         [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
@@ -164,19 +186,26 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
                                             }
                                           }
                                         });
+    } else {
+      for (auto idx = 0; idx < n_points_; idx++) {
+        const auto& p = particles_.at(idx);
+        for (auto i = 0; i < kn; i++) {
+          potentials(kn * idx + i) = p.outputs(i);
+        }
+      }
     }
 
     return potentials;
   }
 
-  bool prepare() const {
-    if (n_points_ == 0) {
+  void prepare() const {
+    if (n_points_ < 1024) {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
       reset_tree();
       tree_height_ = 0;
-      return false;
+      return;
     }
 
     auto tree_height = fmm_tree_height<kDim>(n_points_);
@@ -193,8 +222,6 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
       particles_.clear();
       particles_.shrink_to_fit();
     }
-
-    return true;
   }
 
   void reset_tree() const {
