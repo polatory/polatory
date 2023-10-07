@@ -146,6 +146,10 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
 
  private:
   void handle_self_interaction() const {
+    if (n_points_ == 0) {
+      return;
+    }
+
     scalfmm::container::point<double, kDim> x{};
     auto k = kernel_.evaluate(x, x);
 
