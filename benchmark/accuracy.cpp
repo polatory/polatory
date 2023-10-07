@@ -23,7 +23,10 @@ using polatory::rbf::cov_spheroidal3;
 using polatory::rbf::cov_spheroidal5;
 using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
+using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
+using polatory::rbf::multiquadric3;
+using polatory::rbf::multiquadric5;
 using polatory::rbf::rbf_base;
 using polatory::rbf::triharmonic3d;
 
@@ -81,13 +84,37 @@ int main() {
     std::cout << "biharmonic2d: " << estimate_accuracy<biharmonic2d<3>>({1.0}) << std::endl;
     std::cout << "biharmonic3d: " << estimate_accuracy<biharmonic3d<3>>({1.0}) << std::endl;
     std::cout << "triharmonic3d: " << estimate_accuracy<triharmonic3d<3>>({1.0}) << std::endl;
-    std::cout << "multiquadric1[scale=0.01]: " << estimate_accuracy<multiquadric1<3>>({1.0, 0.01})
+    std::cout << "inverse_multiquadric1[c=0.01]: "
+              << estimate_accuracy<inverse_multiquadric1<3>>({1.0, 0.01}) << std::endl;
+    std::cout << "inverse_multiquadric1[c=0.1]: "
+              << estimate_accuracy<inverse_multiquadric1<3>>({1.0, 0.1}) << std::endl;
+    std::cout << "inverse_multiquadric1[c=1.]: "
+              << estimate_accuracy<inverse_multiquadric1<3>>({1.0, 1.0}) << std::endl;
+    std::cout << "inverse_multiquadric1[c=10.]: "
+              << estimate_accuracy<inverse_multiquadric1<3>>({1.0, 10.0}) << std::endl;
+    std::cout << "multiquadric1[c=0.01]: " << estimate_accuracy<multiquadric1<3>>({1.0, 0.01})
               << std::endl;
-    std::cout << "multiquadric1[scale=0.1]: " << estimate_accuracy<multiquadric1<3>>({1.0, 0.1})
+    std::cout << "multiquadric1[c=0.1]: " << estimate_accuracy<multiquadric1<3>>({1.0, 0.1})
               << std::endl;
-    std::cout << "multiquadric1[scale=1.]: " << estimate_accuracy<multiquadric1<3>>({1.0, 1.0})
+    std::cout << "multiquadric1[c=1.]: " << estimate_accuracy<multiquadric1<3>>({1.0, 1.0})
               << std::endl;
-    std::cout << "multiquadric1[scale=10.]: " << estimate_accuracy<multiquadric1<3>>({1.0, 10.0})
+    std::cout << "multiquadric1[c=10.]: " << estimate_accuracy<multiquadric1<3>>({1.0, 10.0})
+              << std::endl;
+    std::cout << "multiquadric3[c=0.01]: " << estimate_accuracy<multiquadric3<3>>({1.0, 0.01})
+              << std::endl;
+    std::cout << "multiquadric3[c=0.1]: " << estimate_accuracy<multiquadric3<3>>({1.0, 0.1})
+              << std::endl;
+    std::cout << "multiquadric3[c=1.]: " << estimate_accuracy<multiquadric3<3>>({1.0, 1.0})
+              << std::endl;
+    std::cout << "multiquadric3[c=10.]: " << estimate_accuracy<multiquadric3<3>>({1.0, 10.0})
+              << std::endl;
+    std::cout << "multiquadric5[c=0.01]: " << estimate_accuracy<multiquadric5<3>>({1.0, 0.01})
+              << std::endl;
+    std::cout << "multiquadric5[c=0.1]: " << estimate_accuracy<multiquadric5<3>>({1.0, 0.1})
+              << std::endl;
+    std::cout << "multiquadric5[c=1.]: " << estimate_accuracy<multiquadric5<3>>({1.0, 1.0})
+              << std::endl;
+    std::cout << "multiquadric5[c=10.]: " << estimate_accuracy<multiquadric5<3>>({1.0, 10.0})
               << std::endl;
     std::cout << "cov_exponential[scale=0.01]: "
               << estimate_accuracy<cov_exponential<3>>({1.0, 0.01}) << std::endl;

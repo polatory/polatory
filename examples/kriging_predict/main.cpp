@@ -25,6 +25,8 @@ using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
+using polatory::rbf::multiquadric3;
+using polatory::rbf::multiquadric5;
 using polatory::rbf::triharmonic3d;
 
 template <class Rbf>
@@ -117,6 +119,10 @@ int main(int argc, const char* argv[]) {
       main_impl<inverse_multiquadric1<3>>(opts);
     } else if (opts.rbf_name == "mq1") {
       main_impl<multiquadric1<3>>(opts);
+    } else if (opts.rbf_name == "mq3") {
+      main_impl<multiquadric3<3>>(opts);
+    } else if (opts.rbf_name == "mq5") {
+      main_impl<multiquadric5<3>>(opts);
     } else if (opts.rbf_name == "th3") {
       main_impl<triharmonic3d<3>>(opts);
     } else {

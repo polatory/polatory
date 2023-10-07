@@ -24,8 +24,8 @@
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/inverse_multiquadric1.hpp>
-#include <polatory/rbf/multiquadric1.hpp>
+#include <polatory/rbf/inverse_multiquadric.hpp>
+#include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/triharmonic3d.hpp>
 #include <polatory/table.hpp>
 #include <polatory/types.hpp>

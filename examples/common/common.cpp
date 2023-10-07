@@ -23,4 +23,8 @@ Conditionally positive definite of order 1
   bh3 VAR        (biharmonic3d)
   mq1 VAR C      (multiquadric1)
 Conditionally positive definite of order 2
-  bh2 VAR        (biharmonic2d))";
+  bh2 VAR        (biharmonic2d)
+  th3 VAR        (triharmonic3d)
+  mq3 VAR C      (multiquadric3)
+Conditionally positive definite of order 3
+  mq5 VAR C      (multiquadric5))";

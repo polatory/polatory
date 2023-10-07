@@ -24,6 +24,9 @@ using polatory::rbf::cov_spheroidal5;
 using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::multiquadric1;
+using polatory::rbf::multiquadric3;
+using polatory::rbf::multiquadric5;
+using polatory::rbf::triharmonic3d;
 
 template <class Rbf>
 void main_impl(const options& opts) {
@@ -78,6 +81,14 @@ int main(int argc, const char* argv[]) {
       main_impl<cov_spheroidal9<2>>(opts);
     } else if (opts.rbf_name == "mq1") {
       main_impl<multiquadric1<2>>(opts);
+    } else if (opts.rbf_name == "mq3") {
+      main_impl<multiquadric3<2>>(opts);
+    } else if (opts.rbf_name == "mq5") {
+      main_impl<multiquadric5<2>>(opts);
+    } else if (opts.rbf_name == "th3") {
+      main_impl<triharmonic3d<2>>(opts);
+    } else {
+      throw std::runtime_error("Unknown RBF name: " + opts.rbf_name);
     }
 
     return 0;

@@ -9,7 +9,7 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
-#include <polatory/rbf/inverse_multiquadric1.hpp>
+#include <polatory/rbf/inverse_multiquadric.hpp>
 #include <polatory/types.hpp>
 #include <random>
 #include <utility>

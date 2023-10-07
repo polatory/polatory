@@ -8,7 +8,7 @@
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/rbf/inverse_multiquadric1.hpp>
+#include <polatory/rbf/inverse_multiquadric.hpp>
 #include <polatory/types.hpp>
 
 #include "../utility.hpp"

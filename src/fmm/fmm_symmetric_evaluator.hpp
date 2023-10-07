@@ -10,8 +10,8 @@
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/inverse_multiquadric1.hpp>
-#include <polatory/rbf/multiquadric1.hpp>
+#include <polatory/rbf/inverse_multiquadric.hpp>
+#include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/triharmonic3d.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>
@@ -307,6 +307,8 @@ void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal9<DIM>>);       \
   IMPLEMENT_MODEL(model<rbf::inverse_multiquadric1<DIM>>); \
   IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);         \
+  IMPLEMENT_MODEL(model<rbf::multiquadric3<DIM>>);         \
+  IMPLEMENT_MODEL(model<rbf::multiquadric5<DIM>>);         \
   IMPLEMENT_MODEL(model<rbf::triharmonic3d<DIM>>);
 
 }  // namespace polatory::fmm
