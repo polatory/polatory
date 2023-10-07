@@ -5,9 +5,7 @@
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <vector>
 
-namespace polatory {
-namespace rbf {
-namespace reference {
+namespace polatory::rbf::reference {
 
 template <int Dim>
 class cov_gaussian final : public covariance_function_base<Dim> {
@@ -47,6 +45,4 @@ class cov_gaussian final : public covariance_function_base<Dim> {
   }
 };
 
-}  // namespace reference
-}  // namespace rbf
-}  // namespace polatory
+}  // namespace polatory::rbf::reference

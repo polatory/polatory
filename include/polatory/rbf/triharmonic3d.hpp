@@ -5,8 +5,7 @@
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
-namespace polatory {
-namespace rbf {
+namespace polatory::rbf {
 
 template <int Dim>
 class triharmonic3d final : public rbf_base<Dim> {
@@ -61,5 +60,4 @@ class triharmonic3d final : public rbf_base<Dim> {
   }
 };
 
-}  // namespace rbf
-}  // namespace polatory
+}  // namespace polatory::rbf

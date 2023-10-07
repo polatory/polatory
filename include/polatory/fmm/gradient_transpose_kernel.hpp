@@ -10,8 +10,7 @@
 #include <string>
 #include <type_traits>
 
-namespace polatory {
-namespace fmm {
+namespace polatory::fmm {
 
 template <class Rbf>
 struct gradient_transpose_kernel {
@@ -93,5 +92,4 @@ struct gradient_transpose_kernel {
   const Rbf rbf_;
 };
 
-}  // namespace fmm
-}  // namespace polatory
+}  // namespace polatory::fmm

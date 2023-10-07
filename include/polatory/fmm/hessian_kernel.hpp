@@ -9,8 +9,7 @@
 #include <string>
 #include <type_traits>
 
-namespace polatory {
-namespace fmm {
+namespace polatory::fmm {
 
 template <class Rbf>
 struct hessian_kernel {
@@ -98,5 +97,4 @@ struct hessian_kernel {
   const Rbf rbf_;
 };
 
-}  // namespace fmm
-}  // namespace polatory
+}  // namespace polatory::fmm

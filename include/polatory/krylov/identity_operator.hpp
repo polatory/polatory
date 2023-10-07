@@ -4,8 +4,7 @@
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory {
-namespace krylov {
+namespace polatory::krylov {
 
 class identity_operator : public linear_operator {
  public:
@@ -22,5 +21,4 @@ class identity_operator : public linear_operator {
   const index_t n_;
 };
 
-}  // namespace krylov
-}  // namespace polatory
+}  // namespace polatory::krylov

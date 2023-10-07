@@ -31,8 +31,7 @@ inline void validate(boost::any& v, const std::vector<std::string>& values,
 
 }  // namespace Eigen
 
-namespace polatory {
-namespace geometry {
+namespace polatory::geometry {
 
 inline void validate(boost::any& v, const std::vector<std::string>& values, bbox3d*, int) {
   namespace po = boost::program_options;
@@ -47,8 +46,7 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
               boost::lexical_cast<double>(values[5])});
 }
 
-}  // namespace geometry
-}  // namespace polatory
+}  // namespace polatory::geometry
 
 extern const char* const cov_list;
 extern const char* const rbf_cov_list;
