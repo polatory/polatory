@@ -7,7 +7,6 @@
 
 namespace polatory {
 namespace rbf {
-namespace reference {
 
 template <int Dim>
 class triharmonic3d final : public rbf_base<Dim> {
@@ -62,6 +61,5 @@ class triharmonic3d final : public rbf_base<Dim> {
   }
 };
 
-}  // namespace reference
 }  // namespace rbf
 }  // namespace polatory

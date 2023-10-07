@@ -25,6 +25,7 @@ using polatory::rbf::cov_spheroidal7;
 using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::rbf_base;
+using polatory::rbf::triharmonic3d;
 
 template <class Rbf>
 double estimate_accuracy(const std::vector<double>& rbf_params) {
@@ -79,6 +80,7 @@ int main() {
   try {
     std::cout << "biharmonic2d: " << estimate_accuracy<biharmonic2d<3>>({1.0}) << std::endl;
     std::cout << "biharmonic3d: " << estimate_accuracy<biharmonic3d<3>>({1.0}) << std::endl;
+    std::cout << "triharmonic3d: " << estimate_accuracy<triharmonic3d<3>>({1.0}) << std::endl;
     std::cout << "multiquadric1[scale=0.01]: " << estimate_accuracy<multiquadric1<3>>({1.0, 0.01})
               << std::endl;
     std::cout << "multiquadric1[scale=0.1]: " << estimate_accuracy<multiquadric1<3>>({1.0, 0.1})
