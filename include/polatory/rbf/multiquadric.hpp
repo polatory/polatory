@@ -10,7 +10,7 @@ namespace polatory::rbf {
 
 template <int Dim, int k>
 class multiquadric final : public rbf_base<Dim> {
-  static_assert(k == 1 || k == 3 || k == 5, "k must be either 1, 3, or 5.");
+  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
 
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
@@ -70,8 +70,5 @@ using multiquadric1 = multiquadric<Dim, 1>;
 
 template <int Dim>
 using multiquadric3 = multiquadric<Dim, 3>;
-
-template <int Dim>
-using multiquadric5 = multiquadric<Dim, 5>;
 
 }  // namespace polatory::rbf

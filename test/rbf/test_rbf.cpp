@@ -32,7 +32,6 @@ using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::multiquadric3;
-using polatory::rbf::multiquadric5;
 using polatory::rbf::rbf_base;
 using polatory::rbf::triharmonic3d;
 using polatory::rbf::reference::cov_gaussian;
@@ -142,7 +141,6 @@ TEST(rbf, gradient) {
   test_gradient(inverse_multiquadric1<3>({1.1, 0.1}));
   test_gradient(multiquadric1<3>({1.1, 0.1}));
   test_gradient(multiquadric3<3>({1.1, 0.1}));
-  test_gradient(multiquadric5<3>({1.1, 0.1}));
   test_gradient(triharmonic3d<3>({1.1}));
 
   test_gradient(cov_gaussian<3>({1.1, 0.9}));
@@ -160,7 +158,6 @@ TEST(rbf, hessian) {
   test_hessian(inverse_multiquadric1<3>({1.1, 0.1}));
   test_hessian(multiquadric1<3>({1.1, 0.1}));
   test_hessian(multiquadric3<3>({1.1, 0.1}));
-  test_hessian(multiquadric5<3>({1.1, 0.1}));
   test_hessian(triharmonic3d<3>({1.1}));
 
   test_hessian(cov_gaussian<3>({1.1, 0.9}));

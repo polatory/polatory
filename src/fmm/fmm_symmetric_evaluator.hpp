@@ -308,7 +308,6 @@ void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
   IMPLEMENT_MODEL(model<rbf::inverse_multiquadric1<DIM>>); \
   IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);         \
   IMPLEMENT_MODEL(model<rbf::multiquadric3<DIM>>);         \
-  IMPLEMENT_MODEL(model<rbf::multiquadric5<DIM>>);         \
   IMPLEMENT_MODEL(model<rbf::triharmonic3d<DIM>>);
 
 }  // namespace polatory::fmm

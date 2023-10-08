@@ -26,7 +26,6 @@ using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::multiquadric3;
-using polatory::rbf::multiquadric5;
 using polatory::rbf::rbf_base;
 using polatory::rbf::triharmonic3d;
 
@@ -107,14 +106,6 @@ int main() {
     std::cout << "multiquadric3[c=1.]: " << estimate_accuracy<multiquadric3<3>>({1.0, 1.0})
               << std::endl;
     std::cout << "multiquadric3[c=10.]: " << estimate_accuracy<multiquadric3<3>>({1.0, 10.0})
-              << std::endl;
-    std::cout << "multiquadric5[c=0.01]: " << estimate_accuracy<multiquadric5<3>>({1.0, 0.01})
-              << std::endl;
-    std::cout << "multiquadric5[c=0.1]: " << estimate_accuracy<multiquadric5<3>>({1.0, 0.1})
-              << std::endl;
-    std::cout << "multiquadric5[c=1.]: " << estimate_accuracy<multiquadric5<3>>({1.0, 1.0})
-              << std::endl;
-    std::cout << "multiquadric5[c=10.]: " << estimate_accuracy<multiquadric5<3>>({1.0, 10.0})
               << std::endl;
     std::cout << "cov_exponential[scale=0.01]: "
               << estimate_accuracy<cov_exponential<3>>({1.0, 0.01}) << std::endl;
