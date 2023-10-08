@@ -65,11 +65,6 @@ class coarse_grid {
         auto lagrange_pt = lagrange_pt_full(Eigen::all, flat_indices);
         me_ = -lagrange_pt.rightCols(m_ - l_);
 
-        Eigen::MatrixXd qtaq =
-            (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
-             me_.transpose() * a.topRightCorner(l_, m_ - l_) +
-             a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_));
-
         // Compute decomposition of Q^T A Q.
         ldlt_of_qtaq_ =
             (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
