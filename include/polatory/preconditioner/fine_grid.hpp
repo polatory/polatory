@@ -61,10 +61,13 @@ class fine_grid {
         auto lagrange_pt = lagrange_pt_full(Eigen::all, flat_indices);
         me_ = -lagrange_pt.rightCols(m_ - l_);
 
+        // A hack for preventing segfault observed on macOS (Apple M1 chip).
+        // Enable UBSan to see the error.
+        Eigen::MatrixXd met = me_.transpose();
+
         // Compute decomposition of Q^T A Q.
         ldlt_of_qtaq_ =
-            (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
-             me_.transpose() * a.topRightCorner(l_, m_ - l_) +
+            (met * a.topLeftCorner(l_, l_) * me_ + met * a.topRightCorner(l_, m_ - l_) +
              a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_))
                 .ldlt();
       }
