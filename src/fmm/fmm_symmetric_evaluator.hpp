@@ -1,10 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
-#include <polatory/rbf/biharmonic2d.hpp>
-#include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
@@ -12,7 +9,8 @@
 #include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/rbf/inverse_multiquadric.hpp>
 #include <polatory/rbf/multiquadric.hpp>
-#include <polatory/rbf/triharmonic3d.hpp>
+#include <polatory/rbf/polyharmonic_even.hpp>
+#include <polatory/rbf/polyharmonic_odd.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
@@ -308,6 +306,7 @@ void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
   IMPLEMENT_MODEL(model<rbf::inverse_multiquadric1<DIM>>); \
   IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);         \
   IMPLEMENT_MODEL(model<rbf::multiquadric3<DIM>>);         \
+  IMPLEMENT_MODEL(model<rbf::triharmonic2d<DIM>>);         \
   IMPLEMENT_MODEL(model<rbf::triharmonic3d<DIM>>);
 
 }  // namespace polatory::fmm

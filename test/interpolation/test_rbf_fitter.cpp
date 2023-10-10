@@ -8,9 +8,8 @@
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/model.hpp>
 #include <polatory/precision.hpp>
-#include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/triharmonic3d.hpp>
+#include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 
 #include "../utility.hpp"

@@ -2,8 +2,6 @@
 
 #include <cmath>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/rbf/biharmonic2d.hpp>
-#include <polatory/rbf/biharmonic3d.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
@@ -11,10 +9,11 @@
 #include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/rbf/inverse_multiquadric.hpp>
 #include <polatory/rbf/multiquadric.hpp>
+#include <polatory/rbf/polyharmonic_even.hpp>
+#include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/rbf/reference/cov_gaussian.hpp>
 #include <polatory/rbf/reference/cov_spherical.hpp>
-#include <polatory/rbf/triharmonic3d.hpp>
 #include <random>
 
 #include "../utility.hpp"
@@ -33,6 +32,7 @@ using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::multiquadric3;
 using polatory::rbf::rbf_base;
+using polatory::rbf::triharmonic2d;
 using polatory::rbf::triharmonic3d;
 using polatory::rbf::reference::cov_gaussian;
 using polatory::rbf::reference::cov_spherical;
@@ -132,7 +132,7 @@ TEST(rbf, anisotropy) {
 
 TEST(rbf, gradient) {
   test_gradient(biharmonic2d<3>({1.1}));
-  // test_gradient(biharmonic3d<3>({1.1}));
+  test_gradient(biharmonic3d<3>({1.1}));
   test_gradient(cov_exponential<3>({1.1, 0.9}));
   test_gradient(cov_spheroidal3<3>({1.1, 0.9}));
   test_gradient(cov_spheroidal5<3>({1.1, 0.9}));
@@ -141,6 +141,7 @@ TEST(rbf, gradient) {
   test_gradient(inverse_multiquadric1<3>({1.1, 0.1}));
   test_gradient(multiquadric1<3>({1.1, 0.1}));
   test_gradient(multiquadric3<3>({1.1, 0.1}));
+  test_gradient(triharmonic2d<3>({1.1}));
   test_gradient(triharmonic3d<3>({1.1}));
 
   test_gradient(cov_gaussian<3>({1.1, 0.9}));
@@ -148,8 +149,8 @@ TEST(rbf, gradient) {
 }
 
 TEST(rbf, hessian) {
-  // test_hessian(biharmonic2d<3>({1.1}));
-  // test_hessian(biharmonic3d<3>({1.1}));
+  test_hessian(biharmonic2d<3>({1.1}));
+  test_hessian(biharmonic3d<3>({1.1}));
   test_hessian(cov_exponential<3>({1.1, 0.9}));
   test_hessian(cov_spheroidal3<3>({1.1, 0.9}));
   test_hessian(cov_spheroidal5<3>({1.1, 0.9}));
@@ -158,6 +159,7 @@ TEST(rbf, hessian) {
   test_hessian(inverse_multiquadric1<3>({1.1, 0.1}));
   test_hessian(multiquadric1<3>({1.1, 0.1}));
   test_hessian(multiquadric3<3>({1.1, 0.1}));
+  test_hessian(triharmonic2d<3>({1.1}));
   test_hessian(triharmonic3d<3>({1.1}));
 
   test_hessian(cov_gaussian<3>({1.1, 0.9}));
