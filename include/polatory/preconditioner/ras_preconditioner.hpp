@@ -248,6 +248,26 @@ class ras_preconditioner : public krylov::linear_operator {
     return weights_total;
   }
 
+  index_t size() const override { return mu_ + kDim * sigma_ + l_; }
+
+ private:
+  Evaluator& evaluator(int src_level, int trg_level) const {
+    std::pair key(src_level, trg_level);
+
+    if (!evaluator_.contains(key)) {
+      evaluator_.emplace(
+          std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
+          std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), Eigen::all),
+                                grad_points_(grad_point_idcs_.at(trg_level), Eigen::all), bbox_,
+                                precision::kFast));
+      evaluator_.at(key).set_target_points(
+          points_(point_idcs_.at(trg_level), Eigen::all),
+          grad_points_(grad_point_idcs_.at(trg_level), Eigen::all));
+    }
+
+    return evaluator_.at(key);
+  }
+
   common::valuesd solve(int level, const common::valuesd& residuals) const {
     common::valuesd weights = common::valuesd::Zero(size());
 
@@ -319,26 +339,6 @@ class ras_preconditioner : public krylov::linear_operator {
       std::cout << std::format("Residual after level {}: {:f}", level, residuals.norm())
                 << std::endl;
     }
-  }
-
-  index_t size() const override { return mu_ + kDim * sigma_ + l_; }
-
- private:
-  Evaluator& evaluator(int src_level, int trg_level) const {
-    std::pair key(src_level, trg_level);
-
-    if (!evaluator_.contains(key)) {
-      evaluator_.emplace(
-          std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
-          std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), Eigen::all),
-                                grad_points_(grad_point_idcs_.at(trg_level), Eigen::all), bbox_,
-                                precision::kFast));
-      evaluator_.at(key).set_target_points(
-          points_(point_idcs_.at(trg_level), Eigen::all),
-          grad_points_(grad_point_idcs_.at(trg_level), Eigen::all));
-    }
-
-    return evaluator_.at(key);
   }
 
   const Model& model_;
