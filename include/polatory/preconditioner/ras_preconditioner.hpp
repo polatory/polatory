@@ -34,7 +34,7 @@ namespace polatory::preconditioner {
 template <class Model>
 class ras_preconditioner : public krylov::linear_operator {
   static constexpr bool kRecomputeAndClear = false;
-  static constexpr bool kReportResidual = true;
+  static constexpr bool kReportResidual = false;
   static constexpr double kCoarseRatio = 0.125;
   static constexpr index_t kNCoarsestPoints = 1024;
   static constexpr int kDim = Model::kDim;
@@ -193,26 +193,51 @@ class ras_preconditioner : public krylov::linear_operator {
     report_initial_residual(residuals);
 
     {
-      // Solve on level 0.
       common::valuesd weights = solve(0, residuals);
 
-      auto level = n_levels_;
-      // Update residuals on level `level` - 1.
-      if (level > 1) {
-        update_residuals(0, level - 1, weights, residuals);
-      }
+      update_residuals(0, n_levels_ - 1, weights, residuals);
 
       weights_total += weights;
 
       report_residual(0, v, weights_total);
     }
 
-    for (auto level = n_levels_ - 1; level >= 1; level--) {
+    for (auto level = 1; level < n_levels_ - 1; level++) {
       {
-        // Solve on level `level`.
         common::valuesd weights = solve(level, residuals);
 
-        // Evaluate residuals on level `level` - 1.
+        update_residuals(level, n_levels_ - 1, weights, residuals);
+
+        if (l_ > 0) {
+          // Orthogonalize weights against P.
+          auto n_cols = p_.cols();
+          for (index_t i = 0; i < n_cols; i++) {
+            auto dot = p_.col(i).dot(weights);
+            weights -= dot * p_.col(i);
+            residuals += dot * ap_.col(i);
+          }
+        }
+
+        weights_total += weights;
+
+        report_residual(level, v, weights_total);
+      }
+
+      {
+        common::valuesd weights = solve(0, residuals);
+
+        update_residuals(0, n_levels_ - 1, weights, residuals);
+
+        weights_total += weights;
+
+        report_residual(0, v, weights_total);
+      }
+    }
+
+    for (auto level = n_levels_ - 1; level >= 1; level--) {
+      {
+        common::valuesd weights = solve(level, residuals);
+
         update_residuals(level, level - 1, weights, residuals);
 
         if (l_ > 0) {
@@ -231,10 +256,8 @@ class ras_preconditioner : public krylov::linear_operator {
       }
 
       {
-        // Solve on level 0.
         common::valuesd weights = solve(0, residuals);
 
-        // Update residuals on level `level` - 1.
         if (level > 1) {
           update_residuals(0, level - 1, weights, residuals);
         }
