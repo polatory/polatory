@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -212,11 +213,8 @@ class ras_preconditioner : public krylov::linear_operator {
     }
 
     {
-      common::valuesd weights = common::valuesd::Zero(size());
-
       // Solve on level 0.
-      coarse_->solve(residuals);
-      coarse_->set_solution_to(weights);
+      common::valuesd weights = solve(0, residuals);
 
       auto level = n_levels_;
       // Update residuals on level `level` - 1.
@@ -226,32 +224,13 @@ class ras_preconditioner : public krylov::linear_operator {
 
       weights_total += weights;
 
-      if (kReportResidual) {
-        finest_evaluator_->set_weights(weights_total);
-        common::valuesd test_residuals =
-            v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
-        std::cout << "Residual after level 0: " << test_residuals.norm() << std::endl;
-      }
+      report_residual(0, v, weights_total);
     }
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       {
-        common::valuesd weights = common::valuesd::Zero(size());
-
         // Solve on level `level`.
-        auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
-#pragma omp parallel for schedule(guided)
-        for (index_t i = 0; i < n_grids; i++) {
-          auto& fine = fine_grids_.at(level).at(i);
-          if (kRecomputeAndClear) {
-            fine.setup(points_, grad_points_, lagrange_pt_);
-          }
-          fine.solve(residuals);
-          fine.set_solution_to(weights);
-          if (kRecomputeAndClear) {
-            fine.clear();
-          }
-        }
+        common::valuesd weights = solve(level, residuals);
 
         // Evaluate residuals on level `level` - 1.
         update_residuals(level, level - 1, weights, residuals);
@@ -268,21 +247,12 @@ class ras_preconditioner : public krylov::linear_operator {
 
         weights_total += weights;
 
-        if (kReportResidual) {
-          finest_evaluator_->set_weights(weights_total);
-          common::valuesd test_residuals =
-              v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
-          std::cout << "Residual after level " << level << ": " << test_residuals.norm()
-                    << std::endl;
-        }
+        report_residual(level, v, weights_total);
       }
 
       {
-        common::valuesd weights = common::valuesd::Zero(size());
-
         // Solve on level 0.
-        coarse_->solve(residuals);
-        coarse_->set_solution_to(weights);
+        common::valuesd weights = solve(0, residuals);
 
         // Update residuals on level `level` - 1.
         if (level > 1) {
@@ -291,16 +261,36 @@ class ras_preconditioner : public krylov::linear_operator {
 
         weights_total += weights;
 
-        if (kReportResidual) {
-          finest_evaluator_->set_weights(weights_total);
-          common::valuesd test_residuals =
-              v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
-          std::cout << "Residual after level 0: " << test_residuals.norm() << std::endl;
-        }
+        report_residual(0, v, weights_total);
       }
     }
 
     return weights_total;
+  }
+
+  common::valuesd solve(int level, const common::valuesd& residuals) const {
+    common::valuesd weights = common::valuesd::Zero(size());
+
+    if (level == 0) {
+      coarse_->solve(residuals);
+      coarse_->set_solution_to(weights);
+    } else {
+      auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
+#pragma omp parallel for schedule(guided)
+      for (index_t i = 0; i < n_grids; i++) {
+        auto& fine = fine_grids_.at(level).at(i);
+        if (kRecomputeAndClear) {
+          fine.setup(points_, grad_points_, lagrange_pt_);
+        }
+        fine.solve(residuals);
+        fine.set_solution_to(weights);
+        if (kRecomputeAndClear) {
+          fine.clear();
+        }
+      }
+    }
+
+    return weights;
   }
 
   void update_residuals(int src_level, int trg_level, const common::valuesd& weights,
@@ -335,6 +325,15 @@ class ras_preconditioner : public krylov::linear_operator {
     for (index_t i = 0; i < trg_sigma; i++) {
       residuals.segment(mu_ + kDim * trg_grad_indices.at(i), kDim) -=
           fit.segment(trg_mu + kDim * i, kDim);
+    }
+  }
+
+  void report_residual(int level, const common::valuesd& v,
+                       const common::valuesd& weights_total) const {
+    if (kReportResidual) {
+      finest_evaluator_->set_weights(weights_total);
+      common::valuesd residuals = v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
+      std::cout << std::format("Residual after level {}: {}", level, residuals.norm()) << std::endl;
     }
   }
 
