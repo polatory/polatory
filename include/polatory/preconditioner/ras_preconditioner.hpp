@@ -53,11 +53,13 @@ class ras_preconditioner : public krylov::linear_operator {
 
  public:
   ras_preconditioner(const Model& model, const Points& points, const Points& grad_points)
-      : l_(model.poly_basis_size()),
+      : model_(model),
+        l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()),
         points_(points),
         grad_points_(grad_points),
+        bbox_(Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_))),
         finest_evaluator_(kReportResidual ? std::make_unique<SymmetricEvaluator>(
                                                 model, points_, grad_points_, precision::kFast)
                                           : nullptr) {
@@ -158,22 +160,6 @@ class ras_preconditioner : public krylov::linear_operator {
 
     if (n_levels_ == 1) {
       return;
-    }
-
-    auto bbox = Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_));
-    for (auto level = 1; level < n_levels_; level++) {
-      add_evaluator(level, level - 1, model, points_(point_idcs_.at(level), Eigen::all),
-                    grad_points_(grad_point_idcs_.at(level), Eigen::all), bbox, precision::kFast);
-      evaluator(level, level - 1)
-          .set_target_points(points_(point_idcs_.at(level - 1), Eigen::all),
-                             grad_points_(grad_point_idcs_.at(level - 1), Eigen::all));
-    }
-
-    for (auto level = 1; level < n_levels_; level++) {
-      add_evaluator(0, level, model, points_(point_idcs_.at(0), Eigen::all),
-                    grad_points_(grad_point_idcs_.at(0), Eigen::all), bbox, precision::kFast);
-      evaluator(0, level).set_target_points(points_(point_idcs_.at(level), Eigen::all),
-                                            grad_points_(grad_point_idcs_.at(level), Eigen::all));
     }
 
     if (l_ > 0) {
@@ -338,21 +324,30 @@ class ras_preconditioner : public krylov::linear_operator {
   index_t size() const override { return mu_ + kDim * sigma_ + l_; }
 
  private:
-  template <class... Args>
-  void add_evaluator(int from_level, int to_level, Args&&... args) {
-    evaluator_.emplace(std::piecewise_construct, std::forward_as_tuple(from_level, to_level),
-                       std::forward_as_tuple(std::forward<Args>(args)...));
+  Evaluator& evaluator(int src_level, int trg_level) const {
+    std::pair key(src_level, trg_level);
+
+    if (!evaluator_.contains(key)) {
+      evaluator_.emplace(
+          std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
+          std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), Eigen::all),
+                                grad_points_(grad_point_idcs_.at(trg_level), Eigen::all), bbox_,
+                                precision::kFast));
+      evaluator_.at(key).set_target_points(
+          points_(point_idcs_.at(trg_level), Eigen::all),
+          grad_points_(grad_point_idcs_.at(trg_level), Eigen::all));
+    }
+
+    return evaluator_.at(key);
   }
 
-  Evaluator& evaluator(int from_level, int to_level) const {
-    return evaluator_.at({from_level, to_level});
-  }
-
+  const Model& model_;
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;
   const Points points_;
   const Points grad_points_;
+  const Bbox bbox_;
   const std::unique_ptr<SymmetricEvaluator> finest_evaluator_;
 
   Eigen::MatrixXd lagrange_pt_;
