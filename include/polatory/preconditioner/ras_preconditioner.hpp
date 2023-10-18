@@ -162,12 +162,8 @@ class ras_preconditioner : public krylov::linear_operator {
 
     auto bbox = Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_));
     for (auto level = 1; level < n_levels_; level++) {
-      if (level == n_levels_ - 1) {
-        add_evaluator(level, level - 1, model, points_, grad_points_, bbox, precision::kFast);
-      } else {
-        add_evaluator(level, level - 1, model, points_(point_idcs_.at(level), Eigen::all),
-                      grad_points_(grad_point_idcs_.at(level), Eigen::all), bbox, precision::kFast);
-      }
+      add_evaluator(level, level - 1, model, points_(point_idcs_.at(level), Eigen::all),
+                    grad_points_(grad_point_idcs_.at(level), Eigen::all), bbox, precision::kFast);
       evaluator(level, level - 1)
           .set_target_points(points_(point_idcs_.at(level - 1), Eigen::all),
                              grad_points_(grad_point_idcs_.at(level - 1), Eigen::all));
@@ -201,16 +197,14 @@ class ras_preconditioner : public krylov::linear_operator {
     POLATORY_ASSERT(v.rows() == size());
 
     common::valuesd residuals = v.head(mu_ + kDim * sigma_);
-    common::valuesd weights_total = common::valuesd::Zero(size());
+
     if (n_levels_ == 1) {
-      coarse_->solve(residuals);
-      coarse_->set_solution_to(weights_total);
-      return weights_total;
+      return solve(0, residuals);
     }
 
-    if (kReportResidual) {
-      std::cout << "Initial residual: " << residuals.norm() << std::endl;
-    }
+    common::valuesd weights_total = common::valuesd::Zero(size());
+
+    report_initial_residual(residuals);
 
     {
       // Solve on level 0.
@@ -295,24 +289,21 @@ class ras_preconditioner : public krylov::linear_operator {
 
   void update_residuals(int src_level, int trg_level, const common::valuesd& weights,
                         common::valuesd& residuals) const {
-    if (src_level < n_levels_ - 1) {
-      const auto& src_indices = point_idcs_.at(src_level);
-      const auto& src_grad_indices = grad_point_idcs_.at(src_level);
-      auto src_mu = static_cast<index_t>(src_indices.size());
-      auto src_sigma = static_cast<index_t>(src_grad_indices.size());
-      common::valuesd src_weights(src_mu + kDim * src_sigma + l_);
-      for (index_t i = 0; i < src_mu; i++) {
-        src_weights(i) = weights(src_indices.at(i));
-      }
-      for (index_t i = 0; i < src_sigma; i++) {
-        src_weights.segment(src_mu + kDim * i, kDim) =
-            weights.segment(mu_ + kDim * src_grad_indices.at(i), kDim);
-      }
-      src_weights.tail(l_) = weights.tail(l_);
-      evaluator(src_level, trg_level).set_weights(src_weights);
-    } else {
-      evaluator(src_level, trg_level).set_weights(weights);
+    const auto& src_indices = point_idcs_.at(src_level);
+    const auto& src_grad_indices = grad_point_idcs_.at(src_level);
+    auto src_mu = static_cast<index_t>(src_indices.size());
+    auto src_sigma = static_cast<index_t>(src_grad_indices.size());
+    common::valuesd src_weights(src_mu + kDim * src_sigma + l_);
+    for (index_t i = 0; i < src_mu; i++) {
+      src_weights(i) = weights(src_indices.at(i));
     }
+    for (index_t i = 0; i < src_sigma; i++) {
+      src_weights.segment(src_mu + kDim * i, kDim) =
+          weights.segment(mu_ + kDim * src_grad_indices.at(i), kDim);
+    }
+    src_weights.tail(l_) = weights.tail(l_);
+    evaluator(src_level, trg_level).set_weights(src_weights);
+
     auto fit = evaluator(src_level, trg_level).evaluate();
 
     const auto& trg_indices = point_idcs_.at(trg_level);
@@ -328,12 +319,19 @@ class ras_preconditioner : public krylov::linear_operator {
     }
   }
 
+  void report_initial_residual(const common::valuesd& residuals) const {
+    if (kReportResidual) {
+      std::cout << std::format("Initial residual: {:f}", residuals.norm()) << std::endl;
+    }
+  }
+
   void report_residual(int level, const common::valuesd& v,
                        const common::valuesd& weights_total) const {
     if (kReportResidual) {
       finest_evaluator_->set_weights(weights_total);
       common::valuesd residuals = v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
-      std::cout << std::format("Residual after level {}: {}", level, residuals.norm()) << std::endl;
+      std::cout << std::format("Residual after level {}: {:f}", level, residuals.norm())
+                << std::endl;
     }
   }
 
