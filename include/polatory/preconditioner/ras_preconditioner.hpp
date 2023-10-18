@@ -33,7 +33,7 @@ namespace polatory::preconditioner {
 
 template <class Model>
 class ras_preconditioner : public krylov::linear_operator {
-  static constexpr bool kRecomputeAndClear = false;
+  static constexpr bool kRecomputeAndClear = true;
   static constexpr bool kReportResidual = false;
   static constexpr double kCoarseRatio = 0.125;
   static constexpr index_t kNCoarsestPoints = 1024;
@@ -281,7 +281,7 @@ class ras_preconditioner : public krylov::linear_operator {
       evaluator_.emplace(
           std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
           std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), Eigen::all),
-                                grad_points_(grad_point_idcs_.at(trg_level), Eigen::all), bbox_,
+                                grad_points_(grad_point_idcs_.at(src_level), Eigen::all), bbox_,
                                 precision::kFast));
       evaluator_.at(key).set_target_points(
           points_(point_idcs_.at(trg_level), Eigen::all),
