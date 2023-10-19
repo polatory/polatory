@@ -38,28 +38,22 @@ class domain {
                      [](const auto& a, const auto& b) { return a.first < b.first; });
 
     auto n_poly_points = static_cast<index_t>(poly_point_idcs.size());
-    std::vector<index_t> new_point_indices(poly_point_idcs);
-    std::vector<bool> new_inner_point(n_poly_points);
+    point_indices.insert(point_indices.begin(), poly_point_idcs.begin(), poly_point_idcs.end());
+    inner_point.insert(inner_point.begin(), n_poly_points, false);
 
     for (index_t i = 0; i < n_poly_points; i++) {
-      auto idx = poly_point_idcs.at(i);
-      auto it = std::lower_bound(point_indices.begin(), point_indices.end(), idx);
+      auto idx = point_indices.at(i);
+      auto it = std::lower_bound(point_indices.begin() + n_poly_points, point_indices.end(), idx);
       if (it == point_indices.end() || *it != idx) {
         continue;
       }
 
       auto it_inner = inner_point.begin() + std::distance(point_indices.begin(), it);
-      new_inner_point.at(i) = *it_inner;
+      inner_point.at(i) = *it_inner;
 
       point_indices.erase(it);
       inner_point.erase(it_inner);
     }
-
-    new_point_indices.insert(new_point_indices.end(), point_indices.begin(), point_indices.end());
-    new_inner_point.insert(new_inner_point.end(), inner_point.begin(), inner_point.end());
-
-    point_indices = new_point_indices;
-    inner_point = new_inner_point;
   }
 
   Bbox bbox_;
