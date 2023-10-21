@@ -19,7 +19,7 @@ namespace polatory::preconditioner {
 template <int Dim>
 class domain_divider {
   static constexpr double kOverlapQuota = 0.5;
-  static constexpr index_t kMaxLeafSize = 256;
+  static constexpr index_t kMaxLeafSize = 384;
 
   using Bbox = geometry::bboxNd<Dim>;
   using Points = geometry::pointsNd<Dim>;
@@ -40,8 +40,6 @@ class domain_divider {
 
     root.inner_point = std::vector<bool>(point_indices.size(), true);
     root.inner_grad_point = std::vector<bool>(grad_point_indices.size(), true);
-
-    root.bbox_ = domain_bbox(root);
 
     domains_.push_back(std::move(root));
 
@@ -112,8 +110,9 @@ class domain_divider {
       mixed_points.emplace_back(d.grad_point_indices.at(i), d.inner_grad_point.at(i), true);
     }
 
+    auto bbox = domain_bbox(d);
     auto split_axis = index_t{0};
-    d.bbox_.width().maxCoeff(&split_axis);
+    bbox.width().maxCoeff(&split_axis);
 
     // TODO(mizuno): Sort all points along each axis and cache the result as a permutation.
     std::sort(mixed_points.begin(), mixed_points.end(),
@@ -162,9 +161,6 @@ class domain_divider {
         right.inner_point.push_back(inner);
       }
     }
-
-    left.bbox_ = domain_bbox(left);
-    right.bbox_ = domain_bbox(right);
 
     domains_.push_back(std::move(left));
     domains_.push_back(std::move(right));

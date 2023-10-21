@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <iterator>
 #include <polatory/common/zip_sort.hpp>
-#include <polatory/geometry/bbox3d.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
@@ -15,8 +14,6 @@ class domain_divider;
 
 template <int Dim>
 class domain {
-  using Bbox = geometry::bboxNd<Dim>;
-
  public:
   std::vector<index_t> point_indices;
   std::vector<index_t> grad_point_indices;
@@ -55,8 +52,6 @@ class domain {
       inner_point.erase(it_inner);
     }
   }
-
-  Bbox bbox_;
 };
 
 }  // namespace polatory::preconditioner
