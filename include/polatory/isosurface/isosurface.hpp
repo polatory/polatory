@@ -19,7 +19,7 @@ class isosurface {
 
     rmt_lattice_.add_all_nodes(field_fn, isovalue);
 
-    return generate_common();
+    return generate_common(field_fn);
   }
 
   surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn,
@@ -31,11 +31,11 @@ class isosurface {
     }
     rmt_lattice_.add_nodes_by_tracking(field_fn, isovalue);
 
-    return generate_common();
+    return generate_common(field_fn);
   }
 
  private:
-  surface generate_common() {
+  surface generate_common(field_function& field_fn) {
     rmt_lattice_.cluster_vertices();
 
     rmt_surface rmt_surf(rmt_lattice_);
@@ -70,6 +70,16 @@ class isosurface {
     }
 
     surface surf(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
+
+    if (surf.faces().rows() == 0) {
+      auto bbox = rmt_lattice_.bbox();
+      geometry::points3d points(1, 3);
+      points << (bbox.min() + bbox.max()) / 2.0;
+      auto value = field_fn(points)(0);
+      if (value < 0.0) {
+        surf = surface(entire_tag{});
+      }
+    }
 
     rmt_lattice_.clear();
 

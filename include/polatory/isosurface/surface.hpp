@@ -10,6 +10,8 @@
 
 namespace polatory::isosurface {
 
+struct entire_tag {};
+
 class surface {
  public:
   using vertices_type = geometry::points3d;
@@ -44,10 +46,20 @@ class surface {
     faces_.conservativeResize(n_faces, 3);
   }
 
+  surface(entire_tag) : entire_(true) {}
+
   void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);
     if (!ofs) {
       throw std::runtime_error("Failed to open file '" + filename + "'.");
+    }
+
+    if (faces_.rows() == 0) {
+      if (entire_) {
+        ofs << "# entire\n";
+      } else {
+        ofs << "# empty\n";
+      }
     }
 
     for (auto v : vertices_.rowwise()) {
@@ -67,6 +79,7 @@ class surface {
  private:
   vertices_type vertices_;
   faces_type faces_;
+  bool entire_{};
 };
 
 }  // namespace polatory::isosurface
