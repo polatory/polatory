@@ -15,8 +15,13 @@ endif()
 add_test(
     NAME ${TARGET}
     COMMAND $<TARGET_FILE:${TARGET}>
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=coarse_grid.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=domain_divider.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=lagrange_basis.hoge
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_evaluator.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_fitter.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_incremental_fitter.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_inequality_fitter.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_operator.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_symmetric_evaluator.*
