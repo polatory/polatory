@@ -9,17 +9,23 @@ namespace polatory::polynomial {
 
 template <class Basis>
 class polynomial_evaluator {
+  static constexpr int kDim = Basis::kDim;
+  using Points = geometry::pointsNd<kDim>;
+
  public:
-  explicit polynomial_evaluator(int dimension, int degree)
-      : basis_(dimension, degree), weights_(common::valuesd::Zero(basis_.basis_size())) {}
+  explicit polynomial_evaluator(int degree)
+      : basis_(degree), weights_(common::valuesd::Zero(basis_.basis_size())) {}
 
   common::valuesd evaluate() const {
-    Eigen::MatrixXd pt = basis_.evaluate(points_);
+    Eigen::MatrixXd pt = basis_.evaluate(points_, grad_points_);
 
     return pt.transpose() * weights_;
   }
 
-  void set_field_points(const geometry::points3d& points) { points_ = points; }
+  void set_target_points(const Points& points, const Points& grad_points) {
+    points_ = points;
+    grad_points_ = grad_points;
+  }
 
   void set_weights(const common::valuesd& weights) {
     POLATORY_ASSERT(weights.rows() == basis_.basis_size());
@@ -30,7 +36,8 @@ class polynomial_evaluator {
  private:
   const Basis basis_;
 
-  geometry::points3d points_;
+  Points points_;
+  Points grad_points_;
   common::valuesd weights_;
 };
 

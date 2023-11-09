@@ -6,9 +6,16 @@
 
 namespace polatory::rbf {
 
-class covariance_function_base : public rbf_base {
+template <int Dim>
+class covariance_function_base : public rbf_base<Dim> {
+  using Base = rbf_base<Dim>;
+
+ protected:
+  using Matrix = Base::Matrix;
+  using Vector = Base::Vector;
+
  public:
-  using rbf_base::rbf_base;
+  using Base::Base;
 
   int cpd_order() const override { return 0; }
 

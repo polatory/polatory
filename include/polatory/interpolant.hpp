@@ -1,6 +1,6 @@
 #pragma once
 
-#include <algorithm>
+#include <format>
 #include <memory>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -18,99 +18,123 @@
 
 namespace polatory {
 
+template <class Model>
 class interpolant {
- public:
-  explicit interpolant(model model) : model_(std::move(model)) {}
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+  using Evaluator = interpolation::rbf_evaluator<Model>;
 
-  const geometry::points3d& centers() const {
-    if (!fitted_) {
-      throw std::runtime_error(kNotFittedErrorMessage);
-    }
+ public:
+  explicit interpolant(const Model& model) : model_(model) {}
+
+  const Points& centers() const {
+    throw_if_not_fitted();
 
     return centers_;
   }
 
-  common::valuesd evaluate(const geometry::points3d& points) {
-    if (!fitted_) {
-      throw std::runtime_error(kNotFittedErrorMessage);
-    }
+  const Points& grad_centers() const {
+    throw_if_not_fitted();
 
-    set_evaluation_bbox_impl(geometry::bbox3d::from_points(points));
+    return centers_;
+  }
+
+  common::valuesd evaluate(const Points& points) {
+    throw_if_not_fitted();
+
+    set_evaluation_bbox_impl(Bbox::from_points(points));
     return evaluate_impl(points);
   }
 
-  common::valuesd evaluate_impl(const geometry::points3d& points) const {
-    if (!fitted_) {
-      throw std::runtime_error(kNotFittedErrorMessage);
-    }
+  common::valuesd evaluate_impl(const Points& points) const {
+    throw_if_not_fitted();
 
     return evaluator_->evaluate(points);
   }
 
-  void fit(const geometry::points3d& points, const common::valuesd& values,
-           double absolute_tolerance, int max_iter = 32) {
-    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
-    if (points.rows() < min_n_points) {
-      throw std::invalid_argument("points.rows() must be greater than or equal to " +
-                                  std::to_string(min_n_points) + ".");
-    }
+  void fit(const Points& points, const common::valuesd& values, double absolute_tolerance,
+           int max_iter = 32) {
+    fit(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance, max_iter);
+  }
 
-    if (values.rows() != points.rows()) {
-      throw std::invalid_argument("values.rows() must be equal to points.rows().");
+  void fit(const Points& points, const Points& grad_points, const common::valuesd& values,
+           double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 32) {
+    check_num_points(points, grad_points);
+
+    auto n_rhs = points.rows() + kDim * grad_points.rows();
+    if (values.rows() != n_rhs) {
+      throw std::invalid_argument(std::format("values.rows() must be equal to {}.", n_rhs));
     }
 
     if (absolute_tolerance <= 0.0) {
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
     }
 
+    if (grad_absolute_tolerance <= 0.0) {
+      throw std::invalid_argument("grad_absolute_tolerance must be greater than 0.0.");
+    }
+
     clear();
 
-    interpolation::rbf_fitter fitter(model_, points);
-    weights_ = fitter.fit(values, absolute_tolerance, max_iter);
+    interpolation::rbf_fitter fitter(model_, points, grad_points);
+    weights_ = fitter.fit(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
     fitted_ = true;
     centers_ = points;
-    centers_bbox_ = geometry::bbox3d::from_points(centers_);
+    grad_centers_ = grad_points;
+    bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_points));
   }
 
-  void fit_incrementally(const geometry::points3d& points, const common::valuesd& values,
+  void fit_incrementally(const Points& points, const common::valuesd& values,
                          double absolute_tolerance, int max_iter = 32) {
-    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
-    if (points.rows() < min_n_points) {
-      throw std::invalid_argument("points.rows() must be greater than or equal to " +
-                                  std::to_string(min_n_points) + ".");
-    }
+    fit_incrementally(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance,
+                      max_iter);
+  }
 
-    if (values.rows() != points.rows()) {
-      throw std::invalid_argument("values.rows() must be equal to points.rows().");
+  void fit_incrementally(const Points& points, const Points& grad_points,
+                         const common::valuesd& values, double absolute_tolerance,
+                         double grad_absolute_tolerance, int max_iter = 32) {
+    check_num_points(points, grad_points);
+
+    if (values.rows() != points.rows() + kDim * grad_points.rows()) {
+      throw std::invalid_argument(std::format("values.rows() must be equal to {}.",
+                                              points.rows() + kDim * grad_points.rows()));
     }
 
     if (absolute_tolerance <= 0.0) {
       throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
     }
 
+    if (grad_absolute_tolerance <= 0.0) {
+      throw std::invalid_argument("grad_absolute_tolerance must be greater than 0.0.");
+    }
+
     clear();
 
-    interpolation::rbf_incremental_fitter fitter(model_, points);
+    interpolation::rbf_incremental_fitter fitter(model_, points, grad_points);
     std::vector<index_t> center_indices;
-    std::tie(center_indices, weights_) = fitter.fit(values, absolute_tolerance, max_iter);
+    std::vector<index_t> grad_center_indices;
+    std::tie(center_indices, grad_center_indices, weights_) =
+        fitter.fit(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
-    centers_bbox_ = geometry::bbox3d::from_points(centers_);
+    grad_centers_ = grad_points(grad_center_indices, Eigen::all);
+    bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
-  void fit_inequality(const geometry::points3d& points, const common::valuesd& values,
+  void fit_inequality(const Points& points, const common::valuesd& values,
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
                       double absolute_tolerance, int max_iter = 32) {
     if (model_.nugget() > 0.0) {
       throw std::runtime_error("Non-zero nugget is not supported.");
     }
 
-    auto min_n_points = std::max(index_t{1}, model_.poly_basis_size());
+    auto min_n_points = model_.poly_basis_size();
     if (points.rows() < min_n_points) {
-      throw std::invalid_argument("points.rows() must be greater than or equal to " +
-                                  std::to_string(min_n_points) + ".");
+      throw std::invalid_argument(
+          std::format("points.rows() must be greater than or equal to {}.", min_n_points));
     }
 
     if (values.rows() != points.rows()) {
@@ -138,46 +162,65 @@ class interpolant {
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
-    centers_bbox_ = geometry::bbox3d::from_points(centers_);
+    bbox_ = Bbox::from_points(centers_);
   }
 
-  void set_evaluation_bbox_impl(const geometry::bbox3d& bbox) {
-    if (!fitted_) {
-      throw std::runtime_error(kNotFittedErrorMessage);
-    }
+  void set_evaluation_bbox_impl(const Bbox& bbox) {
+    throw_if_not_fitted();
 
-    auto union_bbox = bbox.convex_hull(centers_bbox_);
+    auto union_bbox = bbox.convex_hull(bbox_);
 
-    evaluator_ = std::make_unique<interpolation::rbf_evaluator<>>(model_, centers_, union_bbox);
+    evaluator_ = std::make_unique<Evaluator>(model_, centers_, grad_centers_, union_bbox,
+                                             precision::kPrecise);
     evaluator_->set_weights(weights_);
   }
 
   const common::valuesd& weights() const {
-    if (!fitted_) {
-      throw std::runtime_error(kNotFittedErrorMessage);
-    }
+    throw_if_not_fitted();
 
     return weights_;
   }
 
  private:
+  void check_num_points(const Points& points, const Points& grad_points) const {
+    auto l = model_.poly_basis_size();
+    auto mu = points.rows();
+    auto sigma = grad_points.rows();
+
+    if (model_.poly_degree() == 1 && mu == 1 && sigma >= 1) {
+      // The special case.
+      return;
+    }
+
+    if (mu < l) {
+      throw std::invalid_argument(
+          std::format("points.rows() must be greater than or equal to {}.", l));
+    }
+  }
+
   void clear() {
     fitted_ = false;
-    centers_ = geometry::points3d();
-    centers_bbox_ = geometry::bbox3d();
+    centers_ = Points();
+    grad_centers_ = Points();
+    bbox_ = Bbox();
     weights_ = common::valuesd();
   }
 
-  static constexpr const char* kNotFittedErrorMessage = "The interpolant is not fitted yet.";
+  void throw_if_not_fitted() const {
+    if (!fitted_) {
+      throw std::runtime_error("The interpolant is not fitted yet.");
+    }
+  }
 
-  const model model_;
+  const Model model_;
 
   bool fitted_{};
-  geometry::points3d centers_;
-  geometry::bbox3d centers_bbox_;
+  Points centers_;
+  Points grad_centers_;
+  Bbox bbox_;
   common::valuesd weights_;
 
-  std::unique_ptr<interpolation::rbf_evaluator<>> evaluator_;
+  std::unique_ptr<Evaluator> evaluator_;
 };
 
 }  // namespace polatory

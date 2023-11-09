@@ -15,9 +15,8 @@ struct options {
   double min_distance;
   std::string rbf_name;
   std::vector<double> rbf_params;
-  polatory::geometry::linear_transformation3d aniso;
+  polatory::geometry::matrix3d aniso;
   double nugget;
-  int poly_dimension;
   int poly_degree;
   double absolute_tolerance;
   int max_iter;
@@ -41,14 +40,12 @@ inline options parse_options(int argc, const char* argv[]) {
       ("aniso",
        po::value(&opts.aniso)
            ->multitoken()
-           ->default_value(polatory::geometry::linear_transformation3d::Identity(),
+           ->default_value(polatory::geometry::matrix3d::Identity(),
                            "1. 0. 0. 0. 1. 0. 0. 0. 1.")
            ->value_name("A11 A12 A13 A21 A22 A23 A31 A32 A33"),                         //
        "Elements of the anisotropy matrix")                                             //
       ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")->value_name("VAL"),  //
        "Nugget of the model")                                                           //
-      ("dim", po::value(&opts.poly_dimension)->default_value(3)->value_name("1|2|3"),   //
-       "Dimension of the drift polynomial")                                             //
       ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),   //
        "Degree of the drift polynomial")                                                //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),       //

@@ -10,8 +10,6 @@ target_link_libraries(${TARGET} PRIVATE
     polatory
 )
 
-polatory_enable_ipo(${TARGET})
-
 if(MSVC)
     polatory_target_contents(${TARGET} ${POLATORY_DLLS})
 endif()

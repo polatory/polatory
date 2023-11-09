@@ -58,7 +58,7 @@ class preconditioner : public linear_operator {
 
 class krylov_test : public ::testing::Test {
  protected:
-  static constexpr index_t n = index_t{100};
+  static constexpr index_t n = 100;
 
   std::unique_ptr<random_symmetric> op;
   std::unique_ptr<preconditioner> pc;

@@ -1,61 +1,85 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/interpolation/rbf_direct_evaluator.hpp>
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/geometry/sphere3d.hpp>
+#include <polatory/interpolation/rbf_direct_operator.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/random_points.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/rbf/inverse_multiquadric.hpp>
 #include <polatory/types.hpp>
 
-#include "../random_anisotropy.hpp"
+#include "../utility.hpp"
 
 using polatory::index_t;
 using polatory::model;
+using polatory::precision;
 using polatory::common::valuesd;
+using polatory::geometry::bbox3d;
+using polatory::geometry::point3d;
 using polatory::geometry::sphere3d;
-using polatory::interpolation::rbf_direct_evaluator;
+using polatory::interpolation::rbf_direct_operator;
 using polatory::interpolation::rbf_operator;
 using polatory::point_cloud::random_points;
-using polatory::rbf::cov_exponential;
+using polatory::rbf::inverse_multiquadric1;
 
 namespace {
 
-void test_poly_degree(int poly_degree, index_t n_points) {
-  auto absolute_tolerance = 1e-6;
+void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points) {
+  constexpr int kDim = 3;
+  using Rbf = inverse_multiquadric1<kDim>;
+  using Model = model<Rbf>;
 
-  cov_exponential rbf({1.0, 0.2});
-  rbf.set_anisotropy(random_anisotropy());
+  index_t n_points = n_initial_points;
+  index_t n_grad_points = n_initial_grad_points;
 
-  model model(rbf, 3, poly_degree);
+  auto rel_tolerance = 1e-10;
+
+  Rbf rbf({1.0, 0.01});
+  rbf.set_anisotropy(random_anisotropy<kDim>());
+
+  Model model(rbf, poly_degree);
   model.set_nugget(0.01);
 
-  auto points = random_points(sphere3d(), n_points);
+  bbox3d bbox{-point3d::Ones(), point3d::Ones()};
+  rbf_operator<Model> op(model, bbox, precision::kPrecise);
 
-  valuesd weights = valuesd::Random(n_points + model.poly_basis_size());
+  for (auto i = 0; i < 4; i++) {
+    auto points = random_points(sphere3d(), n_points);
+    auto grad_points = random_points(sphere3d(), n_grad_points);
 
-  rbf_direct_evaluator direct_eval(model, points);
-  direct_eval.set_weights(weights);
-  direct_eval.set_field_points(points);
+    valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
-  rbf_operator<> op(model, points);
+    rbf_direct_operator<Model> direct_op(model, points, grad_points);
+    op.set_points(points, grad_points);
 
-  valuesd direct_op_weights = direct_eval.evaluate() + weights.head(n_points) * model.nugget();
-  valuesd op_weights = op(weights);
+    valuesd direct_op_weights = direct_op(weights);
+    valuesd op_weights = op(weights);
 
-  EXPECT_EQ(n_points + model.poly_basis_size(), op_weights.rows());
+    EXPECT_EQ(n_points + kDim * n_grad_points + model.poly_basis_size(), direct_op_weights.rows());
+    EXPECT_EQ(n_points + kDim * n_grad_points + model.poly_basis_size(), op_weights.rows());
 
-  auto max_residual = (op_weights.head(n_points) - direct_op_weights).lpNorm<Eigen::Infinity>();
-  EXPECT_LT(max_residual, absolute_tolerance);
+    EXPECT_LT(relative_error(op_weights.head(n_points + kDim * n_grad_points),
+                             direct_op_weights.head(n_points + kDim * n_grad_points)),
+              rel_tolerance);
 
-  // TODO(mizuno): Test the polynomial part.
+    EXPECT_EQ(direct_op_weights.tail(model.poly_basis_size()),
+              op_weights.tail(model.poly_basis_size()));
+
+    n_points *= 2;
+    n_grad_points *= 2;
+  }
 }
 
 }  // namespace
 
 TEST(rbf_operator, trivial) {
-  test_poly_degree(-1, 1024);
-  test_poly_degree(0, 1024);
-  test_poly_degree(1, 1024);
-  test_poly_degree(2, 1024);
+  test(-1, 1024, 0);
+  test(-1, 0, 256);
+
+  for (auto deg = -1; deg <= 2; deg++) {
+    test(deg, 1024, 256);
+  }
 }

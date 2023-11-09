@@ -12,14 +12,14 @@
 namespace Eigen {
 
 inline void validate(boost::any& v, const std::vector<std::string>& values,
-                     polatory::geometry::linear_transformation3d*, int) {
+                     polatory::geometry::matrix3d*, int) {
   namespace po = boost::program_options;
 
   if (values.size() != 9) {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  polatory::geometry::linear_transformation3d aniso;
+  polatory::geometry::matrix3d aniso;
   aniso << boost::lexical_cast<double>(values[0]), boost::lexical_cast<double>(values[1]),
       boost::lexical_cast<double>(values[2]), boost::lexical_cast<double>(values[3]),
       boost::lexical_cast<double>(values[4]), boost::lexical_cast<double>(values[5]),
@@ -31,8 +31,7 @@ inline void validate(boost::any& v, const std::vector<std::string>& values,
 
 }  // namespace Eigen
 
-namespace polatory {
-namespace geometry {
+namespace polatory::geometry {
 
 inline void validate(boost::any& v, const std::vector<std::string>& values, bbox3d*, int) {
   namespace po = boost::program_options;
@@ -47,45 +46,7 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
               boost::lexical_cast<double>(values[5])});
 }
 
-}  // namespace geometry
-}  // namespace polatory
-
-inline std::unique_ptr<polatory::rbf::rbf_base> make_rbf(const std::string& name,
-                                                         const std::vector<double>& params) {
-  if (name == "bh2") {
-    return std::make_unique<polatory::rbf::biharmonic2d>(params);
-  }
-
-  if (name == "bh3") {
-    return std::make_unique<polatory::rbf::biharmonic3d>(params);
-  }
-
-  if (name == "mq1") {
-    return std::make_unique<polatory::rbf::multiquadric1>(params);
-  }
-
-  if (name == "exp") {
-    return std::make_unique<polatory::rbf::cov_exponential>(params);
-  }
-
-  if (name == "sp3") {
-    return std::make_unique<polatory::rbf::cov_spheroidal3>(params);
-  }
-
-  if (name == "sp5") {
-    return std::make_unique<polatory::rbf::cov_spheroidal5>(params);
-  }
-
-  if (name == "sp7") {
-    return std::make_unique<polatory::rbf::cov_spheroidal7>(params);
-  }
-
-  if (name == "sp9") {
-    return std::make_unique<polatory::rbf::cov_spheroidal9>(params);
-  }
-
-  throw std::invalid_argument("Unknown RBF name: " + name);
-}
+}  // namespace polatory::geometry
 
 extern const char* const cov_list;
 extern const char* const rbf_cov_list;

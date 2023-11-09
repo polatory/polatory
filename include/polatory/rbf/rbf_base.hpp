@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <polatory/geometry/point3d.hpp>
 #include <stdexcept>
 #include <string>
@@ -8,45 +7,47 @@
 
 namespace polatory::rbf {
 
+template <int Dim>
 class rbf_base {
  protected:
-  using matrix3d = geometry::matrix3d;
-  using vector3d = geometry::vector3d;
+  using Matrix = geometry::matrixNd<Dim>;
+  using Vector = geometry::vectorNd<Dim>;
 
  public:
+  static constexpr int kDim = Dim;
+
   virtual ~rbf_base() = default;
 
-  rbf_base(rbf_base&&) = delete;
-  rbf_base& operator=(const rbf_base&) = delete;
-  rbf_base& operator=(rbf_base&&) = delete;
+  rbf_base(const rbf_base&) = default;
+  rbf_base(rbf_base&&) = default;
+  rbf_base& operator=(const rbf_base&) = default;
+  rbf_base& operator=(rbf_base&&) = default;
 
-  const geometry::linear_transformation3d& anisotropy() const { return aniso_; }
-
-  virtual std::unique_ptr<rbf_base> clone() const = 0;
+  const Matrix& anisotropy() const { return aniso_; }
 
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;
 
-  double evaluate(const vector3d& diff) const {
-    auto a_diff = geometry::transform_vector(aniso_, diff);
+  double evaluate(const Vector& diff) const {
+    auto a_diff = geometry::transform_vector<Dim>(aniso_, diff);
     return evaluate_isotropic(a_diff);
   }
 
-  vector3d evaluate_gradient(const vector3d& diff) const {
-    auto a_diff = geometry::transform_vector(aniso_, diff);
+  Vector evaluate_gradient(const Vector& diff) const {
+    auto a_diff = geometry::transform_vector<Dim>(aniso_, diff);
     return evaluate_gradient_isotropic(a_diff) * aniso_;
   }
 
-  matrix3d evaluate_hessian(const vector3d& diff) const {
-    auto a_diff = geometry::transform_vector(aniso_, diff);
+  Matrix evaluate_hessian(const Vector& diff) const {
+    auto a_diff = geometry::transform_vector<Dim>(aniso_, diff);
     return aniso_.transpose() * evaluate_hessian_isotropic(a_diff) * aniso_;
   }
 
-  virtual double evaluate_isotropic(const vector3d& diff) const = 0;
+  virtual double evaluate_isotropic(const Vector& diff) const = 0;
 
-  virtual vector3d evaluate_gradient_isotropic(const vector3d& diff) const = 0;
+  virtual Vector evaluate_gradient_isotropic(const Vector& diff) const = 0;
 
-  virtual matrix3d evaluate_hessian_isotropic(const vector3d& diff) const = 0;
+  virtual Matrix evaluate_hessian_isotropic(const Vector& diff) const = 0;
 
   virtual int num_parameters() const = 0;
 
@@ -56,7 +57,7 @@ class rbf_base {
 
   const std::vector<double>& parameters() const { return params_; }
 
-  void set_anisotropy(const geometry::linear_transformation3d& aniso) {
+  void set_anisotropy(const Matrix& aniso) {
     if (aniso.determinant() <= 0.0) {
       throw std::invalid_argument("aniso must have a positive determinant.");
     }
@@ -74,13 +75,11 @@ class rbf_base {
   }
 
  protected:
-  rbf_base() : aniso_(geometry::linear_transformation3d::Identity()) {}
-
-  rbf_base(const rbf_base&) = default;
+  rbf_base() : aniso_(Matrix::Identity()) {}
 
  private:
   std::vector<double> params_;
-  geometry::linear_transformation3d aniso_;
+  Matrix aniso_;
 };
 
 }  // namespace polatory::rbf

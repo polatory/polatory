@@ -3,39 +3,54 @@
 #include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
+#include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
-#include <polatory/fmm/fmm_tree_height.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::interpolation {
 
-template <int Order = 10>
+template <class Model>
 class rbf_symmetric_evaluator {
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<polynomial::monomial_basis>;
+  static constexpr int kDim = Model::kDim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
 
  public:
-  rbf_symmetric_evaluator(const model& model, const geometry::points3d& points)
-      : n_points_(points.rows()), n_poly_basis_(model.poly_basis_size()) {
-    auto bbox = geometry::bbox3d::from_points(points);
-    a_ = std::make_unique<fmm::fmm_symmetric_evaluator<Order>>(
-        model, fmm::fmm_tree_height(n_points_), bbox);
-    a_->set_points(points);
+  rbf_symmetric_evaluator(const Model& model, const Points& points, const Points& grad_points,
+                          precision prec)
+      : rbf_symmetric_evaluator(
+            model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)), prec) {
+    set_points(points, grad_points);
+  }
 
-    if (n_poly_basis_ > 0) {
-      p_ = std::make_unique<PolynomialEvaluator>(model.poly_dimension(), model.poly_degree());
-      p_->set_field_points(points);
+  rbf_symmetric_evaluator(const Model& model, const Bbox& bbox, precision prec)
+      : l_(model.poly_basis_size()),
+        a_(model, bbox, prec),
+        f_(model, bbox, prec),
+        ft_(model, bbox, prec),
+        h_(model, bbox, prec) {
+    if (l_ > 0) {
+      p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
   }
 
   common::valuesd evaluate() const {
-    auto y = a_->evaluate();
+    common::valuesd y = common::valuesd::Zero(mu_ + kDim * sigma_);
 
-    if (n_poly_basis_ > 0) {
+    y.head(mu_) += a_.evaluate();
+    y.head(mu_) += f_.evaluate();
+    y.tail(kDim * sigma_) += ft_.evaluate();
+    y.tail(kDim * sigma_) += h_.evaluate();
+
+    if (l_ > 0) {
       // Add polynomial terms.
       y += p_->evaluate();
     }
@@ -43,22 +58,45 @@ class rbf_symmetric_evaluator {
     return y;
   }
 
+  void set_points(const Points& points, const Points& grad_points) {
+    mu_ = points.rows();
+    sigma_ = grad_points.rows();
+
+    a_.set_points(points);
+    f_.set_source_points(grad_points);
+    f_.set_target_points(points);
+    ft_.set_source_points(points);
+    ft_.set_target_points(grad_points);
+    h_.set_points(grad_points);
+
+    if (l_ > 0) {
+      p_->set_target_points(points, grad_points);
+    }
+  }
+
   template <class Derived>
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
-    POLATORY_ASSERT(weights.rows() == n_points_ + n_poly_basis_);
+    POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
-    a_->set_weights(weights.head(n_points_));
+    a_.set_weights(weights.head(mu_));
+    f_.set_weights(weights.segment(mu_, kDim * sigma_));
+    ft_.set_weights(weights.head(mu_));
+    h_.set_weights(weights.segment(mu_, kDim * sigma_));
 
-    if (n_poly_basis_ > 0) {
-      p_->set_weights(weights.tail(n_poly_basis_));
+    if (l_ > 0) {
+      p_->set_weights(weights.tail(l_));
     }
   }
 
  private:
-  const index_t n_points_;
-  const index_t n_poly_basis_;
+  const index_t l_;
+  index_t mu_{};
+  index_t sigma_{};
 
-  std::unique_ptr<fmm::fmm_symmetric_evaluator<Order>> a_;
+  fmm::fmm_symmetric_evaluator<Model> a_;
+  fmm::fmm_gradient_evaluator<Model> f_;
+  fmm::fmm_gradient_transpose_evaluator<Model> ft_;
+  fmm::fmm_hessian_symmetric_evaluator<Model> h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 

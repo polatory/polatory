@@ -2,33 +2,40 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <format>
 #include <numeric>
-#include <polatory/point_cloud/random_points.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
 using polatory::index_t;
-using polatory::geometry::sphere3d;
-using polatory::point_cloud::random_points;
+using polatory::geometry::pointsNd;
 using polatory::preconditioner::domain_divider;
 
-TEST(domain_divider, trivial) {
+namespace {
+
+template <int Dim>
+void test() {
+  std::cout << std::format("dim: {}", Dim) << std::endl;
+
+  using Points = pointsNd<Dim>;
+
   auto n_points = index_t{10000};
   auto n_grad_points = index_t{10000};
   auto n_poly_points = index_t{10};
 
-  auto points = random_points(sphere3d(), n_points);
+  auto points = Points(n_points, Dim);
   std::vector<index_t> point_idcs(n_points);
   std::iota(point_idcs.begin(), point_idcs.end(), 0);
 
-  auto grad_points = random_points(sphere3d(), n_grad_points);
+  auto grad_points = Points(n_grad_points, Dim);
   std::vector<index_t> grad_point_idcs(n_grad_points);
   std::iota(grad_point_idcs.begin(), grad_point_idcs.end(), 0);
 
   std::vector<index_t> poly_point_idcs(point_idcs.begin(), point_idcs.begin() + n_poly_points);
 
-  domain_divider divider(points, grad_points, point_idcs, grad_point_idcs, poly_point_idcs);
+  domain_divider<Dim> divider(points, grad_points, point_idcs, grad_point_idcs, poly_point_idcs);
 
   std::vector<index_t> inner_points;
   std::vector<index_t> inner_grad_points;
@@ -80,6 +87,12 @@ TEST(domain_divider, trivial) {
   for (index_t i = 0; i < n_poly_points; i++) {
     EXPECT_EQ(poly_point_idcs.at(i), coarse_point_idcs.at(i));
   }
+}
 
-  // TODO(mizuno): Check that at least one coarse point is chosen from each domain.
+}  // namespace
+
+TEST(domain_divider, trivial) {
+  test<1>();
+  test<2>();
+  test<3>();
 }

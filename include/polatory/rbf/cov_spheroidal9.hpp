@@ -7,33 +7,34 @@
 
 namespace polatory::rbf {
 
-class cov_spheroidal9 final : public covariance_function_base {
+template <int Dim>
+class cov_spheroidal9 final : public covariance_function_base<Dim> {
+  using Base = covariance_function_base<Dim>;
+  using Matrix = Base::Matrix;
+  using Vector = Base::Vector;
+
   static constexpr double kRho0 = 0.31622776601683794;
   static constexpr double kA = 1.4230249470757708;
   static constexpr double kB = 0.8445585690332554;
   static constexpr double kD = 7.601027121299299;
 
  public:
-  using covariance_function_base::covariance_function_base;
+  using Base::Base;
 
-  explicit cov_spheroidal9(const std::vector<double>& params) { set_parameters(params); }
+  explicit cov_spheroidal9(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  std::unique_ptr<rbf_base> clone() const override {
-    return std::make_unique<cov_spheroidal9>(*this);
-  }
-
-  double evaluate_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+  double evaluate_isotropic(const Vector& diff) const override {
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
     auto rho = r / range;
 
     return rho < kRho0 ? psill * (1.0 - kA * rho) : psill * kB * std::pow(1.0 + (rho * rho), -4.5);
   }
 
-  vector3d evaluate_gradient_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+  Vector evaluate_gradient_isotropic(const Vector& diff) const override {
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
     auto rho = r / range;
 
@@ -43,16 +44,16 @@ class cov_spheroidal9 final : public covariance_function_base {
     return coeff * diff;
   }
 
-  matrix3d evaluate_hessian_isotropic(const vector3d& diff) const override {
-    auto psill = parameters().at(0);
-    auto range = parameters().at(1);
+  Matrix evaluate_hessian_isotropic(const Vector& diff) const override {
+    auto psill = Base::parameters().at(0);
+    auto range = Base::parameters().at(1);
     auto r = diff.norm();
     auto rho = r / range;
 
     auto coeff =
         (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + (rho * rho), -5.5)) /
         (range * range);
-    return coeff * (matrix3d::Identity() -
+    return coeff * (Matrix::Identity() -
                     diff.transpose() * diff *
                         (rho < kRho0 ? 1.0 / (r * r) : 11.0 / (r * r + range * range)));
   }

@@ -3,20 +3,59 @@
 #include <Eigen/Core>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace polatory::point_cloud {
 
+template <int Dim>
 class distance_filter {
- public:
-  distance_filter(const geometry::points3d& points, double distance);
+  using Point = geometry::pointNd<Dim>;
+  using Points = geometry::pointsNd<Dim>;
 
-  distance_filter(const geometry::points3d& points, double distance,
-                  const std::vector<index_t>& indices);
+ public:
+  distance_filter(const Points& points, double distance)
+      : distance_filter(points, distance, trivial_indices(points.rows())) {}
+
+  distance_filter(const Points& points, double distance, const std::vector<index_t>& indices)
+      : n_points_(points.rows()) {
+    if (distance <= 0.0) {
+      throw std::invalid_argument("distance must be greater than 0.0.");
+    }
+
+    kdtree tree(points, true);
+
+    std::unordered_set<index_t> indices_to_remove;
+
+    std::vector<index_t> nn_indices;
+    std::vector<double> nn_distances;
+
+    for (auto i : indices) {
+      if (indices_to_remove.contains(i)) {
+        continue;
+      }
+
+      Point p = points.row(i);
+      tree.radius_search(p, distance, nn_indices, nn_distances);
+
+      for (auto j : nn_indices) {
+        if (j != i) {
+          indices_to_remove.insert(j);
+        }
+      }
+    }
+
+    for (auto i : indices) {
+      if (!indices_to_remove.contains(i)) {
+        filtered_indices_.push_back(i);
+      }
+    }
+  }
 
   template <class Derived>
   auto operator()(const Eigen::MatrixBase<Derived>& m) {

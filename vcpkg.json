@@ -13,17 +13,15 @@
     "ceres",
     "double-conversion",
     "eigen3",
+    {
+      "name": "fftw3",
+      "platform": "osx & arm64"
+    },
     "flann",
     "gtest",
     {
       "name": "intel-mkl",
       "platform": "(windows | linux | osx) & x64"
     }
-  ],
-  "features": {
-    "python": {
-      "description": "Build the Python binding",
-      "dependencies": ["pybind11"]
-    }
-  }
+  ]
 }

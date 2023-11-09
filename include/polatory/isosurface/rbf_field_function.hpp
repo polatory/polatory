@@ -8,9 +8,14 @@
 
 namespace polatory::isosurface {
 
+template <class Model>
 class rbf_field_function : public field_function {
+  static_assert(Model::kDim == 3, "Model must be three-dimensional.");
+
+  using Interpolant = interpolant<Model>;
+
  public:
-  explicit rbf_field_function(interpolant& interpolant) : interpolant_(interpolant) {}
+  explicit rbf_field_function(Interpolant& interpolant) : interpolant_(interpolant) {}
 
   common::valuesd operator()(const geometry::points3d& points) const override {
     return interpolant_.evaluate_impl(points);
@@ -21,7 +26,7 @@ class rbf_field_function : public field_function {
   }
 
  private:
-  interpolant& interpolant_;
+  Interpolant& interpolant_;
 };
 
 }  // namespace polatory::isosurface

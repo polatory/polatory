@@ -1,14 +1,11 @@
 add_executable(accuracy accuracy.cpp)
 target_link_libraries(accuracy PRIVATE polatory)
-polatory_enable_ipo(accuracy)
 
 add_executable(points points.cpp)
 target_link_libraries(points PRIVATE polatory)
-polatory_enable_ipo(points)
 
 add_executable(predict predict.cpp)
 target_link_libraries(predict PRIVATE polatory)
-polatory_enable_ipo(predict)
 
 if(MSVC)
     polatory_target_contents(predict ${POLATORY_DLLS})

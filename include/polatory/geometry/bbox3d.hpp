@@ -1,34 +1,43 @@
 #pragma once
 
+#include <limits>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory::geometry {
 
-class bbox3d {
+template <int Dim>
+class bboxNd {
+  using Point = pointNd<Dim>;
+  using Points = pointsNd<Dim>;
+  using Vector = vectorNd<Dim>;
+  using Matrix = matrixNd<Dim>;
+
  public:
-  bbox3d();
+  bboxNd()
+      : min_(Point::Constant(std::numeric_limits<double>::infinity())),
+        max_(Point::Constant(-std::numeric_limits<double>::infinity())) {}
 
-  bbox3d(const point3d& min, const point3d& max);
+  bboxNd(const Point& min, const Point& max) : min_(min), max_(max){};
 
-  bool operator==(const bbox3d& other) const = default;
+  bool operator==(const bboxNd& other) const = default;
 
-  point3d center() const;
+  Point center() const { return min_ + width() / 2.0; }
 
-  bool contains(const point3d& p) const;
+  bool contains(const Point& p) const {
+    return (p.array() >= min_.array()).all() && (p.array() <= max_.array()).all();
+  }
 
-  bbox3d convex_hull(const bbox3d& other) const;
+  bboxNd convex_hull(const bboxNd& other) const {
+    return {min_.cwiseMin(other.min_), max_.cwiseMax(other.max_)};
+  }
 
-  const point3d& max() const;
+  const Point& max() const { return max_; }
 
-  const point3d& min() const;
-
-  vector3d size() const;
-
-  bbox3d transform(const linear_transformation3d& t) const;
+  const Point& min() const { return min_; }
 
   template <class Derived>
-  static bbox3d from_points(const Eigen::MatrixBase<Derived>& points) {
+  static bboxNd from_points(const Eigen::MatrixBase<Derived>& points) {
     if (points.rows() == 0) {
       return {};
     }
@@ -36,9 +45,28 @@ class bbox3d {
     return {points.colwise().minCoeff(), points.colwise().maxCoeff()};
   }
 
+  bboxNd transform(const Matrix& t) const {
+    Points corners(1 << Dim, Dim);
+
+    for (auto i = 0; i < (1 << Dim); ++i) {
+      for (auto j = 0; j < Dim; ++j) {
+        corners(i, j) = (i & (1 << j)) ? max_(j) : min_(j);
+      }
+      corners.row(i) = transform_point<Dim>(t, corners.row(i));
+    }
+
+    return from_points(corners);
+  }
+
+  Vector width() const { return max_ - min_; }
+
  private:
-  point3d min_;
-  point3d max_;
+  Point min_;
+  Point max_;
 };
+
+using bbox1d = bboxNd<1>;
+using bbox2d = bboxNd<2>;
+using bbox3d = bboxNd<3>;
 
 }  // namespace polatory::geometry

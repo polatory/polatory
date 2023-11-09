@@ -13,17 +13,20 @@ namespace polatory::polynomial {
 
 // NOTE: If given points have a large offset from the origin,
 // construction can fail due to a large condition number.
+template <int Dim>
 class unisolvent_point_set {
   static constexpr int kMaxTrial = 32;
 
+  using Points = geometry::pointsNd<Dim>;
+
  public:
-  unisolvent_point_set(const geometry::vectors3d& points, int dimension, int degree) {
+  unisolvent_point_set(const Points& points, int degree) {
     if (degree < 0) {
       return;
     }
 
     auto n_points = points.rows();
-    auto n_poly_basis = polynomial_basis_base::basis_size(dimension, degree);
+    auto n_poly_basis = polynomial_basis_base<Dim>::basis_size(degree);
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -40,8 +43,8 @@ class unisolvent_point_set {
       }
 
       try {
-        lagrange_basis basis(dimension, degree,
-                             points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
+        lagrange_basis<Dim> basis(degree,
+                                  points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
         found = true;
       } catch (const std::domain_error&) {
         // No-op.

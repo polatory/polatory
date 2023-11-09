@@ -8,15 +8,24 @@
 
 namespace polatory::polynomial {
 
-class monomial_basis : public polynomial_basis_base {
+template <int Dim>
+class monomial_basis : public polynomial_basis_base<Dim> {
+  using Base = polynomial_basis_base<Dim>;
+  using Points = geometry::pointsNd<Dim>;
+
  public:
-  explicit monomial_basis(int dimension, int degree) : polynomial_basis_base(dimension, degree) {
+  using Base::basis_size;
+  using Base::degree;
+
+  static constexpr int kDim = Dim;
+
+  explicit monomial_basis(int degree) : Base(degree) {
     POLATORY_ASSERT(degree >= 0 && degree <= 2);
   }
 
   template <class DerivedPoints>
   Eigen::MatrixXd evaluate(const Eigen::MatrixBase<DerivedPoints>& points) const {
-    return evaluate(points, geometry::points3d(0, 3));
+    return evaluate(points, Points(0, Dim));
   }
 
   template <class DerivedPoints, class DerivedGradPoints>
@@ -25,9 +34,9 @@ class monomial_basis : public polynomial_basis_base {
     auto mu = points.rows();
     auto sigma = grad_points.rows();
 
-    Eigen::MatrixXd result(basis_size(), mu + dimension() * sigma);
+    Eigen::MatrixXd result(basis_size(), mu + Dim * sigma);
 
-    switch (dimension()) {
+    switch (kDim) {
       case 1:
         switch (degree()) {
           case 0:
