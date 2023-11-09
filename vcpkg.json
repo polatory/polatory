@@ -23,11 +23,5 @@
       "name": "intel-mkl",
       "platform": "(windows | linux | osx) & x64"
     }
-  ],
-  "features": {
-    "python": {
-      "description": "Build the Python binding",
-      "dependencies": ["pybind11"]
-    }
-  }
+  ]
 }

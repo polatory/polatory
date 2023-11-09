@@ -62,8 +62,3 @@ add_subdirectory(src)
 
 enable_testing()
 add_subdirectory(test)
-
-if(BUILD_PYTHON)
-    find_package(pybind11 CONFIG REQUIRED)
-    add_subdirectory(python)
-endif()

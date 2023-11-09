@@ -19,7 +19,7 @@ namespace polatory::preconditioner {
 template <int Dim>
 class domain_divider {
   static constexpr double kOverlapQuota = 0.5;
-  static constexpr index_t kMaxLeafSize = 384;
+  static constexpr index_t kMaxLeafSize = 1024;
 
   using Bbox = geometry::bboxNd<Dim>;
   using Points = geometry::pointsNd<Dim>;
