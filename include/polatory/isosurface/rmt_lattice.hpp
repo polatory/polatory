@@ -25,7 +25,7 @@ class rmt_lattice : public rmt_primitive_lattice {
 
   using base = rmt_primitive_lattice;
 
-  static constexpr double kZeroValueReplacement = 1e-10;
+  static constexpr double kZeroValueReplacement = 1e-100;
 
   rmt_node_list node_list_;
   std::vector<cell_vector> nodes_to_evaluate_;
