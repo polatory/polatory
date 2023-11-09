@@ -1,3 +1,5 @@
+**🚧 NOTE: The `main` branch is under development. Please check the [`v0`](https://github.com/polatory/polatory/tree/v0) branch for the moment. 🚧**
+
 <div align="center">
   <img src="https://polatory.github.io/images/polatory_logo.png" width="400" alt="Polatory">
 </div>
@@ -5,8 +7,6 @@
 ---
 
 **Polatory** is a fast and memory-efficient framework for RBF (radial basis function) interpolation.
-
-NOTE: This is a pre-release version. APIs are subject to change without notice.
 
 [Features](#features) • [Building](#building) • [Contribution](#contribution) • [Module Index](#module-index) • [References](#references)
 
