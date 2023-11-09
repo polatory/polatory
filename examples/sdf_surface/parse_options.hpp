@@ -52,22 +52,23 @@ inline options parse_options(int argc, const char* argv[]) {
            ->multitoken()
            ->default_value(polatory::geometry::matrix3d::Identity(),
                            "1. 0. 0. 0. 1. 0. 0. 0. 1.")
-           ->value_name("A11 A12 A13 A21 A22 A23 A31 A32 A33"),                              //
-       "Elements of the anisotropy matrix")                                                  //
-      ("nugget", po::value(&opts.nugget)->default_value(0, "0.")->value_name("VAL"),         //
-       "Nugget of the model")                                                                //
-      ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),        //
-       "Degree of the drift polynomial")                                                     //
-      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),            //
-       "Absolute tolerance of the fitting")                                                  //
-      ("grad-tol", po::value(&opts.grad_absolute_tolerance)->required()->value_name("VAL"),  //
-       "Gradient data absolute tolerance of the fitting")                                    //
-      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),            //
-       "Maximum number of iterations")                                                       //
-      ("ineq", po::bool_switch(&opts.ineq),                                                  //
-       "Use inequality constraints")                                                         //
-      ("reduce", po::bool_switch(&opts.reduce),                                              //
-       "Try to reduce the number of RBF centers (incremental fitting)")                      //
+           ->value_name("A11 A12 A13 A21 A22 A23 A31 A32 A33"),                         //
+       "Elements of the anisotropy matrix")                                             //
+      ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")->value_name("VAL"),  //
+       "Nugget of the model")                                                           //
+      ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),   //
+       "Degree of the drift polynomial")                                                //
+      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),       //
+       "Absolute tolerance of the fitting")                                             //
+      ("grad-tol",
+       po::value(&opts.grad_absolute_tolerance)->default_value(1.0, "1.")->value_name("VAL"),  //
+       "Gradient data absolute tolerance of the fitting")                                      //
+      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),              //
+       "Maximum number of iterations")                                                         //
+      ("ineq", po::bool_switch(&opts.ineq),                                                    //
+       "Use inequality constraints")                                                           //
+      ("reduce", po::bool_switch(&opts.reduce),                                                //
+       "Try to reduce the number of RBF centers (incremental fitting)")                        //
       ("mesh-bbox",
        po::value(&opts.mesh_bbox)
            ->multitoken()

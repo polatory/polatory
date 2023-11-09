@@ -27,14 +27,14 @@ inline options parse_options(int argc, const char* argv[]) {
   int weights;
 
   po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()                                                             //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                //
-       "Input file (an output file from kriging_variogram)")                          //
-      ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."),       //
-       cov_list)                                                                      //
-      ("nugget", po::value(&opts.nugget)->default_value(0, "0.")->value_name("VAL"),  //
-       "Initial value of the nugget")                                                 //
-      ("weights", po::value(&weights)->default_value(1)->value_name("0-5"),           //
+  opts_desc.add_options()                                                               //
+      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                  //
+       "Input file (an output file from kriging_variogram)")                            //
+      ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."),         //
+       cov_list)                                                                        //
+      ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")->value_name("VAL"),  //
+       "Initial value of the nugget")                                                   //
+      ("weights", po::value(&weights)->default_value(1)->value_name("0-5"),             //
        R"(Weight function for least squares fitting, one of
   0: N_j
   1: N_j / h_j^2
