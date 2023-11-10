@@ -6,6 +6,7 @@
 #include <optional>
 #include <polatory/polatory.hpp>
 #include <tuple>
+#include <unordered_set>
 
 #include "parse_options.hpp"
 
@@ -24,14 +25,44 @@ using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic3d;
+using face = Eigen::RowVector3i;
 using faces = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
-using indices = Eigen::VectorXi;
 
 class mesh_distance {
+  using halfedge = std::pair<int, int>;
+
+  struct halfedge_hash {
+    std::size_t operator()(const halfedge& edge) const noexcept {
+      std::size_t seed{};
+      boost::hash_combine(seed, std::hash<int>{}(edge.first));
+      boost::hash_combine(seed, std::hash<int>{}(edge.second));
+      return seed;
+    }
+  };
+
  public:
   mesh_distance(points3d&& vertices, faces&& faces)
       : vertices_(std::move(vertices)), faces_(std::move(faces)) {
     tree_.init(vertices_, faces_);
+
+    for (auto f : faces_.rowwise()) {
+      for (auto i = 0; i < 3; i++) {
+        auto j = (i + 1) % 3;
+        halfedge he{f(i), f(j)};
+        halfedge he_opp{f(j), f(i)};
+        auto it = boundary_.find(he_opp);
+        if (it != boundary_.end()) {
+          boundary_.erase(it);
+        } else {
+          boundary_.insert(he);
+        }
+      }
+    }
+
+    for (auto he : boundary_) {
+      boundary_vertices_.insert(he.first);
+      boundary_vertices_.insert(he.second);
+    }
   }
 
   std::pair<points3d, valuesd> operator()(const points3d& points) const {
@@ -45,17 +76,39 @@ class mesh_distance {
       point3d closest_point;
       auto sqrd = tree_.squared_distance(vertices_, faces_, p, fi, closest_point);
 
-      point3d a = vertices_.row(faces_(fi, 0));
-      point3d b = vertices_.row(faces_(fi, 1));
-      point3d c = vertices_.row(faces_(fi, 2));
-      auto sign = -orient3d_inexact(a, b, c, p);
+      face f = faces_.row(fi);
+      point3d a = vertices_.row(f(0));
+      point3d b = vertices_.row(f(1));
+      point3d c = vertices_.row(f(2));
 
-      values(i) = sign * std::sqrt(sqrd);
+      vector3d l;
+      igl::barycentric_coordinates(closest_point, a, b, c, l);
+
+      auto boundary = false;
+      for (auto i = 0; i < 3; i++) {
+        auto j = (i + 1) % 3;
+        auto k = (i + 2) % 3;
+        halfedge he{f(i), f(j)};
+        if (boundary_.contains(he) && std::abs(l(k)) < 1e-10) {
+          boundary = true;
+          break;
+        }
+
+        if (boundary_vertices_.contains(f(i)) && std::abs(1.0 - l(i)) < 1e-10) {
+          boundary = true;
+          break;
+        }
+      }
+
+      if (boundary) {
+        vector3d n = (b - a).cross(c - a).normalized();
+        values(i) = n.dot(p - a);
+      } else {
+        auto sign = -orient3d_inexact(a, b, c, p);
+        values(i) = sign * std::sqrt(sqrd);
+      }
+
       closest_points.row(i) = closest_point;
-
-      // TODO: Compute the barycentric coordinates of c in the triangle fi.
-      // If c is on the boundary of the mesh, recompute the signed distance
-      // as the distance between p and the supporting plane of the triangle..
     }
 
     return {std::move(closest_points), std::move(values)};
@@ -74,6 +127,8 @@ class mesh_distance {
   points3d vertices_;
   faces faces_;
   igl::AABB<points3d, 3> tree_;
+  std::unordered_multiset<halfedge, halfedge_hash> boundary_;
+  std::unordered_set<int> boundary_vertices_;
 };
 
 template <class Model>
