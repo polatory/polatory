@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <Eigen/LU>
-#include <Eigen/SVD>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -14,8 +13,6 @@ namespace polatory::polynomial {
 
 template <int Dim>
 class lagrange_basis : public polynomial_basis_base<Dim> {
-  static constexpr double kRCondThreshold = 1e-10;
-
   using Base = polynomial_basis_base<Dim>;
   using Points = geometry::pointsNd<Dim>;
   using MonomialBasis = monomial_basis<Dim>;
@@ -37,13 +34,13 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
 
     Eigen::MatrixXd p = mono_basis_.evaluate(points, grad_points).transpose();
 
-    // Do not use p.fullPivLu().isInvertible() which is too robust
-    // nor p.fullPivLu().rcond() which returns an inexact value.
-    if (!is_invertible(p)) {
+    Eigen::FullPivLU<Eigen::MatrixXd> lu(p);
+
+    if (!lu.isInvertible()) {
       throw std::domain_error("The set of points is not unisolvent.");
     }
 
-    coeffs_ = p.fullPivLu().inverse();
+    coeffs_ = lu.inverse();
   }
 
   template <class Derived>
@@ -60,17 +57,6 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
   }
 
  private:
-  static bool is_invertible(const Eigen::MatrixXd& m) {
-    auto svd = m.jacobiSvd();
-    const auto& sigmas = svd.singularValues();
-    if (sigmas(0) == 0.0) {
-      return false;
-    }
-
-    auto rcond = sigmas(sigmas.rows() - 1) / sigmas(0);
-    return rcond >= kRCondThreshold;
-  }
-
   const MonomialBasis mono_basis_;
 
   Eigen::MatrixXd coeffs_;

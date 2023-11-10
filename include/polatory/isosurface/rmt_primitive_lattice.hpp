@@ -52,6 +52,7 @@ class rmt_primitive_lattice {
         b2_(DualLatticeVectors[2] / resolution),
         bbox_(bbox),
         ext_bbox_(compute_extended_bbox(bbox, resolution)),
+        cv_offset_(compute_cv_offset()),
         resolution_(resolution) {
     geometry::points3d ext_bbox_vertices(8, 3);
     ext_bbox_vertices << ext_bbox_.min()(0), ext_bbox_.min()(1), ext_bbox_.min()(2),
@@ -75,12 +76,15 @@ class rmt_primitive_lattice {
   const geometry::bbox3d& bbox() const { return bbox_; }
 
   geometry::point3d cell_node_point(const cell_vector& cv) const {
-    return cv(0) * a0_ + cv(1) * a1_ + cv(2) * a2_;
+    return (cv_offset_(0) + static_cast<double>(cv(0))) * a0_ +
+           (cv_offset_(1) + static_cast<double>(cv(1))) * a1_ +
+           (cv_offset_(2) + static_cast<double>(cv(2))) * a2_;
   }
 
   cell_vector cell_vector_from_point(const geometry::point3d& p) const {
-    return {static_cast<int>(std::floor(p.dot(b0_))), static_cast<int>(std::floor(p.dot(b1_))),
-            static_cast<int>(std::floor(p.dot(b2_)))};
+    return {static_cast<int>(std::floor(p.dot(b0_)) - cv_offset_(0)),
+            static_cast<int>(std::floor(p.dot(b1_)) - cv_offset_(1)),
+            static_cast<int>(std::floor(p.dot(b2_)) - cv_offset_(2))};
   }
 
   // All nodes in the extended bbox must be evaluated
@@ -94,6 +98,11 @@ class rmt_primitive_lattice {
   cell_vector cv_max;
 
  private:
+  geometry::vector3d compute_cv_offset() const {
+    geometry::point3d center = bbox_.center();
+    return {std::floor(center.dot(b0_)), std::floor(center.dot(b1_)), std::floor(center.dot(b2_))};
+  }
+
   static geometry::bbox3d compute_extended_bbox(const geometry::bbox3d& bbox, double resolution) {
     geometry::vector3d cell_bbox_size =
         resolution * geometry::vector3d(3.0 / std::numbers::sqrt2, 2.0, 1.0);
@@ -109,6 +118,7 @@ class rmt_primitive_lattice {
   const geometry::vector3d b2_;
   const geometry::bbox3d bbox_;
   const geometry::bbox3d ext_bbox_;
+  const geometry::vector3d cv_offset_;
   const double resolution_;
 };
 

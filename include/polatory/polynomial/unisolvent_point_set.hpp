@@ -11,8 +11,6 @@
 
 namespace polatory::polynomial {
 
-// NOTE: If given points have a large offset from the origin,
-// construction can fail due to a large condition number.
 template <int Dim>
 class unisolvent_point_set {
   static constexpr int kMaxTrial = 32;
