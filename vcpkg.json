@@ -19,6 +19,7 @@
     },
     "flann",
     "gtest",
+    "libigl",
     {
       "name": "intel-mkl",
       "platform": "(windows | linux | osx) & x64"

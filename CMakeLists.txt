@@ -32,6 +32,7 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(FFTW3 CONFIG)
 find_package(flann CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
+find_package(libigl CONFIG REQUIRED)
 find_package(MKL CONFIG)
 find_package(OpenMP REQUIRED)
 
