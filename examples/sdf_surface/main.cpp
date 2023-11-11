@@ -78,7 +78,7 @@ void main_impl(const options& opts) {
     interpolant.fit_inequality(points, values, *values_lb, *values_ub, opts.absolute_tolerance,
                                opts.max_iter);
   } else if (opts.reduce) {
-    interpolant.fit_incrementally(points, grad_points, values, opts.absolute_tolerance,
+    interpolant.fit_incrementally(points, grad_points, rhs, opts.absolute_tolerance,
                                   opts.grad_absolute_tolerance, opts.max_iter);
   } else {
     interpolant.fit(points, grad_points, rhs, opts.absolute_tolerance, opts.grad_absolute_tolerance,
