@@ -1,9 +1,9 @@
+#include <igl/AABB.h>
+#include <igl/barycentric_coordinates.h>
 #include <igl/read_triangle_mesh.h>
-#include <igl/signed_distance.h>
 
 #include <exception>
 #include <iostream>
-#include <optional>
 #include <polatory/polatory.hpp>
 #include <tuple>
 #include <unordered_set>

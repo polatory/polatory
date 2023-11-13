@@ -1,14 +1,11 @@
 #pragma once
 
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <exception>
 #include <iostream>
-#include <optional>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #include "../common/common.hpp"
 
@@ -27,7 +24,6 @@ inline options parse_options(int argc, const char* argv[]) {
   namespace po = boost::program_options;
 
   options opts;
-  std::vector<std::string> rbf_vec;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()                                                                   //
