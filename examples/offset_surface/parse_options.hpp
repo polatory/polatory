@@ -15,6 +15,7 @@ struct options {
   double min_distance;
   double absolute_tolerance;
   int max_iter;
+  bool reduce;
   polatory::geometry::bbox3d mesh_bbox;
   double mesh_resolution;
   std::string mesh_out;
@@ -37,6 +38,8 @@ inline options parse_options(int argc, const char* argv[]) {
        "Absolute tolerance of the fitting")                                                 //
       ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),           //
        "Maximum number of iterations")                                                      //
+      ("reduce", po::bool_switch(&opts.reduce),                                             //
+       "Try to reduce the number of RBF centers (incremental fitting)")                     //
       ("mesh-bbox",
        po::value(&opts.mesh_bbox)
            ->multitoken()

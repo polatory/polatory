@@ -183,7 +183,11 @@ int main(int argc, const char* argv[]) {
 
     // Fit.
     interpolant interpolant(model);
-    interpolant.fit(C, S, opts.absolute_tolerance, opts.max_iter);
+    if (opts.reduce) {
+      interpolant.fit_incrementally(C, S, opts.absolute_tolerance, opts.max_iter);
+    } else {
+      interpolant.fit(C, S, opts.absolute_tolerance, opts.max_iter);
+    }
 
     // Generate the isosurface.
     isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
