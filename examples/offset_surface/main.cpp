@@ -20,22 +20,21 @@ using polatory::geometry::bbox3d;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::geometry::vector3d;
-using polatory::geometry::vectors3d;
 using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic3d;
-using face = Eigen::RowVector3i;
-using faces = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
+using face = Eigen::Matrix<index_t, 1, 3>;
+using faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 class mesh_distance {
-  using halfedge = std::pair<int, int>;
+  using halfedge = std::pair<index_t, index_t>;
 
   struct halfedge_hash {
     std::size_t operator()(const halfedge& edge) const noexcept {
       std::size_t seed{};
-      boost::hash_combine(seed, std::hash<int>{}(edge.first));
-      boost::hash_combine(seed, std::hash<int>{}(edge.second));
+      boost::hash_combine(seed, std::hash<index_t>{}(edge.first));
+      boost::hash_combine(seed, std::hash<index_t>{}(edge.second));
       return seed;
     }
   };
@@ -128,7 +127,7 @@ class mesh_distance {
   faces faces_;
   igl::AABB<points3d, 3> tree_;
   std::unordered_multiset<halfedge, halfedge_hash> boundary_;
-  std::unordered_set<int> boundary_vertices_;
+  std::unordered_set<index_t> boundary_vertices_;
 };
 
 template <class Model>
@@ -142,9 +141,9 @@ class offset_field_function : public field_function {
       : interpolant_(interpolant), dist_(dist) {}
 
   valuesd operator()(const points3d& points) const override {
-    auto [closest_points, values] = dist_(points);
+    auto [C, S] = dist_(points);
 
-    return values - interpolant_.evaluate_impl(closest_points);
+    return S - interpolant_.evaluate_impl(C);
   }
 
   void set_evaluation_bbox(const bbox3d& bbox) override {
@@ -160,10 +159,11 @@ int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
-    // Load points (x,y,z).
+    // Load the points.
     tabled table = read_table(opts.in);
     points3d P = table(Eigen::all, {0, 1, 2});
 
+    // Load the mesh.
     points3d V;
     faces F;
     if (!igl::read_triangle_mesh(opts.mesh_in, V, F)) {

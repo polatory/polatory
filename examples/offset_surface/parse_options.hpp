@@ -28,9 +28,9 @@ inline options parse_options(int argc, const char* argv[]) {
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()                                                                   //
       ("in", po::value(&opts.in)->required()->value_name("FILE"),                           //
-       "Input file in CSV format:\n  X,Y,Z")                                                //
+       "The points to offset the mesh to in CSV format:\n  X,Y,Z")                          //
       ("mesh-in", po::value(&opts.mesh_in)->required()->value_name("FILE"),                 //
-       "Reference mesh in OBJ format")                                                      //
+       "The mesh to offset in OBJ format")                                                  //
       ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("VAL"),  //
        "Minimum separation distance of input points")                                       //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),           //
