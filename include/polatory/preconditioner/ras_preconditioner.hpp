@@ -268,6 +268,17 @@ class ras_preconditioner : public krylov::linear_operator {
       }
     }
 
+    // The last orthogonalization is required to keep v.tail(l_) zero in subsequent iterations.
+
+    if (l_ > 0) {
+      // Orthogonalize weights against P.
+      auto n_cols = p_.cols();
+      for (index_t i = 0; i < n_cols; i++) {
+        auto dot = p_.col(i).dot(weights_total.head(mu_ + kDim * sigma_));
+        weights_total.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
+      }
+    }
+
     return weights_total;
   }
 
