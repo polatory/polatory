@@ -189,7 +189,7 @@ int main(int argc, const char* argv[]) {
     isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     offset_field_function field_fn(interpolant, mesh_dist);
 
-    isosurf.generate(field_fn).export_obj(opts.mesh_out);
+    isosurf.generate_from_seed_points(P, field_fn).export_obj(opts.mesh_out);
 
     return 0;
   } catch (const std::exception& e) {
