@@ -88,8 +88,8 @@ class fine_grid {
 
     for (index_t i = 0; i < sigma_; i++) {
       if (inner_grad_point_.at(i)) {
-        weights_full.segment(mu_full_ + kDim * grad_point_idcs_.at(i), kDim) =
-            lambda_.segment(mu_ + kDim * i, kDim);
+        weights_full.segment<kDim>(mu_full_ + kDim * grad_point_idcs_.at(i)) =
+            lambda_.segment<kDim>(mu_ + kDim * i);
       }
     }
   }

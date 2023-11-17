@@ -338,8 +338,8 @@ class ras_preconditioner : public krylov::linear_operator {
       src_weights(i) = weights(src_indices.at(i));
     }
     for (index_t i = 0; i < src_sigma; i++) {
-      src_weights.segment(src_mu + kDim * i, kDim) =
-          weights.segment(mu_ + kDim * src_grad_indices.at(i), kDim);
+      src_weights.segment<kDim>(src_mu + kDim * i) =
+          weights.segment<kDim>(mu_ + kDim * src_grad_indices.at(i));
     }
     src_weights.tail(l_) = weights.tail(l_);
     evaluator(src_level, trg_level).set_weights(src_weights);
@@ -354,8 +354,8 @@ class ras_preconditioner : public krylov::linear_operator {
       residuals(trg_indices.at(i)) -= fit(i);
     }
     for (index_t i = 0; i < trg_sigma; i++) {
-      residuals.segment(mu_ + kDim * trg_grad_indices.at(i), kDim) -=
-          fit.segment(trg_mu + kDim * i, kDim);
+      residuals.segment<kDim>(mu_ + kDim * trg_grad_indices.at(i)) -=
+          fit.template segment<kDim>(trg_mu + kDim * i);
     }
   }
 
