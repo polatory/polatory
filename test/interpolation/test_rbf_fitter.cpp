@@ -34,8 +34,6 @@ void test(Rbf rbf, int poly_degree, index_t n_points, index_t n_grad_points = 0)
                            n_points, n_grad_points)
             << std::endl;
 
-  using Model = model<Rbf>;
-
   auto absolute_tolerance = 1e-4;
   auto grad_absolute_tolerance = 1e-4;
   auto max_iter = 32;
@@ -49,7 +47,7 @@ void test(Rbf rbf, int poly_degree, index_t n_points, index_t n_grad_points = 0)
 
   rbf.set_anisotropy(aniso);
 
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
   model.set_nugget(0.01);
 
   rbf_fitter fitter(model, points, grad_points);
@@ -57,7 +55,7 @@ void test(Rbf rbf, int poly_degree, index_t n_points, index_t n_grad_points = 0)
 
   EXPECT_EQ(weights.rows(), n_points + kDim * n_grad_points + model.poly_basis_size());
 
-  rbf_direct_evaluator<Model> eval(model, points, grad_points);
+  rbf_direct_evaluator eval(model, points, grad_points);
   eval.set_weights(weights);
   eval.set_target_points(points, grad_points);
   valuesd values_fit = eval.evaluate();

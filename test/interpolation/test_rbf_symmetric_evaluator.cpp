@@ -28,7 +28,6 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
   std::cout << std::format("dim = {}, deg = {}", Dim, poly_degree) << std::endl;
 
   using Rbf = inverse_multiquadric1<Dim>;
-  using Model = model<Rbf>;
   using Points = pointsNd<Dim>;
 
   auto rel_tolerance = 1e-10;
@@ -36,16 +35,16 @@ void test(int poly_degree, index_t n_points, index_t n_grad_points, index_t n_ev
   Rbf rbf({1.0, 0.01});
   rbf.set_anisotropy(random_anisotropy<Dim>());
 
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
 
   Points points = Points::Random(n_points, Dim);
   Points grad_points = Points::Random(n_grad_points, Dim);
 
-  rbf_direct_evaluator<Model> direct_eval(model, points, grad_points);
+  rbf_direct_evaluator direct_eval(model, points, grad_points);
   direct_eval.set_target_points(points.topRows(n_eval_points),
                                 grad_points.topRows(n_eval_grad_points));
 
-  rbf_symmetric_evaluator<Model> eval(model, points, grad_points, precision::kPrecise);
+  rbf_symmetric_evaluator eval(model, points, grad_points, precision::kPrecise);
 
   for (auto i = 0; i < 2; i++) {
     valuesd weights = valuesd::Random(n_points + Dim * n_grad_points + model.poly_basis_size());

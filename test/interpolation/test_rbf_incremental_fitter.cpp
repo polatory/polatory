@@ -28,7 +28,6 @@ void test(int poly_degree) {
   std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
 
   using Rbf = inverse_multiquadric1<Dim>;
-  using Model = model<Rbf>;
 
   index_t n_points = 1024;
   index_t n_grad_points = 256;
@@ -47,16 +46,16 @@ void test(int poly_degree) {
   Rbf rbf({1.0, 1e-4});
   rbf.set_anisotropy(aniso);
 
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
 
-  rbf_incremental_fitter<Model> fitter(model, points, grad_points);
+  rbf_incremental_fitter fitter(model, points, grad_points);
   auto [indices, grad_indices, weights] =
       fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
   EXPECT_EQ(weights.rows(), indices.size() + Dim * grad_indices.size() + model.poly_basis_size());
 
-  rbf_direct_evaluator<Model> eval(model, points(indices, Eigen::all),
-                                   grad_points(grad_indices, Eigen::all));
+  rbf_direct_evaluator eval(model, points(indices, Eigen::all),
+                            grad_points(grad_indices, Eigen::all));
   eval.set_weights(weights);
   eval.set_target_points(points, grad_points);
   valuesd values_fit = eval.evaluate();

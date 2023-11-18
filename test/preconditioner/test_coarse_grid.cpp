@@ -35,7 +35,6 @@ void test(int poly_degree) {
   std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
 
   using Rbf = inverse_multiquadric1<Dim>;
-  using Model = model<Rbf>;
   using Points = pointsNd<Dim>;
   using Matrix = matrixNd<Dim>;
   using Domain = domain<Dim>;
@@ -52,7 +51,7 @@ void test(int poly_degree) {
 
   Rbf rbf({1.0, 0.01});
 
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
   // model.set_nugget(0.01);
   auto l = model.poly_basis_size();
 
@@ -76,7 +75,7 @@ void test(int poly_degree) {
   std::vector<index_t> poly_point_indices(domain.point_indices.begin(),
                                           domain.point_indices.begin() + l);
 
-  coarse_grid<Model> coarse(model, std::move(domain));
+  coarse_grid coarse(model, std::move(domain));
   Eigen::MatrixXd lagrange_pt;
   if (poly_degree >= 0) {
     LagrangeBasis lagrange_basis(poly_degree, points(poly_point_indices, Eigen::all));
@@ -91,7 +90,7 @@ void test(int poly_degree) {
   valuesd sol = valuesd::Zero(mu + Dim * sigma + l);
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_evaluator<Model>(model, points, grad_points);
+  auto eval = rbf_direct_evaluator(model, points, grad_points);
   eval.set_weights(sol);
   eval.set_target_points(points, Points(0, Dim));
   valuesd values_fit = eval.evaluate() + sol.head(mu) * model.nugget();

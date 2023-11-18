@@ -30,7 +30,6 @@ namespace {
 void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points) {
   constexpr int kDim = 3;
   using Rbf = inverse_multiquadric1<kDim>;
-  using Model = model<Rbf>;
 
   index_t n_points = n_initial_points;
   index_t n_grad_points = n_initial_grad_points;
@@ -40,11 +39,11 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
   Rbf rbf({1.0, 0.01});
   rbf.set_anisotropy(random_anisotropy<kDim>());
 
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
   model.set_nugget(0.01);
 
   bbox3d bbox{-point3d::Ones(), point3d::Ones()};
-  rbf_operator<Model> op(model, bbox, precision::kPrecise);
+  rbf_operator op(model, bbox, precision::kPrecise);
 
   for (auto i = 0; i < 4; i++) {
     auto points = random_points(sphere3d(), n_points);
@@ -52,7 +51,7 @@ void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_poin
 
     valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
-    rbf_direct_operator<Model> direct_op(model, points, grad_points);
+    rbf_direct_operator direct_op(model, points, grad_points);
     op.set_points(points, grad_points);
 
     valuesd direct_op_weights = direct_op(weights);

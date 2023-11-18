@@ -32,7 +32,6 @@ using polatory::rbf::triharmonic3d;
 template <class Rbf>
 double estimate_accuracy(const std::vector<double>& rbf_params) {
   constexpr int kDim = Rbf::kDim;
-  using Model = model<Rbf>;
   using Points = pointsNd<kDim>;
 
   auto n_points = 32768;
@@ -43,7 +42,7 @@ double estimate_accuracy(const std::vector<double>& rbf_params) {
   Rbf rbf(rbf_params);
 
   auto poly_degree = rbf.cpd_order() - 1;
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
 
   valuesd weights = valuesd::Zero(n_points + model.poly_basis_size());
   weights.head(n_points) = valuesd::Random(n_points);
@@ -61,11 +60,11 @@ double estimate_accuracy(const std::vector<double>& rbf_params) {
     }
   }
 
-  rbf_direct_evaluator<Model> direct_eval(model, points, Points(0, kDim));
+  rbf_direct_evaluator direct_eval(model, points, Points(0, kDim));
   direct_eval.set_weights(weights);
   direct_eval.set_target_points(eval_points, Points(0, kDim));
 
-  rbf_evaluator<Model> eval(model, points, precision::kPrecise);
+  rbf_evaluator eval(model, points, precision::kPrecise);
   eval.set_weights(weights);
   eval.set_target_points(eval_points);
 

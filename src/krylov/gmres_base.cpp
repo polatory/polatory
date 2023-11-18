@@ -93,7 +93,7 @@ void gmres_base::solve(double tolerance) {
 
 gmres_base::gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
     : op_(op),
-      m_(static_cast<index_t>(rhs.rows())),
+      m_(rhs.size()),
       max_iter_(max_iter),
       x0_(common::valuesd::Zero(m_)),
       rhs_(rhs),

@@ -31,7 +31,6 @@ void test(int poly_degree) {
   std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
 
   using Rbf = biharmonic3d<Dim>;
-  using Model = model<Rbf>;
 
   index_t n_points = 4096;
 
@@ -47,14 +46,14 @@ void test(int poly_degree) {
   Rbf rbf({1.0});
   rbf.set_anisotropy(aniso);
 
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
 
-  rbf_inequality_fitter<Model> fitter(model, points);
+  rbf_inequality_fitter fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<Model> eval(model, points(indices, Eigen::all), precision::kPrecise);
+  rbf_evaluator eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 
@@ -78,7 +77,6 @@ TEST(rbf_inequality_fitter, inequality_only) {
 TEST(rbf_inequality_fitter, kostov86) {
   constexpr int kDim = 1;
   using Rbf = cov_exponential<kDim>;
-  using Model = model<Rbf>;
 
   const auto n_points = index_t{25};
   const auto poly_degree = -1;
@@ -103,12 +101,12 @@ TEST(rbf_inequality_fitter, kostov86) {
       nan, nan, nan, nan, nan, 3;
 
   Rbf rbf({1.0, 3.0});
-  Model model(rbf, poly_degree);
+  model model(rbf, poly_degree);
 
-  rbf_inequality_fitter<Model> fitter(model, points);
+  rbf_inequality_fitter fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
-  rbf_evaluator<Model> eval(model, points(indices, Eigen::all), precision::kPrecise);
+  rbf_evaluator eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 

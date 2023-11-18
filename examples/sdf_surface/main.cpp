@@ -31,8 +31,6 @@ using polatory::rbf::triharmonic3d;
 
 template <class Rbf>
 void main_impl(const options& opts) {
-  using Model = model<Rbf>;
-
   // Load points (x,y,z) and values (value).
   tabled table = read_table(opts.in_file);
   points3d points = table(Eigen::all, {0, 1, 2});
@@ -66,14 +64,14 @@ void main_impl(const options& opts) {
   // Define the model.
   Rbf rbf(opts.rbf_params);
   rbf.set_anisotropy(opts.aniso);
-  Model model(rbf, opts.poly_degree);
+  model model(rbf, opts.poly_degree);
   model.set_nugget(opts.nugget);
 
   valuesd rhs(values.size() + 3 * grad_values.rows());
   rhs << values, grad_values.reshaped<Eigen::RowMajor>();
 
   // Fit.
-  interpolant<Model> interpolant(model);
+  interpolant interpolant(model);
   if (opts.ineq) {
     interpolant.fit_inequality(points, values, *values_lb, *values_ub, opts.absolute_tolerance,
                                opts.max_iter);
@@ -96,7 +94,7 @@ void main_impl(const options& opts) {
   }
 
   isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
-  rbf_field_function<Model> field_fn(interpolant);
+  rbf_field_function field_fn(interpolant);
 
   isosurf.generate_from_seed_points(surface_points, field_fn).export_obj(opts.mesh_file);
 }

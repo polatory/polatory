@@ -16,18 +16,16 @@ using polatory::rbf::cov_spheroidal9;
 
 template <class Rbf>
 void main_impl(const options& opts) {
-  using Model = model<Rbf>;
-
   // Load the empirical variogram.
   empirical_variogram emp_variog(opts.in_file);
 
   // Define the model.
   Rbf rbf(opts.rbf_params);
-  Model model(rbf, -1);
+  model model(rbf, -1);
   model.set_nugget(opts.nugget);
 
   // Fit model parameters.
-  variogram_fitting<Model> fit(emp_variog, model, opts.weight_fn);
+  variogram_fitting fit(emp_variog, model, opts.weight_fn);
 
   auto params = fit.parameters();
   std::cout << "Fitted parameters:" << std::endl
