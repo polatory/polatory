@@ -212,8 +212,8 @@ class ras_preconditioner : public krylov::linear_operator {
           // Orthogonalize weights against P.
           auto n_cols = p_.cols();
           for (index_t i = 0; i < n_cols; i++) {
-            auto dot = p_.col(i).dot(weights);
-            weights -= dot * p_.col(i);
+            auto dot = p_.col(i).dot(weights.head(mu_ + kDim * sigma_));
+            weights.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
             residuals += dot * ap_.col(i);
           }
         }
@@ -244,8 +244,8 @@ class ras_preconditioner : public krylov::linear_operator {
           // Orthogonalize weights against P.
           auto n_cols = p_.cols();
           for (index_t i = 0; i < n_cols; i++) {
-            auto dot = p_.col(i).dot(weights);
-            weights -= dot * p_.col(i);
+            auto dot = p_.col(i).dot(weights.head(mu_ + kDim * sigma_));
+            weights.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
             residuals += dot * ap_.col(i);
           }
         }
