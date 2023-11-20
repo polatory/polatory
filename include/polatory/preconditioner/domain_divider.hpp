@@ -181,25 +181,8 @@ class domain_divider {
       it = domains_.erase(it);
     }
 
-    remove_domains_with_no_inner_points();
-
     for (auto& d : domains_) {
       d.merge_poly_points(poly_point_idcs_);
-    }
-  }
-
-  void remove_domains_with_no_inner_points() {
-    auto it = domains_.begin();
-
-    while (it != domains_.end()) {
-      auto& d = *it;
-      auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true) +
-                         std::count(d.inner_grad_point.begin(), d.inner_grad_point.end(), true);
-      if (n_inner_pts == 0) {
-        it = domains_.erase(it);
-      } else {
-        ++it;
-      }
     }
   }
 
