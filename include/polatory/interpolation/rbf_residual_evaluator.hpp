@@ -54,7 +54,7 @@ class rbf_residual_evaluator {
     auto max_grad_residual = 0.0;
 
     auto nugget = model_.nugget();
-    for (auto begin = 0;;) {
+    for (index_t begin = 0;;) {
       auto end = std::min(mu_, begin + chunk_size);
       if (begin == end) {
         break;
@@ -75,7 +75,7 @@ class rbf_residual_evaluator {
       chunk_size *= 2;
     }
 
-    for (auto begin = 0;;) {
+    for (index_t begin = 0;;) {
       auto end = std::min(sigma_, begin + chunk_size);
       if (begin == end) {
         break;
