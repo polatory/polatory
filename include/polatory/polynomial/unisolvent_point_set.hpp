@@ -30,11 +30,12 @@ class unisolvent_point_set {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<index_t> dist(index_t{0}, n_points - 1);
 
-    std::set<index_t> set;
+    std::set<index_t> best_set;
+    auto best_rcond = 0.0;
     auto found = false;
-    auto trial = 0;
-    while (!found && trial < kMaxTrial) {
-      set.clear();
+
+    for (auto trial = 0; trial < kMaxTrial; trial++) {
+      std::set<index_t> set;
 
       while (static_cast<index_t>(set.size()) < n_poly_basis) {
         set.insert(dist(gen));
@@ -43,19 +44,23 @@ class unisolvent_point_set {
       try {
         lagrange_basis<Dim> basis(degree,
                                   points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
+
+        if (best_rcond < basis.rcond()) {
+          best_rcond = basis.rcond();
+          best_set = std::move(set);
+        }
+
         found = true;
       } catch (const std::domain_error&) {
         // No-op.
       }
-
-      trial++;
     }
 
-    if (!found && trial == kMaxTrial) {
+    if (!found) {
       throw std::runtime_error("Could not find a unisolvent set of points.");
     }
 
-    point_idcs_.insert(point_idcs_.begin(), set.begin(), set.end());
+    point_idcs_.insert(point_idcs_.begin(), best_set.begin(), best_set.end());
   }
 
   // Returns the sorted point indices.

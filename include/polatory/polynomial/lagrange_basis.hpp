@@ -41,6 +41,7 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
     }
 
     coeffs_ = lu.inverse();
+    rcond_ = lu.rcond();
   }
 
   template <class Derived>
@@ -56,10 +57,13 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
     return coeffs_.transpose() * pt;
   }
 
+  double rcond() const { return rcond_; }
+
  private:
   const MonomialBasis mono_basis_;
 
   Eigen::MatrixXd coeffs_;
+  double rcond_{};
 };
 
 }  // namespace polatory::polynomial
