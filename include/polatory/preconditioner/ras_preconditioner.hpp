@@ -189,47 +189,28 @@ class ras_preconditioner : public krylov::linear_operator {
     }
 
     common::valuesd weights_total = common::valuesd::Zero(size());
-
     report_initial_residual(residuals);
 
     {
       common::valuesd weights = solve(0, residuals);
-
       update_residuals(0, n_levels_ - 1, weights, residuals);
-
       weights_total += weights;
-
       report_residual(0, v, weights_total);
     }
 
     for (auto level = 1; level < n_levels_ - 1; level++) {
       {
         common::valuesd weights = solve(level, residuals);
-
         update_residuals(level, n_levels_ - 1, weights, residuals);
-
-        if (l_ > 0) {
-          // Orthogonalize weights against P.
-          auto n_cols = p_.cols();
-          for (index_t i = 0; i < n_cols; i++) {
-            auto dot = p_.col(i).dot(weights.head(mu_ + kDim * sigma_));
-            weights.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
-            residuals += dot * ap_.col(i);
-          }
-        }
-
         weights_total += weights;
-
+        orthogonalize(weights_total, residuals);
         report_residual(level, v, weights_total);
       }
 
       {
         common::valuesd weights = solve(0, residuals);
-
         update_residuals(0, n_levels_ - 1, weights, residuals);
-
         weights_total += weights;
-
         report_residual(0, v, weights_total);
       }
     }
@@ -237,45 +218,19 @@ class ras_preconditioner : public krylov::linear_operator {
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       {
         common::valuesd weights = solve(level, residuals);
-
         update_residuals(level, level - 1, weights, residuals);
-
-        if (l_ > 0) {
-          // Orthogonalize weights against P.
-          auto n_cols = p_.cols();
-          for (index_t i = 0; i < n_cols; i++) {
-            auto dot = p_.col(i).dot(weights.head(mu_ + kDim * sigma_));
-            weights.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
-            residuals += dot * ap_.col(i);
-          }
-        }
-
         weights_total += weights;
-
+        orthogonalize(weights_total, residuals);
         report_residual(level, v, weights_total);
       }
 
       {
         common::valuesd weights = solve(0, residuals);
-
         if (level > 1) {
           update_residuals(0, level - 1, weights, residuals);
         }
-
         weights_total += weights;
-
         report_residual(0, v, weights_total);
-      }
-    }
-
-    // The last orthogonalization is required to keep v.tail(l_) zero in subsequent iterations.
-
-    if (l_ > 0) {
-      // Orthogonalize weights against P.
-      auto n_cols = p_.cols();
-      for (index_t i = 0; i < n_cols; i++) {
-        auto dot = p_.col(i).dot(weights_total.head(mu_ + kDim * sigma_));
-        weights_total.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
       }
     }
 
@@ -300,6 +255,18 @@ class ras_preconditioner : public krylov::linear_operator {
     }
 
     return evaluator_.at(key);
+  }
+
+  void orthogonalize(common::valuesd& weights, common::valuesd& residuals) const {
+    if (l_ > 0) {
+      // Orthogonalize weights against P.
+      auto n_cols = p_.cols();
+      for (index_t i = 0; i < n_cols; i++) {
+        auto dot = p_.col(i).dot(weights.head(mu_ + kDim * sigma_));
+        weights.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
+        residuals += dot * ap_.col(i);
+      }
+    }
   }
 
   common::valuesd solve(int level, const common::valuesd& residuals) const {
