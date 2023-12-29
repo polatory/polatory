@@ -35,14 +35,6 @@ class coarse_grid {
     POLATORY_ASSERT(mu_ > l_);
   }
 
-  void clear() {
-    me_ = Eigen::MatrixXd();
-    ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
-
-    a_top_ = Eigen::MatrixXd();
-    lu_of_p_top_ = Eigen::FullPivLU<Eigen::MatrixXd>();
-  }
-
   void setup(const Points& points_full, const Points& grad_points_full,
              const Eigen::MatrixXd& lagrange_pt_full) {
     auto points = points_full(point_idcs_, Eigen::all);
@@ -66,11 +58,11 @@ class coarse_grid {
         me_ = -lagrange_pt.rightCols(m_ - l_);
 
         // Compute decomposition of Q^T A Q.
-        ldlt_of_qtaq_ =
+        llt_of_qtaq_ =
             (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
              me_.transpose() * a.topRightCorner(l_, m_ - l_) +
              a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_))
-                .ldlt();
+                .llt();
       }
 
       // Compute matrices used for solving the polynomial part.
@@ -87,7 +79,7 @@ class coarse_grid {
       }
       lu_of_p_top_ = p_top.fullPivLu();
     } else {
-      ldlt_of_qtaq_ = a.ldlt();
+      llt_of_qtaq_ = a.llt();
     }
 
     mu_full_ = points_full.rows();
@@ -119,7 +111,7 @@ class coarse_grid {
         common::valuesd qtd = me_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
-        common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
+        common::valuesd gamma = llt_of_qtaq_.solve(qtd);
 
         // Compute lambda = Q gamma.
         lambda_c_.head(l_) = me_ * gamma;
@@ -132,7 +124,7 @@ class coarse_grid {
       common::valuesd a_top_lambda = a_top_ * lambda_c_.head(m_);
       lambda_c_.tail(l_) = lu_of_p_top_.solve(values.head(l_) - a_top_lambda);
     } else {
-      lambda_c_ = ldlt_of_qtaq_.solve(values);
+      lambda_c_ = llt_of_qtaq_.solve(values);
     }
   }
 
@@ -152,7 +144,7 @@ class coarse_grid {
   Eigen::MatrixXd me_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT<Eigen::MatrixXd> ldlt_of_qtaq_;
+  Eigen::LLT<Eigen::MatrixXd> llt_of_qtaq_;
 
   // First l rows of matrix A.
   Eigen::MatrixXd a_top_;

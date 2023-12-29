@@ -6,6 +6,7 @@
     "boost-algorithm",
     "boost-any",
     "boost-container-hash",
+    "boost-filesystem",
     "boost-iterator",
     "boost-lexical-cast",
     "boost-program-options",

@@ -25,7 +25,7 @@ endif()
 set(MKL_THREADING "sequential")
 set(MKL_INTERFACE "lp64")
 
-find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(Boost REQUIRED COMPONENTS filesystem program_options)
 find_package(Ceres CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)

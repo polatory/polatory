@@ -33,6 +33,7 @@ target_include_directories(${TARGET} SYSTEM PUBLIC
 
 target_link_libraries(${TARGET} PUBLIC
     Boost::boost
+    Boost::filesystem
     ceres
     double-conversion::double-conversion
     Eigen3::Eigen

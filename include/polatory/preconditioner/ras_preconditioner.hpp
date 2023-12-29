@@ -33,9 +33,8 @@ namespace polatory::preconditioner {
 
 template <class Model>
 class ras_preconditioner : public krylov::linear_operator {
-  static constexpr bool kRecomputeAndClear = true;
   static constexpr bool kReportResidual = false;
-  static constexpr double kCoarseRatio = 0.125;
+  static constexpr double kCoarseRatio = 0.01;
   static constexpr index_t kNCoarsestPoints = 1024;
   static constexpr int kDim = Model::kDim;
 
@@ -131,12 +130,10 @@ class ras_preconditioner : public krylov::linear_operator {
       }
 
       auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
-      if (!kRecomputeAndClear) {
 #pragma omp parallel for
-        for (index_t i = 0; i < n_grids; i++) {
-          auto& fine = fine_grids_.at(level).at(i);
-          fine.setup(points_, grad_points_, lagrange_pt_);
-        }
+      for (index_t i = 0; i < n_grids; i++) {
+        auto& fine = fine_grids_.at(level).at(i);
+        fine.setup(points_, grad_points_, lagrange_pt_);
       }
 
       std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16)
@@ -280,14 +277,8 @@ class ras_preconditioner : public krylov::linear_operator {
 #pragma omp parallel for schedule(guided)
       for (index_t i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
-        if (kRecomputeAndClear) {
-          fine.setup(points_, grad_points_, lagrange_pt_);
-        }
         fine.solve(residuals);
         fine.set_solution_to(weights);
-        if (kRecomputeAndClear) {
-          fine.clear();
-        }
       }
     }
 

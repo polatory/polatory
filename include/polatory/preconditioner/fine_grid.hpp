@@ -2,6 +2,9 @@
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
+#include <boost/filesystem.hpp>
+#include <fstream>
+#include <iostream>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -11,6 +14,23 @@
 #include <vector>
 
 #include "mat_a.hpp"
+
+namespace Eigen {
+
+template <typename MatrixType_, int UpLo_ = Eigen::Lower>
+class LLT2 : public LLT<MatrixType_, UpLo_> {
+ public:
+  using Base = LLT<MatrixType_, UpLo_>;
+  using MatrixType = typename Base::MatrixType;
+  using Base::Base;
+
+  inline MatrixType& matrixLLT() {
+    eigen_assert(m_isInitialized && "LLT is not initialized.");
+    return this->m_matrix;
+  }
+};
+
+}  // namespace Eigen
 
 namespace polatory::preconditioner {
 
@@ -30,14 +50,12 @@ class fine_grid {
         l_(model.poly_basis_size()),
         mu_(static_cast<index_t>(point_idcs_.size())),
         sigma_(static_cast<index_t>(grad_point_idcs_.size())),
-        m_(mu_ + kDim * sigma_) {
+        m_(mu_ + kDim * sigma_),
+        filename_{boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()} {
     POLATORY_ASSERT(mu_ > l_);
   }
 
-  void clear() {
-    me_ = Eigen::MatrixXd();
-    ldlt_of_qtaq_ = Eigen::LDLT<Eigen::MatrixXd>();
-  }
+  ~fine_grid() { boost::filesystem::remove(filename_); }
 
   void setup(const Points& points_full, const Points& grad_points_full,
              const Eigen::MatrixXd& lagrange_pt_full) {
@@ -66,13 +84,14 @@ class fine_grid {
         Eigen::MatrixXd met = me_.transpose();
 
         // Compute decomposition of Q^T A Q.
-        ldlt_of_qtaq_ =
-            (met * a.topLeftCorner(l_, l_) * me_ + met * a.topRightCorner(l_, m_ - l_) +
-             a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_))
-                .ldlt();
+        llt_of_qtaq_ = Eigen::LLT2<Eigen::MatrixXd>(
+            met * a.topLeftCorner(l_, l_) * me_ + met * a.topRightCorner(l_, m_ - l_) +
+            a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_));
+        save_llt_of_qtaq();
       }
     } else {
-      ldlt_of_qtaq_ = a.ldlt();
+      llt_of_qtaq_ = Eigen::LLT2<Eigen::MatrixXd>(a);
+      save_llt_of_qtaq();
     }
 
     mu_full_ = points_full.rows();
@@ -109,7 +128,9 @@ class fine_grid {
         common::valuesd qtd = me_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
-        common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
+        load_llt_of_qtaq();
+        common::valuesd gamma = llt_of_qtaq_.solve(qtd);
+        llt_of_qtaq_.matrixLLT().resize(0, 0);
 
         // Compute lambda = Q gamma.
         lambda_.head(l_) = me_ * gamma;
@@ -118,11 +139,39 @@ class fine_grid {
         lambda_ = common::valuesd::Zero(m_);
       }
     } else {
-      lambda_ = ldlt_of_qtaq_.solve(values);
+      load_llt_of_qtaq();
+      lambda_ = llt_of_qtaq_.solve(values);
+      llt_of_qtaq_.matrixLLT().resize(0, 0);
     }
   }
 
  private:
+  void load_llt_of_qtaq() {
+    std::ifstream ifs(filename_.string(), std::ios::binary);
+
+    if (!ifs) {
+      std::cerr << "Failed to open file: " << filename_ << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    auto& llt = llt_of_qtaq_.matrixLLT();
+    llt.resize(m_ - l_, m_ - l_);
+    ifs.read(reinterpret_cast<char*>(llt.data()), llt.size() * sizeof(double));
+  }
+
+  void save_llt_of_qtaq() {
+    std::ofstream ofs(filename_.string(), std::ios::binary);
+
+    if (!ofs) {
+      std::cerr << "Failed to open file: " << filename_ << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    auto& llt = llt_of_qtaq_.matrixLLT();
+    ofs.write(reinterpret_cast<const char*>(llt.data()), llt.size() * sizeof(double));
+    llt.resize(0, 0);
+  }
+
   const Model& model_;
   const std::vector<index_t> point_idcs_;
   const std::vector<index_t> grad_point_idcs_;
@@ -140,10 +189,12 @@ class fine_grid {
   Eigen::MatrixXd me_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT<Eigen::MatrixXd> ldlt_of_qtaq_;
+  Eigen::LLT2<Eigen::MatrixXd> llt_of_qtaq_;
 
   // Current solution.
   common::valuesd lambda_;
+
+  boost::filesystem::path filename_;
 };
 
 }  // namespace polatory::preconditioner
