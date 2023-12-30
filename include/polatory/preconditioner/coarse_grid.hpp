@@ -37,8 +37,8 @@ class coarse_grid {
 
   void setup(const Points& points_full, const Points& grad_points_full,
              const Eigen::MatrixXd& lagrange_pt_full) {
-    auto points = points_full(point_idcs_, Eigen::all);
-    auto grad_points = grad_points_full(grad_point_idcs_, Eigen::all);
+    Points points = points_full(point_idcs_, Eigen::all);
+    Points grad_points = grad_points_full(grad_point_idcs_, Eigen::all);
 
     // Compute A.
     auto a = mat_a(model_, points, grad_points);
