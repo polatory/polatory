@@ -4,7 +4,7 @@
 #include <boost/algorithm/string.hpp>
 #include <fstream>
 #include <iostream>
-#include <polatory/numeric/roundtrip_string.hpp>
+#include <polatory/numeric/conv.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <string>

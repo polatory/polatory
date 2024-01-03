@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <exception>
 #include <iostream>
@@ -71,7 +70,7 @@ inline options parse_options(int argc, const char* argv[]) {
 
   opts.rbf_name = rbf_vec.at(0);
   for (std::size_t i = 1; i < rbf_vec.size(); i++) {
-    opts.rbf_params.push_back(boost::lexical_cast<double>(rbf_vec.at(i)));
+    opts.rbf_params.push_back(polatory::numeric::to_double(rbf_vec.at(i)));
   }
 
   return opts;

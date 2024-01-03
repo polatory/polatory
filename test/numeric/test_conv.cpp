@@ -1,15 +1,14 @@
 #include <gtest/gtest.h>
 
-#include <boost/lexical_cast.hpp>
 #include <cmath>
 #include <limits>
-#include <polatory/numeric/roundtrip_string.hpp>
+#include <polatory/numeric/conv.hpp>
 
 using polatory::numeric::to_double;
 using polatory::numeric::to_float;
 using polatory::numeric::to_string;
 
-TEST(roundtrip_string, denorm_min) {
+TEST(conv, denorm_min) {
   auto f = std::numeric_limits<float>::denorm_min();
   auto d = std::numeric_limits<double>::denorm_min();
 
@@ -17,7 +16,7 @@ TEST(roundtrip_string, denorm_min) {
   EXPECT_EQ(d, to_double(to_string(d)));
 }
 
-TEST(roundtrip_string, infinity) {
+TEST(conv, infinity) {
   auto f = std::numeric_limits<float>::infinity();
   auto d = std::numeric_limits<double>::infinity();
 
@@ -25,7 +24,7 @@ TEST(roundtrip_string, infinity) {
   EXPECT_EQ(d, to_double(to_string(d)));
 }
 
-TEST(roundtrip_string, negative_infinity) {
+TEST(conv, negative_infinity) {
   auto f = -std::numeric_limits<float>::infinity();
   auto d = -std::numeric_limits<double>::infinity();
 
@@ -33,7 +32,7 @@ TEST(roundtrip_string, negative_infinity) {
   EXPECT_EQ(d, to_double(to_string(d)));
 }
 
-TEST(roundtrip_string, nan) {
+TEST(conv, nan) {
   auto f = std::numeric_limits<float>::quiet_NaN();
   auto d = std::numeric_limits<double>::quiet_NaN();
 

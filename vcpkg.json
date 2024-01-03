@@ -8,12 +8,11 @@
     "boost-container-hash",
     "boost-filesystem",
     "boost-iterator",
-    "boost-lexical-cast",
     "boost-program-options",
     "boost-range",
     "ceres",
-    "double-conversion",
     "eigen3",
+    "fast-float",
     {
       "name": "fftw3",
       "platform": "osx & arm64"

@@ -12,6 +12,7 @@
 #include <polatory/kriging/variogram_fitting.hpp>
 #include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
+#include <polatory/numeric/conv.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>

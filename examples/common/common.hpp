@@ -1,7 +1,6 @@
 #pragma once
 
 #include <boost/any.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <memory>
 #include <polatory/polatory.hpp>
@@ -20,11 +19,11 @@ inline void validate(boost::any& v, const std::vector<std::string>& values,
   }
 
   polatory::geometry::matrix3d aniso;
-  aniso << boost::lexical_cast<double>(values[0]), boost::lexical_cast<double>(values[1]),
-      boost::lexical_cast<double>(values[2]), boost::lexical_cast<double>(values[3]),
-      boost::lexical_cast<double>(values[4]), boost::lexical_cast<double>(values[5]),
-      boost::lexical_cast<double>(values[6]), boost::lexical_cast<double>(values[7]),
-      boost::lexical_cast<double>(values[8]);
+  aniso << polatory::numeric::to_double(values[0]), polatory::numeric::to_double(values[1]),
+      polatory::numeric::to_double(values[2]), polatory::numeric::to_double(values[3]),
+      polatory::numeric::to_double(values[4]), polatory::numeric::to_double(values[5]),
+      polatory::numeric::to_double(values[6]), polatory::numeric::to_double(values[7]),
+      polatory::numeric::to_double(values[8]);
 
   v = aniso;
 }
@@ -40,10 +39,10 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  v = bbox3d({boost::lexical_cast<double>(values[0]), boost::lexical_cast<double>(values[1]),
-              boost::lexical_cast<double>(values[2])},
-             {boost::lexical_cast<double>(values[3]), boost::lexical_cast<double>(values[4]),
-              boost::lexical_cast<double>(values[5])});
+  v = bbox3d({polatory::numeric::to_double(values[0]), polatory::numeric::to_double(values[1]),
+              polatory::numeric::to_double(values[2])},
+             {polatory::numeric::to_double(values[3]), polatory::numeric::to_double(values[4]),
+              polatory::numeric::to_double(values[5])});
 }
 
 }  // namespace polatory::geometry
