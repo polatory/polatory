@@ -58,11 +58,11 @@ class coarse_grid {
         me_ = -lagrange_pt.rightCols(m_ - l_);
 
         // Compute decomposition of Q^T A Q.
-        llt_of_qtaq_ =
+        ldlt_of_qtaq_ =
             (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
              me_.transpose() * a.topRightCorner(l_, m_ - l_) +
              a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_))
-                .llt();
+                .ldlt();
       }
 
       // Compute matrices used for solving the polynomial part.
@@ -79,7 +79,7 @@ class coarse_grid {
       }
       lu_of_p_top_ = p_top.fullPivLu();
     } else {
-      llt_of_qtaq_ = a.llt();
+      ldlt_of_qtaq_ = a.ldlt();
     }
 
     mu_full_ = points_full.rows();
@@ -111,7 +111,7 @@ class coarse_grid {
         common::valuesd qtd = me_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
-        common::valuesd gamma = llt_of_qtaq_.solve(qtd);
+        common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
 
         // Compute lambda = Q gamma.
         lambda_c_.head(l_) = me_ * gamma;
@@ -124,7 +124,7 @@ class coarse_grid {
       common::valuesd a_top_lambda = a_top_ * lambda_c_.head(m_);
       lambda_c_.tail(l_) = lu_of_p_top_.solve(values.head(l_) - a_top_lambda);
     } else {
-      lambda_c_ = llt_of_qtaq_.solve(values);
+      lambda_c_ = ldlt_of_qtaq_.solve(values);
     }
   }
 
@@ -144,7 +144,7 @@ class coarse_grid {
   Eigen::MatrixXd me_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LLT<Eigen::MatrixXd> llt_of_qtaq_;
+  Eigen::LDLT<Eigen::MatrixXd> ldlt_of_qtaq_;
 
   // First l rows of matrix A.
   Eigen::MatrixXd a_top_;

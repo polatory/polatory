@@ -18,14 +18,14 @@
 namespace Eigen {
 
 template <typename MatrixType_, int UpLo_ = Eigen::Lower>
-class LLT2 : public LLT<MatrixType_, UpLo_> {
+class LDLT2 : public LDLT<MatrixType_, UpLo_> {
  public:
-  using Base = LLT<MatrixType_, UpLo_>;
+  using Base = LDLT<MatrixType_, UpLo_>;
   using MatrixType = typename Base::MatrixType;
   using Base::Base;
 
-  inline MatrixType& matrixLLT() {
-    eigen_assert(m_isInitialized && "LLT is not initialized.");
+  inline MatrixType& matrixLDLT() {
+    eigen_assert(m_isInitialized && "LDLT is not initialized.");
     return this->m_matrix;
   }
 };
@@ -84,14 +84,14 @@ class fine_grid {
         Eigen::MatrixXd met = me_.transpose();
 
         // Compute decomposition of Q^T A Q.
-        llt_of_qtaq_ = Eigen::LLT2<Eigen::MatrixXd>(
+        ldlt_of_qtaq_ = Eigen::LDLT2<Eigen::MatrixXd>(
             met * a.topLeftCorner(l_, l_) * me_ + met * a.topRightCorner(l_, m_ - l_) +
             a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_));
-        save_llt_of_qtaq();
+        save_ldlt_of_qtaq();
       }
     } else {
-      llt_of_qtaq_ = Eigen::LLT2<Eigen::MatrixXd>(a);
-      save_llt_of_qtaq();
+      ldlt_of_qtaq_ = Eigen::LDLT2<Eigen::MatrixXd>(a);
+      save_ldlt_of_qtaq();
     }
 
     mu_full_ = points_full.rows();
@@ -128,9 +128,9 @@ class fine_grid {
         common::valuesd qtd = me_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
-        load_llt_of_qtaq();
-        common::valuesd gamma = llt_of_qtaq_.solve(qtd);
-        llt_of_qtaq_.matrixLLT().resize(0, 0);
+        load_ldlt_of_qtaq();
+        common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
+        ldlt_of_qtaq_.matrixLDLT().resize(0, 0);
 
         // Compute lambda = Q gamma.
         lambda_.head(l_) = me_ * gamma;
@@ -139,14 +139,14 @@ class fine_grid {
         lambda_ = common::valuesd::Zero(m_);
       }
     } else {
-      load_llt_of_qtaq();
-      lambda_ = llt_of_qtaq_.solve(values);
-      llt_of_qtaq_.matrixLLT().resize(0, 0);
+      load_ldlt_of_qtaq();
+      lambda_ = ldlt_of_qtaq_.solve(values);
+      ldlt_of_qtaq_.matrixLDLT().resize(0, 0);
     }
   }
 
  private:
-  void load_llt_of_qtaq() {
+  void load_ldlt_of_qtaq() {
     std::ifstream ifs(filename_.string(), std::ios::binary);
 
     if (!ifs) {
@@ -154,12 +154,12 @@ class fine_grid {
       std::exit(EXIT_FAILURE);
     }
 
-    auto& llt = llt_of_qtaq_.matrixLLT();
-    llt.resize(m_ - l_, m_ - l_);
-    ifs.read(reinterpret_cast<char*>(llt.data()), llt.size() * sizeof(double));
+    auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
+    ldlt.resize(m_ - l_, m_ - l_);
+    ifs.read(reinterpret_cast<char*>(ldlt.data()), ldlt.size() * sizeof(double));
   }
 
-  void save_llt_of_qtaq() {
+  void save_ldlt_of_qtaq() {
     std::ofstream ofs(filename_.string(), std::ios::binary);
 
     if (!ofs) {
@@ -167,9 +167,9 @@ class fine_grid {
       std::exit(EXIT_FAILURE);
     }
 
-    auto& llt = llt_of_qtaq_.matrixLLT();
-    ofs.write(reinterpret_cast<const char*>(llt.data()), llt.size() * sizeof(double));
-    llt.resize(0, 0);
+    auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
+    ofs.write(reinterpret_cast<const char*>(ldlt.data()), ldlt.size() * sizeof(double));
+    ldlt.resize(0, 0);
   }
 
   const Model& model_;
@@ -189,7 +189,7 @@ class fine_grid {
   Eigen::MatrixXd me_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LLT2<Eigen::MatrixXd> llt_of_qtaq_;
+  Eigen::LDLT2<Eigen::MatrixXd> ldlt_of_qtaq_;
 
   // Current solution.
   common::valuesd lambda_;
