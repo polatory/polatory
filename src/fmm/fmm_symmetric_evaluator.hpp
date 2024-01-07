@@ -101,7 +101,12 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
 
     handle_self_interaction();
 
-    return potentials();
+    auto result = potentials();
+
+    // Release some memory.
+    reset_tree();
+
+    return result;
   }
 
   void set_points(const Points& points) {

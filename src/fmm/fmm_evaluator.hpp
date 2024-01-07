@@ -111,7 +111,13 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       scalfmm::algorithms::full_direct(src_particles_, trg_particles_, kernel_);
     }
 
-    return potentials();
+    auto result = potentials();
+
+    // Release some memory.
+    reset_src_tree();
+    reset_trg_tree();
+
+    return result;
   }
 
   void set_source_points(const Points& points) {
