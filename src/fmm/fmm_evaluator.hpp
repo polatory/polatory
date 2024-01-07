@@ -81,8 +81,10 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     if (tree_height_ > 0) {
       if (multipole_dirty_) {
         src_tree_->reset_multipoles();
-        scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](
-            *src_tree_, *fmm_operator_, p2m | m2m);
+        scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
+            (*src_tree_, *fmm_operator_, p2m);
+        scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)]  //
+            (*src_tree_, *fmm_operator_, m2m);
         multipole_dirty_ = false;
       }
 
@@ -94,10 +96,12 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       if (!trg_tree_->is_interaction_p2p_lists_built()) {
         scalfmm::list::omp::build_p2p_interaction_list(*src_tree_, *trg_tree_, 1, false);
       }
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](  //
-          *src_tree_, *trg_tree_, *fmm_operator_, m2l | p2p);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)](  //
-          *src_tree_, *trg_tree_, *fmm_operator_, l2l | l2p);
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
+          (*src_tree_, *trg_tree_, *fmm_operator_, m2l | p2p);
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)]  //
+          (*trg_tree_, *fmm_operator_, l2l);
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
+          (*trg_tree_, *fmm_operator_, l2p);
     } else {
       for (auto& p : trg_particles_) {
         for (auto i = 0; i < kn; i++) {
