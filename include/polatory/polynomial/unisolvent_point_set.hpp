@@ -13,7 +13,7 @@ namespace polatory::polynomial {
 
 template <int Dim>
 class unisolvent_point_set {
-  static constexpr int kMaxTrial = 32;
+  static constexpr int kNumTrials = 100;
 
   using Points = geometry::pointsNd<Dim>;
 
@@ -34,7 +34,7 @@ class unisolvent_point_set {
     auto best_rcond = 0.0;
     auto found = false;
 
-    for (auto trial = 0; trial < kMaxTrial; trial++) {
+    for (auto trial = 0; trial < kNumTrials; trial++) {
       std::set<index_t> set;
 
       while (static_cast<index_t>(set.size()) < n_poly_basis) {
@@ -63,7 +63,7 @@ class unisolvent_point_set {
     point_idcs_.insert(point_idcs_.begin(), best_set.begin(), best_set.end());
   }
 
-  // Returns the sorted point indices.
+  // Returns the *sorted* point indices.
   const std::vector<index_t>& point_indices() const { return point_idcs_; }
 
  private:
