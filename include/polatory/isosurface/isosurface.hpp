@@ -14,22 +14,28 @@ class isosurface {
  public:
   isosurface(const geometry::bbox3d& bbox, double resolution) : rmt_lattice_(bbox, resolution) {}
 
-  surface generate(field_function& field_fn, double isovalue = 0.0) {
+  surface generate(field_function& field_fn, double isovalue = 0.0, bool refine = true) {
     field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     rmt_lattice_.add_all_nodes(field_fn, isovalue);
+    if (refine) {
+      rmt_lattice_.refine_vertices(field_fn, isovalue);
+    }
 
     return generate_common(field_fn);
   }
 
   surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn,
-                                    double isovalue = 0.0) {
+                                    double isovalue = 0.0, bool refine = true) {
     field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     for (auto p : seed_points.rowwise()) {
       rmt_lattice_.add_cell_contains_point(p);
     }
     rmt_lattice_.add_nodes_by_tracking(field_fn, isovalue);
+    if (refine) {
+      rmt_lattice_.refine_vertices(field_fn, isovalue);
+    }
 
     return generate_common(field_fn);
   }

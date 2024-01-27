@@ -128,6 +128,18 @@ class rmt_node {
 
   const geometry::point3d& position() const { return position_; }
 
+  void remove_vertex(edge_index edge_idx) {
+    POLATORY_ASSERT(has_intersection(edge_idx));
+
+    edge_bitset edge_bit = 1 << edge_idx;
+    edge_bitset edge_count_mask = edge_bit - 1;
+
+    intersections_ ^= edge_bit;
+
+    auto it = vis_->begin() + bit_count(static_cast<edge_bitset>(intersections_ & edge_count_mask));
+    vis_->erase(it);
+  }
+
   void set_intersection(edge_index edge_idx) {
     edge_bitset edge_bit = 1 << edge_idx;
 

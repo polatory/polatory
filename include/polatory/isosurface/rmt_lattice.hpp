@@ -330,47 +330,42 @@ class rmt_lattice : public rmt_primitive_lattice {
     // NOLINTNEXTLINE(modernize-loop-convert)
     for (std::ptrdiff_t i = 0; i < static_cast<std::ptrdiff_t>(node_cvs.size()); i++) {
       const auto& cv = node_cvs.at(i);
-      auto& node = node_list_.at(cv);
-
-      // "distance" to the intersection point (if exists) from the node
-      auto d = std::abs(node.value());
-      const auto& p = node.position();
+      auto& node0 = node_list_.at(cv);
+      const auto& p0 = node0.position();
+      auto v0 = node0.value();
 
       for (auto ei : CellEdgeIndices) {
-        auto* node2_ptr = node_list_.neighbor_node_ptr(cv, ei);
-        if (node2_ptr == nullptr) {
+        auto* node1_ptr = node_list_.neighbor_node_ptr(cv, ei);
+        if (node1_ptr == nullptr) {
           // There is no neighbor node on the opposite end of the edge.
           continue;
         }
 
-        auto& node2 = *node2_ptr;
-        if (node.value_sign() == node2.value_sign()) {
+        auto& node1 = *node1_ptr;
+        const auto& p1 = node1.position();
+        auto v1 = node1.value();
+
+        if (v0 * v1 > 0.0) {
           // There is no intersection on the edge.
           continue;
         }
 
-        // "distance" to the intersection point from the neighbor node
-        auto d2 = std::abs(node2.value());
-        const auto& p2 = node2.position();
-
-        // Do not interpolate when coordinates are the same
-        // to prevent boundary vertices from being moved.
-        geometry::point3d vertex =
-            (p.array() == p2.array()).select(p, (d2 * p + d * p2) / (d + d2));
+        auto t = v0 / (v0 - v1);
+        geometry::point3d vertex = p0 + t * (p1 - p0);
 
 #pragma omp critical
         {
           auto vi = static_cast<vertex_index>(vertices_.size());
           vertices_.emplace_back(vertex);
 
-          if (d < d2) {
-            node.insert_vertex(vi, ei);
+          if (t < 0.5) {
+            node0.insert_vertex(vi, ei);
           } else {
-            node2.insert_vertex(vi, OppositeEdge.at(ei));
+            node1.insert_vertex(vi, OppositeEdge.at(ei));
           }
 
-          node.set_intersection(ei);
-          node2.set_intersection(OppositeEdge.at(ei));
+          node0.set_intersection(ei);
+          node1.set_intersection(OppositeEdge.at(ei));
         }
       }
     }
@@ -385,6 +380,62 @@ class rmt_lattice : public rmt_primitive_lattice {
     return vertices;
   }
 
+  void refine_vertices(const field_function& field_fn, double isovalue) {
+    geometry::points3d vertices = get_vertices();
+    common::valuesd vertex_values = field_fn(vertices).array() - isovalue;
+    std::vector<bool> processed(vertices_.size(), false);
+
+    for (auto& ci_node : node_list_) {
+      auto& node0 = ci_node.second;
+      if (node0.is_free()) {
+        continue;
+      }
+
+      const auto& p0 = node0.position();
+      auto v0 = node0.value();
+
+      for (edge_index ei = 0; ei < 14; ei++) {
+        if (!node0.has_intersection(ei)) {
+          continue;
+        }
+
+        auto vi = node0.vertex_on_edge(ei);
+        if (processed.at(vi)) {
+          continue;
+        }
+        processed.at(vi) = true;
+
+        auto& node1 = node0.neighbor(ei);
+        const auto& p1 = node1.position();
+        auto v1 = node1.value();
+
+        auto t = v0 / (v0 - v1);
+        auto vt = vertex_values(vi);
+        if (vt == 0.0) {
+          continue;
+        }
+
+        auto a = ((v1 - v0) * t + v0 - vt) / (t * (1.0 - t));
+        auto b = -((v1 - v0) * t * t + v0 - vt) / (t * (1.0 - t));
+        auto c = v0;
+
+        auto [s0, s1] = solve_quadratic(a, b, c);
+        auto s = 0.0 < s0 && s0 < 1.0 ? s0 : s1;
+
+        auto vertex = p0 + s * (p1 - p0);
+        vertices_.at(vi) = vertex;
+
+        if (t < 0.5 && s >= 0.5) {
+          node0.remove_vertex(ei);
+          node1.insert_vertex(vi, OppositeEdge.at(ei));
+        } else if (t >= 0.5 && s < 0.5) {
+          node1.remove_vertex(OppositeEdge.at(ei));
+          node0.insert_vertex(vi, ei);
+        }
+      }
+    }
+  }
+
   void uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
     auto it = cluster_map_.begin();
     while (it != cluster_map_.end()) {
@@ -395,6 +446,20 @@ class rmt_lattice : public rmt_primitive_lattice {
         ++it;
       }
     }
+  }
+
+ private:
+  static std::pair<double, double> solve_quadratic(double a, double b, double c) {
+    auto d = b * b - 4.0 * a * c;
+    auto sqrt_d = std::sqrt(d);
+
+    if (b > 0.0) {
+      return {(-b - sqrt_d) / (2.0 * a), 2.0 * c / (-b - sqrt_d)};
+    }
+    if (b < 0.0) {
+      return {2.0 * c / (-b + sqrt_d), (-b + sqrt_d) / (2.0 * a)};
+    }
+    return {(-b - sqrt_d) / (2.0 * a), (-b + sqrt_d) / (2.0 * a)};
   }
 };
 
