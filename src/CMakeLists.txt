@@ -73,7 +73,7 @@ if(USE_MKL)
         GIT_TAG polatory
         GIT_SHALLOW ON
         GIT_PROGRESS ON
-        CMAKE_ARGS -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_CXX_FLAGS=-fopenmp -Dscalfmm_USE_MKL=ON -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
+        CMAKE_ARGS -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-fopenmp -Dscalfmm_USE_MKL=ON -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
     )
 elseif(APPLE)
     target_compile_definitions(${TARGET} PUBLIC
