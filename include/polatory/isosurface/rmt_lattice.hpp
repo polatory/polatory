@@ -415,10 +415,12 @@ class rmt_lattice : public rmt_primitive_lattice {
           continue;
         }
 
+        // Solve y = a x^2 + b x + c for a, b, c with (x, y) = (0, v0), (t, vt), (1, v1).
         auto a = ((v1 - v0) * t + v0 - vt) / (t * (1.0 - t));
         auto b = -((v1 - v0) * t * t + v0 - vt) / (t * (1.0 - t));
         auto c = v0;
 
+        // Solve a x^2 + b x + c = 0 for x, where 0 < x < 1.
         auto [s0, s1] = solve_quadratic(a, b, c);
         auto s = 0.0 < s0 && s0 < 1.0 ? s0 : s1;
 
