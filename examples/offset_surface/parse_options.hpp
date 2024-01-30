@@ -36,7 +36,7 @@ inline options parse_options(int argc, const char* argv[]) {
        "Minimum separation distance of input points")                                       //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),           //
        "Absolute tolerance of the fitting")                                                 //
-      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),           //
+      ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),          //
        "Maximum number of iterations")                                                      //
       ("reduce", po::bool_switch(&opts.reduce),                                             //
        "Try to reduce the number of RBF centers (incremental fitting)")                     //

@@ -49,7 +49,7 @@ inline options parse_options(int argc, const char* argv[]) {
        "Degree of the drift polynomial")                                                //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),       //
        "Absolute tolerance of fitting")                                                 //
-      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),       //
+      ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),      //
        "Maximum number of iterations")                                                  //
       ("k", po::value(&opts.k)->default_value(5)->value_name("K"),                      //
        "Number of folds in the cross-validation");

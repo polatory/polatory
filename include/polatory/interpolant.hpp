@@ -54,12 +54,12 @@ class interpolant {
   }
 
   void fit(const Points& points, const common::valuesd& values, double absolute_tolerance,
-           int max_iter = 32) {
+           int max_iter = 100) {
     fit(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance, max_iter);
   }
 
   void fit(const Points& points, const Points& grad_points, const common::valuesd& values,
-           double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 32) {
+           double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 100) {
     check_num_points(points, grad_points);
 
     auto n_rhs = points.rows() + kDim * grad_points.rows();
@@ -87,14 +87,14 @@ class interpolant {
   }
 
   void fit_incrementally(const Points& points, const common::valuesd& values,
-                         double absolute_tolerance, int max_iter = 32) {
+                         double absolute_tolerance, int max_iter = 100) {
     fit_incrementally(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance,
                       max_iter);
   }
 
   void fit_incrementally(const Points& points, const Points& grad_points,
                          const common::valuesd& values, double absolute_tolerance,
-                         double grad_absolute_tolerance, int max_iter = 32) {
+                         double grad_absolute_tolerance, int max_iter = 100) {
     check_num_points(points, grad_points);
 
     if (values.rows() != points.rows() + kDim * grad_points.rows()) {
@@ -126,7 +126,7 @@ class interpolant {
 
   void fit_inequality(const Points& points, const common::valuesd& values,
                       const common::valuesd& values_lb, const common::valuesd& values_ub,
-                      double absolute_tolerance, int max_iter = 32) {
+                      double absolute_tolerance, int max_iter = 100) {
     if (model_.nugget() > 0.0) {
       throw std::runtime_error("Non-zero nugget is not supported.");
     }

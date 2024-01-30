@@ -62,7 +62,7 @@ inline options parse_options(int argc, const char* argv[]) {
       ("grad-tol",
        po::value(&opts.grad_absolute_tolerance)->default_value(1.0, "1.")->value_name("VAL"),  //
        "Gradient data absolute tolerance of the fitting")                                      //
-      ("max-iter", po::value(&opts.max_iter)->default_value(32)->value_name("N"),              //
+      ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),             //
        "Maximum number of iterations")                                                         //
       ("ineq", po::bool_switch(&opts.ineq),                                                    //
        "Use inequality constraints")                                                           //
