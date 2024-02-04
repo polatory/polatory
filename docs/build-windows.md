@@ -16,6 +16,8 @@
 
     - **Git for Windows**
 
+- Clang 17 (must be added to PATH)
+
 ## Clone
 
 ```pwsh
