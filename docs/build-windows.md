@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- [Visual Studio 2022](https://visualstudio.microsoft.com/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/) 17.9 or later
 
   Under **Workloads**, select the following item:
 
@@ -16,7 +16,9 @@
 
     - **Git for Windows**
 
-- Clang 17 (must be added to PATH)
+  - **Compilers, build tools, and runtimes**
+
+    - **C++ Clang Compiler for Windows**
 
 ## Clone
 
