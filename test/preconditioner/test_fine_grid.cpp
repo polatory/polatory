@@ -92,7 +92,6 @@ void test(int poly_degree) {
   }
   coarse.setup(points, grad_points, lagrange_pt);
   fine.setup(points, grad_points, lagrange_pt);
-  cache.finalize();
 
   valuesd rhs = valuesd(mu + Dim * sigma);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();

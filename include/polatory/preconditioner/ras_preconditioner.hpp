@@ -140,7 +140,6 @@ class ras_preconditioner : public krylov::linear_operator {
       std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16)
                 << n_mixed_points << std::endl;
     }
-    cache_.finalize();
 
     {
       auto n_mixed_points =
