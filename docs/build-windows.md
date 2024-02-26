@@ -39,3 +39,5 @@ git pull --recurse-submodules
 ./run configure  # or ./run c
 ./run build      # or ./run b
 ```
+
+**NOTE:** To distribute the example programs, you need to install the [MSVC runtime library](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) and copy the OpenMP runtime library located at `<Visual Studio 2022 Installation Dir>\VC\Redist\MSVC\<version>\debug_nonredist\x64\Microsoft.VC143.OpenMP.LLVM\libomp140.x86_64.dll` to the same directory as the executables.
