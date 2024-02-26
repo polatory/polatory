@@ -5,8 +5,8 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/domain.hpp>
-#include <polatory/preconditioner/temporary_cache.hpp>
 #include <polatory/types.hpp>
 #include <utility>
 #include <vector>
@@ -39,12 +39,13 @@ class fine_grid {
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  fine_grid(const Model& model, Domain&& domain)
+  fine_grid(const Model& model, Domain&& domain, binary_cache& cache)
       : model_(model),
         point_idcs_(std::move(domain.point_indices)),
         grad_point_idcs_(std::move(domain.grad_point_indices)),
         inner_point_(std::move(domain.inner_point)),
         inner_grad_point_(std::move(domain.inner_grad_point)),
+        cache_(cache),
         l_(model.poly_basis_size()),
         mu_(static_cast<index_t>(point_idcs_.size())),
         sigma_(static_cast<index_t>(grad_point_idcs_.size())),
@@ -144,19 +145,13 @@ class fine_grid {
   void load_ldlt_of_qtaq() {
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
     ldlt.resize(m_ - l_, m_ - l_);
-
-    auto& ifs = cache_.begin_read();
-    ifs.read(reinterpret_cast<char*>(ldlt.data()), ldlt.size() * sizeof(double));
-    cache_.end_read();
+    cache_.get(cache_id_, reinterpret_cast<char*>(ldlt.data()));
   }
 
   void save_ldlt_of_qtaq() {
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
-
-    auto& ofs = cache_.begin_write();
-    ofs.write(reinterpret_cast<const char*>(ldlt.data()), ldlt.size() * sizeof(double));
-    cache_.end_write();
-
+    cache_id_ =
+        cache_.put(reinterpret_cast<const char*>(ldlt.data()), ldlt.size() * sizeof(double));
     ldlt.resize(0, 0);
   }
 
@@ -165,6 +160,8 @@ class fine_grid {
   const std::vector<index_t> grad_point_idcs_;
   const std::vector<bool> inner_point_;
   const std::vector<bool> inner_grad_point_;
+  binary_cache& cache_;
+  std::size_t cache_id_;
 
   const index_t l_;
   const index_t mu_;
@@ -181,8 +178,6 @@ class fine_grid {
 
   // Current solution.
   common::valuesd lambda_;
-
-  temporary_cache cache_;
 };
 
 }  // namespace polatory::preconditioner

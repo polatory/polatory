@@ -20,6 +20,7 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
+#include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
@@ -126,7 +127,7 @@ class ras_preconditioner : public krylov::linear_operator {
           divider->choose_coarse_points(ratio);
 
       for (auto&& d : divider->into_domains()) {
-        fine_grids_.at(level).emplace_back(model, std::move(d));
+        fine_grids_.at(level).emplace_back(model, std::move(d), cache_);
       }
 
       auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
@@ -139,6 +140,7 @@ class ras_preconditioner : public krylov::linear_operator {
       std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16)
                 << n_mixed_points << std::endl;
     }
+    cache_.finalize();
 
     {
       auto n_mixed_points =
@@ -351,6 +353,7 @@ class ras_preconditioner : public krylov::linear_operator {
   mutable std::map<std::pair<int, int>, Evaluator> evaluator_;
   Eigen::MatrixXd p_;
   Eigen::MatrixXd ap_;
+  binary_cache cache_;
 };
 
 }  // namespace polatory::preconditioner

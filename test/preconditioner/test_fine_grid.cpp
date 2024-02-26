@@ -6,6 +6,7 @@
 #include <numeric>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
+#include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
@@ -23,6 +24,7 @@ using polatory::common::valuesd;
 using polatory::geometry::matrixNd;
 using polatory::geometry::pointsNd;
 using polatory::polynomial::lagrange_basis;
+using polatory::preconditioner::binary_cache;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
 using polatory::preconditioner::fine_grid;
@@ -81,7 +83,8 @@ void test(int poly_degree) {
                                           domain.point_indices.begin() + l);
 
   coarse_grid coarse(model, std::move(domain_coarse));
-  fine_grid fine(model, std::move(domain_fine));
+  binary_cache cache;
+  fine_grid fine(model, std::move(domain_fine), cache);
   Eigen::MatrixXd lagrange_pt;
   if (poly_degree >= 0) {
     LagrangeBasis lagrange_basis(poly_degree, points(poly_point_indices, Eigen::all));
@@ -89,6 +92,7 @@ void test(int poly_degree) {
   }
   coarse.setup(points, grad_points, lagrange_pt);
   fine.setup(points, grad_points, lagrange_pt);
+  cache.finalize();
 
   valuesd rhs = valuesd(mu + Dim * sigma);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
