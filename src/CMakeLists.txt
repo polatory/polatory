@@ -66,6 +66,10 @@ if(USE_MKL)
         $<LINK_ONLY:MKL::MKL>
     )
 
+    if(MSVC)
+        set(COMPILER_SPEC -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-fopenmp)
+    endif()
+
     ExternalProject_Add(
         scalfmm
         PREFIX ${CMAKE_BINARY_DIR}/scalfmm
@@ -73,7 +77,7 @@ if(USE_MKL)
         GIT_TAG polatory
         GIT_SHALLOW ON
         GIT_PROGRESS ON
-        CMAKE_ARGS -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-fopenmp -Dscalfmm_USE_MKL=ON -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
+        CMAKE_ARGS ${COMPILER_SPEC} -Dscalfmm_USE_MKL=ON -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
     )
 elseif(APPLE)
     target_compile_definitions(${TARGET} PUBLIC

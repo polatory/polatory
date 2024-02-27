@@ -8,10 +8,12 @@
   sudo apt install build-essential cmake curl git ninja-build pkg-config unzip
   ```
 
-  If you prefer Clang:
+- Clang 17
 
   ```bash
-  sudo apt install clang libomp-dev
+  wget https://apt.llvm.org/llvm.sh
+  chmod +x llvm.sh
+  sudo ./llvm.sh 17 all
   ```
 
 ## Clone

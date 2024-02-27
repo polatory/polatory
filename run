@@ -9,6 +9,15 @@ fi
 if [ "$(uname)" = 'Darwin' ]; then
   export CC="${CC:-$(brew --prefix)/opt/llvm/bin/clang}"
   export CXX="${CXX:-$(brew --prefix)/opt/llvm/bin/clang++}"
+elif [ "$(uname)" = 'Linux' ]; then
+  export CC="${CC:-clang-17}"
+  export CXX="${CXX:-clang++-17}"
+  if [ "$CC" = 'clang-17' ]; then
+    export CFLAGS="${CFLAGS:--stdlib=libc++}"
+  fi
+  if [ "$CXX" = 'clang++-17' ]; then
+    export CXXFLAGS="${CXXFLAGS:--stdlib=libc++}"
+  fi
 fi
 
 cd "$(dirname "$0")"
