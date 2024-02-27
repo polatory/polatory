@@ -1,13 +1,12 @@
 #pragma once
 
 #ifdef _WIN32
-#include <fileapi.h>
+#include <Windows.h>
 #else
 #include <unistd.h>
 #endif
 
 #include <boost/filesystem.hpp>
-#include <fstream>
 #include <mutex>
 #include <stdexcept>
 #include <vector>
@@ -20,27 +19,27 @@ class binary_cache {
     auto filename = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
 
 #ifdef _WIN32
-    file_ = ::CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE,
-                          FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS,
+    file_ = ::CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_NEW,
                           FILE_FLAG_DELETE_ON_CLOSE, nullptr);
     if (file_ == INVALID_HANDLE_VALUE) {
-      throw std::runtime_error("failed to open a temporary file");
+      throw std::runtime_error("failed to open a temporary file a");
     }
-#endif
-
-    fs_.open(filename.string(), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
-    if (!fs_.is_open()) {
-      throw std::runtime_error("failed to open a temporary file");
+#else
+    file_ = ::open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL);
+    if (file_ == -1) {
+      throw std::runtime_error("failed to open a temporary file b");
     }
-
-#ifndef _WIN32
     ::unlink(filename.c_str());
 #endif
+
+    records_.push_back({0, 0});
   }
 
   ~binary_cache() {
 #ifdef _WIN32
     ::CloseHandle(file_);
+#else
+    ::close(file_);
 #endif
   }
 
@@ -48,17 +47,34 @@ class binary_cache {
     std::lock_guard lock(mutex_);
 
     const auto& record = records_.at(id);
-    fs_.clear();
-    fs_.seekg(record.offset);
-    fs_.read(data, record.size);
+
+#ifdef _WIN32
+    LARGE_INTEGER distance;
+    distance.QuadPart = record.offset;
+    ::SetFilePointerEx(file_, distance, nullptr, FILE_BEGIN);
+    ::ReadFile(file_, data, record.size, nullptr, nullptr);
+#else
+    ::lseek(file_, record.offset, SEEK_SET);
+    ::read(file_, data, record.size);
+#endif
   }
 
   std::size_t put(const char* data, std::size_t size) {
     std::lock_guard lock(mutex_);
 
     auto id = records_.size();
-    auto offset = static_cast<std::size_t>(fs_.tellp());
-    fs_.write(data, size);
+    auto offset = records_.back().offset + records_.back().size;
+
+#ifdef _WIN32
+    LARGE_INTEGER distance;
+    distance.QuadPart = 0;
+    ::SetFilePointerEx(file_, distance, nullptr, FILE_END);
+    ::WriteFile(file_, data, size, nullptr, nullptr);
+#else
+    ::lseek(file_, 0, SEEK_END);
+    ::write(file_, data, size);
+#endif
+
     records_.push_back({offset, size});
     return id;
   }
@@ -71,10 +87,11 @@ class binary_cache {
 
 #ifdef _WIN32
   HANDLE file_;
+#else
+  int file_;
 #endif
 
   std::vector<record> records_;
-  mutable std::fstream fs_;
   mutable std::mutex mutex_;
 };
 
