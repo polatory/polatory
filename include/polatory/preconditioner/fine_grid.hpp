@@ -2,12 +2,10 @@
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
-#include <boost/filesystem.hpp>
-#include <fstream>
-#include <iostream>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/types.hpp>
 #include <utility>
@@ -41,21 +39,19 @@ class fine_grid {
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  fine_grid(const Model& model, Domain&& domain)
+  fine_grid(const Model& model, Domain&& domain, binary_cache& cache)
       : model_(model),
         point_idcs_(std::move(domain.point_indices)),
         grad_point_idcs_(std::move(domain.grad_point_indices)),
         inner_point_(std::move(domain.inner_point)),
         inner_grad_point_(std::move(domain.inner_grad_point)),
+        cache_(cache),
         l_(model.poly_basis_size()),
         mu_(static_cast<index_t>(point_idcs_.size())),
         sigma_(static_cast<index_t>(grad_point_idcs_.size())),
-        m_(mu_ + kDim * sigma_),
-        filename_{boost::filesystem::temp_directory_path() / boost::filesystem::unique_path()} {
+        m_(mu_ + kDim * sigma_) {
     POLATORY_ASSERT(mu_ > l_);
   }
-
-  ~fine_grid() { boost::filesystem::remove(filename_); }
 
   void setup(const Points& points_full, const Points& grad_points_full,
              const Eigen::MatrixXd& lagrange_pt_full) {
@@ -147,28 +143,14 @@ class fine_grid {
 
  private:
   void load_ldlt_of_qtaq() {
-    std::ifstream ifs(filename_.string(), std::ios::binary);
-
-    if (!ifs) {
-      std::cerr << "Failed to open file: " << filename_ << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
     ldlt.resize(m_ - l_, m_ - l_);
-    ifs.read(reinterpret_cast<char*>(ldlt.data()), ldlt.size() * sizeof(double));
+    cache_.get(cache_id_, ldlt.data());
   }
 
   void save_ldlt_of_qtaq() {
-    std::ofstream ofs(filename_.string(), std::ios::binary);
-
-    if (!ofs) {
-      std::cerr << "Failed to open file: " << filename_ << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
-    ofs.write(reinterpret_cast<const char*>(ldlt.data()), ldlt.size() * sizeof(double));
+    cache_id_ = cache_.put(ldlt.data(), ldlt.size() * sizeof(double));
     ldlt.resize(0, 0);
   }
 
@@ -177,6 +159,8 @@ class fine_grid {
   const std::vector<index_t> grad_point_idcs_;
   const std::vector<bool> inner_point_;
   const std::vector<bool> inner_grad_point_;
+  binary_cache& cache_;
+  std::size_t cache_id_;
 
   const index_t l_;
   const index_t mu_;
@@ -193,8 +177,6 @@ class fine_grid {
 
   // Current solution.
   common::valuesd lambda_;
-
-  boost::filesystem::path filename_;
 };
 
 }  // namespace polatory::preconditioner
