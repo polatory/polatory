@@ -23,12 +23,12 @@ class binary_cache {
     file_ = ::CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_NEW,
                           FILE_FLAG_DELETE_ON_CLOSE, nullptr);
     if (file_ == INVALID_HANDLE_VALUE) {
-      throw std::runtime_error("failed to open a temporary file a");
+      throw std::runtime_error("failed to open a temporary file");
     }
 #else
     file_ = ::open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL);
     if (file_ == -1) {
-      throw std::runtime_error("failed to open a temporary file b");
+      throw std::runtime_error("failed to open a temporary file");
     }
     ::unlink(filename.c_str());
 #endif
@@ -63,9 +63,6 @@ class binary_cache {
   std::size_t put(const char* data, std::size_t size) {
     std::lock_guard lock(mutex_);
 
-    auto id = records_.size();
-    auto offset = records_.back().offset + records_.back().size;
-
 #ifdef _WIN32
     LARGE_INTEGER distance;
     distance.QuadPart = 0;
@@ -76,6 +73,8 @@ class binary_cache {
     ::write(file_, data, size);
 #endif
 
+    auto id = records_.size();
+    auto offset = records_.back().offset + records_.back().size;
     records_.push_back({offset, size});
     return id;
   }
