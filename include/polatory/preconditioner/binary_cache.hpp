@@ -1,8 +1,7 @@
 #pragma once
 
-// For _wunlink (Win32) or unlink (POSIX).
 #ifdef _WIN32
-#include <io.h>
+#include <fileapi.h>
 #else
 #include <unistd.h>
 #endif
@@ -19,10 +18,30 @@ class binary_cache {
  public:
   binary_cache() {
     auto filename = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    fs_.open(filename.string(), std::ios::binary | std::ios::out);
-    fs_.close();
-    fs_.open(filename.string(), std::ios::binary | std::ios::in | std::ios::out);
-    unlink(filename);
+
+#ifdef _WIN32
+    file_ = ::CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS,
+                          FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+    if (file_ == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error("failed to open a temporary file");
+    }
+#endif
+
+    fs_.open(filename.string(), std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
+    if (!fs_.is_open()) {
+      throw std::runtime_error("failed to open a temporary file");
+    }
+
+#ifndef _WIN32
+    ::unlink(filename.c_str());
+#endif
+  }
+
+  ~binary_cache() {
+#ifdef _WIN32
+    ::CloseHandle(file_);
+#endif
   }
 
   void get(std::size_t id, char* data) const {
@@ -50,13 +69,9 @@ class binary_cache {
     std::size_t size;
   };
 
-  static int unlink(const boost::filesystem::path& filename) {
 #ifdef _WIN32
-    return ::_wunlink(filename.c_str());
-#else
-    return ::unlink(filename.c_str());
+  HANDLE file_;
 #endif
-  }
 
   std::vector<record> records_;
   mutable std::fstream fs_;
