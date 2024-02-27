@@ -145,13 +145,12 @@ class fine_grid {
   void load_ldlt_of_qtaq() {
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
     ldlt.resize(m_ - l_, m_ - l_);
-    cache_.get(cache_id_, reinterpret_cast<char*>(ldlt.data()));
+    cache_.get(cache_id_, ldlt.data());
   }
 
   void save_ldlt_of_qtaq() {
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
-    cache_id_ =
-        cache_.put(reinterpret_cast<const char*>(ldlt.data()), ldlt.size() * sizeof(double));
+    cache_id_ = cache_.put(ldlt.data(), ldlt.size() * sizeof(double));
     ldlt.resize(0, 0);
   }
 

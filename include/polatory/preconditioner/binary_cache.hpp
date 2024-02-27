@@ -44,7 +44,7 @@ class binary_cache {
 #endif
   }
 
-  void get(std::size_t id, char* data) const {
+  void get(std::size_t id, void* data) const {
     std::lock_guard lock(mutex_);
 
     const auto& record = records_.at(id);
@@ -60,7 +60,7 @@ class binary_cache {
 #endif
   }
 
-  std::size_t put(const char* data, std::size_t size) {
+  std::size_t put(const void* data, std::size_t size) {
     std::lock_guard lock(mutex_);
 
 #ifdef _WIN32
