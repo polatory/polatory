@@ -312,8 +312,8 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   void cluster_vertices() {
-    for (auto& ci_node : node_list_) {
-      auto& node = ci_node.second;
+    for (auto& cv_node : node_list_) {
+      auto& node = cv_node.second;
       const auto& p = node.position();
       if ((p.array() == bbox().min().array() || p.array() == bbox().max().array()).any()) {
         // Do not cluster boundary nodes' vertices.
@@ -385,8 +385,8 @@ class rmt_lattice : public rmt_primitive_lattice {
     common::valuesd vertex_values = field_fn(vertices).array() - isovalue;
     std::vector<bool> processed(vertices_.size(), false);
 
-    for (auto& ci_node : node_list_) {
-      auto& node0 = ci_node.second;
+    for (auto& cv_node : node_list_) {
+      auto& node0 = cv_node.second;
       if (node0.is_free()) {
         continue;
       }
@@ -424,15 +424,12 @@ class rmt_lattice : public rmt_primitive_lattice {
         auto [s0, s1] = solve_quadratic(a, b, c);
         auto s = 0.0 < s0 && s0 < 1.0 ? s0 : s1;
 
-        auto vertex = p0 + s * (p1 - p0);
+        geometry::point3d vertex = p0 + s * (p1 - p0);
         vertices_.at(vi) = vertex;
 
-        if (t < 0.5 && s >= 0.5) {
+        if (s >= 0.5) {
           node0.remove_vertex(ei);
           node1.insert_vertex(vi, OppositeEdge.at(ei));
-        } else if (t >= 0.5 && s < 0.5) {
-          node1.remove_vertex(OppositeEdge.at(ei));
-          node0.insert_vertex(vi, ei);
         }
       }
     }
