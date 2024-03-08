@@ -3,8 +3,8 @@
 namespace polatory {
 
 enum class precision {
-  kFast = 6,
-  kPrecise = 10,
+  kFast = 8,
+  kPrecise = 8,
 };
 
 }  // namespace polatory

@@ -51,10 +51,8 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
       /* variables */ index_t>;
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
-  using Interpolator = scalfmm::interpolation::interpolator<
-      double, kDim, Kernel,
-      std::conditional_t<std::is_same_v<Kernel, kernel<typename Model::rbf_type>>,
-                         scalfmm::options::chebyshev_<>, scalfmm::options::uniform_<>>>;
+  using Interpolator =
+      scalfmm::interpolation::interpolator<double, kDim, Kernel, scalfmm::options::uniform_<>>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename SourceParticle::position_type;
