@@ -5,6 +5,7 @@
 #include <polatory/polatory.hpp>
 #include <tuple>
 
+#include "../common/common.hpp"
 #include "parse_options.hpp"
 
 using polatory::model;
@@ -14,20 +15,9 @@ using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::kriging::k_fold_cross_validation;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::biharmonic2d;
-using polatory::rbf::biharmonic3d;
-using polatory::rbf::cov_exponential;
-using polatory::rbf::cov_spheroidal3;
-using polatory::rbf::cov_spheroidal5;
-using polatory::rbf::cov_spheroidal7;
-using polatory::rbf::cov_spheroidal9;
-using polatory::rbf::inverse_multiquadric1;
-using polatory::rbf::multiquadric1;
-using polatory::rbf::multiquadric3;
-using polatory::rbf::triharmonic3d;
 
 template <class Rbf>
-void main_impl(const options& opts) {
+void main_impl(Rbf&& rbf, const options& opts) {
   using Model = model<Rbf>;
 
   // Load points (x,y,z) and values (value).
@@ -39,7 +29,6 @@ void main_impl(const options& opts) {
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
   // Define the model.
-  Rbf rbf(opts.rbf_params);
   rbf.set_anisotropy(opts.aniso);
   Model model(rbf, opts.poly_degree);
   model.set_nugget(opts.nugget);
@@ -59,33 +48,7 @@ void main_impl(const options& opts) {
 int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
-
-    if (opts.rbf_name == "bh2") {
-      main_impl<biharmonic2d<3>>(opts);
-    } else if (opts.rbf_name == "bh3") {
-      main_impl<biharmonic3d<3>>(opts);
-    } else if (opts.rbf_name == "exp") {
-      main_impl<cov_exponential<3>>(opts);
-    } else if (opts.rbf_name == "sp3") {
-      main_impl<cov_spheroidal3<3>>(opts);
-    } else if (opts.rbf_name == "sp5") {
-      main_impl<cov_spheroidal5<3>>(opts);
-    } else if (opts.rbf_name == "sp7") {
-      main_impl<cov_spheroidal7<3>>(opts);
-    } else if (opts.rbf_name == "sp9") {
-      main_impl<cov_spheroidal9<3>>(opts);
-    } else if (opts.rbf_name == "imq1") {
-      main_impl<inverse_multiquadric1<3>>(opts);
-    } else if (opts.rbf_name == "mq1") {
-      main_impl<multiquadric1<3>>(opts);
-    } else if (opts.rbf_name == "mq3") {
-      main_impl<multiquadric3<3>>(opts);
-    } else if (opts.rbf_name == "th3") {
-      main_impl<triharmonic3d<3>>(opts);
-    } else {
-      throw std::runtime_error("Unknown RBF name: " + opts.rbf_name);
-    }
-
+    MAIN_IMPL_DIM(opts.rbf_name, 3, opts.rbf_params, opts);
     return 0;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
