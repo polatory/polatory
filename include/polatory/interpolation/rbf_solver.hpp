@@ -13,6 +13,7 @@
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>

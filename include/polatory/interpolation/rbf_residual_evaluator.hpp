@@ -9,6 +9,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <tuple>
 

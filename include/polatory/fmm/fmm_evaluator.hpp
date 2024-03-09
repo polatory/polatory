@@ -9,7 +9,6 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
-#include <polatory/precision.hpp>
 
 namespace polatory::fmm {
 
@@ -20,7 +19,7 @@ class fmm_generic_evaluator {
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  fmm_generic_evaluator(const Model& model, const Bbox& bbox, precision prec);
+  fmm_generic_evaluator(const Model& model, const Bbox& bbox, int order);
 
   ~fmm_generic_evaluator();
 

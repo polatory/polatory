@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
@@ -22,7 +23,6 @@
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
 #include <tuple>
-#include <type_traits>
 #include <vector>
 
 #include "utility.hpp"
@@ -56,10 +56,10 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
   using Tree = scalfmm::component::group_tree_view<Cell, Leaf, Box>;
 
  public:
-  impl(const Model& model, const Bbox& bbox, precision prec)
+  impl(const Model& model, const Bbox& bbox, int order)
       : model_(model),
         kernel_(model.rbf()),
-        order_(static_cast<int>(prec)),
+        order_(order),
         box_(make_box<Model, Box>(model, bbox)),
         near_field_(kernel_) {}
 
@@ -276,8 +276,8 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
 template <class Model, class Kernel>
 fmm_generic_symmetric_evaluator<Model, Kernel>::fmm_generic_symmetric_evaluator(const Model& model,
                                                                                 const Bbox& bbox,
-                                                                                precision prec)
-    : impl_(std::make_unique<impl>(model, bbox, prec)) {}
+                                                                                int order)
+    : impl_(std::make_unique<impl>(model, bbox, order)) {}
 
 template <class Model, class Kernel>
 fmm_generic_symmetric_evaluator<Model, Kernel>::~fmm_generic_symmetric_evaluator() = default;

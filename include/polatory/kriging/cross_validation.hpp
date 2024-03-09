@@ -8,6 +8,7 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/model.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <random>
 #include <stdexcept>

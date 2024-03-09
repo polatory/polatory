@@ -2,9 +2,9 @@
 
 namespace polatory {
 
-enum class precision {
-  kFast = 8,
-  kPrecise = 8,
+struct precision {
+  static constexpr int kFast = 8;
+  static constexpr int kPrecise = 8;
 };
 
 }  // namespace polatory

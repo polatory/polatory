@@ -7,6 +7,7 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/model.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>

@@ -25,34 +25,40 @@ void main_impl(Rbf&& rbf, const options& opts) {
   constexpr int kDim = Rbf::kDim;
   using Points = pointsNd<kDim>;
 
-  Points points = Points::Random(opts.n_points, kDim);
-  Points eval_points = points.topRows(opts.n_eval_points);
+  auto mu = opts.n_points;
+  auto sigma = opts.n_grad_points;
+  auto m = mu + kDim * sigma;
+
+  Points points = Points::Random(mu, kDim);
+  Points grad_points = Points::Random(sigma, kDim);
+  Points eval_points = Points::Random(opts.n_eval_points, kDim);
+  Points grad_eval_points = Points::Random(opts.n_grad_eval_points, kDim);
 
   model model(rbf, opts.poly_degree);
 
-  valuesd weights = valuesd::Zero(opts.n_points + model.poly_basis_size());
-  weights.head(opts.n_points) = valuesd::Random(opts.n_points);
+  valuesd weights = valuesd::Zero(m + model.poly_basis_size());
+  weights.head(opts.n_points) = valuesd::Random(m);
 
   if (opts.poly_degree >= 0) {
     monomial_basis<kDim> poly(model.poly_degree());
-    Eigen::MatrixXd p = poly.evaluate(points).transpose();
+    Eigen::MatrixXd p = poly.evaluate(points, grad_points).transpose();
     orthonormalize_cols(p);
 
     // Orthogonalize weights against P.
     auto n_cols = p.cols();
     for (index_t i = 0; i < n_cols; i++) {
-      auto dot = p.col(i).dot(weights.head(opts.n_points));
-      weights.head(opts.n_points) -= dot * p.col(i);
+      auto dot = p.col(i).dot(weights.head(m));
+      weights.head(m) -= dot * p.col(i);
     }
   }
 
-  rbf_direct_evaluator direct_eval(model, points);
+  rbf_direct_evaluator direct_eval(model, points, grad_points);
   direct_eval.set_weights(weights);
-  direct_eval.set_target_points(eval_points);
+  direct_eval.set_target_points(eval_points, grad_eval_points);
 
-  rbf_evaluator eval(model, points, precision::kPrecise);
+  rbf_evaluator eval(model, points, grad_points, opts.order);
   eval.set_weights(weights);
-  eval.set_target_points(eval_points);
+  eval.set_target_points(eval_points, grad_eval_points);
 
   auto direct_values = direct_eval.evaluate();
   auto values = eval.evaluate();
