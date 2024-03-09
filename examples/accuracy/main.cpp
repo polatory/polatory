@@ -62,9 +62,12 @@ void main_impl(Rbf&& rbf, const options& opts) {
   auto direct_values = direct_eval.evaluate();
   auto values = eval.evaluate();
 
+  std::cout << "Relative error (L1): "
+            << (values - direct_values).template lpNorm<1>() / direct_values.template lpNorm<1>()
+            << std::endl;
   std::cout << "Relative error (L2): " << (values - direct_values).norm() / direct_values.norm()
             << std::endl;
-  std::cout << "Relative error (LInfinity): "
+  std::cout << "Relative error (L-infinity): "
             << (values - direct_values).template lpNorm<Eigen::Infinity>() /
                    direct_values.template lpNorm<Eigen::Infinity>()
             << std::endl;
