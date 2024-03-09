@@ -11,7 +11,6 @@
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::interpolation {
@@ -24,19 +23,19 @@ class rbf_operator : public krylov::linear_operator {
   using MonomialBasis = polynomial::monomial_basis<kDim>;
 
  public:
-  rbf_operator(const Model& model, const Points& points, const Points& grad_points, precision prec)
+  rbf_operator(const Model& model, const Points& points, const Points& grad_points, int order)
       : rbf_operator(model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
-                     prec) {
+                     order) {
     set_points(points, grad_points);
   }
 
-  rbf_operator(const Model& model, const Bbox& bbox, precision prec)
+  rbf_operator(const Model& model, const Bbox& bbox, int order)
       : model_(model),
         l_(model.poly_basis_size()),
-        a_(model, bbox, prec),
-        f_(model, bbox, prec),
-        ft_(model, bbox, prec),
-        h_(model, bbox, prec) {
+        a_(model, bbox, order),
+        f_(model, bbox, order),
+        ft_(model, bbox, order),
+        h_(model, bbox, order) {
     if (l_ > 0) {
       poly_basis_ = std::make_unique<MonomialBasis>(model.poly_degree());
     }

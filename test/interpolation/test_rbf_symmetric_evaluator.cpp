@@ -6,6 +6,7 @@
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/rbf/inverse_multiquadric.hpp>
 #include <polatory/types.hpp>
 

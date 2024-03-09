@@ -20,6 +20,7 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
@@ -61,7 +62,7 @@ class ras_preconditioner : public krylov::linear_operator {
         grad_points_(grad_points),
         bbox_(Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_))),
         finest_evaluator_(kReportResidual ? std::make_unique<SymmetricEvaluator>(
-                                                model, points_, grad_points_, precision::kFast)
+                                                model, points_, grad_points_, precision::kPrecise)
                                           : nullptr) {
     auto n_fine_levels =
         std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(mu_ + sigma_) /
@@ -168,7 +169,7 @@ class ras_preconditioner : public krylov::linear_operator {
       ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
       auto finest_evaluator =
-          SymmetricEvaluator(model.without_poly(), points_, grad_points_, precision::kFast);
+          SymmetricEvaluator(model.without_poly(), points_, grad_points_, precision::kPrecise);
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
         finest_evaluator.set_weights(p_.col(i));

@@ -1,6 +1,3 @@
-add_executable(accuracy accuracy.cpp)
-target_link_libraries(accuracy PRIVATE polatory)
-
 add_executable(points points.cpp)
 target_link_libraries(points PRIVATE polatory)
 

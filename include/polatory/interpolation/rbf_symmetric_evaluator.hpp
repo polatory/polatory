@@ -10,7 +10,6 @@
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::interpolation {
@@ -25,18 +24,18 @@ class rbf_symmetric_evaluator {
 
  public:
   rbf_symmetric_evaluator(const Model& model, const Points& points, const Points& grad_points,
-                          precision prec)
+                          int order)
       : rbf_symmetric_evaluator(
-            model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)), prec) {
+            model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)), order) {
     set_points(points, grad_points);
   }
 
-  rbf_symmetric_evaluator(const Model& model, const Bbox& bbox, precision prec)
+  rbf_symmetric_evaluator(const Model& model, const Bbox& bbox, int order)
       : l_(model.poly_basis_size()),
-        a_(model, bbox, prec),
-        f_(model, bbox, prec),
-        ft_(model, bbox, prec),
-        h_(model, bbox, prec) {
+        a_(model, bbox, order),
+        f_(model, bbox, order),
+        ft_(model, bbox, order),
+        h_(model, bbox, order) {
     if (l_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }

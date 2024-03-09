@@ -13,6 +13,7 @@
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
+#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <tuple>
 #include <unordered_set>
