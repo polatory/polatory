@@ -12,7 +12,6 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::precision;
 using polatory::common::orthonormalize_cols;
 using polatory::common::valuesd;
 using polatory::geometry::pointsNd;
