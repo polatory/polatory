@@ -17,7 +17,6 @@ struct options {
   polatory::index_t n_grad_eval_points;
   std::string rbf_name;
   std::vector<double> rbf_params;
-  int poly_degree;
   int order;
 };
 
@@ -41,8 +40,6 @@ inline options parse_options(int argc, const char* argv[]) {
        "Number of evaluation points for gradients")                                        //
       ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."),            //
        rbf_cov_list)                                                                       //
-      ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),      //
-       "Degree of the drift polynomial")                                                   //
       ("order",
        po::value(&opts.order)
            ->default_value(polatory::precision::kPrecise)

@@ -12,50 +12,43 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::common::orthonormalize_cols;
 using polatory::common::valuesd;
+using polatory::geometry::bboxNd;
+using polatory::geometry::pointNd;
 using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
-using polatory::polynomial::monomial_basis;
 
 template <class Rbf>
 void main_impl(Rbf&& rbf, const options& opts) {
   constexpr int kDim = Rbf::kDim;
+  using Bbox = bboxNd<kDim>;
+  using Point = pointNd<kDim>;
   using Points = pointsNd<kDim>;
+
+  auto poly_degree = rbf.cpd_order() - 1;
+  model model(rbf, poly_degree);
 
   auto mu = opts.n_points;
   auto sigma = opts.n_grad_points;
   auto m = mu + kDim * sigma;
+  auto l = model.poly_basis_size();
 
   Points points = Points::Random(mu, kDim);
   Points grad_points = Points::Random(sigma, kDim);
   Points eval_points = Points::Random(opts.n_eval_points, kDim);
   Points grad_eval_points = Points::Random(opts.n_grad_eval_points, kDim);
 
-  model model(rbf, opts.poly_degree);
-
-  valuesd weights = valuesd::Zero(m + model.poly_basis_size());
-  weights.head(opts.n_points) = valuesd::Random(m);
-
-  if (opts.poly_degree >= 0) {
-    monomial_basis<kDim> poly(model.poly_degree());
-    Eigen::MatrixXd p = poly.evaluate(points, grad_points).transpose();
-    orthonormalize_cols(p);
-
-    // Orthogonalize weights against P.
-    auto n_cols = p.cols();
-    for (index_t i = 0; i < n_cols; i++) {
-      auto dot = p.col(i).dot(weights.head(m));
-      weights.head(m) -= dot * p.col(i);
-    }
-  }
+  valuesd weights = valuesd::Zero(m + l);
+  weights.head(m) = valuesd::Random(m);
 
   rbf_direct_evaluator direct_eval(model, points, grad_points);
   direct_eval.set_weights(weights);
   direct_eval.set_target_points(eval_points, grad_eval_points);
 
-  rbf_evaluator eval(model, points, grad_points, opts.order);
+  Bbox bbox{-Point::Ones(), Point::Ones()};
+  rbf_evaluator eval(model, bbox, opts.order);
+  eval.set_source_points(points, grad_points);
   eval.set_weights(weights);
   eval.set_target_points(eval_points, grad_eval_points);
 
