@@ -168,11 +168,12 @@ class ras_preconditioner : public krylov::linear_operator {
 
       ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
-      auto finest_evaluator =
-          SymmetricEvaluator(model.without_poly(), points_, grad_points_, precision::kPrecise);
+      auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_, precision::kPrecise);
+      common::valuesd weights = common::valuesd::Zero(size());
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
-        finest_evaluator.set_weights(p_.col(i));
+        weights.head(mu_ + kDim * sigma_) = p_.col(i);
+        finest_evaluator.set_weights(weights);
         ap_.col(i) = finest_evaluator.evaluate();
       }
     }

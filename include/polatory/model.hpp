@@ -89,12 +89,7 @@ class model {
     rbf_.set_parameters(std::vector<double>(params.begin() + 1, params.end()));
   }
 
-  // This method is for internal use only.
-  model without_poly() const { return model(rbf_); }
-
  private:
-  explicit model(const Rbf& rbf) : rbf_(rbf), poly_degree_(-1) {}
-
   Rbf rbf_;
   int poly_degree_;
   double nugget_{};
