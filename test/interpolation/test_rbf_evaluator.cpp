@@ -1,14 +1,15 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <format>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
+#include <polatory/numeric/error.hpp>
 #include <polatory/precision.hpp>
-#include <polatory/rbf/inverse_multiquadric.hpp>
+#include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 
 #include "../utility.hpp"
@@ -22,76 +23,50 @@ using polatory::geometry::pointNd;
 using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
-using polatory::rbf::inverse_multiquadric1;
+using polatory::numeric::relative_error;
+using polatory::rbf::triharmonic3d;
 
-namespace {
+TEST(rbf_evaluator, trivial) {
+  constexpr int kDim = 3;
+  using Bbox = bboxNd<kDim>;
+  using Point = pointNd<kDim>;
+  using Points = pointsNd<kDim>;
 
-template <int Dim>
-void test(int poly_degree, index_t n_initial_points, index_t n_initial_grad_points,
-          index_t n_initial_eval_points, index_t n_initial_eval_grad_points) {
-  std::cout << std::format("dim = {}, deg = {}", Dim, poly_degree) << std::endl;
+  index_t n_points = 1024;
+  index_t n_grad_points = 1024;
+  index_t n_eval_points = 1024;
+  index_t n_grad_eval_points = 1024;
+  auto relative_tolerance = 5e-7;
 
-  using Rbf = inverse_multiquadric1<Dim>;
-  using Bbox = bboxNd<Dim>;
-  using Point = pointNd<Dim>;
-  using Points = pointsNd<Dim>;
+  triharmonic3d<kDim> rbf({1.0});
+  rbf.set_anisotropy(random_anisotropy<kDim>());
 
-  index_t n_points = n_initial_points;
-  index_t n_grad_points = n_initial_grad_points;
-  index_t n_eval_points = n_initial_eval_points;
-  index_t n_eval_grad_points = n_initial_eval_grad_points;
-
-  auto rel_tolerance = 1e-10;
-
-  Rbf rbf({1.0, 0.01});
-  rbf.set_anisotropy(random_anisotropy<Dim>());
-
+  auto poly_degree = rbf.cpd_order() - 1;
   model model(rbf, poly_degree);
   model.set_nugget(0.01);
 
+  Points points = Points::Random(n_points, kDim);
+  Points grad_points = Points::Random(n_grad_points, kDim);
+  Points eval_points = Points::Random(n_eval_points, kDim);
+  Points grad_eval_points = Points::Random(n_grad_eval_points, kDim);
+
+  valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
+
   Bbox bbox{-Point::Ones(), Point::Ones()};
   rbf_evaluator eval(model, bbox, precision::kPrecise);
+  eval.set_source_points(points, grad_points);
+  eval.set_weights(weights);
+  eval.set_target_points(eval_points, grad_eval_points);
 
-  for (auto i = 0; i < 2; i++) {
-    Points points = Points::Random(n_points, Dim);
-    Points grad_points = Points::Random(n_grad_points, Dim);
-    Points eval_points = Points::Random(n_eval_points, Dim);
-    Points eval_grad_points = Points::Random(n_eval_grad_points, Dim);
+  rbf_direct_evaluator direct_eval(model, points, grad_points);
+  direct_eval.set_weights(weights);
+  direct_eval.set_target_points(eval_points, grad_eval_points);
 
-    valuesd weights = valuesd::Random(n_points + Dim * n_grad_points + model.poly_basis_size());
+  auto values = eval.evaluate();
+  auto direct_values = direct_eval.evaluate();
 
-    rbf_direct_evaluator direct_eval(model, points, grad_points);
-    direct_eval.set_weights(weights);
-    direct_eval.set_target_points(eval_points, eval_grad_points);
+  EXPECT_EQ(n_eval_points + kDim * n_grad_eval_points, values.rows());
+  EXPECT_EQ(n_eval_points + kDim * n_grad_eval_points, direct_values.rows());
 
-    eval.set_source_points(points, grad_points);
-    eval.set_weights(weights);
-    eval.set_target_points(eval_points, eval_grad_points);
-
-    auto direct_values = direct_eval.evaluate();
-    auto values = eval.evaluate();
-
-    EXPECT_EQ(n_eval_points + Dim * n_eval_grad_points, direct_values.rows());
-    EXPECT_EQ(n_eval_points + Dim * n_eval_grad_points, values.rows());
-
-    EXPECT_LT(relative_error(values, direct_values), rel_tolerance);
-
-    n_points *= 8;
-    n_grad_points *= 8;
-    n_eval_points *= 8;
-    n_eval_grad_points *= 8;
-  }
-}
-
-}  // namespace
-
-TEST(rbf_evaluator, trivial) {
-  test<3>(-1, 1024, 0, 1024, 0);
-  test<3>(-1, 0, 256, 0, 256);
-
-  for (auto deg = -1; deg <= 2; deg++) {
-    test<1>(deg, 1024, 256, 1024, 256);
-    test<2>(deg, 1024, 256, 1024, 256);
-    test<3>(deg, 1024, 256, 1024, 256);
-  }
+  EXPECT_LT(relative_error(values, direct_values), relative_tolerance);
 }

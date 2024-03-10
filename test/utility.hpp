@@ -28,14 +28,6 @@ polatory::geometry::matrixNd<Dim> random_anisotropy() {
   return a;
 }
 
-template <class DerivedApprox, class DerivedExact>
-double relative_error(const Eigen::MatrixBase<DerivedApprox>& approx,
-                      const Eigen::MatrixBase<DerivedExact>& exact) {
-  auto error = (approx - exact).template lpNorm<Eigen::Infinity>();
-  auto scale = exact.template lpNorm<Eigen::Infinity>();
-  return error / scale;
-}
-
 template <int Dim>
 std::pair<polatory::geometry::pointsNd<Dim>, polatory::common::valuesd> sample_data(
     polatory::index_t& n_points, const polatory::geometry::matrixNd<Dim>& aniso) {

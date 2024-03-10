@@ -4,6 +4,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
+#include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>
@@ -13,6 +14,7 @@
 #include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/conv.hpp>
+#include <polatory/numeric/error.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>

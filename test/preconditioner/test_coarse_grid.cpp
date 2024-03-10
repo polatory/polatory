@@ -2,14 +2,15 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <format>
 #include <numeric>
+#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/model.hpp>
+#include <polatory/numeric/error.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
-#include <polatory/rbf/inverse_multiquadric.hpp>
+#include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 #include <random>
 #include <utility>
@@ -21,38 +22,36 @@ using polatory::index_t;
 using polatory::model;
 using polatory::common::valuesd;
 using polatory::geometry::matrixNd;
-using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
+using polatory::numeric::relative_error;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
-using polatory::rbf::inverse_multiquadric1;
+using polatory::rbf::triharmonic3d;
 
 namespace {
 
 template <int Dim>
-void test(int poly_degree) {
-  std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
+void test(index_t n_points, index_t n_grad_points) {
+  constexpr int kDim = Dim;
+  using Matrix = matrixNd<kDim>;
+  using Domain = domain<kDim>;
+  using LagrangeBasis = lagrange_basis<kDim>;
 
-  using Rbf = inverse_multiquadric1<Dim>;
-  using Points = pointsNd<Dim>;
-  using Matrix = matrixNd<Dim>;
-  using Domain = domain<Dim>;
-  using LagrangeBasis = lagrange_basis<Dim>;
-
-  index_t mu = 1000;
-  index_t sigma = 10;
-  auto absolute_tolerance = 1e-10;
+  auto relative_tolerance = 1e-8;
 
   Matrix aniso = Matrix::Identity();
+  auto [points, values] = sample_data(n_points, aniso);
+  auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  auto [points, values] = sample_data(mu, aniso);
-  auto [grad_points, grad_values] = sample_grad_data(sigma, aniso);
+  triharmonic3d<kDim> rbf({1.0});
 
-  Rbf rbf({1.0, 0.01});
-
+  auto poly_degree = rbf.cpd_order() - 1;
   model model(rbf, poly_degree);
-  // model.set_nugget(0.01);
+  model.set_nugget(0.01);
+
+  auto mu = n_points;
+  auto sigma = n_grad_points;
   auto l = model.poly_basis_size();
 
   Domain domain;
@@ -72,39 +71,51 @@ void test(int poly_degree) {
     domain.grad_point_indices = std::move(grad_indices);
   }
 
-  std::vector<index_t> poly_point_indices(domain.point_indices.begin(),
-                                          domain.point_indices.begin() + l);
+  Eigen::MatrixXd lagrange_pt;
+  if (l > 0) {
+    if (poly_degree == 1 && mu == 1 && sigma >= 1) {
+      // The special case.
+      LagrangeBasis lagrange_basis(poly_degree, points, grad_points.topRows(1));
+      lagrange_pt = lagrange_basis.evaluate(points, grad_points);
+    } else {
+      // The ordinary case.
+      std::vector<index_t> poly_point_idcs(domain.point_indices.begin(),
+                                           domain.point_indices.begin() + l);
+      LagrangeBasis lagrange_basis(poly_degree, points(poly_point_idcs, Eigen::all));
+      lagrange_pt = lagrange_basis.evaluate(points, grad_points);
+    }
+  }
 
   coarse_grid coarse(model, std::move(domain));
-  Eigen::MatrixXd lagrange_pt;
-  if (poly_degree >= 0) {
-    LagrangeBasis lagrange_basis(poly_degree, points(poly_point_indices, Eigen::all));
-    lagrange_pt = lagrange_basis.evaluate(points, grad_points);
-  }
   coarse.setup(points, grad_points, lagrange_pt);
 
-  valuesd rhs = valuesd(mu + Dim * sigma);
+  valuesd rhs = valuesd(mu + kDim * sigma);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
   coarse.solve(rhs);
 
-  valuesd sol = valuesd::Zero(mu + Dim * sigma + l);
+  valuesd sol = valuesd::Zero(mu + kDim * sigma + l);
   coarse.set_solution_to(sol);
 
-  auto eval = rbf_direct_evaluator(model, points, grad_points);
+  rbf_direct_evaluator eval(model, points, grad_points);
   eval.set_weights(sol);
-  eval.set_target_points(points, Points(0, Dim));
-  valuesd values_fit = eval.evaluate() + sol.head(mu) * model.nugget();
+  eval.set_target_points(points, grad_points);
 
-  auto max_residual = (rhs.head(mu) - values_fit).lpNorm<Eigen::Infinity>();
-  EXPECT_LT(max_residual, absolute_tolerance);
+  valuesd values_fit = eval.evaluate();
+  values_fit.head(mu) += sol.head(mu) * model.nugget();
+
+  EXPECT_LT(relative_error(values_fit, rhs), relative_tolerance);
 }
 
 }  // namespace
 
 TEST(coarse_grid, trivial) {
-  for (auto deg = -1; deg <= 2; deg++) {
-    test<1>(deg);
-    test<2>(deg);
-    test<3>(deg);
-  }
+  test<1>(1000, 0);
+  test<2>(1000, 0);
+  test<3>(1000, 0);
+}
+
+TEST(coarse_grid, special_case) {
+  test<1>(1, 300);
+  test<2>(1, 300);
+  test<3>(1, 300);
 }

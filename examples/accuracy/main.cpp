@@ -4,7 +4,6 @@
 #include <Eigen/Core>
 #include <exception>
 #include <iostream>
-#include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/polatory.hpp>
 
 #include "../common/common.hpp"
@@ -18,6 +17,7 @@ using polatory::geometry::pointNd;
 using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
+using polatory::numeric::relative_error;
 
 template <class Rbf>
 void main_impl(Rbf&& rbf, const options& opts) {
@@ -42,28 +42,23 @@ void main_impl(Rbf&& rbf, const options& opts) {
   valuesd weights = valuesd::Zero(m + l);
   weights.head(m) = valuesd::Random(m);
 
-  rbf_direct_evaluator direct_eval(model, points, grad_points);
-  direct_eval.set_weights(weights);
-  direct_eval.set_target_points(eval_points, grad_eval_points);
-
   Bbox bbox{-Point::Ones(), Point::Ones()};
   rbf_evaluator eval(model, bbox, opts.order);
   eval.set_source_points(points, grad_points);
   eval.set_weights(weights);
   eval.set_target_points(eval_points, grad_eval_points);
 
-  auto direct_values = direct_eval.evaluate();
-  auto values = eval.evaluate();
+  rbf_direct_evaluator direct_eval(model, points, grad_points);
+  direct_eval.set_weights(weights);
+  direct_eval.set_target_points(eval_points, grad_eval_points);
 
-  std::cout << "Relative error (L1): "
-            << (values - direct_values).template lpNorm<1>() / direct_values.template lpNorm<1>()
-            << std::endl;
-  std::cout << "Relative error (L2): " << (values - direct_values).norm() / direct_values.norm()
-            << std::endl;
+  auto values = eval.evaluate();
+  auto direct_values = direct_eval.evaluate();
+
+  std::cout << "Relative error (L1): " << relative_error<1>(values, direct_values) << std::endl;
+  std::cout << "Relative error (L2): " << relative_error<2>(values, direct_values) << std::endl;
   std::cout << "Relative error (L-infinity): "
-            << (values - direct_values).template lpNorm<Eigen::Infinity>() /
-                   direct_values.template lpNorm<Eigen::Infinity>()
-            << std::endl;
+            << relative_error<Eigen::Infinity>(values, direct_values) << std::endl;
 }
 
 int main(int argc, const char* argv[]) {

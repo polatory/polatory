@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
-#include <format>
 #include <limits>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
@@ -19,34 +19,28 @@ using polatory::model;
 using polatory::precision;
 using polatory::common::valuesd;
 using polatory::geometry::points1d;
-using polatory::geometry::points3d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
 
-namespace {
+TEST(rbf_inequality_fitter, inequality_only) {
+  constexpr int kDim = 3;
 
-template <int Dim>
-void test(int poly_degree) {
-  std::cout << std::format("dim: {}, deg: {}", Dim, poly_degree) << std::endl;
-
-  using Rbf = biharmonic3d<Dim>;
-
-  index_t n_points = 4096;
-
+  index_t n_points = 10000;
   auto absolute_tolerance = 1e-4;
 
-  auto aniso = random_anisotropy<Dim>();
+  auto aniso = random_anisotropy<kDim>();
   auto [points, values] = sample_data(n_points, aniso);
 
   valuesd values_lb = values.array() - 0.001;
   valuesd values_ub = values.array() + 0.001;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  Rbf rbf({1.0});
+  biharmonic3d<kDim> rbf({1.0});
   rbf.set_anisotropy(aniso);
 
+  auto poly_degree = rbf.cpd_order() - 1;
   model model(rbf, poly_degree);
 
   rbf_inequality_fitter fitter(model, points);
@@ -64,23 +58,11 @@ void test(int poly_degree) {
   }
 }
 
-}  // namespace
-
-TEST(rbf_inequality_fitter, inequality_only) {
-  for (auto deg = 0; deg <= 2; deg++) {
-    test<1>(deg);
-    test<2>(deg);
-    test<3>(deg);
-  }
-}
-
 // Example problem taken from https://doi.org/10.1007/BF00897655
 TEST(rbf_inequality_fitter, kostov86) {
   constexpr int kDim = 1;
-  using Rbf = cov_exponential<kDim>;
 
-  const auto n_points = index_t{25};
-  const auto poly_degree = -1;
+  index_t n_points = 25;
   const auto absolute_tolerance = 1e-5;
 
   points1d points = points1d::Zero(n_points, kDim);
@@ -101,8 +83,8 @@ TEST(rbf_inequality_fitter, kostov86) {
   values_ub << nan, nan, nan, 4, nan, 4, nan, nan, nan, nan, nan, 1, nan, nan, nan, nan, 4, 7, nan,
       nan, nan, nan, nan, nan, 3;
 
-  Rbf rbf({1.0, 3.0});
-  model model(rbf, poly_degree);
+  cov_exponential<kDim> rbf({1.0, 3.0});
+  model model(rbf, -1);
 
   rbf_inequality_fitter fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);

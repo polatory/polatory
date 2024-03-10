@@ -16,7 +16,10 @@ add_test(
     NAME ${TARGET}
     COMMAND $<TARGET_FILE:${TARGET}>
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=coarse_grid.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=conv.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=domain_divider.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=fine_grid.*
+    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=isosurface.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=lagrange_basis.hoge
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf.*
     # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_evaluator.*
