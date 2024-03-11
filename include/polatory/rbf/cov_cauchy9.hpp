@@ -4,10 +4,10 @@
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <vector>
 
-namespace polatory::rbf::reference {
+namespace polatory::rbf {
 
 template <int Dim>
-class cov_gaussian final : public covariance_function_base<Dim> {
+class cov_cauchy9 final : public covariance_function_base<Dim> {
   using Base = covariance_function_base<Dim>;
   using Matrix = Base::Matrix;
   using Vector = Base::Vector;
@@ -15,7 +15,7 @@ class cov_gaussian final : public covariance_function_base<Dim> {
  public:
   using Base::Base;
 
-  explicit cov_gaussian(const std::vector<double>& params) { Base::set_parameters(params); }
+  explicit cov_cauchy9(const std::vector<double>& params) { Base::set_parameters(params); }
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
@@ -23,7 +23,7 @@ class cov_gaussian final : public covariance_function_base<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    return psill * std::exp(-3.0 * rho * rho);
+    return psill * std::pow(1.0 + rho * rho, -4.5);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -32,7 +32,7 @@ class cov_gaussian final : public covariance_function_base<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff = -6.0 * psill * std::exp(-3.0 * rho * rho) / (range * range);
+    auto coeff = -9.0 * psill * std::pow(1.0 + rho * rho, -5.5) / (range * range);
     return coeff * diff;
   }
 
@@ -42,9 +42,9 @@ class cov_gaussian final : public covariance_function_base<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff = -6.0 * psill * std::exp(-3.0 * rho * rho) / (range * range);
-    return coeff * (Matrix::Identity() - 6.0 / (range * range) * diff.transpose() * diff);
+    auto coeff = -9.0 * psill * std::pow(1.0 + rho * rho, -5.5) / (range * range);
+    return coeff * (Matrix::Identity() - 11.0 / (r * r + range * range) * diff.transpose() * diff);
   }
 };
 
-}  // namespace polatory::rbf::reference
+}  // namespace polatory::rbf

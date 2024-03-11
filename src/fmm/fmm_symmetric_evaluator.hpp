@@ -3,6 +3,10 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <polatory/rbf/cov_cauchy3.hpp>
+#include <polatory/rbf/cov_cauchy5.hpp>
+#include <polatory/rbf/cov_cauchy7.hpp>
+#include <polatory/rbf/cov_cauchy9.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
@@ -305,6 +309,10 @@ void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
 #define IMPLEMENT_DIM(DIM)                                 \
   IMPLEMENT_MODEL(model<rbf::biharmonic2d<DIM>>);          \
   IMPLEMENT_MODEL(model<rbf::biharmonic3d<DIM>>);          \
+  IMPLEMENT_MODEL(model<rbf::cov_cauchy3<DIM>>);           \
+  IMPLEMENT_MODEL(model<rbf::cov_cauchy5<DIM>>);           \
+  IMPLEMENT_MODEL(model<rbf::cov_cauchy7<DIM>>);           \
+  IMPLEMENT_MODEL(model<rbf::cov_cauchy9<DIM>>);           \
   IMPLEMENT_MODEL(model<rbf::cov_exponential<DIM>>);       \
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal3<DIM>>);       \
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal5<DIM>>);       \

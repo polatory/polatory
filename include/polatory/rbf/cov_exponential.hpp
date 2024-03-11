@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <memory>
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <vector>
 
@@ -22,16 +21,18 @@ class cov_exponential final : public covariance_function_base<Dim> {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
+    auto rho = r / range;
 
-    return psill * std::exp(-r / range);
+    return psill * std::exp(-3.0 * rho);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
+    auto rho = r / range;
 
-    auto coeff = -psill * std::exp(-r / range) / (range * r);
+    auto coeff = -3.0 * psill * std::exp(-3.0 * rho) / (range * r);
     return coeff * diff;
   }
 
@@ -39,10 +40,11 @@ class cov_exponential final : public covariance_function_base<Dim> {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
+    auto rho = r / range;
 
-    auto coeff = -psill * std::exp(-r / range) / (range * r);
+    auto coeff = -3.0 * psill * std::exp(-3.0 * rho) / (range * r);
     return coeff *
-           (Matrix::Identity() - diff.transpose() * diff * (1.0 / (r * r) + 1.0 / (range * r)));
+           (Matrix::Identity() - (1.0 / (r * r) + 3.0 / (range * r)) * diff.transpose() * diff);
   }
 };
 

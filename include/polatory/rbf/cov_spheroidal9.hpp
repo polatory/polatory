@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <memory>
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <vector>
 
@@ -29,7 +28,7 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    return rho < kRho0 ? psill * (1.0 - kA * rho) : psill * kB * std::pow(1.0 + (rho * rho), -4.5);
+    return rho < kRho0 ? psill * (1.0 - kA * rho) : psill * kB * std::pow(1.0 + rho * rho, -4.5);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -38,9 +37,8 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff =
-        (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + (rho * rho), -5.5)) /
-        (range * range);
+    auto coeff = (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + rho * rho, -5.5)) /
+                 (range * range);
     return coeff * diff;
   }
 
@@ -50,12 +48,11 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff =
-        (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + (rho * rho), -5.5)) /
-        (range * range);
-    return coeff * (Matrix::Identity() -
-                    diff.transpose() * diff *
-                        (rho < kRho0 ? 1.0 / (r * r) : 11.0 / (r * r + range * range)));
+    auto coeff = (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + rho * rho, -5.5)) /
+                 (range * range);
+    return coeff *
+           (Matrix::Identity() - (rho < kRho0 ? 1.0 / (r * r) : 11.0 / (r * r + range * range)) *
+                                     diff.transpose() * diff);
   }
 };
 

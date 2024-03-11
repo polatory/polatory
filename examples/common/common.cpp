@@ -4,6 +4,10 @@ const char* const cov_list =
     R"(Covariance function, one of:
 Arguments        Name
 --------------------------------
+ca3 PSILL RANGE  cov_cauchy3
+ca5 PSILL RANGE  cov_cauchy5
+ca7 PSILL RANGE  cov_cauchy7
+ca9 PSILL RANGE  cov_cauchy9
 exp PSILL RANGE  cov_exponential
 sp3 PSILL RANGE  cov_spheroidal3
 sp5 PSILL RANGE  cov_spheroidal5
@@ -24,6 +28,10 @@ imq1 SCALE C     inverse_multiquadric1  -1
 mq1 SCALE C      multiquadric1          0
 mq3 SCALE C      multiquadric3          1
              Covariance functions
+ca3 PSILL RANGE  cov_cauchy3            -1
+ca5 PSILL RANGE  cov_cauchy5            -1
+ca7 PSILL RANGE  cov_cauchy7            -1
+ca9 PSILL RANGE  cov_cauchy9            -1
 exp PSILL RANGE  cov_exponential        -1
 sp3 PSILL RANGE  cov_spheroidal3        -1
 sp5 PSILL RANGE  cov_spheroidal5        -1

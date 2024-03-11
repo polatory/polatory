@@ -19,6 +19,10 @@
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <polatory/precision.hpp>
+#include <polatory/rbf/cov_cauchy3.hpp>
+#include <polatory/rbf/cov_cauchy5.hpp>
+#include <polatory/rbf/cov_cauchy7.hpp>
+#include <polatory/rbf/cov_cauchy9.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>

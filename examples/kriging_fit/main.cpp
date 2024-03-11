@@ -8,6 +8,10 @@
 using polatory::model;
 using polatory::kriging::empirical_variogram;
 using polatory::kriging::variogram_fitting;
+using polatory::rbf::cov_cauchy3;
+using polatory::rbf::cov_cauchy5;
+using polatory::rbf::cov_cauchy7;
+using polatory::rbf::cov_cauchy9;
 using polatory::rbf::cov_exponential;
 using polatory::rbf::cov_spheroidal3;
 using polatory::rbf::cov_spheroidal5;
@@ -39,7 +43,15 @@ int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
 
-    if (opts.rbf_name == "exp") {
+    if (opts.rbf_name == "ca3") {
+      main_impl<cov_cauchy3<3>>(opts);
+    } else if (opts.rbf_name == "ca5") {
+      main_impl<cov_cauchy5<3>>(opts);
+    } else if (opts.rbf_name == "ca7") {
+      main_impl<cov_cauchy7<3>>(opts);
+    } else if (opts.rbf_name == "ca9") {
+      main_impl<cov_cauchy9<3>>(opts);
+    } else if (opts.rbf_name == "exp") {
       main_impl<cov_exponential<3>>(opts);
     } else if (opts.rbf_name == "sp3") {
       main_impl<cov_spheroidal3<3>>(opts);

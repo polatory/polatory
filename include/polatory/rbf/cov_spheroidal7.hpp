@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <memory>
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <vector>
 
@@ -57,8 +56,8 @@ class cov_spheroidal7 final : public covariance_function_base<Dim> {
         (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + kC * (rho * rho), -4.5)) /
         (range * range);
     return coeff * (Matrix::Identity() -
-                    diff.transpose() * diff *
-                        (rho < kRho0 ? 1.0 / (r * r) : 9.0 / (r * r + kE * range * range)));
+                    (rho < kRho0 ? 1.0 / (r * r) : 9.0 / (r * r + kE * range * range)) *
+                        diff.transpose() * diff);
   }
 };
 

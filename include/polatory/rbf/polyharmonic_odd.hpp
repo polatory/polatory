@@ -1,7 +1,6 @@
 #pragma once
 
 #include <limits>
-#include <memory>
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
@@ -53,7 +52,7 @@ class polyharmonic_odd final : public rbf_base<Dim> {
     }
 
     auto coeff = kSign * k * slope * std::pow(r, k - 2);
-    return coeff * (Matrix::Identity() + (k - 2) * diff.transpose() * diff / (r * r));
+    return coeff * (Matrix::Identity() + (k - 2) / (r * r) * diff.transpose() * diff);
   }
 
   int num_parameters() const override { return 1; }

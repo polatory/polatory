@@ -52,6 +52,14 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
     main_impl(polatory::rbf::biharmonic2d<DIM>(PARAMS), OPTS);          \
   } else if (NAME == "bh3") {                                           \
     main_impl(polatory::rbf::biharmonic3d<DIM>(PARAMS), OPTS);          \
+  } else if (NAME == "ca3") {                                           \
+    main_impl(polatory::rbf::cov_cauchy3<DIM>(PARAMS), OPTS);           \
+  } else if (NAME == "ca5") {                                           \
+    main_impl(polatory::rbf::cov_cauchy5<DIM>(PARAMS), OPTS);           \
+  } else if (NAME == "ca7") {                                           \
+    main_impl(polatory::rbf::cov_cauchy7<DIM>(PARAMS), OPTS);           \
+  } else if (NAME == "ca9") {                                           \
+    main_impl(polatory::rbf::cov_cauchy9<DIM>(PARAMS), OPTS);           \
   } else if (NAME == "exp") {                                           \
     main_impl(polatory::rbf::cov_exponential<DIM>(PARAMS), OPTS);       \
   } else if (NAME == "imq1") {                                          \

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <memory>
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <stdexcept>
 #include <vector>

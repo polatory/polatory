@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
@@ -59,7 +58,7 @@ class polyharmonic_even final : public rbf_base<Dim> {
 
     auto coeff = kSign * slope * std::pow(r, k - 2) * (1.0 + k * std::log(r));
     return coeff * (Matrix::Identity() +
-                    diff.transpose() * diff * (k - 2.0 + k / (1.0 + k * std::log(r))) / (r * r));
+                    (k - 2.0 + k / (1.0 + k * std::log(r))) / (r * r) * diff.transpose() * diff);
   }
 
   int num_parameters() const override { return 1; }

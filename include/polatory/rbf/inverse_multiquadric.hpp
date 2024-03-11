@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
@@ -36,7 +35,7 @@ class inverse_multiquadric final : public rbf_base<Dim> {
     auto c = Base::parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = -slope / std::pow(std::hypot(r, c), k + 2);
+    auto coeff = -k * slope / std::pow(std::hypot(r, c), k + 2);
     return coeff * diff;
   }
 
@@ -45,8 +44,8 @@ class inverse_multiquadric final : public rbf_base<Dim> {
     auto c = Base::parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = -slope / std::pow(std::hypot(r, c), 3.0);
-    return coeff * (Matrix::Identity() - (k + 2) * diff.transpose() * diff / (r * r + c * c));
+    auto coeff = -k * slope / std::pow(std::hypot(r, c), k + 2);
+    return coeff * (Matrix::Identity() - (k + 2) / (r * r + c * c) * diff.transpose() * diff);
   }
 
   int num_parameters() const override { return 2; }

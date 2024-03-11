@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
@@ -48,7 +47,7 @@ class multiquadric final : public rbf_base<Dim> {
     auto r = diff.norm();
 
     auto coeff = kSign * k * slope * std::pow(std::hypot(r, c), k - 2);
-    return coeff * (Matrix::Identity() + (k - 2) * diff.transpose() * diff / (r * r + c * c));
+    return coeff * (Matrix::Identity() + (k - 2) / (r * r + c * c) * diff.transpose() * diff);
   }
 
   int num_parameters() const override { return 2; }
