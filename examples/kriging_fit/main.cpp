@@ -13,6 +13,7 @@ using polatory::rbf::cov_cauchy5;
 using polatory::rbf::cov_cauchy7;
 using polatory::rbf::cov_cauchy9;
 using polatory::rbf::cov_exponential;
+using polatory::rbf::cov_gaussian;
 using polatory::rbf::cov_spheroidal3;
 using polatory::rbf::cov_spheroidal5;
 using polatory::rbf::cov_spheroidal7;
@@ -53,6 +54,8 @@ int main(int argc, const char* argv[]) {
       main_impl<cov_cauchy9<3>>(opts);
     } else if (opts.rbf_name == "exp") {
       main_impl<cov_exponential<3>>(opts);
+    } else if (opts.rbf_name == "gau") {
+      main_impl<cov_gaussian<3>>(opts);
     } else if (opts.rbf_name == "sp3") {
       main_impl<cov_spheroidal3<3>>(opts);
     } else if (opts.rbf_name == "sp5") {

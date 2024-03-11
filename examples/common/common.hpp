@@ -62,6 +62,8 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
     main_impl(polatory::rbf::cov_cauchy9<DIM>(PARAMS), OPTS);           \
   } else if (NAME == "exp") {                                           \
     main_impl(polatory::rbf::cov_exponential<DIM>(PARAMS), OPTS);       \
+  } else if (NAME == "gau") {                                           \
+    main_impl(polatory::rbf::cov_gaussian<DIM>(PARAMS), OPTS);          \
   } else if (NAME == "imq1") {                                          \
     main_impl(polatory::rbf::inverse_multiquadric1<DIM>(PARAMS), OPTS); \
   } else if (NAME == "mq1") {                                           \

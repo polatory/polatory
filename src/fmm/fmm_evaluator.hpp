@@ -9,6 +9,7 @@
 #include <polatory/rbf/cov_cauchy7.hpp>
 #include <polatory/rbf/cov_cauchy9.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/rbf/cov_gaussian.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
@@ -358,6 +359,7 @@ void fmm_generic_evaluator<Model, Kernel>::set_weights(
   IMPLEMENT_MODEL(model<rbf::cov_cauchy7<DIM>>);           \
   IMPLEMENT_MODEL(model<rbf::cov_cauchy9<DIM>>);           \
   IMPLEMENT_MODEL(model<rbf::cov_exponential<DIM>>);       \
+  IMPLEMENT_MODEL(model<rbf::cov_gaussian<DIM>>);          \
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal3<DIM>>);       \
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal5<DIM>>);       \
   IMPLEMENT_MODEL(model<rbf::cov_spheroidal7<DIM>>);       \

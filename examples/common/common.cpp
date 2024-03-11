@@ -9,6 +9,7 @@ ca5 PSILL RANGE  cov_cauchy5
 ca7 PSILL RANGE  cov_cauchy7
 ca9 PSILL RANGE  cov_cauchy9
 exp PSILL RANGE  cov_exponential
+gau PSILL RANGE  cov_gaussian
 sp3 PSILL RANGE  cov_spheroidal3
 sp5 PSILL RANGE  cov_spheroidal5
 sp7 PSILL RANGE  cov_spheroidal7
@@ -33,6 +34,7 @@ ca5 PSILL RANGE  cov_cauchy5            -1
 ca7 PSILL RANGE  cov_cauchy7            -1
 ca9 PSILL RANGE  cov_cauchy9            -1
 exp PSILL RANGE  cov_exponential        -1
+gau PSILL RANGE  cov_gaussian           -1
 sp3 PSILL RANGE  cov_spheroidal3        -1
 sp5 PSILL RANGE  cov_spheroidal5        -1
 sp7 PSILL RANGE  cov_spheroidal7        -1
