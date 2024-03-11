@@ -54,6 +54,12 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
     main_impl(polatory::rbf::biharmonic3d<DIM>(PARAMS), OPTS);          \
   } else if (NAME == "exp") {                                           \
     main_impl(polatory::rbf::cov_exponential<DIM>(PARAMS), OPTS);       \
+  } else if (NAME == "imq1") {                                          \
+    main_impl(polatory::rbf::inverse_multiquadric1<DIM>(PARAMS), OPTS); \
+  } else if (NAME == "mq1") {                                           \
+    main_impl(polatory::rbf::multiquadric1<DIM>(PARAMS), OPTS);         \
+  } else if (NAME == "mq3") {                                           \
+    main_impl(polatory::rbf::multiquadric3<DIM>(PARAMS), OPTS);         \
   } else if (NAME == "sp3") {                                           \
     main_impl(polatory::rbf::cov_spheroidal3<DIM>(PARAMS), OPTS);       \
   } else if (NAME == "sp5") {                                           \
@@ -62,12 +68,8 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
     main_impl(polatory::rbf::cov_spheroidal7<DIM>(PARAMS), OPTS);       \
   } else if (NAME == "sp9") {                                           \
     main_impl(polatory::rbf::cov_spheroidal9<DIM>(PARAMS), OPTS);       \
-  } else if (NAME == "imq1") {                                          \
-    main_impl(polatory::rbf::inverse_multiquadric1<DIM>(PARAMS), OPTS); \
-  } else if (NAME == "mq1") {                                           \
-    main_impl(polatory::rbf::multiquadric1<DIM>(PARAMS), OPTS);         \
-  } else if (NAME == "mq3") {                                           \
-    main_impl(polatory::rbf::multiquadric3<DIM>(PARAMS), OPTS);         \
+  } else if (NAME == "th2") {                                           \
+    main_impl(polatory::rbf::triharmonic2d<DIM>(PARAMS), OPTS);         \
   } else if (NAME == "th3") {                                           \
     main_impl(polatory::rbf::triharmonic3d<DIM>(PARAMS), OPTS);         \
   } else {                                                              \
