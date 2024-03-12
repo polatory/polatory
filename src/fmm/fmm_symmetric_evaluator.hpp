@@ -3,20 +3,6 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
-#include <polatory/rbf/cov_cauchy3.hpp>
-#include <polatory/rbf/cov_cauchy5.hpp>
-#include <polatory/rbf/cov_cauchy7.hpp>
-#include <polatory/rbf/cov_cauchy9.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/rbf/cov_gaussian.hpp>
-#include <polatory/rbf/cov_spheroidal3.hpp>
-#include <polatory/rbf/cov_spheroidal5.hpp>
-#include <polatory/rbf/cov_spheroidal7.hpp>
-#include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/inverse_multiquadric.hpp>
-#include <polatory/rbf/multiquadric.hpp>
-#include <polatory/rbf/polyharmonic_even.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
@@ -303,27 +289,13 @@ void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_MODEL(MODEL)                                                             \
+#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(MODEL)                                         \
   template class fmm_generic_symmetric_evaluator<MODEL, kernel<typename MODEL::rbf_type>>; \
   template class fmm_generic_symmetric_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type>>;
 
-#define IMPLEMENT_DIM(DIM)                                 \
-  IMPLEMENT_MODEL(model<rbf::biharmonic2d<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::biharmonic3d<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::cov_cauchy3<DIM>>);           \
-  IMPLEMENT_MODEL(model<rbf::cov_cauchy5<DIM>>);           \
-  IMPLEMENT_MODEL(model<rbf::cov_cauchy7<DIM>>);           \
-  IMPLEMENT_MODEL(model<rbf::cov_cauchy9<DIM>>);           \
-  IMPLEMENT_MODEL(model<rbf::cov_exponential<DIM>>);       \
-  IMPLEMENT_MODEL(model<rbf::cov_gaussian<DIM>>);          \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal3<DIM>>);       \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal5<DIM>>);       \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal7<DIM>>);       \
-  IMPLEMENT_MODEL(model<rbf::cov_spheroidal9<DIM>>);       \
-  IMPLEMENT_MODEL(model<rbf::inverse_multiquadric1<DIM>>); \
-  IMPLEMENT_MODEL(model<rbf::multiquadric1<DIM>>);         \
-  IMPLEMENT_MODEL(model<rbf::multiquadric3<DIM>>);         \
-  IMPLEMENT_MODEL(model<rbf::triharmonic2d<DIM>>);         \
-  IMPLEMENT_MODEL(model<rbf::triharmonic3d<DIM>>);
+#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(RBF)       \
+  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(model<RBF<1>>); \
+  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(model<RBF<2>>); \
+  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(model<RBF<3>>);
 
 }  // namespace polatory::fmm
