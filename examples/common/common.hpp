@@ -60,6 +60,8 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
     main_impl(polatory::rbf::cov_cauchy7<DIM>(PARAMS), OPTS);           \
   } else if (NAME == "ca9") {                                           \
     main_impl(polatory::rbf::cov_cauchy9<DIM>(PARAMS), OPTS);           \
+  } else if (NAME == "cub") {                                           \
+    main_impl(polatory::rbf::cov_cubic<DIM>(PARAMS), OPTS);             \
   } else if (NAME == "exp") {                                           \
     main_impl(polatory::rbf::cov_exponential<DIM>(PARAMS), OPTS);       \
   } else if (NAME == "gau") {                                           \
@@ -78,6 +80,8 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
     main_impl(polatory::rbf::cov_spheroidal7<DIM>(PARAMS), OPTS);       \
   } else if (NAME == "sp9") {                                           \
     main_impl(polatory::rbf::cov_spheroidal9<DIM>(PARAMS), OPTS);       \
+  } else if (NAME == "sph") {                                           \
+    main_impl(polatory::rbf::cov_spherical<DIM>(PARAMS), OPTS);         \
   } else if (NAME == "th2") {                                           \
     main_impl(polatory::rbf::triharmonic2d<DIM>(PARAMS), OPTS);         \
   } else if (NAME == "th3") {                                           \

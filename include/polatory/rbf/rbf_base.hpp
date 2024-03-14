@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <polatory/geometry/point3d.hpp>
 #include <stdexcept>
 #include <string>
@@ -72,6 +73,10 @@ class rbf_base {
     }
 
     params_ = params;
+  }
+
+  virtual double support_radius_isotropic() const {
+    return std::numeric_limits<double>::infinity();
   }
 
  protected:

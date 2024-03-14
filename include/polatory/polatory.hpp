@@ -23,8 +23,10 @@
 #include <polatory/rbf/cov_cauchy5.hpp>
 #include <polatory/rbf/cov_cauchy7.hpp>
 #include <polatory/rbf/cov_cauchy9.hpp>
+#include <polatory/rbf/cov_cubic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_gaussian.hpp>
+#include <polatory/rbf/cov_spherical.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>

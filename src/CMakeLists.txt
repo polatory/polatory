@@ -1,9 +1,40 @@
 set(TARGET polatory)
 
-file(GLOB_RECURSE SOURCES
-    "*.cpp"
+add_library(${TARGET} STATIC
+    fmm/impl/biharmonic2d.cpp
+    fmm/impl/biharmonic3d.cpp
+    fmm/impl/cov_cauchy3.cpp
+    fmm/impl/cov_cauchy5.cpp
+    fmm/impl/cov_cauchy7.cpp
+    fmm/impl/cov_cauchy9.cpp
+    fmm/impl/cov_cubic.cpp
+    fmm/impl/cov_exponential.cpp
+    fmm/impl/cov_gaussian.cpp
+    fmm/impl/cov_spherical.cpp
+    fmm/impl/cov_spheroidal3.cpp
+    fmm/impl/cov_spheroidal5.cpp
+    fmm/impl/cov_spheroidal7.cpp
+    fmm/impl/cov_spheroidal9.cpp
+    fmm/impl/inverse_multiquadric1.cpp
+    fmm/impl/multiquadric1.cpp
+    fmm/impl/multiquadric3.cpp
+    fmm/impl/triharmonic2d.cpp
+    fmm/impl/triharmonic3d.cpp
+    isosurface/mesh_defects_finder.cpp
+    isosurface/rmt_node_list.cpp
+    isosurface/rmt_primitive_lattice.cpp
+    kriging/empirical_variogram.cpp
+    kriging/weight_function.cpp
+    krylov/fgmres.cpp
+    krylov/gmres_base.cpp
+    krylov/gmres.cpp
+    krylov/minres.cpp
+    point_cloud/kdtree.cpp
+    point_cloud/normal_estimator.cpp
+    point_cloud/plane_estimator.cpp
+    point_cloud/random_points.cpp
+    point_cloud/sdf_data_generator.cpp
 )
-add_library(${TARGET} STATIC ${SOURCES})
 
 if(UNIX)
     target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror)

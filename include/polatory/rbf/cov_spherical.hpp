@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace polatory::rbf::reference {
+namespace polatory::rbf {
 
 template <int Dim>
 class cov_spherical final : public covariance_function_base<Dim> {
@@ -44,4 +44,4 @@ class cov_spherical final : public covariance_function_base<Dim> {
   double support_radius_isotropic() const override { return Base::parameters().at(1); }
 };
 
-}  // namespace polatory::rbf::reference
+}  // namespace polatory::rbf
