@@ -22,26 +22,26 @@ class cov_spherical final : public covariance_function_base<Dim> {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
+    auto rho = r / range;
 
-    return r < range ? psill * (1.0 - 1.5 * r / range + 0.5 * std::pow(r / range, 3.0)) : 0.0;
+    return r < range ? psill * (1.0 + rho * (-1.5 + 0.5 * rho * rho)) : 0.0;
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
     auto range = Base::parameters().at(1);
     auto r = diff.norm();
+    auto rho = r / range;
 
-    if (r < range) {
-      auto coeff = psill * 1.5 * (-1.0 / (range * r) + r / std::pow(range, 3.0));
-      return coeff * diff;
-    }
-
-    return Vector::Zero();
+    auto coeff = r < range ? psill * (-1.5 / rho + 1.5 * rho) / (range * range) : 0.0;
+    return coeff * diff;
   }
 
   Matrix evaluate_hessian_isotropic(const Vector& /*diff*/) const override {
     throw std::runtime_error("cov_spherical::evaluate_hessian_isotropic is not implemented");
   }
+
+  double support_radius_isotropic() const override { return Base::parameters().at(1); }
 };
 
 }  // namespace polatory::rbf::reference
