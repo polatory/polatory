@@ -47,16 +47,28 @@ matrix3d to_matrix3d(T t) {
   return Eigen::Transform<double, 3, Eigen::Affine, Eigen::RowMajor>(t).linear();
 }
 
-template <int Dim, class DerivedT, class DerivedP>
+template <int Dim, class DerivedT, class DerivedPoint>
 pointNd<Dim> transform_point(const Eigen::MatrixBase<DerivedT>& t,
-                             const Eigen::MatrixBase<DerivedP>& p) {
-  return t * p.transpose();
+                             const Eigen::MatrixBase<DerivedPoint>& point) {
+  return (t * point.transpose()).transpose();
 }
 
-template <int Dim, class DerivedT, class DerivedV>
+template <int Dim, class DerivedT, class DerivedPoints>
+pointsNd<Dim> transform_points(const Eigen::MatrixBase<DerivedT>& t,
+                               const Eigen::MatrixBase<DerivedPoints>& points) {
+  return (t * points.transpose()).transpose();
+}
+
+template <int Dim, class DerivedT, class DerivedVector>
 vectorNd<Dim> transform_vector(const Eigen::MatrixBase<DerivedT>& t,
-                               const Eigen::MatrixBase<DerivedV>& v) {
-  return t * v.transpose();
+                               const Eigen::MatrixBase<DerivedVector>& vector) {
+  return (t * vector.transpose()).transpose();
+}
+
+template <int Dim, class DerivedT, class DerivedVectors>
+vectorsNd<Dim> transform_vectors(const Eigen::MatrixBase<DerivedT>& t,
+                                 const Eigen::MatrixBase<DerivedVectors>& vectors) {
+  return (t * vectors.transpose()).transpose();
 }
 
 }  // namespace polatory::geometry

@@ -6,8 +6,10 @@
 #include <polatory/rbf/cov_cauchy5.hpp>
 #include <polatory/rbf/cov_cauchy7.hpp>
 #include <polatory/rbf/cov_cauchy9.hpp>
+#include <polatory/rbf/cov_cubic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_gaussian.hpp>
+#include <polatory/rbf/cov_spherical.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
@@ -17,7 +19,6 @@
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/rbf/rbf_base.hpp>
-#include <polatory/rbf/reference/cov_spherical.hpp>
 #include <random>
 
 #include "../utility.hpp"
@@ -31,8 +32,10 @@ using polatory::rbf::cov_cauchy3;
 using polatory::rbf::cov_cauchy5;
 using polatory::rbf::cov_cauchy7;
 using polatory::rbf::cov_cauchy9;
+using polatory::rbf::cov_cubic;
 using polatory::rbf::cov_exponential;
 using polatory::rbf::cov_gaussian;
+using polatory::rbf::cov_spherical;
 using polatory::rbf::cov_spheroidal3;
 using polatory::rbf::cov_spheroidal5;
 using polatory::rbf::cov_spheroidal7;
@@ -43,7 +46,6 @@ using polatory::rbf::multiquadric3;
 using polatory::rbf::rbf_base;
 using polatory::rbf::triharmonic2d;
 using polatory::rbf::triharmonic3d;
-using polatory::rbf::reference::cov_spherical;
 
 namespace {
 
@@ -145,6 +147,7 @@ TEST(rbf, gradient) {
   test_gradient(cov_cauchy5<3>({1.1, 0.9}));
   test_gradient(cov_cauchy7<3>({1.1, 0.9}));
   test_gradient(cov_cauchy9<3>({1.1, 0.9}));
+  test_gradient(cov_cubic<3>({1.1, 0.9}));
   test_gradient(cov_exponential<3>({1.1, 0.9}));
   test_gradient(cov_gaussian<3>({1.1, 0.9}));
   test_gradient(cov_spherical<3>({1.1, 0.9}));
@@ -166,6 +169,7 @@ TEST(rbf, hessian) {
   test_hessian(cov_cauchy5<3>({1.1, 0.9}));
   test_hessian(cov_cauchy7<3>({1.1, 0.9}));
   test_hessian(cov_cauchy9<3>({1.1, 0.9}));
+  // test_hessian(cov_cubic<3>({1.1, 0.9}));
   test_hessian(cov_exponential<3>({1.1, 0.9}));
   test_hessian(cov_gaussian<3>({1.1, 0.9}));
   // test_hessian(cov_spherical<3>({1.1, 0.9}));
