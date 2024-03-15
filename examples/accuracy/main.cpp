@@ -48,6 +48,11 @@ void main_impl(Rbf&& rbf, const options& opts) {
   eval.set_weights(weights);
   eval.set_target_points(eval_points, grad_eval_points);
 
+  if (opts.perf) {
+    eval.evaluate();
+    return;
+  }
+
   rbf_direct_evaluator direct_eval(model, points, grad_points);
   direct_eval.set_weights(weights);
   direct_eval.set_target_points(eval_points, grad_eval_points);

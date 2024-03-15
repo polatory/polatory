@@ -18,6 +18,7 @@ struct options {
   std::string rbf_name;
   std::vector<double> rbf_params;
   int order;
+  bool perf;
 };
 
 inline options parse_options(int argc, const char* argv[]) {
@@ -43,8 +44,10 @@ inline options parse_options(int argc, const char* argv[]) {
       ("order",
        po::value(&opts.order)
            ->default_value(polatory::precision::kPrecise)
-           ->value_name("ORDER"),  //
-       "Order of the interpolators of fast multipole method");
+           ->value_name("ORDER"),                              //
+       "Order of the interpolators of fast multipole method")  //
+      ("perf", po::bool_switch(&opts.perf),                    //
+       "Run fast evaluation only and do not compute accuracy (for performance measurement)");
 
   po::variables_map vm;
   try {
