@@ -19,7 +19,7 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
     throw std::invalid_argument("multiplication must be within (1.0, 3.0].");
   }
 
-  kdtree tree(points, true);
+  kdtree tree(points);
 
   auto n_points = points.rows();
   auto n_reduced_points =

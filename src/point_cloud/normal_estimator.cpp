@@ -11,7 +11,7 @@
 namespace polatory::point_cloud {
 
 normal_estimator::normal_estimator(const geometry::points3d& points)
-    : n_points_(points.rows()), points_(points), tree_(points, true) {}
+    : n_points_(points.rows()), points_(points), tree_(points) {}
 
 normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_factor_threshold) {
   return estimate_with_knn(std::vector<index_t>{k}, plane_factor_threshold);

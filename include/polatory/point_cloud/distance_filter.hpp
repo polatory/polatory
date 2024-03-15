@@ -28,7 +28,7 @@ class distance_filter {
       throw std::invalid_argument("distance must be greater than 0.0.");
     }
 
-    kdtree tree(points, true);
+    kdtree tree(points);
 
     std::unordered_set<index_t> indices_to_remove;
 

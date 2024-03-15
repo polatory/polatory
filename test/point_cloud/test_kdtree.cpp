@@ -26,7 +26,7 @@ TEST(kdtree, trivial) {
 
   auto points = random_points(sphere3d(center, radius), n_points);
 
-  kdtree tree(points, true);
+  kdtree tree(points);
 
   std::vector<index_t> indices;
   std::vector<double> distances;
@@ -61,7 +61,7 @@ TEST(kdtree, zero_points) {
 
   points3d points;
 
-  kdtree tree(points, true);
+  kdtree tree(points);
 
   std::vector<index_t> indices;
   std::vector<double> distances;

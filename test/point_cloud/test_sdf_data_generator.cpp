@@ -31,7 +31,7 @@ TEST(sdf_data_generator, trivial) {
 
   EXPECT_EQ(sdf_points.rows(), sdf_values.rows());
 
-  kdtree tree(points, true);
+  kdtree tree(points);
 
   std::vector<index_t> indices;
   std::vector<double> distances;

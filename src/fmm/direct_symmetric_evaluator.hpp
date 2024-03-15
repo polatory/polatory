@@ -84,7 +84,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
     }
 
     Points apoints = geometry::transform_points<kDim>(a, points);
-    kdtree_ = std::make_unique<point_cloud::kdtree<kDim>>(apoints, true);
+    kdtree_ = std::make_unique<point_cloud::kdtree<kDim>>(apoints);
   }
 
   void set_weights(const Eigen::Ref<const common::valuesd>& weights) {

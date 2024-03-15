@@ -16,17 +16,15 @@ class kdtree<Dim>::impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
 
  public:
-  impl(const Points& points, bool use_exact_search) {
+  impl(const Points& points) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(), Dim);
 
     flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
     flann_index_->buildIndex();
 
-    if (use_exact_search) {
-      params_knn_.checks = flann::FLANN_CHECKS_UNLIMITED;
-      params_radius_.checks = flann::FLANN_CHECKS_UNLIMITED;
-    }
+    params_knn_.checks = flann::FLANN_CHECKS_UNLIMITED;
+    params_radius_.checks = flann::FLANN_CHECKS_UNLIMITED;
   }
 
   void knn_search(const Point& point, index_t k, std::vector<index_t>& indices,
@@ -74,8 +72,8 @@ class kdtree<Dim>::impl {
 };
 
 template <int Dim>
-kdtree<Dim>::kdtree(const Points& points, bool use_exact_search)
-    : pimpl_(points.rows() == 0 ? nullptr : std::make_unique<impl>(points, use_exact_search)) {}
+kdtree<Dim>::kdtree(const Points& points)
+    : pimpl_(points.rows() == 0 ? nullptr : std::make_unique<impl>(points)) {}
 
 template <int Dim>
 kdtree<Dim>::~kdtree() = default;
