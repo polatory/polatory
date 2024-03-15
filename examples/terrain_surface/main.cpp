@@ -17,9 +17,9 @@ using polatory::geometry::points3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function_25d;
 using polatory::point_cloud::distance_filter;
+using polatory::rbf::RbfPtr;
 
-template <class Rbf>
-void main_impl(Rbf&& rbf, const options& opts) {
+void main_impl(RbfPtr<2>&& rbf, const options& opts) {
   // Load points (x,y,0) and values (z).
   tabled table = read_table(opts.in_file);
   points2d points = table(Eigen::all, {0, 1});
@@ -29,11 +29,11 @@ void main_impl(Rbf&& rbf, const options& opts) {
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
   // Define the model.
-  model model(rbf, opts.poly_degree);
+  model<2> model(rbf, opts.poly_degree);
   model.set_nugget(opts.smooth);
 
   // Fit.
-  interpolant interpolant(model);
+  interpolant<2> interpolant(model);
   if (opts.reduce) {
     interpolant.fit_incrementally(points, values, opts.absolute_tolerance, opts.max_iter);
   } else {
@@ -51,7 +51,7 @@ void main_impl(Rbf&& rbf, const options& opts) {
 int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
-    MAIN_IMPL_DIM(opts.rbf_name, 2, opts.rbf_params, opts);
+    main_impl(make_rbf<2>(opts.rbf_name, opts.rbf_params), opts);
     return 0;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

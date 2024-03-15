@@ -47,59 +47,61 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
 
 }  // namespace polatory::geometry
 
-#define MAIN_IMPL_DIM(NAME, DIM, PARAMS, OPTS)                          \
-  if (NAME == "bh2") {                                                  \
-    main_impl(polatory::rbf::biharmonic2d<DIM>(PARAMS), OPTS);          \
-  } else if (NAME == "bh3") {                                           \
-    main_impl(polatory::rbf::biharmonic3d<DIM>(PARAMS), OPTS);          \
-  } else if (NAME == "ca3") {                                           \
-    main_impl(polatory::rbf::cov_cauchy3<DIM>(PARAMS), OPTS);           \
-  } else if (NAME == "ca5") {                                           \
-    main_impl(polatory::rbf::cov_cauchy5<DIM>(PARAMS), OPTS);           \
-  } else if (NAME == "ca7") {                                           \
-    main_impl(polatory::rbf::cov_cauchy7<DIM>(PARAMS), OPTS);           \
-  } else if (NAME == "ca9") {                                           \
-    main_impl(polatory::rbf::cov_cauchy9<DIM>(PARAMS), OPTS);           \
-  } else if (NAME == "cub") {                                           \
-    main_impl(polatory::rbf::cov_cubic<DIM>(PARAMS), OPTS);             \
-  } else if (NAME == "exp") {                                           \
-    main_impl(polatory::rbf::cov_exponential<DIM>(PARAMS), OPTS);       \
-  } else if (NAME == "gau") {                                           \
-    main_impl(polatory::rbf::cov_gaussian<DIM>(PARAMS), OPTS);          \
-  } else if (NAME == "imq1") {                                          \
-    main_impl(polatory::rbf::inverse_multiquadric1<DIM>(PARAMS), OPTS); \
-  } else if (NAME == "mq1") {                                           \
-    main_impl(polatory::rbf::multiquadric1<DIM>(PARAMS), OPTS);         \
-  } else if (NAME == "mq3") {                                           \
-    main_impl(polatory::rbf::multiquadric3<DIM>(PARAMS), OPTS);         \
-  } else if (NAME == "sp3") {                                           \
-    main_impl(polatory::rbf::cov_spheroidal3<DIM>(PARAMS), OPTS);       \
-  } else if (NAME == "sp5") {                                           \
-    main_impl(polatory::rbf::cov_spheroidal5<DIM>(PARAMS), OPTS);       \
-  } else if (NAME == "sp7") {                                           \
-    main_impl(polatory::rbf::cov_spheroidal7<DIM>(PARAMS), OPTS);       \
-  } else if (NAME == "sp9") {                                           \
-    main_impl(polatory::rbf::cov_spheroidal9<DIM>(PARAMS), OPTS);       \
-  } else if (NAME == "sph") {                                           \
-    main_impl(polatory::rbf::cov_spherical<DIM>(PARAMS), OPTS);         \
-  } else if (NAME == "th2") {                                           \
-    main_impl(polatory::rbf::triharmonic2d<DIM>(PARAMS), OPTS);         \
-  } else if (NAME == "th3") {                                           \
-    main_impl(polatory::rbf::triharmonic3d<DIM>(PARAMS), OPTS);         \
-  } else {                                                              \
-    throw std::runtime_error("Unknown RBF name: " + NAME);              \
+template <int Dim>
+polatory::rbf::RbfPtr<Dim> make_rbf(const std::string& name, const std::vector<double>& params) {
+  if (name == "bh2") {
+    return std::make_unique<polatory::rbf::biharmonic2d<Dim>>(params);
+  } else if (name == "bh3") {
+    return std::make_unique<polatory::rbf::biharmonic3d<Dim>>(params);
+  } else if (name == "ca3") {
+    return std::make_unique<polatory::rbf::cov_cauchy3<Dim>>(params);
+  } else if (name == "ca5") {
+    return std::make_unique<polatory::rbf::cov_cauchy5<Dim>>(params);
+  } else if (name == "ca7") {
+    return std::make_unique<polatory::rbf::cov_cauchy7<Dim>>(params);
+  } else if (name == "ca9") {
+    return std::make_unique<polatory::rbf::cov_cauchy9<Dim>>(params);
+  } else if (name == "cub") {
+    return std::make_unique<polatory::rbf::cov_cubic<Dim>>(params);
+  } else if (name == "exp") {
+    return std::make_unique<polatory::rbf::cov_exponential<Dim>>(params);
+  } else if (name == "gau") {
+    return std::make_unique<polatory::rbf::cov_gaussian<Dim>>(params);
+  } else if (name == "imq1") {
+    return std::make_unique<polatory::rbf::inverse_multiquadric1<Dim>>(params);
+  } else if (name == "mq1") {
+    return std::make_unique<polatory::rbf::multiquadric1<Dim>>(params);
+  } else if (name == "mq3") {
+    return std::make_unique<polatory::rbf::multiquadric3<Dim>>(params);
+  } else if (name == "sp3") {
+    return std::make_unique<polatory::rbf::cov_spheroidal3<Dim>>(params);
+  } else if (name == "sp5") {
+    return std::make_unique<polatory::rbf::cov_spheroidal5<Dim>>(params);
+  } else if (name == "sp7") {
+    return std::make_unique<polatory::rbf::cov_spheroidal7<Dim>>(params);
+  } else if (name == "sp9") {
+    return std::make_unique<polatory::rbf::cov_spheroidal9<Dim>>(params);
+  } else if (name == "sph") {
+    return std::make_unique<polatory::rbf::cov_spherical<Dim>>(params);
+  } else if (name == "th2") {
+    return std::make_unique<polatory::rbf::triharmonic2d<Dim>>(params);
+  } else if (name == "th3") {
+    return std::make_unique<polatory::rbf::triharmonic3d<Dim>>(params);
+  } else {
+    throw std::runtime_error("Unknown RBF name: " + name);
   }
+}
 
 #define MAIN_IMPL(NAME, DIM, PARAMS, OPTS)                                       \
   switch (DIM) {                                                                 \
     case 1:                                                                      \
-      MAIN_IMPL_DIM(NAME, 1, PARAMS, OPTS)                                       \
+      main_impl(make_rbf<1>(NAME, PARAMS), OPTS);                                \
       break;                                                                     \
     case 2:                                                                      \
-      MAIN_IMPL_DIM(NAME, 2, PARAMS, OPTS)                                       \
+      main_impl(make_rbf<2>(NAME, PARAMS), OPTS);                                \
       break;                                                                     \
     case 3:                                                                      \
-      MAIN_IMPL_DIM(NAME, 3, PARAMS, OPTS)                                       \
+      main_impl(make_rbf<3>(NAME, PARAMS), OPTS);                                \
       break;                                                                     \
     default:                                                                     \
       throw std::runtime_error("Unsupported dimension: " + std::to_string(DIM)); \

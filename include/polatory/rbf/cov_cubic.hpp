@@ -9,6 +9,10 @@ namespace polatory::rbf {
 
 template <int Dim>
 class cov_cubic final : public covariance_function_base<Dim> {
+ public:
+  static constexpr int kDim = Dim;
+
+ private:
   using Base = covariance_function_base<Dim>;
   using Matrix = Base::Matrix;
   using Vector = Base::Vector;
@@ -17,6 +21,8 @@ class cov_cubic final : public covariance_function_base<Dim> {
   using Base::Base;
 
   explicit cov_cubic(const std::vector<double>& params) { Base::set_parameters(params); }
+
+  RbfPtr<kDim> clone() const override { return std::make_unique<cov_cubic>(*this); }
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);

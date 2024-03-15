@@ -7,11 +7,12 @@
 
 namespace polatory::interpolation {
 
-template <class Model>
+template <int Dim>
 class rbf_fitter {
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
+  using Model = model<kDim>;
   using Points = geometry::pointsNd<kDim>;
-  using RbfSolver = rbf_solver<Model>;
+  using RbfSolver = rbf_solver<kDim>;
 
  public:
   rbf_fitter(const Model& model, const Points& points)

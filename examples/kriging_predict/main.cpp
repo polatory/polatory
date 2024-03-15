@@ -17,9 +17,10 @@ using polatory::geometry::vectors3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
 using polatory::point_cloud::distance_filter;
+using polatory::rbf::RbfPtr;
 
-template <class Rbf>
-void main_impl(Rbf&& rbf, const options& opts) {
+template <int Dim>
+void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table(0, 4);
   if (opts.in_file != "") {
@@ -54,15 +55,15 @@ void main_impl(Rbf&& rbf, const options& opts) {
   std::tie(grad_points, grad_values) = grad_filter(grad_points, grad_values);
 
   // Define the model.
-  rbf.set_anisotropy(opts.aniso);
-  model model(rbf, opts.poly_degree);
+  rbf->set_anisotropy(opts.aniso);
+  model<3> model(rbf, opts.poly_degree);
   model.set_nugget(opts.nugget);
 
   valuesd rhs(values.size() + 3 * grad_values.rows());
   rhs << values, grad_values.reshaped<Eigen::RowMajor>();
 
   // Fit.
-  interpolant interpolant(model);
+  interpolant<3> interpolant(model);
   if (opts.ineq) {
     interpolant.fit_inequality(points, values, *values_lb, *values_ub, opts.absolute_tolerance,
                                opts.max_iter);
@@ -86,7 +87,7 @@ void main_impl(Rbf&& rbf, const options& opts) {
 int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
-    MAIN_IMPL_DIM(opts.rbf_name, 3, opts.rbf_params, opts);
+    main_impl(make_rbf<3>(opts.rbf_name, opts.rbf_params), opts);
     return 0;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

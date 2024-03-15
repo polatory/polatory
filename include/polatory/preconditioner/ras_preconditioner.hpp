@@ -33,21 +33,22 @@
 
 namespace polatory::preconditioner {
 
-template <class Model>
+template <int Dim>
 class ras_preconditioner : public krylov::linear_operator {
   static constexpr bool kReportResidual = false;
   static constexpr double kCoarseRatio = 0.01;
   static constexpr index_t kNCoarsestPoints = 1024;
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
 
+  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
   using Domain = domain<kDim>;
   using DomainDivider = domain_divider<kDim>;
-  using CoarseGrid = coarse_grid<Model>;
-  using FineGrid = fine_grid<Model>;
-  using Evaluator = interpolation::rbf_evaluator<Model>;
-  using SymmetricEvaluator = interpolation::rbf_symmetric_evaluator<Model>;
+  using CoarseGrid = coarse_grid<kDim>;
+  using FineGrid = fine_grid<kDim>;
+  using Evaluator = interpolation::rbf_evaluator<kDim>;
+  using SymmetricEvaluator = interpolation::rbf_symmetric_evaluator<kDim>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
   using LagrangeBasis = polynomial::lagrange_basis<kDim>;
   using UnisolventPointSet = polynomial::unisolvent_point_set<kDim>;
@@ -116,7 +117,7 @@ class ras_preconditioner : public krylov::linear_operator {
       auto n_mixed_points =
           static_cast<index_t>(point_idcs_.at(level).size() + grad_point_idcs_.at(level).size());
 
-      auto aniso = model.rbf().anisotropy();
+      auto aniso = model.rbf()->anisotropy();
       auto divider = std::make_unique<DomainDivider>(
           points_ * aniso.transpose(), grad_points_ * aniso.transpose(), point_idcs_.at(level),
           grad_point_idcs_.at(level), poly_point_idcs);

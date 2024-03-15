@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <polatory/polatory.hpp>
 #include <tuple>
 #include <unordered_set>
@@ -24,6 +25,7 @@ using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic3d;
+using polatory::rbf::RbfPtr;
 using face = Eigen::Matrix<index_t, 1, 3>;
 using faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
@@ -130,11 +132,8 @@ class mesh_distance {
   std::unordered_set<index_t> boundary_vertices_;
 };
 
-template <class Model>
 class offset_field_function : public field_function {
-  static_assert(Model::kDim == 3, "Model must be three-dimensional.");
-
-  using Interpolant = interpolant<Model>;
+  using Interpolant = interpolant<3>;
 
  public:
   explicit offset_field_function(Interpolant& interpolant, const mesh_distance& dist)
@@ -178,11 +177,11 @@ int main(int argc, const char* argv[]) {
     std::tie(C, S) = filter(C, S);
 
     // Define the model.
-    biharmonic3d<3> rbf({1.0});
-    model model(rbf, 0);
+    RbfPtr<3> rbf = std::make_unique<biharmonic3d<3>>(std::vector<double>{1.0});
+    model<3> model(rbf, 0);
 
     // Fit.
-    interpolant interpolant(model);
+    interpolant<3> interpolant(model);
     if (opts.reduce) {
       interpolant.fit_incrementally(C, S, opts.absolute_tolerance, opts.max_iter);
     } else {

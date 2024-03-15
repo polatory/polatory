@@ -9,11 +9,15 @@ namespace polatory::rbf {
 
 template <int Dim, int k>
 class polyharmonic_even final : public rbf_base<Dim> {
-  static_assert(k > 0 && k % 2 == 0, "k must be a positive even integer.");
+ public:
+  static constexpr int kDim = Dim;
 
+ private:
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
   using Vector = Base::Vector;
+
+  static_assert(k > 0 && k % 2 == 0, "k must be a positive even integer.");
 
   static constexpr double kSign = (k / 2 + 1) % 2 == 0 ? 1.0 : -1.0;
 
@@ -22,6 +26,8 @@ class polyharmonic_even final : public rbf_base<Dim> {
   using Base::parameters;
 
   explicit polyharmonic_even(const std::vector<double>& params) { Base::set_parameters(params); }
+
+  RbfPtr<kDim> clone() const override { return std::make_unique<polyharmonic_even>(*this); }
 
   int cpd_order() const override { return k / 2 + 1; }
 

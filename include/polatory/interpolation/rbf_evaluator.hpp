@@ -13,13 +13,15 @@
 
 namespace polatory::interpolation {
 
-template <class Model>
+template <int Dim>
 class rbf_evaluator {
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
+  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
   using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
+  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
 
  public:
   rbf_evaluator(const Model& model, const Points& source_points, int order)
@@ -43,10 +45,10 @@ class rbf_evaluator {
 
   rbf_evaluator(const Model& model, const Bbox& bbox, int order)
       : l_(model.poly_basis_size()),
-        a_(model.rbf(), bbox, order),
-        f_(model.rbf(), bbox, order),
-        ft_(model.rbf(), bbox, order),
-        h_(model.rbf(), bbox, order) {
+        a_(fmm::make_fmm_evaluator(model.rbf(), bbox, order)),
+        f_(fmm::make_fmm_gradient_evaluator(model.rbf(), bbox, order)),
+        ft_(fmm::make_fmm_gradient_transpose_evaluator(model.rbf(), bbox, order)),
+        h_(fmm::make_fmm_hessian_evaluator(model.rbf(), bbox, order)) {
     if (l_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
@@ -55,10 +57,10 @@ class rbf_evaluator {
   common::valuesd evaluate() const {
     common::valuesd y = common::valuesd::Zero(trg_mu_ + kDim * trg_sigma_);
 
-    y.head(trg_mu_) += a_.evaluate();
-    y.head(trg_mu_) += f_.evaluate();
-    y.tail(kDim * trg_sigma_) += ft_.evaluate();
-    y.tail(kDim * trg_sigma_) += h_.evaluate();
+    y.head(trg_mu_) += a_->evaluate();
+    y.head(trg_mu_) += f_->evaluate();
+    y.tail(kDim * trg_sigma_) += ft_->evaluate();
+    y.tail(kDim * trg_sigma_) += h_->evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -82,10 +84,10 @@ class rbf_evaluator {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
-    a_.set_source_points(points);
-    f_.set_source_points(grad_points);
-    ft_.set_source_points(points);
-    h_.set_source_points(grad_points);
+    a_->set_source_points(points);
+    f_->set_source_points(grad_points);
+    ft_->set_source_points(points);
+    h_->set_source_points(grad_points);
   }
 
   void set_target_points(const Points& points) { set_target_points(points, Points(0, kDim)); }
@@ -94,10 +96,10 @@ class rbf_evaluator {
     trg_mu_ = points.rows();
     trg_sigma_ = grad_points.rows();
 
-    a_.set_target_points(points);
-    f_.set_target_points(points);
-    ft_.set_target_points(grad_points);
-    h_.set_target_points(grad_points);
+    a_->set_target_points(points);
+    f_->set_target_points(points);
+    ft_->set_target_points(grad_points);
+    h_->set_target_points(grad_points);
 
     if (l_ > 0) {
       p_->set_target_points(points, grad_points);
@@ -108,10 +110,10 @@ class rbf_evaluator {
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
-    a_.set_weights(weights.head(mu_));
-    f_.set_weights(weights.segment(mu_, kDim * sigma_));
-    ft_.set_weights(weights.head(mu_));
-    h_.set_weights(weights.segment(mu_, kDim * sigma_));
+    a_->set_weights(weights.head(mu_));
+    f_->set_weights(weights.segment(mu_, kDim * sigma_));
+    ft_->set_weights(weights.head(mu_));
+    h_->set_weights(weights.segment(mu_, kDim * sigma_));
 
     if (l_ > 0) {
       p_->set_weights(weights.tail(l_));
@@ -125,10 +127,10 @@ class rbf_evaluator {
   index_t trg_mu_{};
   index_t trg_sigma_{};
 
-  fmm::fmm_evaluator<typename Model::rbf_type> a_;
-  fmm::fmm_gradient_evaluator<typename Model::rbf_type> f_;
-  fmm::fmm_gradient_transpose_evaluator<typename Model::rbf_type> ft_;
-  fmm::fmm_hessian_evaluator<typename Model::rbf_type> h_;
+  FmmGenericEvaluatorPtr a_;
+  FmmGenericEvaluatorPtr f_;
+  FmmGenericEvaluatorPtr ft_;
+  FmmGenericEvaluatorPtr h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 

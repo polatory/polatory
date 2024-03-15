@@ -32,9 +32,10 @@ class LDLT2 : public LDLT<MatrixType_, UpLo_> {
 
 namespace polatory::preconditioner {
 
-template <class Model>
+template <int Dim>
 class fine_grid {
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
+  using Model = model<kDim>;
   using Domain = domain<kDim>;
   using Points = geometry::pointsNd<kDim>;
 

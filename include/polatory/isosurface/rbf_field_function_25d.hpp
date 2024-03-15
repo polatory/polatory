@@ -8,11 +8,8 @@
 
 namespace polatory::isosurface {
 
-template <class Model>
 class rbf_field_function_25d : public field_function {
-  static_assert(Model::kDim == 2, "Model must be two-dimensional.");
-
-  using Interpolant = interpolant<Model>;
+  using Interpolant = interpolant<2>;
 
  public:
   explicit rbf_field_function_25d(Interpolant& interpolant) : interpolant_(interpolant) {}

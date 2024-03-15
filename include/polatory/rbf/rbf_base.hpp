@@ -1,6 +1,7 @@
 #pragma once
 
 #include <limits>
+#include <memory>
 #include <polatory/geometry/point3d.hpp>
 #include <stdexcept>
 #include <string>
@@ -9,14 +10,21 @@
 namespace polatory::rbf {
 
 template <int Dim>
+class rbf_base;
+
+template <int Dim>
+using RbfPtr = std::unique_ptr<rbf_base<Dim>>;
+
+template <int Dim>
 class rbf_base {
+ public:
+  static constexpr int kDim = Dim;
+
  protected:
   using Matrix = geometry::matrixNd<Dim>;
   using Vector = geometry::vectorNd<Dim>;
 
  public:
-  static constexpr int kDim = Dim;
-
   virtual ~rbf_base() = default;
 
   rbf_base(const rbf_base&) = default;
@@ -25,6 +33,8 @@ class rbf_base {
   rbf_base& operator=(rbf_base&&) = default;
 
   const Matrix& anisotropy() const { return aniso_; }
+
+  virtual RbfPtr<kDim> clone() const = 0;
 
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;

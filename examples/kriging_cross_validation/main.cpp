@@ -15,11 +15,9 @@ using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::kriging::k_fold_cross_validation;
 using polatory::point_cloud::distance_filter;
+using polatory::rbf::RbfPtr;
 
-template <class Rbf>
-void main_impl(Rbf&& rbf, const options& opts) {
-  using Model = model<Rbf>;
-
+void main_impl(RbfPtr<3>&& rbf, const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table = read_table(opts.in_file);
   points3d points = table(Eigen::all, {0, 1, 2});
@@ -29,8 +27,8 @@ void main_impl(Rbf&& rbf, const options& opts) {
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
   // Define the model.
-  rbf.set_anisotropy(opts.aniso);
-  Model model(rbf, opts.poly_degree);
+  rbf->set_anisotropy(opts.aniso);
+  model<3> model(rbf, opts.poly_degree);
   model.set_nugget(opts.nugget);
 
   // Run the cross validation.
@@ -48,7 +46,7 @@ void main_impl(Rbf&& rbf, const options& opts) {
 int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
-    MAIN_IMPL_DIM(opts.rbf_name, 3, opts.rbf_params, opts);
+    main_impl(make_rbf<3>(opts.rbf_name, opts.rbf_params), opts);
     return 0;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

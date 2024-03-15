@@ -10,15 +10,14 @@
 
 namespace polatory {
 
-template <class Rbf>
+template <int Dim>
 class model {
  public:
-  using rbf_type = Rbf;
+  static constexpr int kDim = Dim;
+  using RbfPtr = rbf::RbfPtr<kDim>;
 
-  static constexpr int kDim = Rbf::kDim;
-
-  model(const Rbf& rbf, int poly_degree) : rbf_(rbf), poly_degree_(poly_degree) {
-    if (poly_degree < rbf.cpd_order() - 1 || poly_degree > 2) {
+  model(const RbfPtr& rbf, int poly_degree) : rbf_(rbf), poly_degree_(poly_degree) {
+    if (poly_degree < rbf->cpd_order() - 1 || poly_degree > 2) {
       throw std::invalid_argument(
           "poly_degree must be within the range of rbf.cpd_order() - 1 to 2.");
     }
@@ -37,28 +36,28 @@ class model {
   double nugget() const { return nugget_; }
 
   // Experimental function.
-  int num_parameters() const { return 1 + rbf_.num_parameters(); }
+  int num_parameters() const { return 1 + rbf_->num_parameters(); }
 
   // Experimental function.
   std::vector<double> parameter_lower_bounds() const {
     std::vector<double> lower_bounds{0.0};
-    lower_bounds.insert(lower_bounds.end(), rbf_.parameter_lower_bounds().begin(),
-                        rbf_.parameter_lower_bounds().end());
+    lower_bounds.insert(lower_bounds.end(), rbf_->parameter_lower_bounds().begin(),
+                        rbf_->parameter_lower_bounds().end());
     return lower_bounds;
   }
 
   // Experimental function.
   std::vector<double> parameter_upper_bounds() const {
     std::vector<double> upper_bounds{std::numeric_limits<double>::infinity()};
-    upper_bounds.insert(upper_bounds.end(), rbf_.parameter_upper_bounds().begin(),
-                        rbf_.parameter_upper_bounds().end());
+    upper_bounds.insert(upper_bounds.end(), rbf_->parameter_upper_bounds().begin(),
+                        rbf_->parameter_upper_bounds().end());
     return upper_bounds;
   }
 
   // Experimental function.
   std::vector<double> parameters() const {
     std::vector<double> params{nugget()};
-    params.insert(params.end(), rbf_.parameters().begin(), rbf_.parameters().end());
+    params.insert(params.end(), rbf_->parameters().begin(), rbf_->parameters().end());
     return params;
   }
 
@@ -68,7 +67,7 @@ class model {
 
   int poly_degree() const { return poly_degree_; }
 
-  const Rbf& rbf() const { return rbf_; }
+  const RbfPtr& rbf() const { return rbf_; }
 
   void set_nugget(double nugget) {
     if (nugget < 0.0) {
@@ -86,11 +85,11 @@ class model {
     }
 
     set_nugget(params[0]);
-    rbf_.set_parameters(std::vector<double>(params.begin() + 1, params.end()));
+    rbf_->set_parameters(std::vector<double>(params.begin() + 1, params.end()));
   }
 
  private:
-  Rbf rbf_;
+  const RbfPtr& rbf_;
   int poly_degree_;
   double nugget_{};
 };

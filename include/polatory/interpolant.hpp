@@ -18,12 +18,16 @@
 
 namespace polatory {
 
-template <class Model>
+template <int Dim>
 class interpolant {
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
+  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
-  using Evaluator = interpolation::rbf_evaluator<Model>;
+  using Evaluator = interpolation::rbf_evaluator<kDim>;
+  using Fitter = interpolation::rbf_fitter<kDim>;
+  using IncrementalFitter = interpolation::rbf_incremental_fitter<kDim>;
+  using InequalityFitter = interpolation::rbf_inequality_fitter<kDim>;
 
  public:
   explicit interpolant(const Model& model) : model_(model) {}
@@ -77,7 +81,7 @@ class interpolant {
 
     clear();
 
-    interpolation::rbf_fitter fitter(model_, points, grad_points);
+    Fitter fitter(model_, points, grad_points);
     weights_ = fitter.fit(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
     fitted_ = true;
@@ -112,7 +116,7 @@ class interpolant {
 
     clear();
 
-    interpolation::rbf_incremental_fitter fitter(model_, points, grad_points);
+    IncrementalFitter fitter(model_, points, grad_points);
     std::vector<index_t> center_indices;
     std::vector<index_t> grad_center_indices;
     std::tie(center_indices, grad_center_indices, weights_) =
@@ -155,7 +159,7 @@ class interpolant {
 
     clear();
 
-    interpolation::rbf_inequality_fitter fitter(model_, points);
+    InequalityFitter fitter(model_, points);
     std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) =
         fitter.fit(values, values_lb, values_ub, absolute_tolerance, max_iter);

@@ -22,14 +22,15 @@
 
 namespace polatory::interpolation {
 
-template <class Model>
+template <int Dim>
 class rbf_incremental_fitter {
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
+  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
   using Vectors = geometry::vectorsNd<kDim>;
-  using Solver = rbf_solver<Model>;
-  using Evaluator = rbf_evaluator<Model>;
+  using Solver = rbf_solver<kDim>;
+  using Evaluator = rbf_evaluator<kDim>;
 
  public:
   rbf_incremental_fitter(const Model& model, const Points& points_full,
