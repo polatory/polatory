@@ -46,7 +46,7 @@ inline options parse_options(int argc, const char* argv[]) {
       ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")->value_name("VAL"),  //
        "Nugget of the model")                                                           //
       ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),   //
-       "Degree of the drift polynomial")                                                //
+       "Degree of the polynomial trend")                                                //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),       //
        "Absolute tolerance of fitting")                                                 //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),      //
