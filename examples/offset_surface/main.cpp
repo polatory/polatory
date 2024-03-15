@@ -4,7 +4,6 @@
 
 #include <exception>
 #include <iostream>
-#include <memory>
 #include <polatory/polatory.hpp>
 #include <tuple>
 #include <unordered_set>
