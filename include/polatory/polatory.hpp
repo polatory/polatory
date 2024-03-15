@@ -32,6 +32,7 @@
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
 #include <polatory/rbf/inverse_multiquadric.hpp>
+#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>

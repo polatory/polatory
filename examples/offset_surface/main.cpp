@@ -25,7 +25,7 @@ using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic3d;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::make_rbf;
 using face = Eigen::Matrix<index_t, 1, 3>;
 using faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
@@ -177,7 +177,7 @@ int main(int argc, const char* argv[]) {
     std::tie(C, S) = filter(C, S);
 
     // Define the model.
-    RbfPtr<3> rbf = std::make_unique<biharmonic3d<3>>(std::vector<double>{1.0});
+    auto rbf = make_rbf<biharmonic3d<3>>({1.0});
     model<3> model(rbf, 0);
 
     // Fit.

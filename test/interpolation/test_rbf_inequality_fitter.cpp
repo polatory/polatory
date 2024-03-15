@@ -9,6 +9,7 @@
 #include <polatory/model.hpp>
 #include <polatory/precision.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
+#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 
@@ -23,7 +24,7 @@ using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::make_rbf;
 
 TEST(rbf_inequality_fitter, inequality_only) {
   constexpr int kDim = 3;
@@ -38,7 +39,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.001;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  RbfPtr<kDim> rbf = std::make_unique<biharmonic3d<kDim>>(std::vector<double>({1.0}));
+  auto rbf = make_rbf<biharmonic3d<kDim>>({1.0});
   rbf->set_anisotropy(aniso);
 
   auto poly_degree = rbf->cpd_order() - 1;
@@ -84,7 +85,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   values_ub << nan, nan, nan, 4, nan, 4, nan, nan, nan, nan, nan, 1, nan, nan, nan, nan, 4, 7, nan,
       nan, nan, nan, nan, nan, 3;
 
-  RbfPtr<kDim> rbf = std::make_unique<cov_exponential<kDim>>(std::vector<double>({1.0, 3.0}));
+  auto rbf = make_rbf<cov_exponential<kDim>>({1.0, 3.0});
   model<kDim> model(rbf, -1);
 
   rbf_inequality_fitter<kDim> fitter(model, points);

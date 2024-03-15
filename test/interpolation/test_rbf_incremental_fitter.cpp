@@ -7,6 +7,7 @@
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/precision.hpp>
+#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 
@@ -19,7 +20,7 @@ using polatory::common::valuesd;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_incremental_fitter;
 using polatory::numeric::absolute_error;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 TEST(rbf_incremental_fitter, trivial) {
@@ -38,7 +39,7 @@ TEST(rbf_incremental_fitter, trivial) {
   valuesd rhs(n_points + kDim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
-  RbfPtr<kDim> rbf = std::make_unique<triharmonic3d<kDim>>(std::vector<double>({1.0}));
+  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
   rbf->set_anisotropy(aniso);
 
   auto poly_degree = rbf->cpd_order() - 1;

@@ -11,6 +11,7 @@
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
+#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 #include <random>
@@ -29,7 +30,7 @@ using polatory::preconditioner::binary_cache;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
 using polatory::preconditioner::fine_grid;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 namespace {
@@ -47,7 +48,7 @@ void test(index_t n_points, index_t n_grad_points) {
   auto [points, values] = sample_data(n_points, aniso);
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  RbfPtr<kDim> rbf = std::make_unique<triharmonic3d<kDim>>(std::vector<double>({1.0}));
+  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
 
   auto poly_degree = rbf->cpd_order() - 1;
   model<kDim> model(rbf, poly_degree);
