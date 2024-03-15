@@ -43,10 +43,10 @@ class rbf_evaluator {
 
   rbf_evaluator(const Model& model, const Bbox& bbox, int order)
       : l_(model.poly_basis_size()),
-        a_(model, bbox, order),
-        f_(model, bbox, order),
-        ft_(model, bbox, order),
-        h_(model, bbox, order) {
+        a_(model.rbf(), bbox, order),
+        f_(model.rbf(), bbox, order),
+        ft_(model.rbf(), bbox, order),
+        h_(model.rbf(), bbox, order) {
     if (l_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
@@ -125,10 +125,10 @@ class rbf_evaluator {
   index_t trg_mu_{};
   index_t trg_sigma_{};
 
-  fmm::fmm_evaluator<Model> a_;
-  fmm::fmm_gradient_evaluator<Model> f_;
-  fmm::fmm_gradient_transpose_evaluator<Model> ft_;
-  fmm::fmm_hessian_evaluator<Model> h_;
+  fmm::fmm_evaluator<typename Model::rbf_type> a_;
+  fmm::fmm_gradient_evaluator<typename Model::rbf_type> f_;
+  fmm::fmm_gradient_transpose_evaluator<typename Model::rbf_type> ft_;
+  fmm::fmm_hessian_evaluator<typename Model::rbf_type> h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 

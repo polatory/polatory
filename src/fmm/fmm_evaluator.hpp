@@ -21,9 +21,9 @@
 
 namespace polatory::fmm {
 
-template <class Model, class Kernel>
-class fmm_generic_evaluator<Model, Kernel>::impl {
-  static constexpr int kDim{Model::kDim};
+template <class Rbf, class Kernel>
+class fmm_generic_evaluator<Rbf, Kernel>::impl {
+  static constexpr int kDim{Rbf::kDim};
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
 
@@ -56,11 +56,11 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  public:
-  impl(const Model& model, const Bbox& bbox, int order)
-      : model_(model),
-        kernel_(model.rbf()),
+  impl(const Rbf& rbf, const Bbox& bbox, int order)
+      : rbf_(rbf),
+        kernel_(rbf),
         order_(order),
-        box_(make_box<Model, Box>(model, bbox)),
+        box_(make_box<Rbf, Box>(rbf, bbox)),
         near_field_(kernel_, false) {}
 
   common::valuesd evaluate() const {
@@ -115,7 +115,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
 
     src_particles_.resize(n_src_points_);
 
-    auto a = model_.rbf().anisotropy();
+    auto a = rbf_.anisotropy();
     for (index_t idx = 0; idx < n_src_points_; idx++) {
       auto& p = src_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
@@ -133,7 +133,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
 
     trg_particles_.resize(n_trg_points_);
 
-    auto a = model_.rbf().anisotropy();
+    auto a = rbf_.anisotropy();
     for (index_t idx = 0; idx < n_trg_points_; idx++) {
       auto& p = trg_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
@@ -282,7 +282,7 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
     trg_tree_.reset(nullptr);
   }
 
-  const Model& model_;
+  const Rbf& rbf_;
   const Kernel kernel_;
   const int order_;
   const Box box_;
@@ -301,45 +301,44 @@ class fmm_generic_evaluator<Model, Kernel>::impl {
   mutable std::unique_ptr<TargetTree> trg_tree_;
 };
 
-template <class Model, class Kernel>
-fmm_generic_evaluator<Model, Kernel>::fmm_generic_evaluator(const Model& model, const Bbox& bbox,
-                                                            int order)
-    : impl_(std::make_unique<impl>(model, bbox, order)) {}
+template <class Rbf, class Kernel>
+fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox,
+                                                          int order)
+    : impl_(std::make_unique<impl>(rbf, bbox, order)) {}
 
-template <class Model, class Kernel>
-fmm_generic_evaluator<Model, Kernel>::~fmm_generic_evaluator() = default;
+template <class Rbf, class Kernel>
+fmm_generic_evaluator<Rbf, Kernel>::~fmm_generic_evaluator() = default;
 
-template <class Model, class Kernel>
-common::valuesd fmm_generic_evaluator<Model, Kernel>::evaluate() const {
+template <class Rbf, class Kernel>
+common::valuesd fmm_generic_evaluator<Rbf, Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
-template <class Model, class Kernel>
-void fmm_generic_evaluator<Model, Kernel>::set_target_points(const Points& points) {
+template <class Rbf, class Kernel>
+void fmm_generic_evaluator<Rbf, Kernel>::set_target_points(const Points& points) {
   impl_->set_target_points(points);
 }
 
-template <class Model, class Kernel>
-void fmm_generic_evaluator<Model, Kernel>::set_source_points(const Points& points) {
+template <class Rbf, class Kernel>
+void fmm_generic_evaluator<Rbf, Kernel>::set_source_points(const Points& points) {
   impl_->set_source_points(points);
 }
 
-template <class Model, class Kernel>
-void fmm_generic_evaluator<Model, Kernel>::set_weights(
+template <class Rbf, class Kernel>
+void fmm_generic_evaluator<Rbf, Kernel>::set_weights(
     const Eigen::Ref<const common::valuesd>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_FMM_EVALUATORS_(MODEL)                                                     \
-  template class fmm_generic_evaluator<MODEL, kernel<typename MODEL::rbf_type>>;             \
-  template class fmm_generic_evaluator<MODEL, gradient_kernel<typename MODEL::rbf_type>>;    \
-  template class fmm_generic_evaluator<MODEL,                                                \
-                                       gradient_transpose_kernel<typename MODEL::rbf_type>>; \
-  template class fmm_generic_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type>>;
+#define IMPLEMENT_FMM_EVALUATORS_(RBF)                                       \
+  template class fmm_generic_evaluator<RBF, kernel<RBF>>;                    \
+  template class fmm_generic_evaluator<RBF, gradient_kernel<RBF>>;           \
+  template class fmm_generic_evaluator<RBF, gradient_transpose_kernel<RBF>>; \
+  template class fmm_generic_evaluator<RBF, hessian_kernel<RBF>>;
 
-#define IMPLEMENT_FMM_EVALUATORS(RBF)       \
-  IMPLEMENT_FMM_EVALUATORS_(model<RBF<1>>); \
-  IMPLEMENT_FMM_EVALUATORS_(model<RBF<2>>); \
-  IMPLEMENT_FMM_EVALUATORS_(model<RBF<3>>);
+#define IMPLEMENT_FMM_EVALUATORS(RBF_NAME) \
+  IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<1>);  \
+  IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<2>);  \
+  IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<3>);
 
 }  // namespace polatory::fmm

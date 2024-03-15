@@ -10,9 +10,9 @@
 
 namespace polatory::fmm {
 
-template <class Model, class Kernel>
-class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
-  static constexpr int kDim{Model::kDim};
+template <class Rbf, class Kernel>
+class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
+  static constexpr int kDim{Rbf::kDim};
   using Bbox = geometry::bboxNd<kDim>;
   using Point = geometry::pointNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
@@ -27,8 +27,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
       /* variables */ index_t>;
 
  public:
-  impl(const Model& model, const Bbox& /*bbox*/, int /*order*/)
-      : model_(model), kernel_(model.rbf()) {}
+  impl(const Rbf& rbf, const Bbox& /*bbox*/, int /*order*/) : rbf_(rbf), kernel_(rbf) {}
 
   common::valuesd evaluate() const {
     for (auto& p : particles_) {
@@ -37,7 +36,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
       }
     }
 
-    auto radius = model_.rbf().support_radius_isotropic();
+    auto radius = rbf_.support_radius_isotropic();
     std::vector<index_t> indices;
     std::vector<double> distances;
 
@@ -73,7 +72,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
 
     particles_.resize(n_points_);
 
-    auto a = model_.rbf().anisotropy();
+    auto a = rbf_.anisotropy();
     for (index_t idx = 0; idx < n_points_; idx++) {
       auto& p = particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
@@ -129,7 +128,7 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
     return potentials;
   }
 
-  const Model& model_;
+  const Rbf& rbf_;
   const Kernel kernel_;
 
   index_t n_points_{};
@@ -137,38 +136,38 @@ class fmm_generic_symmetric_evaluator<Model, Kernel>::impl {
   std::unique_ptr<point_cloud::kdtree<kDim>> kdtree_;
 };
 
-template <class Model, class Kernel>
-fmm_generic_symmetric_evaluator<Model, Kernel>::fmm_generic_symmetric_evaluator(const Model& model,
-                                                                                const Bbox& bbox,
-                                                                                int order)
-    : impl_(std::make_unique<impl>(model, bbox, order)) {}
+template <class Rbf, class Kernel>
+fmm_generic_symmetric_evaluator<Rbf, Kernel>::fmm_generic_symmetric_evaluator(const Rbf& rbf,
+                                                                              const Bbox& bbox,
+                                                                              int order)
+    : impl_(std::make_unique<impl>(rbf, bbox, order)) {}
 
-template <class Model, class Kernel>
-fmm_generic_symmetric_evaluator<Model, Kernel>::~fmm_generic_symmetric_evaluator() = default;
+template <class Rbf, class Kernel>
+fmm_generic_symmetric_evaluator<Rbf, Kernel>::~fmm_generic_symmetric_evaluator() = default;
 
-template <class Model, class Kernel>
-common::valuesd fmm_generic_symmetric_evaluator<Model, Kernel>::evaluate() const {
+template <class Rbf, class Kernel>
+common::valuesd fmm_generic_symmetric_evaluator<Rbf, Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
-template <class Model, class Kernel>
-void fmm_generic_symmetric_evaluator<Model, Kernel>::set_points(const Points& points) {
+template <class Rbf, class Kernel>
+void fmm_generic_symmetric_evaluator<Rbf, Kernel>::set_points(const Points& points) {
   impl_->set_points(points);
 }
 
-template <class Model, class Kernel>
-void fmm_generic_symmetric_evaluator<Model, Kernel>::set_weights(
+template <class Rbf, class Kernel>
+void fmm_generic_symmetric_evaluator<Rbf, Kernel>::set_weights(
     const Eigen::Ref<const common::valuesd>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(MODEL)                                         \
-  template class fmm_generic_symmetric_evaluator<MODEL, kernel<typename MODEL::rbf_type>>; \
-  template class fmm_generic_symmetric_evaluator<MODEL, hessian_kernel<typename MODEL::rbf_type>>;
+#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)                    \
+  template class fmm_generic_symmetric_evaluator<RBF, kernel<RBF>>; \
+  template class fmm_generic_symmetric_evaluator<RBF, hessian_kernel<RBF>>;
 
-#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(RBF)       \
-  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(model<RBF<1>>); \
-  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(model<RBF<2>>); \
-  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(model<RBF<3>>);
+#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(RBF_NAME) \
+  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<1>);  \
+  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<2>);  \
+  IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<3>);
 
 }  // namespace polatory::fmm

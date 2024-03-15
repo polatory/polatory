@@ -32,10 +32,10 @@ class rbf_operator : public krylov::linear_operator {
   rbf_operator(const Model& model, const Bbox& bbox, int order)
       : model_(model),
         l_(model.poly_basis_size()),
-        a_(model, bbox, order),
-        f_(model, bbox, order),
-        ft_(model, bbox, order),
-        h_(model, bbox, order) {
+        a_(model.rbf(), bbox, order),
+        f_(model.rbf(), bbox, order),
+        ft_(model.rbf(), bbox, order),
+        h_(model.rbf(), bbox, order) {
     if (l_ > 0) {
       poly_basis_ = std::make_unique<MonomialBasis>(model.poly_degree());
     }
@@ -91,10 +91,10 @@ class rbf_operator : public krylov::linear_operator {
   index_t mu_{};
   index_t sigma_{};
 
-  mutable fmm::fmm_symmetric_evaluator<Model> a_;
-  mutable fmm::fmm_gradient_evaluator<Model> f_;
-  mutable fmm::fmm_gradient_transpose_evaluator<Model> ft_;
-  mutable fmm::fmm_hessian_symmetric_evaluator<Model> h_;
+  mutable fmm::fmm_symmetric_evaluator<typename Model::rbf_type> a_;
+  mutable fmm::fmm_gradient_evaluator<typename Model::rbf_type> f_;
+  mutable fmm::fmm_gradient_transpose_evaluator<typename Model::rbf_type> ft_;
+  mutable fmm::fmm_hessian_symmetric_evaluator<typename Model::rbf_type> h_;
   std::unique_ptr<MonomialBasis> poly_basis_;
   Eigen::MatrixXd pt_;
 };

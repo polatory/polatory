@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <polatory/geometry/bbox3d.hpp>
-#include <polatory/model.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 #include <polatory/types.hpp>
 #include <scalfmm/tree/box.hpp>
 
@@ -15,9 +15,9 @@ inline int fmm_tree_height(index_t n_points) {
                   static_cast<int>(std::round(std::log(n_points) / std::log(std::pow(2.0, Dim)))));
 }
 
-template <class Model, class Box>
-Box make_box(const Model& model, const geometry::bboxNd<Model::kDim>& bbox) {
-  auto a_bbox = bbox.transform(model.rbf().anisotropy());
+template <class Rbf, class Box>
+Box make_box(const Rbf& rbf, const geometry::bboxNd<Rbf::kDim>& bbox) {
+  auto a_bbox = bbox.transform(rbf.anisotropy());
 
   auto width = 1.01 * a_bbox.width().maxCoeff();
   if (width == 0.0) {
@@ -25,7 +25,7 @@ Box make_box(const Model& model, const geometry::bboxNd<Model::kDim>& bbox) {
   }
 
   typename Box::position_type center;
-  for (auto i = 0; i < Model::kDim; ++i) {
+  for (auto i = 0; i < Rbf::kDim; ++i) {
     center.at(i) = a_bbox.center()(i);
   }
 
