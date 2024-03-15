@@ -9,16 +9,22 @@ namespace polatory::rbf {
 
 template <int Dim, int k>
 class inverse_multiquadric final : public rbf_base<Dim> {
-  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
+ public:
+  static constexpr int kDim = Dim;
 
+ private:
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
   using Vector = Base::Vector;
+
+  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
 
  public:
   using Base::Base;
 
   explicit inverse_multiquadric(const std::vector<double>& params) { Base::set_parameters(params); }
+
+  RbfPtr<kDim> clone() const override { return std::make_unique<inverse_multiquadric>(*this); }
 
   int cpd_order() const override { return 0; }
 

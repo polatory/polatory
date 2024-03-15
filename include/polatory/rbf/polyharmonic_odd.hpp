@@ -8,11 +8,15 @@ namespace polatory::rbf {
 
 template <int Dim, int k>
 class polyharmonic_odd final : public rbf_base<Dim> {
-  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
+ public:
+  static constexpr int kDim = Dim;
 
+ private:
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
   using Vector = Base::Vector;
+
+  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
 
   static constexpr double kSign = ((k + 1) / 2) % 2 == 0 ? 1.0 : -1.0;
 
@@ -21,6 +25,8 @@ class polyharmonic_odd final : public rbf_base<Dim> {
   using Base::parameters;
 
   explicit polyharmonic_odd(const std::vector<double>& params) { Base::set_parameters(params); }
+
+  RbfPtr<kDim> clone() const override { return std::make_unique<polyharmonic_odd>(*this); }
 
   int cpd_order() const override { return (k + 1) / 2; }
 

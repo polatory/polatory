@@ -20,15 +20,16 @@
 
 namespace polatory::interpolation {
 
-template <class Model>
+template <int Dim>
 class rbf_solver {
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
   using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using Operator = rbf_operator<Model>;
-  using Preconditioner = preconditioner::ras_preconditioner<Model>;
-  using ResidualEvaluator = rbf_residual_evaluator<Model>;
+  using Model = model<kDim>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using Operator = rbf_operator<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+  using Preconditioner = preconditioner::ras_preconditioner<kDim>;
+  using ResidualEvaluator = rbf_residual_evaluator<kDim>;
 
  public:
   rbf_solver(const Model& model, const Points& points)

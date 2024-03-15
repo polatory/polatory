@@ -7,6 +7,7 @@
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/precision.hpp>
+#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 
@@ -19,6 +20,7 @@ using polatory::common::valuesd;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::numeric::absolute_error;
+using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 namespace {
@@ -36,19 +38,19 @@ void test(index_t n_points, index_t n_grad_points) {
   valuesd rhs(n_points + kDim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
-  triharmonic3d<kDim> rbf({1.0});
-  rbf.set_anisotropy(aniso);
+  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
+  rbf->set_anisotropy(aniso);
 
-  auto poly_degree = rbf.cpd_order() - 1;
-  model model(rbf, poly_degree);
+  auto poly_degree = rbf->cpd_order() - 1;
+  model<kDim> model(rbf, poly_degree);
   model.set_nugget(0.01);
 
-  rbf_fitter fitter(model, points, grad_points);
+  rbf_fitter<kDim> fitter(model, points, grad_points);
   valuesd weights = fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
   EXPECT_EQ(weights.rows(), n_points + kDim * n_grad_points + model.poly_basis_size());
 
-  rbf_symmetric_evaluator eval(model, points, grad_points, precision::kPrecise);
+  rbf_symmetric_evaluator<kDim> eval(model, points, grad_points, precision::kPrecise);
   eval.set_weights(weights);
 
   valuesd values_fit = eval.evaluate();

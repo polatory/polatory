@@ -20,6 +20,7 @@ add_library(${TARGET} STATIC
     fmm/impl/multiquadric3.cpp
     fmm/impl/triharmonic2d.cpp
     fmm/impl/triharmonic3d.cpp
+    fmm/make_evaluator.cpp
     isosurface/mesh_defects_finder.cpp
     isosurface/rmt_node_list.cpp
     isosurface/rmt_primitive_lattice.cpp

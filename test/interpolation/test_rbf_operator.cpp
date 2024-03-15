@@ -7,6 +7,7 @@
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/precision.hpp>
+#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 
@@ -20,6 +21,7 @@ using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_operator;
 using polatory::interpolation::rbf_operator;
 using polatory::numeric::relative_error;
+using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 TEST(rbf_operator, trivial) {
@@ -30,11 +32,11 @@ TEST(rbf_operator, trivial) {
   index_t n_grad_points = 1024;
   auto relative_tolerance = 5e-7;
 
-  triharmonic3d<kDim> rbf({1.0});
-  rbf.set_anisotropy(random_anisotropy<kDim>());
+  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
+  rbf->set_anisotropy(random_anisotropy<kDim>());
 
-  auto poly_degree = rbf.cpd_order() - 1;
-  model model(rbf, poly_degree);
+  auto poly_degree = rbf->cpd_order() - 1;
+  model<kDim> model(rbf, poly_degree);
   model.set_nugget(0.01);
 
   Points points = Points::Random(n_points, kDim);
@@ -42,9 +44,9 @@ TEST(rbf_operator, trivial) {
 
   valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
-  rbf_operator op(model, points, grad_points, precision::kPrecise);
+  rbf_operator<kDim> op(model, points, grad_points, precision::kPrecise);
 
-  rbf_direct_operator direct_op(model, points, grad_points);
+  rbf_direct_operator<kDim> direct_op(model, points, grad_points);
 
   valuesd op_weights = op(weights);
   valuesd direct_op_weights = direct_op(weights);

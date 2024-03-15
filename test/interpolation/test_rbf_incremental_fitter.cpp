@@ -7,6 +7,7 @@
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/precision.hpp>
+#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 
@@ -19,6 +20,7 @@ using polatory::common::valuesd;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_incremental_fitter;
 using polatory::numeric::absolute_error;
+using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 TEST(rbf_incremental_fitter, trivial) {
@@ -37,20 +39,20 @@ TEST(rbf_incremental_fitter, trivial) {
   valuesd rhs(n_points + kDim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
-  triharmonic3d<kDim> rbf({1.0});
-  rbf.set_anisotropy(aniso);
+  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
+  rbf->set_anisotropy(aniso);
 
-  auto poly_degree = rbf.cpd_order() - 1;
-  model model(rbf, poly_degree);
+  auto poly_degree = rbf->cpd_order() - 1;
+  model<kDim> model(rbf, poly_degree);
 
-  rbf_incremental_fitter fitter(model, points, grad_points);
+  rbf_incremental_fitter<kDim> fitter(model, points, grad_points);
   auto [indices, grad_indices, weights] =
       fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
   EXPECT_EQ(weights.rows(), indices.size() + kDim * grad_indices.size() + model.poly_basis_size());
 
-  rbf_evaluator eval(model, points(indices, Eigen::all), grad_points(grad_indices, Eigen::all),
-                     precision::kPrecise);
+  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all),
+                           grad_points(grad_indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   eval.set_target_points(points, grad_points);
   valuesd values_fit = eval.evaluate();

@@ -10,14 +10,16 @@ namespace polatory::polynomial {
 
 template <int Dim>
 class monomial_basis : public polynomial_basis_base<Dim> {
-  using Base = polynomial_basis_base<Dim>;
-  using Points = geometry::pointsNd<Dim>;
+ public:
+  static constexpr int kDim = Dim;
+
+ private:
+  using Base = polynomial_basis_base<kDim>;
+  using Points = geometry::pointsNd<kDim>;
 
  public:
   using Base::basis_size;
   using Base::degree;
-
-  static constexpr int kDim = Dim;
 
   explicit monomial_basis(int degree) : Base(degree) {
     POLATORY_ASSERT(degree >= 0 && degree <= 2);

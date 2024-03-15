@@ -128,7 +128,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     return potentials;
   }
 
-  const Rbf& rbf_;
+  const Rbf rbf_;
   const Kernel kernel_;
 
   index_t n_points_{};

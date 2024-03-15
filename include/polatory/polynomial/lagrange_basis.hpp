@@ -13,9 +13,13 @@ namespace polatory::polynomial {
 
 template <int Dim>
 class lagrange_basis : public polynomial_basis_base<Dim> {
-  using Base = polynomial_basis_base<Dim>;
-  using Points = geometry::pointsNd<Dim>;
-  using MonomialBasis = monomial_basis<Dim>;
+ public:
+  static constexpr int kDim = Dim;
+
+ private:
+  using Base = polynomial_basis_base<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+  using MonomialBasis = monomial_basis<kDim>;
 
  public:
   using Base::basis_size;
@@ -23,7 +27,7 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
 
   template <class Derived>
   lagrange_basis(int degree, const Eigen::MatrixBase<Derived>& points)
-      : lagrange_basis(degree, points, Points(0, Dim)) {}
+      : lagrange_basis(degree, points, Points(0, kDim)) {}
 
   template <class DerivedPoints, class DerivedGradPoints>
   lagrange_basis(int degree, const Eigen::MatrixBase<DerivedPoints>& points,
@@ -46,7 +50,7 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
 
   template <class Derived>
   Eigen::MatrixXd evaluate(const Eigen::MatrixBase<Derived>& points) const {
-    return evaluate(points, Points(0, Dim));
+    return evaluate(points, Points(0, kDim));
   }
 
   template <class DerivedPoints, class DerivedGradPoints>

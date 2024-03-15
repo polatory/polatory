@@ -15,12 +15,15 @@
 
 namespace polatory::interpolation {
 
-template <class Model>
+template <int Dim>
 class rbf_operator : public krylov::linear_operator {
-  static constexpr int kDim = Model::kDim;
+  static constexpr int kDim = Dim;
   using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
+  using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim>;
+  using Model = model<kDim>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using Points = geometry::pointsNd<kDim>;
 
  public:
   rbf_operator(const Model& model, const Points& points, const Points& grad_points, int order)
@@ -32,10 +35,10 @@ class rbf_operator : public krylov::linear_operator {
   rbf_operator(const Model& model, const Bbox& bbox, int order)
       : model_(model),
         l_(model.poly_basis_size()),
-        a_(model.rbf(), bbox, order),
-        f_(model.rbf(), bbox, order),
-        ft_(model.rbf(), bbox, order),
-        h_(model.rbf(), bbox, order) {
+        a_(fmm::make_fmm_symmetric_evaluator(model.rbf(), bbox, order)),
+        f_(fmm::make_fmm_gradient_evaluator(model.rbf(), bbox, order)),
+        ft_(fmm::make_fmm_gradient_transpose_evaluator(model.rbf(), bbox, order)),
+        h_(fmm::make_fmm_hessian_symmetric_evaluator(model.rbf(), bbox, order)) {
     if (l_ > 0) {
       poly_basis_ = std::make_unique<MonomialBasis>(model.poly_degree());
     }
@@ -46,15 +49,15 @@ class rbf_operator : public krylov::linear_operator {
 
     common::valuesd y = common::valuesd::Zero(size());
 
-    a_.set_weights(weights.head(mu_));
-    f_.set_weights(weights.segment(mu_, kDim * sigma_));
-    ft_.set_weights(weights.head(mu_));
-    h_.set_weights(weights.segment(mu_, kDim * sigma_));
+    a_->set_weights(weights.head(mu_));
+    f_->set_weights(weights.segment(mu_, kDim * sigma_));
+    ft_->set_weights(weights.head(mu_));
+    h_->set_weights(weights.segment(mu_, kDim * sigma_));
 
-    y.head(mu_) += a_.evaluate();
-    y.head(mu_) += f_.evaluate();
-    y.segment(mu_, kDim * sigma_) += ft_.evaluate();
-    y.segment(mu_, kDim * sigma_) += h_.evaluate();
+    y.head(mu_) += a_->evaluate();
+    y.head(mu_) += f_->evaluate();
+    y.segment(mu_, kDim * sigma_) += ft_->evaluate();
+    y.segment(mu_, kDim * sigma_) += h_->evaluate();
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -71,12 +74,12 @@ class rbf_operator : public krylov::linear_operator {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
-    a_.set_points(points);
-    f_.set_source_points(grad_points);
-    f_.set_target_points(points);
-    ft_.set_source_points(points);
-    ft_.set_target_points(grad_points);
-    h_.set_points(grad_points);
+    a_->set_points(points);
+    f_->set_source_points(grad_points);
+    f_->set_target_points(points);
+    ft_->set_source_points(points);
+    ft_->set_target_points(grad_points);
+    h_->set_points(grad_points);
 
     if (l_ > 0) {
       pt_ = poly_basis_->evaluate(points, grad_points);
@@ -91,10 +94,10 @@ class rbf_operator : public krylov::linear_operator {
   index_t mu_{};
   index_t sigma_{};
 
-  mutable fmm::fmm_symmetric_evaluator<typename Model::rbf_type> a_;
-  mutable fmm::fmm_gradient_evaluator<typename Model::rbf_type> f_;
-  mutable fmm::fmm_gradient_transpose_evaluator<typename Model::rbf_type> ft_;
-  mutable fmm::fmm_hessian_symmetric_evaluator<typename Model::rbf_type> h_;
+  mutable FmmGenericSymmetricEvaluatorPtr a_;
+  mutable FmmGenericEvaluatorPtr f_;
+  mutable FmmGenericEvaluatorPtr ft_;
+  mutable FmmGenericSymmetricEvaluatorPtr h_;
   std::unique_ptr<MonomialBasis> poly_basis_;
   Eigen::MatrixXd pt_;
 };
