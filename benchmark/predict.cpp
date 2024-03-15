@@ -9,6 +9,7 @@ using polatory::write_table;
 using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::rbf::cov_exponential;
+using polatory::rbf::RbfPtr;
 
 int main(int /*argc*/, char* argv[]) {
   try {
@@ -18,10 +19,12 @@ int main(int /*argc*/, char* argv[]) {
 
     double absolute_tolerance = 1e-4;
 
-    const auto poly_degree = 0;
-    model model(cov_exponential<3>({1.0, 0.02}), poly_degree);
+    RbfPtr<3> rbf = std::make_unique<polatory::rbf::triharmonic3d<3>>(std::vector<double>({1.0}));
 
-    interpolant interpolant(model);
+    auto poly_degree = 0;
+    model<3> model(rbf, poly_degree);
+
+    interpolant<3> interpolant(model);
 
     interpolant.fit(points, values, absolute_tolerance);
     auto prediction_values = interpolant.evaluate(prediction_points);

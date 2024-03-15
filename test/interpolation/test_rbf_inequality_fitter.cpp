@@ -23,6 +23,7 @@ using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
+using polatory::rbf::RbfPtr;
 
 TEST(rbf_inequality_fitter, inequality_only) {
   constexpr int kDim = 3;
@@ -37,18 +38,18 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.001;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  biharmonic3d<kDim> rbf({1.0});
-  rbf.set_anisotropy(aniso);
+  RbfPtr<kDim> rbf = std::make_unique<biharmonic3d<kDim>>(std::vector<double>({1.0}));
+  rbf->set_anisotropy(aniso);
 
-  auto poly_degree = rbf.cpd_order() - 1;
-  model model(rbf, poly_degree);
+  auto poly_degree = rbf->cpd_order() - 1;
+  model<kDim> model(rbf, poly_degree);
 
-  rbf_inequality_fitter fitter(model, points);
+  rbf_inequality_fitter<kDim> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator eval(model, points(indices, Eigen::all), precision::kPrecise);
+  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 
@@ -83,13 +84,13 @@ TEST(rbf_inequality_fitter, kostov86) {
   values_ub << nan, nan, nan, 4, nan, 4, nan, nan, nan, nan, nan, 1, nan, nan, nan, nan, 4, 7, nan,
       nan, nan, nan, nan, nan, 3;
 
-  cov_exponential<kDim> rbf({1.0, 3.0});
-  model model(rbf, -1);
+  RbfPtr<kDim> rbf = std::make_unique<cov_exponential<kDim>>(std::vector<double>({1.0, 3.0}));
+  model<kDim> model(rbf, -1);
 
-  rbf_inequality_fitter fitter(model, points);
+  rbf_inequality_fitter<kDim> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
-  rbf_evaluator eval(model, points(indices, Eigen::all), precision::kPrecise);
+  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   valuesd values_fit = eval.evaluate(points);
 

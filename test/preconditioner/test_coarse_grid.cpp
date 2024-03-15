@@ -27,6 +27,7 @@ using polatory::numeric::relative_error;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
+using polatory::rbf::RbfPtr;
 using polatory::rbf::triharmonic3d;
 
 namespace {
@@ -44,10 +45,10 @@ void test(index_t n_points, index_t n_grad_points) {
   auto [points, values] = sample_data(n_points, aniso);
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  triharmonic3d<kDim> rbf({1.0});
+  RbfPtr<kDim> rbf = std::make_unique<triharmonic3d<kDim>>(std::vector<double>({1.0}));
 
-  auto poly_degree = rbf.cpd_order() - 1;
-  model model(rbf, poly_degree);
+  auto poly_degree = rbf->cpd_order() - 1;
+  model<kDim> model(rbf, poly_degree);
   model.set_nugget(0.01);
 
   auto mu = n_points;
@@ -86,7 +87,7 @@ void test(index_t n_points, index_t n_grad_points) {
     }
   }
 
-  coarse_grid coarse(model, std::move(domain));
+  coarse_grid<kDim> coarse(model, std::move(domain));
   coarse.setup(points, grad_points, lagrange_pt);
 
   valuesd rhs = valuesd(mu + kDim * sigma);
@@ -96,7 +97,7 @@ void test(index_t n_points, index_t n_grad_points) {
   valuesd sol = valuesd::Zero(mu + kDim * sigma + l);
   coarse.set_solution_to(sol);
 
-  rbf_direct_evaluator eval(model, points, grad_points);
+  rbf_direct_evaluator<kDim> eval(model, points, grad_points);
   eval.set_weights(sol);
   eval.set_target_points(points, grad_points);
 

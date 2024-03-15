@@ -29,6 +29,7 @@ using polatory::preconditioner::binary_cache;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
 using polatory::preconditioner::fine_grid;
+using polatory::rbf::RbfPtr;
 using polatory::rbf::triharmonic3d;
 
 namespace {
@@ -46,10 +47,10 @@ void test(index_t n_points, index_t n_grad_points) {
   auto [points, values] = sample_data(n_points, aniso);
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  triharmonic3d<kDim> rbf({1.0});
+  RbfPtr<kDim> rbf = std::make_unique<triharmonic3d<kDim>>(std::vector<double>({1.0}));
 
-  auto poly_degree = rbf.cpd_order() - 1;
-  model model(rbf, poly_degree);
+  auto poly_degree = rbf->cpd_order() - 1;
+  model<kDim> model(rbf, poly_degree);
 
   auto mu = n_points;
   auto sigma = n_grad_points;
@@ -94,9 +95,9 @@ void test(index_t n_points, index_t n_grad_points) {
     }
   }
 
-  coarse_grid coarse(model, std::move(domain_coarse));
+  coarse_grid<kDim> coarse(model, std::move(domain_coarse));
   binary_cache cache;
-  fine_grid fine(model, std::move(domain_fine), cache);
+  fine_grid<kDim> fine(model, std::move(domain_fine), cache);
   coarse.setup(points, grad_points, lagrange_pt);
   fine.setup(points, grad_points, lagrange_pt);
 
