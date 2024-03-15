@@ -12,10 +12,10 @@ namespace polatory {
 
 template <int Dim>
 class model {
- public:
   static constexpr int kDim = Dim;
   using RbfPtr = rbf::RbfPtr<kDim>;
 
+ public:
   model(const RbfPtr& rbf, int poly_degree) : rbf_(rbf), poly_degree_(poly_degree) {
     if (poly_degree < rbf->cpd_order() - 1 || poly_degree > 2) {
       throw std::invalid_argument(

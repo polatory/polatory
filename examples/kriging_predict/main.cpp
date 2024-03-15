@@ -19,8 +19,7 @@ using polatory::isosurface::rbf_field_function;
 using polatory::point_cloud::distance_filter;
 using polatory::rbf::RbfPtr;
 
-template <int Dim>
-void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
+void main_impl(RbfPtr<3>&& rbf, const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table(0, 4);
   if (opts.in_file != "") {

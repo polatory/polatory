@@ -17,13 +17,13 @@ namespace polatory::interpolation {
 
 template <int Dim>
 class rbf_residual_evaluator {
-  static constexpr index_t kInitialChunkSize = 1024;
-
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
   using Evaluator = rbf_evaluator<kDim>;
+  using Model = model<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+
+  static constexpr index_t kInitialChunkSize = 1024;
 
  public:
   rbf_residual_evaluator(const Model& model, const Points& points, const Points& grad_points)

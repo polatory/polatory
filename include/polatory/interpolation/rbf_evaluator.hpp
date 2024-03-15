@@ -16,12 +16,12 @@ namespace polatory::interpolation {
 template <int Dim>
 class rbf_evaluator {
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
+  using Model = model<kDim>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+  using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
 
  public:
   rbf_evaluator(const Model& model, const Points& source_points, int order)

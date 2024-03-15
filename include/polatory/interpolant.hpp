@@ -21,13 +21,13 @@ namespace polatory {
 template <int Dim>
 class interpolant {
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
   using Evaluator = interpolation::rbf_evaluator<kDim>;
   using Fitter = interpolation::rbf_fitter<kDim>;
   using IncrementalFitter = interpolation::rbf_incremental_fitter<kDim>;
   using InequalityFitter = interpolation::rbf_inequality_fitter<kDim>;
+  using Model = model<kDim>;
+  using Points = geometry::pointsNd<kDim>;
 
  public:
   explicit interpolant(const Model& model) : model_(model) {}

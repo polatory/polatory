@@ -13,9 +13,12 @@ namespace polatory::polynomial {
 
 template <int Dim>
 class unisolvent_point_set {
-  static constexpr int kNumTrials = 100;
+  static constexpr int kDim = Dim;
+  using LagrangeBasis = lagrange_basis<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+  using PolynomialBasisBase = polynomial_basis_base<kDim>;
 
-  using Points = geometry::pointsNd<Dim>;
+  static constexpr int kNumTrials = 100;
 
  public:
   unisolvent_point_set(const Points& points, int degree) {
@@ -24,7 +27,7 @@ class unisolvent_point_set {
     }
 
     auto n_points = points.rows();
-    auto n_poly_basis = polynomial_basis_base<Dim>::basis_size(degree);
+    auto n_poly_basis = PolynomialBasisBase::basis_size(degree);
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -42,8 +45,8 @@ class unisolvent_point_set {
       }
 
       try {
-        lagrange_basis<Dim> basis(degree,
-                                  points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
+        LagrangeBasis basis(degree,
+                            points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
 
         if (best_rcond < basis.rcond()) {
           best_rcond = basis.rcond();

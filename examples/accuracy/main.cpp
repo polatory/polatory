@@ -23,12 +23,12 @@ using polatory::rbf::RbfPtr;
 template <int Dim>
 void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
   using Bbox = bboxNd<kDim>;
+  using DirectEvaluator = rbf_direct_evaluator<kDim>;
+  using Evaluator = rbf_evaluator<kDim>;
+  using Model = model<kDim>;
   using Point = pointNd<kDim>;
   using Points = pointsNd<kDim>;
-  using RbfEvaluator = rbf_evaluator<kDim>;
-  using RbfDirectEvaluator = rbf_direct_evaluator<kDim>;
 
   auto poly_degree = rbf->cpd_order() - 1;
   Model model(rbf, poly_degree);
@@ -47,7 +47,7 @@ void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
   weights.head(m) = valuesd::Random(m);
 
   Bbox bbox{-Point::Ones(), Point::Ones()};
-  RbfEvaluator eval(model, bbox, opts.order);
+  Evaluator eval(model, bbox, opts.order);
   eval.set_source_points(points, grad_points);
   eval.set_weights(weights);
   eval.set_target_points(eval_points, grad_eval_points);
@@ -57,7 +57,7 @@ void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
     return;
   }
 
-  RbfDirectEvaluator direct_eval(model, points, grad_points);
+  DirectEvaluator direct_eval(model, points, grad_points);
   direct_eval.set_weights(weights);
   direct_eval.set_target_points(eval_points, grad_eval_points);
 

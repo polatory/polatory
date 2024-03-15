@@ -23,11 +23,11 @@ namespace polatory::interpolation {
 template <int Dim>
 class rbf_inequality_fitter {
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
+  using Evaluator = rbf_evaluator<kDim>;
+  using Model = model<kDim>;
   using Points = geometry::pointsNd<kDim>;
   using Solver = rbf_solver<kDim>;
-  using Evaluator = rbf_evaluator<kDim>;
 
  public:
   rbf_inequality_fitter(const Model& model, const Points& points)

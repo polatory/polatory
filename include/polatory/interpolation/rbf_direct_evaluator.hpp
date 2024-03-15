@@ -14,10 +14,10 @@ template <int Dim>
 class rbf_direct_evaluator {
   static constexpr int kDim = Dim;
   using Model = model<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using Vector = geometry::vectorNd<kDim>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using Points = geometry::pointsNd<kDim>;
   using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
+  using Vector = geometry::vectorNd<kDim>;
 
  public:
   rbf_direct_evaluator(const Model& model, const Points& source_points)

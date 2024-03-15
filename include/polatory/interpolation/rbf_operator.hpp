@@ -18,12 +18,12 @@ namespace polatory::interpolation {
 template <int Dim>
 class rbf_operator : public krylov::linear_operator {
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
   using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
   using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim>;
+  using Model = model<kDim>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using Points = geometry::pointsNd<kDim>;
 
  public:
   rbf_operator(const Model& model, const Points& points, const Points& grad_points, int order)

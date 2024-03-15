@@ -17,9 +17,9 @@ template <int Dim>
 class rbf_direct_operator : public krylov::linear_operator {
   static constexpr int kDim = Dim;
   using Model = model<kDim>;
+  using MonomialBasis = polynomial::monomial_basis<kDim>;
   using Points = geometry::pointsNd<kDim>;
   using Vector = geometry::vectorNd<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
 
  public:
   rbf_direct_operator(const Model& model, const Points& points, const Points& grad_points)
