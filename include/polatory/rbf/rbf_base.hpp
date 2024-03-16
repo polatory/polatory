@@ -10,18 +10,13 @@
 namespace polatory::rbf::internal {
 
 template <int Dim>
-class rbf_base;
-
-template <int Dim>
-using RbfPtr = std::unique_ptr<rbf_base<Dim>>;
-
-template <int Dim>
 class rbf_base {
  public:
   static constexpr int kDim = Dim;
 
  protected:
   using Matrix = geometry::matrixNd<Dim>;
+  using RbfPtr = std::unique_ptr<rbf_base<Dim>>;
   using Vector = geometry::vectorNd<Dim>;
 
  public:
@@ -34,7 +29,7 @@ class rbf_base {
 
   const Matrix& anisotropy() const { return aniso_; }
 
-  virtual RbfPtr<kDim> clone() const = 0;
+  virtual RbfPtr clone() const = 0;
 
   // The order of conditional positive definiteness.
   virtual int cpd_order() const = 0;

@@ -18,6 +18,7 @@ class multiquadric final : public rbf_base<Dim> {
  private:
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
+  using RbfPtr = Base::RbfPtr;
   using Vector = Base::Vector;
 
   static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
@@ -29,7 +30,7 @@ class multiquadric final : public rbf_base<Dim> {
 
   explicit multiquadric(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  RbfPtr<kDim> clone() const override { return std::make_unique<multiquadric>(*this); }
+  RbfPtr clone() const override { return std::make_unique<multiquadric>(*this); }
 
   int cpd_order() const override { return (k + 1) / 2; }
 

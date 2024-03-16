@@ -18,6 +18,7 @@ class inverse_multiquadric final : public rbf_base<Dim> {
  private:
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
+  using RbfPtr = Base::RbfPtr;
   using Vector = Base::Vector;
 
   static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
@@ -27,7 +28,7 @@ class inverse_multiquadric final : public rbf_base<Dim> {
 
   explicit inverse_multiquadric(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  RbfPtr<kDim> clone() const override { return std::make_unique<inverse_multiquadric>(*this); }
+  RbfPtr clone() const override { return std::make_unique<inverse_multiquadric>(*this); }
 
   int cpd_order() const override { return 0; }
 

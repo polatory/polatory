@@ -18,6 +18,7 @@ class polyharmonic_even final : public rbf_base<Dim> {
  private:
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
+  using RbfPtr = Base::RbfPtr;
   using Vector = Base::Vector;
 
   static_assert(k > 0 && k % 2 == 0, "k must be a positive even integer.");
@@ -30,7 +31,7 @@ class polyharmonic_even final : public rbf_base<Dim> {
 
   explicit polyharmonic_even(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  RbfPtr<kDim> clone() const override { return std::make_unique<polyharmonic_even>(*this); }
+  RbfPtr clone() const override { return std::make_unique<polyharmonic_even>(*this); }
 
   int cpd_order() const override { return k / 2 + 1; }
 

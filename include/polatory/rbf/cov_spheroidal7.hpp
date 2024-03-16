@@ -17,6 +17,7 @@ class cov_spheroidal7 final : public covariance_function_base<Dim> {
  private:
   using Base = covariance_function_base<Dim>;
   using Matrix = Base::Matrix;
+  using RbfPtr = Base::RbfPtr;
   using Vector = Base::Vector;
 
   static constexpr double kRho0 = 0.2944149476843637;
@@ -31,7 +32,7 @@ class cov_spheroidal7 final : public covariance_function_base<Dim> {
 
   explicit cov_spheroidal7(const std::vector<double>& params) { Base::set_parameters(params); }
 
-  RbfPtr<kDim> clone() const override { return std::make_unique<cov_spheroidal7>(*this); }
+  RbfPtr clone() const override { return std::make_unique<cov_spheroidal7>(*this); }
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto psill = Base::parameters().at(0);
