@@ -117,10 +117,8 @@ class ras_preconditioner : public krylov::linear_operator {
       auto n_mixed_points =
           static_cast<index_t>(point_idcs_.at(level).size() + grad_point_idcs_.at(level).size());
 
-      auto aniso = model.rbf()->anisotropy();
-      auto divider = std::make_unique<DomainDivider>(
-          points_ * aniso.transpose(), grad_points_ * aniso.transpose(), point_idcs_.at(level),
-          grad_point_idcs_.at(level), poly_point_idcs);
+      auto divider = std::make_unique<DomainDivider>(points_, grad_points_, point_idcs_.at(level),
+                                                     grad_point_idcs_.at(level), poly_point_idcs);
 
       auto ratio = level == 1
                        ? static_cast<double>(kNCoarsestPoints) / static_cast<double>(n_mixed_points)

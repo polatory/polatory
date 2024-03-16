@@ -50,25 +50,25 @@ matrix3d to_matrix3d(T t) {
 template <int Dim, class DerivedT, class DerivedPoint>
 pointNd<Dim> transform_point(const Eigen::MatrixBase<DerivedT>& t,
                              const Eigen::MatrixBase<DerivedPoint>& point) {
-  return (t * point.transpose()).transpose();
+  return point * t.transpose();
 }
 
 template <int Dim, class DerivedT, class DerivedPoints>
 pointsNd<Dim> transform_points(const Eigen::MatrixBase<DerivedT>& t,
                                const Eigen::MatrixBase<DerivedPoints>& points) {
-  return (t * points.transpose()).transpose();
+  return points * t.transpose();
 }
 
 template <int Dim, class DerivedT, class DerivedVector>
 vectorNd<Dim> transform_vector(const Eigen::MatrixBase<DerivedT>& t,
                                const Eigen::MatrixBase<DerivedVector>& vector) {
-  return (t * vector.transpose()).transpose();
+  return vector * t.transpose();
 }
 
 template <int Dim, class DerivedT, class DerivedVectors>
 vectorsNd<Dim> transform_vectors(const Eigen::MatrixBase<DerivedT>& t,
                                  const Eigen::MatrixBase<DerivedVectors>& vectors) {
-  return (t * vectors.transpose()).transpose();
+  return vectors * t.transpose();
 }
 
 }  // namespace polatory::geometry
