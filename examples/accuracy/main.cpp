@@ -74,7 +74,19 @@ void main_impl(rbf_proxy<Dim>&& rbf, const options& opts) {
 int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
-    MAIN_IMPL(opts.rbf_name, opts.dim, opts.rbf_params, opts);
+    switch (opts.dim) {
+      case 1:
+        main_impl(make_rbf<1>(opts.rbf_name, opts.rbf_params), opts);
+        break;
+      case 2:
+        main_impl(make_rbf<2>(opts.rbf_name, opts.rbf_params), opts);
+        break;
+      case 3:
+        main_impl(make_rbf<3>(opts.rbf_name, opts.rbf_params), opts);
+        break;
+      default:
+        throw std::runtime_error("Unsupported dimension: " + std::to_string(opts.dim));
+    }
     return 0;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

@@ -79,20 +79,5 @@ polatory::rbf::rbf_proxy<Dim> make_rbf(const std::string& name, const std::vecto
   throw std::runtime_error("Unknown RBF name: " + name);
 }
 
-#define MAIN_IMPL(NAME, DIM, PARAMS, OPTS)                                       \
-  switch (DIM) {                                                                 \
-    case 1:                                                                      \
-      main_impl(make_rbf<1>(NAME, PARAMS), OPTS);                                \
-      break;                                                                     \
-    case 2:                                                                      \
-      main_impl(make_rbf<2>(NAME, PARAMS), OPTS);                                \
-      break;                                                                     \
-    case 3:                                                                      \
-      main_impl(make_rbf<3>(NAME, PARAMS), OPTS);                                \
-      break;                                                                     \
-    default:                                                                     \
-      throw std::runtime_error("Unsupported dimension: " + std::to_string(DIM)); \
-  }
-
 extern const char* const cov_list;
 extern const char* const rbf_cov_list;
