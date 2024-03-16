@@ -46,7 +46,7 @@ class surface {
     faces_.conservativeResize(n_faces, 3);
   }
 
-  surface(entire_tag) : entire_(true) {}
+  explicit surface(entire_tag) : entire_(true) {}
 
   void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);

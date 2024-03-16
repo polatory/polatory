@@ -36,17 +36,20 @@ class rbf_solver {
       : rbf_solver(model, points, Points(0, kDim)) {}
 
   rbf_solver(const Model& model, const Points& points, const Points& grad_points)
-      : model_(model), l_(model.poly_basis_size()), mu_(points.rows()), sigma_(grad_points.rows()) {
-    op_ = std::make_unique<Operator>(model, points, grad_points, precision::kPrecise);
-    res_eval_ = std::make_unique<ResidualEvaluator>(model, points, grad_points);
-
+      : model_(model),
+        l_(model.poly_basis_size()),
+        mu_(points.rows()),
+        sigma_(grad_points.rows()),
+        op_(model, points, grad_points, precision::kPrecise),
+        res_eval_(model, points, grad_points) {
     set_points(points, grad_points);
   }
 
-  rbf_solver(const Model& model, const Bbox& bbox) : model_(model), l_(model.poly_basis_size()) {
-    op_ = std::make_unique<Operator>(model, bbox, precision::kPrecise);
-    res_eval_ = std::make_unique<ResidualEvaluator>(model, bbox);
-  }
+  rbf_solver(const Model& model, const Bbox& bbox)
+      : model_(model),
+        l_(model.poly_basis_size()),
+        op_(model, bbox, precision::kPrecise),
+        res_eval_(model, bbox) {}
 
   void set_points(const Points& points) { set_points(points, Points(0, kDim)); }
 
@@ -54,8 +57,8 @@ class rbf_solver {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
-    op_->set_points(points, grad_points);
-    res_eval_->set_points(points, grad_points);
+    op_.set_points(points, grad_points);
+    res_eval_.set_points(points, grad_points);
 
     pc_ = std::make_unique<Preconditioner>(model_, points, grad_points);
 
@@ -121,7 +124,7 @@ class rbf_solver {
     rhs.head(mu_ + kDim * sigma_) = values;
     rhs.tail(l_) = common::valuesd::Zero(l_);
 
-    krylov::fgmres solver(*op_, rhs, max_iter);
+    krylov::fgmres solver(op_, rhs, max_iter);
     if (initial_solution != nullptr) {
       solver.set_initial_solution(*initial_solution);
     }
@@ -140,7 +143,7 @@ class rbf_solver {
                 << solver.relative_residual() << std::defaultfloat << std::endl;
 
       auto [converged, res, grad_res] =
-          res_eval_->converged(values, solution, absolute_tolerance, grad_absolute_tolerance);
+          res_eval_.converged(values, solution, absolute_tolerance, grad_absolute_tolerance);
       if (converged) {
         if (mu_ > 0) {
           std::cout << "Achieved absolute residual: " << res << std::endl;
@@ -164,9 +167,9 @@ class rbf_solver {
 
   index_t mu_{};
   index_t sigma_{};
-  std::unique_ptr<Operator> op_;
+  Operator op_;
+  ResidualEvaluator res_eval_;
   std::unique_ptr<Preconditioner> pc_;
-  std::unique_ptr<ResidualEvaluator> res_eval_;
   Eigen::MatrixXd p_;
 };
 

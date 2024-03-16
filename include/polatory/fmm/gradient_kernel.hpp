@@ -30,17 +30,16 @@ struct gradient_kernel {
 
   gradient_kernel(const gradient_kernel&) = default;
 
-  const std::string name() const { return std::string(""); }
+  std::string name() const { return ""; }
 
   template <typename ValueType>
-  [[nodiscard]] inline constexpr auto mutual_coefficient() const {
+  constexpr auto mutual_coefficient() const {
     using decayed_type = typename std::decay_t<ValueType>;
     return vector_type<decayed_type>{decayed_type(-1.0)};
   }
 
-  [[nodiscard]] inline auto evaluate(
-      scalfmm::container::point<double, kDim> const& x,
-      scalfmm::container::point<double, kDim> const& y) const noexcept {
+  auto evaluate(scalfmm::container::point<double, kDim> const& x,
+                scalfmm::container::point<double, kDim> const& y) const {
     Vector diff;
     for (auto i = 0; i < kDim; i++) {
       diff(i) = x.at(i) - y.at(i);
@@ -56,9 +55,8 @@ struct gradient_kernel {
     return result;
   }
 
-  [[nodiscard]] inline auto evaluate(
-      scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
-      scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const noexcept {
+  auto evaluate(scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
+                scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
 
     std::array<std::array<double, 4>, kDim> v;

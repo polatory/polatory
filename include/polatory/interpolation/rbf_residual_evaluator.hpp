@@ -2,8 +2,6 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <cmath>
-#include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -32,14 +30,11 @@ class rbf_residual_evaluator {
         mu_(points.rows()),
         sigma_(grad_points.rows()),
         points_(points),
-        grad_points_(grad_points) {
-    evaluator_ = std::make_unique<Evaluator>(model, points_, grad_points_, precision::kPrecise);
-  }
+        grad_points_(grad_points),
+        evaluator_(model, points, grad_points, precision::kPrecise) {}
 
   rbf_residual_evaluator(const Model& model, const Bbox& bbox)
-      : model_(model), l_(model.poly_basis_size()) {
-    evaluator_ = std::make_unique<Evaluator>(model, bbox, precision::kPrecise);
-  }
+      : model_(model), l_(model.poly_basis_size()), evaluator_(model, bbox, precision::kPrecise) {}
 
   template <class Derived, class Derived2>
   std::tuple<bool, double, double> converged(const Eigen::MatrixBase<Derived>& values,
@@ -49,7 +44,7 @@ class rbf_residual_evaluator {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
-    evaluator_->set_weights(weights);
+    evaluator_.set_weights(weights);
 
     auto chunk_size = kInitialChunkSize;
     auto max_residual = 0.0;
@@ -63,8 +58,8 @@ class rbf_residual_evaluator {
       }
 
       auto points = points_.middleRows(begin, end - begin);
-      evaluator_->set_target_points(points);
-      common::valuesd fit = evaluator_->evaluate() + weights.segment(begin, end - begin) * nugget;
+      evaluator_.set_target_points(points);
+      common::valuesd fit = evaluator_.evaluate() + weights.segment(begin, end - begin) * nugget;
 
       auto res = (values.segment(begin, end - begin) - fit).template lpNorm<Eigen::Infinity>();
       if (res >= absolute_tolerance) {
@@ -84,8 +79,8 @@ class rbf_residual_evaluator {
       }
 
       auto grad_points = grad_points_.middleRows(begin, end - begin);
-      evaluator_->set_target_points(Points(0, kDim), grad_points);
-      auto fit = evaluator_->evaluate();
+      evaluator_.set_target_points(Points(0, kDim), grad_points);
+      auto fit = evaluator_.evaluate();
 
       auto res = (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit)
                      .template lpNorm<Eigen::Infinity>();
@@ -108,7 +103,7 @@ class rbf_residual_evaluator {
     points_ = points;
     grad_points_ = grad_points;
 
-    evaluator_->set_source_points(points, grad_points);
+    evaluator_.set_source_points(points, grad_points);
   }
 
  private:
@@ -119,8 +114,7 @@ class rbf_residual_evaluator {
   index_t sigma_{};
   Points points_;
   Points grad_points_;
-
-  std::unique_ptr<Evaluator> evaluator_;
+  mutable Evaluator evaluator_;
 };
 
 }  // namespace polatory::interpolation

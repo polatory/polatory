@@ -50,7 +50,7 @@ class bboxNd {
 
     for (auto i = 0; i < (1 << Dim); ++i) {
       for (auto j = 0; j < Dim; ++j) {
-        corners(i, j) = (i & (1 << j)) ? max_(j) : min_(j);
+        corners(i, j) = (i & (1 << j)) != 0 ? max_(j) : min_(j);
       }
       corners.row(i) = transform_point<Dim>(t, corners.row(i));
     }

@@ -13,7 +13,7 @@ class kdtree {
   using Points = geometry::pointsNd<Dim>;
 
  public:
-  kdtree(const Points& points);
+  explicit kdtree(const Points& points);
 
   ~kdtree();
 
