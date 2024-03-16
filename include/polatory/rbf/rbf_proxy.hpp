@@ -8,10 +8,7 @@ namespace polatory::rbf {
 
 template <int Dim>
 class rbf_proxy {
- public:
   static constexpr int kDim = Dim;
-
- private:
   using Matrix = geometry::matrixNd<Dim>;
   using RbfBase = internal::rbf_base<Dim>;
   using Vector = geometry::vectorNd<Dim>;

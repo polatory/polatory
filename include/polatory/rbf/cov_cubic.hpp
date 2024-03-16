@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <polatory/rbf/covariance_function_base.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/rbf/rbf_proxy.hpp>
 #include <stdexcept>
 #include <vector>
 

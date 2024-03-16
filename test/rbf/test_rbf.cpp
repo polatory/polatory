@@ -18,7 +18,7 @@
 #include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/rbf/rbf_base.hpp>
 #include <random>
 
 #include "../utility.hpp"
@@ -26,30 +26,30 @@
 using polatory::geometry::matrix3d;
 using polatory::geometry::transform_vector;
 using polatory::geometry::vector3d;
-using polatory::rbf::biharmonic2d;
-using polatory::rbf::biharmonic3d;
-using polatory::rbf::cov_cauchy3;
-using polatory::rbf::cov_cauchy5;
-using polatory::rbf::cov_cauchy7;
-using polatory::rbf::cov_cauchy9;
-using polatory::rbf::cov_cubic;
-using polatory::rbf::cov_exponential;
-using polatory::rbf::cov_gaussian;
-using polatory::rbf::cov_spherical;
-using polatory::rbf::cov_spheroidal3;
-using polatory::rbf::cov_spheroidal5;
-using polatory::rbf::cov_spheroidal7;
-using polatory::rbf::cov_spheroidal9;
-using polatory::rbf::inverse_multiquadric1;
-using polatory::rbf::multiquadric1;
-using polatory::rbf::multiquadric3;
-using polatory::rbf::rbf_proxy;
-using polatory::rbf::triharmonic2d;
-using polatory::rbf::triharmonic3d;
+using polatory::rbf::internal::biharmonic2d;
+using polatory::rbf::internal::biharmonic3d;
+using polatory::rbf::internal::cov_cauchy3;
+using polatory::rbf::internal::cov_cauchy5;
+using polatory::rbf::internal::cov_cauchy7;
+using polatory::rbf::internal::cov_cauchy9;
+using polatory::rbf::internal::cov_cubic;
+using polatory::rbf::internal::cov_exponential;
+using polatory::rbf::internal::cov_gaussian;
+using polatory::rbf::internal::cov_spherical;
+using polatory::rbf::internal::cov_spheroidal3;
+using polatory::rbf::internal::cov_spheroidal5;
+using polatory::rbf::internal::cov_spheroidal7;
+using polatory::rbf::internal::cov_spheroidal9;
+using polatory::rbf::internal::inverse_multiquadric1;
+using polatory::rbf::internal::multiquadric1;
+using polatory::rbf::internal::multiquadric3;
+using polatory::rbf::internal::rbf_base;
+using polatory::rbf::internal::triharmonic2d;
+using polatory::rbf::internal::triharmonic3d;
 
 namespace {
 
-vector3d gradient_approx(const rbf_proxy<3>& rbf, const vector3d& v, double h) {
+vector3d gradient_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
   // First-order central difference.
 
   auto xm = vector3d{v(0) - h, v(1), v(2)};
@@ -66,7 +66,7 @@ vector3d gradient_approx(const rbf_proxy<3>& rbf, const vector3d& v, double h) {
          (2.0 * h);
 }
 
-matrix3d hessian_approx(const rbf_proxy<3>& rbf, const vector3d& v, double h) {
+matrix3d hessian_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
   auto xm = vector3d{v(0) - h, v(1), v(2)};
   auto ym = vector3d{v(0), v(1) - h, v(2)};
   auto zm = vector3d{v(0), v(1), v(2) - h};
@@ -84,7 +84,7 @@ matrix3d hessian_approx(const rbf_proxy<3>& rbf, const vector3d& v, double h) {
   return m;
 }
 
-void test_gradient(const rbf_proxy<3>& rbf) {
+void test_gradient(const rbf_base<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-4;
 
@@ -105,7 +105,7 @@ void test_gradient(const rbf_proxy<3>& rbf) {
   }
 }
 
-void test_hessian(const rbf_proxy<3>& rbf) {
+void test_hessian(const rbf_base<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-4;
 

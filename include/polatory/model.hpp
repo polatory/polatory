@@ -3,7 +3,7 @@
 #include <limits>
 #include <memory>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
-#include <polatory/rbf/rbf.hpp>
+#include <polatory/rbf/rbf_proxy.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <vector>
