@@ -125,9 +125,9 @@ class model {
   }
 
  private:
+  std::vector<RbfPtr> rbfs_;
   int poly_degree_;
   double nugget_{};
-  std::vector<RbfPtr> rbfs_;
 };
 
 }  // namespace polatory

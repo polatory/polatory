@@ -16,16 +16,17 @@ Eigen::MatrixXd mat_a(const model<Dim>& model, const Eigen::MatrixBase<DerivedPo
   auto sigma = grad_points.rows();
   auto m = mu + kDim * sigma;
 
-  Eigen::MatrixXd a(m, m);
+  Eigen::MatrixXd a = Eigen::MatrixXd::Zero(m, m);
+
+  auto aa = a.topLeftCorner(mu, mu);
+  aa.diagonal().array() = model.nugget();
 
   for (const auto& rbf : model.rbfs()) {
-    auto aa = a.topLeftCorner(mu, mu);
-    aa.diagonal().array() = rbf->evaluate(Vector::Zero()) + model.nugget();
+    aa.diagonal().array() += rbf->evaluate(Vector::Zero());
     for (index_t i = 0; i < mu - 1; i++) {
       for (index_t j = i + 1; j < mu; j++) {
         Vector diff = points.row(i) - points.row(j);
-        aa(i, j) = rbf->evaluate(diff);
-        aa(j, i) = aa(i, j);
+        aa(i, j) += rbf->evaluate(diff);
       }
     }
 
@@ -34,26 +35,25 @@ Eigen::MatrixXd mat_a(const model<Dim>& model, const Eigen::MatrixBase<DerivedPo
       for (index_t i = 0; i < mu; i++) {
         for (index_t j = 0; j < sigma; j++) {
           Vector diff = points.row(i) - grad_points.row(j);
-          af.template block<1, kDim>(i, kDim * j) = -rbf->evaluate_gradient(diff);
+          af.template block<1, kDim>(i, kDim * j) += -rbf->evaluate_gradient(diff);
         }
       }
-      a.bottomLeftCorner(kDim * sigma, mu) = af.transpose();
 
       auto ah = a.bottomRightCorner(kDim * sigma, kDim * sigma);
       Eigen::MatrixXd ah_diagonal = -rbf->evaluate_hessian(Vector::Zero());
       for (index_t i = 0; i < sigma; i++) {
-        ah.template block<kDim, kDim>(kDim * i, kDim * i) = ah_diagonal;
+        ah.template block<kDim, kDim>(kDim * i, kDim * i) += ah_diagonal;
       }
       for (index_t i = 0; i < sigma - 1; i++) {
         for (index_t j = i + 1; j < sigma; j++) {
           Vector diff = grad_points.row(i) - grad_points.row(j);
-          ah.template block<kDim, kDim>(kDim * i, kDim * j) = -rbf->evaluate_hessian(diff);
-          ah.template block<kDim, kDim>(kDim * j, kDim * i) =
-              ah.template block<kDim, kDim>(kDim * i, kDim * j).transpose();
+          ah.template block<kDim, kDim>(kDim * i, kDim * j) += -rbf->evaluate_hessian(diff);
         }
       }
     }
   }
+
+  a.triangularView<Eigen::Lower>() = a.transpose().triangularView<Eigen::Lower>();
 
   return a;
 }

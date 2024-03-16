@@ -19,10 +19,10 @@ namespace polatory::preconditioner {
 template <int Dim>
 class coarse_grid {
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
   using Domain = domain<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Model = model<kDim>;
   using MonomialBasis = polynomial::monomial_basis<kDim>;
+  using Points = geometry::pointsNd<kDim>;
 
  public:
   coarse_grid(const Model& model, Domain&& domain)

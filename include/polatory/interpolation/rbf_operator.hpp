@@ -52,6 +52,8 @@ class rbf_operator : public krylov::linear_operator {
 
     common::valuesd y = common::valuesd::Zero(size());
 
+    y.head(mu_) = weights.head(mu_) * model_.nugget();
+
     for (std::size_t i = 0; i < a_.size(); ++i) {
       a_.at(i)->set_weights(weights.head(mu_));
       f_.at(i)->set_weights(weights.segment(mu_, kDim * sigma_));
@@ -69,8 +71,6 @@ class rbf_operator : public krylov::linear_operator {
       y.head(mu_ + kDim * sigma_) += pt_.transpose() * weights.tail(l_);
       y.tail(l_) += pt_ * weights.head(mu_ + kDim * sigma_);
     }
-
-    y.head(mu_) += weights.head(mu_) * model_.nugget();
 
     return y;
   }

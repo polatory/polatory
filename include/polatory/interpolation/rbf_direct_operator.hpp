@@ -37,6 +37,8 @@ class rbf_direct_operator : public krylov::linear_operator {
 
     common::valuesd y = common::valuesd::Zero(size());
 
+    y.head(mu_) = weights.head(mu_) * model_.nugget();
+
     for (const auto& rbf : model_.rbfs()) {
       for (index_t i = 0; i < mu_; i++) {
         for (index_t j = 0; j < mu_; j++) {
@@ -69,8 +71,6 @@ class rbf_direct_operator : public krylov::linear_operator {
       y.head(mu_ + kDim * sigma_) += pt_.transpose() * weights.tail(l_);
       y.tail(l_) += pt_ * weights.head(mu_ + kDim * sigma_);
     }
-
-    y.head(mu_) += weights.head(mu_) * model_.nugget();
 
     return y;
   }
