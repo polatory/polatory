@@ -27,7 +27,6 @@ using polatory::numeric::relative_error;
 using polatory::polynomial::lagrange_basis;
 using polatory::preconditioner::coarse_grid;
 using polatory::preconditioner::domain;
-using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 namespace {
@@ -45,9 +44,9 @@ void test(index_t n_points, index_t n_grad_points) {
   auto [points, values] = sample_data(n_points, aniso);
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
+  triharmonic3d<kDim> rbf({1.0});
 
-  auto poly_degree = rbf->cpd_order() - 1;
+  auto poly_degree = rbf.cpd_order() - 1;
   model<kDim> model(std::move(rbf), poly_degree);
   model.set_nugget(0.01);
 

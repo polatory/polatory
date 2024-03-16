@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace polatory::rbf {
+namespace polatory::rbf::internal {
 
 template <int Dim>
 class rbf_base;
@@ -97,9 +97,4 @@ class rbf_base {
   Matrix aniso_;
 };
 
-template <class Rbf>
-RbfPtr<Rbf::kDim> make_rbf(const std::vector<double>& params) {
-  return std::make_unique<Rbf>(params);
-}
-
-}  // namespace polatory::rbf
+}  // namespace polatory::rbf::internal

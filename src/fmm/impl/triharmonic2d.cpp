@@ -5,8 +5,8 @@
 
 namespace polatory::fmm {
 
-IMPLEMENT_FMM_EVALUATORS(rbf::triharmonic2d);
+IMPLEMENT_FMM_EVALUATORS(rbf::internal::triharmonic2d);
 
-IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::triharmonic2d);
+IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::triharmonic2d);
 
 }  // namespace polatory::fmm

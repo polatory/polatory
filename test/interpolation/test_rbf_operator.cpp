@@ -21,7 +21,6 @@ using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_operator;
 using polatory::interpolation::rbf_operator;
 using polatory::numeric::relative_error;
-using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 TEST(rbf_operator, trivial) {
@@ -32,10 +31,10 @@ TEST(rbf_operator, trivial) {
   index_t n_grad_points = 1024;
   auto relative_tolerance = 5e-7;
 
-  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
-  rbf->set_anisotropy(random_anisotropy<kDim>());
+  triharmonic3d<kDim> rbf({1.0});
+  rbf.set_anisotropy(random_anisotropy<kDim>());
 
-  auto poly_degree = rbf->cpd_order() - 1;
+  auto poly_degree = rbf.cpd_order() - 1;
   model<kDim> model(std::move(rbf), poly_degree);
   model.set_nugget(0.01);
 

@@ -4,7 +4,7 @@
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
-namespace polatory::rbf {
+namespace polatory::rbf::internal {
 
 template <int Dim>
 class covariance_function_base : public rbf_base<Dim> {
@@ -33,4 +33,4 @@ class covariance_function_base : public rbf_base<Dim> {
   }
 };
 
-}  // namespace polatory::rbf
+}  // namespace polatory::rbf::internal

@@ -2,10 +2,13 @@
 
 #include <cmath>
 #include <limits>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
 namespace polatory::rbf {
+
+namespace internal {
 
 template <int Dim, int k>
 class polyharmonic_even final : public rbf_base<Dim> {
@@ -85,5 +88,10 @@ using biharmonic2d = polyharmonic_even<Dim, 2>;
 
 template <int Dim>
 using triharmonic2d = polyharmonic_even<Dim, 4>;
+
+}  // namespace internal
+
+DEFINE_RBF(biharmonic2d);
+DEFINE_RBF(triharmonic2d);
 
 }  // namespace polatory::rbf

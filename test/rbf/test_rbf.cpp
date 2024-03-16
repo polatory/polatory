@@ -18,7 +18,7 @@
 #include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <random>
 
 #include "../utility.hpp"
@@ -43,13 +43,13 @@ using polatory::rbf::cov_spheroidal9;
 using polatory::rbf::inverse_multiquadric1;
 using polatory::rbf::multiquadric1;
 using polatory::rbf::multiquadric3;
-using polatory::rbf::rbf_base;
+using polatory::rbf::rbf_proxy;
 using polatory::rbf::triharmonic2d;
 using polatory::rbf::triharmonic3d;
 
 namespace {
 
-vector3d gradient_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
+vector3d gradient_approx(const rbf_proxy<3>& rbf, const vector3d& v, double h) {
   // First-order central difference.
 
   auto xm = vector3d{v(0) - h, v(1), v(2)};
@@ -66,7 +66,7 @@ vector3d gradient_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
          (2.0 * h);
 }
 
-matrix3d hessian_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
+matrix3d hessian_approx(const rbf_proxy<3>& rbf, const vector3d& v, double h) {
   auto xm = vector3d{v(0) - h, v(1), v(2)};
   auto ym = vector3d{v(0), v(1) - h, v(2)};
   auto zm = vector3d{v(0), v(1), v(2) - h};
@@ -84,7 +84,7 @@ matrix3d hessian_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
   return m;
 }
 
-void test_gradient(const rbf_base<3>& rbf) {
+void test_gradient(const rbf_proxy<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-4;
 
@@ -105,7 +105,7 @@ void test_gradient(const rbf_base<3>& rbf) {
   }
 }
 
-void test_hessian(const rbf_base<3>& rbf) {
+void test_hessian(const rbf_proxy<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-4;
 

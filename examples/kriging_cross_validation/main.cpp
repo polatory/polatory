@@ -16,9 +16,9 @@ using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::kriging::k_fold_cross_validation;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::rbf_proxy;
 
-void main_impl(RbfPtr<3>&& rbf, const options& opts) {
+void main_impl(rbf_proxy<3>&& rbf, const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table = read_table(opts.in_file);
   points3d points = table(Eigen::all, {0, 1, 2});
@@ -28,7 +28,7 @@ void main_impl(RbfPtr<3>&& rbf, const options& opts) {
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
   // Define the model.
-  rbf->set_anisotropy(opts.aniso);
+  rbf.set_anisotropy(opts.aniso);
   model<3> model(std::move(rbf), opts.poly_degree);
   model.set_nugget(opts.nugget);
 

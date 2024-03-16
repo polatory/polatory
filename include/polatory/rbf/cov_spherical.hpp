@@ -2,10 +2,13 @@
 
 #include <cmath>
 #include <polatory/rbf/covariance_function_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <stdexcept>
 #include <vector>
 
 namespace polatory::rbf {
+
+namespace internal {
 
 template <int Dim>
 class cov_spherical final : public covariance_function_base<Dim> {
@@ -49,5 +52,9 @@ class cov_spherical final : public covariance_function_base<Dim> {
 
   double support_radius_isotropic() const override { return Base::parameters().at(1); }
 };
+
+}  // namespace internal
+
+DEFINE_RBF(cov_spherical);
 
 }  // namespace polatory::rbf

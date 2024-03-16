@@ -18,9 +18,9 @@ using polatory::geometry::points3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function_25d;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::rbf_proxy;
 
-void main_impl(RbfPtr<2>&& rbf, const options& opts) {
+void main_impl(rbf_proxy<2>&& rbf, const options& opts) {
   // Load points (x,y,0) and values (z).
   tabled table = read_table(opts.in_file);
   points2d points = table(Eigen::all, {0, 1});

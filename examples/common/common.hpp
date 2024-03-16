@@ -48,48 +48,35 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, bbox
 }  // namespace polatory::geometry
 
 template <int Dim>
-polatory::rbf::RbfPtr<Dim> make_rbf(const std::string& name, const std::vector<double>& params) {
-  if (name == "bh2") {
-    return std::make_unique<polatory::rbf::biharmonic2d<Dim>>(params);
-  } else if (name == "bh3") {
-    return std::make_unique<polatory::rbf::biharmonic3d<Dim>>(params);
-  } else if (name == "ca3") {
-    return std::make_unique<polatory::rbf::cov_cauchy3<Dim>>(params);
-  } else if (name == "ca5") {
-    return std::make_unique<polatory::rbf::cov_cauchy5<Dim>>(params);
-  } else if (name == "ca7") {
-    return std::make_unique<polatory::rbf::cov_cauchy7<Dim>>(params);
-  } else if (name == "ca9") {
-    return std::make_unique<polatory::rbf::cov_cauchy9<Dim>>(params);
-  } else if (name == "cub") {
-    return std::make_unique<polatory::rbf::cov_cubic<Dim>>(params);
-  } else if (name == "exp") {
-    return std::make_unique<polatory::rbf::cov_exponential<Dim>>(params);
-  } else if (name == "gau") {
-    return std::make_unique<polatory::rbf::cov_gaussian<Dim>>(params);
-  } else if (name == "imq1") {
-    return std::make_unique<polatory::rbf::inverse_multiquadric1<Dim>>(params);
-  } else if (name == "mq1") {
-    return std::make_unique<polatory::rbf::multiquadric1<Dim>>(params);
-  } else if (name == "mq3") {
-    return std::make_unique<polatory::rbf::multiquadric3<Dim>>(params);
-  } else if (name == "sp3") {
-    return std::make_unique<polatory::rbf::cov_spheroidal3<Dim>>(params);
-  } else if (name == "sp5") {
-    return std::make_unique<polatory::rbf::cov_spheroidal5<Dim>>(params);
-  } else if (name == "sp7") {
-    return std::make_unique<polatory::rbf::cov_spheroidal7<Dim>>(params);
-  } else if (name == "sp9") {
-    return std::make_unique<polatory::rbf::cov_spheroidal9<Dim>>(params);
-  } else if (name == "sph") {
-    return std::make_unique<polatory::rbf::cov_spherical<Dim>>(params);
-  } else if (name == "th2") {
-    return std::make_unique<polatory::rbf::triharmonic2d<Dim>>(params);
-  } else if (name == "th3") {
-    return std::make_unique<polatory::rbf::triharmonic3d<Dim>>(params);
-  } else {
-    throw std::runtime_error("Unknown RBF name: " + name);
+polatory::rbf::rbf_proxy<Dim> make_rbf(const std::string& name, const std::vector<double>& params) {
+#define CASE(SHORT_NAME, RBF_NAME)               \
+  if (name == SHORT_NAME) {                      \
+    return polatory::rbf::RBF_NAME<Dim>(params); \
   }
+
+  CASE("bh2", biharmonic2d);
+  CASE("bh3", biharmonic3d);
+  CASE("ca3", cov_cauchy3);
+  CASE("ca5", cov_cauchy5);
+  CASE("ca7", cov_cauchy7);
+  CASE("ca9", cov_cauchy9);
+  CASE("cub", cov_cubic);
+  CASE("exp", cov_exponential);
+  CASE("gau", cov_gaussian);
+  CASE("imq1", inverse_multiquadric1);
+  CASE("mq1", multiquadric1);
+  CASE("mq3", multiquadric3);
+  CASE("sp3", cov_spheroidal3);
+  CASE("sp5", cov_spheroidal5);
+  CASE("sp7", cov_spheroidal7);
+  CASE("sp9", cov_spheroidal9);
+  CASE("sph", cov_spherical);
+  CASE("th2", triharmonic2d);
+  CASE("th3", triharmonic3d);
+
+#undef CASE
+
+  throw std::runtime_error("Unknown RBF name: " + name);
 }
 
 #define MAIN_IMPL(NAME, DIM, PARAMS, OPTS)                                       \

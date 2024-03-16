@@ -2,9 +2,12 @@
 
 #include <cmath>
 #include <polatory/rbf/covariance_function_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <vector>
 
 namespace polatory::rbf {
+
+namespace internal {
 
 template <int Dim>
 class cov_exponential final : public covariance_function_base<Dim> {
@@ -53,5 +56,9 @@ class cov_exponential final : public covariance_function_base<Dim> {
            (Matrix::Identity() - (1.0 / (r * r) + 3.0 / (range * r)) * diff.transpose() * diff);
   }
 };
+
+}  // namespace internal
+
+DEFINE_RBF(cov_exponential);
 
 }  // namespace polatory::rbf

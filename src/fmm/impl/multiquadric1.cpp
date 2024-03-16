@@ -5,8 +5,8 @@
 
 namespace polatory::fmm {
 
-IMPLEMENT_FMM_EVALUATORS(rbf::multiquadric1);
+IMPLEMENT_FMM_EVALUATORS(rbf::internal::multiquadric1);
 
-IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::multiquadric1);
+IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::multiquadric1);
 
 }  // namespace polatory::fmm

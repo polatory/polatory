@@ -5,8 +5,8 @@
 
 namespace polatory::fmm {
 
-IMPLEMENT_FMM_EVALUATORS(rbf::cov_cauchy9);
+IMPLEMENT_FMM_EVALUATORS(rbf::internal::cov_cauchy9);
 
-IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::cov_cauchy9);
+IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::cov_cauchy9);
 
 }  // namespace polatory::fmm

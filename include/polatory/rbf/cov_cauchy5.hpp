@@ -2,9 +2,12 @@
 
 #include <cmath>
 #include <polatory/rbf/covariance_function_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <vector>
 
 namespace polatory::rbf {
+
+namespace internal {
 
 template <int Dim>
 class cov_cauchy5 final : public covariance_function_base<Dim> {
@@ -55,5 +58,9 @@ class cov_cauchy5 final : public covariance_function_base<Dim> {
            (Matrix::Identity() - kA * 7.0 / (kA * r * r + range * range) * diff.transpose() * diff);
   }
 };
+
+}  // namespace internal
+
+DEFINE_RBF(cov_cauchy5);
 
 }  // namespace polatory::rbf

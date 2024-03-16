@@ -9,6 +9,7 @@
 #include <polatory/fmm/kernel.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory::fmm {
@@ -71,21 +72,21 @@ template <class Rbf>
 using fmm_hessian_evaluator = fmm_generic_evaluator<Rbf, hessian_kernel<Rbf>>;
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::RbfPtr<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                const geometry::bboxNd<Dim>& bbox, int order);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf::RbfPtr<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                         const geometry::bboxNd<Dim>& bbox,
                                                         int order);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf::RbfPtr<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                                   const geometry::bboxNd<Dim>& bbox,
                                                                   int order);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf::RbfPtr<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                        const geometry::bboxNd<Dim>& bbox,
                                                        int order);
 

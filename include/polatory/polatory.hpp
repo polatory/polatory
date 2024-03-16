@@ -35,5 +35,6 @@
 #include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/table.hpp>
 #include <polatory/types.hpp>

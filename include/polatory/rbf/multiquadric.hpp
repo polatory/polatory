@@ -2,10 +2,13 @@
 
 #include <cmath>
 #include <limits>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
 namespace polatory::rbf {
+
+namespace internal {
 
 template <int Dim, int k>
 class multiquadric final : public rbf_base<Dim> {
@@ -75,5 +78,10 @@ using multiquadric1 = multiquadric<Dim, 1>;
 
 template <int Dim>
 using multiquadric3 = multiquadric<Dim, 3>;
+
+}  // namespace internal
+
+DEFINE_RBF(multiquadric1);
+DEFINE_RBF(multiquadric3);
 
 }  // namespace polatory::rbf

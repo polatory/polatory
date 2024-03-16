@@ -19,10 +19,10 @@ using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
 using polatory::numeric::relative_error;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::rbf_proxy;
 
 template <int Dim>
-void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
+void main_impl(rbf_proxy<Dim>&& rbf, const options& opts) {
   static constexpr int kDim = Dim;
   using Bbox = bboxNd<kDim>;
   using DirectEvaluator = rbf_direct_evaluator<kDim>;
@@ -31,7 +31,7 @@ void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
   using Point = pointNd<kDim>;
   using Points = pointsNd<kDim>;
 
-  auto poly_degree = rbf->cpd_order() - 1;
+  auto poly_degree = rbf.cpd_order() - 1;
   Model model(std::move(rbf), poly_degree);
 
   auto mu = opts.n_points;

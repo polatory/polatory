@@ -2,9 +2,12 @@
 
 #include <cmath>
 #include <polatory/rbf/covariance_function_base.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <vector>
 
 namespace polatory::rbf {
+
+namespace internal {
 
 template <int Dim>
 class cov_spheroidal9 final : public covariance_function_base<Dim> {
@@ -61,5 +64,9 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
                                      diff.transpose() * diff);
   }
 };
+
+}  // namespace internal
+
+DEFINE_RBF(cov_spheroidal9);
 
 }  // namespace polatory::rbf

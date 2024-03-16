@@ -20,7 +20,6 @@ using polatory::common::valuesd;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::numeric::absolute_error;
-using polatory::rbf::make_rbf;
 using polatory::rbf::triharmonic3d;
 
 namespace {
@@ -38,10 +37,10 @@ void test(index_t n_points, index_t n_grad_points) {
   valuesd rhs(n_points + kDim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
-  auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
-  rbf->set_anisotropy(aniso);
+  triharmonic3d<kDim> rbf({1.0});
+  rbf.set_anisotropy(aniso);
 
-  auto poly_degree = rbf->cpd_order() - 1;
+  auto poly_degree = rbf.cpd_order() - 1;
   model<kDim> model(std::move(rbf), poly_degree);
   model.set_nugget(0.01);
 

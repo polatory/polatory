@@ -19,33 +19,33 @@
 #include <stdexcept>
 
 using polatory::geometry::bboxNd;
-using polatory::rbf::biharmonic2d;
-using polatory::rbf::biharmonic3d;
-using polatory::rbf::cov_cauchy3;
-using polatory::rbf::cov_cauchy5;
-using polatory::rbf::cov_cauchy7;
-using polatory::rbf::cov_cauchy9;
-using polatory::rbf::cov_cubic;
-using polatory::rbf::cov_exponential;
-using polatory::rbf::cov_gaussian;
-using polatory::rbf::cov_spherical;
-using polatory::rbf::cov_spheroidal3;
-using polatory::rbf::cov_spheroidal5;
-using polatory::rbf::cov_spheroidal7;
-using polatory::rbf::cov_spheroidal9;
-using polatory::rbf::inverse_multiquadric1;
-using polatory::rbf::multiquadric1;
-using polatory::rbf::multiquadric3;
-using polatory::rbf::RbfPtr;
-using polatory::rbf::triharmonic2d;
-using polatory::rbf::triharmonic3d;
+using polatory::rbf::rbf_proxy;
+using polatory::rbf::internal::biharmonic2d;
+using polatory::rbf::internal::biharmonic3d;
+using polatory::rbf::internal::cov_cauchy3;
+using polatory::rbf::internal::cov_cauchy5;
+using polatory::rbf::internal::cov_cauchy7;
+using polatory::rbf::internal::cov_cauchy9;
+using polatory::rbf::internal::cov_cubic;
+using polatory::rbf::internal::cov_exponential;
+using polatory::rbf::internal::cov_gaussian;
+using polatory::rbf::internal::cov_spherical;
+using polatory::rbf::internal::cov_spheroidal3;
+using polatory::rbf::internal::cov_spheroidal5;
+using polatory::rbf::internal::cov_spheroidal7;
+using polatory::rbf::internal::cov_spheroidal9;
+using polatory::rbf::internal::inverse_multiquadric1;
+using polatory::rbf::internal::multiquadric1;
+using polatory::rbf::internal::multiquadric3;
+using polatory::rbf::internal::triharmonic2d;
+using polatory::rbf::internal::triharmonic3d;
 
 namespace polatory::fmm {
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const RbfPtr<Dim>& rbf, const bboxNd<Dim>& bbox,
+FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf_proxy<Dim>& rbf, const bboxNd<Dim>& bbox,
                                                int order) {
-  auto* base = rbf.get();
+  auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                            \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                       \
@@ -77,19 +77,19 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const RbfPtr<Dim>& rbf, const bbo
   throw std::invalid_argument("RBF type not supported.");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_evaluator<1>(const RbfPtr<1>& rbf,
+template FmmGenericEvaluatorPtr<1> make_fmm_evaluator<1>(const rbf_proxy<1>& rbf,
                                                          const bboxNd<1>& bbox, int order);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_evaluator<2>(const RbfPtr<2>& rbf,
+template FmmGenericEvaluatorPtr<2> make_fmm_evaluator<2>(const rbf_proxy<2>& rbf,
                                                          const bboxNd<2>& bbox, int order);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_evaluator<3>(const RbfPtr<3>& rbf,
+template FmmGenericEvaluatorPtr<3> make_fmm_evaluator<3>(const rbf_proxy<3>& rbf,
                                                          const bboxNd<3>& bbox, int order);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const RbfPtr<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf_proxy<Dim>& rbf,
                                                         const bboxNd<Dim>& bbox, int order) {
-  auto* base = rbf.get();
+  auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                                     \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                \
@@ -121,20 +121,20 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const RbfPtr<Dim>& rbf,
   throw std::invalid_argument("RBF type not supported.");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_gradient_evaluator<1>(const RbfPtr<1>& rbf,
+template FmmGenericEvaluatorPtr<1> make_fmm_gradient_evaluator<1>(const rbf_proxy<1>& rbf,
                                                                   const bboxNd<1>& bbox, int order);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_gradient_evaluator<2>(const RbfPtr<2>& rbf,
+template FmmGenericEvaluatorPtr<2> make_fmm_gradient_evaluator<2>(const rbf_proxy<2>& rbf,
                                                                   const bboxNd<2>& bbox, int order);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_gradient_evaluator<3>(const RbfPtr<3>& rbf,
+template FmmGenericEvaluatorPtr<3> make_fmm_gradient_evaluator<3>(const rbf_proxy<3>& rbf,
                                                                   const bboxNd<3>& bbox, int order);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const RbfPtr<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf_proxy<Dim>& rbf,
                                                                   const bboxNd<Dim>& bbox,
                                                                   int order) {
-  auto* base = rbf.get();
+  auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                                       \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                  \
@@ -167,22 +167,22 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const RbfPtr<D
   throw std::invalid_argument("RBF type not supported.");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_gradient_transpose_evaluator<1>(const RbfPtr<1>& rbf,
+template FmmGenericEvaluatorPtr<1> make_fmm_gradient_transpose_evaluator<1>(const rbf_proxy<1>& rbf,
                                                                             const bboxNd<1>& bbox,
                                                                             int order);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_gradient_transpose_evaluator<2>(const RbfPtr<2>& rbf,
+template FmmGenericEvaluatorPtr<2> make_fmm_gradient_transpose_evaluator<2>(const rbf_proxy<2>& rbf,
                                                                             const bboxNd<2>& bbox,
                                                                             int order);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_gradient_transpose_evaluator<3>(const RbfPtr<3>& rbf,
+template FmmGenericEvaluatorPtr<3> make_fmm_gradient_transpose_evaluator<3>(const rbf_proxy<3>& rbf,
                                                                             const bboxNd<3>& bbox,
                                                                             int order);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const RbfPtr<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf_proxy<Dim>& rbf,
                                                        const bboxNd<Dim>& bbox, int order) {
-  auto* base = rbf.get();
+  auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                                    \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                               \
@@ -214,20 +214,20 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const RbfPtr<Dim>& rbf,
   throw std::invalid_argument("RBF type not supported.");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_hessian_evaluator<1>(const RbfPtr<1>& rbf,
+template FmmGenericEvaluatorPtr<1> make_fmm_hessian_evaluator<1>(const rbf_proxy<1>& rbf,
                                                                  const bboxNd<1>& bbox, int order);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_hessian_evaluator<2>(const RbfPtr<2>& rbf,
+template FmmGenericEvaluatorPtr<2> make_fmm_hessian_evaluator<2>(const rbf_proxy<2>& rbf,
                                                                  const bboxNd<2>& bbox, int order);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_hessian_evaluator<3>(const RbfPtr<3>& rbf,
+template FmmGenericEvaluatorPtr<3> make_fmm_hessian_evaluator<3>(const rbf_proxy<3>& rbf,
                                                                  const bboxNd<3>& bbox, int order);
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const RbfPtr<Dim>& rbf,
+FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf_proxy<Dim>& rbf,
                                                                   const bboxNd<Dim>& bbox,
                                                                   int order) {
-  auto* base = rbf.get();
+  auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                                      \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                 \
@@ -259,23 +259,23 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const RbfPtr<D
   throw std::runtime_error("RBF type not supported.");
 }
 
-template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_symmetric_evaluator<1>(const RbfPtr<1>& rbf,
+template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_symmetric_evaluator<1>(const rbf_proxy<1>& rbf,
                                                                             const bboxNd<1>& bbox,
                                                                             int order);
 
-template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_symmetric_evaluator<2>(const RbfPtr<2>& rbf,
+template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_symmetric_evaluator<2>(const rbf_proxy<2>& rbf,
                                                                             const bboxNd<2>& bbox,
                                                                             int order);
 
-template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_symmetric_evaluator<3>(const RbfPtr<3>& rbf,
+template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_symmetric_evaluator<3>(const rbf_proxy<3>& rbf,
                                                                             const bboxNd<3>& bbox,
                                                                             int order);
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const RbfPtr<Dim>& rbf,
+FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const rbf_proxy<Dim>& rbf,
                                                                           const bboxNd<Dim>& bbox,
                                                                           int order) {
-  auto* base = rbf.get();
+  auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                                      \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                 \
@@ -309,12 +309,12 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const 
 }
 
 template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_hessian_symmetric_evaluator<1>(
-    const RbfPtr<1>& rbf, const bboxNd<1>& bbox, int order);
+    const rbf_proxy<1>& rbf, const bboxNd<1>& bbox, int order);
 
 template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_hessian_symmetric_evaluator<2>(
-    const RbfPtr<2>& rbf, const bboxNd<2>& bbox, int order);
+    const rbf_proxy<2>& rbf, const bboxNd<2>& bbox, int order);
 
 template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_hessian_symmetric_evaluator<3>(
-    const RbfPtr<3>& rbf, const bboxNd<3>& bbox, int order);
+    const rbf_proxy<3>& rbf, const bboxNd<3>& bbox, int order);
 
 }  // namespace polatory::fmm

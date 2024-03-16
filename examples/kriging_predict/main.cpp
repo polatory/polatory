@@ -18,9 +18,9 @@ using polatory::geometry::vectors3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::RbfPtr;
+using polatory::rbf::rbf_proxy;
 
-void main_impl(RbfPtr<3>&& rbf, const options& opts) {
+void main_impl(rbf_proxy<3>&& rbf, const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table(0, 4);
   if (opts.in_file != "") {
@@ -55,7 +55,7 @@ void main_impl(RbfPtr<3>&& rbf, const options& opts) {
   std::tie(grad_points, grad_values) = grad_filter(grad_points, grad_values);
 
   // Define the model.
-  rbf->set_anisotropy(opts.aniso);
+  rbf.set_anisotropy(opts.aniso);
   model<3> model(std::move(rbf), opts.poly_degree);
   model.set_nugget(opts.nugget);
 

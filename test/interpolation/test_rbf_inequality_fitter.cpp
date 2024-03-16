@@ -24,7 +24,6 @@ using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
 using polatory::rbf::biharmonic3d;
 using polatory::rbf::cov_exponential;
-using polatory::rbf::make_rbf;
 
 TEST(rbf_inequality_fitter, inequality_only) {
   constexpr int kDim = 3;
@@ -39,10 +38,10 @@ TEST(rbf_inequality_fitter, inequality_only) {
   valuesd values_ub = values.array() + 0.001;
   values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  auto rbf = make_rbf<biharmonic3d<kDim>>({1.0});
-  rbf->set_anisotropy(aniso);
+  biharmonic3d<kDim> rbf({1.0});
+  rbf.set_anisotropy(aniso);
 
-  auto poly_degree = rbf->cpd_order() - 1;
+  auto poly_degree = rbf.cpd_order() - 1;
   model<kDim> model(std::move(rbf), poly_degree);
 
   rbf_inequality_fitter<kDim> fitter(model, points);
@@ -85,7 +84,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   values_ub << nan, nan, nan, 4, nan, 4, nan, nan, nan, nan, nan, 1, nan, nan, nan, nan, 4, 7, nan,
       nan, nan, nan, nan, nan, 3;
 
-  auto rbf = make_rbf<cov_exponential<kDim>>({1.0, 3.0});
+  cov_exponential<kDim> rbf({1.0, 3.0});
   model<kDim> model(std::move(rbf), -1);
 
   rbf_inequality_fitter<kDim> fitter(model, points);

@@ -1,10 +1,13 @@
 #pragma once
 
 #include <limits>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <vector>
 
 namespace polatory::rbf {
+
+namespace internal {
 
 template <int Dim, int k>
 class polyharmonic_odd final : public rbf_base<Dim> {
@@ -79,5 +82,10 @@ using biharmonic3d = polyharmonic_odd<Dim, 1>;
 
 template <int Dim>
 using triharmonic3d = polyharmonic_odd<Dim, 3>;
+
+}  // namespace internal
+
+DEFINE_RBF(biharmonic3d);
+DEFINE_RBF(triharmonic3d);
 
 }  // namespace polatory::rbf
