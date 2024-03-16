@@ -47,32 +47,32 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const RbfPtr<Dim>& rbf, const bbo
                                                int order) {
   auto* base = rbf.get();
 
-#define IMPL(RBF_NAME)                                                            \
+#define CASE(RBF_NAME)                                                            \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                       \
     return std::make_unique<fmm_evaluator<RBF_NAME<Dim>>>(*derived, bbox, order); \
   }
 
-  IMPL(biharmonic2d)
-  IMPL(biharmonic3d)
-  IMPL(cov_cauchy3);
-  IMPL(cov_cauchy5);
-  IMPL(cov_cauchy7);
-  IMPL(cov_cauchy9);
-  IMPL(cov_cubic);
-  IMPL(cov_exponential);
-  IMPL(cov_gaussian);
-  IMPL(cov_spherical);
-  IMPL(cov_spheroidal3);
-  IMPL(cov_spheroidal5);
-  IMPL(cov_spheroidal7);
-  IMPL(cov_spheroidal9);
-  IMPL(inverse_multiquadric1);
-  IMPL(multiquadric1);
-  IMPL(multiquadric3);
-  IMPL(triharmonic2d)
-  IMPL(triharmonic3d)
+  CASE(biharmonic2d);
+  CASE(biharmonic3d);
+  CASE(cov_cauchy3);
+  CASE(cov_cauchy5);
+  CASE(cov_cauchy7);
+  CASE(cov_cauchy9);
+  CASE(cov_cubic);
+  CASE(cov_exponential);
+  CASE(cov_gaussian);
+  CASE(cov_spherical);
+  CASE(cov_spheroidal3);
+  CASE(cov_spheroidal5);
+  CASE(cov_spheroidal7);
+  CASE(cov_spheroidal9);
+  CASE(inverse_multiquadric1);
+  CASE(multiquadric1);
+  CASE(multiquadric3);
+  CASE(triharmonic2d);
+  CASE(triharmonic3d);
 
-#undef IMPL
+#undef CASE
 
   throw std::invalid_argument("RBF type not supported.");
 }
@@ -91,32 +91,32 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const RbfPtr<Dim>& rbf,
                                                         const bboxNd<Dim>& bbox, int order) {
   auto* base = rbf.get();
 
-#define IMPL(RBF_NAME)                                                                     \
+#define CASE(RBF_NAME)                                                                     \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                \
     return std::make_unique<fmm_gradient_evaluator<RBF_NAME<Dim>>>(*derived, bbox, order); \
   }
 
-  IMPL(biharmonic2d)
-  IMPL(biharmonic3d)
-  IMPL(cov_cauchy3);
-  IMPL(cov_cauchy5);
-  IMPL(cov_cauchy7);
-  IMPL(cov_cauchy9);
-  IMPL(cov_cubic);
-  IMPL(cov_exponential);
-  IMPL(cov_gaussian);
-  IMPL(cov_spherical);
-  IMPL(cov_spheroidal3);
-  IMPL(cov_spheroidal5);
-  IMPL(cov_spheroidal7);
-  IMPL(cov_spheroidal9);
-  IMPL(inverse_multiquadric1);
-  IMPL(multiquadric1);
-  IMPL(multiquadric3);
-  IMPL(triharmonic2d)
-  IMPL(triharmonic3d)
+  CASE(biharmonic2d);
+  CASE(biharmonic3d);
+  CASE(cov_cauchy3);
+  CASE(cov_cauchy5);
+  CASE(cov_cauchy7);
+  CASE(cov_cauchy9);
+  CASE(cov_cubic);
+  CASE(cov_exponential);
+  CASE(cov_gaussian);
+  CASE(cov_spherical);
+  CASE(cov_spheroidal3);
+  CASE(cov_spheroidal5);
+  CASE(cov_spheroidal7);
+  CASE(cov_spheroidal9);
+  CASE(inverse_multiquadric1);
+  CASE(multiquadric1);
+  CASE(multiquadric3);
+  CASE(triharmonic2d);
+  CASE(triharmonic3d);
 
-#undef IMPL
+#undef CASE
 
   throw std::invalid_argument("RBF type not supported.");
 }
@@ -136,33 +136,33 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const RbfPtr<D
                                                                   int order) {
   auto* base = rbf.get();
 
-#define IMPL(RBF_NAME)                                                                       \
+#define CASE(RBF_NAME)                                                                       \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                  \
     return std::make_unique<fmm_gradient_transpose_evaluator<RBF_NAME<Dim>>>(*derived, bbox, \
                                                                              order);         \
   }
 
-  IMPL(biharmonic2d)
-  IMPL(biharmonic3d)
-  IMPL(cov_cauchy3);
-  IMPL(cov_cauchy5);
-  IMPL(cov_cauchy7);
-  IMPL(cov_cauchy9);
-  IMPL(cov_cubic);
-  IMPL(cov_exponential);
-  IMPL(cov_gaussian);
-  IMPL(cov_spherical);
-  IMPL(cov_spheroidal3);
-  IMPL(cov_spheroidal5);
-  IMPL(cov_spheroidal7);
-  IMPL(cov_spheroidal9);
-  IMPL(inverse_multiquadric1);
-  IMPL(multiquadric1);
-  IMPL(multiquadric3);
-  IMPL(triharmonic2d)
-  IMPL(triharmonic3d)
+  CASE(biharmonic2d);
+  CASE(biharmonic3d);
+  CASE(cov_cauchy3);
+  CASE(cov_cauchy5);
+  CASE(cov_cauchy7);
+  CASE(cov_cauchy9);
+  CASE(cov_cubic);
+  CASE(cov_exponential);
+  CASE(cov_gaussian);
+  CASE(cov_spherical);
+  CASE(cov_spheroidal3);
+  CASE(cov_spheroidal5);
+  CASE(cov_spheroidal7);
+  CASE(cov_spheroidal9);
+  CASE(inverse_multiquadric1);
+  CASE(multiquadric1);
+  CASE(multiquadric3);
+  CASE(triharmonic2d);
+  CASE(triharmonic3d);
 
-#undef IMPL
+#undef CASE
 
   throw std::invalid_argument("RBF type not supported.");
 }
@@ -184,32 +184,32 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const RbfPtr<Dim>& rbf,
                                                        const bboxNd<Dim>& bbox, int order) {
   auto* base = rbf.get();
 
-#define IMPL(RBF_NAME)                                                                    \
+#define CASE(RBF_NAME)                                                                    \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                               \
     return std::make_unique<fmm_hessian_evaluator<RBF_NAME<Dim>>>(*derived, bbox, order); \
   }
 
-  IMPL(biharmonic2d)
-  IMPL(biharmonic3d)
-  IMPL(cov_cauchy3);
-  IMPL(cov_cauchy5);
-  IMPL(cov_cauchy7);
-  IMPL(cov_cauchy9);
-  IMPL(cov_cubic);
-  IMPL(cov_exponential);
-  IMPL(cov_gaussian);
-  IMPL(cov_spherical);
-  IMPL(cov_spheroidal3);
-  IMPL(cov_spheroidal5);
-  IMPL(cov_spheroidal7);
-  IMPL(cov_spheroidal9);
-  IMPL(inverse_multiquadric1);
-  IMPL(multiquadric1);
-  IMPL(multiquadric3);
-  IMPL(triharmonic2d)
-  IMPL(triharmonic3d)
+  CASE(biharmonic2d);
+  CASE(biharmonic3d);
+  CASE(cov_cauchy3);
+  CASE(cov_cauchy5);
+  CASE(cov_cauchy7);
+  CASE(cov_cauchy9);
+  CASE(cov_cubic);
+  CASE(cov_exponential);
+  CASE(cov_gaussian);
+  CASE(cov_spherical);
+  CASE(cov_spheroidal3);
+  CASE(cov_spheroidal5);
+  CASE(cov_spheroidal7);
+  CASE(cov_spheroidal9);
+  CASE(inverse_multiquadric1);
+  CASE(multiquadric1);
+  CASE(multiquadric3);
+  CASE(triharmonic2d);
+  CASE(triharmonic3d);
 
-#undef IMPL
+#undef CASE
 
   throw std::invalid_argument("RBF type not supported.");
 }
@@ -229,32 +229,32 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const RbfPtr<D
                                                                   int order) {
   auto* base = rbf.get();
 
-#define IMPL(RBF_NAME)                                                                      \
+#define CASE(RBF_NAME)                                                                      \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                 \
     return std::make_unique<fmm_symmetric_evaluator<RBF_NAME<Dim>>>(*derived, bbox, order); \
   }
 
-  IMPL(biharmonic2d)
-  IMPL(biharmonic3d)
-  IMPL(cov_cauchy3);
-  IMPL(cov_cauchy5);
-  IMPL(cov_cauchy7);
-  IMPL(cov_cauchy9);
-  IMPL(cov_cubic);
-  IMPL(cov_exponential);
-  IMPL(cov_gaussian);
-  IMPL(cov_spherical);
-  IMPL(cov_spheroidal3);
-  IMPL(cov_spheroidal5);
-  IMPL(cov_spheroidal7);
-  IMPL(cov_spheroidal9);
-  IMPL(inverse_multiquadric1);
-  IMPL(multiquadric1);
-  IMPL(multiquadric3);
-  IMPL(triharmonic2d)
-  IMPL(triharmonic3d)
+  CASE(biharmonic2d);
+  CASE(biharmonic3d);
+  CASE(cov_cauchy3);
+  CASE(cov_cauchy5);
+  CASE(cov_cauchy7);
+  CASE(cov_cauchy9);
+  CASE(cov_cubic);
+  CASE(cov_exponential);
+  CASE(cov_gaussian);
+  CASE(cov_spherical);
+  CASE(cov_spheroidal3);
+  CASE(cov_spheroidal5);
+  CASE(cov_spheroidal7);
+  CASE(cov_spheroidal9);
+  CASE(inverse_multiquadric1);
+  CASE(multiquadric1);
+  CASE(multiquadric3);
+  CASE(triharmonic2d);
+  CASE(triharmonic3d);
 
-#undef IMPL
+#undef CASE
 
   throw std::runtime_error("RBF type not supported.");
 }
@@ -277,33 +277,33 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const 
                                                                           int order) {
   auto* base = rbf.get();
 
-#define IMPL(RBF_NAME)                                                                      \
+#define CASE(RBF_NAME)                                                                      \
   if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                 \
     return std::make_unique<fmm_hessian_symmetric_evaluator<RBF_NAME<Dim>>>(*derived, bbox, \
                                                                             order);         \
   }
 
-  IMPL(biharmonic2d)
-  IMPL(biharmonic3d)
-  IMPL(cov_cauchy3);
-  IMPL(cov_cauchy5);
-  IMPL(cov_cauchy7);
-  IMPL(cov_cauchy9);
-  IMPL(cov_cubic);
-  IMPL(cov_exponential);
-  IMPL(cov_gaussian);
-  IMPL(cov_spherical);
-  IMPL(cov_spheroidal3);
-  IMPL(cov_spheroidal5);
-  IMPL(cov_spheroidal7);
-  IMPL(cov_spheroidal9);
-  IMPL(inverse_multiquadric1);
-  IMPL(multiquadric1);
-  IMPL(multiquadric3);
-  IMPL(triharmonic2d)
-  IMPL(triharmonic3d)
+  CASE(biharmonic2d);
+  CASE(biharmonic3d);
+  CASE(cov_cauchy3);
+  CASE(cov_cauchy5);
+  CASE(cov_cauchy7);
+  CASE(cov_cauchy9);
+  CASE(cov_cubic);
+  CASE(cov_exponential);
+  CASE(cov_gaussian);
+  CASE(cov_spherical);
+  CASE(cov_spheroidal3);
+  CASE(cov_spheroidal5);
+  CASE(cov_spheroidal7);
+  CASE(cov_spheroidal9);
+  CASE(inverse_multiquadric1);
+  CASE(multiquadric1);
+  CASE(multiquadric3);
+  CASE(triharmonic2d);
+  CASE(triharmonic3d);
 
-#undef IMPL
+#undef CASE
 
   throw std::runtime_error("RBF type not supported.");
 }

@@ -10,7 +10,6 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
-#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 #include <random>

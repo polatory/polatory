@@ -7,7 +7,6 @@
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/precision.hpp>
-#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 

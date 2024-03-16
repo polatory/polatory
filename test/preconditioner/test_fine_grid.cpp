@@ -11,7 +11,6 @@
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
-#include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 #include <random>

@@ -249,7 +249,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     tree_.reset(nullptr);
   }
 
-  const Rbf rbf_;
+  const Rbf& rbf_;
   const Kernel kernel_;
   const int order_;
   const Box box_;

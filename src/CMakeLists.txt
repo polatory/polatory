@@ -20,7 +20,7 @@ add_library(${TARGET} STATIC
     fmm/impl/multiquadric3.cpp
     fmm/impl/triharmonic2d.cpp
     fmm/impl/triharmonic3d.cpp
-    fmm/make_evaluator.cpp
+    fmm/make_fmm_evaluator.cpp
     isosurface/mesh_defects_finder.cpp
     isosurface/rmt_node_list.cpp
     isosurface/rmt_primitive_lattice.cpp
@@ -102,7 +102,7 @@ if(USE_MKL)
         set(COMPILER_SPEC -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-fopenmp)
     endif()
 
-    ExternalProject_Add(
+    externalproject_add(
         scalfmm
         PREFIX ${CMAKE_BINARY_DIR}/scalfmm
         GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
@@ -121,7 +121,7 @@ elseif(APPLE)
         FFTW3::fftw3
     )
 
-    ExternalProject_Add(
+    externalproject_add(
         scalfmm
         PREFIX ${CMAKE_BINARY_DIR}/scalfmm
         GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git

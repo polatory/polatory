@@ -97,4 +97,9 @@ class rbf_base {
   Matrix aniso_;
 };
 
+template <class Rbf>
+RbfPtr<Rbf::kDim> make_rbf(const std::vector<double>& params) {
+  return std::make_unique<Rbf>(params);
+}
+
 }  // namespace polatory::rbf

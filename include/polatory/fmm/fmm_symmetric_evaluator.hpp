@@ -30,7 +30,8 @@ template <int Dim>
 using FmmGenericSymmetricEvaluatorPtr = std::unique_ptr<fmm_generic_symmetric_evaluator_base<Dim>>;
 
 template <class Rbf, class Kernel>
-class fmm_generic_symmetric_evaluator : public fmm_generic_symmetric_evaluator_base<Rbf::kDim> {
+class fmm_generic_symmetric_evaluator final
+    : public fmm_generic_symmetric_evaluator_base<Rbf::kDim> {
   static constexpr int kDim = Rbf::kDim;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;

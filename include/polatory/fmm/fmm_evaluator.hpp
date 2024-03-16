@@ -9,7 +9,6 @@
 #include <polatory/fmm/kernel.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/rbf/cov_spherical.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 
 namespace polatory::fmm {
@@ -35,7 +34,7 @@ template <int Dim>
 using FmmGenericEvaluatorPtr = std::unique_ptr<fmm_generic_evaluator_base<Dim>>;
 
 template <class Rbf, class Kernel>
-class fmm_generic_evaluator : public fmm_generic_evaluator_base<Rbf::kDim> {
+class fmm_generic_evaluator final : public fmm_generic_evaluator_base<Rbf::kDim> {
   static constexpr int kDim = Rbf::kDim;
   using Bbox = geometry::bboxNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
