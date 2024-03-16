@@ -16,48 +16,69 @@ class model {
   using RbfPtr = rbf::RbfPtr<kDim>;
 
  public:
-  model(const RbfPtr& rbf, int poly_degree) : rbf_(rbf), poly_degree_(poly_degree) {
-    if (poly_degree < rbf->cpd_order() - 1 || poly_degree > 2) {
-      throw std::invalid_argument(
-          "poly_degree must be within the range of rbf.cpd_order() - 1 to 2.");
+  model(RbfPtr&& rbf, int poly_degree) : poly_degree_(poly_degree) {
+    if (poly_degree < cpd_order() - 1 || poly_degree > 2) {
+      throw std::invalid_argument("poly_degree must be within " + std::to_string(cpd_order() - 1) +
+                                  " to 2.");
     }
+
+    rbfs_.push_back(std::move(rbf));
   }
 
   ~model() = default;
 
-  model(const model& model)
-      : rbf_(model.rbf_), poly_degree_(model.poly_degree_), nugget_(model.nugget_) {}
+  model(const model& model) : poly_degree_(model.poly_degree_), nugget_(model.nugget_) {
+    for (const auto& rbf : model.rbfs_) {
+      rbfs_.push_back(rbf->clone());
+    }
+  }
 
   model(model&& model) = default;
 
   model& operator=(const model&) = delete;
   model& operator=(model&&) = delete;
 
+  int cpd_order() const {
+    auto order = 0;
+    for (const auto& rbf : rbfs_) {
+      order = std::max(order, rbf->cpd_order());
+    }
+    return order;
+  }
+
   double nugget() const { return nugget_; }
 
-  // Experimental function.
-  int num_parameters() const { return 1 + rbf_->num_parameters(); }
+  int num_parameters() const {
+    auto np = 1;
+    for (const auto& rbf : rbfs_) {
+      np += rbf->num_parameters();
+    }
+    return np;
+  }
 
-  // Experimental function.
   std::vector<double> parameter_lower_bounds() const {
-    std::vector<double> lower_bounds{0.0};
-    lower_bounds.insert(lower_bounds.end(), rbf_->parameter_lower_bounds().begin(),
-                        rbf_->parameter_lower_bounds().end());
-    return lower_bounds;
+    std::vector<double> lbs{0.0};
+    for (const auto& rbf : rbfs_) {
+      lbs.insert(lbs.end(), rbf->parameter_lower_bounds().begin(),
+                 rbf->parameter_lower_bounds().end());
+    }
+    return lbs;
   }
 
-  // Experimental function.
   std::vector<double> parameter_upper_bounds() const {
-    std::vector<double> upper_bounds{std::numeric_limits<double>::infinity()};
-    upper_bounds.insert(upper_bounds.end(), rbf_->parameter_upper_bounds().begin(),
-                        rbf_->parameter_upper_bounds().end());
-    return upper_bounds;
+    std::vector<double> ubs{std::numeric_limits<double>::infinity()};
+    for (const auto& rbf : rbfs_) {
+      ubs.insert(ubs.end(), rbf->parameter_upper_bounds().begin(),
+                 rbf->parameter_upper_bounds().end());
+    }
+    return ubs;
   }
 
-  // Experimental function.
   std::vector<double> parameters() const {
     std::vector<double> params{nugget()};
-    params.insert(params.end(), rbf_->parameters().begin(), rbf_->parameters().end());
+    for (const auto& rbf : rbfs_) {
+      params.insert(params.end(), rbf->parameters().begin(), rbf->parameters().end());
+    }
     return params;
   }
 
@@ -67,7 +88,9 @@ class model {
 
   int poly_degree() const { return poly_degree_; }
 
-  const RbfPtr& rbf() const { return rbf_; }
+  const RbfPtr& rbf() const { return rbfs_.at(0); }
+
+  const std::vector<RbfPtr>& rbfs() const { return rbfs_; }
 
   void set_nugget(double nugget) {
     if (nugget < 0.0) {
@@ -77,21 +100,26 @@ class model {
     nugget_ = nugget;
   }
 
-  // Experimental function.
   void set_parameters(const std::vector<double>& params) {
     if (static_cast<int>(params.size()) != num_parameters()) {
       throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) +
                                   ".");
     }
 
-    set_nugget(params[0]);
-    rbf_->set_parameters(std::vector<double>(params.begin() + 1, params.end()));
+    set_nugget(params.at(0));
+
+    auto i = 1;
+    for (const auto& rbf : rbfs_) {
+      rbf->set_parameters(
+          std::vector<double>(params.begin() + i, params.begin() + i + rbf->num_parameters()));
+      i += rbf->num_parameters();
+    }
   }
 
  private:
-  const RbfPtr& rbf_;
   int poly_degree_;
   double nugget_{};
+  std::vector<RbfPtr> rbfs_;
 };
 
 }  // namespace polatory

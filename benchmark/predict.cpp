@@ -1,6 +1,7 @@
 #include <exception>
 #include <iostream>
 #include <polatory/polatory.hpp>
+#include <utility>
 
 using polatory::interpolant;
 using polatory::model;
@@ -22,7 +23,7 @@ int main(int /*argc*/, char* argv[]) {
     auto rbf = make_rbf<cov_exponential<3>>({1.0, 0.02});
 
     auto poly_degree = 0;
-    model<3> model(rbf, poly_degree);
+    model<3> model(std::move(rbf), poly_degree);
 
     interpolant<3> interpolant(model);
 

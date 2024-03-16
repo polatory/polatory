@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <polatory/polatory.hpp>
+#include <utility>
 
 #include "parse_options.hpp"
 
@@ -17,7 +18,7 @@ int main(int argc, const char* argv[]) {
 
     // Define the model.
     auto rbf = make_rbf<3>(opts.rbf_name, opts.rbf_params);
-    model<3> model(rbf, -1);
+    model<3> model(std::move(rbf), -1);
     model.set_nugget(opts.nugget);
 
     // Fit model parameters.

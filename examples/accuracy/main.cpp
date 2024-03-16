@@ -5,6 +5,7 @@
 #include <exception>
 #include <iostream>
 #include <polatory/polatory.hpp>
+#include <utility>
 
 #include "../common/common.hpp"
 #include "parse_options.hpp"
@@ -31,7 +32,7 @@ void main_impl(RbfPtr<Dim>&& rbf, const options& opts) {
   using Points = pointsNd<kDim>;
 
   auto poly_degree = rbf->cpd_order() - 1;
-  Model model(rbf, poly_degree);
+  Model model(std::move(rbf), poly_degree);
 
   auto mu = opts.n_points;
   auto sigma = opts.n_grad_points;

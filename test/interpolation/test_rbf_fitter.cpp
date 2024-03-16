@@ -9,6 +9,7 @@
 #include <polatory/precision.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
+#include <utility>
 
 #include "../utility.hpp"
 
@@ -41,7 +42,7 @@ void test(index_t n_points, index_t n_grad_points) {
   rbf->set_anisotropy(aniso);
 
   auto poly_degree = rbf->cpd_order() - 1;
-  model<kDim> model(rbf, poly_degree);
+  model<kDim> model(std::move(rbf), poly_degree);
   model.set_nugget(0.01);
 
   rbf_fitter<kDim> fitter(model, points, grad_points);

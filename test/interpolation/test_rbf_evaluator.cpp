@@ -11,6 +11,7 @@
 #include <polatory/precision.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
+#include <utility>
 
 #include "../utility.hpp"
 
@@ -43,7 +44,7 @@ TEST(rbf_evaluator, trivial) {
   rbf->set_anisotropy(random_anisotropy<kDim>());
 
   auto poly_degree = rbf->cpd_order() - 1;
-  model<kDim> model(rbf, poly_degree);
+  model<kDim> model(std::move(rbf), poly_degree);
   model.set_nugget(0.01);
 
   Points points = Points::Random(n_points, kDim);

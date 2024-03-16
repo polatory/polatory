@@ -50,7 +50,7 @@ void test(index_t n_points, index_t n_grad_points) {
   auto rbf = make_rbf<triharmonic3d<kDim>>({1.0});
 
   auto poly_degree = rbf->cpd_order() - 1;
-  model<kDim> model(rbf, poly_degree);
+  model<kDim> model(std::move(rbf), poly_degree);
 
   auto mu = n_points;
   auto sigma = n_grad_points;

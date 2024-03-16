@@ -11,6 +11,7 @@
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
+#include <utility>
 
 #include "../utility.hpp"
 
@@ -42,7 +43,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   rbf->set_anisotropy(aniso);
 
   auto poly_degree = rbf->cpd_order() - 1;
-  model<kDim> model(rbf, poly_degree);
+  model<kDim> model(std::move(rbf), poly_degree);
 
   rbf_inequality_fitter<kDim> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
@@ -85,7 +86,7 @@ TEST(rbf_inequality_fitter, kostov86) {
       nan, nan, nan, nan, nan, 3;
 
   auto rbf = make_rbf<cov_exponential<kDim>>({1.0, 3.0});
-  model<kDim> model(rbf, -1);
+  model<kDim> model(std::move(rbf), -1);
 
   rbf_inequality_fitter<kDim> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);

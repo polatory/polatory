@@ -3,6 +3,7 @@
 #include <optional>
 #include <polatory/polatory.hpp>
 #include <tuple>
+#include <utility>
 
 #include "../common/common.hpp"
 #include "parse_options.hpp"
@@ -55,7 +56,7 @@ void main_impl(RbfPtr<3>&& rbf, const options& opts) {
 
   // Define the model.
   rbf->set_anisotropy(opts.aniso);
-  model<3> model(rbf, opts.poly_degree);
+  model<3> model(std::move(rbf), opts.poly_degree);
   model.set_nugget(opts.nugget);
 
   valuesd rhs(values.size() + 3 * grad_values.rows());

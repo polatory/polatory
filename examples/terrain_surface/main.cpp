@@ -2,6 +2,7 @@
 #include <iostream>
 #include <polatory/polatory.hpp>
 #include <tuple>
+#include <utility>
 
 #include "../common/common.hpp"
 #include "parse_options.hpp"
@@ -29,7 +30,7 @@ void main_impl(RbfPtr<2>&& rbf, const options& opts) {
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
   // Define the model.
-  model<2> model(rbf, opts.poly_degree);
+  model<2> model(std::move(rbf), opts.poly_degree);
   model.set_nugget(opts.smooth);
 
   // Fit.

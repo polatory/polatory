@@ -7,6 +7,7 @@
 #include <polatory/polatory.hpp>
 #include <tuple>
 #include <unordered_set>
+#include <utility>
 
 #include "parse_options.hpp"
 
@@ -177,7 +178,7 @@ int main(int argc, const char* argv[]) {
 
     // Define the model.
     auto rbf = make_rbf<biharmonic3d<3>>({1.0});
-    model<3> model(rbf, 0);
+    model<3> model(std::move(rbf), 0);
 
     // Fit.
     interpolant<3> interpolant(model);
