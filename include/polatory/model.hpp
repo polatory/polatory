@@ -17,12 +17,20 @@ class model {
 
  public:
   model(RbfPtr&& rbf, int poly_degree) : poly_degree_(poly_degree) {
+    rbfs_.push_back(std::move(rbf));
+
     if (poly_degree < cpd_order() - 1 || poly_degree > 2) {
       throw std::invalid_argument("poly_degree must be within " + std::to_string(cpd_order() - 1) +
                                   " to 2.");
     }
+  }
 
-    rbfs_.push_back(std::move(rbf));
+  model(std::vector<RbfPtr>&& rbfs, int poly_degree)
+      : rbfs_(std::move(rbfs)), poly_degree_(poly_degree) {
+    if (poly_degree < cpd_order() - 1 || poly_degree > 2) {
+      throw std::invalid_argument("poly_degree must be within " + std::to_string(cpd_order() - 1) +
+                                  " to 2.");
+    }
   }
 
   ~model() = default;
