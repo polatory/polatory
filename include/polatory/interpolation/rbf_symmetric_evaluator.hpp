@@ -11,6 +11,7 @@
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
 #include <polatory/types.hpp>
+#include <vector>
 
 namespace polatory::interpolation {
 
@@ -34,11 +35,14 @@ class rbf_symmetric_evaluator {
   }
 
   rbf_symmetric_evaluator(const Model& model, const Bbox& bbox, int order)
-      : l_(model.poly_basis_size()),
-        a_(fmm::make_fmm_symmetric_evaluator(model.rbf(), bbox, order)),
-        f_(fmm::make_fmm_gradient_evaluator(model.rbf(), bbox, order)),
-        ft_(fmm::make_fmm_gradient_transpose_evaluator(model.rbf(), bbox, order)),
-        h_(fmm::make_fmm_hessian_symmetric_evaluator(model.rbf(), bbox, order)) {
+      : l_(model.poly_basis_size()) {
+    for (const auto& rbf : model.rbfs()) {
+      a_.push_back(fmm::make_fmm_symmetric_evaluator(rbf, bbox, order));
+      f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox, order));
+      ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox, order));
+      h_.push_back(fmm::make_fmm_hessian_symmetric_evaluator(rbf, bbox, order));
+    }
+
     if (l_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
@@ -47,10 +51,12 @@ class rbf_symmetric_evaluator {
   common::valuesd evaluate() const {
     common::valuesd y = common::valuesd::Zero(mu_ + kDim * sigma_);
 
-    y.head(mu_) += a_->evaluate();
-    y.head(mu_) += f_->evaluate();
-    y.tail(kDim * sigma_) += ft_->evaluate();
-    y.tail(kDim * sigma_) += h_->evaluate();
+    for (std::size_t i = 0; i < a_.size(); ++i) {
+      y.head(mu_) += a_.at(i)->evaluate();
+      y.head(mu_) += f_.at(i)->evaluate();
+      y.tail(kDim * sigma_) += ft_.at(i)->evaluate();
+      y.tail(kDim * sigma_) += h_.at(i)->evaluate();
+    }
 
     if (l_ > 0) {
       // Add polynomial terms.
@@ -64,12 +70,14 @@ class rbf_symmetric_evaluator {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
-    a_->set_points(points);
-    f_->set_source_points(grad_points);
-    f_->set_target_points(points);
-    ft_->set_source_points(points);
-    ft_->set_target_points(grad_points);
-    h_->set_points(grad_points);
+    for (std::size_t i = 0; i < a_.size(); ++i) {
+      a_.at(i)->set_points(points);
+      f_.at(i)->set_source_points(grad_points);
+      f_.at(i)->set_target_points(points);
+      ft_.at(i)->set_source_points(points);
+      ft_.at(i)->set_target_points(grad_points);
+      h_.at(i)->set_points(grad_points);
+    }
 
     if (l_ > 0) {
       p_->set_target_points(points, grad_points);
@@ -80,10 +88,12 @@ class rbf_symmetric_evaluator {
   void set_weights(const Eigen::MatrixBase<Derived>& weights) {
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
-    a_->set_weights(weights.head(mu_));
-    f_->set_weights(weights.segment(mu_, kDim * sigma_));
-    ft_->set_weights(weights.head(mu_));
-    h_->set_weights(weights.segment(mu_, kDim * sigma_));
+    for (std::size_t i = 0; i < a_.size(); ++i) {
+      a_.at(i)->set_weights(weights.head(mu_));
+      f_.at(i)->set_weights(weights.segment(mu_, kDim * sigma_));
+      ft_.at(i)->set_weights(weights.head(mu_));
+      h_.at(i)->set_weights(weights.segment(mu_, kDim * sigma_));
+    }
 
     if (l_ > 0) {
       p_->set_weights(weights.tail(l_));
@@ -95,10 +105,10 @@ class rbf_symmetric_evaluator {
   index_t mu_{};
   index_t sigma_{};
 
-  FmmGenericSymmetricEvaluatorPtr a_;
-  FmmGenericEvaluatorPtr f_;
-  FmmGenericEvaluatorPtr ft_;
-  FmmGenericSymmetricEvaluatorPtr h_;
+  std::vector<FmmGenericSymmetricEvaluatorPtr> a_;
+  std::vector<FmmGenericEvaluatorPtr> f_;
+  std::vector<FmmGenericEvaluatorPtr> ft_;
+  std::vector<FmmGenericSymmetricEvaluatorPtr> h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 

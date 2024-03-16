@@ -36,34 +36,35 @@ class rbf_direct_evaluator {
   }
 
   common::valuesd evaluate() const {
-    const auto& rbf = model_.rbf();
     auto w = weights_.head(mu_);
     auto grad_w = weights_.segment(mu_, kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim);
 
     common::valuesd y = common::valuesd::Zero(trg_mu_ + kDim * trg_sigma_);
 
-    for (index_t i = 0; i < trg_mu_; i++) {
-      for (index_t j = 0; j < mu_; j++) {
-        Vector diff = trg_points_.row(i) - src_points_.row(j);
-        y(i) += w(j) * rbf->evaluate(diff);
+    for (const auto& rbf : model_.rbfs()) {
+      for (index_t i = 0; i < trg_mu_; i++) {
+        for (index_t j = 0; j < mu_; j++) {
+          Vector diff = trg_points_.row(i) - src_points_.row(j);
+          y(i) += w(j) * rbf->evaluate(diff);
+        }
+
+        for (index_t j = 0; j < sigma_; j++) {
+          Vector diff = trg_points_.row(i) - src_grad_points_.row(j);
+          y(i) += grad_w.row(j).dot(-rbf->evaluate_gradient(diff));
+        }
       }
 
-      for (index_t j = 0; j < sigma_; j++) {
-        Vector diff = trg_points_.row(i) - src_grad_points_.row(j);
-        y(i) += grad_w.row(j).dot(-rbf->evaluate_gradient(diff));
-      }
-    }
+      for (index_t i = 0; i < trg_sigma_; i++) {
+        for (index_t j = 0; j < mu_; j++) {
+          Vector diff = trg_grad_points_.row(i) - src_points_.row(j);
+          y.segment<kDim>(trg_mu_ + kDim * i) += w(j) * rbf->evaluate_gradient(diff).transpose();
+        }
 
-    for (index_t i = 0; i < trg_sigma_; i++) {
-      for (index_t j = 0; j < mu_; j++) {
-        Vector diff = trg_grad_points_.row(i) - src_points_.row(j);
-        y.segment<kDim>(trg_mu_ + kDim * i) += w(j) * rbf->evaluate_gradient(diff).transpose();
-      }
-
-      for (index_t j = 0; j < sigma_; j++) {
-        Vector diff = trg_grad_points_.row(i) - src_grad_points_.row(j);
-        y.segment<kDim>(trg_mu_ + kDim * i) +=
-            (grad_w.row(j) * -rbf->evaluate_hessian(diff)).transpose();
+        for (index_t j = 0; j < sigma_; j++) {
+          Vector diff = trg_grad_points_.row(i) - src_grad_points_.row(j);
+          y.segment<kDim>(trg_mu_ + kDim * i) +=
+              (grad_w.row(j) * -rbf->evaluate_hessian(diff)).transpose();
+        }
       }
     }
 
