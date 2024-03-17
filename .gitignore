@@ -1,5 +1,7 @@
 .idea/
+.venv/
 .vscode/
+*.egg-info/
 build/
 data/
 .DS_Store

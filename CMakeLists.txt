@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 cmake_policy(VERSION "3.16")
 
-option(BUILD_PYTHON "Build the Python binding" OFF)
+option(BUILD_PYTHON "Build Python bindings" OFF)
 if(BUILD_PYTHON)
     list(APPEND VCPKG_MANIFEST_FEATURES "python")
 endif()
@@ -63,3 +63,8 @@ add_subdirectory(src)
 
 enable_testing()
 add_subdirectory(test)
+
+if(BUILD_PYTHON)
+    find_package(pybind11 CONFIG REQUIRED)
+    add_subdirectory(python)
+endif()
