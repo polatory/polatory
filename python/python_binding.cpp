@@ -4,6 +4,7 @@
 
 #undef _GNU_SOURCE
 #include <polatory/polatory.hpp>
+#include <string>
 #include <vector>
 
 #define xstr(s) str(s)
@@ -12,6 +13,12 @@
 using namespace polatory;
 namespace py = pybind11;
 using namespace py::literals;
+
+template <int Dim, class Rbf>
+void define_rbf(py::module& m, const std::string& name) {
+  py::class_<Rbf, rbf::rbf_proxy<Dim>>(m, name.c_str())
+      .def(py::init<const std::vector<double>&>(), "params"_a);
+}
 
 template <int Dim>
 void define_module(py::module& m) {
@@ -26,44 +33,25 @@ void define_module(py::module& m) {
       .def("evaluate_gradient", &rbf::rbf_proxy<Dim>::evaluate_gradient, "diff"_a)
       .def("evaluate_hessian", &rbf::rbf_proxy<Dim>::evaluate_hessian, "diff"_a);
 
-  py::class_<rbf::biharmonic2d<Dim>, rbf::rbf_proxy<Dim>>(m, "Biharmonic2D")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::biharmonic3d<Dim>, rbf::rbf_proxy<Dim>>(m, "Biharmonic3D")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_cauchy3<Dim>, rbf::rbf_proxy<Dim>>(m, "CovCauchy3")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_cauchy5<Dim>, rbf::rbf_proxy<Dim>>(m, "CovCauchy5")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_cauchy7<Dim>, rbf::rbf_proxy<Dim>>(m, "CovCauchy7")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_cauchy9<Dim>, rbf::rbf_proxy<Dim>>(m, "CovCauchy9")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_cubic<Dim>, rbf::rbf_proxy<Dim>>(m, "CovCubic")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_exponential<Dim>, rbf::rbf_proxy<Dim>>(m, "CovExponential")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_gaussian<Dim>, rbf::rbf_proxy<Dim>>(m, "CovGaussian")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_spherical<Dim>, rbf::rbf_proxy<Dim>>(m, "CovSpherical")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_spheroidal3<Dim>, rbf::rbf_proxy<Dim>>(m, "CovSpheroidal3")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_spheroidal5<Dim>, rbf::rbf_proxy<Dim>>(m, "CovSpheroidal5")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_spheroidal7<Dim>, rbf::rbf_proxy<Dim>>(m, "CovSpheroidal7")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::cov_spheroidal9<Dim>, rbf::rbf_proxy<Dim>>(m, "CovSpheroidal9")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::inverse_multiquadric1<Dim>, rbf::rbf_proxy<Dim>>(m, "InverseMultiquadric1")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::multiquadric1<Dim>, rbf::rbf_proxy<Dim>>(m, "Multiquadric1")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::multiquadric3<Dim>, rbf::rbf_proxy<Dim>>(m, "Multiquadric3")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::triharmonic2d<Dim>, rbf::rbf_proxy<Dim>>(m, "Triharmonic2D")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
-  py::class_<rbf::triharmonic3d<Dim>, rbf::rbf_proxy<Dim>>(m, "Triharmonic3D")
-      .def(py::init<const std::vector<double>&>(), "params"_a);
+  define_rbf<Dim, rbf::biharmonic2d<Dim>>(m, "Biharmonic2D");
+  define_rbf<Dim, rbf::biharmonic3d<Dim>>(m, "Biharmonic3D");
+  define_rbf<Dim, rbf::cov_cauchy3<Dim>>(m, "CovCauchy3");
+  define_rbf<Dim, rbf::cov_cauchy5<Dim>>(m, "CovCauchy5");
+  define_rbf<Dim, rbf::cov_cauchy7<Dim>>(m, "CovCauchy7");
+  define_rbf<Dim, rbf::cov_cauchy9<Dim>>(m, "CovCauchy9");
+  define_rbf<Dim, rbf::cov_cubic<Dim>>(m, "CovCubic");
+  define_rbf<Dim, rbf::cov_exponential<Dim>>(m, "CovExponential");
+  define_rbf<Dim, rbf::cov_gaussian<Dim>>(m, "CovGaussian");
+  define_rbf<Dim, rbf::cov_spherical<Dim>>(m, "CovSpherical");
+  define_rbf<Dim, rbf::cov_spheroidal3<Dim>>(m, "CovSpheroidal3");
+  define_rbf<Dim, rbf::cov_spheroidal5<Dim>>(m, "CovSpheroidal5");
+  define_rbf<Dim, rbf::cov_spheroidal7<Dim>>(m, "CovSpheroidal7");
+  define_rbf<Dim, rbf::cov_spheroidal9<Dim>>(m, "CovSpheroidal9");
+  define_rbf<Dim, rbf::inverse_multiquadric1<Dim>>(m, "InverseMultiquadric1");
+  define_rbf<Dim, rbf::multiquadric1<Dim>>(m, "Multiquadric1");
+  define_rbf<Dim, rbf::multiquadric3<Dim>>(m, "Multiquadric3");
+  define_rbf<Dim, rbf::triharmonic2d<Dim>>(m, "Triharmonic2D");
+  define_rbf<Dim, rbf::triharmonic3d<Dim>>(m, "Triharmonic3D");
 
   py::class_<model<Dim>>(m, "Model")
       .def(py::init<rbf::rbf_proxy<Dim>, int>(), "rbf"_a, "poly_degree"_a)
