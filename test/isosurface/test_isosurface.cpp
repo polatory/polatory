@@ -22,6 +22,18 @@ using polatory::isosurface::vertex_index;
 
 namespace {
 
+class constant_field_function : public field_function {
+ public:
+  explicit constant_field_function(double value) : value_(value) {}
+
+  valuesd operator()(const points3d& points) const override {
+    return valuesd::Constant(points.rows(), value_);
+  }
+
+ private:
+  double value_;
+};
+
 class distance_from_origin : public field_function {
  public:
   valuesd operator()(const points3d& points) const override { return points.rowwise().norm(); }
@@ -47,6 +59,32 @@ TEST(isosurface, generate) {
 
   ASSERT_EQ(1082, surface.vertices().rows());
   ASSERT_EQ(2160, surface.faces().rows());
+}
+
+TEST(isosurface, generate_empty) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  constant_field_function field_fn(1.0);
+
+  auto surface = isosurf.generate(field_fn);
+
+  ASSERT_TRUE(surface.is_empty());
+  ASSERT_FALSE(surface.is_entire());
+}
+
+TEST(isosurface, generate_entire) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  constant_field_function field_fn(-1.0);
+
+  auto surface = isosurf.generate(field_fn);
+
+  ASSERT_FALSE(surface.is_empty());
+  ASSERT_TRUE(surface.is_entire());
 }
 
 TEST(isosurface, generate_from_seed_points) {

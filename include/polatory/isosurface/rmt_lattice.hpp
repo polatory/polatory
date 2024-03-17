@@ -36,6 +36,7 @@ class rmt_lattice : public rmt_primitive_lattice {
   std::vector<cell_vector> nodes_to_evaluate_;
   std::unordered_set<cell_vector> added_cells_;
   std::vector<cell_vector> last_added_cells_;
+  double value_at_arbitrary_point_{kZeroValueReplacement};
 
   std::vector<geometry::point3d> vertices_;
   std::unordered_map<vertex_index, vertex_index> cluster_map_;
@@ -112,6 +113,7 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
 
     common::valuesd values = field_fn(points).array() - isovalue;
+    value_at_arbitrary_point_ = values(0);
 
     index_t i{};
     for (const auto& cv : nodes_to_evaluate_) {
@@ -453,6 +455,8 @@ class rmt_lattice : public rmt_primitive_lattice {
       }
     }
   }
+
+  double value_at_arbitrary_point() const { return value_at_arbitrary_point_; }
 
  private:
   static std::pair<double, double> solve_quadratic(double a, double b, double c) {

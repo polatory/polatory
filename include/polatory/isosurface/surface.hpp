@@ -75,6 +75,10 @@ class surface {
 
   const faces_type& faces() const { return faces_; }
 
+  bool is_empty() const { return faces_.rows() == 0 && !entire_; }
+
+  bool is_entire() const { return entire_; }
+
   const vertices_type& vertices() const { return vertices_; }
 
  private:
