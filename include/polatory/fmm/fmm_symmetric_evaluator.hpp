@@ -18,7 +18,15 @@ class fmm_generic_symmetric_evaluator_base {
   using Points = geometry::pointsNd<kDim>;
 
  public:
+  fmm_generic_symmetric_evaluator_base() = default;
+
   virtual ~fmm_generic_symmetric_evaluator_base() = default;
+
+  fmm_generic_symmetric_evaluator_base(const fmm_generic_symmetric_evaluator_base&) = delete;
+  fmm_generic_symmetric_evaluator_base(fmm_generic_symmetric_evaluator_base&&) = delete;
+  fmm_generic_symmetric_evaluator_base& operator=(const fmm_generic_symmetric_evaluator_base&) =
+      delete;
+  fmm_generic_symmetric_evaluator_base& operator=(fmm_generic_symmetric_evaluator_base&&) = delete;
 
   virtual common::valuesd evaluate() const = 0;
 
@@ -41,6 +49,11 @@ class fmm_generic_symmetric_evaluator final
   fmm_generic_symmetric_evaluator(const Rbf& rbf, const Bbox& bbox, int order);
 
   ~fmm_generic_symmetric_evaluator() override;
+
+  fmm_generic_symmetric_evaluator(const fmm_generic_symmetric_evaluator&) = delete;
+  fmm_generic_symmetric_evaluator(fmm_generic_symmetric_evaluator&&) = delete;
+  fmm_generic_symmetric_evaluator& operator=(const fmm_generic_symmetric_evaluator&) = delete;
+  fmm_generic_symmetric_evaluator& operator=(fmm_generic_symmetric_evaluator&&) = delete;
 
   common::valuesd evaluate() const override;
 

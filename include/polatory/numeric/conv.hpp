@@ -23,7 +23,7 @@ inline float to_float(const std::string& str) {
 
 template <class T>
 std::string to_string(T value) {
-  std::array<char, 32> buffer;
+  std::array<char, 32> buffer{};
   auto [ptr, ec] = std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
   return std::string(buffer.data(), ptr);
 }

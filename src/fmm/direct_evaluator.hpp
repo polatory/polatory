@@ -1,7 +1,9 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>

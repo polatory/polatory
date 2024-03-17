@@ -1,11 +1,13 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <algorithm>
 #include <format>
 #include <iostream>
 #include <iterator>
 #include <polatory/common/complementary_indices.hpp>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>

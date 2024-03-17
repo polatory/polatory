@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <memory>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/geometry/bbox3d.hpp>

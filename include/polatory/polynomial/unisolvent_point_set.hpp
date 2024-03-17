@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
@@ -54,7 +55,7 @@ class unisolvent_point_set {
         }
 
         found = true;
-      } catch (const std::domain_error&) {
+      } catch (const std::domain_error&) {  // NOLINT(bugprone-empty-catch)
         // No-op.
       }
     }

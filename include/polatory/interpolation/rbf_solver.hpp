@@ -6,6 +6,7 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/common/orthonormalize.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>

@@ -29,8 +29,6 @@ struct gradient_transpose_kernel {
 
   explicit gradient_transpose_kernel(const Rbf& rbf) : rbf_(rbf) {}
 
-  gradient_transpose_kernel(const gradient_transpose_kernel&) = default;
-
   std::string name() const { return ""; }
 
   template <typename ValueType>
@@ -61,7 +59,7 @@ struct gradient_transpose_kernel {
                 scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
 
-    std::array<std::array<double, 4>, kDim> v;
+    std::array<std::array<double, 4>, kDim> v{};
 
     for (std::size_t i = 0; i < x.at(0).size; i++) {
       Vector diff;

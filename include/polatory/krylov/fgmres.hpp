@@ -1,6 +1,8 @@
 #pragma once
 
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/gmres.hpp>
+#include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <vector>

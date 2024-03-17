@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
 #include <vector>

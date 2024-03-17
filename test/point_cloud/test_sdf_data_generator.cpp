@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/random_points.hpp>

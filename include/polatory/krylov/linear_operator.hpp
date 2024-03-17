@@ -1,5 +1,6 @@
 #pragma once
 
+#include <polatory/common/types.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::krylov {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <limits>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>

@@ -28,8 +28,6 @@ struct hessian_kernel {
 
   explicit hessian_kernel(const Rbf& rbf) : rbf_(rbf) {}
 
-  hessian_kernel(const hessian_kernel&) = default;
-
   std::string name() const { return ""; }
 
   template <typename ValueType>
@@ -63,7 +61,7 @@ struct hessian_kernel {
                 scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
 
-    std::array<std::array<double, 4>, kDim * kDim> v;
+    std::array<std::array<double, 4>, kDim * kDim> v{};
 
     auto a = rbf_.anisotropy();
     for (std::size_t i = 0; i < x.at(0).size; i++) {

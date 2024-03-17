@@ -1,6 +1,7 @@
 #pragma once
 
 #include <polatory/common/macros.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
 

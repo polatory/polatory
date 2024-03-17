@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <cmath>
 #include <exception>
 #include <iomanip>

@@ -2,6 +2,7 @@
 
 #include <boost/container_hash/hash.hpp>
 #include <functional>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>

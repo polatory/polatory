@@ -14,14 +14,20 @@ class rbf_proxy {
   using Vector = geometry::vectorNd<Dim>;
 
  protected:
-  rbf_proxy(std::unique_ptr<RbfBase>&& rbf) : rbf_(std::move(rbf)) {}
+  explicit rbf_proxy(std::unique_ptr<RbfBase>&& rbf) : rbf_(std::move(rbf)) {}
 
  public:
+  ~rbf_proxy() = default;
+
   rbf_proxy(const rbf_proxy& other) : rbf_(other.rbf_->clone()) {}
 
   rbf_proxy(rbf_proxy&& other) = default;
 
   rbf_proxy& operator=(const rbf_proxy& other) {
+    if (this == &other) {
+      return *this;
+    }
+
     rbf_ = other.rbf_->clone();
     return *this;
   }
@@ -76,7 +82,7 @@ class rbf_proxy {
   template <int Dim>                                                           \
   class RBF_NAME : public rbf_proxy<Dim> {                                     \
    public:                                                                     \
-    RBF_NAME(const std::vector<double>& params)                                \
+    explicit RBF_NAME(const std::vector<double>& params)                       \
         : rbf_proxy<Dim>(std::make_unique<internal::RBF_NAME<Dim>>(params)) {} \
   };
 

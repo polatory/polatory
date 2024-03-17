@@ -4,6 +4,7 @@
 #include <cmath>
 #include <numbers>
 #include <polatory/common/orthonormalize.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/types.hpp>

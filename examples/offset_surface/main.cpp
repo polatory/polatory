@@ -2,6 +2,7 @@
 #include <igl/barycentric_coordinates.h>
 #include <igl/read_triangle_mesh.h>
 
+#include <Eigen/Core>
 #include <exception>
 #include <iostream>
 #include <polatory/polatory.hpp>

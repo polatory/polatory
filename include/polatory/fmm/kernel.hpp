@@ -27,8 +27,6 @@ struct kernel {
 
   explicit kernel(const Rbf& rbf) : rbf_(rbf) {}
 
-  kernel(const kernel&) = default;
-
   std::string name() const { return ""; }
 
   template <typename ValueType>
@@ -51,7 +49,7 @@ struct kernel {
                 scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
 
-    std::array<double, 4> v;
+    std::array<double, 4> v{};
     for (std::size_t i = 0; i < x.at(0).size; i++) {
       Vector diff;
       for (auto j = 0; j < kDim; j++) {

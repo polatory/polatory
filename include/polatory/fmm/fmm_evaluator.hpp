@@ -20,7 +20,14 @@ class fmm_generic_evaluator_base {
   using Points = geometry::pointsNd<kDim>;
 
  public:
+  fmm_generic_evaluator_base() = default;
+
   virtual ~fmm_generic_evaluator_base() = default;
+
+  fmm_generic_evaluator_base(const fmm_generic_evaluator_base&) = delete;
+  fmm_generic_evaluator_base(fmm_generic_evaluator_base&&) = delete;
+  fmm_generic_evaluator_base& operator=(const fmm_generic_evaluator_base&) = delete;
+  fmm_generic_evaluator_base& operator=(fmm_generic_evaluator_base&&) = delete;
 
   virtual common::valuesd evaluate() const = 0;
 
@@ -44,6 +51,11 @@ class fmm_generic_evaluator final : public fmm_generic_evaluator_base<Rbf::kDim>
   fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox, int order);
 
   ~fmm_generic_evaluator() override;
+
+  fmm_generic_evaluator(const fmm_generic_evaluator&) = delete;
+  fmm_generic_evaluator(fmm_generic_evaluator&&) = delete;
+  fmm_generic_evaluator& operator=(const fmm_generic_evaluator&) = delete;
+  fmm_generic_evaluator& operator=(fmm_generic_evaluator&&) = delete;
 
   common::valuesd evaluate() const override;
 

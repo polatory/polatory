@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <algorithm>
 #include <exception>
 #include <iostream>

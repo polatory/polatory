@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <memory>
+#include <polatory/common/types.hpp>
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/krylov/gmres.hpp>
 #include <polatory/krylov/linear_operator.hpp>

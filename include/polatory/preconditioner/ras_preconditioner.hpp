@@ -11,6 +11,7 @@
 #include <numeric>
 #include <polatory/common/macros.hpp>
 #include <polatory/common/orthonormalize.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -168,7 +169,7 @@ class ras_preconditioner : public krylov::linear_operator {
       ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
 
       auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_, precision::kPrecise);
-      common::valuesd weights = common::valuesd::Zero(size());
+      common::valuesd weights = common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
         weights.head(mu_ + kDim * sigma_) = p_.col(i);

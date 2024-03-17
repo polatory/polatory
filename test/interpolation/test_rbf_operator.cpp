@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_direct_operator.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>

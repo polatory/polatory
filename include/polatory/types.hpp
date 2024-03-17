@@ -1,6 +1,6 @@
 #pragma once
 
-#include <polatory/common/types.hpp>
+#include <Eigen/Core>
 
 namespace polatory {
 

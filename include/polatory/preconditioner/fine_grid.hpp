@@ -3,6 +3,7 @@
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/preconditioner/binary_cache.hpp>
@@ -40,6 +41,7 @@ class fine_grid {
   using Points = geometry::pointsNd<kDim>;
 
  public:
+  // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
   fine_grid(const Model& model, Domain&& domain, binary_cache& cache)
       : model_(model),
         point_idcs_(std::move(domain.point_indices)),

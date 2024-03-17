@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 

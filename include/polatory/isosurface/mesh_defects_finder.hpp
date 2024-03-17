@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 #include <unordered_set>

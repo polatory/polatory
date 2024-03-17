@@ -26,7 +26,8 @@ class binary_cache {
       throw std::runtime_error("failed to open a temporary file");
     }
 #else
-    file_ = ::open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
+    file_ = ::open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
     if (file_ == -1) {
       throw std::runtime_error("failed to open a temporary file");
     }
@@ -44,6 +45,11 @@ class binary_cache {
 #endif
   }
 
+  binary_cache(const binary_cache&) = delete;
+  binary_cache(binary_cache&&) = delete;
+  binary_cache& operator=(const binary_cache&) = delete;
+  binary_cache& operator=(binary_cache&&) = delete;
+
   void get(std::size_t id, void* data) const {
     std::lock_guard lock(mutex_);
 
@@ -55,7 +61,7 @@ class binary_cache {
     ::SetFilePointerEx(file_, distance, nullptr, FILE_BEGIN);
     ::ReadFile(file_, data, record.size, nullptr, nullptr);
 #else
-    ::lseek(file_, record.offset, SEEK_SET);
+    ::lseek(file_, static_cast<::off_t>(record.offset), SEEK_SET);
     ::read(file_, data, record.size);
 #endif
   }
@@ -81,14 +87,14 @@ class binary_cache {
 
  private:
   struct record {
-    std::size_t offset;
-    std::size_t size;
+    std::size_t offset{};
+    std::size_t size{};
   };
 
 #ifdef _WIN32
-  HANDLE file_;
+  HANDLE file_{};
 #else
-  int file_;
+  int file_{};
 #endif
 
   std::vector<record> records_;

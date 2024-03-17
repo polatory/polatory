@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/cuboid3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>

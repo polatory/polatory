@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <memory>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>

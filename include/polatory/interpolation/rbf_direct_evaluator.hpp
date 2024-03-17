@@ -1,7 +1,9 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
+#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -29,7 +31,7 @@ class rbf_direct_evaluator {
     set_source_points(source_points, source_grad_points);
   }
 
-  rbf_direct_evaluator(const Model& model) : model_(model), l_(model.poly_basis_size()) {
+  explicit rbf_direct_evaluator(const Model& model) : model_(model), l_(model.poly_basis_size()) {
     if (l_ > 0) {
       p_ = std::make_unique<PolynomialEvaluator>(model.poly_degree());
     }
