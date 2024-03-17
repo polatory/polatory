@@ -32,20 +32,21 @@ using polatory::point_cloud::random_points;
 
 // Relative positions of neighbor nodes connected by each edge.
 std::array<vector3d, 14> NeighborVectors{
-    transform_vector<3>(rotation(), vector3d{1.0, 1.0, 1.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{2.0, 0.0, 0.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{1.0, -1.0, -1.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{0.0, 2.0, 0.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{1.0, 1.0, -1.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{0.0, 0.0, -2.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{-1.0, +1.0, -1.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{-1.0, -1.0, -1.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{-2.0, 0.0, 0.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{-1.0, 1.0, 1.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{0.0, -2.0, 0.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{-1.0, -1.0, 1.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{0.0, 0.0, 2.0}) / std::numbers::sqrt2,
-    transform_vector<3>(rotation(), vector3d{1.0, -1.0, 1.0}) / std::numbers::sqrt2};
+    transform_vector<3>(rotation(), vector3d{-1.0, 1.0, 1.0}) / std::numbers::sqrt2,    // 0
+    transform_vector<3>(rotation(), vector3d{0.0, 2.0, 0.0}) / std::numbers::sqrt2,     // 1
+    transform_vector<3>(rotation(), vector3d{1.0, 1.0, -1.0}) / std::numbers::sqrt2,    // 2
+    transform_vector<3>(rotation(), vector3d{0.0, 0.0, 2.0}) / std::numbers::sqrt2,     // 3
+    transform_vector<3>(rotation(), vector3d{1.0, 1.0, 1.0}) / std::numbers::sqrt2,     // 4
+    transform_vector<3>(rotation(), vector3d{2.0, 0.0, 0.0}) / std::numbers::sqrt2,     // 5
+    transform_vector<3>(rotation(), vector3d{1.0, -1.0, 1.0}) / std::numbers::sqrt2,    // 6
+    transform_vector<3>(rotation(), vector3d{1.0, -1.0, -1.0}) / std::numbers::sqrt2,   // 7
+    transform_vector<3>(rotation(), vector3d{0.0, -2.0, 0.0}) / std::numbers::sqrt2,    // 8
+    transform_vector<3>(rotation(), vector3d{-1.0, -1.0, 1.0}) / std::numbers::sqrt2,   // 9
+    transform_vector<3>(rotation(), vector3d{0.0, 0.0, -2.0}) / std::numbers::sqrt2,    // A
+    transform_vector<3>(rotation(), vector3d{-1.0, -1.0, -1.0}) / std::numbers::sqrt2,  // B
+    transform_vector<3>(rotation(), vector3d{-2.0, 0.0, 0.0}) / std::numbers::sqrt2,    // C
+    transform_vector<3>(rotation(), vector3d{-1.0, +1.0, -1.0}) / std::numbers::sqrt2,  // D
+};
 
 TEST(rmt, lattice) {
   point3d min(-1.0, -1.0, -1.0);

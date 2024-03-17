@@ -21,9 +21,22 @@ static constexpr edge_bitset EdgeSetMask = 0x3fff;
 using edge_index = int;
 
 // Adjacent edges (4 or 6) of each edge.
-inline const std::array<edge_bitset, 14> NeighborMasks{0x321a, 0x2015, 0x24b2, 0x0251, 0x006f,
-                                                       0x00d4, 0x03b8, 0x0d64, 0x0ac0, 0x1949,
-                                                       0x2884, 0x3780, 0x2a01, 0x1c07};
+inline const std::array<edge_bitset, 14> NeighborMasks{
+    0b11001000011010,  // 0
+    0b10000000010101,  // 1
+    0b10010010110010,  // 2
+    0b00001001010001,  // 3
+    0b00000001101111,  // 4
+    0b00000011010100,  // 5
+    0b00001110111000,  // 6
+    0b00110101100100,  // 7
+    0b00101011000000,  // 8
+    0b01100101001001,  // 9
+    0b10100010000100,  // A
+    0b11011110000000,  // B
+    0b10101000000001,  // C
+    0b01110000000111,  // D
+};
 
 enum binary_sign { Pos = 0, Neg = 1 };
 

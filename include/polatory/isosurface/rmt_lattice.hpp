@@ -7,6 +7,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
+#include <polatory/isosurface/rmt_edge.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
 #include <polatory/isosurface/rmt_node_list.hpp>
 #include <polatory/isosurface/rmt_primitive_lattice.hpp>
@@ -19,7 +20,10 @@
 
 namespace polatory::isosurface {
 
-inline const std::array<edge_index, 14> OppositeEdge{7, 8, 9, 10, 11, 12, 13, 0, 1, 2, 3, 4, 5, 6};
+inline const std::array<edge_index, 14> OppositeEdge{
+    rmt_edge::k7, rmt_edge::k8, rmt_edge::k9, rmt_edge::kA, rmt_edge::kB,
+    rmt_edge::kC, rmt_edge::kD, rmt_edge::k0, rmt_edge::k1, rmt_edge::k2,
+    rmt_edge::k3, rmt_edge::k4, rmt_edge::k5, rmt_edge::k6};
 
 class rmt_lattice : public rmt_primitive_lattice {
   friend class rmt_surface;
@@ -47,13 +51,13 @@ class rmt_lattice : public rmt_primitive_lattice {
     }
 
     add_node(cv);
-    add_node(cv + NeighborCellVectors[4]);
-    add_node(cv + NeighborCellVectors[9]);
-    add_node(cv + NeighborCellVectors[3]);
-    add_node(cv + NeighborCellVectors[13]);
-    add_node(cv + NeighborCellVectors[1]);
-    add_node(cv + NeighborCellVectors[12]);
-    add_node(cv + NeighborCellVectors[0]);
+    add_node(cv + NeighborCellVectors[rmt_edge::k0]);
+    add_node(cv + NeighborCellVectors[rmt_edge::k1]);
+    add_node(cv + NeighborCellVectors[rmt_edge::k2]);
+    add_node(cv + NeighborCellVectors[rmt_edge::k3]);
+    add_node(cv + NeighborCellVectors[rmt_edge::k4]);
+    add_node(cv + NeighborCellVectors[rmt_edge::k5]);
+    add_node(cv + NeighborCellVectors[rmt_edge::k6]);
 
     added_cells_.insert(cv);
     last_added_cells_.push_back(cv);
@@ -140,13 +144,13 @@ class rmt_lattice : public rmt_primitive_lattice {
     // at which ends the field values take opposite signs.
     for (const auto& cv : last_added_cells_) {
       auto iaaa = cv;
-      auto iaab = cv + NeighborCellVectors[4];
-      auto iaba = cv + NeighborCellVectors[9];
-      auto iabb = cv + NeighborCellVectors[3];
-      auto ibaa = cv + NeighborCellVectors[13];
-      auto ibab = cv + NeighborCellVectors[1];
-      auto ibba = cv + NeighborCellVectors[12];
-      auto ibbb = cv + NeighborCellVectors[0];
+      auto iaab = cv + NeighborCellVectors[rmt_edge::k2];
+      auto iaba = cv + NeighborCellVectors[rmt_edge::k0];
+      auto iabb = cv + NeighborCellVectors[rmt_edge::k1];
+      auto ibaa = cv + NeighborCellVectors[rmt_edge::k6];
+      auto ibab = cv + NeighborCellVectors[rmt_edge::k5];
+      auto ibba = cv + NeighborCellVectors[rmt_edge::k3];
+      auto ibbb = cv + NeighborCellVectors[rmt_edge::k4];
 
       const auto* aaa = node_list_.node_ptr(iaaa);
       const auto* aab = node_list_.node_ptr(iaab);
@@ -158,69 +162,69 @@ class rmt_lattice : public rmt_primitive_lattice {
       const auto* bbb = node_list_.node_ptr(ibbb);
 
       // __a and __b
-      if (has_intersection(aaa, aab)) {  // o -> 4
-        cells_to_add.insert(iaaa + NeighborCellVectors[2]);
-        cells_to_add.insert(iaaa + NeighborCellVectors[5]);
-        cells_to_add.insert(iaaa + NeighborCellVectors[6]);
+      if (has_intersection(aaa, aab)) {  // o -> 2
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::k7]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::kA]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::kD]);
       }
-      if (has_intersection(aba, abb)) {  // 9 -> 3
+      if (has_intersection(aba, abb)) {  // 0 -> 1
         cells_to_add.insert(iaba);
-        cells_to_add.insert(iaba + NeighborCellVectors[5]);
-        cells_to_add.insert(iaba + NeighborCellVectors[6]);
+        cells_to_add.insert(iaba + NeighborCellVectors[rmt_edge::kA]);
+        cells_to_add.insert(iaba + NeighborCellVectors[rmt_edge::kD]);
       }
-      if (has_intersection(baa, bab)) {  // 13 -> 1
+      if (has_intersection(baa, bab)) {  // 6 -> 5
         cells_to_add.insert(ibaa);
-        cells_to_add.insert(ibaa + NeighborCellVectors[2]);
-        cells_to_add.insert(ibaa + NeighborCellVectors[5]);
+        cells_to_add.insert(ibaa + NeighborCellVectors[rmt_edge::k7]);
+        cells_to_add.insert(ibaa + NeighborCellVectors[rmt_edge::kA]);
       }
-      if (has_intersection(bba, bbb)) {  // 12 -> 0
+      if (has_intersection(bba, bbb)) {  // 3 -> 4
         cells_to_add.insert(ibba);
-        cells_to_add.insert(ibba + NeighborCellVectors[2]);
-        cells_to_add.insert(ibba + NeighborCellVectors[6]);
+        cells_to_add.insert(ibba + NeighborCellVectors[rmt_edge::k7]);
+        cells_to_add.insert(ibba + NeighborCellVectors[rmt_edge::kD]);
       }
 
       // _a_ and _b_
-      if (has_intersection(aaa, aba)) {  // o -> 9
-        cells_to_add.insert(iaaa + NeighborCellVectors[6]);
-        cells_to_add.insert(iaaa + NeighborCellVectors[8]);
-        cells_to_add.insert(iaaa + NeighborCellVectors[11]);
+      if (has_intersection(aaa, aba)) {  // o -> 0
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::kD]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::kC]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::k9]);
       }
-      if (has_intersection(aab, abb)) {  // 4 -> 3
+      if (has_intersection(aab, abb)) {  // 2 -> 1
         cells_to_add.insert(iaab);
-        cells_to_add.insert(iaab + NeighborCellVectors[6]);
-        cells_to_add.insert(iaab + NeighborCellVectors[8]);
+        cells_to_add.insert(iaab + NeighborCellVectors[rmt_edge::kD]);
+        cells_to_add.insert(iaab + NeighborCellVectors[rmt_edge::kC]);
       }
-      if (has_intersection(baa, bba)) {  // 13 -> 12
+      if (has_intersection(baa, bba)) {  // 6 -> 3
         cells_to_add.insert(ibaa);
-        cells_to_add.insert(ibaa + NeighborCellVectors[8]);
-        cells_to_add.insert(ibaa + NeighborCellVectors[11]);
+        cells_to_add.insert(ibaa + NeighborCellVectors[rmt_edge::kC]);
+        cells_to_add.insert(ibaa + NeighborCellVectors[rmt_edge::k9]);
       }
-      if (has_intersection(bab, bbb)) {  // 1 -> 0
+      if (has_intersection(bab, bbb)) {  // 5 -> 4
         cells_to_add.insert(ibab);
-        cells_to_add.insert(ibab + NeighborCellVectors[6]);
-        cells_to_add.insert(ibab + NeighborCellVectors[11]);
+        cells_to_add.insert(ibab + NeighborCellVectors[rmt_edge::kD]);
+        cells_to_add.insert(ibab + NeighborCellVectors[rmt_edge::k9]);
       }
 
       // a__ and b__
-      if (has_intersection(aaa, baa)) {  // o -> 13
-        cells_to_add.insert(iaaa + NeighborCellVectors[2]);
-        cells_to_add.insert(iaaa + NeighborCellVectors[10]);
-        cells_to_add.insert(iaaa + NeighborCellVectors[11]);
+      if (has_intersection(aaa, baa)) {  // o -> 6
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::k7]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::k8]);
+        cells_to_add.insert(iaaa + NeighborCellVectors[rmt_edge::k9]);
       }
-      if (has_intersection(aab, bab)) {  // 4 -> 1
+      if (has_intersection(aab, bab)) {  // 2 -> 5
         cells_to_add.insert(iaab);
-        cells_to_add.insert(iaab + NeighborCellVectors[2]);
-        cells_to_add.insert(iaab + NeighborCellVectors[10]);
+        cells_to_add.insert(iaab + NeighborCellVectors[rmt_edge::k7]);
+        cells_to_add.insert(iaab + NeighborCellVectors[rmt_edge::k8]);
       }
-      if (has_intersection(aba, bba)) {  // 9 -> 12
+      if (has_intersection(aba, bba)) {  // 0 -> 3
         cells_to_add.insert(iaba);
-        cells_to_add.insert(iaba + NeighborCellVectors[10]);
-        cells_to_add.insert(iaba + NeighborCellVectors[11]);
+        cells_to_add.insert(iaba + NeighborCellVectors[rmt_edge::k8]);
+        cells_to_add.insert(iaba + NeighborCellVectors[rmt_edge::k9]);
       }
-      if (has_intersection(abb, bbb)) {  // 3 -> 0
+      if (has_intersection(abb, bbb)) {  // 1 -> 4
         cells_to_add.insert(iabb);
-        cells_to_add.insert(iabb + NeighborCellVectors[2]);
-        cells_to_add.insert(iabb + NeighborCellVectors[11]);
+        cells_to_add.insert(iabb + NeighborCellVectors[rmt_edge::k7]);
+        cells_to_add.insert(iabb + NeighborCellVectors[rmt_edge::k9]);
       }
     }
 
@@ -325,7 +329,9 @@ class rmt_lattice : public rmt_primitive_lattice {
   }
 
   void generate_vertices(const std::vector<cell_vector>& node_cvs) {
-    static constexpr std::array<edge_index, 7> CellEdgeIndices{0, 1, 3, 4, 9, 12, 13};
+    static constexpr std::array<edge_index, 7> CellEdgeIndices{
+        rmt_edge::k0, rmt_edge::k1, rmt_edge::k2, rmt_edge::k3,
+        rmt_edge::k4, rmt_edge::k5, rmt_edge::k6};
 
 #pragma omp parallel for
     // NOLINTNEXTLINE(modernize-loop-convert)

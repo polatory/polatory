@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <polatory/common/macros.hpp>
+#include <polatory/isosurface/rmt_edge.hpp>
 #include <polatory/isosurface/rmt_lattice.hpp>
 #include <polatory/isosurface/rmt_node.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -20,7 +21,12 @@ namespace detail {
 class rmt_tetrahedron {
   // List of indices of the three edges of each tetrahedron.
   static constexpr std::array<std::array<edge_index, 3>, 6> EdgeIndices{
-      {{0, 1, 4}, {0, 4, 3}, {0, 3, 9}, {0, 9, 12}, {0, 12, 13}, {0, 13, 1}}};
+      {{rmt_edge::k4, rmt_edge::k5, rmt_edge::k2},
+       {rmt_edge::k4, rmt_edge::k2, rmt_edge::k1},
+       {rmt_edge::k4, rmt_edge::k1, rmt_edge::k0},
+       {rmt_edge::k4, rmt_edge::k0, rmt_edge::k3},
+       {rmt_edge::k4, rmt_edge::k3, rmt_edge::k6},
+       {rmt_edge::k4, rmt_edge::k6, rmt_edge::k5}}};
 
   // List of indices of the three outer edges of each tetrahedron as:
   //          ei0           ei1           ei2
@@ -31,7 +37,12 @@ class rmt_tetrahedron {
   //  ei0: outer edge from node0 to node1
   //  ~ei0: opposite outer edge of e0 from node1 to node0.
   static constexpr std::array<std::array<edge_index, 3>, 6> OuterEdgeIndices{
-      {{2, 6, 12}, {5, 9, 13}, {6, 11, 1}, {8, 13, 4}, {11, 2, 3}, {10, 4, 9}}};
+      {{rmt_edge::k7, rmt_edge::kD, rmt_edge::k3},
+       {rmt_edge::kA, rmt_edge::k0, rmt_edge::k6},
+       {rmt_edge::kD, rmt_edge::k9, rmt_edge::k5},
+       {rmt_edge::kC, rmt_edge::k6, rmt_edge::k2},
+       {rmt_edge::k9, rmt_edge::k7, rmt_edge::k1},
+       {rmt_edge::k8, rmt_edge::k2, rmt_edge::k0}}};
 
   // Encode four signs of tetrahedron nodes into an integer.
   template <binary_sign s, binary_sign s0, binary_sign s1, binary_sign s2>
