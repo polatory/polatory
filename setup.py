@@ -85,16 +85,22 @@ class CMakeBuild(build_ext):
             if env["CXX"] == "clang++-17" and "CXXFLAGS" not in env:
                 env["CXXFLAGS"] = "-stdlib=libc++"
         elif sys.platform == "win32":
-            env = {**self.windows_buildenv(), **env}
+            env = {**env, **self.windows_buildenv()}
+            cmake_args += ["-DCMAKE_CXX_COMPILER=clang-cl"]
 
         build_temp_dir = (Path(self.build_temp) / ext.name).resolve()
         build_temp_dir.mkdir(parents=True, exist_ok=True)
 
         subprocess.run(
-            ["cmake", ext.src_dir, *cmake_args], cwd=build_temp_dir, check=True, env=env
+            ["cmake", ext.src_dir, *cmake_args],
+            shell=True,
+            cwd=build_temp_dir,
+            check=True,
+            env=env,
         )
         subprocess.run(
             ["cmake", "--build", ".", "--target", "_core"],
+            shell=True,
             cwd=build_temp_dir,
             check=True,
             env=env,
