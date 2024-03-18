@@ -5,9 +5,9 @@
 
 namespace polatory::kriging {
 
-empirical_variogram::empirical_variogram(const geometry::points3d& points,
-                                         const common::valuesd& values, double bin_width,
-                                         index_t n_bins) {
+template <int Dim>
+empirical_variogram<Dim>::empirical_variogram(const Points& points, const common::valuesd& values,
+                                              double bin_width, index_t n_bins) {
   POLATORY_ASSERT(values.rows() == points.rows());
 
   auto n_points = points.rows();
@@ -81,16 +81,33 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
   }
 }
 
-empirical_variogram::empirical_variogram(const std::string& filename) {
+template <int Dim>
+empirical_variogram<Dim>::empirical_variogram(const std::string& filename) {
   common::load(filename, *this);
 }
 
-const std::vector<double>& empirical_variogram::bin_distance() const { return distance_; }
+template <int Dim>
+const std::vector<double>& empirical_variogram<Dim>::bin_distance() const {
+  return distance_;
+}
 
-const std::vector<double>& empirical_variogram::bin_gamma() const { return gamma_; }
+template <int Dim>
+const std::vector<double>& empirical_variogram<Dim>::bin_gamma() const {
+  return gamma_;
+}
 
-const std::vector<index_t>& empirical_variogram::bin_num_pairs() const { return num_pairs_; }
+template <int Dim>
+const std::vector<index_t>& empirical_variogram<Dim>::bin_num_pairs() const {
+  return num_pairs_;
+}
 
-void empirical_variogram::save(const std::string& filename) const { common::save(filename, *this); }
+template <int Dim>
+void empirical_variogram<Dim>::save(const std::string& filename) const {
+  common::save(filename, *this);
+}
+
+template class empirical_variogram<1>;
+template class empirical_variogram<2>;
+template class empirical_variogram<3>;
 
 }  // namespace polatory::kriging

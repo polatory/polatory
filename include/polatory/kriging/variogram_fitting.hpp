@@ -3,6 +3,7 @@
 #include <ceres/ceres.h>
 
 #include <iostream>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
 #include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
@@ -12,10 +13,14 @@
 
 namespace polatory::kriging {
 
-template <class Model>
+template <int Dim>
 class variogram_fitting {
+  using EmpiricalVariogram = empirical_variogram<Dim>;
+  using Model = model<Dim>;
+  using Vector = geometry::vectorNd<Dim>;
+
  public:
-  variogram_fitting(const empirical_variogram& emp_variog, const Model& model,
+  variogram_fitting(const EmpiricalVariogram& emp_variog, const Model& model,
                     const weight_function& weight_fn) {
     Model model2(model);
 
@@ -78,8 +83,9 @@ class variogram_fitting {
 
       auto model_gamma = model_->nugget();
       for (const auto& rbf : model_->rbfs()) {
-        model_gamma += rbf.evaluate_isotropic(geometry::vector3d::Zero()) -
-                       rbf.evaluate_isotropic(geometry::vector3d{distance_, 0.0, 0.0});
+        Vector v = Vector::Zero();
+        v(0) = distance_;
+        model_gamma += rbf.evaluate_isotropic(Vector::Zero()) - rbf.evaluate_isotropic(v);
       }
 
       residuals[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);

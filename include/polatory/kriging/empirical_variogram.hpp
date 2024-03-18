@@ -9,10 +9,13 @@
 
 namespace polatory::kriging {
 
+template <int Dim>
 class empirical_variogram {
+  using Points = geometry::pointsNd<Dim>;
+
  public:
-  empirical_variogram(const geometry::points3d& points, const common::valuesd& values,
-                      double bin_width, index_t n_bins);
+  empirical_variogram(const Points& points, const common::valuesd& values, double bin_width,
+                      index_t n_bins);
 
   explicit empirical_variogram(const std::string& filename);
 
@@ -37,9 +40,9 @@ class empirical_variogram {
 
 namespace polatory::common {
 
-template <>
-struct read<kriging::empirical_variogram> {
-  void operator()(std::istream& is, kriging::empirical_variogram& t) const {
+template <int Dim>
+struct read<kriging::empirical_variogram<Dim>> {
+  void operator()(std::istream& is, kriging::empirical_variogram<Dim>& t) const {
     index_t n_bins{};
     read<index_t>{}(is, n_bins);
 
@@ -57,9 +60,9 @@ struct read<kriging::empirical_variogram> {
   }
 };
 
-template <>
-struct write<kriging::empirical_variogram> {
-  void operator()(std::ostream& os, const kriging::empirical_variogram& t) const {
+template <int Dim>
+struct write<kriging::empirical_variogram<Dim>> {
+  void operator()(std::ostream& os, const kriging::empirical_variogram<Dim>& t) const {
     auto n_bins = static_cast<index_t>(t.distance_.size());
     write<index_t>{}(os, n_bins);
 

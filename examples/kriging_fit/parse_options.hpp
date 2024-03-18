@@ -12,6 +12,7 @@
 
 struct options {
   std::string in_file;
+  int dim;
   std::string rbf_name;
   std::vector<double> rbf_params;
   double nugget;
@@ -29,6 +30,8 @@ inline options parse_options(int argc, const char* argv[]) {
   opts_desc.add_options()                                                               //
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                  //
        "Input file (an output file from kriging_variogram)")                            //
+      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),                    //
+       "Dimension of the spatial domain")                                               //
       ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."),         //
        cov_list)                                                                        //
       ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")->value_name("VAL"),  //
