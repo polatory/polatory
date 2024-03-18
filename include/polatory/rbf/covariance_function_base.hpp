@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <polatory/rbf/rbf_base.hpp>
+#include <string>
 #include <vector>
 
 namespace polatory::rbf::internal {
@@ -24,6 +25,11 @@ class covariance_function_base : public rbf_base<Dim> {
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0, 0.0};
     return lower_bounds;
+  }
+
+  const std::vector<std::string>& parameter_names() const override {
+    static const std::vector<std::string> names{"psill", "range"};
+    return names;
   }
 
   const std::vector<double>& parameter_upper_bounds() const override {

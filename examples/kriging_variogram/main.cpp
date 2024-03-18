@@ -29,12 +29,12 @@ int main(int argc, const char* argv[]) {
     const auto& bin_num_pairs = emp_variog.bin_num_pairs();
 
     std::cout << "Empirical variogram:" << std::endl
-              << std::setw(12) << "n_pairs" << std::setw(12) << "distance" << std::setw(12)
-              << "gamma" << std::endl;
+              << std::setw(12) << "distance" << std::setw(12) << "gamma" << std::setw(12)
+              << "num_pairs" << std::endl;
     auto n_bins = static_cast<index_t>(bin_num_pairs.size());
     for (index_t bin = 0; bin < n_bins; bin++) {
-      std::cout << std::setw(12) << bin_num_pairs.at(bin) << std::setw(12) << bin_distance.at(bin)
-                << std::setw(12) << bin_gamma.at(bin) << std::endl;
+      std::cout << std::setw(12) << bin_distance.at(bin) << std::setw(12) << bin_gamma.at(bin)
+                << std::setw(12) << bin_num_pairs.at(bin) << std::endl;
     }
 
     // Save the empirical variogram.

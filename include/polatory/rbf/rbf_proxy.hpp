@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <polatory/rbf/rbf_base.hpp>
+#include <string>
 #include <vector>
 
 namespace polatory::rbf {
@@ -61,6 +62,8 @@ class rbf_proxy {
   const std::vector<double>& parameter_lower_bounds() const {
     return rbf_->parameter_lower_bounds();
   }
+
+  const std::vector<std::string>& parameter_names() const { return rbf_->parameter_names(); }
 
   const std::vector<double>& parameter_upper_bounds() const {
     return rbf_->parameter_upper_bounds();

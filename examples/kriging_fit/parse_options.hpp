@@ -37,10 +37,14 @@ inline options parse_options(int argc, const char* argv[]) {
        R"(Weight function for least squares fitting, one of
   0: N_j
   1: N_j / h_j^2
-  2: N_j / (\\gamma(h_j))^2
+  2: N_j / (gamma(h_j))^2
   3: 1
   4: 1 / h_j^2
-  5: 1 / (\\gamma(h_j))^2)");
+  5: 1 / (gamma(h_j))^2
+where
+  N_j: number of pairs in the j-th bin
+  h_j: representative distance of the j-th bin
+  gamma: model variogram)");
 
   po::variables_map vm;
   try {

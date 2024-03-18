@@ -74,10 +74,14 @@ class variogram_fitting {
 
     bool operator()(const double* const* param_blocks, double* residuals) const {
       const auto* params = param_blocks[0];
-      auto sill = params[0] + params[1];
       model_->set_parameters(std::vector<double>(params, params + model_->num_parameters()));
-      auto model_gamma =
-          sill - model_->rbf().evaluate_isotropic(geometry::vector3d{distance_, 0.0, 0.0});
+
+      auto model_gamma = model_->nugget();
+      for (const auto& rbf : model_->rbfs()) {
+        model_gamma += rbf.evaluate_isotropic(geometry::vector3d::Zero()) -
+                       rbf.evaluate_isotropic(geometry::vector3d{distance_, 0.0, 0.0});
+      }
+
       residuals[0] = weight_fn_(n_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
 
       return true;

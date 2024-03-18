@@ -6,6 +6,7 @@
 #include <polatory/rbf/rbf_proxy.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace polatory {
@@ -65,6 +66,14 @@ class model {
                  rbf.parameter_lower_bounds().end());
     }
     return lbs;
+  }
+
+  std::vector<std::string> parameter_names() const {
+    std::vector<std::string> names{"nugget"};
+    for (const auto& rbf : rbfs_) {
+      names.insert(names.end(), rbf.parameter_names().begin(), rbf.parameter_names().end());
+    }
+    return names;
   }
 
   std::vector<double> parameter_upper_bounds() const {

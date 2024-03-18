@@ -24,12 +24,19 @@ int main(int argc, const char* argv[]) {
     // Fit model parameters.
     variogram_fitting fit(emp_variog, model, opts.weight_fn);
 
+    std::cout << "Fitted parameters:" << std::endl;
+
+    auto names = model.parameter_names();
+    for (std::size_t i = 0; i < names.size(); ++i) {
+      std::cout << std::setw(12) << names.at(i);
+    }
+    std::cout << std::endl;
+
     auto params = fit.parameters();
-    std::cout << "Fitted parameters:" << std::endl
-              << std::setw(12) << "nugget" << std::setw(12) << "psill" << std::setw(12) << "range"
-              << std::endl
-              << std::setw(12) << params[0] << std::setw(12) << params[1] << std::setw(12)
-              << params[2] << std::endl;
+    for (std::size_t i = 0; i < params.size(); ++i) {
+      std::cout << std::setw(12) << params.at(i);
+    }
+    std::cout << std::endl;
 
     return 0;
   } catch (const std::exception& e) {

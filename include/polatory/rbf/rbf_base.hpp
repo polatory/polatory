@@ -59,6 +59,8 @@ class rbf_base {
 
   virtual const std::vector<double>& parameter_lower_bounds() const = 0;
 
+  virtual const std::vector<std::string>& parameter_names() const = 0;
+
   virtual const std::vector<double>& parameter_upper_bounds() const = 0;
 
   const std::vector<double>& parameters() const { return params_; }
