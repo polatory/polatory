@@ -3,8 +3,8 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
-#include <polatory/isosurface/rmt_lattice.hpp>
-#include <polatory/isosurface/rmt_surface.hpp>
+#include <polatory/isosurface/rmt/lattice.hpp>
+#include <polatory/isosurface/rmt/surface_generator.hpp>
 #include <polatory/isosurface/surface.hpp>
 #include <unordered_set>
 
@@ -44,7 +44,7 @@ class isosurface {
   surface generate_common() {
     rmt_lattice_.cluster_vertices();
 
-    rmt_surface rmt_surf(rmt_lattice_);
+    rmt::surface_generator rmt_surf(rmt_lattice_);
     rmt_surf.generate_surface();
 
     // Unclustering non-manifold vertices may require a few iterations.
@@ -88,7 +88,7 @@ class isosurface {
     return surf;
   }
 
-  rmt_lattice rmt_lattice_;
+  rmt::lattice rmt_lattice_;
 };
 
 }  // namespace polatory::isosurface

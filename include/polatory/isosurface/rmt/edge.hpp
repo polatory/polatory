@@ -1,8 +1,8 @@
 #pragma once
 
-namespace polatory::isosurface {
+namespace polatory::isosurface::rmt {
 
-struct rmt_edge {
+struct edge {
   static constexpr int k0 = 0;
   static constexpr int k1 = 1;
   static constexpr int k2 = 2;
@@ -19,4 +19,4 @@ struct rmt_edge {
   static constexpr int kD = 13;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace polatory::isosurface::rmt

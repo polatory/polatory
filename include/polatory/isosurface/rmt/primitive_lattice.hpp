@@ -1,33 +1,31 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <array>
+#include <boost/container_hash/hash.hpp>
 #include <cmath>
+#include <functional>
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <stdexcept>
 
-namespace polatory::isosurface {
+namespace polatory::isosurface::rmt {
 
-namespace detail {
+using cell_vector = Eigen::Vector3i;
+using cell_vectors = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
-class lattice_vectors : public std::array<geometry::vector3d, 3> {
-  using base = std::array<geometry::vector3d, 3>;
-
- public:
-  lattice_vectors();
+struct cell_vector_hash {
+  std::size_t operator()(const cell_vector& cv) const noexcept {
+    std::size_t seed{};
+    boost::hash_combine(seed, std::hash<int>()(cv(0)));
+    boost::hash_combine(seed, std::hash<int>()(cv(1)));
+    boost::hash_combine(seed, std::hash<int>()(cv(2)));
+    return seed;
+  }
 };
-
-class dual_lattice_vectors : public std::array<geometry::vector3d, 3> {
-  using base = std::array<geometry::vector3d, 3>;
-
- public:
-  dual_lattice_vectors();
-};
-
-}  // namespace detail
 
 inline geometry::matrix3d rotation() {
   return geometry::to_matrix3d(
@@ -36,20 +34,32 @@ inline geometry::matrix3d rotation() {
 }
 
 // Primitive vectors of the body-centered cubic lattice.
-extern const detail::lattice_vectors LatticeVectors;
+inline const std::array<geometry::vector3d, 3> kLatticeVectors{
+    {geometry::transform_vector<3>(rotation(), geometry::vector3d{-1.0, 1.0, 1.0}) /
+         std::numbers::sqrt2,
+     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, -1.0, 1.0}) /
+         std::numbers::sqrt2,
+     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 1.0, -1.0}) /
+         std::numbers::sqrt2}};
 
 // Reciprocal primitive vectors of the body-centered cubic lattice.
-extern const detail::dual_lattice_vectors DualLatticeVectors;
+inline const std::array<geometry::vector3d, 3> kDualLatticeVectors{
+    {geometry::transform_vector<3>(rotation(), geometry::vector3d{0.0, 1.0, 1.0}) /
+         std::numbers::sqrt2,
+     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 0.0, 1.0}) /
+         std::numbers::sqrt2,
+     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 1.0, 0.0}) /
+         std::numbers::sqrt2}};
 
-class rmt_primitive_lattice {
+class primitive_lattice {
  public:
-  rmt_primitive_lattice(const geometry::bbox3d& bbox, double resolution)
-      : a0_(resolution * LatticeVectors[0]),
-        a1_(resolution * LatticeVectors[1]),
-        a2_(resolution * LatticeVectors[2]),
-        b0_(DualLatticeVectors[0] / resolution),
-        b1_(DualLatticeVectors[1] / resolution),
-        b2_(DualLatticeVectors[2] / resolution),
+  primitive_lattice(const geometry::bbox3d& bbox, double resolution)
+      : a0_(resolution * kLatticeVectors[0]),
+        a1_(resolution * kLatticeVectors[1]),
+        a2_(resolution * kLatticeVectors[2]),
+        b0_(kDualLatticeVectors[0] / resolution),
+        b1_(kDualLatticeVectors[1] / resolution),
+        b2_(kDualLatticeVectors[2] / resolution),
         bbox_(bbox),
         ext_bbox_(compute_extended_bbox(bbox, resolution)),
         cv_offset_(compute_cv_offset()),
@@ -122,4 +132,4 @@ class rmt_primitive_lattice {
   const double resolution_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace polatory::isosurface::rmt

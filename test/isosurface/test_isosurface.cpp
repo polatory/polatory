@@ -119,8 +119,7 @@ TEST(isosurface, manifold) {
 
 using halfedge = std::pair<vertex_index, vertex_index>;
 
-template <>
-struct std::hash<halfedge> {
+struct halfedge_hash {
   std::size_t operator()(const halfedge& e) const noexcept {
     std::size_t seed{};
     boost::hash_combine(seed, std::hash<vertex_index>()(e.first));
@@ -138,7 +137,7 @@ TEST(isosurface, boundary_coordinates) {
 
   auto surface = isosurf.generate(field_fn);
 
-  std::unordered_set<halfedge> boundary_hes;
+  std::unordered_set<halfedge, halfedge_hash> boundary_hes;
   for (auto f : surface.faces().rowwise()) {
     for (std::size_t i = 0; i < 3; i++) {
       auto he = std::make_pair(f(i), f((i + 1) % 3));
