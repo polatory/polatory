@@ -2,7 +2,6 @@
 #include <fstream>
 #include <polatory/common/macros.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
-#include <polatory/numeric/sum_accumulator.hpp>
 
 namespace polatory::kriging {
 
@@ -19,24 +18,40 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
   distance_.resize(n_bins);
   gamma_.resize(n_bins);
   num_pairs_.resize(n_bins);
-  std::vector<numeric::kahan_sum_accumulator<double>> dist_sum(n_bins);
-  std::vector<numeric::kahan_sum_accumulator<double>> gamma_sum(n_bins);
 
-  for (index_t i = 0; i < n_points - 1; i++) {
-    for (index_t j = i + 1; j < n_points; j++) {
-      auto dist = (points.row(i) - points.row(j)).norm();
-      // gstat's convention (to include more pairs in the first bin?):
-      //   https://github.com/edzer/gstat/blob/32003307b11d6354340b653ab67c2d85d7304824/src/sem.c#L734-L738
-      auto frac = dist / bin_width;
-      auto bin = dist > 0.0 && frac == std::floor(frac) ? static_cast<index_t>(std::floor(frac)) - 1
-                                                        : static_cast<index_t>(std::floor(frac));
-      if (bin >= n_bins) {
-        continue;
+#pragma omp parallel
+  {
+    std::vector<double> distance_local(n_bins);
+    std::vector<double> gamma_local(n_bins);
+    std::vector<index_t> num_pairs_local(n_bins);
+
+#pragma omp for schedule(dynamic)
+    for (index_t i = 0; i < n_points - 1; i++) {
+      for (index_t j = i + 1; j < n_points; j++) {
+        auto dist = (points.row(i) - points.row(j)).norm();
+        // gstat's convention (to include more pairs in the first bin?):
+        //   https://github.com/edzer/gstat/blob/32003307b11d6354340b653ab67c2d85d7304824/src/sem.c#L734-L738
+        auto frac = dist / bin_width;
+        auto bin = dist > 0.0 && frac == std::floor(frac)
+                       ? static_cast<index_t>(std::floor(frac)) - 1
+                       : static_cast<index_t>(std::floor(frac));
+        if (bin >= n_bins) {
+          continue;
+        }
+
+        distance_local.at(bin) += dist;
+        gamma_local.at(bin) += std::pow(values(i) - values(j), 2.0) / 2.0;
+        num_pairs_local.at(bin)++;
       }
+    }
 
-      dist_sum.at(bin) += dist;
-      gamma_sum.at(bin) += std::pow(values(i) - values(j), 2.0) / 2.0;
-      num_pairs_.at(bin)++;
+#pragma omp critical
+    {
+      for (index_t i = 0; i < n_bins; i++) {
+        distance_.at(i) += distance_local.at(i);
+        gamma_.at(i) += gamma_local.at(i);
+        num_pairs_.at(i) += num_pairs_local.at(i);
+      }
     }
   }
 
@@ -45,8 +60,8 @@ empirical_variogram::empirical_variogram(const geometry::points3d& points,
       continue;
     }
 
-    distance_.at(i) = dist_sum.at(i).get() / static_cast<double>(num_pairs_.at(i));
-    gamma_.at(i) = gamma_sum.at(i).get() / static_cast<double>(num_pairs_.at(i));
+    distance_.at(i) /= static_cast<double>(num_pairs_.at(i));
+    gamma_.at(i) /= static_cast<double>(num_pairs_.at(i));
   }
 
   // Remove empty bins.

@@ -7,7 +7,6 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/numeric/sum_accumulator.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/polynomial_evaluator.hpp>
 #include <polatory/types.hpp>
