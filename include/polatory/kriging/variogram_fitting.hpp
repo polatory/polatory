@@ -2,6 +2,7 @@
 
 #include <ceres/ceres.h>
 
+#include <algorithm>
 #include <iostream>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
@@ -58,7 +59,7 @@ class variogram_fitting {
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_QR;
-    options.max_num_iterations = 32;
+    options.max_num_iterations = 100;
 
     ceres::Solver::Summary summary;
     Solve(options, &problem, &summary);
@@ -79,7 +80,14 @@ class variogram_fitting {
 
     bool operator()(const double* const* param_blocks, double* residuals) const {
       const auto* params = param_blocks[0];
-      model_->set_parameters(std::vector<double>(params, params + model_->num_parameters()));
+
+      std::vector<double> clamped_params(params, params + model_->num_parameters());
+      auto lbs = model_->parameter_lower_bounds();
+      auto ubs = model_->parameter_upper_bounds();
+      for (auto i = 0; i < model_->num_parameters(); i++) {
+        clamped_params.at(i) = std::clamp(clamped_params.at(i), lbs.at(i), ubs.at(i));
+      }
+      model_->set_parameters(clamped_params);
 
       auto model_gamma = model_->nugget();
       for (const auto& rbf : model_->rbfs()) {
