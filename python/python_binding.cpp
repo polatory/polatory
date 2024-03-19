@@ -1,8 +1,9 @@
+#include <Python.h>
+#undef _GNU_SOURCE
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#undef _GNU_SOURCE
 #include <polatory/polatory.hpp>
 #include <string>
 #include <vector>

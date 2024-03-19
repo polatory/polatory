@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -91,16 +92,15 @@ class CMakeBuild(build_ext):
         build_temp_dir = (Path(self.build_temp) / ext.name).resolve()
         build_temp_dir.mkdir(parents=True, exist_ok=True)
 
+        cmake = shutil.which("cmake", path=env["PATH"])
         subprocess.run(
-            ["cmake", ext.src_dir, *cmake_args],
-            shell=True,
+            [cmake, ext.src_dir, *cmake_args],
             cwd=build_temp_dir,
             check=True,
             env=env,
         )
         subprocess.run(
-            ["cmake", "--build", ".", "--target", "_core"],
-            shell=True,
+            [cmake, "--build", ".", "--target", "_core"],
             cwd=build_temp_dir,
             check=True,
             env=env,
