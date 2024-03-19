@@ -7,7 +7,7 @@ namespace polatory::kriging {
 
 template <int Dim>
 empirical_variogram<Dim>::empirical_variogram(const Points& points, const common::valuesd& values,
-                                              double bin_width, index_t n_bins) {
+                                              double bin_width, index_t num_bins) {
   POLATORY_ASSERT(values.rows() == points.rows());
 
   auto n_points = points.rows();
@@ -15,15 +15,15 @@ empirical_variogram<Dim>::empirical_variogram(const Points& points, const common
     return;
   }
 
-  distance_.resize(n_bins);
-  gamma_.resize(n_bins);
-  num_pairs_.resize(n_bins);
+  distance_.resize(num_bins);
+  gamma_.resize(num_bins);
+  num_pairs_.resize(num_bins);
 
 #pragma omp parallel
   {
-    std::vector<double> distance_local(n_bins);
-    std::vector<double> gamma_local(n_bins);
-    std::vector<index_t> num_pairs_local(n_bins);
+    std::vector<double> distance_local(num_bins);
+    std::vector<double> gamma_local(num_bins);
+    std::vector<index_t> num_pairs_local(num_bins);
 
 #pragma omp for schedule(dynamic)
     for (index_t i = 0; i < n_points - 1; i++) {
@@ -35,7 +35,7 @@ empirical_variogram<Dim>::empirical_variogram(const Points& points, const common
         auto bin = dist > 0.0 && frac == std::floor(frac)
                        ? static_cast<index_t>(std::floor(frac)) - 1
                        : static_cast<index_t>(std::floor(frac));
-        if (bin >= n_bins) {
+        if (bin >= num_bins) {
           continue;
         }
 
@@ -47,7 +47,7 @@ empirical_variogram<Dim>::empirical_variogram(const Points& points, const common
 
 #pragma omp critical
     {
-      for (index_t i = 0; i < n_bins; i++) {
+      for (index_t i = 0; i < num_bins; i++) {
         distance_.at(i) += distance_local.at(i);
         gamma_.at(i) += gamma_local.at(i);
         num_pairs_.at(i) += num_pairs_local.at(i);
@@ -55,7 +55,7 @@ empirical_variogram<Dim>::empirical_variogram(const Points& points, const common
     }
   }
 
-  for (index_t i = 0; i < n_bins; i++) {
+  for (index_t i = 0; i < num_bins; i++) {
     if (num_pairs_.at(i) == 0) {
       continue;
     }

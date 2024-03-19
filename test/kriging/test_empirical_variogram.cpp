@@ -58,9 +58,9 @@ TEST(empirical_variogram, trivial) {
   auto variance = centered.dot(centered) / static_cast<double>(n_points - 1);
 
   auto bin_width = 0.2;
-  auto n_bins = index_t{5};
+  auto num_bins = index_t{5};
 
-  empirical_variogram<3> variog(points, values, bin_width, n_bins);
+  empirical_variogram<3> variog(points, values, bin_width, num_bins);
 
   const auto& bin_distance = variog.bin_distance();
   EXPECT_EQ(1u, bin_distance.size());
@@ -82,9 +82,9 @@ TEST(empirical_variogram, zero_points) {
   valuesd values(n_points);
 
   auto bin_width = 0.2;
-  auto n_bins = index_t{5};
+  auto num_bins = index_t{5};
 
-  empirical_variogram variog(points, values, bin_width, n_bins);
+  empirical_variogram variog(points, values, bin_width, num_bins);
 
   EXPECT_EQ(0u, variog.bin_distance().size());
   EXPECT_EQ(0u, variog.bin_gamma().size());

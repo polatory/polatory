@@ -70,13 +70,13 @@ where
 
   switch (weights) {
     case 0:
-      opts.weight_fn = polatory::kriging::weight_functions::n_pairs;
+      opts.weight_fn = polatory::kriging::weight_functions::num_pairs;
       break;
     case 1:
-      opts.weight_fn = polatory::kriging::weight_functions::n_pairs_over_distance_squared;
+      opts.weight_fn = polatory::kriging::weight_functions::num_pairs_over_distance_squared;
       break;
     case 2:
-      opts.weight_fn = polatory::kriging::weight_functions::n_pairs_over_model_gamma_squared;
+      opts.weight_fn = polatory::kriging::weight_functions::num_pairs_over_model_gamma_squared;
       break;
     case 3:
       opts.weight_fn = polatory::kriging::weight_functions::one;

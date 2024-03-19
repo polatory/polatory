@@ -4,6 +4,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <memory>
 #include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
@@ -20,6 +21,31 @@ geometry::bboxNd<Dim> bbox_from_points(const geometry::pointsNd<Dim>& points) {
   return geometry::bboxNd<Dim>::from_points(points);
 }
 
+template <int Dim>
+std::unique_ptr<kriging::variogram_fitting<Dim>> make_variogram_fitting(
+    const kriging::empirical_variogram<Dim>& emp_variog, const model<Dim>& model,
+    const std::string& weight) {
+  const kriging::weight_function* weight_fn{nullptr};
+
+  if (weight == "num_pairs") {
+    weight_fn = &kriging::weight_functions::num_pairs;
+  } else if (weight == "num_pairs_over_distance_squared") {
+    weight_fn = &kriging::weight_functions::num_pairs_over_distance_squared;
+  } else if (weight == "num_pairs_over_model_gamma_squared") {
+    weight_fn = &kriging::weight_functions::num_pairs_over_model_gamma_squared;
+  } else if (weight == "one") {
+    weight_fn = &kriging::weight_functions::one;
+  } else if (weight == "one_over_distance_squared") {
+    weight_fn = &kriging::weight_functions::one_over_distance_squared;
+  } else if (weight == "one_over_model_gamma_squared") {
+    weight_fn = &kriging::weight_functions::one_over_model_gamma_squared;
+  } else {
+    throw std::invalid_argument("Unknown weight function: " + weight);
+  }
+
+  return std::make_unique<kriging::variogram_fitting<Dim>>(emp_variog, model, *weight_fn);
+}
+
 template <int Dim, class Rbf>
 void define_rbf(py::module& m, const std::string& name) {
   py::class_<Rbf, rbf::rbf_proxy<Dim>>(m, name.c_str())
@@ -28,24 +54,30 @@ void define_rbf(py::module& m, const std::string& name) {
 
 template <int Dim>
 void define_module(py::module& m) {
-  py::class_<geometry::bboxNd<Dim>>(m, "Bbox")
-      .def(py::init<>())
-      .def(py::init<const geometry::pointNd<Dim>&, const geometry::pointNd<Dim>&>(), "min"_a,
-           "max"_a)
-      .def_static("from_points", &bbox_from_points<Dim>, "points"_a)
-      .def_property_readonly("min", &geometry::bboxNd<Dim>::min)
-      .def_property_readonly("max", &geometry::bboxNd<Dim>::max);
+  using Bbox = geometry::bboxNd<Dim>;
+  using DistanceFilter = point_cloud::distance_filter<Dim>;
+  using EmpiricalVariogram = kriging::empirical_variogram<Dim>;
+  using Interpolant = interpolant<Dim>;
+  using Model = model<Dim>;
+  using Points = geometry::pointsNd<Dim>;
+  using RbfProxy = rbf::rbf_proxy<Dim>;
+  using VariogramFitting = kriging::variogram_fitting<Dim>;
 
-  py::class_<rbf::rbf_proxy<Dim>>(m, "Rbf")
-      .def_property("anisotropy", &rbf::rbf_proxy<Dim>::anisotropy,
-                    &rbf::rbf_proxy<Dim>::set_anisotropy)
-      .def_property_readonly("cpd_order", &rbf::rbf_proxy<Dim>::cpd_order)
-      .def_property_readonly("num_parameters", &rbf::rbf_proxy<Dim>::num_parameters)
-      .def_property("parameters", &rbf::rbf_proxy<Dim>::parameters,
-                    &rbf::rbf_proxy<Dim>::set_parameters)
-      .def("evaluate", &rbf::rbf_proxy<Dim>::evaluate, "diff"_a)
-      .def("evaluate_gradient", &rbf::rbf_proxy<Dim>::evaluate_gradient, "diff"_a)
-      .def("evaluate_hessian", &rbf::rbf_proxy<Dim>::evaluate_hessian, "diff"_a);
+  py::class_<Bbox>(m, "Bbox")
+      .def(py::init<>())
+      .def(py::init<const Points&, const Points>(), "min"_a, "max"_a)
+      .def_static("from_points", &bbox_from_points<Dim>, "points"_a)
+      .def_property_readonly("min", &Bbox::min)
+      .def_property_readonly("max", &Bbox::max);
+
+  py::class_<RbfProxy>(m, "Rbf")
+      .def_property("anisotropy", &RbfProxy::anisotropy, &RbfProxy::set_anisotropy)
+      .def_property_readonly("cpd_order", &RbfProxy::cpd_order)
+      .def_property_readonly("num_parameters", &RbfProxy::num_parameters)
+      .def_property("parameters", &RbfProxy::parameters, &RbfProxy::set_parameters)
+      .def("evaluate", &RbfProxy::evaluate, "diff"_a)
+      .def("evaluate_gradient", &RbfProxy::evaluate_gradient, "diff"_a)
+      .def("evaluate_hessian", &RbfProxy::evaluate_hessian, "diff"_a);
 
   define_rbf<Dim, rbf::biharmonic2d<Dim>>(m, "Biharmonic2D");
   define_rbf<Dim, rbf::biharmonic3d<Dim>>(m, "Biharmonic3D");
@@ -67,62 +99,70 @@ void define_module(py::module& m) {
   define_rbf<Dim, rbf::triharmonic2d<Dim>>(m, "Triharmonic2D");
   define_rbf<Dim, rbf::triharmonic3d<Dim>>(m, "Triharmonic3D");
 
-  py::class_<model<Dim>>(m, "Model")
-      .def(py::init<rbf::rbf_proxy<Dim>, int>(), "rbf"_a, "poly_degree"_a)
-      .def(py::init<std::vector<rbf::rbf_proxy<Dim>>, int>(), "rbfs"_a, "poly_degree"_a)
-      .def_property_readonly("cpd_order", &model<Dim>::cpd_order)
-      .def_property("nugget", &model<Dim>::nugget, &model<Dim>::set_nugget)
-      .def_property_readonly("num_parameters", &model<Dim>::num_parameters)
-      .def_property("parameters", &model<Dim>::parameters, &model<Dim>::set_parameters)
-      .def_property_readonly("poly_basis_size", &model<Dim>::poly_basis_size)
-      .def_property_readonly("poly_degree", &model<Dim>::poly_degree)
-      .def_property_readonly("rbfs", &model<Dim>::rbfs);
+  py::class_<Model>(m, "Model")
+      .def(py::init<RbfProxy, int>(), "rbf"_a, "poly_degree"_a)
+      .def(py::init<std::vector<RbfProxy>, int>(), "rbfs"_a, "poly_degree"_a)
+      .def_property_readonly("cpd_order", &Model::cpd_order)
+      .def_property("nugget", &Model::nugget, &Model::set_nugget)
+      .def_property_readonly("num_parameters", &Model::num_parameters)
+      .def_property("parameters", &Model::parameters, &Model::set_parameters)
+      .def_property_readonly("poly_basis_size", &Model::poly_basis_size)
+      .def_property_readonly("poly_degree", &Model::poly_degree)
+      .def_property_readonly("rbfs", &Model::rbfs);
 
-  py::class_<interpolant<Dim>>(m, "Interpolant")
-      .def(py::init<const model<Dim>&>(), "model"_a)
-      .def_property_readonly("centers", &interpolant<Dim>::centers)
-      .def_property_readonly("weights", &interpolant<Dim>::weights)
-      .def("evaluate", &interpolant<Dim>::evaluate, "points"_a)
+  py::class_<Interpolant>(m, "Interpolant")
+      .def(py::init<const Model&>(), "model"_a)
+      .def_property_readonly("centers", &Interpolant::centers)
+      .def_property_readonly("weights", &Interpolant::weights)
+      .def("evaluate", &Interpolant::evaluate, "points"_a)
       .def("fit",
-           py::overload_cast<const geometry::pointsNd<Dim>&, const common::valuesd&, double, int>(
-               &interpolant<Dim>::fit),
+           py::overload_cast<const Points&, const common::valuesd&, double, int>(&Interpolant::fit),
            "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100)
       .def("fit_with_grad",
-           py::overload_cast<const geometry::pointsNd<Dim>&, const geometry::pointsNd<Dim>&,
-                             const common::valuesd&, double, double, int>(&interpolant<Dim>::fit),
+           py::overload_cast<const Points&, const Points&, const common::valuesd&, double, double,
+                             int>(&Interpolant::fit),
            "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
            "grad_absolute_tolerance"_a, "max_iter"_a = 100)
       .def("fit_incrementally",
-           py::overload_cast<const geometry::pointsNd<Dim>&, const common::valuesd&, double, int>(
-               &interpolant<Dim>::fit_incrementally),
+           py::overload_cast<const Points&, const common::valuesd&, double, int>(
+               &Interpolant::fit_incrementally),
            "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100)
       .def("fit_incrementally_with_grad",
-           py::overload_cast<const geometry::pointsNd<Dim>&, const geometry::pointsNd<Dim>&,
-                             const common::valuesd&, double, double, int>(
-               &interpolant<Dim>::fit_incrementally),
+           py::overload_cast<const Points&, const Points&, const common::valuesd&, double, double,
+                             int>(&Interpolant::fit_incrementally),
            "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
            "grad_absolute_tolerance"_a, "max_iter"_a = 100)
       .def("fit_inequality",
-           py::overload_cast<const geometry::pointsNd<Dim>&, const common::valuesd&,
-                             const common::valuesd&, const common::valuesd&, double, int>(
-               &interpolant<Dim>::fit_inequality),
+           py::overload_cast<const Points&, const common::valuesd&, const common::valuesd&,
+                             const common::valuesd&, double, int>(&Interpolant::fit_inequality),
            "points"_a, "values"_a, "values_lb"_a, "values_ub"_a, "absolute_tolerance"_a,
            "max_iter"_a = 100);
 
-  py::class_<point_cloud::distance_filter<Dim>>(m, "DistanceFilter")
-      .def(py::init<const geometry::pointsNd<Dim>&, double>(), "points"_a, "distance"_a)
-      .def_property_readonly("filtered_indices",
-                             &point_cloud::distance_filter<Dim>::filtered_indices);
+  py::class_<DistanceFilter>(m, "DistanceFilter")
+      .def(py::init<const Points&, double>(), "points"_a, "distance"_a)
+      .def_property_readonly("filtered_indices", &DistanceFilter::filtered_indices);
+
+  py::class_<EmpiricalVariogram>(m, "EmpiricalVariogram")
+      .def(py::init<const Points&, const common::valuesd&, double, index_t>(), "points"_a,
+           "values"_a, "bin_width"_a, "num_bins"_a)
+      .def_property_readonly("bin_distance", &EmpiricalVariogram::bin_distance)
+      .def_property_readonly("bin_gamma", &EmpiricalVariogram::bin_gamma)
+      .def_property_readonly("bin_num_pairs", &EmpiricalVariogram::bin_num_pairs);
+
+  py::class_<VariogramFitting>(m, "VariogramFitting")
+      .def(py::init(&make_variogram_fitting<Dim>), "emp_variog"_a, "model"_a,
+           "weight"_a = "num_pairs_over_distance_squared")
+      .def_property_readonly("parameters", &VariogramFitting::parameters);
 }
 
 PYBIND11_MODULE(_core, m) {
-  auto p1 = m.def_submodule("p1");
-  auto p2 = m.def_submodule("p2");
-  auto p3 = m.def_submodule("p3");
+  auto one = m.def_submodule("one");
+  auto two = m.def_submodule("two");
+  auto three = m.def_submodule("three");
 
-  define_module<1>(p1);
-  define_module<2>(p2);
-  define_module<3>(p3);
+  define_module<1>(one);
+  define_module<2>(two);
+  define_module<3>(three);
 
   py::class_<point_cloud::normal_estimator>(m, "NormalEstimator")
       .def(py::init<const geometry::points3d&>(), "points"_a)

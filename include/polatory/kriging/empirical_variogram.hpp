@@ -15,7 +15,7 @@ class empirical_variogram {
 
  public:
   empirical_variogram(const Points& points, const common::valuesd& values, double bin_width,
-                      index_t n_bins);
+                      index_t num_bins);
 
   explicit empirical_variogram(const std::string& filename);
 
@@ -43,10 +43,10 @@ namespace polatory::common {
 template <int Dim>
 struct read<kriging::empirical_variogram<Dim>> {
   void operator()(std::istream& is, kriging::empirical_variogram<Dim>& t) const {
-    index_t n_bins{};
-    read<index_t>{}(is, n_bins);
+    index_t num_bins{};
+    read<index_t>{}(is, num_bins);
 
-    for (index_t i = 0; i < n_bins; ++i) {
+    for (index_t i = 0; i < num_bins; ++i) {
       double distance{};
       double gamma{};
       index_t num_pairs{};
@@ -63,10 +63,10 @@ struct read<kriging::empirical_variogram<Dim>> {
 template <int Dim>
 struct write<kriging::empirical_variogram<Dim>> {
   void operator()(std::ostream& os, const kriging::empirical_variogram<Dim>& t) const {
-    auto n_bins = static_cast<index_t>(t.distance_.size());
-    write<index_t>{}(os, n_bins);
+    auto num_bins = static_cast<index_t>(t.distance_.size());
+    write<index_t>{}(os, num_bins);
 
-    for (index_t i = 0; i < n_bins; ++i) {
+    for (index_t i = 0; i < num_bins; ++i) {
       write<double>{}(os, t.distance_.at(i));
       write<double>{}(os, t.gamma_.at(i));
       write<index_t>{}(os, t.num_pairs_.at(i));

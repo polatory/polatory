@@ -64,7 +64,10 @@ class CMakeBuild(build_ext):
             "-DCMAKE_BUILD_TYPE=Release",
             f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={out_dir}",
-            "-DBUILD_PYTHON=ON",
+            "-DBUILD_BENCHMARKS=OFF",
+            "-DBUILD_EXAMPLES=OFF",
+            "-DBUILD_PYTHON_BINDINGS=ON",
+            "-DBUILD_TESTS=OFF",
             f"-DPOLATORY_VERSION={version}",
         ]
 

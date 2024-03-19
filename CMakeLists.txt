@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 cmake_policy(VERSION "3.16")
 
-option(BUILD_PYTHON "Build Python bindings" OFF)
-if(BUILD_PYTHON)
+option(BUILD_BENCHMARKS "Build benchmark programs" ON)
+option(BUILD_EXAMPLES "Build example programs" ON)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
+option(BUILD_TESTS "Build unit tests" ON)
+
+if(BUILD_PYTHON_BINDINGS)
     list(APPEND VCPKG_MANIFEST_FEATURES "python")
 endif()
 
@@ -57,14 +61,22 @@ if(MSVC AND USE_MKL)
     )
 endif()
 
-add_subdirectory(benchmark)
-add_subdirectory(examples)
 add_subdirectory(src)
 
-enable_testing()
-add_subdirectory(test)
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmark)
+endif()
 
-if(BUILD_PYTHON)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+if(BUILD_PYTHON_BINDINGS)
     find_package(pybind11 CONFIG REQUIRED)
     add_subdirectory(python)
+endif()
+
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
 endif()

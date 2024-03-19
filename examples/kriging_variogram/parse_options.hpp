@@ -9,7 +9,7 @@ struct options {
   std::string in_file;
   int dim;
   double bin_width;
-  int n_bins;
+  int num_bins;
   std::string out_file;
 };
 
@@ -19,16 +19,16 @@ inline options parse_options(int argc, const char* argv[]) {
   options opts;
 
   po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()                                                        //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),           //
-       "Input file in CSV format:\n  X[,Y[,Z]],VAL")                             //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),             //
-       "Dimension of the spatial domain")                                        //
-      ("bin-width", po::value(&opts.bin_width)->required()->value_name("VAL"),   //
-       "Bin width of the empirical variogram")                                   //
-      ("n-bins", po::value(&opts.n_bins)->default_value(15)->value_name("VAL"),  //
-       "Number of bins in the empirical variogram")                              //
-      ("out", po::value(&opts.out_file)->value_name("FILE"),                     //
+  opts_desc.add_options()                                                          //
+      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),             //
+       "Input file in CSV format:\n  X[,Y[,Z]],VAL")                               //
+      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),               //
+       "Dimension of the spatial domain")                                          //
+      ("bin-width", po::value(&opts.bin_width)->required()->value_name("VAL"),     //
+       "Bin width of the empirical variogram")                                     //
+      ("n-bins", po::value(&opts.num_bins)->default_value(15)->value_name("VAL"),  //
+       "Number of bins in the empirical variogram")                                //
+      ("out", po::value(&opts.out_file)->value_name("FILE"),                       //
        "Output file for use in kriging_fit");
 
   po::variables_map vm;
