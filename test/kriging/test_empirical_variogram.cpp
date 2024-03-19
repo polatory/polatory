@@ -27,10 +27,10 @@ TEST(empirical_variogram, serialize) {
 
   auto filename = (fs::temp_directory_path() / "840297bb-21d8-42a2-a3b5-814d27d78e14").string();
 
-  empirical_variogram v(points, values, 0.1, 10);
+  empirical_variogram<3> v(points, values, 0.1, 10);
   v.save(filename);
 
-  empirical_variogram v2(filename);
+  empirical_variogram<3> v2(filename);
 
   ASSERT_TRUE(std::equal(v.bin_distance().begin(), v.bin_distance().end(),
                          v2.bin_distance().begin(), v2.bin_distance().end()));
@@ -60,7 +60,7 @@ TEST(empirical_variogram, trivial) {
   auto bin_width = 0.2;
   auto n_bins = index_t{5};
 
-  empirical_variogram variog(points, values, bin_width, n_bins);
+  empirical_variogram<3> variog(points, values, bin_width, n_bins);
 
   const auto& bin_distance = variog.bin_distance();
   EXPECT_EQ(1u, bin_distance.size());
