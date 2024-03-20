@@ -3,6 +3,7 @@
 #include <ceres/ceres.h>
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/empirical_variogram.hpp>
@@ -97,8 +98,7 @@ class variogram_fitting {
       }
 
       residuals[0] = weight_fn_(num_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
-
-      return true;
+      return !std::isnan(residuals[0]);
     }
 
    private:
