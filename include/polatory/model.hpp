@@ -101,6 +101,8 @@ class model {
 
   const RbfProxy& rbf() const { return rbfs_.at(0); }
 
+  std::vector<RbfProxy>& rbfs() { return rbfs_; }
+
   const std::vector<RbfProxy>& rbfs() const { return rbfs_; }
 
   void set_nugget(double nugget) {

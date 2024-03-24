@@ -5,7 +5,11 @@
 #include <pybind11/stl.h>
 
 #include <memory>
+#include <polatory/kriging/vario_fitting.hpp>
+#include <polatory/kriging/variogram.hpp>
+#include <polatory/kriging/variogram_calculator.hpp>
 #include <polatory/polatory.hpp>
+#include <polatory/polynomial/detrend.hpp>
 #include <string>
 #include <vector>
 
@@ -19,31 +23,6 @@ using namespace py::literals;
 template <int Dim>
 geometry::bboxNd<Dim> bbox_from_points(const geometry::pointsNd<Dim>& points) {
   return geometry::bboxNd<Dim>::from_points(points);
-}
-
-template <int Dim>
-std::unique_ptr<kriging::variogram_fitting<Dim>> make_variogram_fitting(
-    const kriging::empirical_variogram<Dim>& emp_variog, const model<Dim>& model,
-    const std::string& weight) {
-  const kriging::weight_function* weight_fn{nullptr};
-
-  if (weight == "num_pairs") {
-    weight_fn = &kriging::weight_functions::num_pairs;
-  } else if (weight == "num_pairs_over_distance_squared") {
-    weight_fn = &kriging::weight_functions::num_pairs_over_distance_squared;
-  } else if (weight == "num_pairs_over_model_gamma_squared") {
-    weight_fn = &kriging::weight_functions::num_pairs_over_model_gamma_squared;
-  } else if (weight == "one") {
-    weight_fn = &kriging::weight_functions::one;
-  } else if (weight == "one_over_distance_squared") {
-    weight_fn = &kriging::weight_functions::one_over_distance_squared;
-  } else if (weight == "one_over_model_gamma_squared") {
-    weight_fn = &kriging::weight_functions::one_over_model_gamma_squared;
-  } else {
-    throw std::invalid_argument("Unknown weight function: " + weight);
-  }
-
-  return std::make_unique<kriging::variogram_fitting<Dim>>(emp_variog, model, *weight_fn);
 }
 
 template <int Dim, class Rbf>
@@ -61,7 +40,10 @@ void define_module(py::module& m) {
   using Model = model<Dim>;
   using Points = geometry::pointsNd<Dim>;
   using RbfProxy = rbf::rbf_proxy<Dim>;
+  using Variogram = kriging::variogram<Dim>;
+  using VariogramCalculator = kriging::variogram_calculator<Dim>;
   using VariogramFitting = kriging::variogram_fitting<Dim>;
+  using Vectors = geometry::vectorsNd<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
@@ -108,7 +90,8 @@ void define_module(py::module& m) {
       .def_property("parameters", &Model::parameters, &Model::set_parameters)
       .def_property_readonly("poly_basis_size", &Model::poly_basis_size)
       .def_property_readonly("poly_degree", &Model::poly_degree)
-      .def_property_readonly("rbfs", &Model::rbfs);
+      .def_property_readonly(
+          "rbfs", static_cast<const std::vector<RbfProxy>& (Model::*)() const>(&Model::rbfs));
 
   py::class_<Interpolant>(m, "Interpolant")
       .def(py::init<const Model&>(), "model"_a)
@@ -149,10 +132,30 @@ void define_module(py::module& m) {
       .def_property_readonly("bin_gamma", &EmpiricalVariogram::bin_gamma)
       .def_property_readonly("bin_num_pairs", &EmpiricalVariogram::bin_num_pairs);
 
+  py::class_<Variogram>(m, "Variogram")
+      .def_property_readonly("bin_distance", &Variogram::bin_distance)
+      .def_property_readonly("bin_gamma", &Variogram::bin_gamma)
+      .def_property_readonly("bin_num_pairs", &Variogram::bin_num_pairs)
+      .def_property_readonly("direction", &Variogram::direction);
+
+  py::class_<VariogramCalculator>(m, "VariogramCalculator")
+      .def(py::init<const Points&, const common::valuesd&, double, index_t, double, Vectors>(),
+           "points"_a, "values"_a, "bin_width"_a, "num_bins"_a, "angle_tolerance"_a, "directions"_a)
+      .def_property_readonly("variograms", &VariogramCalculator::variograms);
+
   py::class_<VariogramFitting>(m, "VariogramFitting")
-      .def(py::init(&make_variogram_fitting<Dim>), "emp_variog"_a, "model"_a,
-           "weight"_a = "num_pairs_over_distance_squared")
+      .def(py::init<const EmpiricalVariogram&, const Model&, const kriging::weight_function&>(),
+           "emp_variog"_a, "model"_a, "weight_fn"_a)
       .def_property_readonly("parameters", &VariogramFitting::parameters);
+
+  m.def("detrend",
+        py::overload_cast<const Points&, const common::valuesd&, int>(&polynomial::detrend<Dim>),
+        "points"_a, "values"_a, "degree"_a);
+
+  m.def("detrend",
+        py::overload_cast<const Points&, const Points&, const common::valuesd&, int>(
+            &polynomial::detrend<Dim>),
+        "points"_a, "grad_points"_a, "values"_a, "degree"_a);
 }
 
 PYBIND11_MODULE(_core, m) {
@@ -206,6 +209,31 @@ PYBIND11_MODULE(_core, m) {
       .def("export_obj", &isosurface::surface::export_obj, "filename"_a)
       .def_property_readonly("faces", &isosurface::surface::faces)
       .def_property_readonly("vertices", &isosurface::surface::vertices);
+
+  py::class_<kriging::weight_function>(m, "WeightFunction")
+      .def(py::init<double, double, double>(), "exp_distance"_a = 0.0, "exp_model_gamma"_a = 0.0,
+           "exp_num_pairs"_a = 0.0)
+      .def_readonly_static("num_pairs", &kriging::weight_function::num_pairs)
+      .def_readonly_static("num_pairs_over_distance_squared",
+                           &kriging::weight_function::num_pairs_over_distance_squared)
+      .def_readonly_static("num_pairs_over_model_gamma_squared",
+                           &kriging::weight_function::num_pairs_over_model_gamma_squared)
+      .def_readonly_static("one", &kriging::weight_function::one)
+      .def_readonly_static("one_over_distance_squared",
+                           &kriging::weight_function::one_over_distance_squared)
+      .def_readonly_static("one_over_model_gamma_squared",
+                           &kriging::weight_function::one_over_model_gamma_squared);
+
+  py::class_<kriging::vario_fitting>(m, "VarioFitting")
+      .def(py::init<const std::vector<kriging::variogram<3>>&, const model<3>&,
+                    const kriging::weight_function&>(),
+           "variogs"_a, "model"_a, "weight_fn"_a)
+      .def_property_readonly("euler_angles", &kriging::vario_fitting::euler_angles)
+      .def_property_readonly("final_cost", &kriging::vario_fitting::final_cost)
+      .def_property_readonly("model", &kriging::vario_fitting::model)
+      .def_property_readonly("parameters", &kriging::vario_fitting::parameters)
+      .def_property_readonly("rotation", &kriging::vario_fitting::rotation)
+      .def("scale", &kriging::vario_fitting::scale);
 
   m.attr("__version__") = xstr(POLATORY_VERSION);
 }

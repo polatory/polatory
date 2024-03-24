@@ -97,7 +97,7 @@ class variogram_fitting {
         model_gamma += rbf.evaluate_isotropic(Vector::Zero()) - rbf.evaluate_isotropic(v);
       }
 
-      residuals[0] = weight_fn_(num_pairs_, distance_, model_gamma) * (gamma_ - model_gamma);
+      residuals[0] = weight_fn_(distance_, model_gamma, num_pairs_) * (gamma_ - model_gamma);
       return !std::isnan(residuals[0]);
     }
 

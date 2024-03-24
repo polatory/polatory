@@ -70,22 +70,22 @@ where
 
   switch (weights) {
     case 0:
-      opts.weight_fn = polatory::kriging::weight_functions::num_pairs;
+      opts.weight_fn = polatory::kriging::weight_function::num_pairs;
       break;
     case 1:
-      opts.weight_fn = polatory::kriging::weight_functions::num_pairs_over_distance_squared;
+      opts.weight_fn = polatory::kriging::weight_function::num_pairs_over_distance_squared;
       break;
     case 2:
-      opts.weight_fn = polatory::kriging::weight_functions::num_pairs_over_model_gamma_squared;
+      opts.weight_fn = polatory::kriging::weight_function::num_pairs_over_model_gamma_squared;
       break;
     case 3:
-      opts.weight_fn = polatory::kriging::weight_functions::one;
+      opts.weight_fn = polatory::kriging::weight_function::one;
       break;
     case 4:
-      opts.weight_fn = polatory::kriging::weight_functions::one_over_distance_squared;
+      opts.weight_fn = polatory::kriging::weight_function::one_over_distance_squared;
       break;
     case 5:
-      opts.weight_fn = polatory::kriging::weight_functions::one_over_model_gamma_squared;
+      opts.weight_fn = polatory::kriging::weight_function::one_over_model_gamma_squared;
       break;
     default:
       throw std::runtime_error("weight must be within the range of 0 to 5.");
