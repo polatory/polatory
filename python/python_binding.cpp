@@ -139,6 +139,8 @@ void define_module(py::module& m) {
       .def_property_readonly("direction", &Variogram::direction);
 
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
+      .def(py::init<const Points&, const common::valuesd&, double, index_t>(), "points"_a,
+           "values"_a, "bin_width"_a, "num_bins"_a)
       .def(py::init<const Points&, const common::valuesd&, double, index_t, double, Vectors>(),
            "points"_a, "values"_a, "bin_width"_a, "num_bins"_a, "angle_tolerance"_a, "directions"_a)
       .def_property_readonly("variograms", &VariogramCalculator::variograms);

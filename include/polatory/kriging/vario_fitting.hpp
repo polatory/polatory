@@ -10,7 +10,6 @@
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
-#include <stdexcept>
 #include <string>
 #include <vector>
 

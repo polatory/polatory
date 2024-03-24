@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <numbers>
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/variogram.hpp>
@@ -67,9 +68,12 @@ class variogram_calculator {
   using Vector = geometry::vectorNd<kDim>;
   using Vectors = geometry::vectorsNd<kDim>;
 
-  static constexpr index_t kNumDirections = 46;
-
  public:
+  variogram_calculator(const Points& points, const common::valuesd& values, double bin_width,
+                       index_t num_bins)
+      : variogram_calculator(points, values, bin_width, num_bins, std::numbers::pi / 2.0,
+                             Vector::UnitX()) {}
+
   variogram_calculator(const Points& points, const common::valuesd& values, double bin_width,
                        index_t num_bins, double angle_tolerance, Vectors directions) {
     auto cos_angle_tolerance = std::cos(angle_tolerance);
@@ -97,7 +101,7 @@ class variogram_calculator {
 
           auto dir = (point_j - point_i).normalized();
           for (index_t k = 0; k < num_directions; k++) {
-            if (std::abs(dir.dot(directions.row(k))) < cos_angle_tolerance) {
+            if (std::abs(dir.dot(directions.row(k))) >= cos_angle_tolerance) {
               local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
             }
           }
