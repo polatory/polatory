@@ -159,8 +159,8 @@ void define_module(py::module& m) {
             &kriging::detrend<Dim>),
         "points"_a, "grad_points"_a, "values"_a, "degree"_a);
 
-  m.def("k_fold_cross_validation", &kriging::k_fold_cross_validation<Dim>, "model"_a, "points"_a,
-        "values"_a, "absolute_tolerance"_a, "max_iter"_a, "k"_a);
+  m.def("cross_validation", &kriging::cross_validation<Dim>, "model"_a, "points"_a, "values"_a,
+        "set_ids"_a, "absolute_tolerance"_a, "max_iter"_a = 100);
 }
 
 PYBIND11_MODULE(_core, m) {
