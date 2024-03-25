@@ -69,26 +69,27 @@ class variogram_calculator {
   using Vectors = geometry::vectorsNd<kDim>;
 
  public:
-  variogram_calculator(const Points& points, const common::valuesd& values, double bin_width,
-                       index_t num_bins)
-      : variogram_calculator(points, values, bin_width, num_bins, std::numbers::pi / 2.0,
-                             Vector::UnitX()) {}
+  variogram_calculator(const Points& points, const common::valuesd& values, double bin_interval,
+                       double bin_tolerance, index_t num_bins)
+      : variogram_calculator(points, values, bin_interval, bin_tolerance, num_bins,
+                             std::numbers::pi / 2.0, Vector::UnitX()) {}
 
-  variogram_calculator(const Points& points, const common::valuesd& values, double bin_width,
-                       index_t num_bins, double angle_tolerance, Vectors directions) {
+  variogram_calculator(const Points& points, const common::valuesd& values, double bin_interval,
+                       double bin_tolerance, index_t num_bins, double angle_tolerance,
+                       Vectors directions) {
     auto cos_angle_tolerance = std::cos(angle_tolerance);
     auto num_directions = directions.rows();
 
     std::vector<VariogramBuilder> builders;
     for (index_t k = 0; k < num_directions; k++) {
-      builders.emplace_back(bin_width, num_bins, directions.row(k));
+      builders.emplace_back(bin_interval, bin_tolerance, num_bins, directions.row(k));
     }
 
 #pragma omp parallel
     {
       std::vector<VariogramBuilder> local_builders;
       for (index_t k = 0; k < num_directions; k++) {
-        local_builders.emplace_back(bin_width, num_bins, directions.row(k));
+        local_builders.emplace_back(bin_interval, bin_tolerance, num_bins, directions.row(k));
       }
 
 #pragma omp for schedule(dynamic)

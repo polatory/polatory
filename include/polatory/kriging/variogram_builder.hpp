@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -18,8 +19,12 @@ class variogram_builder {
   using Vector = geometry::vectorNd<Dim>;
 
  public:
-  variogram_builder(double bin_width, index_t num_bins, const Vector& direction)
-      : bin_width_(bin_width), num_bins_(num_bins), direction_(direction) {
+  variogram_builder(double bin_interval, double bin_tolerance, index_t num_bins,
+                    const Vector& direction)
+      : bin_interval_(bin_interval),
+        bin_tolerance_(bin_tolerance),
+        num_bins_(num_bins),
+        direction_(direction) {
     distance_.resize(num_bins);
     gamma_.resize(num_bins);
     num_pairs_.resize(num_bins);
@@ -27,17 +32,19 @@ class variogram_builder {
 
   void add_pair(const Point& point_i, const Point& point_j, double value_i, double value_j) {
     auto dist = (point_j - point_i).norm();
-
-    auto bin = static_cast<index_t>(std::floor(dist / bin_width_));
-    if (bin >= num_bins_) {
-      return;
-    }
-
     auto incr = value_j - value_i;
+    auto gamma = 0.5 * (incr * incr);
 
-    distance_.at(bin) += dist;
-    gamma_.at(bin) += (incr * incr) / 2.0;
-    num_pairs_.at(bin)++;
+    auto first = static_cast<index_t>(std::ceil((dist - bin_tolerance_) / bin_interval_));
+    auto last = static_cast<index_t>(std::floor((dist + bin_tolerance_) / bin_interval_));
+    first = std::max(first, index_t{0});
+    last = std::min(last, num_bins_ - 1);
+
+    for (index_t bin = first; bin <= last; bin++) {
+      distance_.at(bin) += dist;
+      gamma_.at(bin) += gamma;
+      num_pairs_.at(bin)++;
+    }
   }
 
   Variogram into_variogram() {
@@ -65,7 +72,7 @@ class variogram_builder {
   }
 
   void merge(const variogram_builder& other) {
-    POLATORY_ASSERT(other.bin_width_ == bin_width_);
+    POLATORY_ASSERT(other.bin_interval_ == bin_interval_);
     POLATORY_ASSERT(other.num_bins_ == num_bins_);
     POLATORY_ASSERT(other.direction_ == direction_);
 
@@ -77,7 +84,8 @@ class variogram_builder {
   }
 
  private:
-  const double bin_width_;
+  const double bin_interval_;
+  const double bin_tolerance_;
   const index_t num_bins_;
   const Vector direction_;
   std::vector<double> distance_;
