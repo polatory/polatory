@@ -5,11 +5,11 @@
 #include <pybind11/stl.h>
 
 #include <memory>
+#include <polatory/kriging/detrend.hpp>
 #include <polatory/kriging/vario_fitting.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_calculator.hpp>
 #include <polatory/polatory.hpp>
-#include <polatory/polynomial/detrend.hpp>
 #include <string>
 #include <vector>
 
@@ -151,13 +151,16 @@ void define_module(py::module& m) {
       .def_property_readonly("parameters", &VariogramFitting::parameters);
 
   m.def("detrend",
-        py::overload_cast<const Points&, const common::valuesd&, int>(&polynomial::detrend<Dim>),
+        py::overload_cast<const Points&, const common::valuesd&, int>(&kriging::detrend<Dim>),
         "points"_a, "values"_a, "degree"_a);
 
   m.def("detrend",
         py::overload_cast<const Points&, const Points&, const common::valuesd&, int>(
-            &polynomial::detrend<Dim>),
+            &kriging::detrend<Dim>),
         "points"_a, "grad_points"_a, "values"_a, "degree"_a);
+
+  m.def("k_fold_cross_validation", &kriging::k_fold_cross_validation<Dim>, "model"_a, "points"_a,
+        "values"_a, "absolute_tolerance"_a, "max_iter"_a, "k"_a);
 }
 
 PYBIND11_MODULE(_core, m) {

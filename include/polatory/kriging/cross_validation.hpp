@@ -5,20 +5,18 @@
 #include <cmath>
 #include <numeric>
 #include <polatory/common/types.hpp>
-#include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/interpolation/rbf_fitter.hpp>
+#include <polatory/interpolant.hpp>
 #include <polatory/model.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <random>
 #include <stdexcept>
 
 namespace polatory::kriging {
 
-inline common::valuesd k_fold_cross_validation(const model<3>& model,
-                                               const geometry::points3d& points,
+template <int Dim>
+inline common::valuesd k_fold_cross_validation(const model<Dim>& model,
+                                               const geometry::pointsNd<Dim>& points,
                                                const common::valuesd& values,
                                                double absolute_tolerance, int max_iter, index_t k) {
   auto n_points = points.rows();
@@ -27,7 +25,7 @@ inline common::valuesd k_fold_cross_validation(const model<3>& model,
   }
 
   if (k < 2 || k > n_points) {
-    throw std::invalid_argument("k must be within the range of 2 to points.rows().");
+    throw std::invalid_argument("k must be within 2 to points.rows().");
   }
 
   std::random_device rd;
@@ -37,7 +35,6 @@ inline common::valuesd k_fold_cross_validation(const model<3>& model,
   std::iota(indices.begin(), indices.end(), 0);
   std::shuffle(indices.begin(), indices.end(), gen);
 
-  auto bbox = geometry::bbox3d::from_points(points);
   common::valuesd residuals(n_points);
 
   auto n_k = static_cast<double>(n_points) / static_cast<double>(k);
@@ -54,18 +51,15 @@ inline common::valuesd k_fold_cross_validation(const model<3>& model,
     std::copy(indices.begin() + a, indices.begin() + b, test_set.begin());
     std::copy(indices.begin() + b, indices.end(), train_set.begin() + a);
 
-    geometry::points3d train_points = points(train_set, Eigen::all);
-    geometry::points3d test_points = points(test_set, Eigen::all);
+    geometry::pointsNd<Dim> train_points = points(train_set, Eigen::all);
+    geometry::pointsNd<Dim> test_points = points(test_set, Eigen::all);
 
     common::valuesd train_values = values(train_set, Eigen::all);
     common::valuesd test_values = values(test_set, Eigen::all);
 
-    interpolation::rbf_fitter<3> fitter(model, train_points);
-    auto weights = fitter.fit(train_values, absolute_tolerance, max_iter);
-
-    interpolation::rbf_evaluator<3> eval(model, train_points, bbox, precision::kPrecise);
-    eval.set_weights(weights);
-    auto test_values_fit = eval.evaluate(test_points);
+    interpolant<Dim> interpolant(model);
+    interpolant.fit(train_points, train_values, absolute_tolerance, max_iter);
+    auto test_values_fit = interpolant.evaluate(test_points);
 
     for (index_t j = 0; j < test_set_size; j++) {
       residuals(test_set.at(j)) = test_values(j) - test_values_fit(j);

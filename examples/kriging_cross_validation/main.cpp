@@ -34,8 +34,8 @@ void main_impl(rbf_proxy<3>&& rbf, const options& opts) {
   model.set_nugget(opts.nugget);
 
   // Run the cross validation.
-  auto residuals = k_fold_cross_validation(model, points, values, opts.absolute_tolerance,
-                                           opts.max_iter, opts.k);
+  auto residuals = k_fold_cross_validation<3>(model, points, values, opts.absolute_tolerance,
+                                              opts.max_iter, opts.k);
 
   std::cout << "Estimated mean absolute error: " << std::endl
             << std::setw(12) << residuals.template lpNorm<1>() / static_cast<double>(points.rows())
