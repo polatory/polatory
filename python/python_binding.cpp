@@ -133,7 +133,7 @@ void define_module(py::module& m) {
       .def_property_readonly("bin_num_pairs", &EmpiricalVariogram::bin_num_pairs);
 
   py::class_<Variogram>(m, "Variogram")
-      .def_property_readonly("bin_distance", &Variogram::bin_distance)
+      .def_property_readonly("bin_lag", &Variogram::bin_lag)
       .def_property_readonly("bin_gamma", &Variogram::bin_gamma)
       .def_property_readonly("bin_num_pairs", &Variogram::bin_num_pairs)
       .def_property_readonly("direction", &Variogram::direction);

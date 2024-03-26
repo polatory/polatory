@@ -12,14 +12,14 @@ class variogram {
   using Vector = geometry::vectorNd<Dim>;
 
  public:
-  variogram(std::vector<double>&& bin_distance, std::vector<double>&& bin_gamma,
+  variogram(std::vector<Vector>&& bin_lag, std::vector<double>&& bin_gamma,
             std::vector<index_t>&& bin_num_pairs, const Vector& direction)
-      : bin_distance_{std::move(bin_distance)},
+      : bin_lag_{std::move(bin_lag)},
         bin_gamma_{std::move(bin_gamma)},
         bin_num_pairs_{std::move(bin_num_pairs)},
         direction_{direction} {}
 
-  const std::vector<double>& bin_distance() const { return bin_distance_; }
+  const std::vector<Vector>& bin_lag() const { return bin_lag_; }
 
   const std::vector<double>& bin_gamma() const { return bin_gamma_; }
 
@@ -27,10 +27,10 @@ class variogram {
 
   const Vector& direction() const { return direction_; }
 
-  index_t num_bins() const { return static_cast<index_t>(bin_distance_.size()); }
+  index_t num_bins() const { return static_cast<index_t>(bin_lag_.size()); }
 
  private:
-  std::vector<double> bin_distance_;
+  std::vector<Vector> bin_lag_;
   std::vector<double> bin_gamma_;
   std::vector<index_t> bin_num_pairs_;
   Vector direction_;

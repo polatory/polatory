@@ -133,32 +133,22 @@ class vario_fitting {
         rbf.set_anisotropy(aniso);
       }
 
-      const Vector& dir = variog_.direction();
-
       auto num_bins = variog_.num_bins();
-      auto total_weight = 0.0;
       for (index_t i = 0; i < num_bins; i++) {
-        auto distance = variog_.bin_distance().at(i);
+        auto lag = variog_.bin_lag().at(i);
         auto gamma = variog_.bin_gamma().at(i);
         auto num_pairs = variog_.bin_num_pairs().at(i);
 
         auto model_gamma = model_->nugget();
         for (const auto& rbf : model_->rbfs()) {
-          model_gamma += rbf.evaluate(Vector::Zero()) - rbf.evaluate(distance * dir);
+          model_gamma += rbf.evaluate(Vector::Zero()) - rbf.evaluate(lag);
         }
 
-        auto weight = weight_fn_(distance, model_gamma, num_pairs);
+        auto weight = weight_fn_(lag.norm(), model_gamma, num_pairs);
         residuals[i] = weight * (gamma - model_gamma);
         if (std::isnan(residuals[i])) {
           return false;
         }
-
-        total_weight += weight;
-      }
-
-      // Give the same total weight to each direction.
-      for (index_t i = 0; i < num_bins; i++) {
-        residuals[i] /= total_weight;
       }
 
       return true;

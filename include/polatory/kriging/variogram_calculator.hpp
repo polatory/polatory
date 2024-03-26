@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cmath>
 #include <numbers>
 #include <polatory/common/types.hpp>
@@ -94,16 +93,21 @@ class variogram_calculator {
 
 #pragma omp for schedule(dynamic)
       for (index_t i = 0; i < points.rows() - 1; i++) {
+        auto point_i = points.row(i);
+        auto value_i = values(i);
         for (index_t j = i + 1; j < points.rows(); j++) {
-          auto point_i = points.row(i);
           auto point_j = points.row(j);
-          auto value_i = values(i);
           auto value_j = values(j);
 
           auto dir = (point_j - point_i).normalized();
           for (index_t k = 0; k < num_directions; k++) {
-            if (std::abs(dir.dot(directions.row(k))) >= cos_angle_tolerance) {
-              local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
+            auto dot = dir.dot(directions.row(k));
+            if (std::abs(dot) >= cos_angle_tolerance) {
+              if (dot > 0.0) {
+                local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
+              } else {
+                local_builders.at(k).add_pair(point_j, point_i, value_j, value_i);
+              }
             }
           }
         }
