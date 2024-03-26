@@ -27,7 +27,7 @@ class variogram {
 
   const Vector& direction() const { return direction_; }
 
-  index_t num_bins() const { return static_cast<index_t>(bin_lag_.size()); }
+  index_t num_lags() const { return static_cast<index_t>(bin_lag_.size()); }
 
  private:
   std::vector<Vector> bin_lag_;

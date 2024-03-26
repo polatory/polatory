@@ -43,7 +43,6 @@ void define_module(py::module& m) {
   using Variogram = kriging::variogram<Dim>;
   using VariogramCalculator = kriging::variogram_calculator<Dim>;
   using VariogramFitting = kriging::variogram_fitting<Dim>;
-  using Vectors = geometry::vectorsNd<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
@@ -127,7 +126,7 @@ void define_module(py::module& m) {
 
   py::class_<EmpiricalVariogram>(m, "EmpiricalVariogram")
       .def(py::init<const Points&, const common::valuesd&, double, index_t>(), "points"_a,
-           "values"_a, "bin_width"_a, "num_bins"_a)
+           "values"_a, "bin_width"_a, "num_lags"_a)
       .def_property_readonly("bin_distance", &EmpiricalVariogram::bin_distance)
       .def_property_readonly("bin_gamma", &EmpiricalVariogram::bin_gamma)
       .def_property_readonly("bin_num_pairs", &EmpiricalVariogram::bin_num_pairs);
@@ -139,13 +138,14 @@ void define_module(py::module& m) {
       .def_property_readonly("direction", &Variogram::direction);
 
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
-      .def(py::init<const Points&, const common::valuesd&, double, double, index_t>(), "points"_a,
-           "values"_a, "bin_interval"_a, "bin_tolerance"_a, "num_bins"_a)
-      .def(py::init<const Points&, const common::valuesd&, double, double, index_t, double,
-                    Vectors>(),
-           "points"_a, "values"_a, "bin_interval"_a, "bin_tolerance"_a, "num_bins"_a,
-           "angle_tolerance"_a, "directions"_a)
-      .def_property_readonly("variograms", &VariogramCalculator::variograms);
+      .def(py::init<double, index_t>(), "lag_distance"_a, "num_lags"_a)
+      .def_property("angle_tolerance", &VariogramCalculator::angle_tolerance,
+                    &VariogramCalculator::set_angle_tolerance)
+      .def_property("directions", &VariogramCalculator::directions,
+                    &VariogramCalculator::set_directions)
+      .def_property("lag_tolerance", &VariogramCalculator::lag_tolerance,
+                    &VariogramCalculator::set_lag_tolerance)
+      .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
 
   py::class_<VariogramFitting>(m, "VariogramFitting")
       .def(py::init<const EmpiricalVariogram&, const Model&, const kriging::weight_function&>(),

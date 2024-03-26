@@ -19,15 +19,15 @@ class variogram_builder {
   using Vector = geometry::vectorNd<Dim>;
 
  public:
-  variogram_builder(double bin_interval, double bin_tolerance, index_t num_bins,
+  variogram_builder(double lag_distance, double lag_tolerance, index_t num_lags,
                     const Vector& direction)
-      : bin_interval_(bin_interval),
-        bin_tolerance_(bin_tolerance),
-        num_bins_(num_bins),
+      : lag_distance_(lag_distance),
+        lag_tolerance_(lag_tolerance),
+        num_lags_(num_lags),
         direction_(direction) {
-    lag_.resize(num_bins, Vector::Zero());
-    gamma_.resize(num_bins);
-    num_pairs_.resize(num_bins);
+    lag_.resize(num_lags, Vector::Zero());
+    gamma_.resize(num_lags);
+    num_pairs_.resize(num_lags);
   }
 
   void add_pair(const Point& point_i, const Point& point_j, double value_i, double value_j) {
@@ -36,10 +36,10 @@ class variogram_builder {
     auto incr = value_j - value_i;
     auto gamma = 0.5 * (incr * incr);
 
-    auto first = static_cast<index_t>(std::ceil((dist - bin_tolerance_) / bin_interval_));
-    auto last = static_cast<index_t>(std::floor((dist + bin_tolerance_) / bin_interval_));
+    auto first = static_cast<index_t>(std::ceil((dist - lag_tolerance_) / lag_distance_));
+    auto last = static_cast<index_t>(std::floor((dist + lag_tolerance_) / lag_distance_));
     first = std::max(first, index_t{0});
-    last = std::min(last, num_bins_ - 1);
+    last = std::min(last, num_lags_ - 1);
 
     for (index_t bin = first; bin <= last; bin++) {
       lag_.at(bin) += lag;
@@ -73,12 +73,12 @@ class variogram_builder {
   }
 
   void merge(const variogram_builder& other) {
-    POLATORY_ASSERT(other.bin_interval_ == bin_interval_);
-    POLATORY_ASSERT(other.bin_tolerance_ == bin_tolerance_);
-    POLATORY_ASSERT(other.num_bins_ == num_bins_);
+    POLATORY_ASSERT(other.lag_distance_ == lag_distance_);
+    POLATORY_ASSERT(other.lag_tolerance_ == lag_tolerance_);
+    POLATORY_ASSERT(other.num_lags_ == num_lags_);
     POLATORY_ASSERT(other.direction_ == direction_);
 
-    for (index_t i = 0; i < num_bins_; i++) {
+    for (index_t i = 0; i < num_lags_; i++) {
       lag_.at(i) += other.lag_.at(i);
       gamma_.at(i) += other.gamma_.at(i);
       num_pairs_.at(i) += other.num_pairs_.at(i);
@@ -86,9 +86,9 @@ class variogram_builder {
   }
 
  private:
-  const double bin_interval_;
-  const double bin_tolerance_;
-  const index_t num_bins_;
+  const double lag_distance_;
+  const double lag_tolerance_;
+  const index_t num_lags_;
   const Vector direction_;
   std::vector<Vector> lag_;
   std::vector<double> gamma_;

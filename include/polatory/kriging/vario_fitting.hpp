@@ -133,8 +133,8 @@ class vario_fitting {
         rbf.set_anisotropy(aniso);
       }
 
-      auto num_bins = variog_.num_bins();
-      for (index_t i = 0; i < num_bins; i++) {
+      auto num_lags = variog_.num_lags();
+      for (index_t i = 0; i < num_lags; i++) {
         auto lag = variog_.bin_lag().at(i);
         auto gamma = variog_.bin_gamma().at(i);
         auto num_pairs = variog_.bin_num_pairs().at(i);
@@ -169,7 +169,7 @@ class vario_fitting {
     cost_fn->AddParameterBlock(4);
     cost_fn->AddParameterBlock(num_rbfs);
     cost_fn->AddParameterBlock(num_rbfs);
-    cost_fn->SetNumResiduals(variog.num_bins());
+    cost_fn->SetNumResiduals(variog.num_lags());
     return cost_fn;
   }
 

@@ -7,6 +7,7 @@
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_builder.hpp>
 #include <polatory/types.hpp>
+#include <stdexcept>
 #include <vector>
 
 namespace polatory::kriging {
@@ -68,40 +69,39 @@ class variogram_calculator {
   using Vectors = geometry::vectorsNd<kDim>;
 
  public:
-  variogram_calculator(const Points& points, const common::valuesd& values, double bin_interval,
-                       double bin_tolerance, index_t num_bins)
-      : variogram_calculator(points, values, bin_interval, bin_tolerance, num_bins,
-                             std::numbers::pi / 2.0, Vector::UnitX()) {}
+  variogram_calculator(double lag_distance, index_t num_lags)
+      : lag_distance_(lag_distance), num_lags_(num_lags), lag_tolerance_{0.5 * lag_distance} {}
 
-  variogram_calculator(const Points& points, const common::valuesd& values, double bin_interval,
-                       double bin_tolerance, index_t num_bins, double angle_tolerance,
-                       Vectors directions) {
-    auto cos_angle_tolerance = std::cos(angle_tolerance);
-    auto num_directions = directions.rows();
+  double angle_tolerance() const { return angle_tolerance_; }
+
+  std::vector<Variogram> calculate(const Points& points, const common::valuesd& values) const {
+    auto num_directions = directions_.rows();
+    auto num_points = points.rows();
+    auto cos_angle_tolerance = std::cos(angle_tolerance_);
 
     std::vector<VariogramBuilder> builders;
     for (index_t k = 0; k < num_directions; k++) {
-      builders.emplace_back(bin_interval, bin_tolerance, num_bins, directions.row(k));
+      builders.emplace_back(lag_distance_, lag_tolerance_, num_lags_, directions_.row(k));
     }
 
 #pragma omp parallel
     {
       std::vector<VariogramBuilder> local_builders;
       for (index_t k = 0; k < num_directions; k++) {
-        local_builders.emplace_back(bin_interval, bin_tolerance, num_bins, directions.row(k));
+        local_builders.emplace_back(lag_distance_, lag_tolerance_, num_lags_, directions_.row(k));
       }
 
 #pragma omp for schedule(dynamic)
-      for (index_t i = 0; i < points.rows() - 1; i++) {
+      for (index_t i = 0; i < num_points - 1; i++) {
         auto point_i = points.row(i);
         auto value_i = values(i);
-        for (index_t j = i + 1; j < points.rows(); j++) {
+        for (index_t j = i + 1; j < num_points; j++) {
           auto point_j = points.row(j);
           auto value_j = values(j);
 
           auto dir = (point_j - point_i).normalized();
           for (index_t k = 0; k < num_directions; k++) {
-            auto dot = dir.dot(directions.row(k));
+            auto dot = dir.dot(directions_.row(k));
             if (std::abs(dot) >= cos_angle_tolerance) {
               if (dot > 0.0) {
                 local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
@@ -119,15 +119,48 @@ class variogram_calculator {
       }
     }
 
+    std::vector<Variogram> variograms;
     for (auto& builder : builders) {
-      variograms_.emplace_back(builder.into_variogram());
+      variograms.emplace_back(builder.into_variogram());
     }
+
+    return variograms;
   }
 
-  const std::vector<Variogram>& variograms() { return variograms_; }
+  const Vectors& directions() const { return directions_; }
+
+  double lag_tolerance() const { return lag_tolerance_; }
+
+  void set_angle_tolerance(double angle_tolerance) {
+    if (!(angle_tolerance > 0.0)) {
+      throw std::invalid_argument("angle_tolerance must be positive");
+    }
+
+    angle_tolerance_ = angle_tolerance;
+  }
+
+  void set_directions(const Vectors& directions) {
+    if (directions.rows() == 0) {
+      throw std::invalid_argument("directions must not be empty");
+    }
+
+    directions_ = directions;
+  }
+
+  void set_lag_tolerance(double lag_tolerance) {
+    if (!(lag_tolerance > 0.0)) {
+      throw std::invalid_argument("lag_tolerance must be positive");
+    }
+
+    lag_tolerance_ = lag_tolerance;
+  }
 
  private:
-  std::vector<Variogram> variograms_;
+  double lag_distance_;
+  index_t num_lags_;
+  double lag_tolerance_;
+  Vectors directions_{Vector::UnitX()};
+  double angle_tolerance_{std::numbers::pi / 2.0};
 };
 
 }  // namespace polatory::kriging

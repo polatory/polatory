@@ -5,3 +5,5 @@
 build/
 data/
 .DS_Store
+.RData
+.Rhistory
