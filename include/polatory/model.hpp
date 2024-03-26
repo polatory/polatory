@@ -160,45 +160,46 @@ std::string model<3>::description() const {
 
   std::stringstream ss;
   ss << "        Type       Psill       Major  Semi-major       Minor"
-        "         Dip     Dip az.       Pitch\n";
+        "     Azimuth         Dip    Rotation\n";
 
   ss << std::format("         nug  {:>10.4f}\n", nugget());
 
   for (const auto& rbf : rbfs()) {
     auto type = rbf.short_name();
-    auto [rot, scale] = geometry::decompose_inverse_anisotropy<3>(rbf.anisotropy());
-    auto euler = rot.eulerAngles(2, 0, 2);
-    auto az = -euler(0) / deg;
-    auto dip = -euler(1) / deg;
-    auto pitch = -euler(2) / deg;
-    if (dip < -90.0) {
-      dip += 180.0;
-      pitch = 180.0 - pitch;
-    } else if (dip < 0.0) {
-      dip = -dip;
-      az += 180.0;
-    } else if (dip > 90.0) {
-      dip = 180.0 - dip;
-      az += 180.0;
-      pitch = 180.0 - pitch;
-    }
-    if (az < 0.0) {
-      az += 360.0;
-    } else if (az >= 360.0) {
-      az -= 360.0;
-    }
-    if (pitch >= 180.0) {
-      pitch -= 180.0;
-    }
+    auto [rotation, scale] = geometry::decompose_inverse_anisotropy<3>(rbf.anisotropy());
     auto psill = rbf.parameters().at(0);
     auto range = rbf.parameters().at(1);
     auto major = scale(0) * range;
     auto semi_major = scale(1) * range;
     auto minor = scale(2) * range;
 
+    auto euler = rotation.eulerAngles(2, 0, 2);
+    auto az = -euler(0) / deg;
+    auto dip = -euler(1) / deg;
+    auto rot = -euler(2) / deg;
+    if (dip < -90.0) {
+      dip += 180.0;
+      rot = 180.0 - rot;
+    } else if (dip < 0.0) {
+      dip = -dip;
+      az += 180.0;
+    } else if (dip > 90.0) {
+      dip = 180.0 - dip;
+      az += 180.0;
+      rot = 180.0 - rot;
+    }
+    if (az < 0.0) {
+      az += 360.0;
+    } else if (az >= 360.0) {
+      az -= 360.0;
+    }
+    if (rot >= 180.0) {
+      rot -= 180.0;
+    }
+
     ss << std::format(
         "  {:>10}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}\n",
-        type, psill, major, semi_major, minor, dip, az, pitch);
+        type, psill, major, semi_major, minor, az, dip, rot);
   }
 
   return ss.str();
