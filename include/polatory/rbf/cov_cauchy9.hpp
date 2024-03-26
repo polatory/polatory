@@ -55,6 +55,8 @@ class cov_cauchy9 final : public covariance_function_base<Dim> {
     auto coeff = -9.0 * psill * std::pow(1.0 + rho * rho, -5.5) / (range * range);
     return coeff * (Matrix::Identity() - 11.0 / (r * r + range * range) * diff.transpose() * diff);
   }
+
+  std::string short_name() const override { return "ca9"; }
 };
 
 }  // namespace internal

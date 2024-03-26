@@ -58,6 +58,8 @@ class cov_cauchy5 final : public covariance_function_base<Dim> {
     return coeff *
            (Matrix::Identity() - kA * 7.0 / (kA * r * r + range * range) * diff.transpose() * diff);
   }
+
+  std::string short_name() const override { return "ca5"; }
 };
 
 }  // namespace internal

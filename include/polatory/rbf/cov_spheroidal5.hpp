@@ -69,6 +69,8 @@ class cov_spheroidal5 final : public covariance_function_base<Dim> {
                     (rho < kRho0 ? 1.0 / (r * r) : 7.0 / (r * r + kE * range * range)) *
                         diff.transpose() * diff);
   }
+
+  std::string short_name() const override { return "sp5"; }
 };
 
 }  // namespace internal

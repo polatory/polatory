@@ -55,6 +55,8 @@ class cov_gaussian final : public covariance_function_base<Dim> {
     auto coeff = -6.0 * psill * std::exp(-3.0 * rho * rho) / (range * range);
     return coeff * (Matrix::Identity() - 6.0 / (range * range) * diff.transpose() * diff);
   }
+
+  std::string short_name() const override { return "gau"; }
 };
 
 }  // namespace internal

@@ -20,6 +20,8 @@ class covariance_function_base : public rbf_base<Dim> {
 
   int cpd_order() const override { return 0; }
 
+  bool is_covariance_function() const override { return true; }
+
   int num_parameters() const override { return 2; }
 
   const std::vector<double>& parameter_lower_bounds() const override {

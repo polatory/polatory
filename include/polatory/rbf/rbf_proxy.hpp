@@ -57,6 +57,8 @@ class rbf_proxy {
 
   RbfBase* get_raw_pointer() const { return rbf_.get(); }
 
+  bool is_covariance_function() const { return rbf_->is_covariance_function(); }
+
   int num_parameters() const { return rbf_->num_parameters(); }
 
   const std::vector<double>& parameter_lower_bounds() const {
@@ -74,6 +76,8 @@ class rbf_proxy {
   void set_anisotropy(const Matrix& aniso) { rbf_->set_anisotropy(aniso); }
 
   void set_parameters(const std::vector<double>& params) { rbf_->set_parameters(params); }
+
+  std::string short_name() const { return rbf_->short_name(); }
 
   double support_radius_isotropic() const { return rbf_->support_radius_isotropic(); }
 

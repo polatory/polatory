@@ -1,10 +1,14 @@
 #pragma once
 
+#include <format>
 #include <limits>
 #include <memory>
+#include <numbers>
+#include <polatory/geometry/anisotropy.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/rbf/rbf_proxy.hpp>
 #include <polatory/types.hpp>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -47,6 +51,17 @@ class model {
       order = std::max(order, rbf.cpd_order());
     }
     return order;
+  }
+
+  std::string description() const { throw std::runtime_error("description() is not implemented."); }
+
+  bool is_covariance_model() const {
+    for (const auto& rbf : rbfs_) {
+      if (!rbf.is_covariance_function()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   double nugget() const { return nugget_; }
@@ -134,5 +149,59 @@ class model {
   int poly_degree_;
   double nugget_{};
 };
+
+template <>
+std::string model<3>::description() const {
+  if (!is_covariance_model()) {
+    throw std::runtime_error("describe() is only available for covariance models.");
+  }
+
+  auto deg = std::numbers::pi / 180.0;
+
+  std::stringstream ss;
+  ss << "        Type       Psill       Major  Semi-major       Minor"
+        "         Dip     Dip az.       Pitch\n";
+
+  ss << std::format("         nug  {:>10.4f}\n", nugget());
+
+  for (const auto& rbf : rbfs()) {
+    auto type = rbf.short_name();
+    auto [rot, scale] = geometry::decompose_inverse_anisotropy<3>(rbf.anisotropy());
+    auto euler = rot.eulerAngles(2, 0, 2);
+    auto az = -euler(0) / deg;
+    auto dip = -euler(1) / deg;
+    auto pitch = -euler(2) / deg;
+    if (dip < -90.0) {
+      dip += 180.0;
+      pitch = 180.0 - pitch;
+    } else if (dip < 0.0) {
+      dip = -dip;
+      az += 180.0;
+    } else if (dip > 90.0) {
+      dip = 180.0 - dip;
+      az += 180.0;
+      pitch = 180.0 - pitch;
+    }
+    if (az < 0.0) {
+      az += 360.0;
+    } else if (az >= 360.0) {
+      az -= 360.0;
+    }
+    if (pitch >= 180.0) {
+      pitch -= 180.0;
+    }
+    auto psill = rbf.parameters().at(0);
+    auto range = rbf.parameters().at(1);
+    auto major = scale(0) * range;
+    auto semi_major = scale(1) * range;
+    auto minor = scale(2) * range;
+
+    ss << std::format(
+        "  {:>10}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}\n",
+        type, psill, major, semi_major, minor, dip, az, pitch);
+  }
+
+  return ss.str();
+}
 
 }  // namespace polatory

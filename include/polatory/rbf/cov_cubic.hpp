@@ -56,6 +56,8 @@ class cov_cubic final : public covariance_function_base<Dim> {
     throw std::runtime_error("cov_cubic::evaluate_hessian_isotropic is not implemented");
   }
 
+  std::string short_name() const override { return "cub"; }
+
   double support_radius_isotropic() const override { return Base::parameters().at(1); }
 };
 

@@ -56,6 +56,8 @@ class cov_exponential final : public covariance_function_base<Dim> {
     return coeff *
            (Matrix::Identity() - (1.0 / (r * r) + 3.0 / (range * r)) * diff.transpose() * diff);
   }
+
+  std::string short_name() const override { return "exp"; }
 };
 
 }  // namespace internal

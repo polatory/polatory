@@ -54,8 +54,10 @@ void define_module(py::module& m) {
   py::class_<RbfProxy>(m, "Rbf")
       .def_property("anisotropy", &RbfProxy::anisotropy, &RbfProxy::set_anisotropy)
       .def_property_readonly("cpd_order", &RbfProxy::cpd_order)
+      .def_property_readonly("is_covariance_function", &RbfProxy::is_covariance_function)
       .def_property_readonly("num_parameters", &RbfProxy::num_parameters)
       .def_property("parameters", &RbfProxy::parameters, &RbfProxy::set_parameters)
+      .def_property_readonly("short_name", &RbfProxy::short_name)
       .def("evaluate", &RbfProxy::evaluate, "diff"_a)
       .def("evaluate_gradient", &RbfProxy::evaluate_gradient, "diff"_a)
       .def("evaluate_hessian", &RbfProxy::evaluate_hessian, "diff"_a);
@@ -84,6 +86,7 @@ void define_module(py::module& m) {
       .def(py::init<RbfProxy, int>(), "rbf"_a, "poly_degree"_a)
       .def(py::init<std::vector<RbfProxy>, int>(), "rbfs"_a, "poly_degree"_a)
       .def_property_readonly("cpd_order", &Model::cpd_order)
+      .def_property_readonly("description", &Model::description)
       .def_property("nugget", &Model::nugget, &Model::set_nugget)
       .def_property_readonly("num_parameters", &Model::num_parameters)
       .def_property("parameters", &Model::parameters, &Model::set_parameters)

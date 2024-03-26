@@ -55,6 +55,8 @@ class rbf_base {
 
   virtual Matrix evaluate_hessian_isotropic(const Vector& diff) const = 0;
 
+  virtual bool is_covariance_function() const { return false; }
+
   virtual int num_parameters() const = 0;
 
   virtual const std::vector<double>& parameter_lower_bounds() const = 0;
@@ -82,16 +84,18 @@ class rbf_base {
     params_ = params;
   }
 
+  virtual std::string short_name() const { return ""; }
+
   virtual double support_radius_isotropic() const {
     return std::numeric_limits<double>::infinity();
   }
 
  protected:
-  rbf_base() : aniso_(Matrix::Identity()) {}
+  rbf_base() {}
 
  private:
   std::vector<double> params_;
-  Matrix aniso_;
+  Matrix aniso_{Matrix::Identity()};
 };
 
 }  // namespace polatory::rbf::internal

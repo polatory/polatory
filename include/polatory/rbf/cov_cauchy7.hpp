@@ -58,6 +58,8 @@ class cov_cauchy7 final : public covariance_function_base<Dim> {
     return coeff *
            (Matrix::Identity() - kA * 9.0 / (kA * r * r + range * range) * diff.transpose() * diff);
   }
+
+  std::string short_name() const override { return "ca7"; }
 };
 
 }  // namespace internal

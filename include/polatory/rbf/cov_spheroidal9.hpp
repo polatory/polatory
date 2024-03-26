@@ -64,6 +64,8 @@ class cov_spheroidal9 final : public covariance_function_base<Dim> {
            (Matrix::Identity() - (rho < kRho0 ? 1.0 / (r * r) : 11.0 / (r * r + range * range)) *
                                      diff.transpose() * diff);
   }
+
+  std::string short_name() const override { return "sp9"; }
 };
 
 }  // namespace internal
