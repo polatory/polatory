@@ -3,19 +3,19 @@
 #include <ceres/ceres.h>
 
 #include <cmath>
-#include <polatory/kriging/vario_fitting.hpp>
+#include <polatory/kriging/variogram_fitting.hpp>
 #include <thread>
 
 namespace polatory::kriging {
 
 template <>
-class vario_fitting<1> {
+class variogram_fitting<1> {
   using Model = model<1>;
   using Variogram = variogram<1>;
 
  public:
-  vario_fitting(const std::vector<Variogram>& variogs, const Model& model,
-                const weight_function& weight_fn)
+  variogram_fitting(const std::vector<Variogram>& variogs, const Model& model,
+                    const weight_function& weight_fn)
       : model_template_(model),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),
@@ -25,7 +25,7 @@ class vario_fitting<1> {
     problem.AddParameterBlock(params_.data(), num_params_);
     auto lbs = model.parameter_lower_bounds();
     auto ubs = model.parameter_upper_bounds();
-    for (auto i = 0; i < num_params_; i++) {
+    for (index_t i = 0; i < num_params_; i++) {
       problem.SetParameterLowerBound(params_.data(), i, lbs.at(i));
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }

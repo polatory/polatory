@@ -5,10 +5,7 @@
 #include <pybind11/stl.h>
 
 #include <memory>
-#include <polatory/kriging/detrend.hpp>
-#include <polatory/kriging/vario_fitting.hpp>
-#include <polatory/kriging/variogram.hpp>
-#include <polatory/kriging/variogram_calculator.hpp>
+#include <polatory/kriging.hpp>
 #include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
@@ -35,7 +32,6 @@ template <int Dim>
 void define_module(py::module& m) {
   using Bbox = geometry::bboxNd<Dim>;
   using DistanceFilter = point_cloud::distance_filter<Dim>;
-  using EmpiricalVariogram = kriging::empirical_variogram<Dim>;
   using Interpolant = interpolant<Dim>;
   using Model = model<Dim>;
   using Points = geometry::pointsNd<Dim>;
@@ -43,7 +39,6 @@ void define_module(py::module& m) {
   using Variogram = kriging::variogram<Dim>;
   using VariogramCalculator = kriging::variogram_calculator<Dim>;
   using VariogramFitting = kriging::variogram_fitting<Dim>;
-  using VarioFitting = kriging::vario_fitting<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
@@ -128,13 +123,6 @@ void define_module(py::module& m) {
       .def(py::init<const Points&, double>(), "points"_a, "distance"_a)
       .def_property_readonly("filtered_indices", &DistanceFilter::filtered_indices);
 
-  py::class_<EmpiricalVariogram>(m, "EmpiricalVariogram")
-      .def(py::init<const Points&, const common::valuesd&, double, index_t>(), "points"_a,
-           "values"_a, "bin_width"_a, "num_lags"_a)
-      .def_property_readonly("bin_distance", &EmpiricalVariogram::bin_distance)
-      .def_property_readonly("bin_gamma", &EmpiricalVariogram::bin_gamma)
-      .def_property_readonly("bin_num_pairs", &EmpiricalVariogram::bin_num_pairs);
-
   py::class_<Variogram>(m, "Variogram")
       .def_property_readonly("bin_lag", &Variogram::bin_lag)
       .def_property_readonly("bin_gamma", &Variogram::bin_gamma)
@@ -152,17 +140,12 @@ void define_module(py::module& m) {
       .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
 
   py::class_<VariogramFitting>(m, "VariogramFitting")
-      .def(py::init<const EmpiricalVariogram&, const Model&, const kriging::weight_function&>(),
-           "emp_variog"_a, "model"_a, "weight_fn"_a)
-      .def_property_readonly("parameters", &VariogramFitting::parameters);
-
-  py::class_<VarioFitting>(m, "VarioFitting")
       .def(py::init<const std::vector<Variogram>&, const Model&, const kriging::weight_function&>(),
            "variogs"_a, "model"_a, "weight_fn"_a)
-      .def_property_readonly("brief_report", &VarioFitting::brief_report)
-      .def_property_readonly("full_report", &VarioFitting::full_report)
-      .def_property_readonly("final_cost", &VarioFitting::final_cost)
-      .def_property_readonly("model", &VarioFitting::model);
+      .def_property_readonly("brief_report", &VariogramFitting::brief_report)
+      .def_property_readonly("full_report", &VariogramFitting::full_report)
+      .def_property_readonly("final_cost", &VariogramFitting::final_cost)
+      .def_property_readonly("model", &VariogramFitting::model);
 
   m.def("detrend",
         py::overload_cast<const Points&, const common::valuesd&, int>(&kriging::detrend<Dim>),

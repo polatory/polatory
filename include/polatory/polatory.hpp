@@ -9,10 +9,6 @@
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>
-#include <polatory/kriging/cross_validation.hpp>
-#include <polatory/kriging/empirical_variogram.hpp>
-#include <polatory/kriging/variogram_fitting.hpp>
-#include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/conv.hpp>
 #include <polatory/numeric/error.hpp>

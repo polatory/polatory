@@ -4,20 +4,20 @@
 
 #include <Eigen/Geometry>
 #include <cmath>
-#include <polatory/kriging/vario_fitting.hpp>
+#include <polatory/kriging/variogram_fitting.hpp>
 #include <thread>
 
 namespace polatory::kriging {
 
 template <>
-class vario_fitting<2> {
-  using Matrix = geometry::matrix2d;
-  using Model = model<2>;
-  using Variogram = variogram<2>;
+class variogram_fitting<3> {
+  using Matrix = geometry::matrix3d;
+  using Model = model<3>;
+  using Variogram = variogram<3>;
 
  public:
-  vario_fitting(const std::vector<Variogram>& variogs, const Model& model,
-                const weight_function& weight_fn)
+  variogram_fitting(const std::vector<Variogram>& variogs, const Model& model,
+                    const weight_function& weight_fn)
       : model_template_(model),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),
@@ -27,18 +27,23 @@ class vario_fitting<2> {
     problem.AddParameterBlock(params_.data(), num_params_);
     auto lbs = model.parameter_lower_bounds();
     auto ubs = model.parameter_upper_bounds();
-    for (auto i = 0; i < num_params_; i++) {
+    for (index_t i = 0; i < num_params_; i++) {
       problem.SetParameterLowerBound(params_.data(), i, lbs.at(i));
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
 
-    auto* angle_manifold = internal::AngleManifold::Create();
-    problem.AddParameterBlock(&angle_, 1, angle_manifold);
+    auto* quaternion_manifold = new ceres::EigenQuaternionManifold;
+    problem.AddParameterBlock(q_.coeffs().data(), 4, quaternion_manifold);
 
+    inv_major_.resize(num_rbfs_, 1.0);
     inv_minor_.resize(num_rbfs_, 1.0);
+    problem.AddParameterBlock(inv_major_.data(), num_rbfs_);
     problem.AddParameterBlock(inv_minor_.data(), num_rbfs_);
 
     for (index_t i = 0; i < num_rbfs_; i++) {
+      problem.SetParameterLowerBound(inv_major_.data(), i, 1e-2);
+      problem.SetParameterUpperBound(inv_major_.data(), i, 1.0);
+
       problem.SetParameterLowerBound(inv_minor_.data(), i, 1.0);
       problem.SetParameterUpperBound(inv_minor_.data(), i, 1e2);
     }
@@ -47,10 +52,12 @@ class vario_fitting<2> {
       auto* cost_fn =
           new ceres::DynamicNumericDiffCostFunction(new residual(model, variog, weight_fn));
       cost_fn->AddParameterBlock(num_params_);
-      cost_fn->AddParameterBlock(1);
+      cost_fn->AddParameterBlock(4);
+      cost_fn->AddParameterBlock(num_rbfs_);
       cost_fn->AddParameterBlock(num_rbfs_);
       cost_fn->SetNumResiduals(variog.num_lags());
-      problem.AddResidualBlock(cost_fn, nullptr, params_.data(), &angle_, inv_minor_.data());
+      problem.AddResidualBlock(cost_fn, nullptr, params_.data(), q_.coeffs().data(),
+                               inv_major_.data(), inv_minor_.data());
     }
 
     ceres::Solver::Options options;
@@ -71,13 +78,14 @@ class vario_fitting<2> {
     Model model{model_template_};
     model.set_parameters(params_);
 
-    Eigen::Rotation2Dd r(angle_);
-    Matrix inv_rot = r.toRotationMatrix();
+    Eigen::Quaterniond q(q_.coeffs().data());
+    Matrix inv_rot = q.normalized().toRotationMatrix();
     for (index_t i = 0; i < num_rbfs_; i++) {
       auto& rbf = model.rbfs().at(i);
 
       Matrix inv_scale = Matrix::Identity();
-      inv_scale(1, 1) = inv_minor_.at(i);
+      inv_scale(0, 0) = inv_major_.at(i);
+      inv_scale(2, 2) = inv_minor_.at(i);
       Matrix aniso = inv_scale * inv_rot;
 
       rbf.set_anisotropy(aniso);
@@ -93,8 +101,9 @@ class vario_fitting<2> {
 
     bool operator()(const double* const* param_blocks, double* residuals) const {
       const auto* params = param_blocks[0];
-      const auto* angle = param_blocks[1];
-      const auto* min_scale = param_blocks[2];
+      const auto* q_coeffs = param_blocks[1];
+      const auto* maj_scale = param_blocks[2];
+      const auto* min_scale = param_blocks[3];
 
       Model model{model_template_};
 
@@ -102,14 +111,15 @@ class vario_fitting<2> {
       internal::clamp_parameters(clamped_params, model);
       model.set_parameters(clamped_params);
 
-      Eigen::Rotation2Dd r(*angle);
-      Matrix inv_rot = r.toRotationMatrix();
+      Eigen::Quaterniond q(q_coeffs);
+      Matrix inv_rot = q.normalized().toRotationMatrix();
       auto num_rbfs = model.num_rbfs();
       for (index_t i = 0; i < num_rbfs; i++) {
         auto& rbf = model.rbfs().at(i);
 
         Matrix inv_scale = Matrix::Identity();
-        inv_scale(1, 1) = min_scale[i];
+        inv_scale(0, 0) = maj_scale[i];
+        inv_scale(2, 2) = min_scale[i];
         Matrix aniso = inv_scale * inv_rot;
 
         rbf.set_anisotropy(aniso);
@@ -143,7 +153,8 @@ class vario_fitting<2> {
   index_t num_params_;
   index_t num_rbfs_;
   std::vector<double> params_;
-  double angle_{std::numbers::pi * Eigen::Matrix<double, 1, 1>::Random()(0)};
+  Eigen::Quaterniond q_{Eigen::Quaterniond::UnitRandom()};
+  std::vector<double> inv_major_;
   std::vector<double> inv_minor_;
   ceres::Solver::Summary summary_;
 };
