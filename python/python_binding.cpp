@@ -131,6 +131,8 @@ void define_module(py::module& m) {
 
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
       .def(py::init<double, index_t>(), "lag_distance"_a, "num_lags"_a)
+      .def_readonly_static("AUTOMATIC_ANGLE_TOLERANCE",
+                           &VariogramCalculator::kAutomaticAngleTolerance)
       .def_property("angle_tolerance", &VariogramCalculator::angle_tolerance,
                     &VariogramCalculator::set_angle_tolerance)
       .def_property("directions", &VariogramCalculator::directions,
@@ -141,7 +143,8 @@ void define_module(py::module& m) {
 
   py::class_<VariogramFitting>(m, "VariogramFitting")
       .def(py::init<const std::vector<Variogram>&, const Model&, const kriging::weight_function&>(),
-           "variogs"_a, "model"_a, "weight_fn"_a)
+           "variogs"_a, "model"_a,
+           "weight_fn"_a = kriging::weight_function::kNumPairsOverDistanceSquared)
       .def_property_readonly("brief_report", &VariogramFitting::brief_report)
       .def_property_readonly("full_report", &VariogramFitting::full_report)
       .def_property_readonly("final_cost", &VariogramFitting::final_cost)
@@ -161,17 +164,6 @@ void define_module(py::module& m) {
 }
 
 PYBIND11_MODULE(_core, m) {
-  auto one = m.def_submodule("one");
-  auto two = m.def_submodule("two");
-  auto three = m.def_submodule("three");
-
-  define_module<1>(one);
-  define_module<2>(two);
-  define_module<3>(three);
-
-  two.attr("DIRECTIONS_8") = kriging::kDirections2D_8;
-  three.attr("DIRECTIONS_46") = kriging::kDirections3D_46;
-
   py::class_<point_cloud::normal_estimator>(m, "NormalEstimator")
       .def(py::init<const geometry::points3d&>(), "points"_a)
       .def("estimate_with_knn",
@@ -218,16 +210,27 @@ PYBIND11_MODULE(_core, m) {
   py::class_<kriging::weight_function>(m, "WeightFunction")
       .def(py::init<double, double, double>(), "exp_distance"_a = 0.0, "exp_model_gamma"_a = 0.0,
            "exp_num_pairs"_a = 0.0)
-      .def_readonly_static("num_pairs", &kriging::weight_function::num_pairs)
-      .def_readonly_static("num_pairs_over_distance_squared",
-                           &kriging::weight_function::num_pairs_over_distance_squared)
-      .def_readonly_static("num_pairs_over_model_gamma_squared",
-                           &kriging::weight_function::num_pairs_over_model_gamma_squared)
-      .def_readonly_static("one", &kriging::weight_function::one)
-      .def_readonly_static("one_over_distance_squared",
-                           &kriging::weight_function::one_over_distance_squared)
-      .def_readonly_static("one_over_model_gamma_squared",
-                           &kriging::weight_function::one_over_model_gamma_squared);
+      .def_readonly_static("NUM_PAIRS", &kriging::weight_function::kNumPairs)
+      .def_readonly_static("NUM_PAIRS_OVER_DISTANCE_SQUARED",
+                           &kriging::weight_function::kNumPairsOverDistanceSquared)
+      .def_readonly_static("NUM_PAIRS_OVER_MODEL_GAMMA_SQUARED",
+                           &kriging::weight_function::kNumPairsOverModelGammaSquared)
+      .def_readonly_static("ONE", &kriging::weight_function::kOne)
+      .def_readonly_static("ONE_OVER_DISTANCE_SQUARED",
+                           &kriging::weight_function::kOneOverDistanceSquared)
+      .def_readonly_static("ONE_OVER_MODEL_GAMMA_SQUARED",
+                           &kriging::weight_function::kOneOverModelGammaSquared);
 
   m.attr("__version__") = xstr(POLATORY_VERSION);
+
+  auto one = m.def_submodule("one");
+  auto two = m.def_submodule("two");
+  auto three = m.def_submodule("three");
+
+  define_module<1>(one);
+  define_module<2>(two);
+  define_module<3>(three);
+
+  two.attr("DIRECTIONS_8") = kriging::kDirections2D_8;
+  three.attr("DIRECTIONS_46") = kriging::kDirections3D_46;
 }

@@ -14,8 +14,9 @@ class variogram_fitting<1> {
   using Variogram = variogram<1>;
 
  public:
-  variogram_fitting(const std::vector<Variogram>& variogs, const Model& model,
-                    const weight_function& weight_fn)
+  variogram_fitting(
+      const std::vector<Variogram>& variogs, const Model& model,
+      const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared)
       : model_template_(model),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),

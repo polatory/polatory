@@ -22,6 +22,7 @@ class variogram_builder {
   variogram_builder(double lag_distance, double lag_tolerance, index_t num_lags,
                     const Vector& direction)
       : lag_distance_(lag_distance),
+        inv_lag_distance_(1.0 / lag_distance),
         lag_tolerance_(lag_tolerance),
         num_lags_(num_lags),
         direction_(direction) {
@@ -36,8 +37,8 @@ class variogram_builder {
     auto incr = value_j - value_i;
     auto gamma = 0.5 * (incr * incr);
 
-    auto first = static_cast<index_t>(std::ceil((dist - lag_tolerance_) / lag_distance_));
-    auto last = static_cast<index_t>(std::floor((dist + lag_tolerance_) / lag_distance_));
+    auto first = static_cast<index_t>(std::ceil(inv_lag_distance_ * (dist - lag_tolerance_)));
+    auto last = static_cast<index_t>(std::floor(inv_lag_distance_ * (dist + lag_tolerance_)));
     first = std::max(first, index_t{0});
     last = std::min(last, num_lags_ - 1);
 
@@ -87,6 +88,7 @@ class variogram_builder {
 
  private:
   const double lag_distance_;
+  const double inv_lag_distance_;
   const double lag_tolerance_;
   const index_t num_lags_;
   const Vector direction_;

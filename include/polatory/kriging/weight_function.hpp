@@ -7,12 +7,12 @@ namespace polatory::kriging {
 
 class weight_function {
  public:
-  static const weight_function num_pairs;
-  static const weight_function num_pairs_over_distance_squared;
-  static const weight_function num_pairs_over_model_gamma_squared;
-  static const weight_function one;
-  static const weight_function one_over_distance_squared;
-  static const weight_function one_over_model_gamma_squared;
+  static const weight_function kNumPairs;
+  static const weight_function kNumPairsOverDistanceSquared;
+  static const weight_function kNumPairsOverModelGammaSquared;
+  static const weight_function kOne;
+  static const weight_function kOneOverDistanceSquared;
+  static const weight_function kOneOverModelGammaSquared;
 
   weight_function(double exp_distance, double exp_model_gamma, double exp_num_pairs)
       : exp_distance_(exp_distance),
@@ -30,11 +30,11 @@ class weight_function {
   double exp_num_pairs_;
 };
 
-inline const weight_function weight_function::num_pairs{0.0, 0.0, 1.0};
-inline const weight_function weight_function::num_pairs_over_distance_squared{-2.0, 0.0, 1.0};
-inline const weight_function weight_function::num_pairs_over_model_gamma_squared{0.0, -2.0, 1.0};
-inline const weight_function weight_function::one{0.0, 0.0, 0.0};
-inline const weight_function weight_function::one_over_distance_squared{-2.0, 0.0, 0.0};
-inline const weight_function weight_function::one_over_model_gamma_squared{0.0, -2.0, 0.0};
+inline const weight_function weight_function::kNumPairs{0.0, 0.0, 1.0};
+inline const weight_function weight_function::kNumPairsOverDistanceSquared{-2.0, 0.0, 1.0};
+inline const weight_function weight_function::kNumPairsOverModelGammaSquared{0.0, -2.0, 1.0};
+inline const weight_function weight_function::kOne{0.0, 0.0, 0.0};
+inline const weight_function weight_function::kOneOverDistanceSquared{-2.0, 0.0, 0.0};
+inline const weight_function weight_function::kOneOverModelGammaSquared{0.0, -2.0, 0.0};
 
 }  // namespace polatory::kriging

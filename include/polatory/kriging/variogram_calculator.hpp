@@ -22,6 +22,9 @@ class variogram_calculator {
   using Vectors = geometry::vectorsNd<kDim>;
 
  public:
+  // Not constexpr because of Python bindings.
+  static inline const double kAutomaticAngleTolerance = -1.0;
+
   variogram_calculator(double lag_distance, index_t num_lags)
       : lag_distance_(lag_distance), num_lags_(num_lags), lag_tolerance_{0.5 * lag_distance} {}
 
@@ -48,18 +51,34 @@ class variogram_calculator {
       for (index_t i = 0; i < num_points - 1; i++) {
         auto point_i = points.row(i);
         auto value_i = values(i);
+
         for (index_t j = i + 1; j < num_points; j++) {
           auto point_j = points.row(j);
           auto value_j = values(j);
 
-          auto dir = (point_j - point_i).normalized();
-          for (index_t k = 0; k < num_directions; k++) {
-            auto dot = dir.dot(directions_.row(k));
-            if (std::abs(dot) >= cos_angle_tolerance) {
-              if (dot > 0.0) {
-                local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
-              } else {
-                local_builders.at(k).add_pair(point_j, point_i, value_j, value_i);
+          // Do not normalize the direction to avoid division for performance.
+          Vector dir = point_j - point_i;
+          auto dir_norm = dir.norm();
+          common::valuesd dots = dir * directions_.transpose();
+
+          if (angle_tolerance_ == kAutomaticAngleTolerance) {
+            index_t k{};
+            dots.cwiseAbs().maxCoeff(&k);
+            auto dot = dots(k);
+            if (dot > 0.0) {
+              local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
+            } else {
+              local_builders.at(k).add_pair(point_j, point_i, value_j, value_i);
+            }
+          } else {
+            for (index_t k = 0; k < num_directions; k++) {
+              auto dot = dots(k);
+              if (std::abs(dot) >= dir_norm * cos_angle_tolerance) {
+                if (dot > 0.0) {
+                  local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
+                } else {
+                  local_builders.at(k).add_pair(point_j, point_i, value_j, value_i);
+                }
               }
             }
           }
@@ -85,7 +104,7 @@ class variogram_calculator {
   double lag_tolerance() const { return lag_tolerance_; }
 
   void set_angle_tolerance(double angle_tolerance) {
-    if (!(angle_tolerance > 0.0)) {
+    if (angle_tolerance != kAutomaticAngleTolerance && !(angle_tolerance > 0.0)) {
       throw std::invalid_argument("angle_tolerance must be positive");
     }
 
@@ -113,7 +132,7 @@ class variogram_calculator {
   index_t num_lags_;
   double lag_tolerance_;
   Vectors directions_{Vector::UnitX()};
-  double angle_tolerance_{std::numbers::pi / 2.0};
+  double angle_tolerance_{kAutomaticAngleTolerance};
 };
 
 }  // namespace polatory::kriging
