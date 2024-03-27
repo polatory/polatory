@@ -4,8 +4,15 @@
 
 #include <Eigen/Geometry>
 #include <cmath>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/kriging/weight_function.hpp>
+#include <polatory/model.hpp>
+#include <polatory/types.hpp>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace polatory::kriging {
 
@@ -79,8 +86,7 @@ class variogram_fitting<3> {
     Model model{model_template_};
     model.set_parameters(params_);
 
-    Eigen::Quaterniond q(q_.coeffs().data());
-    Matrix inv_rot = q.normalized().toRotationMatrix();
+    Matrix inv_rot = q_.normalized().toRotationMatrix();
     for (index_t i = 0; i < num_rbfs_; i++) {
       auto& rbf = model.rbfs().at(i);
 

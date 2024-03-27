@@ -3,8 +3,14 @@
 #include <ceres/ceres.h>
 
 #include <cmath>
+#include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/kriging/weight_function.hpp>
+#include <polatory/model.hpp>
+#include <polatory/types.hpp>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace polatory::kriging {
 

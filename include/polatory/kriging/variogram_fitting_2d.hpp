@@ -4,8 +4,16 @@
 
 #include <Eigen/Geometry>
 #include <cmath>
+#include <numbers>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/kriging/weight_function.hpp>
+#include <polatory/model.hpp>
+#include <polatory/types.hpp>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace polatory::kriging {
 
@@ -33,8 +41,7 @@ class variogram_fitting<2> {
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
 
-    auto* angle_manifold = internal::AngleManifold::Create();
-    problem.AddParameterBlock(&angle_, 1, angle_manifold);
+    problem.AddParameterBlock(&r_.angle(), 1);
 
     inv_minor_.resize(num_rbfs_, 1.0);
     problem.AddParameterBlock(inv_minor_.data(), num_rbfs_);
@@ -51,7 +58,7 @@ class variogram_fitting<2> {
       cost_fn->AddParameterBlock(1);
       cost_fn->AddParameterBlock(num_rbfs_);
       cost_fn->SetNumResiduals(variog.num_lags());
-      problem.AddResidualBlock(cost_fn, nullptr, params_.data(), &angle_, inv_minor_.data());
+      problem.AddResidualBlock(cost_fn, nullptr, params_.data(), &r_.angle(), inv_minor_.data());
     }
 
     ceres::Solver::Options options;
@@ -72,8 +79,7 @@ class variogram_fitting<2> {
     Model model{model_template_};
     model.set_parameters(params_);
 
-    Eigen::Rotation2Dd r(angle_);
-    Matrix inv_rot = r.toRotationMatrix();
+    Matrix inv_rot = r_.toRotationMatrix();
     for (index_t i = 0; i < num_rbfs_; i++) {
       auto& rbf = model.rbfs().at(i);
 
@@ -144,7 +150,7 @@ class variogram_fitting<2> {
   index_t num_params_;
   index_t num_rbfs_;
   std::vector<double> params_;
-  double angle_{std::numbers::pi * Eigen::Matrix<double, 1, 1>::Random()(0)};
+  Eigen::Rotation2Dd r_{std::numbers::pi * Eigen::Matrix<double, 1, 1>::Random()(0)};
   std::vector<double> inv_minor_;
   ceres::Solver::Summary summary_;
 };
