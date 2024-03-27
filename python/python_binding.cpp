@@ -169,6 +169,9 @@ PYBIND11_MODULE(_core, m) {
   define_module<2>(two);
   define_module<3>(three);
 
+  two.attr("DIRECTIONS_8") = kriging::kDirections2D_8;
+  three.attr("DIRECTIONS_46") = kriging::kDirections3D_46;
+
   py::class_<point_cloud::normal_estimator>(m, "NormalEstimator")
       .def(py::init<const geometry::points3d&>(), "points"_a)
       .def("estimate_with_knn",

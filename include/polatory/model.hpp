@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <format>
 #include <limits>
 #include <memory>
@@ -153,6 +154,62 @@ class model {
 };
 
 template <>
+std::string model<1>::description() const {
+  if (!is_covariance_model()) {
+    throw std::runtime_error("describe() is only available for covariance models.");
+  }
+
+  std::stringstream ss;
+  ss << "        Type       Psill       Range\n";
+
+  ss << std::format("         nug  {:>10.4f}\n", nugget());
+
+  for (const auto& rbf : rbfs()) {
+    auto type = rbf.short_name();
+    auto [rotation, scale] = geometry::decompose_inverse_anisotropy(rbf.anisotropy());
+    auto psill = rbf.parameters().at(0);
+    auto range = scale(0) * rbf.parameters().at(1);
+
+    ss << std::format("  {:>10}  {:>10.4f}  {:>10.4f}\n", type, psill, range);
+  }
+
+  return ss.str();
+}
+
+template <>
+std::string model<2>::description() const {
+  if (!is_covariance_model()) {
+    throw std::runtime_error("describe() is only available for covariance models.");
+  }
+
+  auto deg = std::numbers::pi / 180.0;
+
+  std::stringstream ss;
+  ss << "        Type       Psill       Major       Minor    Rotation\n";
+
+  ss << std::format("         nug  {:>10.4f}\n", nugget());
+
+  for (const auto& rbf : rbfs()) {
+    auto type = rbf.short_name();
+    auto [rotation, scale] = geometry::decompose_inverse_anisotropy(rbf.anisotropy());
+    auto psill = rbf.parameters().at(0);
+    auto range = rbf.parameters().at(1);
+    auto major = scale(0) * range;
+    auto minor = scale(1) * range;
+
+    auto rot = -std::atan2(rotation(1, 0), rotation(0, 0)) / deg;
+    if (rot < 0.0) {
+      rot += 180.0;
+    }
+
+    ss << std::format("  {:>10}  {:>10.4f}  {:>10.4f}  {:>10.4f}  {:>10.4f}\n", type, psill, major,
+                      minor, rot);
+  }
+
+  return ss.str();
+}
+
+template <>
 std::string model<3>::description() const {
   if (!is_covariance_model()) {
     throw std::runtime_error("describe() is only available for covariance models.");
@@ -162,13 +219,13 @@ std::string model<3>::description() const {
 
   std::stringstream ss;
   ss << "        Type       Psill       Major  Semi-major       Minor"
-        "     Azimuth         Dip    Rotation\n";
+        "     Dip Az.         Dip    Rotation\n";
 
   ss << std::format("         nug  {:>10.4f}\n", nugget());
 
   for (const auto& rbf : rbfs()) {
     auto type = rbf.short_name();
-    auto [rotation, scale] = geometry::decompose_inverse_anisotropy<3>(rbf.anisotropy());
+    auto [rotation, scale] = geometry::decompose_inverse_anisotropy(rbf.anisotropy());
     auto psill = rbf.parameters().at(0);
     auto range = rbf.parameters().at(1);
     auto major = scale(0) * range;
