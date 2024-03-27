@@ -13,11 +13,14 @@ common::valuesd detrend(const geometry::pointsNd<Dim>& points,
                         int degree) {
   polynomial::monomial_basis<Dim> basis(degree);
 
-  Eigen::MatrixXd at = basis.evaluate(points, grad_points);
+  Eigen::MatrixXd pt = basis.evaluate(points, grad_points);
 
-  common::valuesd coeffs = (at * at.transpose()).inverse() * at * values;
+  Eigen::MatrixXd system = pt * pt.transpose();
+  Eigen::VectorXd rhs = pt * values;
 
-  return values - at.transpose() * coeffs;
+  Eigen::VectorXd coeffs = system.ldlt().solve(rhs);
+
+  return values - pt.transpose() * coeffs;
 }
 
 template <int Dim>
