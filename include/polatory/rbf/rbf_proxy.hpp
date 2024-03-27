@@ -59,7 +59,7 @@ class rbf_proxy {
 
   bool is_covariance_function() const { return rbf_->is_covariance_function(); }
 
-  int num_parameters() const { return rbf_->num_parameters(); }
+  index_t num_parameters() const { return rbf_->num_parameters(); }
 
   const std::vector<double>& parameter_lower_bounds() const {
     return rbf_->parameter_lower_bounds();

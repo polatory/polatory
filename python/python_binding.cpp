@@ -43,6 +43,7 @@ void define_module(py::module& m) {
   using Variogram = kriging::variogram<Dim>;
   using VariogramCalculator = kriging::variogram_calculator<Dim>;
   using VariogramFitting = kriging::variogram_fitting<Dim>;
+  using VarioFitting = kriging::vario_fitting<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
@@ -155,6 +156,14 @@ void define_module(py::module& m) {
            "emp_variog"_a, "model"_a, "weight_fn"_a)
       .def_property_readonly("parameters", &VariogramFitting::parameters);
 
+  py::class_<VarioFitting>(m, "VarioFitting")
+      .def(py::init<const std::vector<Variogram>&, const Model&, const kriging::weight_function&>(),
+           "variogs"_a, "model"_a, "weight_fn"_a)
+      .def_property_readonly("brief_report", &VarioFitting::brief_report)
+      .def_property_readonly("full_report", &VarioFitting::full_report)
+      .def_property_readonly("final_cost", &VarioFitting::final_cost)
+      .def_property_readonly("model", &VarioFitting::model);
+
   m.def("detrend",
         py::overload_cast<const Points&, const common::valuesd&, int>(&kriging::detrend<Dim>),
         "points"_a, "values"_a, "degree"_a);
@@ -233,17 +242,6 @@ PYBIND11_MODULE(_core, m) {
                            &kriging::weight_function::one_over_distance_squared)
       .def_readonly_static("one_over_model_gamma_squared",
                            &kriging::weight_function::one_over_model_gamma_squared);
-
-  py::class_<kriging::vario_fitting>(m, "VarioFitting")
-      .def(py::init<const std::vector<kriging::variogram<3>>&, const model<3>&,
-                    const kriging::weight_function&>(),
-           "variogs"_a, "model"_a, "weight_fn"_a)
-      .def_property_readonly("euler_angles", &kriging::vario_fitting::euler_angles)
-      .def_property_readonly("final_cost", &kriging::vario_fitting::final_cost)
-      .def_property_readonly("model", &kriging::vario_fitting::model)
-      .def_property_readonly("parameters", &kriging::vario_fitting::parameters)
-      .def_property_readonly("rotation", &kriging::vario_fitting::rotation)
-      .def("scale", &kriging::vario_fitting::scale);
 
   m.attr("__version__") = xstr(POLATORY_VERSION);
 }

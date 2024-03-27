@@ -72,7 +72,7 @@ class polyharmonic_even final : public rbf_base<Dim> {
                     (k - 2.0 + k / (1.0 + k * std::log(r))) / (r * r) * diff.transpose() * diff);
   }
 
-  int num_parameters() const override { return 1; }
+  index_t num_parameters() const override { return 1; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0};

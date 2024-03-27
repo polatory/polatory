@@ -66,13 +66,15 @@ class model {
 
   double nugget() const { return nugget_; }
 
-  int num_parameters() const {
-    auto np = 1;
+  index_t num_parameters() const {
+    index_t np = 1;
     for (const auto& rbf : rbfs_) {
       np += rbf.num_parameters();
     }
     return np;
   }
+
+  index_t num_rbfs() const { return static_cast<index_t>(rbfs_.size()); }
 
   std::vector<double> parameter_lower_bounds() const {
     std::vector<double> lbs{0.0};
@@ -129,14 +131,14 @@ class model {
   }
 
   void set_parameters(const std::vector<double>& params) {
-    if (static_cast<int>(params.size()) != num_parameters()) {
+    if (static_cast<index_t>(params.size()) != num_parameters()) {
       throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) +
                                   ".");
     }
 
     set_nugget(params.at(0));
 
-    auto i = 1;
+    index_t i = 1;
     for (auto& rbf : rbfs_) {
       rbf.set_parameters(
           std::vector<double>(params.begin() + i, params.begin() + i + rbf.num_parameters()));

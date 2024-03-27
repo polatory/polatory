@@ -61,7 +61,7 @@ class multiquadric final : public rbf_base<Dim> {
     return coeff * (Matrix::Identity() + (k - 2) / (r * r + c * c) * diff.transpose() * diff);
   }
 
-  int num_parameters() const override { return 2; }
+  index_t num_parameters() const override { return 2; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0, 0.0};

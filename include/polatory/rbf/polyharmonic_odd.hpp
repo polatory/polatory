@@ -66,7 +66,7 @@ class polyharmonic_odd final : public rbf_base<Dim> {
     return coeff * (Matrix::Identity() + (k - 2) / (r * r) * diff.transpose() * diff);
   }
 
-  int num_parameters() const override { return 1; }
+  index_t num_parameters() const override { return 1; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0};

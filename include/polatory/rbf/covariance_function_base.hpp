@@ -22,7 +22,7 @@ class covariance_function_base : public rbf_base<Dim> {
 
   bool is_covariance_function() const override { return true; }
 
-  int num_parameters() const override { return 2; }
+  index_t num_parameters() const override { return 2; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0, 0.0};
