@@ -238,22 +238,20 @@ std::string model<3>::description() const {
     auto rot = -euler(2) / deg;
     if (dip < -90.0) {
       dip += 180.0;
-      rot = 180.0 - rot;
+      rot = -rot;
     } else if (dip < 0.0) {
       dip = -dip;
       az += 180.0;
     } else if (dip > 90.0) {
       dip = 180.0 - dip;
       az += 180.0;
-      rot = 180.0 - rot;
+      rot = -rot;
     }
     if (az < 0.0) {
       az += 360.0;
-    } else if (az >= 360.0) {
-      az -= 360.0;
     }
-    if (rot >= 180.0) {
-      rot -= 180.0;
+    if (rot < 0.0) {
+      rot += 180.0;
     }
 
     ss << std::format(
