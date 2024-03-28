@@ -16,17 +16,23 @@ namespace polatory::kriging {
 
 template <>
 class variogram_fitting<1> {
+  using Matrix = geometry::matrix1d;
   using Model = model<1>;
   using Variogram = variogram<1>;
 
  public:
   variogram_fitting(
       const std::vector<Variogram>& variogs, const Model& model,
-      const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared)
+      const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared,
+      bool /*fit_anisotropy*/ = true)
       : model_template_(model),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),
         params_(model.parameters()) {
+    for (auto& rbf : model_template_.rbfs()) {
+      rbf.set_anisotropy(Matrix::Identity());
+    }
+
     ceres::Problem problem;
 
     problem.AddParameterBlock(params_.data(), num_params_);
@@ -38,8 +44,8 @@ class variogram_fitting<1> {
     }
 
     for (const auto& variog : variogs) {
-      auto* cost_fn =
-          new ceres::DynamicNumericDiffCostFunction(new residual(model, variog, weight_fn));
+      auto* cost_fn = new ceres::DynamicNumericDiffCostFunction(
+          new residual(model_template_, variog, weight_fn));
       cost_fn->AddParameterBlock(num_params_);
       cost_fn->SetNumResiduals(variog.num_lags());
       problem.AddResidualBlock(cost_fn, nullptr, params_.data());
@@ -80,22 +86,7 @@ class variogram_fitting<1> {
       internal::clamp_parameters(clamped_params, model);
       model.set_parameters(clamped_params);
 
-      auto num_lags = variog_.num_lags();
-      for (index_t i = 0; i < num_lags; i++) {
-        auto lag = variog_.bin_lag().at(i);
-        auto gamma = variog_.bin_gamma().at(i);
-        auto num_pairs = variog_.bin_num_pairs().at(i);
-
-        auto model_gamma = internal::compute_model_gamma(model, lag);
-
-        auto weight = weight_fn_(lag.norm(), model_gamma, num_pairs);
-        residuals[i] = weight * (gamma - model_gamma);
-        if (std::isnan(residuals[i])) {
-          return false;
-        }
-      }
-
-      return true;
+      return internal::compute_residuals(model, variog_, weight_fn_, residuals);
     }
 
    private:
@@ -104,7 +95,7 @@ class variogram_fitting<1> {
     const weight_function& weight_fn_;
   };
 
-  const Model& model_template_;
+  Model model_template_;
   index_t num_params_;
   index_t num_rbfs_;
   std::vector<double> params_;

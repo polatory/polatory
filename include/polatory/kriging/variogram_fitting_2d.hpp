@@ -26,11 +26,17 @@ class variogram_fitting<2> {
  public:
   variogram_fitting(
       const std::vector<Variogram>& variogs, const Model& model,
-      const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared)
+      const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared,
+      bool fit_anisotropy = true)
       : model_template_(model),
+        fit_anisotropy_(fit_anisotropy && variogs.size() >= 2),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),
         params_(model.parameters()) {
+    for (auto& rbf : model_template_.rbfs()) {
+      rbf.set_anisotropy(Matrix::Identity());
+    }
+
     ceres::Problem problem;
 
     problem.AddParameterBlock(params_.data(), num_params_);
@@ -41,24 +47,32 @@ class variogram_fitting<2> {
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
 
-    problem.AddParameterBlock(&r_.angle(), 1);
+    if (fit_anisotropy_) {
+      problem.AddParameterBlock(&r_.angle(), 1);
 
-    inv_minor_.resize(num_rbfs_, 1.0);
-    problem.AddParameterBlock(inv_minor_.data(), num_rbfs_);
+      inv_minor_.resize(num_rbfs_, 1.0);
+      problem.AddParameterBlock(inv_minor_.data(), num_rbfs_);
 
-    for (index_t i = 0; i < num_rbfs_; i++) {
-      problem.SetParameterLowerBound(inv_minor_.data(), i, 1.0);
-      problem.SetParameterUpperBound(inv_minor_.data(), i, 1e2);
+      for (index_t i = 0; i < num_rbfs_; i++) {
+        problem.SetParameterLowerBound(inv_minor_.data(), i, 1.0);
+        problem.SetParameterUpperBound(inv_minor_.data(), i, 1e2);
+      }
     }
 
     for (const auto& variog : variogs) {
-      auto* cost_fn =
-          new ceres::DynamicNumericDiffCostFunction(new residual(model, variog, weight_fn));
+      auto* cost_fn = new ceres::DynamicNumericDiffCostFunction(
+          new residual(model_template_, variog, weight_fn, fit_anisotropy_));
       cost_fn->AddParameterBlock(num_params_);
-      cost_fn->AddParameterBlock(1);
-      cost_fn->AddParameterBlock(num_rbfs_);
+      if (fit_anisotropy_) {
+        cost_fn->AddParameterBlock(1);
+        cost_fn->AddParameterBlock(num_rbfs_);
+      }
       cost_fn->SetNumResiduals(variog.num_lags());
-      problem.AddResidualBlock(cost_fn, nullptr, params_.data(), &r_.angle(), inv_minor_.data());
+      if (fit_anisotropy_) {
+        problem.AddResidualBlock(cost_fn, nullptr, params_.data(), &r_.angle(), inv_minor_.data());
+      } else {
+        problem.AddResidualBlock(cost_fn, nullptr, params_.data());
+      }
     }
 
     ceres::Solver::Options options;
@@ -79,15 +93,17 @@ class variogram_fitting<2> {
     Model model{model_template_};
     model.set_parameters(params_);
 
-    Matrix inv_rot = r_.toRotationMatrix();
-    for (index_t i = 0; i < num_rbfs_; i++) {
-      auto& rbf = model.rbfs().at(i);
+    if (fit_anisotropy_) {
+      Matrix inv_rot = r_.toRotationMatrix();
+      for (index_t i = 0; i < num_rbfs_; i++) {
+        auto& rbf = model.rbfs().at(i);
 
-      Matrix inv_scale = Matrix::Identity();
-      inv_scale(1, 1) = inv_minor_.at(i);
-      Matrix aniso = inv_scale * inv_rot;
+        Matrix inv_scale = Matrix::Identity();
+        inv_scale(1, 1) = inv_minor_.at(i);
+        Matrix aniso = inv_scale * inv_rot;
 
-      rbf.set_anisotropy(aniso);
+        rbf.set_anisotropy(aniso);
+      }
     }
 
     return model;
@@ -95,13 +111,15 @@ class variogram_fitting<2> {
 
  private:
   struct residual {
-    residual(const Model& model_template, const Variogram& variog, const weight_function& weight_fn)
-        : model_template_(model_template), variog_(variog), weight_fn_(weight_fn) {}
+    residual(const Model& model_template, const Variogram& variog, const weight_function& weight_fn,
+             bool fit_anisotropy)
+        : model_template_(model_template),
+          variog_(variog),
+          weight_fn_(weight_fn),
+          fit_anisotropy_(fit_anisotropy) {}
 
     bool operator()(const double* const* param_blocks, double* residuals) const {
       const auto* params = param_blocks[0];
-      const auto* angle = param_blocks[1];
-      const auto* min_scale = param_blocks[2];
 
       Model model{model_template_};
 
@@ -109,44 +127,36 @@ class variogram_fitting<2> {
       internal::clamp_parameters(clamped_params, model);
       model.set_parameters(clamped_params);
 
-      Eigen::Rotation2Dd r(*angle);
-      Matrix inv_rot = r.toRotationMatrix();
-      auto num_rbfs = model.num_rbfs();
-      for (index_t i = 0; i < num_rbfs; i++) {
-        auto& rbf = model.rbfs().at(i);
+      if (fit_anisotropy_) {
+        const auto* angle = param_blocks[1];
+        const auto* min_scale = param_blocks[2];
 
-        Matrix inv_scale = Matrix::Identity();
-        inv_scale(1, 1) = min_scale[i];
-        Matrix aniso = inv_scale * inv_rot;
+        Eigen::Rotation2Dd r(*angle);
+        Matrix inv_rot = r.toRotationMatrix();
+        auto num_rbfs = model.num_rbfs();
+        for (index_t i = 0; i < num_rbfs; i++) {
+          auto& rbf = model.rbfs().at(i);
 
-        rbf.set_anisotropy(aniso);
-      }
+          Matrix inv_scale = Matrix::Identity();
+          inv_scale(1, 1) = min_scale[i];
+          Matrix aniso = inv_scale * inv_rot;
 
-      auto num_lags = variog_.num_lags();
-      for (index_t i = 0; i < num_lags; i++) {
-        auto lag = variog_.bin_lag().at(i);
-        auto gamma = variog_.bin_gamma().at(i);
-        auto num_pairs = variog_.bin_num_pairs().at(i);
-
-        auto model_gamma = internal::compute_model_gamma(model, lag);
-
-        auto weight = weight_fn_(lag.norm(), model_gamma, num_pairs);
-        residuals[i] = weight * (gamma - model_gamma);
-        if (std::isnan(residuals[i])) {
-          return false;
+          rbf.set_anisotropy(aniso);
         }
       }
 
-      return true;
+      return internal::compute_residuals(model, variog_, weight_fn_, residuals);
     }
 
    private:
     const Model& model_template_;
     const Variogram& variog_;
     const weight_function& weight_fn_;
+    bool fit_anisotropy_;
   };
 
-  const Model& model_template_;
+  Model model_template_;
+  bool fit_anisotropy_;
   index_t num_params_;
   index_t num_rbfs_;
   std::vector<double> params_;

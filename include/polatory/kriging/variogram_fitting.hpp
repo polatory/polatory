@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/kriging/variogram.hpp>
+#include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 #include <vector>
@@ -23,12 +25,31 @@ void clamp_parameters(std::vector<double>& params, const model<Dim>& model) {
 }
 
 template <int Dim>
-double compute_model_gamma(const model<Dim>& model, const geometry::vectorNd<Dim>& lag) {
-  auto gamma = model.nugget();
+bool compute_residuals(const model<Dim>& model, const variogram<Dim>& variog,
+                       const weight_function& weight_fn, double* residuals) {
   for (const auto& rbf : model.rbfs()) {
-    gamma += rbf.evaluate(geometry::vectorNd<Dim>::Zero()) - rbf.evaluate(lag);
+    auto range = rbf.parameters().at(1);
+    if (range == 0.0) {
+      return false;
+    }
   }
-  return gamma;
+
+  auto num_lags = variog.num_lags();
+  for (index_t i = 0; i < num_lags; i++) {
+    auto lag = variog.bin_lag().at(i);
+    auto gamma = variog.bin_gamma().at(i);
+    auto num_pairs = variog.bin_num_pairs().at(i);
+
+    auto model_gamma = model.nugget();
+    for (const auto& rbf : model.rbfs()) {
+      model_gamma += rbf.evaluate(geometry::vectorNd<Dim>::Zero()) - rbf.evaluate(lag);
+    }
+
+    auto weight = weight_fn(lag.norm(), model_gamma, num_pairs);
+    residuals[i] = weight * (gamma - model_gamma);
+  }
+
+  return true;
 }
 
 }  // namespace internal

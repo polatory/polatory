@@ -142,9 +142,11 @@ void define_module(py::module& m) {
       .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
 
   py::class_<VariogramFitting>(m, "VariogramFitting")
-      .def(py::init<const std::vector<Variogram>&, const Model&, const kriging::weight_function&>(),
+      .def(py::init<const std::vector<Variogram>&, const Model&, const kriging::weight_function&,
+                    bool>(),
            "variogs"_a, "model"_a,
-           "weight_fn"_a = kriging::weight_function::kNumPairsOverDistanceSquared)
+           "weight_fn"_a = kriging::weight_function::kNumPairsOverDistanceSquared,
+           "fit_anisotropy"_a = true)
       .def_property_readonly("brief_report", &VariogramFitting::brief_report)
       .def_property_readonly("full_report", &VariogramFitting::full_report)
       .def_property_readonly("final_cost", &VariogramFitting::final_cost)
