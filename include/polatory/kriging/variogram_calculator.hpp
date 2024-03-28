@@ -47,6 +47,9 @@ class variogram_calculator {
         local_builders.emplace_back(lag_distance_, lag_tolerance_, num_lags_, directions_.row(k));
       }
 
+      common::valuesd dots;
+      common::valuesd abs_dots;
+
 #pragma omp for schedule(dynamic)
       for (index_t i = 0; i < num_points - 1; i++) {
         auto point_i = points.row(i);
@@ -58,23 +61,22 @@ class variogram_calculator {
 
           // Do not normalize the direction to avoid division for performance.
           Vector dir = point_j - point_i;
-          auto dir_norm = dir.norm();
-          common::valuesd dots = dir * directions_.transpose();
+          dots = dir * directions_.transpose();
+          abs_dots = dots.cwiseAbs();
 
           if (angle_tolerance_ == kAutomaticAngleTolerance) {
             index_t k{};
-            dots.cwiseAbs().maxCoeff(&k);
-            auto dot = dots(k);
-            if (dot > 0.0) {
+            abs_dots.maxCoeff(&k);
+            if (dots(k) > 0.0) {
               local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
             } else {
               local_builders.at(k).add_pair(point_j, point_i, value_j, value_i);
             }
           } else {
+            auto threshold = dir.norm() * cos_angle_tolerance;
             for (index_t k = 0; k < num_directions; k++) {
-              auto dot = dots(k);
-              if (std::abs(dot) >= dir_norm * cos_angle_tolerance) {
-                if (dot > 0.0) {
+              if (abs_dots(k) >= threshold) {
+                if (dots(k) > 0.0) {
                   local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
                 } else {
                   local_builders.at(k).add_pair(point_j, point_i, value_j, value_i);
