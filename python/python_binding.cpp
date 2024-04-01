@@ -103,7 +103,7 @@ void define_module(py::module& m) {
       .def("fit",
            py::overload_cast<const Points&, const common::valuesd&, double, int>(&Interpolant::fit),
            "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100)
-      .def("fit_with_grad",
+      .def("fit",
            py::overload_cast<const Points&, const Points&, const common::valuesd&, double, double,
                              int>(&Interpolant::fit),
            "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
@@ -112,7 +112,7 @@ void define_module(py::module& m) {
            py::overload_cast<const Points&, const common::valuesd&, double, int>(
                &Interpolant::fit_incrementally),
            "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100)
-      .def("fit_incrementally_with_grad",
+      .def("fit_incrementally",
            py::overload_cast<const Points&, const Points&, const common::valuesd&, double, double,
                              int>(&Interpolant::fit_incrementally),
            "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
