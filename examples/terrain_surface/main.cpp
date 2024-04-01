@@ -3,7 +3,6 @@
 #include <iostream>
 #include <polatory/polatory.hpp>
 #include <tuple>
-#include <utility>
 
 #include "../common/common.hpp"
 #include "parse_options.hpp"
@@ -19,9 +18,8 @@ using polatory::geometry::points3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function_25d;
 using polatory::point_cloud::distance_filter;
-using polatory::rbf::rbf_proxy;
 
-void main_impl(rbf_proxy<2>&& rbf, const options& opts) {
+void main_impl(model<2>&& model, const options& opts) {
   // Load points (x,y,0) and values (z).
   tabled table = read_table(opts.in_file);
   points2d points = table(Eigen::all, {0, 1});
@@ -29,10 +27,6 @@ void main_impl(rbf_proxy<2>&& rbf, const options& opts) {
 
   // Remove very close points.
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
-
-  // Define the model.
-  model<2> model(std::move(rbf), opts.poly_degree);
-  model.set_nugget(opts.smooth);
 
   // Fit.
   interpolant<2> interpolant(model);
@@ -53,7 +47,7 @@ void main_impl(rbf_proxy<2>&& rbf, const options& opts) {
 int main(int argc, const char* argv[]) {
   try {
     auto opts = parse_options(argc, argv);
-    main_impl(make_rbf<2>(opts.rbf_name, opts.rbf_params), opts);
+    main_impl(make_model<2>(opts.model_opts), opts);
     return 0;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

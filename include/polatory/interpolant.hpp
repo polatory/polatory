@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <format>
 #include <memory>
+#include <polatory/common/io.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -187,7 +188,14 @@ class interpolant {
     return weights_;
   }
 
+  POLATORY_IMPLEMENT_LOAD_SAVE(interpolant);
+
  private:
+  POLATORY_FRIEND_READ_WRITE(model);
+
+  // For deserialization.
+  interpolant() = default;
+
   void check_num_points(const Points& points, const Points& grad_points) const {
     auto l = model_.poly_basis_size();
     auto mu = points.rows();
@@ -218,8 +226,7 @@ class interpolant {
     }
   }
 
-  const Model model_;
-
+  Model model_;
   bool fitted_{};
   Points centers_;
   Points grad_centers_;
@@ -230,3 +237,31 @@ class interpolant {
 };
 
 }  // namespace polatory
+
+namespace polatory::common {
+
+template <int Dim>
+struct Read<interpolant<Dim>> {
+  void operator()(std::istream& is, interpolant<Dim>& t) {
+    read(is, t.model_);
+    read(is, t.fitted_);
+    read(is, t.centers_);
+    read(is, t.grad_centers_);
+    read(is, t.bbox_);
+    read(is, t.weights_);
+  }
+};
+
+template <int Dim>
+struct Write<interpolant<Dim>> {
+  void operator()(std::ostream& os, const interpolant<Dim>& t) {
+    write(os, t.model_);
+    write(os, t.fitted_);
+    write(os, t.centers_);
+    write(os, t.grad_centers_);
+    write(os, t.bbox_);
+    write(os, t.weights_);
+  }
+};
+
+}  // namespace polatory::common

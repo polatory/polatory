@@ -12,14 +12,9 @@ namespace polatory::rbf {
 namespace internal {
 
 template <int Dim, int k>
-class multiquadric final : public rbf_base<Dim> {
- public:
-  static constexpr int kDim = Dim;
-
- private:
+class multiquadric : public rbf_base<Dim> {
   using Base = rbf_base<Dim>;
   using Matrix = Base::Matrix;
-  using RbfPtr = Base::RbfPtr;
   using Vector = Base::Vector;
 
   static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
@@ -28,24 +23,24 @@ class multiquadric final : public rbf_base<Dim> {
 
  public:
   using Base::Base;
+  using Base::parameters;
+  using Base::set_parameters;
 
-  explicit multiquadric(const std::vector<double>& params) { Base::set_parameters(params); }
-
-  RbfPtr clone() const override { return std::make_unique<multiquadric>(*this); }
+  explicit multiquadric(const std::vector<double>& params) { set_parameters(params); }
 
   int cpd_order() const override { return (k + 1) / 2; }
 
   double evaluate_isotropic(const Vector& diff) const override {
-    auto slope = Base::parameters().at(0);
-    auto c = Base::parameters().at(1);
+    auto slope = parameters().at(0);
+    auto c = parameters().at(1);
     auto r = diff.norm();
 
     return kSign * slope * std::pow(std::hypot(r, c), k);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
-    auto slope = Base::parameters().at(0);
-    auto c = Base::parameters().at(1);
+    auto slope = parameters().at(0);
+    auto c = parameters().at(1);
     auto r = diff.norm();
 
     auto coeff = kSign * k * slope * std::pow(std::hypot(r, c), k - 2);
@@ -53,15 +48,15 @@ class multiquadric final : public rbf_base<Dim> {
   }
 
   Matrix evaluate_hessian_isotropic(const Vector& diff) const override {
-    auto slope = Base::parameters().at(0);
-    auto c = Base::parameters().at(1);
+    auto slope = parameters().at(0);
+    auto c = parameters().at(1);
     auto r = diff.norm();
 
     auto coeff = kSign * k * slope * std::pow(std::hypot(r, c), k - 2);
     return coeff * (Matrix::Identity() + (k - 2) / (r * r + c * c) * diff.transpose() * diff);
   }
 
-  int num_parameters() const override { return 2; }
+  index_t num_parameters() const override { return 2; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0, 0.0};
@@ -81,14 +76,44 @@ class multiquadric final : public rbf_base<Dim> {
 };
 
 template <int Dim>
-using multiquadric1 = multiquadric<Dim, 1>;
+class multiquadric1 final : public multiquadric<Dim, 1> {
+ public:
+  static constexpr int kDim = Dim;
+  static inline const std::string kShortName = "mq1";
+
+ private:
+  using Base = multiquadric<Dim, 1>;
+  using RbfPtr = Base::RbfPtr;
+
+ public:
+  using Base::Base;
+
+  RbfPtr clone() const override { return std::make_unique<multiquadric1>(*this); }
+
+  std::string short_name() const override { return kShortName; }
+};
 
 template <int Dim>
-using multiquadric3 = multiquadric<Dim, 3>;
+class multiquadric3 final : public multiquadric<Dim, 3> {
+ public:
+  static constexpr int kDim = Dim;
+  static inline const std::string kShortName = "mq3";
+
+ private:
+  using Base = multiquadric<Dim, 3>;
+  using RbfPtr = Base::RbfPtr;
+
+ public:
+  using Base::Base;
+
+  RbfPtr clone() const override { return std::make_unique<multiquadric3>(*this); }
+
+  std::string short_name() const override { return kShortName; }
+};
 
 }  // namespace internal
 
-DEFINE_RBF(multiquadric1);
-DEFINE_RBF(multiquadric3);
+POLATORY_DEFINE_RBF(multiquadric1);
+POLATORY_DEFINE_RBF(multiquadric3);
 
 }  // namespace polatory::rbf

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <polatory/common/io.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <string>
 #include <vector>
@@ -20,7 +21,9 @@ class rbf_proxy {
  public:
   ~rbf_proxy() = default;
 
-  rbf_proxy(const rbf_proxy& other) : rbf_(other.rbf_->clone()) {}
+  // The check for if other.rbf_ has a value is required for copying a default-constructed
+  // rbf_proxy on deserialization of a std::vector<rbf_proxy>, etc.
+  rbf_proxy(const rbf_proxy& other) : rbf_(other.rbf_ ? other.rbf_->clone() : nullptr) {}
 
   rbf_proxy(rbf_proxy&& other) = default;
 
@@ -57,7 +60,9 @@ class rbf_proxy {
 
   RbfBase* get_raw_pointer() const { return rbf_.get(); }
 
-  int num_parameters() const { return rbf_->num_parameters(); }
+  bool is_covariance_function() const { return rbf_->is_covariance_function(); }
+
+  index_t num_parameters() const { return rbf_->num_parameters(); }
 
   const std::vector<double>& parameter_lower_bounds() const {
     return rbf_->parameter_lower_bounds();
@@ -75,16 +80,25 @@ class rbf_proxy {
 
   void set_parameters(const std::vector<double>& params) { rbf_->set_parameters(params); }
 
+  std::string short_name() const { return rbf_->short_name(); }
+
   double support_radius_isotropic() const { return rbf_->support_radius_isotropic(); }
 
  private:
+  POLATORY_FRIEND_READ_WRITE(rbf_proxy);
+
+  // For deserialization.
+  rbf_proxy() = default;
+
   std::unique_ptr<RbfBase> rbf_;
 };
 
-#define DEFINE_RBF(RBF_NAME)                                                   \
+#define POLATORY_DEFINE_RBF(RBF_NAME)                                          \
   template <int Dim>                                                           \
   class RBF_NAME : public rbf_proxy<Dim> {                                     \
    public:                                                                     \
+    using Rbf = internal::RBF_NAME<Dim>;                                       \
+                                                                               \
     explicit RBF_NAME(const std::vector<double>& params)                       \
         : rbf_proxy<Dim>(std::make_unique<internal::RBF_NAME<Dim>>(params)) {} \
   };

@@ -3,9 +3,11 @@
 #include <igl/read_triangle_mesh.h>
 
 #include <Eigen/Core>
+#include <cmath>
 #include <exception>
 #include <iostream>
 #include <polatory/polatory.hpp>
+#include <stdexcept>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
@@ -73,7 +75,7 @@ class mesh_distance {
     for (index_t i = 0; i < points.rows(); i++) {
       point3d p = points.row(i);
 
-      int fi;
+      int fi{};
       point3d closest_point;
       auto sqrd = tree_.squared_distance(vertices_, faces_, p, fi, closest_point);
 

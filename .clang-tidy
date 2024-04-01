@@ -2,27 +2,34 @@ Checks: "-*,\
   boost-*,\
   bugprone-*,\
   -bugprone-easily-swappable-parameters,\
+  -bugprone-macro-parentheses,\
   -bugprone-unchecked-optional-access,\
   cert-*,\
+  -cert-err58-cpp,\
   clang-analyzer-*,\
   cppcoreguidelines-*,\
   -cppcoreguidelines-avoid-const-or-ref-data-members,\
   -cppcoreguidelines-avoid-do-while,\
   -cppcoreguidelines-avoid-magic-numbers,\
   -cppcoreguidelines-avoid-non-const-global-variables,\
+  -cppcoreguidelines-macro-usage,\
   -cppcoreguidelines-non-private-member-variables-in-classes,\
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,\
   google-*,\
+  -google-readability-casting,\
   -google-runtime-int,\
   -google-runtime-references,\
   misc-*,\
   -misc-const-correctness,\
+  -misc-include-cleaner,\
   -misc-non-private-member-variables-in-classes,\
   modernize-*,\
   -modernize-pass-by-value,\
   -modernize-use-nodiscard,\
   -modernize-use-trailing-return-type,\
+  openmp-*,\
   performance-*,\
+  -performance-avoid-endl,\
   portability-*,\
   readability-*,\
   -readability-function-cognitive-complexity,\

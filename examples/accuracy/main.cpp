@@ -5,6 +5,8 @@
 #include <exception>
 #include <iostream>
 #include <polatory/polatory.hpp>
+#include <stdexcept>
+#include <string>
 #include <utility>
 
 #include "../common/common.hpp"
@@ -19,20 +21,15 @@ using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
 using polatory::numeric::relative_error;
-using polatory::rbf::rbf_proxy;
 
 template <int Dim>
-void main_impl(rbf_proxy<Dim>&& rbf, const options& opts) {
+void main_impl(model<Dim>&& model, const options& opts) {
   static constexpr int kDim = Dim;
   using Bbox = bboxNd<kDim>;
   using DirectEvaluator = rbf_direct_evaluator<kDim>;
   using Evaluator = rbf_evaluator<kDim>;
-  using Model = model<kDim>;
   using Point = pointNd<kDim>;
   using Points = pointsNd<kDim>;
-
-  auto poly_degree = rbf.cpd_order() - 1;
-  Model model(std::move(rbf), poly_degree);
 
   auto mu = opts.n_points;
   auto sigma = opts.n_grad_points;
@@ -76,13 +73,13 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
     switch (opts.dim) {
       case 1:
-        main_impl(make_rbf<1>(opts.rbf_name, opts.rbf_params), opts);
+        main_impl(make_model<1>(opts.model_opts), opts);
         break;
       case 2:
-        main_impl(make_rbf<2>(opts.rbf_name, opts.rbf_params), opts);
+        main_impl(make_model<2>(opts.model_opts), opts);
         break;
       case 3:
-        main_impl(make_rbf<3>(opts.rbf_name, opts.rbf_params), opts);
+        main_impl(make_model<3>(opts.model_opts), opts);
         break;
       default:
         throw std::runtime_error("Unsupported dimension: " + std::to_string(opts.dim));

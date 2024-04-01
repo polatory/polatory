@@ -3,40 +3,38 @@
 #include <boost/program_options.hpp>
 #include <exception>
 #include <iostream>
+#include <polatory/kriging.hpp>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "../common/common.hpp"
+#include "../common/model_options.hpp"
 
 struct options {
   std::string in_file;
-  int dim;
-  std::string rbf_name;
-  std::vector<double> rbf_params;
-  double nugget;
-  polatory::kriging::weight_function weight_fn;
+  int dim{};
+  model_options model_opts;
+  polatory::kriging::weight_function weight_fn{
+      polatory::kriging::weight_function::kNumPairsOverDistanceSquared};
 };
 
 inline options parse_options(int argc, const char* argv[]) {
   namespace po = boost::program_options;
 
   options opts;
-  std::vector<std::string> rbf_vec;
   int weights;
 
-  po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()                                                               //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                  //
-       "Input file (an output file from kriging_variogram)")                            //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),                    //
-       "Dimension of the spatial domain")                                               //
-      ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."),         //
-       cov_list)                                                                        //
-      ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")->value_name("VAL"),  //
-       "Initial value of the nugget")                                                   //
-      ("weights", po::value(&weights)->default_value(1)->value_name("0-5"),             //
+  auto model_opts_desc = make_model_options_description(opts.model_opts);
+
+  po::options_description general_opts_desc("General", 80, 50);
+  general_opts_desc.add_options()                                            //
+      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),       //
+       "Input file produced by kriging_variogram")                           //
+      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),         //
+       "Dimension of the spatial domain")                                    //
+      ("weights", po::value(&weights)->default_value(1)->value_name("0-5"),  //
        R"(Weight function for least squares fitting, one of
   0: N_j
   1: N_j / h_j^2
@@ -48,6 +46,9 @@ where
   N_j: number of pairs in the j-th bin
   h_j: representative distance of the j-th bin
   gamma: model variogram)");
+
+  po::options_description opts_desc;
+  opts_desc.add(general_opts_desc).add(model_opts_desc);
 
   po::variables_map vm;
   try {
@@ -63,29 +64,24 @@ where
     throw;
   }
 
-  opts.rbf_name = rbf_vec.at(0);
-  for (std::size_t i = 1; i < rbf_vec.size(); i++) {
-    opts.rbf_params.push_back(polatory::numeric::to_double(rbf_vec.at(i)));
-  }
-
   switch (weights) {
     case 0:
-      opts.weight_fn = polatory::kriging::weight_functions::num_pairs;
+      opts.weight_fn = polatory::kriging::weight_function::kNumPairs;
       break;
     case 1:
-      opts.weight_fn = polatory::kriging::weight_functions::num_pairs_over_distance_squared;
+      opts.weight_fn = polatory::kriging::weight_function::kNumPairsOverDistanceSquared;
       break;
     case 2:
-      opts.weight_fn = polatory::kriging::weight_functions::num_pairs_over_model_gamma_squared;
+      opts.weight_fn = polatory::kriging::weight_function::kNumPairsOverModelGammaSquared;
       break;
     case 3:
-      opts.weight_fn = polatory::kriging::weight_functions::one;
+      opts.weight_fn = polatory::kriging::weight_function::kOne;
       break;
     case 4:
-      opts.weight_fn = polatory::kriging::weight_functions::one_over_distance_squared;
+      opts.weight_fn = polatory::kriging::weight_function::kOneOverDistanceSquared;
       break;
     case 5:
-      opts.weight_fn = polatory::kriging::weight_functions::one_over_model_gamma_squared;
+      opts.weight_fn = polatory::kriging::weight_function::kOneOverModelGammaSquared;
       break;
     default:
       throw std::runtime_error("weight must be within the range of 0 to 5.");

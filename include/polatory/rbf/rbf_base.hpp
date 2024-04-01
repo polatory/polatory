@@ -3,6 +3,7 @@
 #include <limits>
 #include <memory>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/types.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -55,7 +56,9 @@ class rbf_base {
 
   virtual Matrix evaluate_hessian_isotropic(const Vector& diff) const = 0;
 
-  virtual int num_parameters() const = 0;
+  virtual bool is_covariance_function() const { return false; }
+
+  virtual index_t num_parameters() const = 0;
 
   virtual const std::vector<double>& parameter_lower_bounds() const = 0;
 
@@ -74,7 +77,7 @@ class rbf_base {
   }
 
   void set_parameters(const std::vector<double>& params) {
-    if (static_cast<int>(params.size()) != num_parameters()) {
+    if (static_cast<index_t>(params.size()) != num_parameters()) {
       throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) +
                                   ".");
     }
@@ -82,16 +85,18 @@ class rbf_base {
     params_ = params;
   }
 
+  virtual std::string short_name() const = 0;
+
   virtual double support_radius_isotropic() const {
     return std::numeric_limits<double>::infinity();
   }
 
  protected:
-  rbf_base() : aniso_(Matrix::Identity()) {}
+  rbf_base() = default;
 
  private:
   std::vector<double> params_;
-  Matrix aniso_;
+  Matrix aniso_{Matrix::Identity()};
 };
 
 }  // namespace polatory::rbf::internal

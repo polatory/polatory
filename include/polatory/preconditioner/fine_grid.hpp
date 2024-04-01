@@ -163,14 +163,14 @@ class fine_grid {
   const std::vector<bool> inner_point_;
   const std::vector<bool> inner_grad_point_;
   binary_cache& cache_;
-  std::size_t cache_id_;
+  std::size_t cache_id_{};
 
   const index_t l_;
   const index_t mu_;
   const index_t sigma_;
   const index_t m_;
-  index_t mu_full_;
-  index_t sigma_full_;
+  index_t mu_full_{};
+  index_t sigma_full_{};
 
   // Matrix -E.
   Eigen::MatrixXd me_;

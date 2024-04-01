@@ -5,6 +5,7 @@
 #include <pybind11/stl.h>
 
 #include <memory>
+#include <polatory/kriging.hpp>
 #include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
@@ -21,31 +22,6 @@ geometry::bboxNd<Dim> bbox_from_points(const geometry::pointsNd<Dim>& points) {
   return geometry::bboxNd<Dim>::from_points(points);
 }
 
-template <int Dim>
-std::unique_ptr<kriging::variogram_fitting<Dim>> make_variogram_fitting(
-    const kriging::empirical_variogram<Dim>& emp_variog, const model<Dim>& model,
-    const std::string& weight) {
-  const kriging::weight_function* weight_fn{nullptr};
-
-  if (weight == "num_pairs") {
-    weight_fn = &kriging::weight_functions::num_pairs;
-  } else if (weight == "num_pairs_over_distance_squared") {
-    weight_fn = &kriging::weight_functions::num_pairs_over_distance_squared;
-  } else if (weight == "num_pairs_over_model_gamma_squared") {
-    weight_fn = &kriging::weight_functions::num_pairs_over_model_gamma_squared;
-  } else if (weight == "one") {
-    weight_fn = &kriging::weight_functions::one;
-  } else if (weight == "one_over_distance_squared") {
-    weight_fn = &kriging::weight_functions::one_over_distance_squared;
-  } else if (weight == "one_over_model_gamma_squared") {
-    weight_fn = &kriging::weight_functions::one_over_model_gamma_squared;
-  } else {
-    throw std::invalid_argument("Unknown weight function: " + weight);
-  }
-
-  return std::make_unique<kriging::variogram_fitting<Dim>>(emp_variog, model, *weight_fn);
-}
-
 template <int Dim, class Rbf>
 void define_rbf(py::module& m, const std::string& name) {
   py::class_<Rbf, rbf::rbf_proxy<Dim>>(m, name.c_str())
@@ -56,11 +32,12 @@ template <int Dim>
 void define_module(py::module& m) {
   using Bbox = geometry::bboxNd<Dim>;
   using DistanceFilter = point_cloud::distance_filter<Dim>;
-  using EmpiricalVariogram = kriging::empirical_variogram<Dim>;
   using Interpolant = interpolant<Dim>;
   using Model = model<Dim>;
   using Points = geometry::pointsNd<Dim>;
   using RbfProxy = rbf::rbf_proxy<Dim>;
+  using Variogram = kriging::variogram<Dim>;
+  using VariogramCalculator = kriging::variogram_calculator<Dim>;
   using VariogramFitting = kriging::variogram_fitting<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
@@ -73,8 +50,10 @@ void define_module(py::module& m) {
   py::class_<RbfProxy>(m, "Rbf")
       .def_property("anisotropy", &RbfProxy::anisotropy, &RbfProxy::set_anisotropy)
       .def_property_readonly("cpd_order", &RbfProxy::cpd_order)
+      .def_property_readonly("is_covariance_function", &RbfProxy::is_covariance_function)
       .def_property_readonly("num_parameters", &RbfProxy::num_parameters)
       .def_property("parameters", &RbfProxy::parameters, &RbfProxy::set_parameters)
+      .def_property_readonly("short_name", &RbfProxy::short_name)
       .def("evaluate", &RbfProxy::evaluate, "diff"_a)
       .def("evaluate_gradient", &RbfProxy::evaluate_gradient, "diff"_a)
       .def("evaluate_hessian", &RbfProxy::evaluate_hessian, "diff"_a);
@@ -100,15 +79,21 @@ void define_module(py::module& m) {
   define_rbf<Dim, rbf::triharmonic3d<Dim>>(m, "Triharmonic3D");
 
   py::class_<Model>(m, "Model")
-      .def(py::init<RbfProxy, int>(), "rbf"_a, "poly_degree"_a)
-      .def(py::init<std::vector<RbfProxy>, int>(), "rbfs"_a, "poly_degree"_a)
+      .def(py::init<RbfProxy, int>(), "rbf"_a, "poly_degree"_a = Model::kMinRequiredPolyDegree)
+      .def(py::init<std::vector<RbfProxy>, int>(), "rbfs"_a,
+           "poly_degree"_a = Model::kMinRequiredPolyDegree)
+      .def_readonly_static("MIN_REQUIRED_POLY_DEGREE", &Model::kMinRequiredPolyDegree)
       .def_property_readonly("cpd_order", &Model::cpd_order)
+      .def_property_readonly("description", &Model::description)
       .def_property("nugget", &Model::nugget, &Model::set_nugget)
       .def_property_readonly("num_parameters", &Model::num_parameters)
       .def_property("parameters", &Model::parameters, &Model::set_parameters)
       .def_property_readonly("poly_basis_size", &Model::poly_basis_size)
       .def_property_readonly("poly_degree", &Model::poly_degree)
-      .def_property_readonly("rbfs", &Model::rbfs);
+      .def_property_readonly(
+          "rbfs", static_cast<const std::vector<RbfProxy>& (Model::*)() const>(&Model::rbfs))
+      .def_static("load", &Model::load, "filename"_a)
+      .def("save", &Model::save, "filename"_a);
 
   py::class_<Interpolant>(m, "Interpolant")
       .def(py::init<const Model&>(), "model"_a)
@@ -136,34 +121,60 @@ void define_module(py::module& m) {
            py::overload_cast<const Points&, const common::valuesd&, const common::valuesd&,
                              const common::valuesd&, double, int>(&Interpolant::fit_inequality),
            "points"_a, "values"_a, "values_lb"_a, "values_ub"_a, "absolute_tolerance"_a,
-           "max_iter"_a = 100);
+           "max_iter"_a = 100)
+      .def_static("load", &Interpolant::load, "filename"_a)
+      .def("save", &Interpolant::save, "filename"_a);
 
   py::class_<DistanceFilter>(m, "DistanceFilter")
       .def(py::init<const Points&, double>(), "points"_a, "distance"_a)
       .def_property_readonly("filtered_indices", &DistanceFilter::filtered_indices);
 
-  py::class_<EmpiricalVariogram>(m, "EmpiricalVariogram")
-      .def(py::init<const Points&, const common::valuesd&, double, index_t>(), "points"_a,
-           "values"_a, "bin_width"_a, "num_bins"_a)
-      .def_property_readonly("bin_distance", &EmpiricalVariogram::bin_distance)
-      .def_property_readonly("bin_gamma", &EmpiricalVariogram::bin_gamma)
-      .def_property_readonly("bin_num_pairs", &EmpiricalVariogram::bin_num_pairs);
+  py::class_<Variogram>(m, "Variogram")
+      .def_property_readonly("bin_distance", &Variogram::bin_distance)
+      .def_property_readonly("bin_gamma", &Variogram::bin_gamma)
+      .def_property_readonly("bin_num_pairs", &Variogram::bin_num_pairs)
+      .def_property_readonly("direction", &Variogram::direction)
+      .def_property_readonly("num_bins", &Variogram::num_bins);
+
+  py::class_<VariogramCalculator>(m, "VariogramCalculator")
+      .def(py::init<double, index_t>(), "lag_distance"_a, "num_lags"_a)
+      .def_readonly_static("AUTOMATIC_ANGLE_TOLERANCE",
+                           &VariogramCalculator::kAutomaticAngleTolerance)
+      .def_readonly_static("ISOTROPIC_DIRECTIONS", &VariogramCalculator::kIsotropicDirections)
+      .def_readonly_static("ANISOTROPIC_DIRECTIONS", &VariogramCalculator::kAnisotropicDirections)
+      .def_property("angle_tolerance", &VariogramCalculator::angle_tolerance,
+                    &VariogramCalculator::set_angle_tolerance)
+      .def_property("directions", &VariogramCalculator::directions,
+                    &VariogramCalculator::set_directions)
+      .def_property("lag_tolerance", &VariogramCalculator::lag_tolerance,
+                    &VariogramCalculator::set_lag_tolerance)
+      .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
 
   py::class_<VariogramFitting>(m, "VariogramFitting")
-      .def(py::init(&make_variogram_fitting<Dim>), "emp_variog"_a, "model"_a,
-           "weight"_a = "num_pairs_over_distance_squared")
-      .def_property_readonly("parameters", &VariogramFitting::parameters);
+      .def(py::init<const std::vector<Variogram>&, const Model&, const kriging::weight_function&,
+                    bool>(),
+           "variogs"_a, "model"_a,
+           "weight_fn"_a = kriging::weight_function::kNumPairsOverDistanceSquared,
+           "fit_anisotropy"_a = true)
+      .def_property_readonly("brief_report", &VariogramFitting::brief_report)
+      .def_property_readonly("full_report", &VariogramFitting::full_report)
+      .def_property_readonly("final_cost", &VariogramFitting::final_cost)
+      .def_property_readonly("model", &VariogramFitting::model);
+
+  m.def("cross_validate", &kriging::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
+        "set_ids"_a, "absolute_tolerance"_a, "max_iter"_a = 100);
+
+  m.def("detrend",
+        py::overload_cast<const Points&, const common::valuesd&, int>(&kriging::detrend<Dim>),
+        "points"_a, "values"_a, "degree"_a);
+
+  m.def("detrend",
+        py::overload_cast<const Points&, const Points&, const common::valuesd&, int>(
+            &kriging::detrend<Dim>),
+        "points"_a, "grad_points"_a, "values"_a, "degree"_a);
 }
 
 PYBIND11_MODULE(_core, m) {
-  auto one = m.def_submodule("one");
-  auto two = m.def_submodule("two");
-  auto three = m.def_submodule("three");
-
-  define_module<1>(one);
-  define_module<2>(two);
-  define_module<3>(three);
-
   py::class_<point_cloud::normal_estimator>(m, "NormalEstimator")
       .def(py::init<const geometry::points3d&>(), "points"_a)
       .def("estimate_with_knn",
@@ -207,5 +218,27 @@ PYBIND11_MODULE(_core, m) {
       .def_property_readonly("faces", &isosurface::surface::faces)
       .def_property_readonly("vertices", &isosurface::surface::vertices);
 
+  py::class_<kriging::weight_function>(m, "WeightFunction")
+      .def(py::init<double, double, double>(), "exp_distance"_a = 0.0, "exp_model_gamma"_a = 0.0,
+           "exp_num_pairs"_a = 0.0)
+      .def_readonly_static("NUM_PAIRS", &kriging::weight_function::kNumPairs)
+      .def_readonly_static("NUM_PAIRS_OVER_DISTANCE_SQUARED",
+                           &kriging::weight_function::kNumPairsOverDistanceSquared)
+      .def_readonly_static("NUM_PAIRS_OVER_MODEL_GAMMA_SQUARED",
+                           &kriging::weight_function::kNumPairsOverModelGammaSquared)
+      .def_readonly_static("ONE", &kriging::weight_function::kOne)
+      .def_readonly_static("ONE_OVER_DISTANCE_SQUARED",
+                           &kriging::weight_function::kOneOverDistanceSquared)
+      .def_readonly_static("ONE_OVER_MODEL_GAMMA_SQUARED",
+                           &kriging::weight_function::kOneOverModelGammaSquared);
+
   m.attr("__version__") = xstr(POLATORY_VERSION);
+
+  auto one = m.def_submodule("one");
+  auto two = m.def_submodule("two");
+  auto three = m.def_submodule("three");
+
+  define_module<1>(one);
+  define_module<2>(two);
+  define_module<3>(three);
 }

@@ -22,8 +22,6 @@ add_library(${TARGET} STATIC
     fmm/impl/triharmonic3d.cpp
     fmm/make_fmm_evaluator.cpp
     isosurface/mesh_defects_finder.cpp
-    kriging/empirical_variogram.cpp
-    kriging/weight_function.cpp
     krylov/fgmres.cpp
     krylov/gmres_base.cpp
     krylov/gmres.cpp

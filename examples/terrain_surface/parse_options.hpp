@@ -9,14 +9,12 @@
 #include <vector>
 
 #include "../common/common.hpp"
+#include "../common/model_options.hpp"
 
 struct options {
   std::string in_file;
   double min_distance;
-  std::string rbf_name;
-  std::vector<double> rbf_params;
-  double smooth;
-  int poly_degree;
+  model_options model_opts;
   double absolute_tolerance;
   int max_iter;
   bool reduce;
@@ -29,25 +27,21 @@ inline options parse_options(int argc, const char* argv[]) {
   namespace po = boost::program_options;
 
   options opts;
-  std::vector<std::string> rbf_vec;
 
-  po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()                                                                      //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                         //
-       "Input file in CSV format:\n  X,Y,Z")                                                   //
-      ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("VAL"),     //
-       "Minimum separation distance of input points")                                          //
-      ("rbf", po::value(&rbf_vec)->multitoken()->required()->value_name("..."), rbf_cov_list)  //
-      ("smooth", po::value(&opts.smooth)->default_value(0.0, "0.")->value_name("VAL"),         //
-       "Amount of spline smoothing")                                                           //
-      ("deg", po::value(&opts.poly_degree)->default_value(0)->value_name("-1|0|1|2"),          //
-       "Degree of the polynomial")                                                             //
-      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),              //
-       "Absolute tolerance of the fitting")                                                    //
-      ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),             //
-       "Maximum number of iterations")                                                         //
-      ("reduce", po::bool_switch(&opts.reduce),                                                //
-       "Try to reduce the number of RBF centers (incremental fitting)")                        //
+  auto model_opts_desc = make_model_options_description(opts.model_opts);
+
+  po::options_description general_opts_desc("General", 80, 50);
+  general_opts_desc.add_options()                                                           //
+      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                      //
+       "Input file in CSV format:\n  X,Y,Z")                                                //
+      ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("VAL"),  //
+       "Minimum separation distance of input points")                                       //
+      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("VAL"),           //
+       "Absolute tolerance of the fitting")                                                 //
+      ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),          //
+       "Maximum number of iterations")                                                      //
+      ("reduce", po::bool_switch(&opts.reduce),                                             //
+       "Try to reduce the number of RBF centers (incremental fitting)")                     //
       ("mesh-bbox",
        po::value(&opts.mesh_bbox)
            ->multitoken()
@@ -58,6 +52,9 @@ inline options parse_options(int argc, const char* argv[]) {
        "Output mesh resolution")                                                              //
       ("mesh-out", po::value(&opts.mesh_file)->multitoken()->required()->value_name("FILE"),  //
        "Output mesh file in OBJ format");
+
+  po::options_description opts_desc;
+  opts_desc.add(general_opts_desc).add(model_opts_desc);
 
   po::variables_map vm;
   try {
@@ -71,11 +68,6 @@ inline options parse_options(int argc, const char* argv[]) {
               << "Usage: " << argv[0] << " [OPTION]..." << std::endl
               << opts_desc;
     throw;
-  }
-
-  opts.rbf_name = rbf_vec.at(0);
-  for (std::size_t i = 1; i < rbf_vec.size(); i++) {
-    opts.rbf_params.push_back(polatory::numeric::to_double(rbf_vec.at(i)));
   }
 
   return opts;

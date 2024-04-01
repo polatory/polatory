@@ -1,22 +1,26 @@
 #include <Eigen/Core>
 #include <exception>
-#include <iomanip>
 #include <iostream>
+#include <polatory/kriging.hpp>
 #include <polatory/polatory.hpp>
+#include <stdexcept>
+#include <string>
 
 #include "parse_options.hpp"
 
 using polatory::index_t;
 using polatory::read_table;
 using polatory::tabled;
+using polatory::common::save;
 using polatory::common::valuesd;
 using polatory::geometry::pointsNd;
-using polatory::kriging::empirical_variogram;
+using polatory::kriging::variogram;
+using polatory::kriging::variogram_calculator;
 
 template <int Dim>
 void main_impl(const options& opts) {
-  using EmpiricalVariogram = empirical_variogram<Dim>;
   using Points = pointsNd<Dim>;
+  using VariogramCalculator = variogram_calculator<Dim>;
 
   // Load points (x,y,z) and values (value).
   tabled table = read_table(opts.in_file);
@@ -24,24 +28,14 @@ void main_impl(const options& opts) {
   valuesd values = table.col(3);
 
   // Compute the empirical variogram.
-  EmpiricalVariogram emp_variog(points, values, opts.bin_width, opts.num_bins);
-  const auto& bin_distance = emp_variog.bin_distance();
-  const auto& bin_gamma = emp_variog.bin_gamma();
-  const auto& bin_num_pairs = emp_variog.bin_num_pairs();
-
-  std::cout << "Empirical variogram:" << std::endl
-            << std::setw(12) << "distance" << std::setw(12) << "gamma" << std::setw(12)
-            << "num_pairs" << std::endl;
-  auto num_bins = static_cast<index_t>(bin_num_pairs.size());
-  for (index_t bin = 0; bin < num_bins; bin++) {
-    std::cout << std::setw(12) << bin_distance.at(bin) << std::setw(12) << bin_gamma.at(bin)
-              << std::setw(12) << bin_num_pairs.at(bin) << std::endl;
+  VariogramCalculator calc(opts.lag_distance, opts.num_lags);
+  if (opts.aniso) {
+    calc.set_directions(VariogramCalculator::kAnisotropicDirections);
   }
+  auto variogs = calc.calculate(points, values);
 
   // Save the empirical variogram.
-  if (!opts.out_file.empty()) {
-    emp_variog.save(opts.out_file);
-  }
+  save(opts.out_file, variogs);
 }
 
 int main(int argc, const char* argv[]) {

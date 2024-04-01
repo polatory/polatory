@@ -1,6 +1,7 @@
 #pragma once
 
 #include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/io.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -9,10 +10,6 @@
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>
-#include <polatory/kriging/cross_validation.hpp>
-#include <polatory/kriging/empirical_variogram.hpp>
-#include <polatory/kriging/variogram_fitting.hpp>
-#include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/conv.hpp>
 #include <polatory/numeric/error.hpp>
@@ -37,5 +34,6 @@
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/rbf/rbf_proxy.hpp>
+#include <polatory/rbf/rbf_proxy_io.hpp>
 #include <polatory/table.hpp>
 #include <polatory/types.hpp>

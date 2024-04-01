@@ -12,7 +12,7 @@ class identity_operator : public linear_operator {
   explicit identity_operator(index_t n) : n_(n) {}
 
   common::valuesd operator()(const common::valuesd& v) const override {
-    POLATORY_ASSERT(static_cast<int>(v.rows()) == n_);
+    POLATORY_ASSERT(v.rows() == n_);
     return v;
   }
 

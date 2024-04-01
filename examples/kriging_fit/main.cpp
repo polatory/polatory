@@ -1,45 +1,34 @@
 #include <exception>
-#include <iomanip>
 #include <iostream>
+#include <polatory/kriging.hpp>
 #include <polatory/polatory.hpp>
-#include <utility>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "parse_options.hpp"
 
 using polatory::model;
-using polatory::kriging::empirical_variogram;
+using polatory::common::load;
+using polatory::kriging::variogram;
 using polatory::kriging::variogram_fitting;
-using polatory::rbf::rbf_proxy;
 
 template <int Dim>
-void main_impl(rbf_proxy<Dim>&& rbf, const options& opts) {
-  using EmpiricalVariogram = empirical_variogram<Dim>;
-  using Model = model<Dim>;
+void main_impl(model<Dim>&& model, const options& opts) {
+  using Variogram = variogram<Dim>;
   using VariogramFitting = variogram_fitting<Dim>;
 
   // Load the empirical variogram.
-  EmpiricalVariogram emp_variog(opts.in_file);
-
-  // Define the model.
-  Model model(std::move(rbf), -1);
-  model.set_nugget(opts.nugget);
+  std::vector<Variogram> variogs;
+  load(opts.in_file, variogs);
 
   // Fit model parameters.
-  VariogramFitting fit(emp_variog, model, opts.weight_fn);
+  VariogramFitting fit(variogs, model, opts.weight_fn);
 
-  std::cout << "Fitted parameters:" << std::endl;
+  std::cout << fit.brief_report() << std::endl;
 
-  auto names = model.parameter_names();
-  for (std::size_t i = 0; i < names.size(); ++i) {
-    std::cout << std::setw(12) << names.at(i);
-  }
-  std::cout << std::endl;
-
-  auto params = fit.parameters();
-  for (std::size_t i = 0; i < params.size(); ++i) {
-    std::cout << std::setw(12) << params.at(i);
-  }
-  std::cout << std::endl;
+  model = fit.model();
+  std::cout << model.description() << std::endl;
 }
 
 int main(int argc, const char* argv[]) {
@@ -47,13 +36,13 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
     switch (opts.dim) {
       case 1:
-        main_impl(make_rbf<1>(opts.rbf_name, opts.rbf_params), opts);
+        main_impl(make_model<1>(opts.model_opts), opts);
         break;
       case 2:
-        main_impl(make_rbf<2>(opts.rbf_name, opts.rbf_params), opts);
+        main_impl(make_model<2>(opts.model_opts), opts);
         break;
       case 3:
-        main_impl(make_rbf<3>(opts.rbf_name, opts.rbf_params), opts);
+        main_impl(make_model<3>(opts.model_opts), opts);
         break;
       default:
         throw std::runtime_error("Unsupported dimension: " + std::to_string(opts.dim));

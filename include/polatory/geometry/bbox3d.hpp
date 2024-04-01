@@ -2,7 +2,7 @@
 
 #include <Eigen/Core>
 #include <limits>
-#include <polatory/common/macros.hpp>
+#include <polatory/common/io.hpp>
 #include <polatory/geometry/point3d.hpp>
 
 namespace polatory::geometry {
@@ -62,6 +62,8 @@ class bboxNd {
   Vector width() const { return max_ - min_; }
 
  private:
+  POLATORY_FRIEND_READ_WRITE(bboxNd);
+
   Point min_;
   Point max_;
 };
@@ -71,3 +73,23 @@ using bbox2d = bboxNd<2>;
 using bbox3d = bboxNd<3>;
 
 }  // namespace polatory::geometry
+
+namespace polatory::common {
+
+template <int Dim>
+struct Read<geometry::bboxNd<Dim>> {
+  void operator()(std::istream& is, geometry::bboxNd<Dim>& t) const {
+    read(is, t.min_);
+    read(is, t.max_);
+  }
+};
+
+template <int Dim>
+struct Write<geometry::bboxNd<Dim>> {
+  void operator()(std::ostream& os, const geometry::bboxNd<Dim>& t) const {
+    write(os, t.min_);
+    write(os, t.max_);
+  }
+};
+
+}  // namespace polatory::common
