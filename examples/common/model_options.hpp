@@ -3,11 +3,8 @@
 #include <boost/any.hpp>
 #include <boost/program_options.hpp>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <vector>
-
-#include "common.hpp"
 
 struct rbf_options {
   std::string name;
@@ -65,14 +62,44 @@ struct model_options {
 boost::program_options::options_description make_model_options_description(model_options& opts) {
   namespace po = boost::program_options;
 
-  po::options_description opts_desc("Model", 80, 50);
-  opts_desc.add_options()                                                               //
-      ("rbf", po::value(&opts.rbf)->multitoken()->required()->value_name("..."),        //
-       rbf_cov_list)                                                                    //
-      ("rbf2", po::value(&opts.rbf2)->multitoken()->value_name("..."),                  //
-       "The second structure")                                                          //
-      ("nugget", po::value(&opts.nugget)->default_value(0.0, "0.")->value_name("VAL"),  //
-       "Nugget of the model")                                                           //
+  po::options_description opts_desc("Model options");
+  opts_desc.add_options()  //
+      ("rbf",
+       po::value(&opts.rbf)->multitoken()->required()->value_name(
+           "... [aniso A_11 A_12 ... A_dd]"),  //
+       R"(Basic function, one of:
+Arguments        Name                 --deg >=
+----------------------------------------------
+             Polyharmonic splines
+bh2 SCALE        biharmonic2d           1
+bh3 SCALE        biharmonic3d           0
+th2 SCALE        triharmonic2d          2
+th3 SCALE        triharmonic3d          1
+          Generalized multiquadrics
+imq1 SCALE C     inverse_multiquadric1  -1
+mq1 SCALE C      multiquadric1          0
+mq3 SCALE C      multiquadric3          1
+             Covariance functions
+ca3 PSILL RANGE  cov_cauchy3            -1
+ca5 PSILL RANGE  cov_cauchy5            -1
+ca7 PSILL RANGE  cov_cauchy7            -1
+ca9 PSILL RANGE  cov_cauchy9            -1
+cub PSILL RANGE  cov_cubic              -1
+exp PSILL RANGE  cov_exponential        -1
+gau PSILL RANGE  cov_gaussian           -1
+sp3 PSILL RANGE  cov_spheroidal3        -1
+sp5 PSILL RANGE  cov_spheroidal5        -1
+sp7 PSILL RANGE  cov_spheroidal7        -1
+sp9 PSILL RANGE  cov_spheroidal9        -1
+sph PSILL RANGE  cov_spherical          -1)")  //
+      ("rbf2",
+       po::value(&opts.rbf2)
+           ->multitoken()
+           ->default_value(std::nullopt, "NONE")
+           ->value_name("... [aniso A_11 A_12 ... A_dd]"),                            //
+       "Second basic function to be added")                                           //
+      ("nug", po::value(&opts.nugget)->default_value(0.0, "0.0")->value_name("NUG"),  //
+       "Nugget of the model")                                                         //
       ("deg",
        po::value(&opts.poly_degree)
            ->default_value(polatory::model<1>::kMinRequiredPolyDegree, "AUTO")
@@ -80,42 +107,4 @@ boost::program_options::options_description make_model_options_description(model
        "Degree of the polynomial trend");
 
   return opts_desc;
-}
-
-template <int Dim>
-polatory::rbf::rbf_proxy<Dim> make_rbf(const rbf_options& opts) {
-  auto rbf = polatory::rbf::make_rbf<Dim>(opts.name, opts.params);
-
-  if (opts.aniso.size() != 0) {
-    if (opts.aniso.size() != Dim * Dim) {
-      throw std::runtime_error("wrong anisotropy size");
-    }
-    polatory::geometry::matrixNd<Dim> aniso;
-    for (int i = 0; i < Dim; ++i) {
-      for (int j = 0; j < Dim; ++j) {
-        aniso(i, j) = opts.aniso.at(Dim * i + j);
-      }
-    }
-    rbf.set_anisotropy(aniso);
-  }
-
-  return rbf;
-}
-
-template <int Dim>
-polatory::model<Dim> make_model(const model_options& opts) {
-  using Model = polatory::model<Dim>;
-  using RbfProxy = polatory::rbf::rbf_proxy<Dim>;
-
-  std::vector<RbfProxy> rbfs;
-  rbfs.push_back(make_rbf<Dim>(opts.rbf));
-
-  if (opts.rbf2) {
-    rbfs.push_back(make_rbf<Dim>(*opts.rbf2));
-  }
-
-  Model m{std::move(rbfs), opts.poly_degree};
-  m.set_nugget(opts.nugget);
-
-  return m;
 }

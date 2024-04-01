@@ -4,7 +4,7 @@
 #include <polatory/polatory.hpp>
 #include <tuple>
 
-#include "../common/common.hpp"
+#include "../common/make_model.hpp"
 #include "parse_options.hpp"
 
 using polatory::interpolant;

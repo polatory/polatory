@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "../common/common.hpp"
 #include "../common/model_options.hpp"
 
 struct options {
@@ -28,13 +27,13 @@ inline options parse_options(int argc, const char* argv[]) {
 
   auto model_opts_desc = make_model_options_description(opts.model_opts);
 
-  po::options_description general_opts_desc("General", 80, 50);
-  general_opts_desc.add_options()                                            //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),       //
-       "Input file produced by kriging_variogram")                           //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),         //
-       "Dimension of the spatial domain")                                    //
-      ("weights", po::value(&weights)->default_value(1)->value_name("0-5"),  //
+  po::options_description general_opts_desc("General options");
+  general_opts_desc.add_options()                                               //
+      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),          //
+       "Input file produced by kriging_variogram")                              //
+      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),            //
+       "Dimension of input points")                                             //
+      ("weights", po::value(&weights)->default_value(1)->value_name("0 to 5"),  //
        R"(Weight function for least squares fitting, one of
   0: N_j
   1: N_j / h_j^2
@@ -47,7 +46,7 @@ where
   h_j: representative distance of the j-th bin
   gamma: model variogram)");
 
-  po::options_description opts_desc;
+  po::options_description opts_desc(80, 50);
   opts_desc.add(general_opts_desc).add(model_opts_desc);
 
   po::variables_map vm;

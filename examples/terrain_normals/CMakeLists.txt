@@ -1,8 +1,6 @@
 set(TARGET terrain_normals)
 
-add_executable(${TARGET}
-    main.cpp
-)
+add_executable(${TARGET} main.cpp)
 
 target_link_libraries(${TARGET} PRIVATE
     Boost::program_options

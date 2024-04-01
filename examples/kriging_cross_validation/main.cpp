@@ -8,7 +8,7 @@
 #include <tuple>
 #include <utility>
 
-#include "../common/common.hpp"
+#include "../common/make_model.hpp"
 #include "parse_options.hpp"
 
 using polatory::model;

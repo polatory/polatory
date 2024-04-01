@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "../common/make_model.hpp"
 #include "parse_options.hpp"
 
 using polatory::model;

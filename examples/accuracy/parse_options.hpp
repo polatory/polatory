@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "../common/common.hpp"
 #include "../common/model_options.hpp"
 
 struct options {
@@ -28,18 +27,18 @@ inline options parse_options(int argc, const char* argv[]) {
 
   auto model_opts_desc = make_model_options_description(opts.model_opts);
 
-  po::options_description general_opts_desc("General", 80, 50);
-  general_opts_desc.add_options()                                                          //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),                       //
-       "Dimension of the domain")                                                          //
-      ("n", po::value(&opts.n_points)->required()->value_name("N"),                        //
-       "Number of RBF centers")                                                            //
-      ("ng", po::value(&opts.n_grad_points)->default_value(0)->value_name("N"),            //
-       "Number of RBF centers for gradients")                                              //
-      ("n-eval", po::value(&opts.n_eval_points)->required()->value_name("N"),              //
-       "Number of evaluation points")                                                      //
-      ("ng-eval", po::value(&opts.n_grad_eval_points)->default_value(0)->value_name("N"),  //
-       "Number of evaluation points for gradients")                                        //
+  po::options_description general_opts_desc("General options");
+  general_opts_desc.add_options()                                                              //
+      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),                           //
+       "Dimension of RBF centers and evaluation points")                                       //
+      ("n", po::value(&opts.n_points)->default_value(0)->value_name("N"),                      //
+       "Number of RBF centers")                                                                //
+      ("n-grad", po::value(&opts.n_grad_points)->default_value(0)->value_name("N"),            //
+       "Number of RBF centers for gradients")                                                  //
+      ("n-eval", po::value(&opts.n_eval_points)->default_value(0)->value_name("N"),            //
+       "Number of evaluation points")                                                          //
+      ("n-grad-eval", po::value(&opts.n_grad_eval_points)->default_value(0)->value_name("N"),  //
+       "Number of evaluation points for gradients")                                            //
       ("order",
        po::value(&opts.order)
            ->default_value(polatory::precision::kPrecise)
@@ -48,7 +47,7 @@ inline options parse_options(int argc, const char* argv[]) {
       ("perf", po::bool_switch(&opts.perf),                    //
        "Run fast evaluation only and do not compute accuracy (for performance measurement)");
 
-  po::options_description opts_desc;
+  po::options_description opts_desc(80, 50);
   opts_desc.add(general_opts_desc).add(model_opts_desc);
 
   po::variables_map vm;

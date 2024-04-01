@@ -1,9 +1,6 @@
 set(TARGET kriging_predict)
 
-add_executable(${TARGET}
-    ../common/common.cpp
-    main.cpp
-)
+add_executable(${TARGET} main.cpp)
 
 target_link_libraries(${TARGET} PRIVATE
     Boost::program_options
