@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cctype>
 #include <polatory/polatory.hpp>
+#include <regex>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -9,22 +9,16 @@
 
 #include "model_options.hpp"
 
-bool is_identifier_like(const std::string& token) {
-  if (token.empty()) {
-    return false;
-  }
+bool is_identifier(const std::string& token) {
+  static const std::regex re{"[A-Z_a-z][0-9A-Z_a-z]*"};
 
-  auto c = token.at(0);
-  return std::isalpha(c) || c == '_';
+  return std::regex_match(token, re);
 }
 
-bool is_number_like(const std::string& token) {
-  if (token.empty()) {
-    return false;
-  }
+bool is_number(const std::string& token) {
+  static const std::regex re{"-?([0-9]+\\.?|[0-9]*\\.[0-9]+)([Ee][+-]?[0-9]+)?"};
 
-  auto c = token.at(0);
-  return std::isdigit(c) || c == '.' || c == '-';
+  return std::regex_match(token, re);
 }
 
 template <int Dim>
@@ -37,11 +31,11 @@ polatory::model<Dim> make_model(const model_options& opts) {
 
   auto it = opts.rbf_args.begin();
   auto end = opts.rbf_args.end();
-  while (it != end && is_identifier_like(*it)) {
+  while (it != end && is_identifier(*it)) {
     const auto& name = *it++;
 
     std::vector<double> params;
-    while (it != end && is_number_like(*it)) {
+    while (it != end && is_number(*it)) {
       params.push_back(polatory::numeric::to_double(*it++));
     }
 
@@ -51,7 +45,7 @@ polatory::model<Dim> make_model(const model_options& opts) {
       ++it;
 
       std::vector<double> aniso_elems;
-      while (it != end && is_number_like(*it)) {
+      while (it != end && is_number(*it)) {
         aniso_elems.push_back(polatory::numeric::to_double(*it++));
       }
       if (aniso_elems.size() != Dim * Dim) {
