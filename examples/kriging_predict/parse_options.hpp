@@ -64,10 +64,10 @@ inline options parse_options(int argc, const char* argv[]) {
       ("mesh-res", po::value(&opts.mesh_resolution)->required()->value_name("RES"),  //
        "Output mesh resolution")                                                     //
       ("mesh-isoval",
-       po::value(&mesh_vals_vec)->multitoken()->required()->value_name("VAL [...]"),  //
-       "Output mesh isovalues")                                                       //
+       po::value(&mesh_vals_vec)->multitoken()->required()->value_name("VAL ..."),  //
+       "Output mesh isovalues")                                                     //
       ("mesh-out",
-       po::value(&mesh_files_vec)->multitoken()->required()->value_name("FILE [...]"),  //
+       po::value(&mesh_files_vec)->multitoken()->required()->value_name("FILE ..."),  //
        "Output mesh files in OBJ format");
 
   po::options_description opts_desc(80, 50);

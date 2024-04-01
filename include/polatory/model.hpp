@@ -34,6 +34,10 @@ class model {
 
   model(std::vector<RbfProxy>&& rbfs, int poly_degree = kMinRequiredPolyDegree)
       : rbfs_(std::move(rbfs)) {
+    if (rbfs_.empty()) {
+      throw std::invalid_argument("rbfs must not be empty.");
+    }
+
     auto min_poly_degree = cpd_order() - 1;
     auto max_poly_degree = 2;
     if (poly_degree == kMinRequiredPolyDegree) {

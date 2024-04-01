@@ -27,7 +27,7 @@ inline options parse_options(int argc, const char* argv[]) {
        po::value(&opts.ks)
            ->multitoken()
            ->default_value(std::vector<polatory::index_t>{10, 30, 100, 300}, "10 30 100 300")
-           ->value_name("K [...]"),                               //
+           ->value_name("K ..."),                                 //
        "Number of points for k-NN search for normal estimation")  //
       ("min-plane-factor",
        po::value(&opts.min_plane_factor)->default_value(1.8)->value_name("FACTOR"),  //
