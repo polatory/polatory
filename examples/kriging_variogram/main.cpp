@@ -25,7 +25,7 @@ void main_impl(const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
-  valuesd values = table.col(3);
+  valuesd values = table.col(Dim);
 
   // Compute the empirical variogram.
   VariogramCalculator calc(opts.lag_distance, opts.num_lags);

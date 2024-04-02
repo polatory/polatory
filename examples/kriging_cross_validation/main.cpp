@@ -26,8 +26,8 @@ void main_impl(model<Dim>&& model, const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
-  valuesd values = table.col(3);
-  Eigen::VectorXi set_ids = table.col(4).cast<int>();
+  valuesd values = table.col(Dim);
+  Eigen::VectorXi set_ids = table.col(Dim + 1).cast<int>();
 
   // Remove very close points.
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
