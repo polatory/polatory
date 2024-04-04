@@ -54,34 +54,16 @@ inline const std::array<geometry::vector3d, 3> kDualLatticeVectors{
 class primitive_lattice {
  public:
   primitive_lattice(const geometry::bbox3d& bbox, double resolution)
-      : a0_(resolution * kLatticeVectors[0]),
+      : bbox_(bbox),
+        resolution_(resolution),
+        a0_(resolution * kLatticeVectors[0]),
         a1_(resolution * kLatticeVectors[1]),
         a2_(resolution * kLatticeVectors[2]),
         b0_(kDualLatticeVectors[0] / resolution),
         b1_(kDualLatticeVectors[1] / resolution),
         b2_(kDualLatticeVectors[2] / resolution),
-        bbox_(bbox),
-        ext_bbox_(compute_extended_bbox(bbox, resolution)),
         cv_offset_(compute_cv_offset()),
-        resolution_(resolution) {
-    geometry::points3d ext_bbox_vertices(8, 3);
-    ext_bbox_vertices << ext_bbox_.min()(0), ext_bbox_.min()(1), ext_bbox_.min()(2),
-        ext_bbox_.max()(0), ext_bbox_.min()(1), ext_bbox_.min()(2), ext_bbox_.min()(0),
-        ext_bbox_.max()(1), ext_bbox_.min()(2), ext_bbox_.min()(0), ext_bbox_.min()(1),
-        ext_bbox_.max()(2), ext_bbox_.min()(0), ext_bbox_.max()(1), ext_bbox_.max()(2),
-        ext_bbox_.max()(0), ext_bbox_.min()(1), ext_bbox_.max()(2), ext_bbox_.max()(0),
-        ext_bbox_.max()(1), ext_bbox_.min()(2), ext_bbox_.max()(0), ext_bbox_.max()(1),
-        ext_bbox_.max()(2);
-
-    cell_vectors cvs(8, 3);
-    for (auto i = 0; i < 8; i++) {
-      cvs.row(i) = cell_vector_from_point(ext_bbox_vertices.row(i));
-    }
-
-    // Bounds of cell vectors for enumerating all nodes in the extended bbox.
-    cv_min = cvs.colwise().minCoeff().array() + 1;
-    cv_max = cvs.colwise().maxCoeff();
-  }
+        ext_bbox_(compute_extended_bbox()) {}
 
   const geometry::bbox3d& bbox() const { return bbox_; }
 
@@ -103,33 +85,43 @@ class primitive_lattice {
 
   double resolution() const { return resolution_; }
 
- protected:
-  cell_vector cv_min;
-  cell_vector cv_max;
-
  private:
   geometry::vector3d compute_cv_offset() const {
     geometry::point3d center = bbox_.center();
     return {std::floor(center.dot(b0_)), std::floor(center.dot(b1_)), std::floor(center.dot(b2_))};
   }
 
-  static geometry::bbox3d compute_extended_bbox(const geometry::bbox3d& bbox, double resolution) {
-    geometry::vector3d cell_bbox_size =
-        resolution * geometry::vector3d(3.0 / std::numbers::sqrt2, 2.0, 1.0);
-    geometry::vector3d ext = 1.01 * cell_bbox_size;
-    return {bbox.min() - ext, bbox.max() + ext};
+  // Returns the bounding box of all cells surrounding all nodes in bbox_.
+  geometry::bbox3d compute_extended_bbox() {
+    geometry::points3d cell_vertices(8, 3);
+    geometry::point3d o = geometry::point3d::Zero();
+    cell_vertices <<         //
+        o,                   //
+        o + a0_,             //
+        o + a1_,             //
+        o + a2_,             //
+        o + a0_ + a1_,       //
+        o + a0_ + a2_,       //
+        o + a1_ + a2_,       //
+        o + a0_ + a1_ + a2_  //
+        ;
+
+    geometry::vector3d cell_bbox_width =
+        1.01 * geometry::bbox3d::from_points(cell_vertices).width();
+
+    return {bbox_.min() - cell_bbox_width, bbox_.max() + cell_bbox_width};
   }
 
+  const geometry::bbox3d bbox_;
+  const double resolution_;
   const geometry::vector3d a0_;
   const geometry::vector3d a1_;
   const geometry::vector3d a2_;
   const geometry::vector3d b0_;
   const geometry::vector3d b1_;
   const geometry::vector3d b2_;
-  const geometry::bbox3d bbox_;
-  const geometry::bbox3d ext_bbox_;
   const geometry::vector3d cv_offset_;
-  const double resolution_;
+  const geometry::bbox3d ext_bbox_;
 };
 
 }  // namespace polatory::isosurface::rmt

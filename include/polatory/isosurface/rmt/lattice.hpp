@@ -36,6 +36,17 @@ class lattice : public primitive_lattice {
 
   // Add all nodes inside the boundary.
   void add_all_nodes(const field_function& field_fn, double isovalue) {
+    auto ext_bbox_corners = extended_bbox().corners();
+
+    cell_vectors cvs(8, 3);
+    for (index_t i = 0; i < 8; i++) {
+      cvs.row(i) = cell_vector_from_point(ext_bbox_corners.row(i));
+    }
+
+    // Bounds of cell vectors for enumerating all nodes in the extended bbox.
+    cell_vector cv_min = cvs.colwise().minCoeff().array() + 1;
+    cell_vector cv_max = cvs.colwise().maxCoeff();
+
     std::vector<cell_vector> new_nodes;
     std::vector<cell_vector> prev_nodes;
 

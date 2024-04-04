@@ -268,7 +268,7 @@ class surface_generator {
       auto v2 = lattice_.clustered_vertex_index(face[2]);
 
       if (v0 == v1 || v1 == v2 || v2 == v0) {
-        // Degenerated face.
+        // Degenerate face (due to vertex clustering).
         continue;
       }
 

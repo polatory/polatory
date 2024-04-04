@@ -33,6 +33,18 @@ class bboxNd {
     return {min_.cwiseMin(other.min_), max_.cwiseMax(other.max_)};
   }
 
+  Points corners() const {
+    Points corners(1 << Dim, Dim);
+
+    for (auto i = 0; i < (1 << Dim); ++i) {
+      for (auto j = 0; j < Dim; ++j) {
+        corners(i, j) = (i & (1 << j)) != 0 ? max_(j) : min_(j);
+      }
+    }
+
+    return corners;
+  }
+
   const Point& max() const { return max_; }
 
   const Point& min() const { return min_; }
@@ -47,16 +59,7 @@ class bboxNd {
   }
 
   bboxNd transform(const Matrix& t) const {
-    Points corners(1 << Dim, Dim);
-
-    for (auto i = 0; i < (1 << Dim); ++i) {
-      for (auto j = 0; j < Dim; ++j) {
-        corners(i, j) = (i & (1 << j)) != 0 ? max_(j) : min_(j);
-      }
-      corners.row(i) = transform_point<Dim>(t, corners.row(i));
-    }
-
-    return from_points(corners);
+    return from_points(transform_points<Dim>(t, corners()));
   }
 
   Vector width() const { return max_ - min_; }
