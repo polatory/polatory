@@ -27,41 +27,41 @@ struct cell_vector_hash {
   }
 };
 
-inline geometry::matrix3d rotation() {
-  return geometry::to_matrix3d(
+// Rotates the lattice so that the space spanned by the first and third primitive vectors
+// is the xy-plane.
+inline geometry::vector3d rotate(const geometry::vector3d& v) {
+  static const geometry::matrix3d rotation = geometry::to_matrix3d(
       Eigen::AngleAxisd(-std::numbers::pi / 2.0, geometry::vector3d::UnitZ()) *
       Eigen::AngleAxisd(-std::numbers::pi / 4.0, geometry::vector3d::UnitY()));
+
+  return geometry::transform_vector<3>(rotation, v);
 }
+
+inline constexpr double inv_sqrt2 = std::numbers::sqrt2 / 2.0;
 
 // Primitive vectors of the body-centered cubic lattice.
 inline const std::array<geometry::vector3d, 3> kLatticeVectors{
-    {geometry::transform_vector<3>(rotation(), geometry::vector3d{-1.0, 1.0, 1.0}) /
-         std::numbers::sqrt2,
-     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, -1.0, 1.0}) /
-         std::numbers::sqrt2,
-     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 1.0, -1.0}) /
-         std::numbers::sqrt2}};
+    {rotate(inv_sqrt2 * geometry::vector3d{-1.0, 1.0, 1.0}),
+     rotate(inv_sqrt2* geometry::vector3d{1.0, -1.0, 1.0}),
+     rotate(inv_sqrt2* geometry::vector3d{1.0, 1.0, -1.0})}};
 
 // Reciprocal primitive vectors of the body-centered cubic lattice.
 inline const std::array<geometry::vector3d, 3> kDualLatticeVectors{
-    {geometry::transform_vector<3>(rotation(), geometry::vector3d{0.0, 1.0, 1.0}) /
-         std::numbers::sqrt2,
-     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 0.0, 1.0}) /
-         std::numbers::sqrt2,
-     geometry::transform_vector<3>(rotation(), geometry::vector3d{1.0, 1.0, 0.0}) /
-         std::numbers::sqrt2}};
+    {rotate(inv_sqrt2 * geometry::vector3d{0.0, 1.0, 1.0}),
+     rotate(inv_sqrt2* geometry::vector3d{1.0, 0.0, 1.0}),
+     rotate(inv_sqrt2* geometry::vector3d{1.0, 1.0, 0.0})}};
 
 class primitive_lattice {
  public:
   primitive_lattice(const geometry::bbox3d& bbox, double resolution)
       : bbox_(bbox),
         resolution_(resolution),
-        a0_(resolution * kLatticeVectors[0]),
-        a1_(resolution * kLatticeVectors[1]),
-        a2_(resolution * kLatticeVectors[2]),
-        b0_(kDualLatticeVectors[0] / resolution),
-        b1_(kDualLatticeVectors[1] / resolution),
-        b2_(kDualLatticeVectors[2] / resolution),
+        a0_(resolution_ * kLatticeVectors[0]),
+        a1_(resolution_ * kLatticeVectors[1]),
+        a2_(resolution_ * kLatticeVectors[2]),
+        b0_(kDualLatticeVectors[0] / resolution_),
+        b1_(kDualLatticeVectors[1] / resolution_),
+        b2_(kDualLatticeVectors[2] / resolution_),
         cv_offset_(compute_cv_offset()),
         ext_bbox_(compute_extended_bbox()) {}
 

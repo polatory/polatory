@@ -280,15 +280,19 @@ class lattice : public primitive_lattice {
   bool add_node_unchecked(const cell_vector& cv) {
     auto p = cell_node_point(cv);
 
-    // Due to the numerical error in the rotation of the lattice,
-    // nodes are not perfectly aligned with planes.
-    // Round the position of the node to prevent creation of near-degenerate tetrahedra.
-    auto unit = resolution() / 100.0;
-    p = unit * (p.array() / unit).round();
-
     if (!extended_bbox().contains(p)) {
       return false;
     }
+
+    // To prevent generation of near-degenerate tetrahedra,
+    // project the point on the bounding box if it is very close to it.
+
+    const auto& min = bbox().min();
+    const auto& max = bbox().max();
+    auto tiny = 1e-10 * resolution();
+
+    p = ((p.array() - min.array()).abs() < tiny).select(min, p);
+    p = ((p.array() - max.array()).abs() < tiny).select(max, p);
 
     node_list_.emplace(cv, Node{clamp_to_bbox(p)});
 

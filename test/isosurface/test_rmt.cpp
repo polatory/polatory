@@ -21,31 +21,32 @@ using polatory::isosurface::bit_count;
 using polatory::isosurface::bit_pop;
 using polatory::isosurface::rmt::edge_bitset;
 using polatory::isosurface::rmt::edge_index;
+using polatory::isosurface::rmt::inv_sqrt2;
 using polatory::isosurface::rmt::kDualLatticeVectors;
 using polatory::isosurface::rmt::kLatticeVectors;
 using polatory::isosurface::rmt::kNeighborCellVectors;
 using polatory::isosurface::rmt::kNeighborMasks;
 using polatory::isosurface::rmt::kOppositeEdge;
 using polatory::isosurface::rmt::primitive_lattice;
-using polatory::isosurface::rmt::rotation;
+using polatory::isosurface::rmt::rotate;
 using polatory::point_cloud::random_points;
 
 // Relative positions of neighbor nodes connected by each edge.
 std::array<vector3d, 14> kNeighborVectors{
-    transform_vector<3>(rotation(), vector3d{-1.0, 1.0, 1.0}) / std::numbers::sqrt2,    // 0
-    transform_vector<3>(rotation(), vector3d{0.0, 2.0, 0.0}) / std::numbers::sqrt2,     // 1
-    transform_vector<3>(rotation(), vector3d{1.0, 1.0, -1.0}) / std::numbers::sqrt2,    // 2
-    transform_vector<3>(rotation(), vector3d{0.0, 0.0, 2.0}) / std::numbers::sqrt2,     // 3
-    transform_vector<3>(rotation(), vector3d{1.0, 1.0, 1.0}) / std::numbers::sqrt2,     // 4
-    transform_vector<3>(rotation(), vector3d{2.0, 0.0, 0.0}) / std::numbers::sqrt2,     // 5
-    transform_vector<3>(rotation(), vector3d{1.0, -1.0, 1.0}) / std::numbers::sqrt2,    // 6
-    transform_vector<3>(rotation(), vector3d{1.0, -1.0, -1.0}) / std::numbers::sqrt2,   // 7
-    transform_vector<3>(rotation(), vector3d{0.0, -2.0, 0.0}) / std::numbers::sqrt2,    // 8
-    transform_vector<3>(rotation(), vector3d{-1.0, -1.0, 1.0}) / std::numbers::sqrt2,   // 9
-    transform_vector<3>(rotation(), vector3d{0.0, 0.0, -2.0}) / std::numbers::sqrt2,    // A
-    transform_vector<3>(rotation(), vector3d{-1.0, -1.0, -1.0}) / std::numbers::sqrt2,  // B
-    transform_vector<3>(rotation(), vector3d{-2.0, 0.0, 0.0}) / std::numbers::sqrt2,    // C
-    transform_vector<3>(rotation(), vector3d{-1.0, +1.0, -1.0}) / std::numbers::sqrt2,  // D
+    rotate(inv_sqrt2 * vector3d{-1.0, 1.0, 1.0}),   // 0
+    rotate(inv_sqrt2* vector3d{0.0, 2.0, 0.0}),     // 1
+    rotate(inv_sqrt2* vector3d{1.0, 1.0, -1.0}),    // 2
+    rotate(inv_sqrt2* vector3d{0.0, 0.0, 2.0}),     // 3
+    rotate(inv_sqrt2* vector3d{1.0, 1.0, 1.0}),     // 4
+    rotate(inv_sqrt2* vector3d{2.0, 0.0, 0.0}),     // 5
+    rotate(inv_sqrt2* vector3d{1.0, -1.0, 1.0}),    // 6
+    rotate(inv_sqrt2* vector3d{1.0, -1.0, -1.0}),   // 7
+    rotate(inv_sqrt2* vector3d{0.0, -2.0, 0.0}),    // 8
+    rotate(inv_sqrt2* vector3d{-1.0, -1.0, 1.0}),   // 9
+    rotate(inv_sqrt2* vector3d{0.0, 0.0, -2.0}),    // A
+    rotate(inv_sqrt2* vector3d{-1.0, -1.0, -1.0}),  // B
+    rotate(inv_sqrt2* vector3d{-2.0, 0.0, 0.0}),    // C
+    rotate(inv_sqrt2* vector3d{-1.0, +1.0, -1.0}),  // D
 };
 
 TEST(rmt, lattice) {
