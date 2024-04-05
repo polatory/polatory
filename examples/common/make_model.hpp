@@ -9,13 +9,13 @@
 
 #include "model_options.hpp"
 
-bool is_identifier(const std::string& token) {
+inline bool is_identifier(const std::string& token) {
   static const std::regex re{"[A-Z_a-z][0-9A-Z_a-z]*"};
 
   return std::regex_match(token, re);
 }
 
-bool is_number(const std::string& token) {
+inline bool is_number(const std::string& token) {
   static const std::regex re{"-?([0-9]+\\.?|[0-9]*\\.[0-9]+)([Ee][+-]?[0-9]+)?"};
 
   return std::regex_match(token, re);
