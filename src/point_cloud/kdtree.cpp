@@ -82,7 +82,7 @@ template <int Dim>
 void kdtree<Dim>::knn_search(const Point& point, index_t k, std::vector<index_t>& indices,
                              std::vector<double>& distances) const {
   if (k <= 0) {
-    throw std::invalid_argument("k must be greater than 0.");
+    throw std::invalid_argument("k must be positive.");
   }
 
   if (!pimpl_) {
@@ -95,8 +95,8 @@ void kdtree<Dim>::knn_search(const Point& point, index_t k, std::vector<index_t>
 template <int Dim>
 void kdtree<Dim>::radius_search(const Point& point, double radius, std::vector<index_t>& indices,
                                 std::vector<double>& distances) const {
-  if (radius <= 0.0) {
-    throw std::invalid_argument("radius must be greater than 0.0.");
+  if (radius < 0.0) {
+    throw std::invalid_argument("radius must be non-negative.");
   }
 
   if (!pimpl_) {

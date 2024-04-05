@@ -24,8 +24,8 @@ class distance_filter {
 
   distance_filter(const Points& points, double distance, const std::vector<index_t>& indices)
       : n_points_(points.rows()) {
-    if (distance <= 0.0) {
-      throw std::invalid_argument("distance must be greater than 0.0.");
+    if (distance < 0.0) {
+      throw std::invalid_argument("distance must be non-negative.");
     }
 
     kdtree tree(points);
@@ -40,7 +40,7 @@ class distance_filter {
         continue;
       }
 
-      Point p = points.row(i);
+      auto p = points.row(i);
       tree.radius_search(p, distance, nn_indices, nn_distances);
 
       for (auto j : nn_indices) {
