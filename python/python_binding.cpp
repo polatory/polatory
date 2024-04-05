@@ -44,6 +44,7 @@ void define_module(py::module& m) {
       .def(py::init<>())
       .def(py::init<const Points&, const Points>(), "min"_a, "max"_a)
       .def_static("from_points", &bbox_from_points<Dim>, "points"_a)
+      .def_property_readonly("is_empty", &Bbox::is_empty)
       .def_property_readonly("min", &Bbox::min)
       .def_property_readonly("max", &Bbox::max);
 

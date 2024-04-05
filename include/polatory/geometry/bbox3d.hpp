@@ -45,6 +45,8 @@ class bboxNd {
     return corners;
   }
 
+  bool is_empty() const { return (min_.array() > max_.array()).any(); }
+
   const Point& max() const { return max_; }
 
   const Point& min() const { return min_; }
