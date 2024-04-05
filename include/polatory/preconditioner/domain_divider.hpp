@@ -18,12 +18,14 @@ namespace polatory::preconditioner {
 
 template <int Dim>
 class domain_divider {
+  static constexpr int kDim = Dim;
+  using Bbox = geometry::bboxNd<kDim>;
+  using Domain = domain<kDim>;
+  using Point = geometry::pointNd<kDim>;
+  using Points = geometry::pointsNd<kDim>;
+
   static constexpr double kOverlapQuota = 0.5;
   static constexpr index_t kMaxLeafSize = 1024;
-
-  using Bbox = geometry::bboxNd<Dim>;
-  using Points = geometry::pointsNd<Dim>;
-  using Domain = domain<Dim>;
 
  public:
   template <class DerivedPoints, class DerivedGradPoints>
@@ -50,33 +52,30 @@ class domain_divider {
     std::vector<index_t> idcs(poly_point_idcs_);
     std::vector<index_t> grad_idcs;
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
     auto n_poly_points = static_cast<index_t>(poly_point_idcs_.size());
     for (const auto& d : domains_) {
+      auto mu = d.num_points();
+      auto sigma = d.num_grad_points();
+
       std::vector<mixed_point> mixed_points;
-      for (index_t i = n_poly_points; i < d.size(); i++) {
+      for (index_t i = n_poly_points; i < mu; i++) {
         if (d.inner_point.at(i)) {
           mixed_points.emplace_back(d.point_indices.at(i), true, false);
         }
       }
-      for (index_t i = 0; i < d.grad_size(); i++) {
+      for (index_t i = 0; i < sigma; i++) {
         if (d.inner_grad_point.at(i)) {
           mixed_points.emplace_back(d.grad_point_indices.at(i), true, true);
         }
       }
+      std::shuffle(mixed_points.begin(), mixed_points.end(), std::mt19937{});
 
-      std::shuffle(mixed_points.begin(), mixed_points.end(), gen);
+      auto n_coarse_points = static_cast<index_t>(
+          round_half_to_even(ratio * static_cast<double>(mixed_points.size())));
 
-      auto n_inner_pts = std::count(d.inner_point.begin(), d.inner_point.end(), true) +
-                         std::count(d.inner_grad_point.begin(), d.inner_grad_point.end(), true);
-      auto n_coarse =
-          static_cast<index_t>(round_half_to_even(ratio * static_cast<double>(n_inner_pts)));
-
-      auto count = index_t{0};
+      index_t count{};
       for (const auto& p : mixed_points) {
-        if (count == n_coarse) {
+        if (count == n_coarse_points) {
           break;
         }
 
@@ -97,41 +96,63 @@ class domain_divider {
     index_t index{};
     bool inner{};
     bool grad{};
+
+    int multiplicity() const { return grad ? kDim : 1; }
+
+    Point point(const Points& points, const Points& grad_points) const {
+      return grad ? grad_points.row(index) : points.row(index);
+    }
   };
 
   void divide_domain(std::list<Domain>::iterator it) {
     auto& d = *it;
+    auto mu = d.num_points();
+    auto sigma = d.num_grad_points();
 
     std::vector<mixed_point> mixed_points;
-    for (index_t i = 0; i < d.size(); i++) {
+    for (index_t i = 0; i < mu; i++) {
       mixed_points.emplace_back(d.point_indices.at(i), d.inner_point.at(i), false);
     }
-    for (index_t i = 0; i < d.grad_size(); i++) {
+    for (index_t i = 0; i < sigma; i++) {
       mixed_points.emplace_back(d.grad_point_indices.at(i), d.inner_grad_point.at(i), true);
     }
 
     auto bbox = domain_bbox(d);
-    auto split_axis = index_t{0};
+    index_t split_axis{};
     bbox.width().maxCoeff(&split_axis);
 
     // TODO(mizuno): Sort all points along each axis and cache the result as a permutation.
     std::sort(mixed_points.begin(), mixed_points.end(),
               [this, split_axis](const auto& a, const auto& b) {
-                return (a.grad ? grad_points_ : points_)(a.index, split_axis) <
-                       (b.grad ? grad_points_ : points_)(b.index, split_axis);
+                return a.point(points_, grad_points_)(split_axis) <
+                       b.point(points_, grad_points_)(split_axis);
               });
 
-    auto q = kOverlapQuota * static_cast<double>(kMaxLeafSize) /
-             static_cast<double>(mixed_points.size());
+    std::vector<index_t> prefix_sum_mult{0};
+    for (const auto& p : mixed_points) {
+      prefix_sum_mult.push_back(prefix_sum_mult.back() + p.multiplicity());
+    }
 
-    auto n_pts = d.mixed_size();
-    auto n_overlap_pts = static_cast<index_t>(round_half_to_even(q * static_cast<double>(n_pts)));
-    auto n_subdomain_pts =
-        static_cast<index_t>(std::ceil(static_cast<double>(n_pts + n_overlap_pts) / 2.0));
-    auto left_partition = n_pts - n_subdomain_pts;
-    auto right_partition = n_subdomain_pts;
-    auto mid = static_cast<index_t>(
-        round_half_to_even(static_cast<double>(left_partition + right_partition) / 2.0));
+    auto n_points_mult = mu + kDim * sigma;
+    auto q = kOverlapQuota * static_cast<double>(kMaxLeafSize) / static_cast<double>(n_points_mult);
+    auto n_subdomain_points_mult = static_cast<index_t>(
+        round_half_to_even((1.0 + q) / 2.0 * static_cast<double>(n_points_mult)));
+    auto left_partition_mult = n_points_mult - n_subdomain_points_mult;
+    auto right_partition_mult = n_subdomain_points_mult;
+    auto mid_mult = static_cast<index_t>(
+        round_half_to_even(static_cast<double>(left_partition_mult + right_partition_mult) / 2.0));
+
+    auto n_points = mu + sigma;
+    auto left_partition = static_cast<index_t>(std::distance(
+        prefix_sum_mult.begin(),
+        std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), left_partition_mult) - 1));
+    auto right_partition = static_cast<index_t>(std::distance(
+        prefix_sum_mult.begin(),
+        std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), right_partition_mult) -
+            1));
+    auto mid = static_cast<index_t>(std::distance(
+        prefix_sum_mult.begin(),
+        std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), mid_mult) - 1));
 
     Domain left;
     Domain right;
@@ -149,7 +170,7 @@ class domain_divider {
       }
     }
 
-    for (index_t i = left_partition; i < n_pts; i++) {
+    for (index_t i = left_partition; i < n_points; i++) {
       const auto& p = mixed_points.at(i);
       auto inner = p.inner && i >= mid;
 
@@ -171,7 +192,7 @@ class domain_divider {
 
     while (it != domains_.end()) {
       auto& d = *it;
-      if (d.mixed_size() <= kMaxLeafSize) {
+      if (d.num_points() + kDim * d.num_grad_points() <= kMaxLeafSize) {
         ++it;
         continue;
       }
