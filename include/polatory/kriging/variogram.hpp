@@ -1,5 +1,6 @@
 #pragma once
 
+#include <numeric>
 #include <polatory/common/io.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -29,6 +30,8 @@ class variogram {
   const Vector& direction() const { return direction_; }
 
   index_t num_bins() const { return static_cast<index_t>(bin_distance_.size()); }
+
+  index_t num_pairs() const { return std::reduce(bin_num_pairs_.begin(), bin_num_pairs_.end()); }
 
  private:
   POLATORY_FRIEND_READ_WRITE(variogram);

@@ -140,7 +140,8 @@ void define_module(py::module& m) {
       .def_property_readonly("bin_gamma", &Variogram::bin_gamma)
       .def_property_readonly("bin_num_pairs", &Variogram::bin_num_pairs)
       .def_property_readonly("direction", &Variogram::direction)
-      .def_property_readonly("num_bins", &Variogram::num_bins);
+      .def_property_readonly("num_bins", &Variogram::num_bins)
+      .def_property_readonly("num_pairs", &Variogram::num_pairs);
 
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
       .def(py::init<double, index_t>(), "lag_distance"_a, "num_lags"_a)
