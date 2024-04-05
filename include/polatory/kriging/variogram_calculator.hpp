@@ -116,7 +116,7 @@ class variogram_calculator {
       throw std::invalid_argument("directions must not be empty.");
     }
 
-    directions_ = directions;
+    directions_ = directions.rowwise().normalized();
   }
 
   void set_lag_tolerance(double lag_tolerance) {
