@@ -24,30 +24,35 @@ class variogram_calculator {
  public:
   // Non-constexpr for the sake of Python bindings.
   static inline const double kAutomaticAngleTolerance = -1.0;
+  static inline const double kAutomaticLagTolerance = -1.0;
 
   static const Vectors kIsotropicDirections;
   static const Vectors kAnisotropicDirections;
 
   variogram_calculator(double lag_distance, index_t num_lags)
-      : lag_distance_(lag_distance), num_lags_(num_lags), lag_tolerance_{0.5 * lag_distance} {}
+      : lag_distance_(lag_distance), num_lags_(num_lags) {}
 
   double angle_tolerance() const { return angle_tolerance_; }
 
   std::vector<Variogram> calculate(const Points& points, const common::valuesd& values) const {
     auto num_directions = directions_.rows();
     auto num_points = points.rows();
-    auto squared_cos_angle_tolerance = std::pow(std::cos(angle_tolerance_), 2);
+    auto lag_tolerance =
+        lag_tolerance_ == kAutomaticLagTolerance ? 0.5 * lag_distance_ : lag_tolerance_;
+    auto squared_cos_angle_tolerance = angle_tolerance_ == kAutomaticAngleTolerance
+                                           ? 0.0
+                                           : std::pow(std::cos(angle_tolerance_), 2);
 
     std::vector<VariogramBuilder> builders;
     for (index_t k = 0; k < num_directions; k++) {
-      builders.emplace_back(lag_distance_, lag_tolerance_, num_lags_, directions_.row(k));
+      builders.emplace_back(lag_distance_, lag_tolerance, num_lags_, directions_.row(k));
     }
 
 #pragma omp parallel
     {
       std::vector<VariogramBuilder> local_builders;
       for (index_t k = 0; k < num_directions; k++) {
-        local_builders.emplace_back(lag_distance_, lag_tolerance_, num_lags_, directions_.row(k));
+        local_builders.emplace_back(lag_distance_, lag_tolerance, num_lags_, directions_.row(k));
       }
 
       common::valuesd squared_dots;
@@ -100,7 +105,7 @@ class variogram_calculator {
 
   void set_angle_tolerance(double angle_tolerance) {
     if (angle_tolerance != kAutomaticAngleTolerance && !(angle_tolerance > 0.0)) {
-      throw std::invalid_argument("angle_tolerance must be positive");
+      throw std::invalid_argument("angle_tolerance must be positive.");
     }
 
     angle_tolerance_ = angle_tolerance;
@@ -108,15 +113,15 @@ class variogram_calculator {
 
   void set_directions(const Vectors& directions) {
     if (directions.rows() == 0) {
-      throw std::invalid_argument("directions must not be empty");
+      throw std::invalid_argument("directions must not be empty.");
     }
 
     directions_ = directions;
   }
 
   void set_lag_tolerance(double lag_tolerance) {
-    if (!(lag_tolerance > 0.0)) {
-      throw std::invalid_argument("lag_tolerance must be positive");
+    if (lag_tolerance != kAutomaticAngleTolerance && !(lag_tolerance > 0.0)) {
+      throw std::invalid_argument("lag_tolerance must be positive.");
     }
 
     lag_tolerance_ = lag_tolerance;
@@ -125,7 +130,7 @@ class variogram_calculator {
  private:
   double lag_distance_;
   index_t num_lags_;
-  double lag_tolerance_;
+  double lag_tolerance_{kAutomaticLagTolerance};
   Vectors directions_{kIsotropicDirections};
   double angle_tolerance_{kAutomaticAngleTolerance};
 };

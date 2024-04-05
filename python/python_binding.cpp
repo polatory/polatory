@@ -147,6 +147,7 @@ void define_module(py::module& m) {
       .def(py::init<double, index_t>(), "lag_distance"_a, "num_lags"_a)
       .def_readonly_static("AUTOMATIC_ANGLE_TOLERANCE",
                            &VariogramCalculator::kAutomaticAngleTolerance)
+      .def_readonly_static("AUTOMATIC_LAG_TOLERANCE", &VariogramCalculator::kAutomaticLagTolerance)
       .def_readonly_static("ISOTROPIC_DIRECTIONS", &VariogramCalculator::kIsotropicDirections)
       .def_readonly_static("ANISOTROPIC_DIRECTIONS", &VariogramCalculator::kAnisotropicDirections)
       .def_property("angle_tolerance", &VariogramCalculator::angle_tolerance,
