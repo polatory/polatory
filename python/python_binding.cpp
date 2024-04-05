@@ -182,17 +182,26 @@ void define_module(py::module& m) {
 PYBIND11_MODULE(_core, m) {
   py::class_<point_cloud::normal_estimator>(m, "NormalEstimator")
       .def(py::init<const geometry::points3d&>(), "points"_a)
+      .def_property_readonly("normals", &point_cloud::normal_estimator::normals)
+      .def_property_readonly("plane_factors", &point_cloud::normal_estimator::plane_factors)
       .def("estimate_with_knn",
-           py::overload_cast<index_t, double>(&point_cloud::normal_estimator::estimate_with_knn),
-           "k"_a, "plane_factor_threshold"_a = 1.8)
+           py::overload_cast<index_t>(&point_cloud::normal_estimator::estimate_with_knn), "k"_a)
       .def("estimate_with_knn",
-           py::overload_cast<const std::vector<index_t>&, double>(
+           py::overload_cast<const std::vector<index_t>&>(
                &point_cloud::normal_estimator::estimate_with_knn),
-           "ks"_a, "plane_factor_threshold"_a = 1.8)
-      .def("estimate_with_radius", &point_cloud::normal_estimator::estimate_with_radius, "radius"_a,
-           "plane_factor_threshold"_a = 1.8)
-      .def("orient_by_outward_vector", &point_cloud::normal_estimator::orient_by_outward_vector,
-           "v"_a)
+           "ks"_a)
+      .def("estimate_with_radius",
+           py::overload_cast<double>(&point_cloud::normal_estimator::estimate_with_radius),
+           "radius"_a)
+      .def("estimate_with_radius",
+           py::overload_cast<const std::vector<double>&>(
+               &point_cloud::normal_estimator::estimate_with_radius),
+           "radii"_a)
+      .def("filter_by_plane_factor", &point_cloud::normal_estimator::filter_by_plane_factor,
+           "threshold"_a = 1.8)
+      .def("orient_toward_direction", &point_cloud::normal_estimator::orient_toward_direction,
+           "direction"_a)
+      .def("orient_toward_point", &point_cloud::normal_estimator::orient_toward_point, "point"_a)
       .def("orient_closed_surface", &point_cloud::normal_estimator::orient_closed_surface, "k"_a);
 
   py::class_<point_cloud::sdf_data_generator>(m, "SdfDataGenerator")

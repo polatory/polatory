@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <iterator>
 #include <numeric>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
@@ -13,13 +14,26 @@ namespace polatory::point_cloud {
 normal_estimator::normal_estimator(const geometry::points3d& points)
     : n_points_(points.rows()), points_(points), tree_(points) {}
 
-normal_estimator& normal_estimator::estimate_with_knn(index_t k, double plane_factor_threshold) {
-  return estimate_with_knn(std::vector<index_t>{k}, plane_factor_threshold);
+normal_estimator& normal_estimator::estimate_with_knn(index_t k) {
+  return estimate_with_knn(std::vector<index_t>{k});
 }
 
-normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>& ks,
-                                                      double plane_factor_threshold) {
-  normals_ = geometry::vectors3d::Zero(n_points_, 3);
+normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>& ks) {
+  if (ks.empty()) {
+    throw std::runtime_error("ks must not be empty.");
+  }
+
+  if (std::any_of(ks.begin(), ks.end(), [](auto k) { return k < 3; })) {
+    throw std::runtime_error("k must be greater than or equal to 3.");
+  }
+
+  normals_ = geometry::points3d::Zero(n_points_, 3);
+  plane_factors_ = common::valuesd::Zero(n_points_);
+
+  if (n_points_ < 3) {
+    estimated_ = true;
+    return *this;
+  }
 
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
@@ -48,54 +62,111 @@ normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>
     auto best = std::distance(plane_factors.begin(),
                               std::max_element(plane_factors.begin(), plane_factors.end()));
 
-    if (plane_factors.at(best) >= plane_factor_threshold) {
-      normals_.row(i) = plane_normals.at(best);
-    }
+    normals_.row(i) = plane_normals.at(best);
+    plane_factors_(i) = plane_factors.at(best);
   }
 
+  estimated_ = true;
   return *this;
 }
 
-normal_estimator& normal_estimator::estimate_with_radius(double radius,
-                                                         double plane_factor_threshold) {
-  normals_ = geometry::vectors3d::Zero(n_points_, 3);
+normal_estimator& normal_estimator::estimate_with_radius(double radius) {
+  return estimate_with_radius(std::vector<double>{radius});
+}
+
+normal_estimator& normal_estimator::estimate_with_radius(const std::vector<double>& radii) {
+  if (radii.empty()) {
+    throw std::runtime_error("radii must not be empty.");
+  }
+
+  if (std::any_of(radii.begin(), radii.end(), [](auto radius) { return radius <= 0.0; })) {
+    throw std::runtime_error("radius must be positive.");
+  }
+
+  normals_ = geometry::points3d::Zero(n_points_, 3);
+  plane_factors_ = common::valuesd::Zero(n_points_);
 
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
 
-#pragma omp parallel for private(nn_indices, nn_distances)
+  std::vector<double> radii_sorted(radii);
+  std::sort(radii_sorted.rbegin(), radii_sorted.rend());
+  auto radius_max = radii_sorted.front();
+
+  std::vector<double> plane_factors;
+  std::vector<geometry::vector3d> plane_normals;
+
+#pragma omp parallel for private(nn_indices, nn_distances, plane_factors, plane_normals)
   for (index_t i = 0; i < n_points_; i++) {
     geometry::point3d p = points_.row(i);
-    tree_.radius_search(p, radius, nn_indices, nn_distances);
+    tree_.radius_search(p, radius_max, nn_indices, nn_distances);
 
     if (nn_indices.size() < 3) {
       continue;
     }
 
-    plane_estimator est(points_(nn_indices, Eigen::all));
+    plane_factors.clear();
+    plane_normals.clear();
+    for (auto radius : radii_sorted) {
+      auto it = std::upper_bound(nn_distances.begin(), nn_distances.end(), radius);
+      auto k = std::distance(nn_distances.begin(), it);
+      nn_indices.resize(k);
+      nn_distances.resize(k);
+      plane_estimator est(points_(nn_indices, Eigen::all));
+      plane_factors.push_back(est.plane_factor());
+      plane_normals.push_back(est.plane_normal());
+    }
 
-    if (est.plane_factor() >= plane_factor_threshold) {
-      normals_.row(i) = est.plane_normal();
+    auto best = std::distance(plane_factors.begin(),
+                              std::max_element(plane_factors.begin(), plane_factors.end()));
+
+    normals_.row(i) = plane_normals.at(best);
+    plane_factors_(i) = plane_factors.at(best);
+  }
+
+  estimated_ = true;
+  return *this;
+}
+
+normal_estimator& normal_estimator::filter_by_plane_factor(double threshold) {
+  throw_if_not_estimated();
+
+  for (index_t i = 0; i < n_points_; i++) {
+    if (plane_factors_(i) < threshold) {
+      normals_.row(i).setZero();
     }
   }
 
   return *this;
 }
 
-geometry::vectors3d normal_estimator::orient_by_outward_vector(const geometry::vector3d& v) {
-  if (n_points_ > 0 && normals_.rows() == 0) {
-    throw std::runtime_error("Normals have not been estimated yet.");
-  }
+normal_estimator& normal_estimator::orient_toward_direction(const geometry::vector3d& direction) {
+  throw_if_not_estimated();
 
 #pragma omp parallel for
   for (index_t i = 0; i < n_points_; i++) {
     auto n = normals_.row(i);
-    if (n.dot(v) < 0.0) {
+    if (n.dot(direction) < 0.0) {
       n = -n;
     }
   }
 
-  return normals_;
+  return *this;
+}
+
+normal_estimator& normal_estimator::orient_toward_point(const geometry::point3d& point) {
+  throw_if_not_estimated();
+
+#pragma omp parallel for
+  for (index_t i = 0; i < n_points_; i++) {
+    auto n = normals_.row(i);
+    auto p = points_.row(i);
+    if (n.dot(point - p) < 0.0) {
+      n = -n;
+    }
+  }
+
+  return *this;
 }
 
 class weighted_pair {
@@ -117,10 +188,8 @@ class weighted_pair {
   double weight_;
 };
 
-geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
-  if (n_points_ > 0 && normals_.rows() == 0) {
-    throw std::runtime_error("Normals have not been estimated yet.");
-  }
+normal_estimator& normal_estimator::orient_closed_surface(index_t k) {
+  throw_if_not_estimated();
 
   auto bbox = geometry::bbox3d::from_points(points_);
   auto center = bbox.center();
@@ -207,7 +276,7 @@ geometry::vectors3d normal_estimator::orient_closed_surface(index_t k) {
 
   std::cout << "Number of connected components: " << n_connected_components << std::endl;
 
-  return normals_;
+  return *this;
 }
 
 }  // namespace polatory::point_cloud

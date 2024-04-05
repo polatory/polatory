@@ -22,9 +22,11 @@ int main(int argc, const char* argv[]) {
     points3d points = table(Eigen::all, {0, 1, 2});
 
     // Estimate normals.
-    vectors3d normals = normal_estimator(points)
-                            .estimate_with_knn(opts.ks, opts.min_plane_factor)
-                            .orient_closed_surface(opts.k_orient);
+    const auto& normals = normal_estimator(points)
+                              .estimate_with_knn(opts.ks)
+                              .filter_by_plane_factor(opts.min_plane_factor)
+                              .orient_closed_surface(opts.k_orient)
+                              .normals();
 
     // Output points with normals.
     write_table(opts.out_file, concatenate_cols(points, normals));
