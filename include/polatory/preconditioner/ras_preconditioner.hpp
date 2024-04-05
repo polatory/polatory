@@ -111,8 +111,9 @@ class ras_preconditioner : public krylov::linear_operator {
 
     fine_grids_.resize(n_levels_);
 
-    std::cout << std::format("{:>8}{:>16}{:>16}{:>16}\n", "level", "n_domains", "n_points",
-                             "n_grad_points");
+    std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", "level", "n_domains", "n_points",
+                             "n_grad_points")
+              << std::endl;
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       auto mu = static_cast<index_t>(point_idcs_.at(level).size());
@@ -138,7 +139,7 @@ class ras_preconditioner : public krylov::linear_operator {
         fine.setup(points_, grad_points_, lagrange_pt_);
       }
 
-      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}\n", level, n_grids, mu, sigma);
+      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", level, n_grids, mu, sigma) << std::endl;
     }
 
     {
@@ -152,7 +153,7 @@ class ras_preconditioner : public krylov::linear_operator {
       coarse_ = std::make_unique<CoarseGrid>(model, std::move(coarse_domain));
       coarse_->setup(points_, grad_points_, lagrange_pt_);
 
-      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}\n", 0, 1, mu, sigma);
+      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", 0, 1, mu, sigma) << std::endl;
     }
 
     if (n_levels_ == 1) {
