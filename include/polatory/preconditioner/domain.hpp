@@ -20,11 +20,9 @@ class domain {
   std::vector<bool> inner_point;
   std::vector<bool> inner_grad_point;
 
-  index_t size() const { return static_cast<index_t>(point_indices.size()); }
+  index_t num_points() const { return static_cast<index_t>(point_indices.size()); }
 
-  index_t grad_size() const { return static_cast<index_t>(grad_point_indices.size()); }
-
-  index_t mixed_size() const { return size() + grad_size(); }
+  index_t num_grad_points() const { return static_cast<index_t>(grad_point_indices.size()); }
 
  private:
   friend class domain_divider<Dim>;

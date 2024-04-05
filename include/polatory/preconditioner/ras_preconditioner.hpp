@@ -67,7 +67,7 @@ class ras_preconditioner : public krylov::linear_operator {
                                                 model, points_, grad_points_, precision::kPrecise)
                                           : nullptr) {
     auto n_fine_levels =
-        std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(mu_ + sigma_) /
+        std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(mu_ + kDim * sigma_) /
                                                         static_cast<double>(kNCoarsestPoints)) /
                                                log(1.0 / kCoarseRatio))));
     n_levels_ = n_fine_levels + 1;
@@ -111,19 +111,20 @@ class ras_preconditioner : public krylov::linear_operator {
 
     fine_grids_.resize(n_levels_);
 
-    std::cout << std::setw(8) << "level" << std::setw(16) << "n_domains" << std::setw(16)
-              << "n_points" << std::endl;
+    std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", "level", "n_domains", "n_points",
+                             "n_grad_points")
+              << std::endl;
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
-      auto n_mixed_points =
-          static_cast<index_t>(point_idcs_.at(level).size() + grad_point_idcs_.at(level).size());
+      auto mu = static_cast<index_t>(point_idcs_.at(level).size());
+      auto sigma = static_cast<index_t>(grad_point_idcs_.at(level).size());
 
       auto divider = std::make_unique<DomainDivider>(points_, grad_points_, point_idcs_.at(level),
                                                      grad_point_idcs_.at(level), poly_point_idcs);
 
-      auto ratio = level == 1
-                       ? static_cast<double>(kNCoarsestPoints) / static_cast<double>(n_mixed_points)
-                       : kCoarseRatio;
+      auto ratio = level == 1 ? static_cast<double>(kNCoarsestPoints) /
+                                    static_cast<double>(mu + kDim * sigma)
+                              : kCoarseRatio;
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
           divider->choose_coarse_points(ratio);
 
@@ -138,13 +139,12 @@ class ras_preconditioner : public krylov::linear_operator {
         fine.setup(points_, grad_points_, lagrange_pt_);
       }
 
-      std::cout << std::setw(8) << level << std::setw(16) << n_grids << std::setw(16)
-                << n_mixed_points << std::endl;
+      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", level, n_grids, mu, sigma) << std::endl;
     }
 
     {
-      auto n_mixed_points =
-          static_cast<index_t>(point_idcs_.at(0).size() + grad_point_idcs_.at(0).size());
+      auto mu = static_cast<index_t>(point_idcs_.at(0).size());
+      auto sigma = static_cast<index_t>(grad_point_idcs_.at(0).size());
 
       Domain coarse_domain;
       coarse_domain.point_indices = point_idcs_.at(0);
@@ -153,8 +153,7 @@ class ras_preconditioner : public krylov::linear_operator {
       coarse_ = std::make_unique<CoarseGrid>(model, std::move(coarse_domain));
       coarse_->setup(points_, grad_points_, lagrange_pt_);
 
-      std::cout << std::setw(8) << 0 << std::setw(16) << 1 << std::setw(16) << n_mixed_points
-                << std::endl;
+      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", 0, 1, mu, sigma) << std::endl;
     }
 
     if (n_levels_ == 1) {
