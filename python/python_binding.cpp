@@ -97,9 +97,14 @@ void define_module(py::module& m) {
 
   py::class_<Interpolant>(m, "Interpolant")
       .def(py::init<const Model&>(), "model"_a)
+      .def_property_readonly("bbox", &Interpolant::bbox)
       .def_property_readonly("centers", &Interpolant::centers)
+      .def_property_readonly("grad_centers", &Interpolant::grad_centers)
+      .def_property_readonly("model", &Interpolant::model)
       .def_property_readonly("weights", &Interpolant::weights)
-      .def("evaluate", &Interpolant::evaluate, "points"_a)
+      .def("evaluate", py::overload_cast<const Points&>(&Interpolant::evaluate), "points"_a)
+      .def("evaluate", py::overload_cast<const Points&, const Points&>(&Interpolant::evaluate),
+           "points"_a, "grad_points"_a)
       .def("fit",
            py::overload_cast<const Points&, const common::valuesd&, double, int>(&Interpolant::fit),
            "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100)

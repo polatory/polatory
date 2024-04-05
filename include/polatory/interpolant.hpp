@@ -35,29 +35,35 @@ class interpolant {
  public:
   explicit interpolant(const Model& model) : model_(model) {}
 
+  const Bbox& bbox() const {
+    throw_if_not_fitted();
+
+    return bbox_;
+  }
+
   const Points& centers() const {
     throw_if_not_fitted();
 
     return centers_;
   }
 
-  const Points& grad_centers() const {
+  common::valuesd evaluate(const Points& points) { return evaluate(points, Points(0, kDim)); }
+
+  common::valuesd evaluate(const Points& points, const Points& grad_points) {
     throw_if_not_fitted();
 
-    return centers_;
-  }
-
-  common::valuesd evaluate(const Points& points) {
-    throw_if_not_fitted();
-
-    set_evaluation_bbox_impl(Bbox::from_points(points));
-    return evaluate_impl(points);
+    set_evaluation_bbox_impl(Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)));
+    return evaluate_impl(points, grad_points);
   }
 
   common::valuesd evaluate_impl(const Points& points) const {
+    return evaluate_impl(points, Points(0, kDim));
+  }
+
+  common::valuesd evaluate_impl(const Points& points, const Points& grad_points) const {
     throw_if_not_fitted();
 
-    return evaluator_->evaluate(points);
+    return evaluator_->evaluate(points, grad_points);
   }
 
   void fit(const Points& points, const common::valuesd& values, double absolute_tolerance,
@@ -90,7 +96,7 @@ class interpolant {
     fitted_ = true;
     centers_ = points;
     grad_centers_ = grad_points;
-    bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_points));
+    bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
   void fit_incrementally(const Points& points, const common::valuesd& values,
@@ -171,6 +177,14 @@ class interpolant {
     centers_ = points(center_indices, Eigen::all);
     bbox_ = Bbox::from_points(centers_);
   }
+
+  const Points& grad_centers() const {
+    throw_if_not_fitted();
+
+    return grad_centers_;
+  }
+
+  const Model& model() const { return model_; }
 
   void set_evaluation_bbox_impl(const Bbox& bbox) {
     throw_if_not_fitted();

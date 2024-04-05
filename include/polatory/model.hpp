@@ -177,7 +177,7 @@ class model {
 template <>
 inline std::string model<1>::description() const {
   if (!is_covariance_model()) {
-    throw std::runtime_error("describe() is only available for covariance models.");
+    throw std::runtime_error("description is only available for covariance models.");
   }
 
   std::stringstream ss;
@@ -200,7 +200,7 @@ inline std::string model<1>::description() const {
 template <>
 inline std::string model<2>::description() const {
   if (!is_covariance_model()) {
-    throw std::runtime_error("describe() is only available for covariance models.");
+    throw std::runtime_error("description is only available for covariance models.");
   }
 
   auto deg = std::numbers::pi / 180.0;
@@ -233,7 +233,7 @@ inline std::string model<2>::description() const {
 template <>
 inline std::string model<3>::description() const {
   if (!is_covariance_model()) {
-    throw std::runtime_error("describe() is only available for covariance models.");
+    throw std::runtime_error("description is only available for covariance models.");
   }
 
   auto deg = std::numbers::pi / 180.0;
