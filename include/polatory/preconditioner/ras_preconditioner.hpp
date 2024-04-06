@@ -259,12 +259,9 @@ class ras_preconditioner : public krylov::linear_operator {
   void orthogonalize(common::valuesd& weights, common::valuesd& residuals) const {
     if (l_ > 0) {
       // Orthogonalize weights against P.
-      auto n_cols = p_.cols();
-      for (index_t i = 0; i < n_cols; i++) {
-        auto dot = p_.col(i).dot(weights.head(mu_ + kDim * sigma_));
-        weights.head(mu_ + kDim * sigma_) -= dot * p_.col(i);
-        residuals += dot * ap_.col(i);
-      }
+      common::valuesd dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
+      weights.head(mu_ + kDim * sigma_) -= p_ * dot;
+      residuals += ap_ * dot;
     }
   }
 

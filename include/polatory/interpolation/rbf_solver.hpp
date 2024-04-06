@@ -17,7 +17,6 @@
 #include <polatory/precision.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 #include <polatory/types.hpp>
-#include <stdexcept>
 
 namespace polatory::interpolation {
 
@@ -81,7 +80,8 @@ class rbf_solver {
                         double grad_absolute_tolerance, int max_iter) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
 
-    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
+    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter,
+                      common::valuesd::Zero(mu_ + kDim * sigma_ + l_));
   }
 
   template <class Derived, class Derived2>
@@ -101,21 +101,18 @@ class rbf_solver {
 
     if (l_ > 0) {
       // Orthogonalize weights against P.
-      auto n_cols = p_.cols();
-      for (index_t i = 0; i < n_cols; i++) {
-        ini_sol.head(mu_ + kDim * sigma_) -=
-            p_.col(i).dot(ini_sol.head(mu_ + kDim * sigma_)) * p_.col(i);
-      }
+      common::valuesd dot = p_.transpose() * ini_sol.head(mu_ + kDim * sigma_);
+      ini_sol.head(mu_ + kDim * sigma_) -= p_ * dot;
     }
 
-    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter, &ini_sol);
+    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter, ini_sol);
   }
 
  private:
-  template <class Derived, class Derived2 = common::valuesd>
+  template <class Derived, class Derived2>
   common::valuesd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
                              double grad_absolute_tolerance, int max_iter,
-                             const Eigen::MatrixBase<Derived2>* initial_solution = nullptr) const {
+                             const Eigen::MatrixBase<Derived2>& initial_solution) const {
     // The solver does not work when all values are zero.
     if (values.isZero()) {
       return common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
@@ -126,9 +123,7 @@ class rbf_solver {
     rhs.tail(l_) = common::valuesd::Zero(l_);
 
     krylov::fgmres solver(op_, rhs, max_iter);
-    if (initial_solution != nullptr) {
-      solver.set_initial_solution(*initial_solution);
-    }
+    solver.set_initial_solution(initial_solution);
     solver.set_right_preconditioner(*pc_);
     solver.setup();
 
@@ -156,7 +151,10 @@ class rbf_solver {
       }
 
       if (solver.iteration_count() == solver.max_iterations()) {
-        throw std::runtime_error("Reached the maximum number of iterations.");
+        std::cerr
+            << "Warning: reached the maximum number of iterations, returning the current solution."
+            << std::endl;
+        break;
       }
     }
 
