@@ -69,53 +69,37 @@ class rbf_solver {
     }
   }
 
-  template <class Derived>
-  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                        int max_iter) const {
-    return solve(values, absolute_tolerance, absolute_tolerance, max_iter);
+  template <class DerivedValues, class DerivedInitialWeights = common::valuesd>
+  common::valuesd solve(
+      const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance, int max_iter,
+      const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
+    return solve(values, absolute_tolerance, absolute_tolerance, max_iter, initial_weights);
   }
 
-  template <class Derived>
-  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                        double grad_absolute_tolerance, int max_iter) const {
+  template <class DerivedValues, class DerivedInitialWeights = common::valuesd>
+  common::valuesd solve(
+      const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance,
+      double grad_absolute_tolerance, int max_iter,
+      const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
+    POLATORY_ASSERT(initial_weights == nullptr ||
+                    initial_weights->rows() == mu_ + kDim * sigma_ + l_);
 
-    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter,
-                      common::valuesd::Zero(mu_ + kDim * sigma_ + l_));
-  }
+    common::valuesd weights = common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
 
-  template <class Derived, class Derived2>
-  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                        int max_iter, const Eigen::MatrixBase<Derived2>& initial_solution) const {
-    return solve(values, absolute_tolerance, absolute_tolerance, max_iter, initial_solution);
-  }
-
-  template <class Derived, class Derived2>
-  common::valuesd solve(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                        double grad_absolute_tolerance, int max_iter,
-                        const Eigen::MatrixBase<Derived2>& initial_solution) const {
-    POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
-    POLATORY_ASSERT(initial_solution.rows() == mu_ + kDim * sigma_ + l_);
-
-    common::valuesd ini_sol = initial_solution;
-
-    if (l_ > 0) {
-      // Orthogonalize weights against P.
-      common::valuesd dot = p_.transpose() * ini_sol.head(mu_ + kDim * sigma_);
-      ini_sol.head(mu_ + kDim * sigma_) -= p_ * dot;
-    }
-
-    return solve_impl(values, absolute_tolerance, grad_absolute_tolerance, max_iter, ini_sol);
-  }
-
- private:
-  template <class Derived, class Derived2>
-  common::valuesd solve_impl(const Eigen::MatrixBase<Derived>& values, double absolute_tolerance,
-                             double grad_absolute_tolerance, int max_iter,
-                             const Eigen::MatrixBase<Derived2>& initial_solution) const {
     // The solver does not work when all values are zero.
     if (values.isZero()) {
-      return common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
+      return weights;
+    }
+
+    if (initial_weights != nullptr) {
+      weights = *initial_weights;
+
+      if (l_ > 0) {
+        // Orthogonalize weights against P.
+        common::valuesd dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
+        weights.head(mu_ + kDim * sigma_) -= p_ * dot;
+      }
     }
 
     common::valuesd rhs(mu_ + kDim * sigma_ + l_);
@@ -123,7 +107,7 @@ class rbf_solver {
     rhs.tail(l_) = common::valuesd::Zero(l_);
 
     krylov::fgmres solver(op_, rhs, max_iter);
-    solver.set_initial_solution(initial_solution);
+    solver.set_initial_solution(weights);
     solver.set_right_preconditioner(*pc_);
     solver.setup();
 
@@ -131,15 +115,14 @@ class rbf_solver {
               << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
               << solver.relative_residual() << std::defaultfloat << std::endl;
 
-    common::valuesd solution;
     while (true) {
       solver.iterate_process();
-      solution = solver.solution_vector();
+      weights = solver.solution_vector();
       std::cout << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
                 << solver.relative_residual() << std::defaultfloat << std::endl;
 
       auto [converged, res, grad_res] =
-          res_eval_.converged(values, solution, absolute_tolerance, grad_absolute_tolerance);
+          res_eval_.converged(values, weights, absolute_tolerance, grad_absolute_tolerance);
       if (converged) {
         if (mu_ > 0) {
           std::cout << "Achieved absolute residual: " << res << std::endl;
@@ -158,9 +141,10 @@ class rbf_solver {
       }
     }
 
-    return solution;
+    return weights;
   }
 
+ private:
   const Model& model_;
   const index_t l_;
 

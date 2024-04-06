@@ -98,7 +98,7 @@ class rbf_inequality_fitter {
         center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
 
         solver.set_points(center_points);
-        center_weights = solver.solve(center_values, absolute_tolerance, max_iter, center_weights);
+        center_weights = solver.solve(center_values, absolute_tolerance, max_iter, &center_weights);
 
         for (index_t i = 0; i < n_centers; i++) {
           auto idx = centers.at(i);

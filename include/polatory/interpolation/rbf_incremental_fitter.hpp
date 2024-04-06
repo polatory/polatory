@@ -85,7 +85,7 @@ class rbf_incremental_fitter {
               .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_centers, Eigen::all)
               .template reshaped<Eigen::RowMajor>();
       weights =
-          solver.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter, weights);
+          solver.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter, &weights);
 
       if (mu == mu_full_ && sigma == sigma_full_) {
         break;
