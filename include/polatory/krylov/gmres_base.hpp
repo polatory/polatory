@@ -10,8 +10,6 @@ namespace polatory::krylov {
 
 class gmres_base {
  public:
-  static bool print_progress;
-
   virtual ~gmres_base() = default;
 
   gmres_base(const gmres_base&) = delete;
@@ -40,9 +38,6 @@ class gmres_base {
   virtual void setup();
 
   virtual common::valuesd solution_vector() const;
-
-  // tolerance: Tolerance of the relative residual (stopping criterion).
-  void solve(double tolerance);
 
  protected:
   gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
