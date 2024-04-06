@@ -1,9 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <algorithm>
-#include <cmath>
-#include <numeric>
 #include <polatory/common/complementary_indices.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -11,6 +8,7 @@
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 #include <unordered_set>
+#include <vector>
 
 namespace polatory::kriging {
 
@@ -20,7 +18,7 @@ inline common::valuesd cross_validate(const model<Dim>& model,
                                       const common::valuesd& values, const Eigen::VectorXi& set_ids,
                                       double absolute_tolerance, int max_iter) {
   auto n_points = points.rows();
-  common::valuesd residuals = common::valuesd::Zero(n_points);
+  common::valuesd predictions = common::valuesd::Zero(n_points);
 
   std::unordered_set<int> ids(set_ids.begin(), set_ids.end());
   for (auto id : ids) {
@@ -37,18 +35,17 @@ inline common::valuesd cross_validate(const model<Dim>& model,
     geometry::pointsNd<Dim> test_points = points(test_set, Eigen::all);
 
     common::valuesd train_values = values(train_set, Eigen::all);
-    common::valuesd test_values = values(test_set, Eigen::all);
 
     interpolant<Dim> interpolant(model);
     interpolant.fit(train_points, train_values, absolute_tolerance, max_iter);
     auto test_values_fit = interpolant.evaluate(test_points);
 
     for (index_t j = 0; j < static_cast<index_t>(test_set.size()); j++) {
-      residuals(test_set.at(j)) = test_values(j) - test_values_fit(j);
+      predictions(test_set.at(j)) = test_values_fit(j);
     }
   }
 
-  return residuals;
+  return predictions;
 }
 
 }  // namespace polatory::kriging

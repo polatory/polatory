@@ -33,15 +33,16 @@ void main_impl(model<Dim>&& model, const options& opts) {
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
   // Run the cross validation.
-  auto residuals =
+  valuesd predictions =
       cross_validate<Dim>(model, points, values, set_ids, opts.absolute_tolerance, opts.max_iter);
+  valuesd errors = values - predictions;
 
   std::cout << "Estimated mean absolute error: " << std::endl
-            << std::setw(12) << residuals.template lpNorm<1>() / static_cast<double>(points.rows())
+            << std::setw(12) << errors.template lpNorm<1>() / static_cast<double>(points.rows())
             << std::endl
             << "Estimated root mean square error: " << std::endl
-            << std::setw(12)
-            << std::sqrt(residuals.squaredNorm() / static_cast<double>(points.rows())) << std::endl;
+            << std::setw(12) << std::sqrt(errors.squaredNorm() / static_cast<double>(points.rows()))
+            << std::endl;
 }
 
 int main(int argc, const char* argv[]) {
