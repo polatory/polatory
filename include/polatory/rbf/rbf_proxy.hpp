@@ -84,6 +84,17 @@ class rbf_proxy {
 
   double support_radius_isotropic() const { return rbf_->support_radius_isotropic(); }
 
+  bool operator==(const rbf_proxy& other) const {
+    if (this == &other) {
+      return true;
+    }
+
+    return short_name() == other.short_name() && parameters() == other.parameters() &&
+           anisotropy() == other.anisotropy();
+  }
+
+  bool operator!=(const rbf_proxy& other) const { return !(*this == other); }
+
  private:
   POLATORY_FRIEND_READ_WRITE(rbf_proxy);
 

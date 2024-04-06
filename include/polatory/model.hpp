@@ -158,6 +158,17 @@ class model {
     }
   }
 
+  bool operator==(const model& other) const {
+    if (this == &other) {
+      return true;
+    }
+
+    return rbfs() == other.rbfs() && poly_degree() == other.poly_degree() &&
+           nugget() == other.nugget();
+  }
+
+  bool operator!=(const model& other) const { return !(*this == other); }
+
   POLATORY_IMPLEMENT_LOAD_SAVE(model);
 
  private:

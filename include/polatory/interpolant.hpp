@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <boost/container_hash/hash.hpp>
 #include <format>
 #include <memory>
 #include <polatory/common/io.hpp>
@@ -16,6 +17,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -30,6 +32,7 @@ class interpolant {
   using IncrementalFitter = interpolation::rbf_incremental_fitter<kDim>;
   using InequalityFitter = interpolation::rbf_inequality_fitter<kDim>;
   using Model = model<kDim>;
+  using Point = geometry::pointNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
 
  public:
@@ -67,12 +70,13 @@ class interpolant {
   }
 
   void fit(const Points& points, const common::valuesd& values, double absolute_tolerance,
-           int max_iter = 100) {
-    fit(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance, max_iter);
+           int max_iter = 100, const interpolant* initial = nullptr) {
+    fit(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance, max_iter, initial);
   }
 
   void fit(const Points& points, const Points& grad_points, const common::valuesd& values,
-           double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 100) {
+           double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 100,
+           const interpolant* initial = nullptr) {
     check_num_points(points, grad_points);
 
     auto n_rhs = points.rows() + kDim * grad_points.rows();
@@ -88,10 +92,17 @@ class interpolant {
       throw std::invalid_argument("grad_absolute_tolerance must be greater than 0.0.");
     }
 
+    common::valuesd initial_weights;
+    if (initial != nullptr) {
+      initial_weights = build_initial_weights(points, grad_points, *initial);
+    }
+
+    // Clear after the initial weights are built as `initial` can be `this`.
     clear();
 
     Fitter fitter(model_, points, grad_points);
-    weights_ = fitter.fit(values, absolute_tolerance, grad_absolute_tolerance, max_iter);
+    weights_ = fitter.fit(values, absolute_tolerance, grad_absolute_tolerance, max_iter,
+                          initial != nullptr ? &initial_weights : nullptr);
 
     fitted_ = true;
     centers_ = points;
@@ -207,8 +218,57 @@ class interpolant {
  private:
   POLATORY_FRIEND_READ_WRITE(model);
 
+  struct point_hash {
+    std::size_t operator()(const Point& p) const noexcept {
+      return boost::hash_range(p.data(), p.data() + p.size());
+    }
+  };
+
   // For deserialization.
   interpolant() = default;
+
+  common::valuesd build_initial_weights(const Points& points, const Points& grad_points,
+                                        const interpolant& initial) const {
+    auto l = model().poly_basis_size();
+    auto mu = points.rows();
+    auto sigma = grad_points.rows();
+    common::valuesd weights = common::valuesd::Zero(mu + kDim * sigma + l);
+
+    if (model() != initial.model()) {
+      std::cerr << "Warning: ignoring the initial interpolant because the model is different."
+                << std::endl;
+      return weights;
+    }
+
+    std::unordered_map<Point, index_t, point_hash> ini_points;
+    std::unordered_map<Point, index_t, point_hash> ini_grad_points;
+
+    auto ini_mu = initial.centers_.rows();
+    auto ini_sigma = initial.grad_centers_.rows();
+    for (index_t i = 0; i < ini_mu; ++i) {
+      ini_points.emplace(initial.centers_.row(i), i);
+    }
+    for (index_t i = 0; i < ini_sigma; ++i) {
+      ini_grad_points.emplace(initial.grad_centers_.row(i), i);
+    }
+
+    for (index_t i = 0; i < mu; ++i) {
+      auto it = ini_points.find(points.row(i));
+      if (it != ini_points.end()) {
+        weights(i) = initial.weights()(it->second);
+      }
+    }
+    for (index_t i = 0; i < sigma; ++i) {
+      auto it = ini_grad_points.find(grad_points.row(i));
+      if (it != ini_grad_points.end()) {
+        weights.segment<kDim>(mu + kDim * i) =
+            initial.weights().template segment<kDim>(ini_mu + kDim * it->second);
+      }
+    }
+    weights.tail(l) = initial.weights().tail(l);
+
+    return weights;
+  }
 
   void check_num_points(const Points& points, const Points& grad_points) const {
     auto l = model_.poly_basis_size();
