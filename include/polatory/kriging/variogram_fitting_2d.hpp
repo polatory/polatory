@@ -8,6 +8,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/kriging/variogram_set.hpp>
 #include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
@@ -22,14 +23,15 @@ class variogram_fitting<2> {
   using Matrix = geometry::matrix2d;
   using Model = model<2>;
   using Variogram = variogram<2>;
+  using VariogramSet = variogram_set<2>;
 
  public:
   variogram_fitting(
-      const std::vector<Variogram>& variogs, const Model& model,
+      const VariogramSet& variog_set, const Model& model,
       const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared,
       bool fit_anisotropy = true)
       : model_template_(model),
-        fit_anisotropy_(fit_anisotropy && variogs.size() >= 2),
+        fit_anisotropy_(fit_anisotropy && variog_set.num_variograms() >= 2),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),
         params_(model.parameters()) {
@@ -59,7 +61,7 @@ class variogram_fitting<2> {
       }
     }
 
-    for (const auto& variog : variogs) {
+    for (const auto& variog : variog_set.variograms()) {
       auto* cost_fn = new ceres::DynamicNumericDiffCostFunction(
           new residual(model_template_, variog, weight_fn, fit_anisotropy_));
       cost_fn->AddParameterBlock(num_params_);

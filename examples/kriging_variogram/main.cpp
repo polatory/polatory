@@ -8,11 +8,9 @@
 
 #include "parse_options.hpp"
 
-using polatory::index_t;
 using polatory::matrixd;
 using polatory::read_table;
 using polatory::vectord;
-using polatory::common::save;
 using polatory::geometry::pointsNd;
 using polatory::kriging::variogram;
 using polatory::kriging::variogram_calculator;
@@ -32,10 +30,10 @@ void main_impl(const options& opts) {
   if (opts.aniso) {
     calc.set_directions(VariogramCalculator::kAnisotropicDirections);
   }
-  auto variogs = calc.calculate(points, values);
+  auto variog_set = calc.calculate(points, values);
 
-  // Save the empirical variogram.
-  save(opts.out_file, variogs);
+  // Save the empirical variograms.
+  variog_set.save(opts.out_file);
 }
 
 int main(int argc, const char* argv[]) {

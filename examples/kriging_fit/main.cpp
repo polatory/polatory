@@ -10,21 +10,20 @@
 #include "parse_options.hpp"
 
 using polatory::model;
-using polatory::common::load;
 using polatory::kriging::variogram;
 using polatory::kriging::variogram_fitting;
+using polatory::kriging::variogram_set;
 
 template <int Dim>
 void main_impl(model<Dim>&& model, const options& opts) {
-  using Variogram = variogram<Dim>;
   using VariogramFitting = variogram_fitting<Dim>;
+  using VariogramSet = variogram_set<Dim>;
 
-  // Load the empirical variogram.
-  std::vector<Variogram> variogs;
-  load(opts.in_file, variogs);
+  // Load the empirical variograms.
+  auto variog_set = VariogramSet::load(opts.in_file);
 
   // Fit model parameters.
-  VariogramFitting fit(variogs, model, opts.weight_fn);
+  VariogramFitting fit(variog_set, model, opts.weight_fn);
 
   std::cout << fit.brief_report() << std::endl;
 

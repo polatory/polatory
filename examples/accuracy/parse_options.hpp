@@ -27,7 +27,7 @@ inline options parse_options(int argc, const char* argv[]) {
 
   auto model_opts_desc = make_model_options_description(opts.model_opts);
 
-  po::options_description general_opts_desc("General options");
+  po::options_description general_opts_desc("General options", 80, 50);
   general_opts_desc.add_options()                                                              //
       ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),                           //
        "Dimension of RBF centers and evaluation points")                                       //

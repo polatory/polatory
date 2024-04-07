@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 cmake_policy(VERSION "3.16")
 
 option(BUILD_BENCHMARKS "Build benchmark programs" ON)
+option(BUILD_CLI "Build command-line interface" ON)
 option(BUILD_EXAMPLES "Build example programs" ON)
 option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 option(BUILD_TESTS "Build unit tests" ON)
@@ -65,6 +66,10 @@ add_subdirectory(src)
 
 if(BUILD_BENCHMARKS)
     add_subdirectory(benchmark)
+endif()
+
+if(BUILD_CLI)
+    add_subdirectory(cli)
 endif()
 
 if(BUILD_EXAMPLES)

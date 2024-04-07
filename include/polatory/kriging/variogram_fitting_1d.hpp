@@ -5,6 +5,7 @@
 #include <cmath>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/kriging/variogram_set.hpp>
 #include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
@@ -19,10 +20,11 @@ class variogram_fitting<1> {
   using Matrix = geometry::matrix1d;
   using Model = model<1>;
   using Variogram = variogram<1>;
+  using VariogramSet = variogram_set<1>;
 
  public:
   variogram_fitting(
-      const std::vector<Variogram>& variogs, const Model& model,
+      const VariogramSet& variog_set, const Model& model,
       const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared,
       bool /*fit_anisotropy*/ = true)
       : model_template_(model),
@@ -43,7 +45,7 @@ class variogram_fitting<1> {
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
 
-    for (const auto& variog : variogs) {
+    for (const auto& variog : variog_set.variograms()) {
       auto* cost_fn = new ceres::DynamicNumericDiffCostFunction(
           new residual(model_template_, variog, weight_fn));
       cost_fn->AddParameterBlock(num_params_);

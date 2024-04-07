@@ -5,8 +5,10 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_builder.hpp>
+#include <polatory/kriging/variogram_set.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace polatory::kriging {
@@ -17,6 +19,7 @@ class variogram_calculator {
   using Points = geometry::pointsNd<kDim>;
   using Variogram = variogram<kDim>;
   using VariogramBuilder = variogram_builder<kDim>;
+  using VariogramSet = variogram_set<kDim>;
   using Vector = geometry::vectorNd<kDim>;
   using Vectors = geometry::vectorsNd<kDim>;
 
@@ -33,7 +36,7 @@ class variogram_calculator {
 
   double angle_tolerance() const { return angle_tolerance_; }
 
-  std::vector<Variogram> calculate(const Points& points, const vectord& values) const {
+  VariogramSet calculate(const Points& points, const vectord& values) const {
     auto num_directions = directions_.rows();
     auto num_points = points.rows();
     auto lag_tolerance =
@@ -92,10 +95,13 @@ class variogram_calculator {
 
     std::vector<Variogram> variograms;
     for (auto& builder : builders) {
-      variograms.emplace_back(builder.into_variogram());
+      auto variogram = builder.into_variogram();
+      if (variogram.num_pairs() != 0) {
+        variograms.emplace_back(std::move(variogram));
+      }
     }
 
-    return variograms;
+    return VariogramSet{std::move(variograms)};
   }
 
   const Vectors& directions() const { return directions_; }

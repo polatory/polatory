@@ -21,7 +21,7 @@ inline options parse_options(int argc, const char* argv[]) {
 
   options opts;
 
-  po::options_description general_opts_desc("General options");
+  po::options_description general_opts_desc("General options", 80, 50);
   general_opts_desc.add_options()                                                            //
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),                       //
        "Input file in CSV format:\n  X[,Y[,Z]],VAL,SET_ID")                                  //

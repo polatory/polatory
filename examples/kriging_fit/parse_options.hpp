@@ -23,11 +23,11 @@ inline options parse_options(int argc, const char* argv[]) {
   namespace po = boost::program_options;
 
   options opts;
-  int weights;
+  int weights{};
 
   auto model_opts_desc = make_model_options_description(opts.model_opts);
 
-  po::options_description general_opts_desc("General options");
+  po::options_description general_opts_desc("General options", 80, 50);
   general_opts_desc.add_options()                                               //
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),          //
        "Input file produced by kriging_variogram")                              //
