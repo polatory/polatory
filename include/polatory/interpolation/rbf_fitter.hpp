@@ -1,6 +1,5 @@
 #pragma once
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/model.hpp>
@@ -22,14 +21,13 @@ class rbf_fitter {
   rbf_fitter(const Model& model, const Points& points, const Points& grad_points)
       : solver_(model, points, grad_points) {}
 
-  common::valuesd fit(const common::valuesd& values, double absolute_tolerance, int max_iter,
-                      const common::valuesd* initial_weights = nullptr) const {
+  vectord fit(const vectord& values, double absolute_tolerance, int max_iter,
+              const vectord* initial_weights = nullptr) const {
     return fit(values, absolute_tolerance, absolute_tolerance, max_iter, initial_weights);
   }
 
-  common::valuesd fit(const common::valuesd& values, double absolute_tolerance,
-                      double grad_absolute_tolerance, int max_iter,
-                      const common::valuesd* initial_weights = nullptr) const {
+  vectord fit(const vectord& values, double absolute_tolerance, double grad_absolute_tolerance,
+              int max_iter, const vectord* initial_weights = nullptr) const {
     return solver_.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter,
                          initial_weights);
   }

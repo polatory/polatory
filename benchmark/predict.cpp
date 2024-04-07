@@ -6,15 +6,15 @@
 using polatory::interpolant;
 using polatory::model;
 using polatory::read_table;
+using polatory::vectord;
 using polatory::write_table;
-using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::rbf::cov_exponential;
 
 int main(int /*argc*/, char* argv[]) {
   try {
     points3d points = read_table(argv[1]);
-    valuesd values = read_table(argv[2]);
+    vectord values = read_table(argv[2]);
     points3d prediction_points = read_table(argv[3]);
 
     double absolute_tolerance = 1e-4;

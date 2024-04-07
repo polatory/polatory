@@ -2,7 +2,6 @@
 
 #include <boost/container_hash/hash.hpp>
 #include <functional>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>
@@ -11,7 +10,7 @@
 #include <unordered_set>
 #include <utility>
 
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::bbox3d;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
@@ -26,8 +25,8 @@ class constant_field_function : public field_function {
  public:
   explicit constant_field_function(double value) : value_(value) {}
 
-  valuesd operator()(const points3d& points) const override {
-    return valuesd::Constant(points.rows(), value_);
+  vectord operator()(const points3d& points) const override {
+    return vectord::Constant(points.rows(), value_);
   }
 
  private:
@@ -36,13 +35,13 @@ class constant_field_function : public field_function {
 
 class distance_from_origin : public field_function {
  public:
-  valuesd operator()(const points3d& points) const override { return points.rowwise().norm(); }
+  vectord operator()(const points3d& points) const override { return points.rowwise().norm(); }
 };
 
 class random_field_function : public field_function {
  public:
-  valuesd operator()(const points3d& points) const override {
-    return valuesd::Random(points.rows());
+  vectord operator()(const points3d& points) const override {
+    return vectord::Random(points.rows());
   }
 };
 

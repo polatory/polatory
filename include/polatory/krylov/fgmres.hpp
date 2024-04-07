@@ -1,6 +1,5 @@
 #pragma once
 
-#include <polatory/common/types.hpp>
 #include <polatory/krylov/gmres.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
@@ -11,19 +10,19 @@ namespace polatory::krylov {
 
 class fgmres : public gmres {
  public:
-  fgmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
+  fgmres(const linear_operator& op, const vectord& rhs, index_t max_iter);
 
   void set_left_preconditioner(const linear_operator& /*left_preconditioner*/) override {
     throw std::runtime_error("set_left_preconditioner is not supported.");
   }
 
-  common::valuesd solution_vector() const override;
+  vectord solution_vector() const override;
 
  private:
-  void add_preconditioned_krylov_basis(const common::valuesd& z) override;
+  void add_preconditioned_krylov_basis(const vectord& z) override;
 
   // zs[i] := right_preconditioned(vs[i - 1]).
-  std::vector<common::valuesd> zs_;
+  std::vector<vectord> zs_;
 };
 
 }  // namespace polatory::krylov

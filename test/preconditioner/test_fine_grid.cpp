@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <numeric>
-#include <polatory/common/types.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
@@ -22,7 +21,7 @@
 using polatory::index_t;
 using polatory::matrixd;
 using polatory::model;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::matrixNd;
 using polatory::numeric::relative_error;
 using polatory::polynomial::lagrange_basis;
@@ -101,12 +100,12 @@ void test(index_t n_points, index_t n_grad_points) {
   coarse.setup(points, grad_points, lagrange_p);
   fine.setup(points, grad_points, lagrange_p);
 
-  valuesd rhs = valuesd(mu + kDim * sigma);
+  vectord rhs = vectord(mu + kDim * sigma);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
   coarse.solve(rhs);
   fine.solve(rhs);
 
-  valuesd sol_coarse = valuesd::Zero(mu + kDim * sigma + l);
+  vectord sol_coarse = vectord::Zero(mu + kDim * sigma + l);
   coarse.set_solution_to(sol_coarse);
   for (index_t i = 0; i < mu; i++) {
     if (!domain.inner_point.at(i)) {
@@ -120,7 +119,7 @@ void test(index_t n_points, index_t n_grad_points) {
   }
   sol_coarse.tail(l).array() = 0.0;
 
-  valuesd sol_fine = valuesd::Zero(mu + kDim * sigma + l);
+  vectord sol_fine = vectord::Zero(mu + kDim * sigma + l);
   fine.set_solution_to(sol_fine);
 
   EXPECT_LT(relative_error(sol_fine, sol_coarse), relative_tolerance);

@@ -3,7 +3,7 @@
 
 namespace polatory::krylov {
 
-gmres::gmres(const linear_operator& op, const common::valuesd& rhs, index_t max_iter)
+gmres::gmres(const linear_operator& op, const vectord& rhs, index_t max_iter)
     : gmres_base(op, rhs, max_iter) {}
 
 void gmres::iterate_process() {

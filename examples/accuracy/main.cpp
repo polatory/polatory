@@ -14,7 +14,7 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::bboxNd;
 using polatory::geometry::pointNd;
 using polatory::geometry::pointsNd;
@@ -41,8 +41,8 @@ void main_impl(model<Dim>&& model, const options& opts) {
   Points eval_points = Points::Random(opts.n_eval_points, kDim);
   Points grad_eval_points = Points::Random(opts.n_grad_eval_points, kDim);
 
-  valuesd weights = valuesd::Zero(m + l);
-  weights.head(m) = valuesd::Random(m);
+  vectord weights = vectord::Zero(m + l);
+  weights.head(m) = vectord::Random(m);
 
   Bbox bbox{-Point::Ones(), Point::Ones()};
   Evaluator eval(model, bbox, opts.order);

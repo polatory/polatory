@@ -3,7 +3,6 @@
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/preconditioner/binary_cache.hpp>
@@ -97,7 +96,7 @@ class fine_grid {
     sigma_full_ = grad_points_full.rows();
   }
 
-  void set_solution_to(common::valuesd& weights_full) const {
+  void set_solution_to(vectord& weights_full) const {
     for (index_t i = 0; i < mu_; i++) {
       if (inner_point_.at(i)) {
         weights_full(point_idcs_.at(i)) = lambda_(i);
@@ -112,30 +111,30 @@ class fine_grid {
     }
   }
 
-  void solve(const common::valuesd& values_full) {
-    common::valuesd values(m_);
+  void solve(const vectord& values_full) {
+    vectord values(m_);
     values.head(mu_) = values_full(point_idcs_);
     values.tail(kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim) =
         values_full.tail(kDim * sigma_full_)
             .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, Eigen::all);
 
     if (l_ > 0) {
-      lambda_ = common::valuesd(m_);
+      lambda_ = vectord(m_);
 
       if (m_ > l_) {
         // Compute Q^T d.
-        common::valuesd qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
+        vectord qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
         load_ldlt_of_qtaq();
-        common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
+        vectord gamma = ldlt_of_qtaq_.solve(qtd);
         ldlt_of_qtaq_.matrixLDLT().resize(0, 0);
 
         // Compute lambda = Q gamma.
         lambda_.head(l_) = q_top_ * gamma;
         lambda_.tail(m_ - l_) = gamma;
       } else {
-        lambda_ = common::valuesd::Zero(m_);
+        lambda_ = vectord::Zero(m_);
       }
     } else {
       load_ldlt_of_qtaq();
@@ -179,7 +178,7 @@ class fine_grid {
   Eigen::LDLT2<matrixd> ldlt_of_qtaq_;
 
   // Current solution.
-  common::valuesd lambda_;
+  vectord lambda_;
 };
 
 }  // namespace polatory::preconditioner

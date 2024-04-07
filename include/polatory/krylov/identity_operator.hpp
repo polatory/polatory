@@ -1,7 +1,6 @@
 #pragma once
 
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
 
@@ -11,7 +10,7 @@ class identity_operator : public linear_operator {
  public:
   explicit identity_operator(index_t n) : n_(n) {}
 
-  common::valuesd operator()(const common::valuesd& v) const override {
+  vectord operator()(const vectord& v) const override {
     POLATORY_ASSERT(v.rows() == n_);
     return v;
   }

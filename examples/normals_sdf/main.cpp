@@ -12,9 +12,9 @@
 using polatory::index_t;
 using polatory::read_table;
 using polatory::tabled;
+using polatory::vectord;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
-using polatory::common::valuesd;
 using polatory::geometry::points3d;
 using polatory::geometry::vectors3d;
 using polatory::point_cloud::sdf_data_generator;
@@ -39,7 +39,7 @@ int main(int argc, const char* argv[]) {
     sdf_data_generator sdf_data(surface_points, surface_normals, opts.min_offset, opts.max_offset,
                                 opts.sdf_multiplication);
     points3d points = sdf_data.sdf_points();
-    valuesd values = sdf_data.sdf_values();
+    vectord values = sdf_data.sdf_values();
 
     // Save the SDF data.
     write_table(opts.out_file, concatenate_cols(points, values));

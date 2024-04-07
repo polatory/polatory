@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/model.hpp>
@@ -29,13 +28,13 @@ class rbf_direct_operator : public krylov::linear_operator {
 
   explicit rbf_direct_operator(const Model& model) : model_(model), l_(model.poly_basis_size()) {}
 
-  common::valuesd operator()(const common::valuesd& weights) const override {
+  vectord operator()(const vectord& weights) const override {
     POLATORY_ASSERT(weights.rows() == size());
 
     auto w = weights.head(mu_);
     auto grad_w = weights.segment(mu_, kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim);
 
-    common::valuesd y = common::valuesd::Zero(size());
+    vectord y = vectord::Zero(size());
 
     y.head(mu_) = weights.head(mu_) * model_.nugget();
 

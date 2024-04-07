@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <numbers>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_builder.hpp>
@@ -34,7 +33,7 @@ class variogram_calculator {
 
   double angle_tolerance() const { return angle_tolerance_; }
 
-  std::vector<Variogram> calculate(const Points& points, const common::valuesd& values) const {
+  std::vector<Variogram> calculate(const Points& points, const vectord& values) const {
     auto num_directions = directions_.rows();
     auto num_points = points.rows();
     auto lag_tolerance =
@@ -55,7 +54,7 @@ class variogram_calculator {
         local_builders.emplace_back(lag_distance_, lag_tolerance, num_lags_, directions_.row(k));
       }
 
-      common::valuesd squared_dots;
+      vectord squared_dots;
 
 #pragma omp for schedule(dynamic)
       for (index_t i = 0; i < num_points - 1; i++) {

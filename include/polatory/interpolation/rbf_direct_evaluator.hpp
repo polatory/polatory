@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -37,11 +36,11 @@ class rbf_direct_evaluator {
     }
   }
 
-  common::valuesd evaluate() const {
+  vectord evaluate() const {
     auto w = weights_.head(mu_);
     auto grad_w = weights_.segment(mu_, kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim);
 
-    common::valuesd y = common::valuesd::Zero(trg_mu_ + kDim * trg_sigma_);
+    vectord y = vectord::Zero(trg_mu_ + kDim * trg_sigma_);
 
     for (const auto& rbf : model_.rbfs()) {
       for (index_t i = 0; i < trg_mu_; i++) {
@@ -78,11 +77,9 @@ class rbf_direct_evaluator {
     return y;
   }
 
-  common::valuesd evaluate(const Points& target_points) {
-    return evaluate(target_points, Points(0, kDim));
-  }
+  vectord evaluate(const Points& target_points) { return evaluate(target_points, Points(0, kDim)); }
 
-  common::valuesd evaluate(const Points& target_points, const Points& target_grad_points) {
+  vectord evaluate(const Points& target_points, const Points& target_grad_points) {
     set_target_points(target_points, target_grad_points);
 
     return evaluate();
@@ -136,7 +133,7 @@ class rbf_direct_evaluator {
   Points src_grad_points_;
   Points trg_points_;
   Points trg_grad_points_;
-  common::valuesd weights_;
+  vectord weights_;
 };
 
 }  // namespace polatory::interpolation

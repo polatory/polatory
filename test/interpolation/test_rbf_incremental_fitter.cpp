@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/model.hpp>
@@ -16,7 +15,7 @@
 using polatory::index_t;
 using polatory::model;
 using polatory::precision;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_incremental_fitter;
 using polatory::numeric::absolute_error;
@@ -35,7 +34,7 @@ TEST(rbf_incremental_fitter, trivial) {
   auto [points, values] = sample_data(n_points, aniso);
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  valuesd rhs(n_points + kDim * n_grad_points);
+  vectord rhs(n_points + kDim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
   triharmonic3d<kDim> rbf({1.0});
@@ -54,7 +53,7 @@ TEST(rbf_incremental_fitter, trivial) {
                            grad_points(grad_indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
   eval.set_target_points(points, grad_points);
-  valuesd values_fit = eval.evaluate();
+  vectord values_fit = eval.evaluate();
 
   EXPECT_LT(absolute_error<Eigen::Infinity>(values_fit.head(n_points), rhs.head(n_points)),
             absolute_tolerance);

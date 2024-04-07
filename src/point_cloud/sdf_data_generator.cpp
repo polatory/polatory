@@ -29,7 +29,7 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
 
   sdf_points_ = geometry::points3d(n_max_sdf_points, 3);
   sdf_points_.topRows(n_points) = points;
-  sdf_values_ = common::valuesd::Zero(n_max_sdf_points);
+  sdf_values_ = vectord::Zero(n_max_sdf_points);
 
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
@@ -81,6 +81,6 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
 
 const geometry::points3d& sdf_data_generator::sdf_points() const { return sdf_points_; }
 
-const common::valuesd& sdf_data_generator::sdf_values() const { return sdf_values_; }
+const vectord& sdf_data_generator::sdf_values() const { return sdf_values_; }
 
 }  // namespace polatory::point_cloud

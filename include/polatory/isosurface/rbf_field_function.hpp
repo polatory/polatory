@@ -1,6 +1,5 @@
 #pragma once
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
@@ -15,7 +14,7 @@ class rbf_field_function : public field_function {
  public:
   explicit rbf_field_function(Interpolant& interpolant) : interpolant_(interpolant) {}
 
-  common::valuesd operator()(const geometry::points3d& points) const override {
+  vectord operator()(const geometry::points3d& points) const override {
     return interpolant_.evaluate_impl(points);
   }
 

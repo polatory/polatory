@@ -5,7 +5,6 @@
 #include <format>
 #include <memory>
 #include <polatory/common/io.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -50,31 +49,31 @@ class interpolant {
     return centers_;
   }
 
-  common::valuesd evaluate(const Points& points) { return evaluate(points, Points(0, kDim)); }
+  vectord evaluate(const Points& points) { return evaluate(points, Points(0, kDim)); }
 
-  common::valuesd evaluate(const Points& points, const Points& grad_points) {
+  vectord evaluate(const Points& points, const Points& grad_points) {
     throw_if_not_fitted();
 
     set_evaluation_bbox_impl(Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)));
     return evaluate_impl(points, grad_points);
   }
 
-  common::valuesd evaluate_impl(const Points& points) const {
+  vectord evaluate_impl(const Points& points) const {
     return evaluate_impl(points, Points(0, kDim));
   }
 
-  common::valuesd evaluate_impl(const Points& points, const Points& grad_points) const {
+  vectord evaluate_impl(const Points& points, const Points& grad_points) const {
     throw_if_not_fitted();
 
     return evaluator_->evaluate(points, grad_points);
   }
 
-  void fit(const Points& points, const common::valuesd& values, double absolute_tolerance,
+  void fit(const Points& points, const vectord& values, double absolute_tolerance,
            int max_iter = 100, const interpolant* initial = nullptr) {
     fit(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance, max_iter, initial);
   }
 
-  void fit(const Points& points, const Points& grad_points, const common::valuesd& values,
+  void fit(const Points& points, const Points& grad_points, const vectord& values,
            double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 100,
            const interpolant* initial = nullptr) {
     check_num_points(points, grad_points);
@@ -92,7 +91,7 @@ class interpolant {
       throw std::invalid_argument("grad_absolute_tolerance must be greater than 0.0.");
     }
 
-    common::valuesd initial_weights;
+    vectord initial_weights;
     if (initial != nullptr) {
       initial_weights = build_initial_weights(points, grad_points, *initial);
     }
@@ -110,15 +109,15 @@ class interpolant {
     bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
-  void fit_incrementally(const Points& points, const common::valuesd& values,
-                         double absolute_tolerance, int max_iter = 100) {
+  void fit_incrementally(const Points& points, const vectord& values, double absolute_tolerance,
+                         int max_iter = 100) {
     fit_incrementally(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance,
                       max_iter);
   }
 
-  void fit_incrementally(const Points& points, const Points& grad_points,
-                         const common::valuesd& values, double absolute_tolerance,
-                         double grad_absolute_tolerance, int max_iter = 100) {
+  void fit_incrementally(const Points& points, const Points& grad_points, const vectord& values,
+                         double absolute_tolerance, double grad_absolute_tolerance,
+                         int max_iter = 100) {
     check_num_points(points, grad_points);
 
     if (values.rows() != points.rows() + kDim * grad_points.rows()) {
@@ -148,9 +147,8 @@ class interpolant {
     bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
-  void fit_inequality(const Points& points, const common::valuesd& values,
-                      const common::valuesd& values_lb, const common::valuesd& values_ub,
-                      double absolute_tolerance, int max_iter = 100) {
+  void fit_inequality(const Points& points, const vectord& values, const vectord& values_lb,
+                      const vectord& values_ub, double absolute_tolerance, int max_iter = 100) {
     if (model_.nugget() > 0.0) {
       throw std::runtime_error("Non-zero nugget is not supported.");
     }
@@ -207,7 +205,7 @@ class interpolant {
     evaluator_->set_weights(weights_);
   }
 
-  const common::valuesd& weights() const {
+  const vectord& weights() const {
     throw_if_not_fitted();
 
     return weights_;
@@ -227,12 +225,12 @@ class interpolant {
   // For deserialization.
   interpolant() = default;
 
-  common::valuesd build_initial_weights(const Points& points, const Points& grad_points,
-                                        const interpolant& initial) const {
+  vectord build_initial_weights(const Points& points, const Points& grad_points,
+                                const interpolant& initial) const {
     auto l = model().poly_basis_size();
     auto mu = points.rows();
     auto sigma = grad_points.rows();
-    common::valuesd weights = common::valuesd::Zero(mu + kDim * sigma + l);
+    vectord weights = vectord::Zero(mu + kDim * sigma + l);
 
     if (model() != initial.model()) {
       std::cerr << "Warning: ignoring the initial interpolant because the model is different."
@@ -291,7 +289,7 @@ class interpolant {
     centers_ = Points();
     grad_centers_ = Points();
     bbox_ = Bbox();
-    weights_ = common::valuesd();
+    weights_ = vectord();
   }
 
   void throw_if_not_fitted() const {
@@ -305,7 +303,7 @@ class interpolant {
   Points centers_;
   Points grad_centers_;
   Bbox bbox_;
-  common::valuesd weights_;
+  vectord weights_;
 
   std::unique_ptr<Evaluator> evaluator_;
 };

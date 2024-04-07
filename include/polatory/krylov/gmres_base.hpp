@@ -1,6 +1,5 @@
 #pragma once
 
-#include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
 #include <vector>
@@ -30,22 +29,22 @@ class gmres_base {
 
   virtual void set_left_preconditioner(const linear_operator& left_preconditioner);
 
-  void set_initial_solution(const common::valuesd& x0);
+  void set_initial_solution(const vectord& x0);
 
   virtual void set_right_preconditioner(const linear_operator& right_preconditioner);
 
   virtual void setup();
 
-  virtual common::valuesd solution_vector() const;
+  virtual vectord solution_vector() const;
 
  protected:
-  gmres_base(const linear_operator& op, const common::valuesd& rhs, index_t max_iter);
+  gmres_base(const linear_operator& op, const vectord& rhs, index_t max_iter);
 
-  virtual void add_preconditioned_krylov_basis(const common::valuesd& /*z*/) {}
+  virtual void add_preconditioned_krylov_basis(const vectord& /*z*/) {}
 
-  common::valuesd left_preconditioned(const common::valuesd& x) const;
+  vectord left_preconditioned(const vectord& x) const;
 
-  common::valuesd right_preconditioned(const common::valuesd& x) const;
+  vectord right_preconditioned(const vectord& x) const;
 
   const linear_operator& op_;
 
@@ -56,7 +55,7 @@ class gmres_base {
   const index_t max_iter_;
 
   // Initial solution.
-  common::valuesd x0_;
+  vectord x0_;
 
   // Left preconditioner.
   const linear_operator* left_pc_{};
@@ -68,25 +67,25 @@ class gmres_base {
   index_t iter_{};
 
   // Constant (right-hand side) vector.
-  const common::valuesd rhs_;
+  const vectord rhs_;
 
   // L2 norm of rhs.
   double rhs_norm_;
 
   // Orthonormal basis vectors for the Krylov subspace.
-  std::vector<common::valuesd> vs_;
+  std::vector<vectord> vs_;
 
   // Upper triangular matrix of QR decomposition.
   matrixd r_;
 
   // Cosines for the Givens rotations.
-  common::valuesd c_;
+  vectord c_;
 
   // Sines for the Givens rotations.
-  common::valuesd s_;
+  vectord s_;
 
   // Sequence of residuals.
-  common::valuesd g_;
+  vectord g_;
 
   bool converged_{};
 };

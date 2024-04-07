@@ -4,7 +4,6 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
@@ -89,7 +88,7 @@ class coarse_grid {
     sigma_full_ = grad_points_full.rows();
   }
 
-  void set_solution_to(Eigen::Ref<common::valuesd> weights_full) const {
+  void set_solution_to(Eigen::Ref<vectord> weights_full) const {
     weights_full(point_idcs_) = lambda_c_.head(mu_);
 
     weights_full.segment(mu_full_, kDim * sigma_full_)
@@ -99,32 +98,32 @@ class coarse_grid {
     weights_full.tail(l_) = lambda_c_.tail(l_);
   }
 
-  void solve(const Eigen::Ref<const common::valuesd>& values_full) {
-    common::valuesd values(m_);
+  void solve(const Eigen::Ref<const vectord>& values_full) {
+    vectord values(m_);
     values.head(mu_) = values_full(point_idcs_);
     values.tail(kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim) =
         values_full.tail(kDim * sigma_full_)
             .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, Eigen::all);
 
     if (l_ > 0) {
-      lambda_c_ = common::valuesd(m_ + l_);
+      lambda_c_ = vectord(m_ + l_);
 
       if (m_ > l_) {
         // Compute Q^T d.
-        common::valuesd qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
+        vectord qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
-        common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
+        vectord gamma = ldlt_of_qtaq_.solve(qtd);
 
         // Compute lambda = Q gamma.
         lambda_c_.head(l_) = q_top_ * gamma;
         lambda_c_.segment(l_, m_ - l_) = gamma;
       } else {
-        lambda_c_.head(m_) = common::valuesd::Zero(m_);
+        lambda_c_.head(m_) = vectord::Zero(m_);
       }
 
       // Solve P c = d - A lambda for c at poly_points.
-      common::valuesd a_top_lambda = a_top_ * lambda_c_.head(m_);
+      vectord a_top_lambda = a_top_ * lambda_c_.head(m_);
       lambda_c_.tail(l_) = lu_of_p_top_.solve(values.head(l_) - a_top_lambda);
     } else {
       lambda_c_ = ldlt_of_qtaq_.solve(values);
@@ -156,7 +155,7 @@ class coarse_grid {
   Eigen::FullPivLU<matrixd> lu_of_p_top_;
 
   // Current solution.
-  common::valuesd lambda_c_;
+  vectord lambda_c_;
 };
 
 }  // namespace polatory::preconditioner

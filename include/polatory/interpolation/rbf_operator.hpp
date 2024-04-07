@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -47,10 +46,10 @@ class rbf_operator : public krylov::linear_operator {
     }
   }
 
-  common::valuesd operator()(const common::valuesd& weights) const override {
+  vectord operator()(const vectord& weights) const override {
     POLATORY_ASSERT(weights.rows() == size());
 
-    common::valuesd y = common::valuesd::Zero(size());
+    vectord y = vectord::Zero(size());
 
     y.head(mu_) = weights.head(mu_) * model_.nugget();
 

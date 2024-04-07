@@ -6,7 +6,6 @@
 #include <iostream>
 #include <iterator>
 #include <polatory/common/complementary_indices.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -39,11 +38,9 @@ class rbf_inequality_fitter {
         n_poly_basis_(model.poly_basis_size()),
         bbox_(Bbox::from_points(points)) {}
 
-  std::pair<std::vector<index_t>, common::valuesd> fit(const common::valuesd& values,
-                                                       const common::valuesd& values_lb,
-                                                       const common::valuesd& values_ub,
-                                                       double absolute_tolerance,
-                                                       int max_iter) const {
+  std::pair<std::vector<index_t>, vectord> fit(const vectord& values, const vectord& values_lb,
+                                               const vectord& values_ub, double absolute_tolerance,
+                                               int max_iter) const {
     double filtering_distance = bbox_.width().norm();
 
     auto not_nan = [](double d) { return !std::isnan(d); };
@@ -61,9 +58,9 @@ class rbf_inequality_fitter {
     Solver solver(model_, bbox_);
     Evaluator res_eval(model_, bbox_, precision::kPrecise);
 
-    common::valuesd weights = common::valuesd::Zero(n_points_ + n_poly_basis_);
+    vectord weights = vectord::Zero(n_points_ + n_poly_basis_);
     auto centers = eq_idcs;
-    common::valuesd center_weights;
+    vectord center_weights;
     std::set<index_t> active_lb_idcs;
     std::set<index_t> active_ub_idcs;
 
@@ -81,12 +78,12 @@ class rbf_inequality_fitter {
 
       // Fit and evaluate residuals at all inequality points.
 
-      common::valuesd values_fit;
+      vectord values_fit;
       auto n_centers = static_cast<index_t>(centers.size());
       if (n_centers >= n_poly_basis_) {
         Points center_points = points_(centers, Eigen::all);
 
-        common::valuesd center_values = values(centers, Eigen::all);
+        vectord center_values = values(centers, Eigen::all);
         for (index_t i = n_eq; i < n_centers; i++) {
           auto idx = centers.at(i);
           center_values(i) = active_lb_idcs.contains(idx) ? values_lb(idx) : values_ub(idx);
@@ -109,15 +106,15 @@ class rbf_inequality_fitter {
         res_eval.set_weights(center_weights);
         values_fit = res_eval.evaluate(ineq_points);
       } else {
-        center_weights = common::valuesd::Zero(n_poly_basis_);
-        values_fit = common::valuesd::Zero(n_ineq);
+        center_weights = vectord::Zero(n_poly_basis_);
+        values_fit = vectord::Zero(n_ineq);
       }
 
       // Incorporate inactive inequality points with large residuals.
 
       auto indices = common::complementary_indices(centers, n_points_);
       auto n_indices = static_cast<index_t>(indices.size());
-      common::valuesd residuals = common::valuesd::Zero(n_indices);
+      vectord residuals = vectord::Zero(n_indices);
       for (index_t i = 0; i < n_indices; i++) {
         auto idx = indices.at(i);
         auto lb = values_lb(idx);
@@ -184,7 +181,7 @@ class rbf_inequality_fitter {
 
  private:
   template <class Predicate>
-  static std::vector<index_t> arg_where(const common::valuesd& v, Predicate predicate) {
+  static std::vector<index_t> arg_where(const vectord& v, Predicate predicate) {
     std::vector<index_t> idcs;
 
     for (index_t i = 0; i < v.rows(); i++) {

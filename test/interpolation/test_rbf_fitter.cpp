@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_fitter.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
@@ -16,7 +15,7 @@
 using polatory::index_t;
 using polatory::model;
 using polatory::precision;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
 using polatory::numeric::absolute_error;
@@ -34,7 +33,7 @@ void test(index_t n_points, index_t n_grad_points) {
   auto [points, values] = sample_data(n_points, aniso);
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  valuesd rhs(n_points + kDim * n_grad_points);
+  vectord rhs(n_points + kDim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
   triharmonic3d<kDim> rbf({1.0});
@@ -45,14 +44,14 @@ void test(index_t n_points, index_t n_grad_points) {
   model.set_nugget(0.01);
 
   rbf_fitter<kDim> fitter(model, points, grad_points);
-  valuesd weights = fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
+  vectord weights = fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
 
   EXPECT_EQ(weights.rows(), n_points + kDim * n_grad_points + model.poly_basis_size());
 
   rbf_symmetric_evaluator<kDim> eval(model, points, grad_points, precision::kPrecise);
   eval.set_weights(weights);
 
-  valuesd values_fit = eval.evaluate();
+  vectord values_fit = eval.evaluate();
   values_fit.head(n_points) += weights.head(n_points) * model.nugget();
 
   EXPECT_LT(absolute_error<Eigen::Infinity>(values_fit.head(n_points), rhs.head(n_points)),

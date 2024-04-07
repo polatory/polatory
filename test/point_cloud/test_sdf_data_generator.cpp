@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/random_points.hpp>
@@ -8,7 +7,7 @@
 #include <polatory/types.hpp>
 
 using polatory::index_t;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::geometry::sphere3d;
@@ -28,7 +27,7 @@ TEST(sdf_data_generator, trivial) {
 
   sdf_data_generator sdf_data(points, normals, min_distance, max_distance);
   points3d sdf_points = sdf_data.sdf_points();
-  valuesd sdf_values = sdf_data.sdf_values();
+  vectord sdf_values = sdf_data.sdf_values();
 
   EXPECT_EQ(sdf_points.rows(), sdf_values.rows());
 

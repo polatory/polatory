@@ -6,7 +6,6 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/common/orthonormalize.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_operator.hpp>
@@ -69,23 +68,22 @@ class rbf_solver {
     }
   }
 
-  template <class DerivedValues, class DerivedInitialWeights = common::valuesd>
-  common::valuesd solve(
-      const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance, int max_iter,
-      const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
+  template <class DerivedValues, class DerivedInitialWeights = vectord>
+  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance,
+                int max_iter,
+                const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
     return solve(values, absolute_tolerance, absolute_tolerance, max_iter, initial_weights);
   }
 
-  template <class DerivedValues, class DerivedInitialWeights = common::valuesd>
-  common::valuesd solve(
-      const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance,
-      double grad_absolute_tolerance, int max_iter,
-      const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
+  template <class DerivedValues, class DerivedInitialWeights = vectord>
+  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance,
+                double grad_absolute_tolerance, int max_iter,
+                const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(initial_weights == nullptr ||
                     initial_weights->rows() == mu_ + kDim * sigma_ + l_);
 
-    common::valuesd weights = common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
+    vectord weights = vectord::Zero(mu_ + kDim * sigma_ + l_);
 
     // The solver does not work when all values are zero.
     if (values.isZero()) {
@@ -97,14 +95,14 @@ class rbf_solver {
 
       if (l_ > 0) {
         // Orthogonalize weights against P.
-        common::valuesd dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
+        vectord dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
         weights.head(mu_ + kDim * sigma_) -= p_ * dot;
       }
     }
 
-    common::valuesd rhs(mu_ + kDim * sigma_ + l_);
+    vectord rhs(mu_ + kDim * sigma_ + l_);
     rhs.head(mu_ + kDim * sigma_) = values;
-    rhs.tail(l_) = common::valuesd::Zero(l_);
+    rhs.tail(l_) = vectord::Zero(l_);
 
     krylov::fgmres solver(op_, rhs, max_iter);
     solver.set_initial_solution(weights);

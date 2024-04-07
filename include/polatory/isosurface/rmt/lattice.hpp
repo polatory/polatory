@@ -3,7 +3,6 @@
 #include <array>
 #include <cmath>
 #include <memory>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
@@ -180,7 +179,7 @@ class lattice : public primitive_lattice {
 
   void refine_vertices(const field_function& field_fn, double isovalue) {
     geometry::points3d vertices = get_vertices();
-    common::valuesd vertex_values = field_fn(vertices).array() - isovalue;
+    vectord vertex_values = field_fn(vertices).array() - isovalue;
     std::vector<bool> processed(vertices_.size(), false);
 
     for (auto& cv_node : node_list_) {
@@ -321,7 +320,7 @@ class lattice : public primitive_lattice {
       *point_it++ = node_list_.at(cv).position();
     }
 
-    common::valuesd values = field_fn(points).array() - isovalue;
+    vectord values = field_fn(points).array() - isovalue;
     value_at_arbitrary_point_ = values(0);
 
     index_t i{};

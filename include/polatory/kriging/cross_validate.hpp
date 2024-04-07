@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <polatory/common/complementary_indices.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/model.hpp>
@@ -13,12 +12,11 @@
 namespace polatory::kriging {
 
 template <int Dim>
-inline common::valuesd cross_validate(const model<Dim>& model,
-                                      const geometry::pointsNd<Dim>& points,
-                                      const common::valuesd& values, const Eigen::VectorXi& set_ids,
-                                      double absolute_tolerance, int max_iter) {
+inline vectord cross_validate(const model<Dim>& model, const geometry::pointsNd<Dim>& points,
+                              const vectord& values, const Eigen::VectorXi& set_ids,
+                              double absolute_tolerance, int max_iter) {
   auto n_points = points.rows();
-  common::valuesd predictions = common::valuesd::Zero(n_points);
+  vectord predictions = vectord::Zero(n_points);
 
   std::unordered_set<int> ids(set_ids.begin(), set_ids.end());
   for (auto id : ids) {
@@ -34,7 +32,7 @@ inline common::valuesd cross_validate(const model<Dim>& model,
     geometry::pointsNd<Dim> train_points = points(train_set, Eigen::all);
     geometry::pointsNd<Dim> test_points = points(test_set, Eigen::all);
 
-    common::valuesd train_values = values(train_set, Eigen::all);
+    vectord train_values = values(train_set, Eigen::all);
 
     interpolant<Dim> interpolant(model);
     interpolant.fit(train_points, train_values, absolute_tolerance, max_iter);

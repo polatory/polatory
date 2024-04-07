@@ -4,7 +4,6 @@
 #include <cmath>
 #include <filesystem>
 #include <polatory/common/io.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/cuboid3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/variogram_calculator.hpp>
@@ -13,9 +12,9 @@
 
 namespace fs = std::filesystem;
 using polatory::index_t;
+using polatory::vectord;
 using polatory::common::load;
 using polatory::common::save;
-using polatory::common::valuesd;
 using polatory::geometry::cuboid3d;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
@@ -27,7 +26,7 @@ TEST(variogram_calculator, serialization) {
   const auto n_points = index_t{1000};
 
   points3d points = random_points(cuboid3d(), n_points);
-  valuesd values = valuesd::Random(n_points);
+  vectord values = vectord::Random(n_points);
 
   auto filename = (fs::temp_directory_path() / "840297bb-21d8-42a2-a3b5-814d27d78e14").string();
 
@@ -66,8 +65,8 @@ TEST(variogram_calculator, trivial) {
       d * point3d(-std::sqrt(3.0) / 6.0, -1.0 / 2.0, 0.0),
       d * point3d(0.0, 0.0, std::sqrt(6.0) / 3.0);
 
-  valuesd values = valuesd::Random(n_points);
-  valuesd centered = values.array() - values.mean();
+  vectord values = vectord::Random(n_points);
+  vectord centered = values.array() - values.mean();
   auto variance = centered.dot(centered) / static_cast<double>(n_points - 1);
 
   auto lag_distance = 1.0;
@@ -88,7 +87,7 @@ TEST(variogram_calculator, zero_points) {
   const auto n_points = index_t{0};
 
   points3d points(n_points, 3);
-  valuesd values(n_points);
+  vectord values(n_points);
 
   auto lag_distance = 0.2;
   auto num_lags = index_t{5};

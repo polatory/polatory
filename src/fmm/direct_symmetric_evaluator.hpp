@@ -3,9 +3,9 @@
 #include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
+#include <polatory/types.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <vector>
@@ -31,7 +31,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
  public:
   impl(const Rbf& rbf, const Bbox& /*bbox*/, int /*order*/) : rbf_(rbf), kernel_(rbf) {}
 
-  common::valuesd evaluate() const {
+  vectord evaluate() const {
     for (auto& p : particles_) {
       for (auto i = 0; i < kn; i++) {
         p.outputs(i) = 0.0;
@@ -88,7 +88,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     kdtree_ = std::make_unique<point_cloud::kdtree<kDim>>(apoints);
   }
 
-  void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
+  void set_weights(const Eigen::Ref<const vectord>& weights) {
     POLATORY_ASSERT(weights.rows() == km * n_points_);
 
     for (index_t idx = 0; idx < n_points_; idx++) {
@@ -117,8 +117,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     }
   }
 
-  common::valuesd potentials() const {
-    common::valuesd potentials = common::valuesd::Zero(kn * n_points_);
+  vectord potentials() const {
+    vectord potentials = vectord::Zero(kn * n_points_);
 
     for (auto idx = 0; idx < n_points_; idx++) {
       const auto& p = particles_.at(idx);
@@ -148,7 +148,7 @@ template <class Rbf, class Kernel>
 fmm_generic_symmetric_evaluator<Rbf, Kernel>::~fmm_generic_symmetric_evaluator() = default;
 
 template <class Rbf, class Kernel>
-common::valuesd fmm_generic_symmetric_evaluator<Rbf, Kernel>::evaluate() const {
+vectord fmm_generic_symmetric_evaluator<Rbf, Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
@@ -159,7 +159,7 @@ void fmm_generic_symmetric_evaluator<Rbf, Kernel>::set_points(const Points& poin
 
 template <class Rbf, class Kernel>
 void fmm_generic_symmetric_evaluator<Rbf, Kernel>::set_weights(
-    const Eigen::Ref<const common::valuesd>& weights) {
+    const Eigen::Ref<const vectord>& weights) {
   impl_->set_weights(weights);
 }
 

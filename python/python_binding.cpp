@@ -106,28 +106,28 @@ void define_module(py::module& m) {
       .def("evaluate", py::overload_cast<const Points&>(&Interpolant::evaluate), "points"_a)
       .def("evaluate", py::overload_cast<const Points&, const Points&>(&Interpolant::evaluate),
            "points"_a, "grad_points"_a)
-      .def(
-          "fit",
-          py::overload_cast<const Points&, const common::valuesd&, double, int, const Interpolant*>(
-              &Interpolant::fit),
-          "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100, "initial"_a = nullptr)
       .def("fit",
-           py::overload_cast<const Points&, const Points&, const common::valuesd&, double, double,
-                             int, const Interpolant*>(&Interpolant::fit),
+           py::overload_cast<const Points&, const vectord&, double, int, const Interpolant*>(
+               &Interpolant::fit),
+           "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100,
+           "initial"_a = nullptr)
+      .def("fit",
+           py::overload_cast<const Points&, const Points&, const vectord&, double, double, int,
+                             const Interpolant*>(&Interpolant::fit),
            "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
            "grad_absolute_tolerance"_a, "max_iter"_a = 100, "initial"_a = nullptr)
       .def("fit_incrementally",
-           py::overload_cast<const Points&, const common::valuesd&, double, int>(
+           py::overload_cast<const Points&, const vectord&, double, int>(
                &Interpolant::fit_incrementally),
            "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100)
       .def("fit_incrementally",
-           py::overload_cast<const Points&, const Points&, const common::valuesd&, double, double,
-                             int>(&Interpolant::fit_incrementally),
+           py::overload_cast<const Points&, const Points&, const vectord&, double, double, int>(
+               &Interpolant::fit_incrementally),
            "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
            "grad_absolute_tolerance"_a, "max_iter"_a = 100)
       .def("fit_inequality",
-           py::overload_cast<const Points&, const common::valuesd&, const common::valuesd&,
-                             const common::valuesd&, double, int>(&Interpolant::fit_inequality),
+           py::overload_cast<const Points&, const vectord&, const vectord&, const vectord&, double,
+                             int>(&Interpolant::fit_inequality),
            "points"_a, "values"_a, "values_lb"_a, "values_ub"_a, "absolute_tolerance"_a,
            "max_iter"_a = 100)
       .def_static("load", &Interpolant::load, "filename"_a)
@@ -174,14 +174,13 @@ void define_module(py::module& m) {
   m.def("cross_validate", &kriging::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
         "set_ids"_a, "absolute_tolerance"_a, "max_iter"_a = 100);
 
-  m.def("detrend",
-        py::overload_cast<const Points&, const common::valuesd&, int>(&kriging::detrend<Dim>),
+  m.def("detrend", py::overload_cast<const Points&, const vectord&, int>(&kriging::detrend<Dim>),
         "points"_a, "values"_a, "degree"_a);
 
-  m.def("detrend",
-        py::overload_cast<const Points&, const Points&, const common::valuesd&, int>(
-            &kriging::detrend<Dim>),
-        "points"_a, "grad_points"_a, "values"_a, "degree"_a);
+  m.def(
+      "detrend",
+      py::overload_cast<const Points&, const Points&, const vectord&, int>(&kriging::detrend<Dim>),
+      "points"_a, "grad_points"_a, "values"_a, "degree"_a);
 }
 
 PYBIND11_MODULE(_core, m) {

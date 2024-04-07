@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
@@ -36,7 +35,7 @@ class normal_estimator {
 
   normal_estimator& orient_closed_surface(index_t k);
 
-  const common::valuesd& plane_factors() const {
+  const vectord& plane_factors() const {
     throw_if_not_estimated();
 
     return plane_factors_;
@@ -55,7 +54,7 @@ class normal_estimator {
 
   bool estimated_{};
   geometry::vectors3d normals_;
-  common::valuesd plane_factors_;
+  vectord plane_factors_;
 };
 
 }  // namespace polatory::point_cloud

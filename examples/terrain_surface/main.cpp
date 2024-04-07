@@ -11,8 +11,8 @@ using polatory::interpolant;
 using polatory::model;
 using polatory::read_table;
 using polatory::tabled;
+using polatory::vectord;
 using polatory::common::concatenate_cols;
-using polatory::common::valuesd;
 using polatory::geometry::points2d;
 using polatory::geometry::points3d;
 using polatory::isosurface::isosurface;
@@ -23,7 +23,7 @@ void main_impl(model<2>&& model, const options& opts) {
   // Load points (x,y,0) and values (z).
   tabled table = read_table(opts.in_file);
   points2d points = table(Eigen::all, {0, 1});
-  valuesd values = table.col(2);
+  vectord values = table.col(2);
 
   // Remove very close points.
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);

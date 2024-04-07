@@ -4,7 +4,6 @@
 #include <cmath>
 #include <numbers>
 #include <polatory/common/orthonormalize.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/types.hpp>
@@ -30,10 +29,10 @@ polatory::geometry::matrixNd<Dim> random_anisotropy() {
 }
 
 template <int Dim>
-std::pair<polatory::geometry::pointsNd<Dim>, polatory::common::valuesd> sample_data(
+std::pair<polatory::geometry::pointsNd<Dim>, polatory::vectord> sample_data(
     polatory::index_t& n_points, const polatory::geometry::matrixNd<Dim>& aniso) {
   using polatory::index_t;
-  using polatory::common::valuesd;
+  using polatory::vectord;
   using polatory::point_cloud::distance_filter;
   using Point = polatory::geometry::pointNd<Dim>;
   using Points = polatory::geometry::pointsNd<Dim>;
@@ -42,7 +41,7 @@ std::pair<polatory::geometry::pointsNd<Dim>, polatory::common::valuesd> sample_d
   points = distance_filter(points, 1e-6)(points);
   n_points = points.rows();
 
-  valuesd values = valuesd::Zero(n_points);
+  vectord values = vectord::Zero(n_points);
   for (index_t i = 0; i < n_points; i++) {
     auto p = points.row(i);
     Point ap = p * aniso.transpose();

@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <numeric>
-#include <polatory/common/types.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
@@ -21,7 +20,7 @@
 using polatory::index_t;
 using polatory::matrixd;
 using polatory::model;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::matrixNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::numeric::relative_error;
@@ -90,18 +89,18 @@ void test(index_t n_points, index_t n_grad_points) {
   coarse_grid<kDim> coarse(model, std::move(domain));
   coarse.setup(points, grad_points, lagrange_p);
 
-  valuesd rhs = valuesd(mu + kDim * sigma);
+  vectord rhs = vectord(mu + kDim * sigma);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
   coarse.solve(rhs);
 
-  valuesd sol = valuesd::Zero(mu + kDim * sigma + l);
+  vectord sol = vectord::Zero(mu + kDim * sigma + l);
   coarse.set_solution_to(sol);
 
   rbf_direct_evaluator<kDim> eval(model, points, grad_points);
   eval.set_weights(sol);
   eval.set_target_points(points, grad_points);
 
-  valuesd values_fit = eval.evaluate();
+  vectord values_fit = eval.evaluate();
   values_fit.head(mu) += sol.head(mu) * model.nugget();
 
   EXPECT_LT(relative_error(values_fit, rhs), relative_tolerance);

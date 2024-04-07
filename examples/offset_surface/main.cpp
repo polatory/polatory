@@ -19,7 +19,7 @@ using polatory::interpolant;
 using polatory::model;
 using polatory::read_table;
 using polatory::tabled;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::bbox3d;
 using polatory::geometry::matrix3d;
 using polatory::geometry::point3d;
@@ -69,8 +69,8 @@ class mesh_distance {
     }
   }
 
-  std::pair<points3d, valuesd> operator()(const points3d& points) const {
-    valuesd values(points.rows());
+  std::pair<points3d, vectord> operator()(const points3d& points) const {
+    vectord values(points.rows());
     points3d closest_points(points.rows(), 3);
 
     for (index_t i = 0; i < points.rows(); i++) {
@@ -142,7 +142,7 @@ class offset_field_function : public field_function {
   explicit offset_field_function(Interpolant& interpolant, const mesh_distance& dist)
       : interpolant_(interpolant), dist_(dist) {}
 
-  valuesd operator()(const points3d& points) const override {
+  vectord operator()(const points3d& points) const override {
     auto [C, S] = dist_(points);
 
     return S - interpolant_.evaluate_impl(C);

@@ -2,7 +2,6 @@
 
 #include <numeric>
 #include <polatory/common/io.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 #include <vector>

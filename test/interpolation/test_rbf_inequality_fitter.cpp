@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <limits>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
@@ -18,7 +17,7 @@
 using polatory::index_t;
 using polatory::model;
 using polatory::precision;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::points1d;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_inequality_fitter;
@@ -34,9 +33,9 @@ TEST(rbf_inequality_fitter, inequality_only) {
   auto aniso = random_anisotropy<kDim>();
   auto [points, values] = sample_data(n_points, aniso);
 
-  valuesd values_lb = values.array() - 0.001;
-  valuesd values_ub = values.array() + 0.001;
-  values = valuesd::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
+  vectord values_lb = values.array() - 0.001;
+  vectord values_ub = values.array() + 0.001;
+  values = vectord::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
   biharmonic3d<kDim> rbf({1.0});
   rbf.set_anisotropy(aniso);
@@ -51,7 +50,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
-  valuesd values_fit = eval.evaluate(points);
+  vectord values_fit = eval.evaluate(points);
 
   for (index_t i = 0; i < n_points; i++) {
     EXPECT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
@@ -72,15 +71,15 @@ TEST(rbf_inequality_fitter, kostov86) {
   }
 
   auto nan = std::numeric_limits<double>::quiet_NaN();
-  valuesd values(n_points);
+  vectord values(n_points);
   values << 1, nan, 4, nan, 3, nan, nan, nan, nan, nan, 3, nan, nan, 7, nan, 8, nan, nan, nan, 8, 3,
       nan, nan, 6, nan;
 
-  valuesd values_lb(n_points);
+  vectord values_lb(n_points);
   values_lb << nan, 6, nan, 2, nan, 2, 9, 4, 3, 3, nan, nan, 7, nan, 4, nan, nan, nan, 5, nan, nan,
       9, 5, nan, nan;
 
-  valuesd values_ub(n_points);
+  vectord values_ub(n_points);
   values_ub << nan, nan, nan, 4, nan, 4, nan, nan, nan, nan, nan, 1, nan, nan, nan, nan, 4, 7, nan,
       nan, nan, nan, nan, nan, 3;
 
@@ -92,7 +91,7 @@ TEST(rbf_inequality_fitter, kostov86) {
 
   rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), precision::kPrecise);
   eval.set_weights(weights);
-  valuesd values_fit = eval.evaluate(points);
+  vectord values_fit = eval.evaluate(points);
 
   for (index_t i = 0; i < n_points; i++) {
     if (!std::isnan(values(i))) {

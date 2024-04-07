@@ -11,7 +11,6 @@
 #include <numeric>
 #include <polatory/common/macros.hpp>
 #include <polatory/common/orthonormalize.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -168,7 +167,7 @@ class ras_preconditioner : public krylov::linear_operator {
       ap_ = matrixd(p_.rows(), p_.cols());
 
       auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_, precision::kPrecise);
-      common::valuesd weights = common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
+      vectord weights = vectord::Zero(mu_ + kDim * sigma_ + l_);
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
         weights.head(mu_ + kDim * sigma_) = p_.col(i);
@@ -178,20 +177,20 @@ class ras_preconditioner : public krylov::linear_operator {
     }
   }
 
-  common::valuesd operator()(const common::valuesd& v) const override {
+  vectord operator()(const vectord& v) const override {
     POLATORY_ASSERT(v.rows() == size());
 
-    common::valuesd residuals = v.head(mu_ + kDim * sigma_);
+    vectord residuals = v.head(mu_ + kDim * sigma_);
 
     if (n_levels_ == 1) {
       return solve(0, residuals);
     }
 
-    common::valuesd weights_total = common::valuesd::Zero(size());
+    vectord weights_total = vectord::Zero(size());
     report_initial_residual(residuals);
 
     {
-      common::valuesd weights = solve(0, residuals);
+      vectord weights = solve(0, residuals);
       update_residuals(0, n_levels_ - 1, weights, residuals);
       weights_total += weights;
       report_residual(0, v, weights_total);
@@ -199,7 +198,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
     for (auto level = 1; level < n_levels_ - 1; level++) {
       {
-        common::valuesd weights = solve(level, residuals);
+        vectord weights = solve(level, residuals);
         update_residuals(level, n_levels_ - 1, weights, residuals);
         weights_total += weights;
         orthogonalize(weights_total, residuals);
@@ -207,7 +206,7 @@ class ras_preconditioner : public krylov::linear_operator {
       }
 
       {
-        common::valuesd weights = solve(0, residuals);
+        vectord weights = solve(0, residuals);
         update_residuals(0, n_levels_ - 1, weights, residuals);
         weights_total += weights;
         report_residual(0, v, weights_total);
@@ -216,7 +215,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       {
-        common::valuesd weights = solve(level, residuals);
+        vectord weights = solve(level, residuals);
         update_residuals(level, level - 1, weights, residuals);
         weights_total += weights;
         orthogonalize(weights_total, residuals);
@@ -224,7 +223,7 @@ class ras_preconditioner : public krylov::linear_operator {
       }
 
       {
-        common::valuesd weights = solve(0, residuals);
+        vectord weights = solve(0, residuals);
         if (level > 1) {
           update_residuals(0, level - 1, weights, residuals);
         }
@@ -256,17 +255,17 @@ class ras_preconditioner : public krylov::linear_operator {
     return evaluator_.at(key);
   }
 
-  void orthogonalize(common::valuesd& weights, common::valuesd& residuals) const {
+  void orthogonalize(vectord& weights, vectord& residuals) const {
     if (l_ > 0) {
       // Orthogonalize weights against P.
-      common::valuesd dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
+      vectord dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
       weights.head(mu_ + kDim * sigma_) -= p_ * dot;
       residuals += ap_ * dot;
     }
   }
 
-  common::valuesd solve(int level, const common::valuesd& residuals) const {
-    common::valuesd weights = common::valuesd::Zero(size());
+  vectord solve(int level, const vectord& residuals) const {
+    vectord weights = vectord::Zero(size());
 
     if (level == 0) {
       coarse_->solve(residuals);
@@ -284,13 +283,13 @@ class ras_preconditioner : public krylov::linear_operator {
     return weights;
   }
 
-  void update_residuals(int src_level, int trg_level, const common::valuesd& weights,
-                        common::valuesd& residuals) const {
+  void update_residuals(int src_level, int trg_level, const vectord& weights,
+                        vectord& residuals) const {
     const auto& src_indices = point_idcs_.at(src_level);
     const auto& src_grad_indices = grad_point_idcs_.at(src_level);
     auto src_mu = static_cast<index_t>(src_indices.size());
     auto src_sigma = static_cast<index_t>(src_grad_indices.size());
-    common::valuesd src_weights(src_mu + kDim * src_sigma + l_);
+    vectord src_weights(src_mu + kDim * src_sigma + l_);
     for (index_t i = 0; i < src_mu; i++) {
       src_weights(i) = weights(src_indices.at(i));
     }
@@ -316,17 +315,16 @@ class ras_preconditioner : public krylov::linear_operator {
     }
   }
 
-  void report_initial_residual(const common::valuesd& residuals) const {
+  void report_initial_residual(const vectord& residuals) const {
     if (kReportResidual) {
       std::cout << std::format("Initial residual: {:f}", residuals.norm()) << std::endl;
     }
   }
 
-  void report_residual(int level, const common::valuesd& v,
-                       const common::valuesd& weights_total) const {
+  void report_residual(int level, const vectord& v, const vectord& weights_total) const {
     if (kReportResidual) {
       finest_evaluator_->set_weights(weights_total);
-      common::valuesd residuals = v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
+      vectord residuals = v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
       std::cout << std::format("Residual after level {}: {:f}", level, residuals.norm())
                 << std::endl;
     }

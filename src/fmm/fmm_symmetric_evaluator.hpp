@@ -3,8 +3,8 @@
 #include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
@@ -56,7 +56,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
         box_(make_box<Rbf, Box>(rbf, bbox)),
         near_field_(kernel_) {}
 
-  common::valuesd evaluate() const {
+  vectord evaluate() const {
     using namespace scalfmm::algorithms;
 
     prepare();
@@ -118,7 +118,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     tree_.reset(nullptr);
   }
 
-  void set_weights(const Eigen::Ref<const common::valuesd>& weights) {
+  void set_weights(const Eigen::Ref<const vectord>& weights) {
     POLATORY_ASSERT(weights.rows() == km * n_points_);
 
     if (!tree_) {
@@ -174,8 +174,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     }
   }
 
-  common::valuesd potentials() const {
-    common::valuesd potentials = common::valuesd::Zero(kn * n_points_);
+  vectord potentials() const {
+    vectord potentials = vectord::Zero(kn * n_points_);
 
     if (tree_height_ > 0) {
       scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
@@ -276,7 +276,7 @@ template <class Rbf, class Kernel>
 fmm_generic_symmetric_evaluator<Rbf, Kernel>::~fmm_generic_symmetric_evaluator() = default;
 
 template <class Rbf, class Kernel>
-common::valuesd fmm_generic_symmetric_evaluator<Rbf, Kernel>::evaluate() const {
+vectord fmm_generic_symmetric_evaluator<Rbf, Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
@@ -287,7 +287,7 @@ void fmm_generic_symmetric_evaluator<Rbf, Kernel>::set_points(const Points& poin
 
 template <class Rbf, class Kernel>
 void fmm_generic_symmetric_evaluator<Rbf, Kernel>::set_weights(
-    const Eigen::Ref<const common::valuesd>& weights) {
+    const Eigen::Ref<const vectord>& weights) {
   impl_->set_weights(weights);
 }
 

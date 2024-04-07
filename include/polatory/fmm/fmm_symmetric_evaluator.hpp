@@ -2,13 +2,13 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <polatory/common/types.hpp>
 #include <polatory/fmm/hessian_kernel.hpp>
 #include <polatory/fmm/kernel.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <polatory/rbf/rbf_proxy.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory::fmm {
 
@@ -28,11 +28,11 @@ class fmm_generic_symmetric_evaluator_base {
       delete;
   fmm_generic_symmetric_evaluator_base& operator=(fmm_generic_symmetric_evaluator_base&&) = delete;
 
-  virtual common::valuesd evaluate() const = 0;
+  virtual vectord evaluate() const = 0;
 
   virtual void set_points(const Points& points) = 0;
 
-  virtual void set_weights(const Eigen::Ref<const common::valuesd>& weights) = 0;
+  virtual void set_weights(const Eigen::Ref<const vectord>& weights) = 0;
 };
 
 template <int Dim>
@@ -55,11 +55,11 @@ class fmm_generic_symmetric_evaluator final
   fmm_generic_symmetric_evaluator& operator=(const fmm_generic_symmetric_evaluator&) = delete;
   fmm_generic_symmetric_evaluator& operator=(fmm_generic_symmetric_evaluator&&) = delete;
 
-  common::valuesd evaluate() const override;
+  vectord evaluate() const override;
 
   void set_points(const Points& points) override;
 
-  void set_weights(const Eigen::Ref<const common::valuesd>& weights) override;
+  void set_weights(const Eigen::Ref<const vectord>& weights) override;
 
  private:
   class impl;

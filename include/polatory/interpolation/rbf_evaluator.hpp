@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -58,8 +57,8 @@ class rbf_evaluator {
     }
   }
 
-  common::valuesd evaluate() const {
-    common::valuesd y = common::valuesd::Zero(trg_mu_ + kDim * trg_sigma_);
+  vectord evaluate() const {
+    vectord y = vectord::Zero(trg_mu_ + kDim * trg_sigma_);
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
       y.head(trg_mu_) += a_.at(i)->evaluate();
@@ -76,11 +75,9 @@ class rbf_evaluator {
     return y;
   }
 
-  common::valuesd evaluate(const Points& target_points) {
-    return evaluate(target_points, Points(0, kDim));
-  }
+  vectord evaluate(const Points& target_points) { return evaluate(target_points, Points(0, kDim)); }
 
-  common::valuesd evaluate(const Points& target_points, const Points& target_grad_points) {
+  vectord evaluate(const Points& target_points, const Points& target_grad_points) {
     set_target_points(target_points, target_grad_points);
 
     return evaluate();

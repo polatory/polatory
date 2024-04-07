@@ -7,7 +7,6 @@
 #include <iterator>
 #include <polatory/common/complementary_indices.hpp>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -45,8 +44,8 @@ class rbf_incremental_fitter {
         grad_points_full_(grad_points_full),
         bbox_(Bbox::from_points(points_full).convex_hull(Bbox::from_points(grad_points_full))) {}
 
-  std::tuple<std::vector<index_t>, std::vector<index_t>, common::valuesd> fit(
-      const common::valuesd& values_full, double absolute_tolerance, double grad_absolute_tolerance,
+  std::tuple<std::vector<index_t>, std::vector<index_t>, vectord> fit(
+      const vectord& values_full, double absolute_tolerance, double grad_absolute_tolerance,
       int max_iter) const {
     POLATORY_ASSERT(values_full.size() == mu_full_ + kDim * sigma_full_);
 
@@ -56,7 +55,7 @@ class rbf_incremental_fitter {
     std::vector<index_t> grad_centers;
     index_t mu{};
     index_t sigma{};
-    common::valuesd weights = common::valuesd::Zero(mu + kDim * sigma + l_);
+    vectord weights = vectord::Zero(mu + kDim * sigma + l_);
 
     Solver solver(model_, bbox_);
     Evaluator res_eval(model_, bbox_, precision::kPrecise);
@@ -75,7 +74,7 @@ class rbf_incremental_fitter {
 
       if (mu >= l_ || (model_.poly_degree() == 1 && mu == 1 && sigma >= 1)) {
         solver.set_points(points, grad_points);
-        common::valuesd values(mu + kDim * sigma);
+        vectord values(mu + kDim * sigma);
         values << values_full.head(mu_full_)(centers),
             values_full.tail(kDim * sigma_full_)
                 .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_centers, Eigen::all)
@@ -165,8 +164,8 @@ class rbf_incremental_fitter {
       mu = static_cast<index_t>(centers.size());
       sigma = static_cast<index_t>(grad_centers.size());
 
-      common::valuesd last_weights = weights;
-      weights = common::valuesd::Zero(mu + kDim * sigma + l_);
+      vectord last_weights = weights;
+      weights = vectord::Zero(mu + kDim * sigma + l_);
       weights.head(last_mu) = last_weights.head(last_mu);
       weights.segment(mu, kDim * last_sigma) = last_weights.segment(last_mu, kDim * last_sigma);
       weights.tail(l_) = last_weights.tail(l_);
@@ -177,23 +176,23 @@ class rbf_incremental_fitter {
     return {std::move(centers), std::move(grad_centers), std::move(weights)};
   }
 
-  std::vector<double> residuals(const common::valuesd& mixed_values_full,
+  std::vector<double> residuals(const vectord& mixed_values_full,
                                 const std::vector<index_t>& c_centers,
-                                const common::valuesd& c_mixed_values_fit) const {
+                                const vectord& c_mixed_values_fit) const {
     auto c_mu = static_cast<index_t>(c_centers.size());
 
-    common::valuesd c_values = mixed_values_full(c_centers);
-    common::valuesd c_values_fit = c_mixed_values_fit.head(c_mu);
+    vectord c_values = mixed_values_full(c_centers);
+    vectord c_values_fit = c_mixed_values_fit.head(c_mu);
 
     std::vector<double> c_residuals(c_mu);
-    Eigen::Map<common::valuesd>(c_residuals.data(), c_mu) = (c_values_fit - c_values).cwiseAbs();
+    Eigen::Map<vectord>(c_residuals.data(), c_mu) = (c_values_fit - c_values).cwiseAbs();
 
     return c_residuals;
   }
 
-  std::vector<double> grad_residuals(const common::valuesd& mixed_values_full,
+  std::vector<double> grad_residuals(const vectord& mixed_values_full,
                                      const std::vector<index_t>& c_grad_centers,
-                                     const common::valuesd& c_mixed_values_fit) const {
+                                     const vectord& c_mixed_values_fit) const {
     auto c_sigma = static_cast<index_t>(c_grad_centers.size());
 
     Vectors c_grad_values =
@@ -203,7 +202,7 @@ class rbf_incremental_fitter {
         c_mixed_values_fit.tail(kDim * c_sigma).template reshaped<Eigen::RowMajor>(c_sigma, kDim);
 
     std::vector<double> c_grad_residuals(c_sigma);
-    Eigen::Map<common::valuesd>(c_grad_residuals.data(), c_sigma) =
+    Eigen::Map<vectord>(c_grad_residuals.data(), c_sigma) =
         (c_grad_values_fit - c_grad_values).cwiseAbs().rowwise().maxCoeff();
 
     return c_grad_residuals;

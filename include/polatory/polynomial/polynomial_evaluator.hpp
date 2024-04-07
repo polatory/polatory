@@ -1,7 +1,6 @@
 #pragma once
 
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
@@ -14,9 +13,9 @@ class polynomial_evaluator {
 
  public:
   explicit polynomial_evaluator(int degree)
-      : basis_(degree), weights_(common::valuesd::Zero(basis_.basis_size())) {}
+      : basis_(degree), weights_(vectord::Zero(basis_.basis_size())) {}
 
-  common::valuesd evaluate() const {
+  vectord evaluate() const {
     auto p = basis_.evaluate(points_, grad_points_);
 
     return p * weights_;
@@ -27,7 +26,7 @@ class polynomial_evaluator {
     grad_points_ = grad_points;
   }
 
-  void set_weights(const common::valuesd& weights) {
+  void set_weights(const vectord& weights) {
     POLATORY_ASSERT(weights.rows() == basis_.basis_size());
 
     weights_ = weights;
@@ -38,7 +37,7 @@ class polynomial_evaluator {
 
   Points points_;
   Points grad_points_;
-  common::valuesd weights_;
+  vectord weights_;
 };
 
 }  // namespace polatory::polynomial

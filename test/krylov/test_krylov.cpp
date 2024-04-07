@@ -2,7 +2,6 @@
 
 #include <Eigen/LU>
 #include <memory>
-#include <polatory/common/types.hpp>
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/krylov/gmres.hpp>
 #include <polatory/krylov/linear_operator.hpp>
@@ -11,7 +10,7 @@
 
 using polatory::index_t;
 using polatory::matrixd;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::krylov::fgmres;
 using polatory::krylov::gmres;
 using polatory::krylov::linear_operator;
@@ -32,7 +31,7 @@ class random_symmetric : public linear_operator {
 
   const matrixd& matrix() const { return m_; }
 
-  valuesd operator()(const valuesd& v) const override { return m_ * v; }
+  vectord operator()(const vectord& v) const override { return m_ * v; }
 
   index_t size() const override { return n_; }
 
@@ -44,11 +43,11 @@ class random_symmetric : public linear_operator {
 class preconditioner : public linear_operator {
  public:
   explicit preconditioner(const random_symmetric& op) : n_(op.size()) {
-    matrixd perturbation = 0.1 * valuesd::Random(n_).asDiagonal();
+    matrixd perturbation = 0.1 * vectord::Random(n_).asDiagonal();
     m_ = op.matrix().inverse() + perturbation;
   }
 
-  valuesd operator()(const valuesd& v) const override { return m_ * v; }
+  vectord operator()(const vectord& v) const override { return m_ * v; }
 
   index_t size() const override { return n_; }
 
@@ -64,19 +63,19 @@ class krylov_test : public ::testing::Test {
   std::unique_ptr<random_symmetric> op;
   std::unique_ptr<preconditioner> pc;
 
-  valuesd solution;
-  valuesd rhs;
+  vectord solution;
+  vectord rhs;
 
-  valuesd x0;
+  vectord x0;
 
   void SetUp() override {
     op = std::make_unique<random_symmetric>(n);
     pc = std::make_unique<preconditioner>(*op);
 
-    solution = (valuesd::Random(n) + valuesd::Ones(n)) / 2.0;
+    solution = (vectord::Random(n) + vectord::Ones(n)) / 2.0;
     rhs = (*op)(solution);
 
-    x0 = valuesd::Random(n);
+    x0 = vectord::Random(n);
   }
 
   void TearDown() override {}

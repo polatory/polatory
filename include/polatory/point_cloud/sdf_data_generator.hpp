@@ -1,6 +1,5 @@
 #pragma once
 
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
@@ -13,11 +12,11 @@ class sdf_data_generator {
                      double min_distance, double max_distance, double multiplication = 2.0);
 
   const geometry::points3d& sdf_points() const;
-  const common::valuesd& sdf_values() const;
+  const vectord& sdf_values() const;
 
  private:
   geometry::points3d sdf_points_;
-  common::valuesd sdf_values_;
+  vectord sdf_values_;
 };
 
 }  // namespace polatory::point_cloud

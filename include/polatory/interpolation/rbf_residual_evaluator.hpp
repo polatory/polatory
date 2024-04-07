@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
@@ -60,7 +59,7 @@ class rbf_residual_evaluator {
 
       auto points = points_.middleRows(begin, end - begin);
       evaluator_.set_target_points(points);
-      common::valuesd fit = evaluator_.evaluate() + weights.segment(begin, end - begin) * nugget;
+      vectord fit = evaluator_.evaluate() + weights.segment(begin, end - begin) * nugget;
 
       auto res = (values.segment(begin, end - begin) - fit).template lpNorm<Eigen::Infinity>();
       if (res >= absolute_tolerance) {

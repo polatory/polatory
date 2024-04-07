@@ -14,7 +14,7 @@
 using polatory::model;
 using polatory::read_table;
 using polatory::tabled;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::pointsNd;
 using polatory::kriging::cross_validate;
 using polatory::point_cloud::distance_filter;
@@ -26,16 +26,16 @@ void main_impl(model<Dim>&& model, const options& opts) {
   // Load points (x,y,z) and values (value).
   tabled table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
-  valuesd values = table.col(Dim);
+  vectord values = table.col(Dim);
   Eigen::VectorXi set_ids = table.col(Dim + 1).cast<int>();
 
   // Remove very close points.
   std::tie(points, values) = distance_filter(points, opts.min_distance)(points, values);
 
   // Run the cross validation.
-  valuesd predictions =
+  vectord predictions =
       cross_validate<Dim>(model, points, values, set_ids, opts.absolute_tolerance, opts.max_iter);
-  valuesd errors = values - predictions;
+  vectord errors = values - predictions;
 
   std::cout << "Estimated mean absolute error: " << std::endl
             << std::setw(12) << errors.template lpNorm<1>() / static_cast<double>(points.rows())

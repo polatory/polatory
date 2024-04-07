@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
@@ -17,7 +16,7 @@
 using polatory::index_t;
 using polatory::model;
 using polatory::precision;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_symmetric_evaluator;
@@ -42,7 +41,7 @@ TEST(rbf_symmetric_evaluator, trivial) {
   Points points = Points::Random(n_points, kDim);
   Points grad_points = Points::Random(n_grad_points, kDim);
 
-  valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
+  vectord weights = vectord::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
   rbf_symmetric_evaluator<kDim> eval(model, points, grad_points, precision::kPrecise);
   eval.set_weights(weights);

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/common/types.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
@@ -18,7 +17,7 @@
 using polatory::index_t;
 using polatory::model;
 using polatory::precision;
-using polatory::common::valuesd;
+using polatory::vectord;
 using polatory::geometry::bboxNd;
 using polatory::geometry::pointNd;
 using polatory::geometry::pointsNd;
@@ -51,7 +50,7 @@ TEST(rbf_evaluator, trivial) {
   Points eval_points = Points::Random(n_eval_points, kDim);
   Points grad_eval_points = Points::Random(n_grad_eval_points, kDim);
 
-  valuesd weights = valuesd::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
+  vectord weights = vectord::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
   Bbox bbox{-Point::Ones(), Point::Ones()};
   rbf_evaluator<kDim> eval(model, bbox, precision::kPrecise);

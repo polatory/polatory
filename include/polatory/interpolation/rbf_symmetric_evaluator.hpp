@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <memory>
 #include <polatory/common/macros.hpp>
-#include <polatory/common/types.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -49,8 +48,8 @@ class rbf_symmetric_evaluator {
     }
   }
 
-  common::valuesd evaluate() const {
-    common::valuesd y = common::valuesd::Zero(mu_ + kDim * sigma_);
+  vectord evaluate() const {
+    vectord y = vectord::Zero(mu_ + kDim * sigma_);
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
       y.head(mu_) += a_.at(i)->evaluate();

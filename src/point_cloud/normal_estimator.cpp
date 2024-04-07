@@ -28,7 +28,7 @@ normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>
   }
 
   normals_ = geometry::points3d::Zero(n_points_, 3);
-  plane_factors_ = common::valuesd::Zero(n_points_);
+  plane_factors_ = vectord::Zero(n_points_);
 
   if (n_points_ < 3) {
     estimated_ = true;
@@ -84,7 +84,7 @@ normal_estimator& normal_estimator::estimate_with_radius(const std::vector<doubl
   }
 
   normals_ = geometry::points3d::Zero(n_points_, 3);
-  plane_factors_ = common::valuesd::Zero(n_points_);
+  plane_factors_ = vectord::Zero(n_points_);
 
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
