@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <algorithm>
 #include <memory>
 #include <polatory/common/macros.hpp>
@@ -69,8 +68,8 @@ class rbf_operator : public krylov::linear_operator {
 
     if (l_ > 0) {
       // Add polynomial terms.
-      y.head(mu_ + kDim * sigma_) += pt_.transpose() * weights.tail(l_);
-      y.tail(l_) += pt_ * weights.head(mu_ + kDim * sigma_);
+      y.head(mu_ + kDim * sigma_) += p_ * weights.tail(l_);
+      y.tail(l_) += p_.transpose() * weights.head(mu_ + kDim * sigma_);
     }
 
     return y;
@@ -90,7 +89,7 @@ class rbf_operator : public krylov::linear_operator {
     }
 
     if (l_ > 0) {
-      pt_ = poly_basis_->evaluate(points, grad_points);
+      p_ = poly_basis_->evaluate(points, grad_points);
     }
   }
 
@@ -107,7 +106,7 @@ class rbf_operator : public krylov::linear_operator {
   std::vector<FmmGenericEvaluatorPtr> ft_;
   std::vector<FmmGenericSymmetricEvaluatorPtr> h_;
   std::unique_ptr<MonomialBasis> poly_basis_;
-  Eigen::MatrixXd pt_;
+  matrixd p_;
 };
 
 }  // namespace polatory::interpolation

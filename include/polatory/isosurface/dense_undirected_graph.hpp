@@ -11,8 +11,10 @@
 namespace polatory::isosurface {
 
 class dense_undirected_graph {
+  using Matrix = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
  public:
-  explicit dense_undirected_graph(index_t order) : m_(Eigen::MatrixXi::Zero(order, order)) {
+  explicit dense_undirected_graph(index_t order) : m_(Matrix::Zero(order, order)) {
     if (order <= 0) {
       throw std::invalid_argument("order must be greater than 0.");
     }
@@ -85,7 +87,7 @@ class dense_undirected_graph {
   index_t order() const { return m_.rows(); }
 
  private:
-  Eigen::MatrixXi m_;
+  Matrix m_;
 };
 
 }  // namespace polatory::isosurface

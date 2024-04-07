@@ -42,9 +42,9 @@ double plane_estimator::plane_error() const { return plane_err_; }
 
 double plane_estimator::point_error() const { return point_err_; }
 
-Eigen::JacobiSVD<Eigen::MatrixXd> plane_estimator::pca_svd(const geometry::points3d& points) {
+Eigen::JacobiSVD<matrixd> plane_estimator::pca_svd(const geometry::points3d& points) {
   geometry::point3d barycenter = points.colwise().mean();
-  return Eigen::JacobiSVD<Eigen::MatrixXd>(points.rowwise() - barycenter, Eigen::ComputeThinV);
+  return Eigen::JacobiSVD<matrixd>(points.rowwise() - barycenter, Eigen::ComputeThinV);
 }
 
 }  // namespace polatory::point_cloud

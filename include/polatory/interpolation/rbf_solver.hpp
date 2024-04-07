@@ -64,7 +64,7 @@ class rbf_solver {
 
     if (l_ > 0) {
       MonomialBasis poly(model_.poly_degree());
-      p_ = poly.evaluate(points, grad_points).transpose();
+      p_ = poly.evaluate(points, grad_points);
       common::orthonormalize_cols(p_);
     }
   }
@@ -153,7 +153,7 @@ class rbf_solver {
   Operator op_;
   ResidualEvaluator res_eval_;
   std::unique_ptr<Preconditioner> pc_;
-  Eigen::MatrixXd p_;
+  matrixd p_;
 };
 
 }  // namespace polatory::interpolation

@@ -1,18 +1,18 @@
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
 #include <cmath>
 #include <polatory/common/orthonormalize.hpp>
 #include <polatory/types.hpp>
 
 using polatory::index_t;
+using polatory::matrixd;
 using polatory::common::orthonormalize_cols;
 
 TEST(orthonormalize_cols, trivial) {
   const index_t rows = 100;
   const index_t cols = 10;
 
-  Eigen::MatrixXd m = Eigen::MatrixXd::Random(rows, cols);
+  matrixd m = matrixd::Random(rows, cols);
   orthonormalize_cols(m);
 
   for (index_t i = 0; i < cols; i++) {

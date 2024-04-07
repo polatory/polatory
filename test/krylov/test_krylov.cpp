@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <Eigen/Core>
 #include <Eigen/LU>
 #include <memory>
 #include <polatory/common/types.hpp>
@@ -11,6 +10,7 @@
 #include <polatory/types.hpp>
 
 using polatory::index_t;
+using polatory::matrixd;
 using polatory::common::valuesd;
 using polatory::krylov::fgmres;
 using polatory::krylov::gmres;
@@ -22,7 +22,7 @@ namespace {
 class random_symmetric : public linear_operator {
  public:
   explicit random_symmetric(index_t n) : n_(n) {
-    m_ = (Eigen::MatrixXd::Random(n, n) + Eigen::MatrixXd::Ones(n, n)) / 2.0;
+    m_ = (matrixd::Random(n, n) + matrixd::Ones(n, n)) / 2.0;
     for (index_t i = 1; i < n; i++) {
       for (index_t j = 0; j < i; j++) {
         m_(i, j) = m_(j, i);
@@ -30,7 +30,7 @@ class random_symmetric : public linear_operator {
     }
   }
 
-  const Eigen::MatrixXd& matrix() const { return m_; }
+  const matrixd& matrix() const { return m_; }
 
   valuesd operator()(const valuesd& v) const override { return m_ * v; }
 
@@ -38,13 +38,13 @@ class random_symmetric : public linear_operator {
 
  private:
   const index_t n_;
-  Eigen::MatrixXd m_;
+  matrixd m_;
 };
 
 class preconditioner : public linear_operator {
  public:
   explicit preconditioner(const random_symmetric& op) : n_(op.size()) {
-    Eigen::MatrixXd perturbation = 0.1 * valuesd::Random(n_).asDiagonal();
+    matrixd perturbation = 0.1 * valuesd::Random(n_).asDiagonal();
     m_ = op.matrix().inverse() + perturbation;
   }
 
@@ -54,7 +54,7 @@ class preconditioner : public linear_operator {
 
  private:
   const index_t n_;
-  Eigen::MatrixXd m_;
+  matrixd m_;
 };
 
 class krylov_test : public ::testing::Test {
@@ -84,9 +84,15 @@ class krylov_test : public ::testing::Test {
   template <class Solver>
   void test_solver(bool with_initial_solution, bool with_right_pc, bool with_left_pc) {
     Solver solver(*op, rhs, n);
-    if (with_initial_solution) solver.set_initial_solution(x0);
-    if (with_right_pc) solver.set_right_preconditioner(*pc);
-    if (with_left_pc) solver.set_left_preconditioner(*pc);
+    if (with_initial_solution) {
+      solver.set_initial_solution(x0);
+    }
+    if (with_right_pc) {
+      solver.set_right_preconditioner(*pc);
+    }
+    if (with_left_pc) {
+      solver.set_left_preconditioner(*pc);
+    }
     solver.setup();
 
     auto last_residual = 0.0;

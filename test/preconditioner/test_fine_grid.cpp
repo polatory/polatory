@@ -20,6 +20,7 @@
 #include "../utility.hpp"
 
 using polatory::index_t;
+using polatory::matrixd;
 using polatory::model;
 using polatory::common::valuesd;
 using polatory::geometry::matrixNd;
@@ -79,26 +80,26 @@ void test(index_t n_points, index_t n_grad_points) {
   Domain domain_coarse(domain);
   Domain domain_fine(domain);
 
-  Eigen::MatrixXd lagrange_pt;
+  matrixd lagrange_p;
   if (l > 0) {
     if (poly_degree == 1 && mu == 1 && sigma >= 1) {
       // The special case.
       LagrangeBasis lagrange_basis(poly_degree, points, grad_points.topRows(1));
-      lagrange_pt = lagrange_basis.evaluate(points, grad_points);
+      lagrange_p = lagrange_basis.evaluate(points, grad_points);
     } else {
       // The ordinary case.
       std::vector<index_t> poly_point_idcs(domain.point_indices.begin(),
                                            domain.point_indices.begin() + l);
       LagrangeBasis lagrange_basis(poly_degree, points(poly_point_idcs, Eigen::all));
-      lagrange_pt = lagrange_basis.evaluate(points, grad_points);
+      lagrange_p = lagrange_basis.evaluate(points, grad_points);
     }
   }
 
   coarse_grid<kDim> coarse(model, std::move(domain_coarse));
   binary_cache cache;
   fine_grid<kDim> fine(model, std::move(domain_fine), cache);
-  coarse.setup(points, grad_points, lagrange_pt);
-  fine.setup(points, grad_points, lagrange_pt);
+  coarse.setup(points, grad_points, lagrange_p);
+  fine.setup(points, grad_points, lagrange_p);
 
   valuesd rhs = valuesd(mu + kDim * sigma);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();

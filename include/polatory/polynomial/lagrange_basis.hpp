@@ -18,8 +18,8 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
 
  private:
   using Base = polynomial_basis_base<kDim>;
-  using Points = geometry::pointsNd<kDim>;
   using MonomialBasis = monomial_basis<kDim>;
+  using Points = geometry::pointsNd<kDim>;
 
  public:
   using Base::basis_size;
@@ -36,9 +36,9 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
     POLATORY_ASSERT(points.rows() == basis_size() ||
                     degree == 1 && points.rows() == 1 && grad_points.rows() == 1);
 
-    Eigen::MatrixXd p = mono_basis_.evaluate(points, grad_points).transpose();
+    auto p = mono_basis_.evaluate(points, grad_points);
 
-    Eigen::FullPivLU<Eigen::MatrixXd> lu(p);
+    Eigen::FullPivLU<matrixd> lu(p);
 
     if (!lu.isInvertible()) {
       throw std::domain_error("The set of points is not unisolvent.");
@@ -49,16 +49,16 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
   }
 
   template <class Derived>
-  Eigen::MatrixXd evaluate(const Eigen::MatrixBase<Derived>& points) const {
+  matrixd evaluate(const Eigen::MatrixBase<Derived>& points) const {
     return evaluate(points, Points(0, kDim));
   }
 
   template <class DerivedPoints, class DerivedGradPoints>
-  Eigen::MatrixXd evaluate(const Eigen::MatrixBase<DerivedPoints>& points,
-                           const Eigen::MatrixBase<DerivedGradPoints>& grad_points) const {
-    auto pt = mono_basis_.evaluate(points, grad_points);
+  matrixd evaluate(const Eigen::MatrixBase<DerivedPoints>& points,
+                   const Eigen::MatrixBase<DerivedGradPoints>& grad_points) const {
+    auto p = mono_basis_.evaluate(points, grad_points);
 
-    return coeffs_.transpose() * pt;
+    return p * coeffs_;
   }
 
   double rcond() const { return rcond_; }
@@ -66,7 +66,7 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
  private:
   const MonomialBasis mono_basis_;
 
-  Eigen::MatrixXd coeffs_;
+  matrixd coeffs_;
   double rcond_{};
 };
 

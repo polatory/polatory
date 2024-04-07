@@ -39,7 +39,7 @@ class coarse_grid {
   }
 
   void setup(const Points& points_full, const Points& grad_points_full,
-             const Eigen::MatrixXd& lagrange_pt_full) {
+             const matrixd& lagrange_p_full) {
     Points points = points_full(point_idcs_, Eigen::all);
     Points grad_points = grad_points_full(grad_point_idcs_, Eigen::all);
 
@@ -56,15 +56,15 @@ class coarse_grid {
           }
         }
 
-        // Compute -E.
-        auto lagrange_pt = lagrange_pt_full(Eigen::all, flat_indices);
-        me_ = -lagrange_pt.rightCols(m_ - l_);
+        // Compute matrix Q.
+        auto lagrange_p = lagrange_p_full(flat_indices, Eigen::all);
+        q_top_ = -lagrange_p.bottomRows(m_ - l_).transpose();
 
         // Compute decomposition of Q^T A Q.
         ldlt_of_qtaq_ =
-            (me_.transpose() * a.topLeftCorner(l_, l_) * me_ +
-             me_.transpose() * a.topRightCorner(l_, m_ - l_) +
-             a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_))
+            (q_top_.transpose() * a.topLeftCorner(l_, l_) * q_top_ +
+             q_top_.transpose() * a.topRightCorner(l_, m_ - l_) +
+             a.bottomLeftCorner(m_ - l_, l_) * q_top_ + a.bottomRightCorner(m_ - l_, m_ - l_))
                 .ldlt();
       }
 
@@ -72,13 +72,13 @@ class coarse_grid {
       a_top_ = a.topRows(l_);
 
       MonomialBasis mono_basis(model_.poly_degree());
-      Eigen::MatrixXd p_top;
+      matrixd p_top;
       if (model_.poly_degree() == 1 && mu_ == 1 && sigma_ >= 1) {
         // The special case.
-        p_top = mono_basis.evaluate(points, grad_points.topRows(1)).transpose();
+        p_top = mono_basis.evaluate(points, grad_points.topRows(1));
       } else {
         // The ordinary case.
-        p_top = mono_basis.evaluate(points.topRows(l_)).transpose();
+        p_top = mono_basis.evaluate(points.topRows(l_));
       }
       lu_of_p_top_ = p_top.fullPivLu();
     } else {
@@ -111,13 +111,13 @@ class coarse_grid {
 
       if (m_ > l_) {
         // Compute Q^T d.
-        common::valuesd qtd = me_.transpose() * values.head(l_) + values.tail(m_ - l_);
+        common::valuesd qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
         common::valuesd gamma = ldlt_of_qtaq_.solve(qtd);
 
         // Compute lambda = Q gamma.
-        lambda_c_.head(l_) = me_ * gamma;
+        lambda_c_.head(l_) = q_top_ * gamma;
         lambda_c_.segment(l_, m_ - l_) = gamma;
       } else {
         lambda_c_.head(m_) = common::valuesd::Zero(m_);
@@ -143,17 +143,17 @@ class coarse_grid {
   index_t mu_full_{};
   index_t sigma_full_{};
 
-  // Matrix -E.
-  Eigen::MatrixXd me_;
+  // First l rows of matrix Q.
+  matrixd q_top_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT<Eigen::MatrixXd> ldlt_of_qtaq_;
+  Eigen::LDLT<matrixd> ldlt_of_qtaq_;
 
   // First l rows of matrix A.
-  Eigen::MatrixXd a_top_;
+  matrixd a_top_;
 
   // LU decomposition of first l rows of matrix P.
-  Eigen::FullPivLU<Eigen::MatrixXd> lu_of_p_top_;
+  Eigen::FullPivLU<matrixd> lu_of_p_top_;
 
   // Current solution.
   common::valuesd lambda_c_;
