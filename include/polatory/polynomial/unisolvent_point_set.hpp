@@ -30,8 +30,7 @@ class unisolvent_point_set {
     auto n_points = points.rows();
     auto n_poly_basis = PolynomialBasisBase::basis_size(degree);
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen;
     std::uniform_int_distribution<index_t> dist(index_t{0}, n_points - 1);
 
     std::set<index_t> best_set;

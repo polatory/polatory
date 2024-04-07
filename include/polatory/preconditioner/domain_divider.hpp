@@ -52,6 +52,8 @@ class domain_divider {
     std::vector<index_t> idcs(poly_point_idcs_);
     std::vector<index_t> grad_idcs;
 
+    std::mt19937 gen;
+
     auto n_poly_points = static_cast<index_t>(poly_point_idcs_.size());
     for (const auto& d : domains_) {
       auto mu = d.num_points();
@@ -68,7 +70,7 @@ class domain_divider {
           mixed_points.emplace_back(d.grad_point_indices.at(i), true, true);
         }
       }
-      std::shuffle(mixed_points.begin(), mixed_points.end(), std::mt19937{});
+      std::shuffle(mixed_points.begin(), mixed_points.end(), gen);
 
       auto n_coarse_points = static_cast<index_t>(
           round_half_to_even(ratio * static_cast<double>(mixed_points.size())));
