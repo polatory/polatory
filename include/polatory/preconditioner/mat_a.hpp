@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 
@@ -10,6 +11,7 @@ template <int Dim, class DerivedPoints, class DerivedGradPoints>
 matrixd mat_a(const model<Dim>& model, const Eigen::MatrixBase<DerivedPoints>& points,
               const Eigen::MatrixBase<DerivedGradPoints>& grad_points) {
   constexpr int kDim = Dim;
+  using Matrix = geometry::matrixNd<kDim>;
   using Vector = geometry::vectorNd<kDim>;
 
   auto mu = points.rows();
@@ -40,7 +42,7 @@ matrixd mat_a(const model<Dim>& model, const Eigen::MatrixBase<DerivedPoints>& p
       }
 
       auto ah = a.bottomRightCorner(kDim * sigma, kDim * sigma);
-      matrixd ah_diagonal = -rbf.evaluate_hessian(Vector::Zero());
+      Matrix ah_diagonal = -rbf.evaluate_hessian(Vector::Zero());
       for (index_t i = 0; i < sigma; i++) {
         ah.template block<kDim, kDim>(kDim * i, kDim * i) += ah_diagonal;
       }
