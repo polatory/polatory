@@ -1,22 +1,24 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::preconditioner {
 
 template <int Dim, class DerivedPoints, class DerivedGradPoints>
-Eigen::MatrixXd mat_a(const model<Dim>& model, const Eigen::MatrixBase<DerivedPoints>& points,
-                      const Eigen::MatrixBase<DerivedGradPoints>& grad_points) {
+matrixd mat_a(const model<Dim>& model, const Eigen::MatrixBase<DerivedPoints>& points,
+              const Eigen::MatrixBase<DerivedGradPoints>& grad_points) {
   constexpr int kDim = Dim;
+  using Matrix = geometry::matrixNd<kDim>;
   using Vector = geometry::vectorNd<kDim>;
 
   auto mu = points.rows();
   auto sigma = grad_points.rows();
   auto m = mu + kDim * sigma;
 
-  Eigen::MatrixXd a = Eigen::MatrixXd::Zero(m, m);
+  matrixd a = matrixd::Zero(m, m);
 
   auto aa = a.topLeftCorner(mu, mu);
   aa.diagonal().array() = model.nugget();
@@ -40,7 +42,7 @@ Eigen::MatrixXd mat_a(const model<Dim>& model, const Eigen::MatrixBase<DerivedPo
       }
 
       auto ah = a.bottomRightCorner(kDim * sigma, kDim * sigma);
-      Eigen::MatrixXd ah_diagonal = -rbf.evaluate_hessian(Vector::Zero());
+      Matrix ah_diagonal = -rbf.evaluate_hessian(Vector::Zero());
       for (index_t i = 0; i < sigma; i++) {
         ah.template block<kDim, kDim>(kDim * i, kDim * i) += ah_diagonal;
       }

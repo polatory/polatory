@@ -84,13 +84,13 @@ class ras_preconditioner : public krylov::linear_operator {
           // The special case.
           poly_point_idcs = {0};
           LagrangeBasis lagrange_basis(model.poly_degree(), points_, grad_points_.topRows(1));
-          lagrange_pt_ = lagrange_basis.evaluate(points_, grad_points_);
+          lagrange_p_ = lagrange_basis.evaluate(points_, grad_points_);
         } else {
           // The ordinary case.
           UnisolventPointSet ups(points_, model.poly_degree());
           poly_point_idcs = ups.point_indices();
           LagrangeBasis lagrange_basis(model.poly_degree(), points_(poly_point_idcs, Eigen::all));
-          lagrange_pt_ = lagrange_basis.evaluate(points_, grad_points_);
+          lagrange_p_ = lagrange_basis.evaluate(points_, grad_points_);
         }
 
         point_idcs_.at(level) = poly_point_idcs;
@@ -136,7 +136,7 @@ class ras_preconditioner : public krylov::linear_operator {
 #pragma omp parallel for
       for (index_t i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
-        fine.setup(points_, grad_points_, lagrange_pt_);
+        fine.setup(points_, grad_points_, lagrange_p_);
       }
 
       std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", level, n_grids, mu, sigma) << std::endl;
@@ -151,7 +151,7 @@ class ras_preconditioner : public krylov::linear_operator {
       coarse_domain.grad_point_indices = grad_point_idcs_.at(0);
 
       coarse_ = std::make_unique<CoarseGrid>(model, std::move(coarse_domain));
-      coarse_->setup(points_, grad_points_, lagrange_pt_);
+      coarse_->setup(points_, grad_points_, lagrange_p_);
 
       std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", 0, 1, mu, sigma) << std::endl;
     }
@@ -162,10 +162,10 @@ class ras_preconditioner : public krylov::linear_operator {
 
     if (l_ > 0) {
       MonomialBasis poly(model.poly_degree());
-      p_ = poly.evaluate(points_, grad_points_).transpose();
+      p_ = poly.evaluate(points_, grad_points_);
       common::orthonormalize_cols(p_);
 
-      ap_ = Eigen::MatrixXd(p_.rows(), p_.cols());
+      ap_ = matrixd(p_.rows(), p_.cols());
 
       auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_, precision::kPrecise);
       common::valuesd weights = common::valuesd::Zero(mu_ + kDim * sigma_ + l_);
@@ -341,15 +341,15 @@ class ras_preconditioner : public krylov::linear_operator {
   const Bbox bbox_;
   const std::unique_ptr<SymmetricEvaluator> finest_evaluator_;
 
-  Eigen::MatrixXd lagrange_pt_;
+  matrixd lagrange_p_;
   int n_levels_;
   std::vector<std::vector<index_t>> point_idcs_;
   std::vector<std::vector<index_t>> grad_point_idcs_;
   mutable std::vector<std::vector<FineGrid>> fine_grids_;
   std::unique_ptr<CoarseGrid> coarse_;
   mutable std::map<std::pair<int, int>, Evaluator> evaluator_;
-  Eigen::MatrixXd p_;
-  Eigen::MatrixXd ap_;
+  matrixd p_;
+  matrixd ap_;
   binary_cache cache_;
 };
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <Eigen/SVD>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/types.hpp>
 
 namespace polatory::point_cloud {
 
@@ -22,9 +22,9 @@ class plane_estimator {
   double point_error() const;
 
  private:
-  static Eigen::JacobiSVD<Eigen::MatrixXd> pca_svd(const geometry::points3d& points);
+  static Eigen::JacobiSVD<matrixd> pca_svd(const geometry::points3d& points);
 
-  Eigen::Matrix3d basis_;
+  geometry::matrix3d basis_;
 
   double point_err_;
   double line_err_;

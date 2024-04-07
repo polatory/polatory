@@ -47,7 +47,7 @@ void gmres_base::setup() {
   g_(0) = r0.norm();
   vs_.emplace_back(r0 / g_(0));
 
-  r_ = Eigen::MatrixXd::Zero(max_iter_ + 1, max_iter_);
+  r_ = matrixd::Zero(max_iter_ + 1, max_iter_);
 }
 
 common::valuesd gmres_base::solution_vector() const {

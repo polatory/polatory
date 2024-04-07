@@ -57,7 +57,7 @@ class fine_grid {
   }
 
   void setup(const Points& points_full, const Points& grad_points_full,
-             const Eigen::MatrixXd& lagrange_pt_full) {
+             const matrixd& lagrange_p_full) {
     Points points = points_full(point_idcs_, Eigen::all);
     Points grad_points = grad_points_full(grad_point_idcs_, Eigen::all);
 
@@ -74,22 +74,22 @@ class fine_grid {
           }
         }
 
-        // Compute -E.
-        auto lagrange_pt = lagrange_pt_full(Eigen::all, flat_indices);
-        me_ = -lagrange_pt.rightCols(m_ - l_);
+        // Compute matrix Q.
+        auto lagrange_p = lagrange_p_full(flat_indices, Eigen::all);
+        q_top_ = -lagrange_p.bottomRows(m_ - l_).transpose();
 
         // A hack for preventing segfault observed on macOS (Apple M1 chip).
         // Enable UBSan to see the error.
-        Eigen::MatrixXd met = me_.transpose();
+        matrixd q_top_t = q_top_.transpose();
 
         // Compute decomposition of Q^T A Q.
-        ldlt_of_qtaq_ = Eigen::LDLT2<Eigen::MatrixXd>(
-            met * a.topLeftCorner(l_, l_) * me_ + met * a.topRightCorner(l_, m_ - l_) +
-            a.bottomLeftCorner(m_ - l_, l_) * me_ + a.bottomRightCorner(m_ - l_, m_ - l_));
+        ldlt_of_qtaq_ = Eigen::LDLT2<matrixd>(
+            q_top_t * a.topLeftCorner(l_, l_) * q_top_ + q_top_t * a.topRightCorner(l_, m_ - l_) +
+            a.bottomLeftCorner(m_ - l_, l_) * q_top_ + a.bottomRightCorner(m_ - l_, m_ - l_));
         save_ldlt_of_qtaq();
       }
     } else {
-      ldlt_of_qtaq_ = Eigen::LDLT2<Eigen::MatrixXd>(a);
+      ldlt_of_qtaq_ = Eigen::LDLT2<matrixd>(a);
       save_ldlt_of_qtaq();
     }
 
@@ -124,7 +124,7 @@ class fine_grid {
 
       if (m_ > l_) {
         // Compute Q^T d.
-        common::valuesd qtd = me_.transpose() * values.head(l_) + values.tail(m_ - l_);
+        common::valuesd qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
 
         // Solve Q^T A Q gamma = Q^T d for gamma.
         load_ldlt_of_qtaq();
@@ -132,7 +132,7 @@ class fine_grid {
         ldlt_of_qtaq_.matrixLDLT().resize(0, 0);
 
         // Compute lambda = Q gamma.
-        lambda_.head(l_) = me_ * gamma;
+        lambda_.head(l_) = q_top_ * gamma;
         lambda_.tail(m_ - l_) = gamma;
       } else {
         lambda_ = common::valuesd::Zero(m_);
@@ -172,11 +172,11 @@ class fine_grid {
   index_t mu_full_{};
   index_t sigma_full_{};
 
-  // Matrix -E.
-  Eigen::MatrixXd me_;
+  // Matrix l rows of matrix Q.
+  matrixd q_top_;
 
   // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT2<Eigen::MatrixXd> ldlt_of_qtaq_;
+  Eigen::LDLT2<matrixd> ldlt_of_qtaq_;
 
   // Current solution.
   common::valuesd lambda_;

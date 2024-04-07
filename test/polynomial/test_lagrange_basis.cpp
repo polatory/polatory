@@ -6,6 +6,7 @@
 #include <polatory/types.hpp>
 
 using polatory::index_t;
+using polatory::matrixd;
 using polatory::geometry::cuboid3d;
 using polatory::point_cloud::random_points;
 using polatory::polynomial::lagrange_basis;
@@ -20,12 +21,12 @@ void test_degree(int degree) {
   auto points = random_points(cuboid3d(), n_points, 0);
 
   lagrange_basis<kDim> basis(degree, points);
-  auto pt = basis.evaluate(points);
+  auto p = basis.evaluate(points);
 
-  EXPECT_EQ(basis.basis_size(), pt.rows());
-  EXPECT_EQ(n_points, pt.cols());
+  EXPECT_EQ(n_points, p.rows());
+  EXPECT_EQ(basis.basis_size(), p.cols());
 
-  Eigen::MatrixXd diff = Eigen::MatrixXd::Identity(n_points, n_points) - pt;
+  matrixd diff = matrixd::Identity(n_points, n_points) - p;
 
   EXPECT_LT(diff.lpNorm<Eigen::Infinity>(), 1e-12);
 }

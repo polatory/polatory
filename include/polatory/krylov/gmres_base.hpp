@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <polatory/common/types.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/types.hpp>
@@ -78,7 +77,7 @@ class gmres_base {
   std::vector<common::valuesd> vs_;
 
   // Upper triangular matrix of QR decomposition.
-  Eigen::MatrixXd r_;
+  matrixd r_;
 
   // Cosines for the Givens rotations.
   common::valuesd c_;

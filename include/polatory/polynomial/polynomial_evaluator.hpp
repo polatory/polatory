@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <polatory/common/macros.hpp>
 #include <polatory/common/types.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -18,9 +17,9 @@ class polynomial_evaluator {
       : basis_(degree), weights_(common::valuesd::Zero(basis_.basis_size())) {}
 
   common::valuesd evaluate() const {
-    Eigen::MatrixXd pt = basis_.evaluate(points_, grad_points_);
+    auto p = basis_.evaluate(points_, grad_points_);
 
-    return pt.transpose() * weights_;
+    return p * weights_;
   }
 
   void set_target_points(const Points& points, const Points& grad_points) {

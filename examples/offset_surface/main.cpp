@@ -21,6 +21,7 @@ using polatory::read_table;
 using polatory::tabled;
 using polatory::common::valuesd;
 using polatory::geometry::bbox3d;
+using polatory::geometry::matrix3d;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::geometry::vector3d;
@@ -120,7 +121,7 @@ class mesh_distance {
  private:
   static double orient3d_inexact(const point3d& a, const point3d& b, const point3d& c,
                                  const point3d& d) {
-    Eigen::Matrix3d m;
+    matrix3d m;
     m << a(0) - d(0), a(1) - d(1), a(2) - d(2), b(0) - d(0), b(1) - d(1), b(2) - d(2), c(0) - d(0),
         c(1) - d(1), c(2) - d(2);
     auto det = m.determinant();

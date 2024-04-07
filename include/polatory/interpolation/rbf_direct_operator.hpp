@@ -68,8 +68,8 @@ class rbf_direct_operator : public krylov::linear_operator {
 
     if (l_ > 0) {
       // Add polynomial terms.
-      y.head(mu_ + kDim * sigma_) += pt_.transpose() * weights.tail(l_);
-      y.tail(l_) += pt_ * weights.head(mu_ + kDim * sigma_);
+      y.head(mu_ + kDim * sigma_) += p_ * weights.tail(l_);
+      y.tail(l_) += p_.transpose() * weights.head(mu_ + kDim * sigma_);
     }
 
     return y;
@@ -83,7 +83,7 @@ class rbf_direct_operator : public krylov::linear_operator {
 
     if (l_ > 0) {
       MonomialBasis basis(model_.poly_degree());
-      pt_ = basis.evaluate(points_, grad_points_);
+      p_ = basis.evaluate(points_, grad_points_);
     }
   }
 
@@ -97,7 +97,7 @@ class rbf_direct_operator : public krylov::linear_operator {
   Points points_;
   Points grad_points_;
 
-  Eigen::MatrixXd pt_;
+  matrixd p_;
 };
 
 }  // namespace polatory::interpolation

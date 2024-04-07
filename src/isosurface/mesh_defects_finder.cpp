@@ -119,14 +119,14 @@ index_t mesh_defects_finder::prev_vertex(index_t fi, index_t vi) const {
 
 double orient2d_inexact(const geometry::point2d& a, const geometry::point2d& b,
                         const geometry::point2d& c) {
-  Eigen::Matrix2d m;
+  geometry::matrix2d m;
   m << a(0) - c(0), a(1) - c(1), b(0) - c(0), b(1) - c(1);
   return m.determinant();
 }
 
 double orient3d_inexact(const geometry::point3d& a, const geometry::point3d& b,
                         const geometry::point3d& c, const geometry::point3d& d) {
-  Eigen::Matrix3d m;
+  geometry::matrix3d m;
   m << a(0) - d(0), a(1) - d(1), a(2) - d(2), b(0) - d(0), b(1) - d(1), b(2) - d(2), c(0) - d(0),
       c(1) - d(1), c(2) - d(2);
   return m.determinant();
