@@ -50,17 +50,12 @@ class rbf_incremental_fitter {
       int max_iter) const {
     POLATORY_ASSERT(values_full.size() == mu_full_ + kDim * sigma_full_);
 
-    auto filtering_distance = bbox_.width().mean() / 4.0;
-    if (filtering_distance == 0.0) {
-      filtering_distance = 1.0;
-    }
+    auto filtering_distance = bbox_.width().norm();
 
-    auto centers =
-        point_cloud::distance_filter(points_full_, filtering_distance).filtered_indices();
-    auto grad_centers =
-        point_cloud::distance_filter(grad_points_full_, filtering_distance).filtered_indices();
-    auto mu = static_cast<index_t>(centers.size());
-    auto sigma = static_cast<index_t>(grad_centers.size());
+    std::vector<index_t> centers;
+    std::vector<index_t> grad_centers;
+    index_t mu{};
+    index_t sigma{};
     common::valuesd weights = common::valuesd::Zero(mu + kDim * sigma + l_);
 
     Solver solver(model_, bbox_);
@@ -78,14 +73,16 @@ class rbf_incremental_fitter {
       Points points = points_full_(centers, Eigen::all);
       Points grad_points = grad_points_full_(grad_centers, Eigen::all);
 
-      solver.set_points(points, grad_points);
-      common::valuesd values(mu + kDim * sigma);
-      values << values_full.head(mu_full_)(centers),
-          values_full.tail(kDim * sigma_full_)
-              .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_centers, Eigen::all)
-              .template reshaped<Eigen::RowMajor>();
-      weights =
-          solver.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter, &weights);
+      if (mu >= l_ || (model_.poly_degree() == 1 && mu == 1 && sigma >= 1)) {
+        solver.set_points(points, grad_points);
+        common::valuesd values(mu + kDim * sigma);
+        values << values_full.head(mu_full_)(centers),
+            values_full.tail(kDim * sigma_full_)
+                .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_centers, Eigen::all)
+                .template reshaped<Eigen::RowMajor>();
+        weights =
+            solver.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter, &weights);
+      }
 
       if (mu == mu_full_ && sigma == sigma_full_) {
         break;

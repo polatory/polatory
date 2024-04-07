@@ -44,7 +44,7 @@ class rbf_inequality_fitter {
                                                        const common::valuesd& values_ub,
                                                        double absolute_tolerance,
                                                        int max_iter) const {
-    double filtering_distance = bbox_.width().mean() / 4.0;
+    double filtering_distance = bbox_.width().norm();
 
     auto not_nan = [](double d) { return !std::isnan(d); };
     auto eq_idcs = arg_where(values, not_nan);
@@ -82,9 +82,8 @@ class rbf_inequality_fitter {
       // Fit and evaluate residuals at all inequality points.
 
       common::valuesd values_fit;
-      if (!centers.empty()) {
-        auto n_centers = static_cast<index_t>(centers.size());
-
+      auto n_centers = static_cast<index_t>(centers.size());
+      if (n_centers >= n_poly_basis_) {
         Points center_points = points_(centers, Eigen::all);
 
         common::valuesd center_values = values(centers, Eigen::all);
