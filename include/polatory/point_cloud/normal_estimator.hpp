@@ -44,7 +44,7 @@ class normal_estimator {
  private:
   void throw_if_not_estimated() const {
     if (!estimated_) {
-      throw std::runtime_error("Normals have not been estimated.");
+      throw std::runtime_error("normals have not been estimated");
     }
   }
 

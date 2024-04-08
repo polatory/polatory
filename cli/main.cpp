@@ -1,6 +1,8 @@
 #include <boost/program_options.hpp>
 #include <exception>
+#include <format>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -26,7 +28,7 @@ int main(int argc, const char* argv[]) {
     auto args = po::collect_unrecognized(parsed.options, po::include_positional);
 
     if (args.empty()) {
-      std::cout << "Usage: polatory [OPTIONS] COMMAND [ARGS]" << std::endl << opts_desc;
+      std::cout << "usage: polatory [OPTIONS] COMMAND [ARGS]" << std::endl << opts_desc;
       return opts.help ? 0 : 1;
     }
 
@@ -62,16 +64,16 @@ int main(int argc, const char* argv[]) {
     } else if (command == variogram_command::kName) {
       variogram_command::run(args, opts);
     } else {
-      std::cerr << "Unknown command: " << command << std::endl;
+      throw std::runtime_error(std::format("unknown command: '{}'", command));
       return 1;
     }
 
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::cerr << "error: " << e.what() << std::endl;
     return 1;
   } catch (...) {
-    std::cerr << "Unknown error" << std::endl;
+    std::cerr << "unknown error" << std::endl;
     return 1;
   }
 }

@@ -24,8 +24,8 @@ class distance_filter {
 
   distance_filter(const Points& points, double distance, const std::vector<index_t>& indices)
       : n_points_(points.rows()) {
-    if (distance < 0.0) {
-      throw std::invalid_argument("distance must be non-negative.");
+    if (!(distance >= 0.0)) {
+      throw std::invalid_argument("distance must be non-negative");
     }
 
     kdtree tree(points);
@@ -60,7 +60,7 @@ class distance_filter {
   template <class Derived>
   auto operator()(const Eigen::MatrixBase<Derived>& m) {
     if (m.rows() != n_points_) {
-      throw std::invalid_argument("m.rows() must match with the original points.");
+      throw std::invalid_argument("m.rows() must match with the original points");
     }
 
     // Use .eval() to prevent memory corruption caused if the result is being assigned

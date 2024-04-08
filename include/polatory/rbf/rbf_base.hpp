@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <limits>
 #include <memory>
 #include <polatory/geometry/point3d.hpp>
@@ -69,8 +70,8 @@ class rbf_base {
   const std::vector<double>& parameters() const { return params_; }
 
   void set_anisotropy(const Matrix& aniso) {
-    if (aniso.determinant() <= 0.0) {
-      throw std::invalid_argument("aniso must have a positive determinant.");
+    if (!(aniso.determinant() > 0.0)) {
+      throw std::invalid_argument("aniso must have a positive determinant");
     }
 
     aniso_ = aniso;
@@ -78,8 +79,7 @@ class rbf_base {
 
   void set_parameters(const std::vector<double>& params) {
     if (static_cast<index_t>(params.size()) != num_parameters()) {
-      throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) +
-                                  ".");
+      throw std::invalid_argument(std::format("params.size() must be {}", num_parameters()));
     }
 
     params_ = params;

@@ -13,7 +13,7 @@ class fgmres : public gmres {
   fgmres(const linear_operator& op, const vectord& rhs, index_t max_iter);
 
   void set_left_preconditioner(const linear_operator& /*left_preconditioner*/) override {
-    throw std::runtime_error("set_left_preconditioner is not supported.");
+    throw std::runtime_error("set_left_preconditioner is not supported");
   }
 
   vectord solution_vector() const override;

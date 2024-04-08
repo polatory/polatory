@@ -41,7 +41,7 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
     Eigen::FullPivLU<matrixd> lu(p);
 
     if (!lu.isInvertible()) {
-      throw std::domain_error("The set of points is not unisolvent.");
+      throw std::invalid_argument("the set of points is not unisolvent");
     }
 
     coeffs_ = lu.inverse();

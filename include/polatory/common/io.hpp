@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <polatory/types.hpp>
@@ -147,7 +148,7 @@ template <class T>
 void load(const std::string& filename, T& t) {
   std::ifstream ifs(filename, std::ios::binary);
   if (!ifs) {
-    throw std::runtime_error{"cannot open file: " + filename};
+    throw std::runtime_error{std::format("cannot open file '{}'", filename)};
   }
 
   read(ifs, t);
@@ -157,7 +158,7 @@ template <class T>
 void save(const std::string& filename, const T& t) {
   std::ofstream ofs(filename, std::ios::binary);
   if (!ofs) {
-    throw std::runtime_error{"cannot open file: " + filename};
+    throw std::runtime_error{std::format("cannot open file '{}'", filename)};
   }
 
   write(ofs, t);

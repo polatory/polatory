@@ -78,7 +78,7 @@ void isosurface_command::run(const std::vector<std::string>& args,
       ;
 
   if (global_opts.help) {
-    std::cout << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     return;
   }
 
@@ -90,9 +90,8 @@ void isosurface_command::run(const std::vector<std::string>& args,
                   .run(),
               vm);
     po::notify(vm);
-  } catch (const po::error& e) {
-    std::cout << e.what() << '\n'
-              << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+  } catch (const po::error&) {
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     throw;
   }
 

@@ -8,6 +8,7 @@
 #endif
 
 #include <boost/filesystem.hpp>
+#include <format>
 #include <mutex>
 #include <stdexcept>
 #include <vector>
@@ -23,13 +24,15 @@ class binary_cache {
     file_ = ::CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_NEW,
                           FILE_FLAG_DELETE_ON_CLOSE, nullptr);
     if (file_ == INVALID_HANDLE_VALUE) {
-      throw std::runtime_error("failed to open a temporary file");
+      throw std::runtime_error(
+          std::format("failed to open a temporary file '{}'", filename.string()));
     }
 #else
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
     file_ = ::open(filename.c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
     if (file_ == -1) {
-      throw std::runtime_error("failed to open a temporary file");
+      throw std::runtime_error(
+          std::format("failed to open a temporary file '{}'", filename.string()));
     }
     ::unlink(filename.c_str());
 #endif

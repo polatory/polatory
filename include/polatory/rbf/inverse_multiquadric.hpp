@@ -17,7 +17,7 @@ class inverse_multiquadric : public rbf_base<Dim> {
   using Matrix = Base::Matrix;
   using Vector = Base::Vector;
 
-  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer.");
+  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer");
 
  public:
   using Base::Base;

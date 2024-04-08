@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <polatory/rbf/cov_cauchy3.hpp>
 #include <polatory/rbf/cov_cauchy5.hpp>
 #include <polatory/rbf/cov_cauchy7.hpp>
@@ -50,7 +51,7 @@ rbf_proxy<Dim> make_rbf(const std::string& name, const std::vector<double>& para
 
 #undef POLATORY_CASE
 
-  throw std::runtime_error("Unknown RBF name: " + name);
+  throw std::runtime_error(std::format("unknown RBF name: '{}'", name));
 }
 
 }  // namespace polatory::rbf

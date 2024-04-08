@@ -3,6 +3,7 @@
 
 #include <Eigen/Core>
 #include <exception>
+#include <format>
 #include <iostream>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
@@ -82,11 +83,14 @@ int main(int argc, const char* argv[]) {
         main_impl(make_model<3>(opts.model_opts), opts);
         break;
       default:
-        throw std::runtime_error("Unsupported dimension: " + std::to_string(opts.dim));
+        throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
     }
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    std::cerr << "error: " << e.what() << std::endl;
+    return 1;
+  } catch (...) {
+    std::cerr << "unknown error" << std::endl;
     return 1;
   }
 }

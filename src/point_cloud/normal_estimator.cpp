@@ -20,11 +20,11 @@ normal_estimator& normal_estimator::estimate_with_knn(index_t k) {
 
 normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>& ks) {
   if (ks.empty()) {
-    throw std::runtime_error("ks must not be empty.");
+    throw std::runtime_error("ks must not be empty");
   }
 
   if (std::any_of(ks.begin(), ks.end(), [](auto k) { return k < 3; })) {
-    throw std::runtime_error("k must be greater than or equal to 3.");
+    throw std::runtime_error("k must be greater than or equal to 3");
   }
 
   normals_ = geometry::points3d::Zero(n_points_, 3);
@@ -76,11 +76,11 @@ normal_estimator& normal_estimator::estimate_with_radius(double radius) {
 
 normal_estimator& normal_estimator::estimate_with_radius(const std::vector<double>& radii) {
   if (radii.empty()) {
-    throw std::runtime_error("radii must not be empty.");
+    throw std::runtime_error("radii must not be empty");
   }
 
-  if (std::any_of(radii.begin(), radii.end(), [](auto radius) { return radius <= 0.0; })) {
-    throw std::runtime_error("radius must be positive.");
+  if (std::any_of(radii.begin(), radii.end(), [](auto radius) { return !(radius > 0.0); })) {
+    throw std::runtime_error("radius must be positive");
   }
 
   normals_ = geometry::points3d::Zero(n_points_, 3);

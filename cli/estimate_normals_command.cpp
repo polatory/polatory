@@ -88,7 +88,7 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
       ;
 
   if (global_opts.help) {
-    std::cout << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     return;
   }
 
@@ -100,9 +100,8 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
                   .run(),
               vm);
     po::notify(vm);
-  } catch (const po::error& e) {
-    std::cout << e.what() << '\n'
-              << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+  } catch (const po::error&) {
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     throw;
   }
 
@@ -110,22 +109,22 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
   if (num_estimation_opts == 0) {
     opts.ks = {10, 30, 100, 300};
   } else if (num_estimation_opts > 1) {
-    throw std::runtime_error("Only one of --k or --radius can be specified.");
+    throw std::runtime_error("only either --k or --radius can be specified");
   }
 
   auto num_orientation_opts = vm.count("point") + vm.count("direction") + vm.count("closed");
   if (num_orientation_opts == 0) {
     opts.closed = 100;
   } else if (num_orientation_opts > 1) {
-    throw std::runtime_error("Only one of --point, --direction, or --closed can be specified.");
+    throw std::runtime_error("only one of --point, --direction, or --closed can be specified");
   }
 
   if (vm.count("point") && opts.point.size() != 3) {
-    throw std::runtime_error("--point takes exactly 3 values.");
+    throw std::runtime_error("--point takes exactly 3 values");
   }
 
   if (vm.count("direction") && opts.direction.size() != 3) {
-    throw std::runtime_error("--direction takes exactly 3 values.");
+    throw std::runtime_error("--direction takes exactly 3 values");
   }
 
   run_impl(opts);

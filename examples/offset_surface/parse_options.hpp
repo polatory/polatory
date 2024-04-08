@@ -58,10 +58,8 @@ inline options parse_options(int argc, const char* argv[]) {
                   po::command_line_style::unix_style ^ po::command_line_style::allow_short),
               vm);
     po::notify(vm);
-  } catch (std::exception& e) {
-    std::cout << e.what() << std::endl
-              << "Usage: " << argv[0] << " [OPTION]..." << std::endl
-              << opts_desc;
+  } catch (const po::error&) {
+    std::cout << "usage: offset_surface [OPTIONS]\n" << opts_desc;
     throw;
   }
 

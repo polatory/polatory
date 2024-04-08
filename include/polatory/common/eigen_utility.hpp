@@ -19,7 +19,7 @@ Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m) {
 template <class Derived, class... Args>
 Eigen::Index common_cols(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   if (m.cols() != common_cols(std::forward<Args>(args)...)) {
-    throw std::invalid_argument("All inputs must have the same number of columns.");
+    throw std::invalid_argument("all matrices must have the same number of columns");
   }
 
   return m.cols();
@@ -33,7 +33,7 @@ Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m) {
 template <class Derived, class... Args>
 Eigen::Index common_rows(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
   if (m.rows() != common_rows(std::forward<Args>(args)...)) {
-    throw std::invalid_argument("All inputs must have the same number of rows.");
+    throw std::invalid_argument("all matrices must have the same number of rows");
   }
 
   return m.rows();

@@ -35,7 +35,7 @@ class model {
   model(std::vector<RbfProxy>&& rbfs, int poly_degree = kMinRequiredPolyDegree)
       : rbfs_(std::move(rbfs)) {
     if (rbfs_.empty()) {
-      throw std::invalid_argument("rbfs must not be empty.");
+      throw std::invalid_argument("rbfs must not be empty");
     }
 
     auto min_poly_degree = cpd_order() - 1;
@@ -46,7 +46,7 @@ class model {
       poly_degree_ = poly_degree;
     } else {
       throw std::invalid_argument(
-          std::format("poly_degree must be within {} to {}.", min_poly_degree, max_poly_degree));
+          std::format("poly_degree must be within {} to {}", min_poly_degree, max_poly_degree));
     }
   }
 
@@ -135,8 +135,8 @@ class model {
   const std::vector<RbfProxy>& rbfs() const { return rbfs_; }
 
   void set_nugget(double nugget) {
-    if (nugget < 0.0) {
-      throw std::invalid_argument("nugget must be greater than or equal to 0.0.");
+    if (!(nugget >= 0.0)) {
+      throw std::invalid_argument("nugget must be non-negative");
     }
 
     nugget_ = nugget;
@@ -144,8 +144,7 @@ class model {
 
   void set_parameters(const std::vector<double>& params) {
     if (static_cast<index_t>(params.size()) != num_parameters()) {
-      throw std::invalid_argument("params.size() must be " + std::to_string(num_parameters()) +
-                                  ".");
+      throw std::invalid_argument(std::format("params.size() must be {}", num_parameters()));
     }
 
     set_nugget(params.at(0));
@@ -188,7 +187,7 @@ class model {
 template <>
 inline std::string model<1>::description() const {
   if (!is_covariance_model()) {
-    throw std::runtime_error("description is only available for covariance models.");
+    throw std::runtime_error("description is only available for covariance models");
   }
 
   std::stringstream ss;
@@ -211,7 +210,7 @@ inline std::string model<1>::description() const {
 template <>
 inline std::string model<2>::description() const {
   if (!is_covariance_model()) {
-    throw std::runtime_error("description is only available for covariance models.");
+    throw std::runtime_error("description is only available for covariance models");
   }
 
   auto deg = std::numbers::pi / 180.0;
@@ -244,7 +243,7 @@ inline std::string model<2>::description() const {
 template <>
 inline std::string model<3>::description() const {
   if (!is_covariance_model()) {
-    throw std::runtime_error("description is only available for covariance models.");
+    throw std::runtime_error("description is only available for covariance models");
   }
 
   auto deg = std::numbers::pi / 180.0;

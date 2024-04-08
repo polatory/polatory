@@ -80,15 +80,15 @@ class interpolant {
 
     auto n_rhs = points.rows() + kDim * grad_points.rows();
     if (values.rows() != n_rhs) {
-      throw std::invalid_argument(std::format("values.rows() must be equal to {}.", n_rhs));
+      throw std::invalid_argument(std::format("values.rows() must be equal to {}", n_rhs));
     }
 
-    if (absolute_tolerance <= 0.0) {
-      throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
+    if (!(absolute_tolerance > 0.0)) {
+      throw std::invalid_argument("absolute_tolerance must be positive");
     }
 
-    if (grad_absolute_tolerance <= 0.0) {
-      throw std::invalid_argument("grad_absolute_tolerance must be greater than 0.0.");
+    if (!(grad_absolute_tolerance > 0.0)) {
+      throw std::invalid_argument("grad_absolute_tolerance must be positive");
     }
 
     vectord initial_weights;
@@ -121,16 +121,16 @@ class interpolant {
     check_num_points(points, grad_points);
 
     if (values.rows() != points.rows() + kDim * grad_points.rows()) {
-      throw std::invalid_argument(std::format("values.rows() must be equal to {}.",
+      throw std::invalid_argument(std::format("values.rows() must be equal to {}",
                                               points.rows() + kDim * grad_points.rows()));
     }
 
-    if (absolute_tolerance <= 0.0) {
-      throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
+    if (!(absolute_tolerance > 0.0)) {
+      throw std::invalid_argument("absolute_tolerance must be positive");
     }
 
-    if (grad_absolute_tolerance <= 0.0) {
-      throw std::invalid_argument("grad_absolute_tolerance must be greater than 0.0.");
+    if (!(grad_absolute_tolerance > 0.0)) {
+      throw std::invalid_argument("grad_absolute_tolerance must be positive");
     }
 
     clear();
@@ -149,30 +149,30 @@ class interpolant {
 
   void fit_inequality(const Points& points, const vectord& values, const vectord& values_lb,
                       const vectord& values_ub, double absolute_tolerance, int max_iter = 100) {
-    if (model_.nugget() > 0.0) {
-      throw std::runtime_error("Non-zero nugget is not supported.");
+    if (model_.nugget() != 0.0) {
+      throw std::runtime_error("Non-zero nugget is not supported");
     }
 
     auto min_n_points = model_.poly_basis_size();
     if (points.rows() < min_n_points) {
       throw std::invalid_argument(
-          std::format("points.rows() must be greater than or equal to {}.", min_n_points));
+          std::format("points.rows() must be greater than or equal to {}", min_n_points));
     }
 
     if (values.rows() != points.rows()) {
-      throw std::invalid_argument("values.rows() must be equal to points.rows().");
+      throw std::invalid_argument("values.rows() must be equal to points.rows()");
     }
 
     if (values_lb.rows() != points.rows()) {
-      throw std::invalid_argument("values_lb.rows() must be equal to points.rows().");
+      throw std::invalid_argument("values_lb.rows() must be equal to points.rows()");
     }
 
     if (values_ub.rows() != points.rows()) {
-      throw std::invalid_argument("values_ub.rows() must be equal to points.rows().");
+      throw std::invalid_argument("values_ub.rows() must be equal to points.rows()");
     }
 
-    if (absolute_tolerance <= 0.0) {
-      throw std::invalid_argument("absolute_tolerance must be greater than 0.0.");
+    if (!(absolute_tolerance > 0.0)) {
+      throw std::invalid_argument("absolute_tolerance must be positive");
     }
 
     clear();
@@ -233,7 +233,7 @@ class interpolant {
     vectord weights = vectord::Zero(mu + kDim * sigma + l);
 
     if (model() != initial.model()) {
-      std::cerr << "Warning: ignoring the initial interpolant because the model is different."
+      std::cerr << "warning: ignoring the initial interpolant because the model is different"
                 << std::endl;
       return weights;
     }
@@ -280,7 +280,7 @@ class interpolant {
 
     if (mu < l) {
       throw std::invalid_argument(
-          std::format("points.rows() must be greater than or equal to {}.", l));
+          std::format("points.rows() must be greater than or equal to {}", l));
     }
   }
 
@@ -294,7 +294,7 @@ class interpolant {
 
   void throw_if_not_fitted() const {
     if (!fitted_) {
-      throw std::runtime_error("The interpolant is not fitted yet.");
+      throw std::runtime_error("interpolant has not been fitted");
     }
   }
 

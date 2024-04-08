@@ -22,7 +22,10 @@ int main(int /*argc*/, char* argv[]) {
 
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    std::cerr << "error: " << e.what() << std::endl;
+    return 1;
+  } catch (...) {
+    std::cerr << "unknown error" << std::endl;
     return 1;
   }
 }

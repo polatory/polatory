@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <boost/algorithm/string.hpp>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <polatory/numeric/conv.hpp>
@@ -15,7 +16,7 @@ namespace polatory {
 inline matrixd read_table(const std::string& filename, const char* delimiters = " \t,") {
   std::ifstream ifs(filename);
   if (!ifs) {
-    throw std::runtime_error("Failed to open file '" + filename + "'.");
+    throw std::runtime_error(std::format("cannot open file '{}'", filename));
   }
 
   std::vector<double> buffer;
@@ -37,7 +38,8 @@ inline matrixd read_table(const std::string& filename, const char* delimiters = 
     if (n_cols == 0) {
       n_cols = row_size;
     } else if (row_size != n_cols) {
-      std::cerr << "Skipping line " << line_no << " with a different number of columns."
+      std::cerr << std::format("warning: skipping line {} with a different number of columns",
+                               line_no)
                 << std::endl;
       continue;
     }
@@ -50,7 +52,7 @@ inline matrixd read_table(const std::string& filename, const char* delimiters = 
   }
 
   if (n_cols == 0) {
-    throw std::runtime_error("File '" + filename + "' is empty.");
+    throw std::runtime_error(std::format("file '{}' is empty", filename));
   }
 
   auto n_rows = static_cast<index_t>(buffer.size() / n_cols);
@@ -62,7 +64,7 @@ void write_table(const std::string& filename, const Eigen::MatrixBase<Derived>& 
                  char delimiter = ' ') {
   std::ofstream ofs(filename);
   if (!ofs) {
-    throw std::runtime_error("Failed to open file '" + filename + "'.");
+    throw std::runtime_error(std::format("cannot open file '{}'", filename));
   }
 
   auto n_cols = table.cols();

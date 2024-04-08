@@ -169,7 +169,7 @@ int main(int argc, const char* argv[]) {
     points3d V;
     faces F;
     if (!igl::read_triangle_mesh(opts.mesh_in, V, F)) {
-      throw std::runtime_error("Failed to read mesh file.");
+      throw std::runtime_error("failed to read the mesh file");
     }
 
     mesh_distance mesh_dist(std::move(V), std::move(F));
@@ -199,7 +199,10 @@ int main(int argc, const char* argv[]) {
 
     return 0;
   } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    std::cerr << "error: " << e.what() << std::endl;
+    return 1;
+  } catch (...) {
+    std::cerr << "unknown error" << std::endl;
     return 1;
   }
 }

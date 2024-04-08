@@ -74,7 +74,7 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf_proxy<Dim>& rbf, const 
 
 #undef CASE
 
-  throw std::invalid_argument("RBF type not supported.");
+  throw std::runtime_error("not implemented");
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_evaluator<1>(const rbf_proxy<1>& rbf,
@@ -118,7 +118,7 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf_proxy<Dim>& rb
 
 #undef CASE
 
-  throw std::invalid_argument("RBF type not supported.");
+  throw std::runtime_error("not implemented");
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_gradient_evaluator<1>(const rbf_proxy<1>& rbf,
@@ -164,7 +164,7 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf_prox
 
 #undef CASE
 
-  throw std::invalid_argument("RBF type not supported.");
+  throw std::runtime_error("not implemented");
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_gradient_transpose_evaluator<1>(const rbf_proxy<1>& rbf,
@@ -211,7 +211,7 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf_proxy<Dim>& rbf
 
 #undef CASE
 
-  throw std::invalid_argument("RBF type not supported.");
+  throw std::runtime_error("not implemented");
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_hessian_evaluator<1>(const rbf_proxy<1>& rbf,
@@ -256,7 +256,7 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf_prox
 
 #undef CASE
 
-  throw std::runtime_error("RBF type not supported.");
+  throw std::runtime_error("not implemented");
 }
 
 template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_symmetric_evaluator<1>(const rbf_proxy<1>& rbf,
@@ -305,7 +305,7 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const 
 
 #undef CASE
 
-  throw std::runtime_error("RBF type not supported.");
+  throw std::runtime_error("not implemented");
 }
 
 template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_hessian_symmetric_evaluator<1>(

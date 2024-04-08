@@ -133,7 +133,7 @@ class rbf_solver {
 
       if (solver.iteration_count() == solver.max_iterations()) {
         std::cerr
-            << "Warning: reached the maximum number of iterations, returning the current solution."
+            << "warning: reached the maximum number of iterations, returning the current solution"
             << std::endl;
         break;
       }

@@ -17,7 +17,7 @@ class polyharmonic_even : public rbf_base<Dim> {
   using Matrix = Base::Matrix;
   using Vector = Base::Vector;
 
-  static_assert(k > 0 && k % 2 == 0, "k must be a positive even integer.");
+  static_assert(k > 0 && k % 2 == 0, "k must be a positive even integer");
 
   static constexpr double kSign = (k / 2 + 1) % 2 == 0 ? 1.0 : -1.0;
 

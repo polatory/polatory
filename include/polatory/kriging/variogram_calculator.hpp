@@ -110,7 +110,7 @@ class variogram_calculator {
 
   void set_angle_tolerance(double angle_tolerance) {
     if (angle_tolerance != kAutomaticAngleTolerance && !(angle_tolerance > 0.0)) {
-      throw std::invalid_argument("angle_tolerance must be positive.");
+      throw std::invalid_argument("angle_tolerance must be positive");
     }
 
     angle_tolerance_ = angle_tolerance;
@@ -118,7 +118,7 @@ class variogram_calculator {
 
   void set_directions(const Vectors& directions) {
     if (directions.rows() == 0) {
-      throw std::invalid_argument("directions must not be empty.");
+      throw std::invalid_argument("directions must not be empty");
     }
 
     directions_ = directions.rowwise().normalized();
@@ -126,7 +126,7 @@ class variogram_calculator {
 
   void set_lag_tolerance(double lag_tolerance) {
     if (lag_tolerance != kAutomaticAngleTolerance && !(lag_tolerance > 0.0)) {
-      throw std::invalid_argument("lag_tolerance must be positive.");
+      throw std::invalid_argument("lag_tolerance must be positive");
     }
 
     lag_tolerance_ = lag_tolerance;

@@ -54,13 +54,13 @@ class unisolvent_point_set {
         }
 
         found = true;
-      } catch (const std::domain_error&) {  // NOLINT(bugprone-empty-catch)
+      } catch (const std::invalid_argument&) {  // NOLINT(bugprone-empty-catch)
         // No-op.
       }
     }
 
     if (!found) {
-      throw std::runtime_error("Could not find a unisolvent set of points.");
+      throw std::runtime_error("could not find a unisolvent set of points");
     }
 
     point_idcs_.insert(point_idcs_.begin(), best_set.begin(), best_set.end());

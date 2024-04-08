@@ -48,9 +48,7 @@ void zip_sort(RandomAccessIterator1 begin1, RandomAccessIterator1 end1,
   using D1 = typename std::iterator_traits<RandomAccessIterator1>::difference_type;
   using D2 = typename std::iterator_traits<RandomAccessIterator2>::difference_type;
 
-  static_assert(
-      std::is_same_v<D1, D2>,
-      "RandomAccessIterator1 and RandomAccessIterator2 must have the same difference_type.");
+  static_assert(std::is_same_v<D1, D2>, "iterators must have the same difference_type");
 
   POLATORY_ASSERT(std::distance(begin1, end1) == std::distance(begin2, end2));
 

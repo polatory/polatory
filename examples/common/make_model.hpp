@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <polatory/polatory.hpp>
 #include <regex>
 #include <stdexcept>
@@ -65,7 +66,7 @@ polatory::model<Dim> make_model(const model_options& opts) {
   }
 
   if (it != end) {
-    throw std::runtime_error("unexpected token in --rbf: " + *it);
+    throw std::runtime_error(std::format("unexpected argument to --rbf: '{}'", *it));
   }
 
   Model m{std::move(rbfs), opts.poly_degree};

@@ -14,7 +14,7 @@ std::pair<matrixNd<Dim>, vectorNd<Dim>> decompose_inverse_anisotropy(const matri
   matrixNd<Dim> m = aniso.transpose() * aniso;
   Eigen::SelfAdjointEigenSolver<matrixNd<Dim>> eigensolver(m);
   if (eigensolver.info() != Eigen::Success) {
-    throw std::runtime_error("Failed to compute eigensystem.");
+    throw std::runtime_error("failed to compute the eigensystem");
   }
   matrixNd<Dim> rot = eigensolver.eigenvectors();
   if (rot.determinant() < 0) {

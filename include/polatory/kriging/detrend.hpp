@@ -11,7 +11,7 @@ template <int Dim>
 vectord detrend(const geometry::pointsNd<Dim>& points, const geometry::pointsNd<Dim>& grad_points,
                 const vectord& values, int degree) {
   if (degree < 0 || degree > 2) {
-    throw std::invalid_argument("degree must be 0, 1, or 2.");
+    throw std::invalid_argument("degree must be 0, 1, or 2");
   }
 
   polynomial::monomial_basis<Dim> basis(degree);

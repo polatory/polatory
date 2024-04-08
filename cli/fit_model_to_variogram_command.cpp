@@ -100,7 +100,7 @@ where
   }
 
   if (global_opts.help) {
-    std::cout << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     return;
   }
 
@@ -112,9 +112,8 @@ where
                   .run(),
               vm);
     po::notify(vm);
-  } catch (const po::error& e) {
-    std::cout << e.what() << '\n'
-              << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+  } catch (const po::error&) {
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     throw;
   }
 
@@ -138,7 +137,7 @@ where
       opts.weight_fn = polatory::kriging::weight_function::kOneOverModelGammaSquared;
       break;
     default:
-      throw std::runtime_error("--weight must be 0 to 5.");
+      throw std::runtime_error("--weight must be 0 to 5");
   }
 
   switch (opts.dim) {
@@ -152,6 +151,6 @@ where
       run_impl<3>(opts);
       break;
     default:
-      throw std::runtime_error(std::format("Unsupported dimension: {}.", opts.dim));
+      throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
   }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <format>
 #include <fstream>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/conv.hpp>
@@ -52,7 +53,7 @@ class surface {
   void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);
     if (!ofs) {
-      throw std::runtime_error("Failed to open file '" + filename + "'.");
+      throw std::runtime_error(std::format("cannot open file '{}'", filename));
     }
 
     if (faces_.rows() == 0) {

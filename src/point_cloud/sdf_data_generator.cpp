@@ -8,15 +8,15 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
                                        const geometry::vectors3d& normals, double min_distance,
                                        double max_distance, double multiplication) {
   if (normals.rows() != points.rows()) {
-    throw std::invalid_argument("normals.rows() must be equal to points.rows().");
+    throw std::invalid_argument("normals.rows() must be equal to points.rows()");
   }
 
-  if (min_distance > max_distance) {
-    throw std::invalid_argument("min_distance must be less than or equal to max_distance.");
+  if (!(min_distance <= max_distance)) {
+    throw std::invalid_argument("min_distance must be less than or equal to max_distance");
   }
 
-  if (multiplication <= 1.0 || multiplication > 3.0) {
-    throw std::invalid_argument("multiplication must be within (1.0, 3.0].");
+  if (!(multiplication > 1.0 && multiplication <= 3.0)) {
+    throw std::invalid_argument("multiplication must be within (1.0, 3.0]");
   }
 
   kdtree tree(points);

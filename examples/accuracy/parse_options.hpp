@@ -58,9 +58,7 @@ inline options parse_options(int argc, const char* argv[]) {
               vm);
     po::notify(vm);
   } catch (std::exception& e) {
-    std::cout << e.what() << std::endl
-              << "Usage: " << argv[0] << " [OPTION]..." << std::endl
-              << opts_desc;
+    std::cout << "usage: accuracy [OPTIONS]\n" << opts_desc;
     throw;
   }
 

@@ -129,7 +129,7 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
   }
 
   if (global_opts.help) {
-    std::cout << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     return;
   }
 
@@ -141,18 +141,17 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
                   .run(),
               vm);
     po::notify(vm);
-  } catch (const po::error& e) {
-    std::cout << e.what() << '\n'
-              << std::format("Usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+  } catch (const po::error&) {
+    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
     throw;
   }
 
   if (!opts.grad_in_file.empty() && opts.ineq) {
-    throw std::runtime_error("--grad-in cannot be used in conjunction with --ineq.");
+    throw std::runtime_error("--grad-in cannot be used in conjunction with --ineq");
   }
 
   if (!opts.initial_interpolant_file.empty() && (opts.ineq || opts.reduce)) {
-    throw std::runtime_error("--initial cannot be used in conjunction with --ineq or --reduce.");
+    throw std::runtime_error("--initial cannot be used in conjunction with --ineq or --reduce");
   }
 
   if (opts.grad_absolute_tolerance == -1.0) {
@@ -170,6 +169,6 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
       run_impl<3>(opts);
       break;
     default:
-      throw std::runtime_error(std::format("Unsupported dimension: {}.", opts.dim));
+      throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
   }
 }

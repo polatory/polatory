@@ -16,7 +16,7 @@ class dense_undirected_graph {
  public:
   explicit dense_undirected_graph(index_t order) : m_(Matrix::Zero(order, order)) {
     if (order <= 0) {
-      throw std::invalid_argument("order must be greater than 0.");
+      throw std::invalid_argument("order must be positive");
     }
   }
 
