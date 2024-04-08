@@ -20,6 +20,7 @@ using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::kriging::variogram;
 using polatory::kriging::variogram_calculator;
+using polatory::kriging::variogram_set;
 using polatory::point_cloud::random_points;
 
 TEST(variogram_calculator, serialization) {
@@ -32,18 +33,16 @@ TEST(variogram_calculator, serialization) {
 
   variogram_calculator<3> calc(0.1, 10);
   calc.set_directions(variogram_calculator<3>::kAnisotropicDirections);
-  auto variogs = calc.calculate(points, values);
+  auto variog_set = calc.calculate(points, values);
 
-  save(filename, variogs);
+  variog_set.save(filename);
+  auto variog_set2 = variogram_set<3>::load(filename);
 
-  std::vector<variogram<3>> variogs2;
-  load(filename, variogs2);
+  EXPECT_EQ(variog_set.num_variograms(), variog_set2.num_variograms());
 
-  EXPECT_EQ(variogs.size(), variogs2.size());
-
-  for (std::size_t i = 0; i < variogs.size(); ++i) {
-    const auto& v = variogs.at(i);
-    const auto& v2 = variogs2.at(i);
+  for (index_t i = 0; i < variog_set.num_variograms(); ++i) {
+    const auto& v = variog_set.variograms().at(i);
+    const auto& v2 = variog_set2.variograms().at(i);
 
     EXPECT_EQ(v.num_bins(), v2.num_bins());
     EXPECT_TRUE(
@@ -73,8 +72,8 @@ TEST(variogram_calculator, trivial) {
   auto num_lags = index_t{5};
 
   variogram_calculator<3> calc(lag_distance, num_lags);
-  auto variogs = calc.calculate(points, values);
-  const auto& v = variogs.at(0);
+  auto variog_set = calc.calculate(points, values);
+  const auto& v = variog_set.variograms().at(0);
 
   EXPECT_EQ(1, v.num_bins());
 
@@ -93,8 +92,8 @@ TEST(variogram_calculator, zero_points) {
   auto num_lags = index_t{5};
 
   variogram_calculator<3> calc(lag_distance, num_lags);
-  auto variogs = calc.calculate(points, values);
-  const auto& v = variogs.at(0);
+  auto variogs_set = calc.calculate(points, values);
+  const auto& v = variogs_set.variograms().at(0);
 
   EXPECT_EQ(0, v.num_bins());
 }

@@ -39,6 +39,7 @@ void define_module(py::module& m) {
   using Variogram = kriging::variogram<Dim>;
   using VariogramCalculator = kriging::variogram_calculator<Dim>;
   using VariogramFitting = kriging::variogram_fitting<Dim>;
+  using VariogramSet = kriging::variogram_set<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
@@ -161,15 +162,21 @@ void define_module(py::module& m) {
       .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
 
   py::class_<VariogramFitting>(m, "VariogramFitting")
-      .def(py::init<const std::vector<Variogram>&, const Model&, const kriging::weight_function&,
-                    bool>(),
-           "variogs"_a, "model"_a,
+      .def(py::init<const VariogramSet&, const Model&, const kriging::weight_function&, bool>(),
+           "variog_set"_a, "model"_a,
            "weight_fn"_a = kriging::weight_function::kNumPairsOverDistanceSquared,
            "fit_anisotropy"_a = true)
       .def_property_readonly("brief_report", &VariogramFitting::brief_report)
       .def_property_readonly("full_report", &VariogramFitting::full_report)
       .def_property_readonly("final_cost", &VariogramFitting::final_cost)
       .def_property_readonly("model", &VariogramFitting::model);
+
+  py::class_<VariogramSet>(m, "VariogramSet")
+      .def_property_readonly("num_pairs", &VariogramSet::num_pairs)
+      .def_property_readonly("num_variograms", &VariogramSet::num_variograms)
+      .def_property_readonly("variograms", &VariogramSet::variograms)
+      .def_static("load", &VariogramSet::load, "filename"_a)
+      .def("save", &VariogramSet::save, "filename"_a);
 
   m.def("cross_validate", &kriging::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
         "set_ids"_a, "absolute_tolerance"_a, "max_iter"_a = 100);

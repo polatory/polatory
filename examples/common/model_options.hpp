@@ -10,16 +10,17 @@ struct model_options {
   int poly_degree{};
 };
 
-boost::program_options::options_description make_model_options_description(model_options& opts) {
+inline boost::program_options::options_description make_model_options_description(
+    model_options& opts) {
   namespace po = boost::program_options;
 
-  po::options_description opts_desc("Model options");
+  po::options_description opts_desc("Model options", 80, 50);
   opts_desc.add_options()  //
       ("rbf",
        po::value(&opts.rbf_args)
            ->multitoken()
            ->required()
-           ->value_name("NAME PARAMS [aniso A_11 A_12 ... A_dd] ..."),                //
+           ->value_name("NAME PARAMS [aniso A_11 A_12 ... A_dd] ..."),
        R"(Basic function(s), one of:
   NAME  PARAMS       Full Name        --deg >=
   --------------------------------------------
@@ -44,14 +45,15 @@ boost::program_options::options_description make_model_options_description(model
   sp5   PSILL RANGE  cov_spheroidal5        -1
   sp7   PSILL RANGE  cov_spheroidal7        -1
   sp9   PSILL RANGE  cov_spheroidal9        -1
-  sph   PSILL RANGE  cov_spherical          -1)")                                     //
-      ("nug", po::value(&opts.nugget)->default_value(0.0, "0.0")->value_name("NUG"),  //
-       "Nugget of the model")                                                         //
+  sph   PSILL RANGE  cov_spherical          -1)")  //
+      ("nug", po::value(&opts.nugget)->default_value(0.0, "0.0")->value_name("NUG"),
+       "Nugget of the model")  //
       ("deg",
        po::value(&opts.poly_degree)
            ->default_value(polatory::model<1>::kMinRequiredPolyDegree, "AUTO")
-           ->value_name("-1|0|1|2"),  //
-       "Degree of the polynomial trend");
+           ->value_name("-1|0|1|2"),
+       "Degree of the polynomial trend")  //
+      ;
 
   return opts_desc;
 }
