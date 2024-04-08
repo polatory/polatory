@@ -10,9 +10,9 @@
 #include "parse_options.hpp"
 
 using polatory::interpolant;
+using polatory::matrixd;
 using polatory::model;
 using polatory::read_table;
-using polatory::tabled;
 using polatory::vectord;
 using polatory::geometry::points3d;
 using polatory::geometry::vectors3d;
@@ -22,7 +22,7 @@ using polatory::point_cloud::distance_filter;
 
 void main_impl(model<3>&& model, const options& opts) {
   // Load points (x,y,z) and values (value).
-  tabled table(0, 4);
+  matrixd table(0, 4);
   if (!opts.in_file.empty()) {
     table = read_table(opts.in_file);
   }
@@ -36,7 +36,7 @@ void main_impl(model<3>&& model, const options& opts) {
   }
 
   // Load gradient data.
-  tabled grad_table(0, 6);
+  matrixd grad_table(0, 6);
   if (!opts.grad_in_file.empty()) {
     grad_table = read_table(opts.grad_in_file);
   }

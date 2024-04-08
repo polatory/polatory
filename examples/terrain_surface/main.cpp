@@ -8,9 +8,9 @@
 #include "parse_options.hpp"
 
 using polatory::interpolant;
+using polatory::matrixd;
 using polatory::model;
 using polatory::read_table;
-using polatory::tabled;
 using polatory::vectord;
 using polatory::common::concatenate_cols;
 using polatory::geometry::points2d;
@@ -21,7 +21,7 @@ using polatory::point_cloud::distance_filter;
 
 void main_impl(model<2>&& model, const options& opts) {
   // Load points (x,y,0) and values (z).
-  tabled table = read_table(opts.in_file);
+  matrixd table = read_table(opts.in_file);
   points2d points = table(Eigen::all, {0, 1});
   vectord values = table.col(2);
 

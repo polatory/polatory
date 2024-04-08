@@ -9,8 +9,8 @@
 #include "parse_options.hpp"
 
 using polatory::index_t;
+using polatory::matrixd;
 using polatory::read_table;
-using polatory::tabled;
 using polatory::vectord;
 using polatory::common::save;
 using polatory::geometry::pointsNd;
@@ -23,7 +23,7 @@ void main_impl(const options& opts) {
   using VariogramCalculator = variogram_calculator<Dim>;
 
   // Load points (x,y,z) and values (value).
-  tabled table = read_table(opts.in_file);
+  matrixd table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
   vectord values = table.col(Dim);
 

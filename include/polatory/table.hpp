@@ -12,9 +12,7 @@
 
 namespace polatory {
 
-using tabled = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
-inline tabled read_table(const std::string& filename, const char* delimiters = " \t,") {
+inline matrixd read_table(const std::string& filename, const char* delimiters = " \t,") {
   std::ifstream ifs(filename);
   if (!ifs) {
     throw std::runtime_error("Failed to open file '" + filename + "'.");
@@ -56,7 +54,7 @@ inline tabled read_table(const std::string& filename, const char* delimiters = "
   }
 
   auto n_rows = static_cast<index_t>(buffer.size() / n_cols);
-  return tabled::Map(buffer.data(), n_rows, n_cols);
+  return matrixd::Map(buffer.data(), n_rows, n_cols);
 }
 
 template <class Derived>

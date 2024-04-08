@@ -10,8 +10,8 @@
 #include "parse_options.hpp"
 
 using polatory::index_t;
+using polatory::matrixd;
 using polatory::read_table;
-using polatory::tabled;
 using polatory::vectord;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
@@ -24,7 +24,7 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
 
     // Load points (x,y,z) and normals (nx,ny,nz).
-    tabled table = read_table(opts.in_file);
+    matrixd table = read_table(opts.in_file);
 
     // Shuffle the points so that the off-surface points will not be clustered.
     std::vector<index_t> indices(table.rows());

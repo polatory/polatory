@@ -16,9 +16,9 @@
 
 using polatory::index_t;
 using polatory::interpolant;
+using polatory::matrixd;
 using polatory::model;
 using polatory::read_table;
-using polatory::tabled;
 using polatory::vectord;
 using polatory::geometry::bbox3d;
 using polatory::geometry::matrix3d;
@@ -162,7 +162,7 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
 
     // Load the points.
-    tabled table = read_table(opts.in);
+    matrixd table = read_table(opts.in);
     points3d P = table(Eigen::all, {0, 1, 2});
 
     // Load the mesh.

@@ -5,8 +5,8 @@
 
 #include "parse_options.hpp"
 
+using polatory::matrixd;
 using polatory::read_table;
-using polatory::tabled;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
 using polatory::geometry::points3d;
@@ -18,7 +18,7 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
 
     // Load points (x,y,z).
-    tabled table = read_table(opts.in_file);
+    matrixd table = read_table(opts.in_file);
     points3d points = table(Eigen::all, {0, 1, 2});
 
     // Estimate normals.

@@ -11,9 +11,9 @@
 #include "../common/make_model.hpp"
 #include "parse_options.hpp"
 
+using polatory::matrixd;
 using polatory::model;
 using polatory::read_table;
-using polatory::tabled;
 using polatory::vectord;
 using polatory::geometry::pointsNd;
 using polatory::kriging::cross_validate;
@@ -24,7 +24,7 @@ void main_impl(model<Dim>&& model, const options& opts) {
   using Points = pointsNd<Dim>;
 
   // Load points (x,y,z) and values (value).
-  tabled table = read_table(opts.in_file);
+  matrixd table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
   vectord values = table.col(Dim);
   Eigen::VectorXi set_ids = table.col(Dim + 1).cast<int>();
