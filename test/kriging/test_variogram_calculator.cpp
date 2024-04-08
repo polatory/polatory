@@ -93,7 +93,6 @@ TEST(variogram_calculator, zero_points) {
 
   variogram_calculator<3> calc(lag_distance, num_lags);
   auto variogs_set = calc.calculate(points, values);
-  const auto& v = variogs_set.variograms().at(0);
 
-  EXPECT_EQ(0, v.num_bins());
+  EXPECT_EQ(0, variogs_set.num_variograms());
 }
