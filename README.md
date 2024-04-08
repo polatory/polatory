@@ -16,7 +16,7 @@
 - Inequality constraints
 - Gradient constraints (Hermite–Birkhoff interpolation)
 - [List of basic functions](https://github.com/polatory/polatory/wiki/List-of-basic-functions)
-- [Command-line interface](https://github.com/polatory/polatory/wiki/CLI-workflows)
+- [Command-line workflows](https://github.com/polatory/polatory/wiki/Command%E2%80%90line-workflows)
 - Python bindings (run `pip install .` after cloning)
 
 ## Building
