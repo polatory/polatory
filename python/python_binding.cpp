@@ -181,13 +181,7 @@ void define_module(py::module& m) {
   m.def("cross_validate", &kriging::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
         "set_ids"_a, "absolute_tolerance"_a, "max_iter"_a = 100);
 
-  m.def("detrend", py::overload_cast<const Points&, const vectord&, int>(&kriging::detrend<Dim>),
-        "points"_a, "values"_a, "degree"_a);
-
-  m.def(
-      "detrend",
-      py::overload_cast<const Points&, const Points&, const vectord&, int>(&kriging::detrend<Dim>),
-      "points"_a, "grad_points"_a, "values"_a, "degree"_a);
+  m.def("detrend", &kriging::detrend<Dim>, "points"_a, "values"_a, "degree"_a);
 }
 
 PYBIND11_MODULE(_core, m) {
