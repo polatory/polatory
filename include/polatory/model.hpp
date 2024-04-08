@@ -128,8 +128,6 @@ class model {
 
   int poly_degree() const { return poly_degree_; }
 
-  const RbfProxy& rbf() const { return rbfs_.at(0); }
-
   std::vector<RbfProxy>& rbfs() { return rbfs_; }
 
   const std::vector<RbfProxy>& rbfs() const { return rbfs_; }
