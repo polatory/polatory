@@ -29,10 +29,10 @@ class model {
   // Non-constexpr for the sake of Python bindings.
   static inline const int kMinRequiredPolyDegree = -2;
 
-  model(RbfProxy&& rbf, int poly_degree = kMinRequiredPolyDegree)
+  explicit model(RbfProxy&& rbf, int poly_degree = kMinRequiredPolyDegree)
       : model(std::vector<RbfProxy>{std::move(rbf)}, poly_degree) {}
 
-  model(std::vector<RbfProxy>&& rbfs, int poly_degree = kMinRequiredPolyDegree)
+  explicit model(std::vector<RbfProxy>&& rbfs, int poly_degree = kMinRequiredPolyDegree)
       : rbfs_(std::move(rbfs)) {
     if (rbfs_.empty()) {
       throw std::invalid_argument("rbfs must not be empty");

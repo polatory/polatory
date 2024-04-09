@@ -61,7 +61,8 @@ struct hessian_kernel {
                 scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
     using decayed_type = typename std::decay_t<xsimd::batch<double>>;
 
-    std::array<std::array<double, 4>, kDim * kDim> v{};
+    constexpr auto dim_size = static_cast<std::size_t>(kDim);
+    std::array<std::array<double, 4>, dim_size * dim_size> v{};
 
     auto a = rbf_.anisotropy();
     for (std::size_t i = 0; i < x.at(0).size; i++) {

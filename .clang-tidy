@@ -5,6 +5,8 @@ Checks: "-*,\
   -bugprone-macro-parentheses,\
   -bugprone-unchecked-optional-access,\
   cert-*,\
+  -cert-msc32-c,\
+  -cert-msc51-cpp,\
   -cert-err58-cpp,\
   clang-analyzer-*,\
   cppcoreguidelines-*,\
@@ -35,6 +37,7 @@ Checks: "-*,\
   -readability-function-cognitive-complexity,\
   -readability-identifier-length,\
   -readability-magic-numbers,\
+  -readability-simplify-boolean-expr,\
   "
 HeaderFilterRegex: "include/.*"
 WarningsAsErrors: "*"

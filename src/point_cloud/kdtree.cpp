@@ -16,7 +16,7 @@ class kdtree<Dim>::impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
 
  public:
-  impl(const Points& points) {
+  explicit impl(const Points& points) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(), Dim);
 
