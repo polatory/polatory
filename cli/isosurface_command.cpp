@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
@@ -8,6 +9,7 @@
 #include "../examples/common/bbox.hpp"
 #include "commands.hpp"
 
+using polatory::index_t;
 using polatory::interpolant;
 using polatory::matrixd;
 using polatory::read_table;
@@ -29,18 +31,26 @@ struct options {
 };
 
 void run_impl(const options& opts) {
-  points3d seed_points;
-
-  if (!opts.seed_points_file.empty()) {
-    matrixd table = read_table(opts.seed_points_file);
-    seed_points = table(Eigen::all, {0, 1, 2});
-  }
-
   auto inter = interpolant<3>::load(opts.in_file);
   auto bbox = opts.bbox.is_empty() ? inter.bbox() : opts.bbox;
 
   isosurface isosurf(bbox, opts.resolution);
   rbf_field_function field_fn(inter);
+
+  points3d seed_points;
+  if (!opts.seed_points_file.empty()) {
+    matrixd table = read_table(opts.seed_points_file);
+    seed_points = table(Eigen::all, {0, 1, 2});
+
+    std::vector<index_t> rows_to_keep;
+    for (index_t i = 0; i < seed_points.rows(); ++i) {
+      if (bbox.contains(seed_points.row(i))) {
+        rows_to_keep.push_back(i);
+      }
+    }
+
+    seed_points = seed_points(rows_to_keep, Eigen::all);
+  }
 
   auto surface = seed_points.rows() > 0
                      ? isosurf.generate_from_seed_points(seed_points, field_fn, opts.isovalue)
