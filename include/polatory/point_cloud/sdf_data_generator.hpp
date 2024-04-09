@@ -12,6 +12,7 @@ class sdf_data_generator {
                      double min_distance, double max_distance, double multiplication = 2.0);
 
   const geometry::points3d& sdf_points() const;
+
   const vectord& sdf_values() const;
 
  private:

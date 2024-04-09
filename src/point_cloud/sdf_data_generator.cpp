@@ -39,7 +39,7 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
       auto p = points.row(i);
       auto n = normals.row(i);
 
-      if (n == geometry::vector3d::Zero()) {
+      if (n.isZero()) {
         continue;
       }
 
