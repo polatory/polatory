@@ -140,74 +140,24 @@ class variogram_calculator {
   double angle_tolerance_{kAutomaticAngleTolerance};
 };
 
-template <>
-inline const geometry::vectors1d variogram_calculator<1>::kIsotropicDirections{
-    geometry::vector1d::UnitX()};
+// Defining these constants here (inline) somehow leads to STATUS_HEAP_CORRUPTION on Windows.
 
 template <>
-inline const geometry::vectors1d variogram_calculator<1>::kAnisotropicDirections{
-    geometry::vector1d::UnitX()};
+const geometry::vectors1d variogram_calculator<1>::kIsotropicDirections;
 
 template <>
-inline const geometry::vectors2d variogram_calculator<2>::kIsotropicDirections{
-    geometry::vector2d::UnitX()};
+const geometry::vectors1d variogram_calculator<1>::kAnisotropicDirections;
 
 template <>
-inline const geometry::vectors2d variogram_calculator<2>::kAnisotropicDirections{
-    {1.0, 0.0}, {0.92387953, 0.38268343},  {0.70710678, 0.70710678},  {0.38268343, 0.92387953},
-    {0.0, 1.0}, {-0.38268343, 0.92387953}, {-0.70710678, 0.70710678}, {-0.92387953, 0.38268343}};
+const geometry::vectors2d variogram_calculator<2>::kIsotropicDirections;
 
 template <>
-inline const geometry::vectors3d variogram_calculator<3>::kIsotropicDirections{
-    geometry::vector3d::UnitX()};
+const geometry::vectors2d variogram_calculator<2>::kAnisotropicDirections;
 
 template <>
-inline const geometry::vectors3d variogram_calculator<3>::kAnisotropicDirections{
-    {0.0, 0.0, 1.0},
-    {0.10607892, 0.32647735, 0.9392336},
-    {-0.27771825, 0.20177411, 0.9392336},
-    {-0.18759248, 0.57735026, 0.79465449},
-    {-0.55543649, 0.40354821, 0.72707576},
-    {-0.44935754, 0.73002559, 0.51491791},
-    {-0.72360682, 0.52573109, 0.44721359},
-    {0.21215785, 0.6529547, 0.72707576},
-    {-0.065560378, 0.85472882, 0.51491791},
-    {0.2763932, 0.85065079, 0.44721359},
-    {-0.27771825, -0.20177411, 0.9392336},
-    {-0.60706198, 0.0, 0.79465449},
-    {-0.55543649, -0.40354821, 0.72707576},
-    {-0.83315468, -0.20177411, 0.51491791},
-    {-0.72360682, -0.52573109, 0.44721359},
-    {-0.83315468, 0.20177411, 0.51491791},
-    {0.10607892, -0.32647735, 0.9392336},
-    {-0.18759248, -0.57735026, 0.79465449},
-    {0.21215785, -0.6529547, 0.72707576},
-    {-0.065560378, -0.85472882, 0.51491791},
-    {0.2763932, -0.85065079, 0.44721359},
-    {-0.44935754, -0.73002559, 0.51491791},
-    {0.34327862, 0.0, 0.9392336},
-    {0.49112347, -0.3568221, 0.79465449},
-    {0.68655723, 0.0, 0.72707576},
-    {0.79263616, -0.32647735, 0.51491791},
-    {0.89442718, 0.0, 0.44721359},
-    {0.55543649, -0.6529547, 0.51491791},
-    {0.49112347, 0.3568221, 0.79465449},
-    {0.55543649, 0.6529547, 0.51491791},
-    {0.79263616, 0.32647735, 0.51491791},
-    {0.10607892, 0.97943211, 0.17163931},
-    {-0.30353099, 0.93417233, 0.18759248},
-    {-0.66151541, 0.73002559, 0.17163931},
-    {-0.89871508, 0.40354821, 0.17163931},
-    {-0.98224694, 0.0, 0.18759248},
-    {-0.89871508, -0.40354821, 0.17163931},
-    {-0.66151541, -0.73002559, 0.17163931},
-    {-0.30353099, -0.93417233, 0.18759248},
-    {0.10607892, -0.97943211, 0.17163931},
-    {0.48987609, -0.85472882, 0.17163931},
-    {0.79465449, -0.57735026, 0.18759248},
-    {0.96427548, -0.20177411, 0.17163931},
-    {0.96427548, 0.20177411, 0.17163931},
-    {0.79465449, 0.57735026, 0.18759248},
-    {0.48987609, 0.85472882, 0.17163931}};
+const geometry::vectors3d variogram_calculator<3>::kIsotropicDirections;
+
+template <>
+const geometry::vectors3d variogram_calculator<3>::kAnisotropicDirections;
 
 }  // namespace polatory::kriging
