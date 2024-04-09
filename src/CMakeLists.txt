@@ -80,6 +80,18 @@ endif()
 
 include(ExternalProject)
 
+set(SCALFMM_CMAKE_ARGS
+    -DCMAKE_CXX_FLAGS=-fopenmp
+    -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
+)
+
+if(MSVC)
+    list(APPEND SCALFMM_CMAKE_ARGS
+        -DCMAKE_CXX_COMPILER=clang++
+    )
+endif()
+
 if(USE_MKL)
     target_compile_definitions(${TARGET} PUBLIC
         # -DEIGEN_USE_MKL_ALL
@@ -94,18 +106,8 @@ if(USE_MKL)
         $<LINK_ONLY:MKL::MKL>
     )
 
-    if(MSVC)
-        set(COMPILER_SPEC -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-fopenmp)
-    endif()
-
-    externalproject_add(
-        scalfmm
-        PREFIX ${CMAKE_BINARY_DIR}/scalfmm
-        GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
-        GIT_TAG polatory
-        GIT_SHALLOW ON
-        GIT_PROGRESS ON
-        CMAKE_ARGS ${COMPILER_SPEC} -Dscalfmm_USE_MKL=ON -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
+    list(APPEND SCALFMM_CMAKE_ARGS
+        -Dscalfmm_USE_MKL=ON
     )
 elseif(APPLE)
     target_compile_definitions(${TARGET} PUBLIC
@@ -117,16 +119,20 @@ elseif(APPLE)
         FFTW3::fftw3
     )
 
-    externalproject_add(
-        scalfmm
-        PREFIX ${CMAKE_BINARY_DIR}/scalfmm
-        GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
-        GIT_TAG polatory
-        GIT_SHALLOW ON
-        GIT_PROGRESS ON
-        CMAKE_ARGS -DBLA_VENDOR=Apple -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
+    list(APPEND SCALFMM_CMAKE_ARGS
+        -DBLA_VENDOR=Apple
     )
 endif()
+
+externalproject_add(
+    scalfmm
+    PREFIX ${CMAKE_BINARY_DIR}/scalfmm
+    GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
+    GIT_TAG polatory
+    GIT_SHALLOW ON
+    GIT_PROGRESS ON
+    CMAKE_ARGS ${SCALFMM_CMAKE_ARGS}
+)
 
 add_dependencies(polatory scalfmm)
 
