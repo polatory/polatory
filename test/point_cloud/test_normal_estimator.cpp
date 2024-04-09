@@ -17,8 +17,10 @@ TEST(normal_estimator, knn) {
   auto points = random_points(sphere3d(), n_points);
   vector3d direction(0.0, 0.0, 1.0);
 
-  const auto& normals =
-      normal_estimator(points).estimate_with_knn(k).orient_toward_direction(direction).normals();
+  auto normals = normal_estimator(points)
+                     .estimate_with_knn(k)
+                     .orient_toward_direction(direction)
+                     .into_normals();
 
   for (auto n : normals.rowwise()) {
     if (n.norm() == 0.0) continue;
@@ -34,10 +36,10 @@ TEST(normal_estimator, radius) {
   auto points = random_points(sphere3d(), n_points);
   vector3d direction(0.0, 0.0, 1.0);
 
-  const auto& normals = normal_estimator(points)
-                            .estimate_with_radius(search_radius)
-                            .orient_toward_direction(direction)
-                            .normals();
+  auto normals = normal_estimator(points)
+                     .estimate_with_radius(search_radius)
+                     .orient_toward_direction(direction)
+                     .into_normals();
 
   for (auto n : normals.rowwise()) {
     if (n.norm() == 0.0) continue;

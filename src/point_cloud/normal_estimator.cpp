@@ -14,11 +14,11 @@ namespace polatory::point_cloud {
 normal_estimator::normal_estimator(const geometry::points3d& points)
     : n_points_(points.rows()), points_(points), tree_(points) {}
 
-normal_estimator& normal_estimator::estimate_with_knn(index_t k) {
+normal_estimator& normal_estimator::estimate_with_knn(index_t k) & {
   return estimate_with_knn(std::vector<index_t>{k});
 }
 
-normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>& ks) {
+normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>& ks) & {
   if (ks.empty()) {
     throw std::runtime_error("ks must not be empty");
   }
@@ -70,11 +70,11 @@ normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>
   return *this;
 }
 
-normal_estimator& normal_estimator::estimate_with_radius(double radius) {
+normal_estimator& normal_estimator::estimate_with_radius(double radius) & {
   return estimate_with_radius(std::vector<double>{radius});
 }
 
-normal_estimator& normal_estimator::estimate_with_radius(const std::vector<double>& radii) {
+normal_estimator& normal_estimator::estimate_with_radius(const std::vector<double>& radii) & {
   if (radii.empty()) {
     throw std::runtime_error("radii must not be empty");
   }
@@ -128,7 +128,7 @@ normal_estimator& normal_estimator::estimate_with_radius(const std::vector<doubl
   return *this;
 }
 
-normal_estimator& normal_estimator::filter_by_plane_factor(double threshold) {
+normal_estimator& normal_estimator::filter_by_plane_factor(double threshold) & {
   throw_if_not_estimated();
 
   for (index_t i = 0; i < n_points_; i++) {
@@ -140,7 +140,7 @@ normal_estimator& normal_estimator::filter_by_plane_factor(double threshold) {
   return *this;
 }
 
-normal_estimator& normal_estimator::orient_toward_direction(const geometry::vector3d& direction) {
+normal_estimator& normal_estimator::orient_toward_direction(const geometry::vector3d& direction) & {
   throw_if_not_estimated();
 
 #pragma omp parallel for
@@ -154,7 +154,7 @@ normal_estimator& normal_estimator::orient_toward_direction(const geometry::vect
   return *this;
 }
 
-normal_estimator& normal_estimator::orient_toward_point(const geometry::point3d& point) {
+normal_estimator& normal_estimator::orient_toward_point(const geometry::point3d& point) & {
   throw_if_not_estimated();
 
 #pragma omp parallel for
@@ -188,7 +188,7 @@ class weighted_pair {
   double weight_;
 };
 
-normal_estimator& normal_estimator::orient_closed_surface(index_t k) {
+normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
   throw_if_not_estimated();
 
   auto bbox = geometry::bbox3d::from_points(points_);
