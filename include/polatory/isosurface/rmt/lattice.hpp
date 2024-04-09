@@ -125,7 +125,7 @@ class lattice : public primitive_lattice {
 
 #pragma omp parallel for
     // NOLINTNEXTLINE(modernize-loop-convert)
-    for (std::ptrdiff_t i = 0; i < static_cast<std::ptrdiff_t>(node_cvs.size()); i++) {
+    for (std::size_t i = 0; i < node_cvs.size(); i++) {
       const auto& cv = node_cvs.at(i);
       auto& node0 = node_list_.at(cv);
       const auto& p0 = node0.position();
