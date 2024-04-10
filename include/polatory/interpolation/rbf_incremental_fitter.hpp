@@ -53,8 +53,13 @@ class rbf_incremental_fitter {
 
     std::vector<index_t> centers;
     std::vector<index_t> grad_centers;
-    index_t mu{};
-    index_t sigma{};
+    if (model_.poly_degree() == 1 && mu_full_ == 1 && sigma_full_ >= 1) {
+      // When values_full(0) is zero, the point will never be added to centers.
+      centers.push_back(0);
+    }
+
+    auto mu = static_cast<index_t>(centers.size());
+    auto sigma = static_cast<index_t>(grad_centers.size());
     vectord weights = vectord::Zero(mu + kDim * sigma + l_);
 
     Solver solver(model_, bbox_);

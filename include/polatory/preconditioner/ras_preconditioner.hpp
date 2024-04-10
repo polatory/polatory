@@ -180,6 +180,9 @@ class ras_preconditioner : public krylov::linear_operator {
   vectord operator()(const vectord& v) const override {
     POLATORY_ASSERT(v.rows() == size());
 
+    // v.tail(l_) must be (almost) zero. If that is not the case, the RBF part of the weights
+    // was not orthogonalized against the polynomial space in previous iterations.
+
     vectord residuals = v.head(mu_ + kDim * sigma_);
 
     if (n_levels_ == 1) {

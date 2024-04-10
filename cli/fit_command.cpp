@@ -19,6 +19,7 @@ using polatory::model;
 using polatory::read_table;
 using polatory::vectord;
 using polatory::geometry::pointsNd;
+using polatory::geometry::vectorsNd;
 
 namespace {
 
@@ -42,6 +43,7 @@ void run_impl(const options& opts) {
   using Interpolant = interpolant<Dim>;
   using Model = model<Dim>;
   using Points = pointsNd<Dim>;
+  using Vectors = vectorsNd<Dim>;
 
   matrixd table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
@@ -54,7 +56,7 @@ void run_impl(const options& opts) {
   }
 
   Points grad_points;
-  vectord grad_values;
+  Vectors grad_values;
   if (!opts.grad_in_file.empty()) {
     matrixd grad_table = read_table(opts.grad_in_file);
     grad_points = grad_table(Eigen::all, Eigen::seqN(0, Dim));
