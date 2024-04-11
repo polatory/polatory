@@ -85,11 +85,6 @@ class rbf_solver {
 
     vectord weights = vectord::Zero(mu_ + kDim * sigma_ + l_);
 
-    // The solver does not work when all values are zero.
-    if (values.isZero()) {
-      return weights;
-    }
-
     if (initial_weights != nullptr) {
       weights = *initial_weights;
 
@@ -103,6 +98,11 @@ class rbf_solver {
     vectord rhs(mu_ + kDim * sigma_ + l_);
     rhs.head(mu_ + kDim * sigma_) = values;
     rhs.tail(l_) = vectord::Zero(l_);
+
+    // The solver does not work if weights is already the solution.
+    if (op_(weights) == rhs) {
+      return weights;
+    }
 
     krylov::fgmres solver(op_, rhs, max_iter);
     solver.set_initial_solution(weights);
