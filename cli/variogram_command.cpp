@@ -15,7 +15,6 @@ using polatory::read_table;
 using polatory::vectord;
 using polatory::geometry::pointsNd;
 using polatory::kriging::detrend;
-using polatory::kriging::variogram;
 using polatory::kriging::variogram_calculator;
 
 namespace {

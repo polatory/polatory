@@ -97,7 +97,7 @@ class variogram_calculator {
     for (auto& builder : builders) {
       auto variogram = builder.into_variogram();
       if (variogram.num_pairs() != 0) {
-        variograms.emplace_back(std::move(variogram));
+        variograms.push_back(std::move(variogram));
       }
     }
 
@@ -125,7 +125,7 @@ class variogram_calculator {
   }
 
   void set_lag_tolerance(double lag_tolerance) {
-    if (lag_tolerance != kAutomaticAngleTolerance && !(lag_tolerance > 0.0)) {
+    if (lag_tolerance != kAutomaticLagTolerance && !(lag_tolerance > 0.0)) {
       throw std::invalid_argument("lag_tolerance must be positive");
     }
 
