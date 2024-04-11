@@ -39,7 +39,7 @@ find_package(flann CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(libigl CONFIG REQUIRED)
 find_package(MKL CONFIG)
-find_package(OpenMP REQUIRED)
+find_package(OpenMP)
 
 set(VCPKG_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
 

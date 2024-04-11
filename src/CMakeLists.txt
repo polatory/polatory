@@ -66,7 +66,6 @@ target_link_libraries(${TARGET} PUBLIC
     ceres
     Eigen3::Eigen
     FastFloat::fast_float
-    OpenMP::OpenMP_CXX
 )
 
 if(UNIX)
@@ -79,10 +78,42 @@ elseif(MSVC)
     )
 endif()
 
-include(ExternalProject)
+if(OPENMP_FOUND)
+    set(OPENMP_COMPILER_FLAGS
+        -fopenmp
+    )
+    set(OPENMP_LINKER_FLAGS
+        -fopenmp
+    )
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    execute_process(
+        COMMAND brew --prefix libomp
+        RESULT_VARIABLE BREW_LIBOMP
+        OUTPUT_VARIABLE BREW_LIBOMP_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(NOT BREW_LIBOMP EQUAL 0)
+        message(FATAL_ERROR "libomp is not installed. Please run `brew install libomp`.")
+    endif()
+    set(OPENMP_COMPILER_FLAGS
+        -Xclang -fopenmp -I${BREW_LIBOMP_PREFIX}/include
+    )
+    set(OPENMP_LINKER_FLAGS
+        -Xclang -fopenmp -L${BREW_LIBOMP_PREFIX}/lib -lomp
+    )
+else()
+    message(FATAL_ERROR "OpenMP is not found.")
+endif()
+
+target_compile_options(${TARGET} PUBLIC ${OPENMP_COMPILER_FLAGS})
+target_link_libraries(${TARGET} PUBLIC ${OPENMP_LINKER_FLAGS})
+
+string(REPLACE ";" " " OPENMP_COMPILER_FLAGS_STR "${OPENMP_COMPILER_FLAGS}")
+string(REPLACE ";" " " OPENMP_LINKER_FLAGS_STR "${OPENMP_LINKER_FLAGS}")
 
 set(SCALFMM_CMAKE_ARGS
-    -DCMAKE_CXX_FLAGS=-fopenmp
+    -DCMAKE_CXX_FLAGS=${OPENMP_COMPILER_FLAGS_STR}
+    -DCMAKE_EXE_LINKER_FLAGS=${OPENMP_LINKER_FLAGS_STR}
     -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
 )
@@ -125,11 +156,13 @@ elseif(APPLE)
     )
 endif()
 
+include(ExternalProject)
+
 externalproject_add(
     scalfmm
     PREFIX ${CMAKE_BINARY_DIR}/scalfmm
     GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
-    GIT_TAG polatory
+    GIT_TAG appleclang
     GIT_SHALLOW ON
     GIT_PROGRESS ON
     CMAKE_ARGS ${SCALFMM_CMAKE_ARGS}
