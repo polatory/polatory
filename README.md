@@ -15,15 +15,10 @@
 - Supports over 1M of input points
 - Inequality constraints
 - Gradient constraints (Hermite–Birkhoff interpolation)
-- [List of basic functions](https://github.com/polatory/polatory/wiki/List-of-basic-functions)
-- [Command-line workflows](https://github.com/polatory/polatory/wiki/Command%E2%80%90line-workflows)
-- Python bindings (run `pip install .` after cloning)
 
-## Building
+## Documentation
 
-[On Windows](docs/build-windows.md) • [On macOS](docs/build-macos.md) • [On Ubuntu](docs/build-ubuntu.md)
-
-Polatory requires a C++ compiler that supports C++20 and OpenMP 5.0. Clang 17 is recommended on all platforms.
+Please check out the [wiki](https://github.com/polatory/polatory/wiki).
 
 ## Contribution
 
