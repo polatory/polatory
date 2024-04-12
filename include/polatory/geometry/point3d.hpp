@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
 
 namespace polatory::geometry {
 
@@ -41,11 +40,6 @@ using matrixNd = Eigen::Matrix<double, Dim, Dim, Dim == 1 ? Eigen::ColMajor : Ei
 using matrix1d = matrixNd<1>;
 using matrix2d = matrixNd<2>;
 using matrix3d = matrixNd<3>;
-
-template <class T>
-matrix3d to_matrix3d(T t) {
-  return Eigen::Transform<double, 3, Eigen::Affine, Eigen::RowMajor>(t).linear();
-}
 
 template <int Dim, class DerivedT, class DerivedPoint>
 pointNd<Dim> transform_point(const Eigen::MatrixBase<DerivedT>& t,

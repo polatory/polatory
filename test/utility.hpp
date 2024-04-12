@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/LU>
 #include <cmath>
 #include <numbers>
 #include <polatory/common/orthonormalize.hpp>

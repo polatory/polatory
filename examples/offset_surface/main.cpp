@@ -3,6 +3,7 @@
 #include <igl/read_triangle_mesh.h>
 
 #include <Eigen/Core>
+#include <Eigen/LU>
 #include <cmath>
 #include <exception>
 #include <iostream>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Eigenvalues>
+#include <Eigen/LU>
 #include <polatory/geometry/point3d.hpp>
 #include <stdexcept>
 #include <utility>

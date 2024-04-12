@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/LU>
 #include <format>
 #include <limits>
 #include <memory>

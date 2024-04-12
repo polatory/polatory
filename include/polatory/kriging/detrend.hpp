@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Cholesky>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/types.hpp>

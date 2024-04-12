@@ -1,3 +1,4 @@
+#include <Eigen/LU>
 #include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <unordered_map>

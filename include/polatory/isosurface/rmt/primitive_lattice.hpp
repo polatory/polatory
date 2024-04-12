@@ -30,9 +30,10 @@ struct cell_vector_hash {
 // Rotates the lattice so that the space spanned by the first and third primitive vectors
 // is the xy-plane.
 inline geometry::vector3d rotate(const geometry::vector3d& v) {
-  static const geometry::matrix3d rotation = geometry::to_matrix3d(
-      Eigen::AngleAxisd(-std::numbers::pi / 2.0, geometry::vector3d::UnitZ()) *
-      Eigen::AngleAxisd(-std::numbers::pi / 4.0, geometry::vector3d::UnitY()));
+  static const geometry::matrix3d rotation =
+      (Eigen::AngleAxisd(-std::numbers::pi / 2.0, geometry::vector3d::UnitZ()) *
+       Eigen::AngleAxisd(-std::numbers::pi / 4.0, geometry::vector3d::UnitY()))
+          .toRotationMatrix();
 
   return geometry::transform_vector<3>(rotation, v);
 }
