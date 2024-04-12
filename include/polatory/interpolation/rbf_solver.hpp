@@ -99,15 +99,15 @@ class rbf_solver {
     rhs.head(mu_ + kDim * sigma_) = values;
     rhs.tail(l_) = vectord::Zero(l_);
 
-    // The solver does not work if weights is already the solution.
-    if (op_(weights) == rhs) {
-      return weights;
-    }
-
     krylov::fgmres solver(op_, rhs, max_iter);
     solver.set_initial_solution(weights);
     solver.set_right_preconditioner(*pc_);
     solver.setup();
+
+    // The solver does not work if the initial solution is already the solution.
+    if (solver.relative_residual() == 0.0) {
+      return weights;
+    }
 
     std::cout << std::setw(4) << "iter" << std::setw(16) << "rel_res" << std::endl
               << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific

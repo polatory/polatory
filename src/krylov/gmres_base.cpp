@@ -38,12 +38,8 @@ void gmres_base::setup() {
 
   g_ = vectord::Zero(max_iter_ + 1);
 
-  vectord r0;
-  if (x0_.isZero()) {
-    r0 = left_preconditioned(rhs_);
-  } else {
-    r0 = left_preconditioned(rhs_ - op_(x0_));
-  }
+  vectord r0 = x0_.isZero() ? rhs_ : rhs_ - op_(x0_);
+  r0 = left_preconditioned(r0);
   g_(0) = r0.norm();
   vs_.emplace_back(r0 / g_(0));
 
