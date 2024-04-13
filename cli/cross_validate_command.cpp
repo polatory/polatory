@@ -72,7 +72,7 @@ void cross_validate_command::run(const std::vector<std::string>& args,
        "Absolute tolerance of fitting")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //
-      ("out", po::value(&opts.out_file)->value_name("FILE"),
+      ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output file in CSV format:\n  X[,Y[,Z]],VAL,SET_ID,...,PREDICTION")  //
       ;
 

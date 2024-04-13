@@ -90,7 +90,7 @@ where
   gamma: model variogram)")  //
       ("num-trials", po::value(&opts.num_trials)->default_value(30)->value_name("N"),
        "Number of trials")  //
-      ("out", po::value(&opts.out_file)->value_name("FILE"),
+      ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output model file")  //
       ;
 

@@ -67,7 +67,7 @@ void normals_to_sdf_command::run(const std::vector<std::string>& args,
        "Default offset distance of off-surface points")  //
       ("mult", po::value(&opts.mult)->default_value(2.0, "2.0")->value_name("1.0 to 3.0"),
        "The size of output data as a multiple the input data")  //
-      ("out", po::value(&opts.out_file)->value_name("FILE"),
+      ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output file in CSV format:\n  X,Y,Z,VAL")  //
       ;
 

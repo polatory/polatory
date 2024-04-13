@@ -83,7 +83,7 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
        "Orient normals toward the direction")  //
       ("closed", po::value(&opts.closed)->value_name("K"),
        "Orient normals for closed surface(s) with specified number of points for k-NN search")  //
-      ("out", po::value(&opts.out_file)->value_name("FILE"),
+      ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output file in CSV format:\n  X,Y,Z,NX,NY,NZ")  //
       ;
 
