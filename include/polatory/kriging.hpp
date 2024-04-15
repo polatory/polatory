@@ -2,6 +2,7 @@
 
 #include <polatory/kriging/cross_validate.hpp>
 #include <polatory/kriging/detrend.hpp>
+#include <polatory/kriging/normal_score_transformation.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_calculator.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>

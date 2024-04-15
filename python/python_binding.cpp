@@ -144,7 +144,8 @@ void define_module(py::module& m) {
       .def_property_readonly("bin_num_pairs", &Variogram::bin_num_pairs)
       .def_property_readonly("direction", &Variogram::direction)
       .def_property_readonly("num_bins", &Variogram::num_bins)
-      .def_property_readonly("num_pairs", &Variogram::num_pairs);
+      .def_property_readonly("num_pairs", &Variogram::num_pairs)
+      .def("back_transform", &Variogram::back_transform, "t"_a);
 
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
       .def(py::init<double, index_t>(), "lag_distance"_a, "num_lags"_a)
@@ -175,6 +176,7 @@ void define_module(py::module& m) {
       .def_property_readonly("num_pairs", &VariogramSet::num_pairs)
       .def_property_readonly("num_variograms", &VariogramSet::num_variograms)
       .def_property_readonly("variograms", &VariogramSet::variograms)
+      .def("back_transform", &VariogramSet::back_transform, "t"_a)
       .def_static("load", &VariogramSet::load, "filename"_a)
       .def("save", &VariogramSet::save, "filename"_a);
 
@@ -251,6 +253,11 @@ PYBIND11_MODULE(_core, m) {
       .def("export_obj", &isosurface::surface::export_obj, "filename"_a)
       .def_property_readonly("faces", &isosurface::surface::faces)
       .def_property_readonly("vertices", &isosurface::surface::vertices);
+
+  py::class_<kriging::normal_score_transformation>(m, "NormalScoreTransformation")
+      .def(py::init<int>(), "order"_a = 30)
+      .def("transform", &kriging::normal_score_transformation::transform, "z"_a)
+      .def("back_transform", &kriging::normal_score_transformation::back_transform, "y"_a);
 
   py::class_<kriging::weight_function>(m, "WeightFunction")
       .def(py::init<double, double, double>(), "exp_distance"_a = 0.0, "exp_model_gamma"_a = 0.0,
