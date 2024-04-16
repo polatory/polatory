@@ -3,6 +3,7 @@
 #include <numeric>
 #include <polatory/common/io.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/kriging/normal_score_transformation.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
@@ -19,6 +20,12 @@ class variogram {
         bin_gamma_{std::move(bin_gamma)},
         bin_num_pairs_{std::move(bin_num_pairs)},
         direction_{direction} {}
+
+  void back_transform(const normal_score_transformation& t) {
+    for (auto& gamma : bin_gamma_) {
+      gamma = t.back_transform_gamma(gamma);
+    }
+  }
 
   const std::vector<double>& bin_distance() const { return bin_distance_; }
 

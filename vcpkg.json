@@ -8,6 +8,7 @@
     "boost-container-hash",
     "boost-filesystem",
     "boost-iterator",
+    "boost-math",
     "boost-program-options",
     "boost-range",
     "ceres",

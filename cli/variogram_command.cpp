@@ -15,6 +15,7 @@ using polatory::read_table;
 using polatory::vectord;
 using polatory::geometry::pointsNd;
 using polatory::kriging::detrend;
+using polatory::kriging::normal_score_transformation;
 using polatory::kriging::variogram_calculator;
 
 namespace {
@@ -23,6 +24,7 @@ struct options {
   std::string in_file;
   int dim{};
   int detrend{};
+  bool normal_score{};
   double lag_distance{};
   int num_lags{};
   double lag_tolerance{};
@@ -44,6 +46,11 @@ void run_impl(const options& opts) {
     values = detrend(points, values, opts.detrend);
   }
 
+  normal_score_transformation nst;
+  if (opts.normal_score) {
+    values = nst.transform(values);
+  }
+
   VariogramCalculator calc(opts.lag_distance, opts.num_lags);
   calc.set_lag_tolerance(opts.lag_tolerance);
   calc.set_angle_tolerance(opts.angle_tolerance);
@@ -51,6 +58,10 @@ void run_impl(const options& opts) {
     calc.set_directions(VariogramCalculator::kAnisotropicDirections);
   }
   auto variog_set = calc.calculate(points, values);
+
+  if (opts.normal_score) {
+    variog_set.back_transform(nst);
+  }
 
   variog_set.save(opts.out_file);
 }
@@ -71,6 +82,8 @@ void variogram_command::run(const std::vector<std::string>& args,
        "Dimension of input points")  //
       ("detrend", po::value(&opts.detrend)->default_value(-1, "-1")->value_name("-1|0|1|2"),
        "Detrend polynomial of specified degree")  //
+      ("normal-score", po::bool_switch(&opts.normal_score),
+       "Perform normal score transformation and back-transform variogram")  //
       ("lag-dist", po::value(&opts.lag_distance)->required()->value_name("DIST"),
        "Lag distance")  //
       ("num-lags", po::value(&opts.num_lags)->default_value(15)->value_name("N"),

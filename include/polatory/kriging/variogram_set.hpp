@@ -2,6 +2,7 @@
 
 #include <numeric>
 #include <polatory/common/io.hpp>
+#include <polatory/kriging/normal_score_transformation.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/types.hpp>
 #include <utility>
@@ -23,6 +24,12 @@ class variogram_set {
   variogram_set(variogram_set&& variogram_set) = default;
   variogram_set& operator=(const variogram_set&) = default;
   variogram_set& operator=(variogram_set&&) = default;
+
+  void back_transform(const normal_score_transformation& t) {
+    for (auto& v : variograms_) {
+      v.back_transform(t);
+    }
+  }
 
   index_t num_pairs() const {
     return std::reduce(variograms_.begin(), variograms_.end(), index_t{0},
