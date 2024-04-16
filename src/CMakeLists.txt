@@ -3,13 +3,13 @@ set(TARGET polatory)
 add_library(${TARGET} STATIC
     fmm/impl/biharmonic2d.cpp
     fmm/impl/biharmonic3d.cpp
-    fmm/impl/cov_cauchy3.cpp
-    fmm/impl/cov_cauchy5.cpp
-    fmm/impl/cov_cauchy7.cpp
-    fmm/impl/cov_cauchy9.cpp
     fmm/impl/cov_cubic.cpp
     fmm/impl/cov_exponential.cpp
     fmm/impl/cov_gaussian.cpp
+    fmm/impl/cov_generalized_cauchy3.cpp
+    fmm/impl/cov_generalized_cauchy5.cpp
+    fmm/impl/cov_generalized_cauchy7.cpp
+    fmm/impl/cov_generalized_cauchy9.cpp
     fmm/impl/cov_spherical.cpp
     fmm/impl/cov_spheroidal3.cpp
     fmm/impl/cov_spheroidal5.cpp

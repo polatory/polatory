@@ -2,13 +2,13 @@
 
 #include <cmath>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/rbf/cov_cauchy3.hpp>
-#include <polatory/rbf/cov_cauchy5.hpp>
-#include <polatory/rbf/cov_cauchy7.hpp>
-#include <polatory/rbf/cov_cauchy9.hpp>
 #include <polatory/rbf/cov_cubic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_gaussian.hpp>
+#include <polatory/rbf/cov_generalized_cauchy3.hpp>
+#include <polatory/rbf/cov_generalized_cauchy5.hpp>
+#include <polatory/rbf/cov_generalized_cauchy7.hpp>
+#include <polatory/rbf/cov_generalized_cauchy9.hpp>
 #include <polatory/rbf/cov_spherical.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
@@ -28,13 +28,13 @@ using polatory::geometry::transform_vector;
 using polatory::geometry::vector3d;
 using polatory::rbf::internal::biharmonic2d;
 using polatory::rbf::internal::biharmonic3d;
-using polatory::rbf::internal::cov_cauchy3;
-using polatory::rbf::internal::cov_cauchy5;
-using polatory::rbf::internal::cov_cauchy7;
-using polatory::rbf::internal::cov_cauchy9;
 using polatory::rbf::internal::cov_cubic;
 using polatory::rbf::internal::cov_exponential;
 using polatory::rbf::internal::cov_gaussian;
+using polatory::rbf::internal::cov_generalized_cauchy3;
+using polatory::rbf::internal::cov_generalized_cauchy5;
+using polatory::rbf::internal::cov_generalized_cauchy7;
+using polatory::rbf::internal::cov_generalized_cauchy9;
 using polatory::rbf::internal::cov_spherical;
 using polatory::rbf::internal::cov_spheroidal3;
 using polatory::rbf::internal::cov_spheroidal5;
@@ -143,13 +143,13 @@ TEST(rbf, anisotropy) {
 TEST(rbf, gradient) {
   test_gradient(biharmonic2d<3>({1.1}));
   test_gradient(biharmonic3d<3>({1.1}));
-  test_gradient(cov_cauchy3<3>({1.1, 0.9}));
-  test_gradient(cov_cauchy5<3>({1.1, 0.9}));
-  test_gradient(cov_cauchy7<3>({1.1, 0.9}));
-  test_gradient(cov_cauchy9<3>({1.1, 0.9}));
   test_gradient(cov_cubic<3>({1.1, 0.9}));
   test_gradient(cov_exponential<3>({1.1, 0.9}));
   test_gradient(cov_gaussian<3>({1.1, 0.9}));
+  test_gradient(cov_generalized_cauchy3<3>({1.1, 0.9}));
+  test_gradient(cov_generalized_cauchy5<3>({1.1, 0.9}));
+  test_gradient(cov_generalized_cauchy7<3>({1.1, 0.9}));
+  test_gradient(cov_generalized_cauchy9<3>({1.1, 0.9}));
   test_gradient(cov_spherical<3>({1.1, 0.9}));
   test_gradient(cov_spheroidal3<3>({1.1, 0.9}));
   test_gradient(cov_spheroidal5<3>({1.1, 0.9}));
@@ -165,13 +165,13 @@ TEST(rbf, gradient) {
 TEST(rbf, hessian) {
   test_hessian(biharmonic2d<3>({1.1}));
   test_hessian(biharmonic3d<3>({1.1}));
-  test_hessian(cov_cauchy3<3>({1.1, 0.9}));
-  test_hessian(cov_cauchy5<3>({1.1, 0.9}));
-  test_hessian(cov_cauchy7<3>({1.1, 0.9}));
-  test_hessian(cov_cauchy9<3>({1.1, 0.9}));
   // test_hessian(cov_cubic<3>({1.1, 0.9}));
   test_hessian(cov_exponential<3>({1.1, 0.9}));
   test_hessian(cov_gaussian<3>({1.1, 0.9}));
+  test_hessian(cov_generalized_cauchy3<3>({1.1, 0.9}));
+  test_hessian(cov_generalized_cauchy5<3>({1.1, 0.9}));
+  test_hessian(cov_generalized_cauchy7<3>({1.1, 0.9}));
+  test_hessian(cov_generalized_cauchy9<3>({1.1, 0.9}));
   // test_hessian(cov_spherical<3>({1.1, 0.9}));
   test_hessian(cov_spheroidal3<3>({1.1, 0.9}));
   test_hessian(cov_spheroidal5<3>({1.1, 0.9}));

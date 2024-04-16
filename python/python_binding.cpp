@@ -62,13 +62,13 @@ void define_module(py::module& m) {
 
   define_rbf<Dim, rbf::biharmonic2d<Dim>>(m, "Biharmonic2D");
   define_rbf<Dim, rbf::biharmonic3d<Dim>>(m, "Biharmonic3D");
-  define_rbf<Dim, rbf::cov_cauchy3<Dim>>(m, "CovCauchy3");
-  define_rbf<Dim, rbf::cov_cauchy5<Dim>>(m, "CovCauchy5");
-  define_rbf<Dim, rbf::cov_cauchy7<Dim>>(m, "CovCauchy7");
-  define_rbf<Dim, rbf::cov_cauchy9<Dim>>(m, "CovCauchy9");
   define_rbf<Dim, rbf::cov_cubic<Dim>>(m, "CovCubic");
   define_rbf<Dim, rbf::cov_exponential<Dim>>(m, "CovExponential");
   define_rbf<Dim, rbf::cov_gaussian<Dim>>(m, "CovGaussian");
+  define_rbf<Dim, rbf::cov_generalized_cauchy3<Dim>>(m, "CovGeneralizedCauchy3");
+  define_rbf<Dim, rbf::cov_generalized_cauchy5<Dim>>(m, "CovGeneralizedCauchy5");
+  define_rbf<Dim, rbf::cov_generalized_cauchy7<Dim>>(m, "CovGeneralizedCauchy7");
+  define_rbf<Dim, rbf::cov_generalized_cauchy9<Dim>>(m, "CovGeneralizedCauchy9");
   define_rbf<Dim, rbf::cov_spherical<Dim>>(m, "CovSpherical");
   define_rbf<Dim, rbf::cov_spheroidal3<Dim>>(m, "CovSpheroidal3");
   define_rbf<Dim, rbf::cov_spheroidal5<Dim>>(m, "CovSpheroidal5");

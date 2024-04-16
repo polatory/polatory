@@ -1,13 +1,13 @@
 #pragma once
 
 #include <format>
-#include <polatory/rbf/cov_cauchy3.hpp>
-#include <polatory/rbf/cov_cauchy5.hpp>
-#include <polatory/rbf/cov_cauchy7.hpp>
-#include <polatory/rbf/cov_cauchy9.hpp>
 #include <polatory/rbf/cov_cubic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_gaussian.hpp>
+#include <polatory/rbf/cov_generalized_cauchy3.hpp>
+#include <polatory/rbf/cov_generalized_cauchy5.hpp>
+#include <polatory/rbf/cov_generalized_cauchy7.hpp>
+#include <polatory/rbf/cov_generalized_cauchy9.hpp>
 #include <polatory/rbf/cov_spherical.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
@@ -31,13 +31,13 @@ rbf_proxy<Dim> make_rbf(const std::string& name, const std::vector<double>& para
 
   POLATORY_CASE(biharmonic2d);
   POLATORY_CASE(biharmonic3d);
-  POLATORY_CASE(cov_cauchy3);
-  POLATORY_CASE(cov_cauchy5);
-  POLATORY_CASE(cov_cauchy7);
-  POLATORY_CASE(cov_cauchy9);
   POLATORY_CASE(cov_cubic);
   POLATORY_CASE(cov_exponential);
   POLATORY_CASE(cov_gaussian);
+  POLATORY_CASE(cov_generalized_cauchy3);
+  POLATORY_CASE(cov_generalized_cauchy5);
+  POLATORY_CASE(cov_generalized_cauchy7);
+  POLATORY_CASE(cov_generalized_cauchy9);
   POLATORY_CASE(inverse_multiquadric1);
   POLATORY_CASE(multiquadric1);
   POLATORY_CASE(multiquadric3);

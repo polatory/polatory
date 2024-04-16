@@ -1,12 +1,12 @@
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
-#include <polatory/rbf/cov_cauchy3.hpp>
-#include <polatory/rbf/cov_cauchy5.hpp>
-#include <polatory/rbf/cov_cauchy7.hpp>
-#include <polatory/rbf/cov_cauchy9.hpp>
 #include <polatory/rbf/cov_cubic.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/cov_gaussian.hpp>
+#include <polatory/rbf/cov_generalized_cauchy3.hpp>
+#include <polatory/rbf/cov_generalized_cauchy5.hpp>
+#include <polatory/rbf/cov_generalized_cauchy7.hpp>
+#include <polatory/rbf/cov_generalized_cauchy9.hpp>
 #include <polatory/rbf/cov_spherical.hpp>
 #include <polatory/rbf/cov_spheroidal3.hpp>
 #include <polatory/rbf/cov_spheroidal5.hpp>
@@ -22,13 +22,13 @@ using polatory::geometry::bboxNd;
 using polatory::rbf::rbf_proxy;
 using polatory::rbf::internal::biharmonic2d;
 using polatory::rbf::internal::biharmonic3d;
-using polatory::rbf::internal::cov_cauchy3;
-using polatory::rbf::internal::cov_cauchy5;
-using polatory::rbf::internal::cov_cauchy7;
-using polatory::rbf::internal::cov_cauchy9;
 using polatory::rbf::internal::cov_cubic;
 using polatory::rbf::internal::cov_exponential;
 using polatory::rbf::internal::cov_gaussian;
+using polatory::rbf::internal::cov_generalized_cauchy3;
+using polatory::rbf::internal::cov_generalized_cauchy5;
+using polatory::rbf::internal::cov_generalized_cauchy7;
+using polatory::rbf::internal::cov_generalized_cauchy9;
 using polatory::rbf::internal::cov_spherical;
 using polatory::rbf::internal::cov_spheroidal3;
 using polatory::rbf::internal::cov_spheroidal5;
@@ -54,13 +54,13 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf_proxy<Dim>& rbf, const 
 
   CASE(biharmonic2d);
   CASE(biharmonic3d);
-  CASE(cov_cauchy3);
-  CASE(cov_cauchy5);
-  CASE(cov_cauchy7);
-  CASE(cov_cauchy9);
   CASE(cov_cubic);
   CASE(cov_exponential);
   CASE(cov_gaussian);
+  CASE(cov_generalized_cauchy3);
+  CASE(cov_generalized_cauchy5);
+  CASE(cov_generalized_cauchy7);
+  CASE(cov_generalized_cauchy9);
   CASE(cov_spherical);
   CASE(cov_spheroidal3);
   CASE(cov_spheroidal5);
@@ -98,13 +98,13 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf_proxy<Dim>& rb
 
   CASE(biharmonic2d);
   CASE(biharmonic3d);
-  CASE(cov_cauchy3);
-  CASE(cov_cauchy5);
-  CASE(cov_cauchy7);
-  CASE(cov_cauchy9);
   CASE(cov_cubic);
   CASE(cov_exponential);
   CASE(cov_gaussian);
+  CASE(cov_generalized_cauchy3);
+  CASE(cov_generalized_cauchy5);
+  CASE(cov_generalized_cauchy7);
+  CASE(cov_generalized_cauchy9);
   CASE(cov_spherical);
   CASE(cov_spheroidal3);
   CASE(cov_spheroidal5);
@@ -144,13 +144,13 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf_prox
 
   CASE(biharmonic2d);
   CASE(biharmonic3d);
-  CASE(cov_cauchy3);
-  CASE(cov_cauchy5);
-  CASE(cov_cauchy7);
-  CASE(cov_cauchy9);
   CASE(cov_cubic);
   CASE(cov_exponential);
   CASE(cov_gaussian);
+  CASE(cov_generalized_cauchy3);
+  CASE(cov_generalized_cauchy5);
+  CASE(cov_generalized_cauchy7);
+  CASE(cov_generalized_cauchy9);
   CASE(cov_spherical);
   CASE(cov_spheroidal3);
   CASE(cov_spheroidal5);
@@ -191,13 +191,13 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf_proxy<Dim>& rbf
 
   CASE(biharmonic2d);
   CASE(biharmonic3d);
-  CASE(cov_cauchy3);
-  CASE(cov_cauchy5);
-  CASE(cov_cauchy7);
-  CASE(cov_cauchy9);
   CASE(cov_cubic);
   CASE(cov_exponential);
   CASE(cov_gaussian);
+  CASE(cov_generalized_cauchy3);
+  CASE(cov_generalized_cauchy5);
+  CASE(cov_generalized_cauchy7);
+  CASE(cov_generalized_cauchy9);
   CASE(cov_spherical);
   CASE(cov_spheroidal3);
   CASE(cov_spheroidal5);
@@ -236,13 +236,13 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf_prox
 
   CASE(biharmonic2d);
   CASE(biharmonic3d);
-  CASE(cov_cauchy3);
-  CASE(cov_cauchy5);
-  CASE(cov_cauchy7);
-  CASE(cov_cauchy9);
   CASE(cov_cubic);
   CASE(cov_exponential);
   CASE(cov_gaussian);
+  CASE(cov_generalized_cauchy3);
+  CASE(cov_generalized_cauchy5);
+  CASE(cov_generalized_cauchy7);
+  CASE(cov_generalized_cauchy9);
   CASE(cov_spherical);
   CASE(cov_spheroidal3);
   CASE(cov_spheroidal5);
@@ -285,13 +285,13 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const 
 
   CASE(biharmonic2d);
   CASE(biharmonic3d);
-  CASE(cov_cauchy3);
-  CASE(cov_cauchy5);
-  CASE(cov_cauchy7);
-  CASE(cov_cauchy9);
   CASE(cov_cubic);
   CASE(cov_exponential);
   CASE(cov_gaussian);
+  CASE(cov_generalized_cauchy3);
+  CASE(cov_generalized_cauchy5);
+  CASE(cov_generalized_cauchy7);
+  CASE(cov_generalized_cauchy9);
   CASE(cov_spherical);
   CASE(cov_spheroidal3);
   CASE(cov_spheroidal5);
