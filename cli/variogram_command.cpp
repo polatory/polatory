@@ -82,8 +82,8 @@ void variogram_command::run(const std::vector<std::string>& args,
        "Dimension of input points")  //
       ("detrend", po::value(&opts.detrend)->default_value(-1, "-1")->value_name("-1|0|1|2"),
        "Detrend polynomial of specified degree")  //
-      ("normal-score", po::bool_switch(&opts.normal_score),
-       "Perform normal score transformation and back-transform variogram")  //
+      ("face_normal-score", po::bool_switch(&opts.normal_score),
+       "Perform face_normal score transformation and back-transform variogram")  //
       ("lag-dist", po::value(&opts.lag_distance)->required()->value_name("DIST"),
        "Lag distance")  //
       ("num-lags", po::value(&opts.num_lags)->default_value(15)->value_name("N"),

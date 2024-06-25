@@ -72,9 +72,9 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
        "Input file in CSV format:\n  X,Y,Z")  //
       ("k", po::value(&opts.ks)->multitoken()->value_name("K ..."),
-       "Number of points for k-NN search during normal estimation")  //
+       "Number of points for k-NN search during face_normal estimation")  //
       ("radius", po::value(&opts.radii)->multitoken()->value_name("RADIUS ..."),
-       "Radius for radius search during normal estimation")  //
+       "Radius for radius search during face_normal estimation")  //
       ("threshold", po::value(&opts.threshold)->default_value(1.8, "1.8")->value_name("THRES"),
        "Threshold for plane factor filtering, set to 1.0 to disable filtering")  //
       ("point", po::value(&opts.point)->multitoken()->value_name("X Y Z"),

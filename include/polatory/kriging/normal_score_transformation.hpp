@@ -116,7 +116,7 @@ class normal_score_transformation {
 
   void throw_if_not_transformed() const {
     if (!transformed_) {
-      throw std::runtime_error("normal score transformation has not been computed");
+      throw std::runtime_error("face_normal score transformation has not been computed");
     }
   }
 

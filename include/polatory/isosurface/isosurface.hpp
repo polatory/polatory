@@ -1,5 +1,7 @@
 #pragma once
 
+#include <polatory/isosurface/mesh_consistency_checker.h>
+
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>

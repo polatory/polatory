@@ -21,6 +21,7 @@ add_library(${TARGET} STATIC
     fmm/impl/triharmonic2d.cpp
     fmm/impl/triharmonic3d.cpp
     fmm/make_fmm_evaluator.cpp
+    isosurface/mesh_consistency_checker.cpp
     isosurface/mesh_defects_finder.cpp
     kriging/variogram_calculator.cpp
     krylov/fgmres.cpp
@@ -41,6 +42,8 @@ if(UNIX)
 elseif(MSVC)
     target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702)
 endif()
+
+message("HOGEEEEEEEEEE: ${CMAKE_CXX_FLAGS_RELEASE}")
 
 target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
