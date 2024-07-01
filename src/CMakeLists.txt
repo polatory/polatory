@@ -125,6 +125,11 @@ elseif(APPLE)
     )
 endif()
 
+if(APPLE)
+    # Avoid linker error with XCode 15
+    target_link_options(${TARGET} PUBLIC -ld_classic)
+endif()
+
 externalproject_add(
     scalfmm
     PREFIX ${CMAKE_BINARY_DIR}/scalfmm
@@ -138,6 +143,6 @@ externalproject_add(
 add_dependencies(polatory scalfmm)
 
 if(UNIX)
-    # target_link_libraries(${TARGET} PRIVATE -fsanitize=address)
-    # target_link_libraries(${TARGET} PRIVATE -fsanitize=undefined)
+    # target_link_options(${TARGET} PUBLIC -fsanitize=address)
+    # target_link_options(${TARGET} PUBLIC -fsanitize=undefined)
 endif()
