@@ -84,10 +84,10 @@ class CMakeBuild(build_ext):
                 env["CXX"] = f"{brew_prefix}/opt/llvm/bin/clang++"
         elif sys.platform == "linux":
             if "CC" not in env:
-                env["CC"] = "clang-17"
+                env["CC"] = "clang"
             if "CXX" not in env:
-                env["CXX"] = "clang++-17"
-            if env["CXX"] == "clang++-17" and "CXXFLAGS" not in env:
+                env["CXX"] = "clang++"
+            if env["CXX"] == "clang++" and "CXXFLAGS" not in env:
                 env["CXXFLAGS"] = "-stdlib=libc++"
         elif sys.platform == "win32":
             env = {**env, **self.windows_buildenv()}

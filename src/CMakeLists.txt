@@ -82,7 +82,6 @@ endif()
 include(ExternalProject)
 
 set(SCALFMM_CMAKE_ARGS
-    -DCMAKE_CXX_FLAGS=-fopenmp
     -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
 )
@@ -90,6 +89,7 @@ set(SCALFMM_CMAKE_ARGS
 if(MSVC)
     list(APPEND SCALFMM_CMAKE_ARGS
         -DCMAKE_CXX_COMPILER=clang++
+        -DCMAKE_CXX_FLAGS=-fopenmp
     )
 endif()
 
