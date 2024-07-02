@@ -72,15 +72,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
         scalfmm::list::omp::build_p2p_interaction_list(*tree_, *tree_, 1, true);
       }
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
-          (*tree_, *fmm_operator_, p2m);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)]  //
-          (*tree_, *fmm_operator_, m2m);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
-          (*tree_, *fmm_operator_, m2l | p2p);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::seq)]  //
-          (*tree_, *fmm_operator_, l2l);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
-          (*tree_, *fmm_operator_, l2p);
+          (*tree_, *fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
     } else {
       for (auto& p : particles_) {
         for (auto i = 0; i < kn; i++) {
