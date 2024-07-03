@@ -25,7 +25,7 @@ struct options {
   double threshold{};
   std::vector<double> point{};
   std::vector<double> direction{};
-  int closed{};
+  bool closed{};
   std::string out_file;
 };
 
@@ -50,8 +50,8 @@ void run_impl(const options& opts) {
   } else if (opts.direction.size() == 3) {
     estimator.orient_toward_direction(
         vector3d{opts.direction[0], opts.direction[1], opts.direction[2]});
-  } else if (opts.closed) {
-    estimator.orient_closed_surface(100);
+  } else {
+    estimator.orient_closed_surface();
   }
 
   const auto& normals = estimator.normals();
@@ -81,8 +81,8 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
        "Orient normals toward the point")  //
       ("direction", po::value(&opts.direction)->multitoken()->value_name("X Y Z"),
        "Orient normals toward the direction")  //
-      ("closed", po::value(&opts.closed)->value_name("K"),
-       "Orient normals for closed surface(s) with specified number of points for k-NN search")  //
+      ("closed", po::bool_switch(&opts.closed),
+       "Orient normals for closed surface(s)")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output file in CSV format:\n  X,Y,Z,NX,NY,NZ")  //
       ;

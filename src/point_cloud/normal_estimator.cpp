@@ -191,9 +191,7 @@ class weighted_pair {
 normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
   throw_if_not_estimated();
 
-  auto bbox = geometry::bbox3d::from_points(points_);
-  auto center = bbox.center();
-  geometry::point3d p_outer{center(0), bbox.min()(1) - 1.0, center(2)};
+  geometry::vector3d seed_point_direction{-geometry::vector3d::UnitY()};
 
   std::vector<bool> oriented(n_points_, false);
   for (index_t i = 0; i < n_points_; i++) {
@@ -202,45 +200,34 @@ normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
     }
   }
 
-  std::vector<index_t> indices(n_points_);
-  std::iota(indices.begin(), indices.end(), 0);
-  {
-    std::vector<double> distances(n_points_);
-    for (index_t i = 0; i < n_points_; i++) {
-      geometry::point3d p = points_.row(i);
-      distances.at(i) = (p_outer - p).norm();
-    }
-    std::sort(indices.begin(), indices.end(),
-              [&](auto i, auto j) { return distances.at(i) < distances.at(j); });
-  }
-  auto indices_it = indices.begin();
+  index_t n_connected_components{};
 
+  auto it = oriented.begin();
   std::priority_queue<weighted_pair> queue;
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
-
-  index_t n_connected_components{};
-  while (std::find(oriented.begin(), oriented.end(), false) != oriented.end()) {
-    while (oriented.at(*indices_it)) {
-      indices_it++;
+  while (true) {
+    it = std::find(it, oriented.end(), false);
+    if (it == oriented.end()) {
+      break;
     }
 
-    auto i_closest = *indices_it;
-    geometry::point3d p_closest = points_.row(i_closest);
-    if (normals_.row(i_closest).dot(p_outer - p_closest) < 0.0) {
-      normals_.row(i_closest) *= -1.0;
-    }
-    oriented.at(i_closest) = true;
+    std::vector<index_t> connected_component;
 
-    tree_.knn_search(p_closest, k, nn_indices, nn_distances);
+    auto seed = static_cast<index_t>(std::distance(oriented.begin(), it));
+    oriented.at(seed) = true;
+    connected_component.push_back(seed);
+    auto p_seed = points_.row(seed);
+
+    tree_.knn_search(p_seed, k, nn_indices, nn_distances);
     for (auto j : nn_indices) {
       if (oriented.at(j)) {
         continue;
       }
 
-      auto weight = std::abs(normals_.row(i_closest).dot(normals_.row(j))) /
-                    (p_closest - points_.row(j)).norm();
-      queue.emplace(i_closest, j, weight);
+      auto weight =
+          std::abs(normals_.row(seed).dot(normals_.row(j))) / (p_seed - points_.row(j)).norm();
+      queue.emplace(seed, j, weight);
     }
 
     while (!queue.empty()) {
@@ -257,6 +244,7 @@ normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
         normals_.row(j) *= -1.0;
       }
       oriented.at(j) = true;
+      connected_component.push_back(j);
 
       geometry::point3d p = points_.row(j);
       tree_.knn_search(p, k, nn_indices, nn_distances);
@@ -272,6 +260,15 @@ normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
     }
 
     n_connected_components++;
+
+    auto seed_it = std::max_element(connected_component.begin(), connected_component.end(),
+                                    [&](auto i, auto j) {
+                                      return points_.row(i).dot(seed_point_direction) <
+                                             points_.row(j).dot(seed_point_direction);
+                                    });
+    if (normals_.row(*seed_it).dot(seed_point_direction) < 0.0) {
+      normals_(connected_component, Eigen::all) *= -1.0;
+    }
   }
 
   std::cout << "Number of connected components: " << n_connected_components << std::endl;
