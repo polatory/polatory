@@ -43,29 +43,40 @@ class rbf_direct_evaluator {
     vectord y = vectord::Zero(trg_mu_ + kDim * trg_sigma_);
 
     for (const auto& rbf : model_.rbfs()) {
-      for (index_t i = 0; i < trg_mu_; i++) {
-        for (index_t j = 0; j < mu_; j++) {
-          Vector diff = trg_points_.row(i) - src_points_.row(j);
-          y(i) += w(j) * rbf.evaluate(diff);
+#pragma omp parallel
+      {
+        vectord y_local = vectord::Zero(trg_mu_ + kDim * trg_sigma_);
+
+#pragma omp for
+        for (index_t i = 0; i < trg_mu_; i++) {
+          for (index_t j = 0; j < mu_; j++) {
+            Vector diff = trg_points_.row(i) - src_points_.row(j);
+            y_local(i) += w(j) * rbf.evaluate(diff);
+          }
+
+          for (index_t j = 0; j < sigma_; j++) {
+            Vector diff = trg_points_.row(i) - src_grad_points_.row(j);
+            y_local(i) += grad_w.row(j).dot(-rbf.evaluate_gradient(diff));
+          }
         }
 
-        for (index_t j = 0; j < sigma_; j++) {
-          Vector diff = trg_points_.row(i) - src_grad_points_.row(j);
-          y(i) += grad_w.row(j).dot(-rbf.evaluate_gradient(diff));
-        }
-      }
+#pragma omp for
+        for (index_t i = 0; i < trg_sigma_; i++) {
+          for (index_t j = 0; j < mu_; j++) {
+            Vector diff = trg_grad_points_.row(i) - src_points_.row(j);
+            y_local.segment<kDim>(trg_mu_ + kDim * i) +=
+                w(j) * rbf.evaluate_gradient(diff).transpose();
+          }
 
-      for (index_t i = 0; i < trg_sigma_; i++) {
-        for (index_t j = 0; j < mu_; j++) {
-          Vector diff = trg_grad_points_.row(i) - src_points_.row(j);
-          y.segment<kDim>(trg_mu_ + kDim * i) += w(j) * rbf.evaluate_gradient(diff).transpose();
+          for (index_t j = 0; j < sigma_; j++) {
+            Vector diff = trg_grad_points_.row(i) - src_grad_points_.row(j);
+            y_local.segment<kDim>(trg_mu_ + kDim * i) +=
+                (grad_w.row(j) * -rbf.evaluate_hessian(diff)).transpose();
+          }
         }
 
-        for (index_t j = 0; j < sigma_; j++) {
-          Vector diff = trg_grad_points_.row(i) - src_grad_points_.row(j);
-          y.segment<kDim>(trg_mu_ + kDim * i) +=
-              (grad_w.row(j) * -rbf.evaluate_hessian(diff)).transpose();
-        }
+#pragma omp critical
+        y += y_local;
       }
     }
 

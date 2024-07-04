@@ -39,29 +39,39 @@ class rbf_direct_operator : public krylov::linear_operator {
     y.head(mu_) = weights.head(mu_) * model_.nugget();
 
     for (const auto& rbf : model_.rbfs()) {
-      for (index_t i = 0; i < mu_; i++) {
-        for (index_t j = 0; j < mu_; j++) {
-          Vector diff = points_.row(i) - points_.row(j);
-          y(i) += w(j) * rbf.evaluate(diff);
+#pragma omp parallel
+      {
+        vectord y_local = vectord::Zero(size());
+
+#pragma omp for
+        for (index_t i = 0; i < mu_; i++) {
+          for (index_t j = 0; j < mu_; j++) {
+            Vector diff = points_.row(i) - points_.row(j);
+            y_local(i) += w(j) * rbf.evaluate(diff);
+          }
+
+          for (index_t j = 0; j < sigma_; j++) {
+            Vector diff = points_.row(i) - grad_points_.row(j);
+            y_local(i) += grad_w.row(j).dot(-rbf.evaluate_gradient(diff));
+          }
         }
 
-        for (index_t j = 0; j < sigma_; j++) {
-          Vector diff = points_.row(i) - grad_points_.row(j);
-          y(i) += grad_w.row(j).dot(-rbf.evaluate_gradient(diff));
-        }
-      }
+#pragma omp for
+        for (index_t i = 0; i < sigma_; i++) {
+          for (index_t j = 0; j < mu_; j++) {
+            Vector diff = grad_points_.row(i) - points_.row(j);
+            y_local.segment<kDim>(mu_ + kDim * i) += w(j) * rbf.evaluate_gradient(diff).transpose();
+          }
 
-      for (index_t i = 0; i < sigma_; i++) {
-        for (index_t j = 0; j < mu_; j++) {
-          Vector diff = grad_points_.row(i) - points_.row(j);
-          y.segment<kDim>(mu_ + kDim * i) += w(j) * rbf.evaluate_gradient(diff).transpose();
+          for (index_t j = 0; j < sigma_; j++) {
+            Vector diff = grad_points_.row(i) - grad_points_.row(j);
+            y_local.segment<kDim>(mu_ + kDim * i) +=
+                (grad_w.row(j) * -rbf.evaluate_hessian(diff)).transpose();
+          }
         }
 
-        for (index_t j = 0; j < sigma_; j++) {
-          Vector diff = grad_points_.row(i) - grad_points_.row(j);
-          y.segment<kDim>(mu_ + kDim * i) +=
-              (grad_w.row(j) * -rbf.evaluate_hessian(diff)).transpose();
-        }
+#pragma omp critical
+        y += y_local;
       }
     }
 
