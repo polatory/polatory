@@ -8,13 +8,14 @@
 #include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
-#include <utility>
 
 #include "../common/make_model.hpp"
 #include "parse_options.hpp"
 
 using polatory::index_t;
+using polatory::matrixd;
 using polatory::model;
+using polatory::read_table;
 using polatory::vectord;
 using polatory::geometry::bboxNd;
 using polatory::geometry::pointNd;
@@ -32,20 +33,55 @@ void main_impl(model<Dim>&& model, const options& opts) {
   using Point = pointNd<kDim>;
   using Points = pointsNd<kDim>;
 
-  auto mu = opts.n_points;
-  auto sigma = opts.n_grad_points;
-  auto m = mu + kDim * sigma;
-  auto l = model.poly_basis_size();
+  index_t mu{};
+  Points points;
+  if (!opts.in_file.empty()) {
+    if (opts.n_points != 0 || opts.n_grad_points != 0) {
+      throw std::runtime_error("--n or --grad-n cannot be specified with --in");
+    }
 
-  Points points = Points::Random(mu, kDim);
-  Points grad_points = Points::Random(sigma, kDim);
+    matrixd table = read_table(opts.in_file);
+    mu = table.rows();
+    points = table.leftCols(kDim);
+  } else {
+    mu = opts.n_points;
+    points = Points::Random(mu, kDim);
+  }
+
+  index_t sigma{};
+  Points grad_points;
+  if (!opts.grad_in_file.empty()) {
+    if (opts.n_points != 0 || opts.n_grad_points != 0) {
+      throw std::runtime_error("--n or --grad-n cannot be specified with --grad-in");
+    }
+
+    matrixd table = read_table(opts.grad_in_file);
+    sigma = table.rows();
+    grad_points = table.leftCols(kDim);
+  } else {
+    sigma = opts.n_grad_points;
+    grad_points = Points::Random(sigma, kDim);
+  }
+
+  Bbox bbox{-Point::Ones(), Point::Ones()};
   Points eval_points = Points::Random(opts.n_eval_points, kDim);
   Points grad_eval_points = Points::Random(opts.n_grad_eval_points, kDim);
+  if (!opts.in_file.empty() || !opts.grad_in_file.empty()) {
+    bbox = Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points));
+    for (auto p : eval_points.rowwise()) {
+      p = (bbox.min() + bbox.width().cwiseProduct(p)).eval();
+    }
+    for (auto p : grad_eval_points.rowwise()) {
+      p = (bbox.min() + bbox.width().cwiseProduct(p)).eval();
+    }
+  }
+
+  auto m = mu + kDim * sigma;
+  auto l = model.poly_basis_size();
 
   vectord weights = vectord::Zero(m + l);
   weights.head(m) = vectord::Random(m);
 
-  Bbox bbox{-Point::Ones(), Point::Ones()};
   Evaluator eval(model, bbox, opts.order);
   eval.set_source_points(points, grad_points);
   eval.set_weights(weights);

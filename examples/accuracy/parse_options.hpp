@@ -5,11 +5,12 @@
 #include <iostream>
 #include <polatory/polatory.hpp>
 #include <string>
-#include <vector>
 
 #include "../common/model_options.hpp"
 
 struct options {
+  std::string in_file;
+  std::string grad_in_file;
   int dim;
   polatory::index_t n_points;
   polatory::index_t n_grad_points;
@@ -28,24 +29,27 @@ inline options parse_options(int argc, const char* argv[]) {
   auto model_opts_desc = make_model_options_description(opts.model_opts);
 
   po::options_description general_opts_desc("General options", 80, 50);
-  general_opts_desc.add_options()                                                              //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),                           //
-       "Dimension of RBF centers and evaluation points")                                       //
-      ("n", po::value(&opts.n_points)->default_value(0)->value_name("N"),                      //
-       "Number of RBF centers")                                                                //
-      ("n-grad", po::value(&opts.n_grad_points)->default_value(0)->value_name("N"),            //
-       "Number of RBF centers for gradients")                                                  //
-      ("n-eval", po::value(&opts.n_eval_points)->default_value(0)->value_name("N"),            //
-       "Number of evaluation points")                                                          //
-      ("n-grad-eval", po::value(&opts.n_grad_eval_points)->default_value(0)->value_name("N"),  //
-       "Number of evaluation points for gradients")                                            //
+  general_opts_desc.add_options()  //
+      ("in", po::value(&opts.in_file)->value_name("FILE"),
+       "Input points file in CSV format:\n  X[,Y[,Z]]")  //
+      ("grad-in", po::value(&opts.grad_in_file)->value_name("FILE"),
+       "Gradient input points file in CSV format:\n  X[,Y[,Z]]")  //
+      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
+       "Dimension of RBF centers and evaluation points")  //
+      ("n", po::value(&opts.n_points)->default_value(0)->value_name("N"),
+       "Number of RBF centers")  //
+      ("n-grad", po::value(&opts.n_grad_points)->default_value(0)->value_name("N"),
+       "Number of RBF centers for gradients")  //
+      ("n-eval", po::value(&opts.n_eval_points)->default_value(0)->value_name("N"),
+       "Number of evaluation points")  //
+      ("n-grad-eval", po::value(&opts.n_grad_eval_points)->default_value(0)->value_name("N"),
+       "Number of evaluation points for gradients")  //
       ("order",
-       po::value(&opts.order)
-           ->default_value(polatory::precision::kPrecise)
-           ->value_name("ORDER"),                              //
+       po::value(&opts.order)->default_value(polatory::precision::kPrecise)->value_name("ORDER"),
        "Order of the interpolators of fast multipole method")  //
-      ("perf", po::bool_switch(&opts.perf),                    //
-       "Run fast evaluation only and do not compute accuracy (for performance measurement)");
+      ("perf", po::bool_switch(&opts.perf),
+       "Run fast evaluation only and do not compute accuracy (for performance measurement)")  //
+      ;
 
   po::options_description opts_desc(80, 50);
   opts_desc.add(general_opts_desc).add(model_opts_desc);
