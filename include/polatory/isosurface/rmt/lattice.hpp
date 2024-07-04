@@ -207,6 +207,11 @@ class lattice : public primitive_lattice {
         auto v1 = node1.value();
 
         auto t = v0 / (v0 - v1);
+        if (t < 1e-3) {
+          // Avoid numerical instability.
+          continue;
+        }
+
         auto vt = vertex_values(vi);
         if (vt == 0.0) {
           continue;
