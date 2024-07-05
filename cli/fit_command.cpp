@@ -109,12 +109,12 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
       ("initial", po::value(&opts.initial_interpolant_file)->value_name("FILE"),
        "Input interpolant file to be used as the initial solution")  //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("TOL"),
-       "Absolute tolerance of the fitting")  //
+       "Absolute fitting tolerance")  //
       ("grad-tol",
        po::value(&opts.grad_absolute_tolerance)
            ->default_value(-1.0, "SAME AS --tol")
            ->value_name("TOL"),
-       "Gradient data absolute tolerance of the fitting")  //
+       "Absolute gradient fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //
       ("ineq", po::bool_switch(&opts.ineq),

@@ -69,7 +69,7 @@ void cross_validate_command::run(const std::vector<std::string>& args,
       ("model", po::value(&opts.model_file)->value_name("FILE"),
        "Input model file")  //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("TOL"),
-       "Absolute tolerance of fitting")  //
+       "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),

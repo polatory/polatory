@@ -35,7 +35,7 @@ inline options parse_options(int argc, const char* argv[]) {
       ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("DIST"),
        "Minimum separation distance of input points")  //
       ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("TOL"),
-       "Absolute tolerance of the fitting")  //
+       "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //
       ("reduce", po::bool_switch(&opts.reduce),

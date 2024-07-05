@@ -52,12 +52,20 @@ class interpolant {
   }
 
   vectord evaluate(const Points& points, double accuracy = kInfinity) {
-    return evaluate(points, Points(0, kDim), accuracy, accuracy);
+    return evaluate(points, Points(0, kDim), accuracy, kInfinity);
   }
 
   vectord evaluate(const Points& points, const Points& grad_points, double accuracy = kInfinity,
                    double grad_accuracy = kInfinity) {
     throw_if_not_fitted();
+
+    if (!(accuracy > 0.0)) {
+      throw std::invalid_argument("accuracy must be positive");
+    }
+
+    if (!(grad_accuracy > 0.0)) {
+      throw std::invalid_argument("grad_accuracy must be positive");
+    }
 
     set_evaluation_bbox_impl(Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
                              accuracy, grad_accuracy);
@@ -76,7 +84,7 @@ class interpolant {
 
   void fit(const Points& points, const vectord& values, double absolute_tolerance,
            int max_iter = 100, const interpolant* initial = nullptr) {
-    fit(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance, max_iter, initial);
+    fit(points, Points(0, kDim), values, absolute_tolerance, kInfinity, max_iter, initial);
   }
 
   void fit(const Points& points, const Points& grad_points, const vectord& values,
@@ -117,8 +125,7 @@ class interpolant {
 
   void fit_incrementally(const Points& points, const vectord& values, double absolute_tolerance,
                          int max_iter = 100) {
-    fit_incrementally(points, Points(0, kDim), values, absolute_tolerance, absolute_tolerance,
-                      max_iter);
+    fit_incrementally(points, Points(0, kDim), values, absolute_tolerance, kInfinity, max_iter);
   }
 
   void fit_incrementally(const Points& points, const Points& grad_points, const vectord& values,
