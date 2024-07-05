@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <boost/container_hash/hash.hpp>
 #include <format>
+#include <limits>
 #include <memory>
 #include <polatory/common/io.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -25,6 +26,7 @@ namespace polatory {
 template <int Dim>
 class interpolant {
   static constexpr int kDim = Dim;
+  static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::bboxNd<kDim>;
   using Evaluator = interpolation::rbf_evaluator<kDim>;
   using Fitter = interpolation::rbf_fitter<kDim>;
@@ -49,12 +51,16 @@ class interpolant {
     return centers_;
   }
 
-  vectord evaluate(const Points& points) { return evaluate(points, Points(0, kDim)); }
+  vectord evaluate(const Points& points, double accuracy = kInfinity) {
+    return evaluate(points, Points(0, kDim), accuracy, accuracy);
+  }
 
-  vectord evaluate(const Points& points, const Points& grad_points) {
+  vectord evaluate(const Points& points, const Points& grad_points, double accuracy = kInfinity,
+                   double grad_accuracy = kInfinity) {
     throw_if_not_fitted();
 
-    set_evaluation_bbox_impl(Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)));
+    set_evaluation_bbox_impl(Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
+                             accuracy, grad_accuracy);
     return evaluate_impl(points, grad_points);
   }
 
@@ -195,12 +201,14 @@ class interpolant {
 
   const Model& model() const { return model_; }
 
-  void set_evaluation_bbox_impl(const Bbox& bbox) {
+  void set_evaluation_bbox_impl(const Bbox& bbox, double accuracy = kInfinity,
+                                double grad_accuracy = kInfinity) {
     throw_if_not_fitted();
 
     auto union_bbox = bbox.convex_hull(bbox_);
 
-    evaluator_ = std::make_unique<Evaluator>(model_, centers_, grad_centers_, union_bbox);
+    evaluator_ = std::make_unique<Evaluator>(model_, centers_, grad_centers_, union_bbox, accuracy,
+                                             grad_accuracy);
     evaluator_->set_weights(weights_);
   }
 

@@ -92,7 +92,7 @@ class fmm_accuracy_estimator {
       last_error = error;
     }
 
-    throw std::runtime_error("failed to construct a fast evaluator");
+    throw std::runtime_error("failed to construct a fast evaluator with the desired accuracy");
   }
 
   static vectord evaluate(const Rbf& rbf, const std::vector<SourceParticle>& src_particles,

@@ -4,6 +4,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <limits>
 #include <memory>
 #include <polatory/kriging.hpp>
 #include <polatory/polatory.hpp>
@@ -16,6 +17,8 @@
 using namespace polatory;
 namespace py = pybind11;
 using namespace py::literals;
+
+static constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
 template <int Dim>
 geometry::bboxNd<Dim> bbox_from_points(const geometry::pointsNd<Dim>& points) {
@@ -104,9 +107,10 @@ void define_module(py::module& m) {
       .def_property_readonly("grad_centers", &Interpolant::grad_centers)
       .def_property_readonly("model", &Interpolant::model)
       .def_property_readonly("weights", &Interpolant::weights)
-      .def("evaluate", py::overload_cast<const Points&>(&Interpolant::evaluate), "points"_a)
+      .def("evaluate", py::overload_cast<const Points&>(&Interpolant::evaluate), "points"_a,
+           "accuracy"_a = kInfinity)
       .def("evaluate", py::overload_cast<const Points&, const Points&>(&Interpolant::evaluate),
-           "points"_a, "grad_points"_a)
+           "points"_a, "grad_points"_a, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity)
       .def("fit",
            py::overload_cast<const Points&, const vectord&, double, int, const Interpolant*>(
                &Interpolant::fit),
@@ -236,11 +240,13 @@ PYBIND11_MODULE(_core, m) {
   py::class_<isosurface::field_function>(m, "_FieldFunction");
 
   py::class_<isosurface::rbf_field_function, isosurface::field_function>(m, "RbfFieldFunction")
-      .def(py::init<interpolant<3>&>(), "interpolant"_a);
+      .def(py::init<interpolant<3>&>(), "interpolant"_a, "accuracy"_a = kInfinity,
+           "grad_accuracy"_a = kInfinity);
 
   py::class_<isosurface::rbf_field_function_25d, isosurface::field_function>(m,
                                                                              "RbfFieldFunction25d")
-      .def(py::init<interpolant<2>&>(), "interpolant"_a);
+      .def(py::init<interpolant<2>&>(), "interpolant"_a, "accuracy"_a = kInfinity,
+           "grad_accuracy"_a = kInfinity);
 
   py::class_<isosurface::isosurface>(m, "Isosurface")
       .def(py::init<const geometry::bbox3d&, double>(), "bbox"_a, "resolution"_a)
