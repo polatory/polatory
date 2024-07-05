@@ -28,7 +28,7 @@ class rbf_evaluator {
 
  public:
   rbf_evaluator(const Model& model, const Points& source_points, double accuracy = kInfinity)
-      : rbf_evaluator(model, source_points, Points(0, kDim), accuracy, accuracy) {}
+      : rbf_evaluator(model, source_points, Points(0, kDim), accuracy, kInfinity) {}
 
   rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
                 double accuracy = kInfinity, double grad_accuracy = kInfinity)
@@ -39,7 +39,7 @@ class rbf_evaluator {
 
   rbf_evaluator(const Model& model, const Points& source_points, const Bbox& bbox,
                 double accuracy = kInfinity)
-      : rbf_evaluator(model, source_points, Points(0, kDim), bbox, accuracy, accuracy) {}
+      : rbf_evaluator(model, source_points, Points(0, kDim), bbox, accuracy, kInfinity) {}
 
   rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
                 const Bbox& bbox, double accuracy = kInfinity, double grad_accuracy = kInfinity)
