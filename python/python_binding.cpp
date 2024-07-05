@@ -107,9 +107,10 @@ void define_module(py::module& m) {
       .def_property_readonly("grad_centers", &Interpolant::grad_centers)
       .def_property_readonly("model", &Interpolant::model)
       .def_property_readonly("weights", &Interpolant::weights)
-      .def("evaluate", py::overload_cast<const Points&>(&Interpolant::evaluate), "points"_a,
+      .def("evaluate", py::overload_cast<const Points&, double>(&Interpolant::evaluate), "points"_a,
            "accuracy"_a = kInfinity)
-      .def("evaluate", py::overload_cast<const Points&, const Points&>(&Interpolant::evaluate),
+      .def("evaluate",
+           py::overload_cast<const Points&, const Points&, double, double>(&Interpolant::evaluate),
            "points"_a, "grad_points"_a, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity)
       .def("fit",
            py::overload_cast<const Points&, const vectord&, double, int, const Interpolant*>(
