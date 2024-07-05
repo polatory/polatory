@@ -19,8 +19,6 @@
 #include <tuple>
 #include <vector>
 
-#include "utility.hpp"
-
 namespace polatory::fmm {
 
 template <class Rbf, class Kernel>
@@ -97,7 +95,7 @@ class fmm_accuracy_estimator {
       last_error = error;
     }
 
-    throw std::runtime_error("failed to construct a fast evaluator with the given accuracy");
+    throw std::runtime_error("failed to construct an evaluator that meets the given accuracy");
   }
 
   static vectord evaluate(const Rbf& rbf, const std::vector<SourceParticle>& src_particles,
