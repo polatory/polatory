@@ -8,7 +8,6 @@
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <tuple>
 
@@ -34,13 +33,13 @@ class rbf_residual_evaluator {
         points_(points),
         grad_points_(grad_points),
         direct_evaluator_(model, points, grad_points),
-        evaluator_(model, points, grad_points, precision::kPrecise) {}
+        evaluator_(model, points, grad_points) {}
 
   rbf_residual_evaluator(const Model& model, const Bbox& bbox)
       : model_(model),
         l_(model.poly_basis_size()),
         direct_evaluator_(model),
-        evaluator_(model, bbox, precision::kPrecise) {}
+        evaluator_(model, bbox) {}
 
   template <class Derived, class Derived2>
   std::tuple<bool, double, double> converged(const Eigen::MatrixBase<Derived>& values,

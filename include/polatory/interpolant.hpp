@@ -200,8 +200,7 @@ class interpolant {
 
     auto union_bbox = bbox.convex_hull(bbox_);
 
-    evaluator_ = std::make_unique<Evaluator>(model_, centers_, grad_centers_, union_bbox,
-                                             precision::kPrecise);
+    evaluator_ = std::make_unique<Evaluator>(model_, centers_, grad_centers_, union_bbox);
     evaluator_->set_weights(weights_);
   }
 

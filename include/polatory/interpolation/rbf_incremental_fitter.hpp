@@ -14,7 +14,6 @@
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <tuple>
 #include <unordered_set>
@@ -63,7 +62,7 @@ class rbf_incremental_fitter {
     vectord weights = vectord::Zero(mu + kDim * sigma + l_);
 
     Solver solver(model_, bbox_);
-    Evaluator res_eval(model_, bbox_, precision::kPrecise);
+    Evaluator res_eval(model_, bbox_);
 
     while (true) {
       if (mu_full_ > 0) {

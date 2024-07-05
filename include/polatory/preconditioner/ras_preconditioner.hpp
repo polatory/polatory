@@ -20,7 +20,6 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/polynomial/unisolvent_point_set.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
@@ -62,9 +61,9 @@ class ras_preconditioner : public krylov::linear_operator {
         points_(points),
         grad_points_(grad_points),
         bbox_(Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_))),
-        finest_evaluator_(kReportResidual ? std::make_unique<SymmetricEvaluator>(
-                                                model, points_, grad_points_, precision::kPrecise)
-                                          : nullptr) {
+        finest_evaluator_(kReportResidual
+                              ? std::make_unique<SymmetricEvaluator>(model, points_, grad_points_)
+                              : nullptr) {
     auto n_fine_levels =
         std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(mu_ + kDim * sigma_) /
                                                         static_cast<double>(kNCoarsestPoints)) /
@@ -166,7 +165,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
       ap_ = matrixd(p_.rows(), p_.cols());
 
-      auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_, precision::kPrecise);
+      auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_);
       vectord weights = vectord::Zero(mu_ + kDim * sigma_ + l_);
       auto n_cols = p_.cols();
       for (index_t i = 0; i < n_cols; i++) {
@@ -248,8 +247,7 @@ class ras_preconditioner : public krylov::linear_operator {
       evaluator_.emplace(
           std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
           std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), Eigen::all),
-                                grad_points_(grad_point_idcs_.at(src_level), Eigen::all), bbox_,
-                                precision::kFast));
+                                grad_points_(grad_point_idcs_.at(src_level), Eigen::all), bbox_));
       evaluator_.at(key).set_target_points(
           points_(point_idcs_.at(trg_level), Eigen::all),
           grad_points_(grad_point_idcs_.at(trg_level), Eigen::all));

@@ -3,6 +3,7 @@
 #include <boost/program_options.hpp>
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <polatory/polatory.hpp>
 #include <string>
 
@@ -10,10 +11,10 @@
 
 struct options {
   std::string in_file;
-  int dim;
-  polatory::index_t n_eval_points;
-  polatory::index_t n_grad_eval_points;
-  int order;
+  int dim{};
+  polatory::index_t n_eval_points{};
+  polatory::index_t n_grad_eval_points{};
+  double precision{};
 };
 
 inline options parse_options(int argc, const char* argv[]) {
@@ -31,9 +32,11 @@ inline options parse_options(int argc, const char* argv[]) {
        "Number of evaluation points")  //
       ("n-grad-eval", po::value(&opts.n_grad_eval_points)->default_value(0)->value_name("N"),
        "Number of evaluation points for gradients")  //
-      ("order",
-       po::value(&opts.order)->default_value(polatory::precision::kPrecise)->value_name("ORDER"),
-       "Order of the interpolators of fast multipole method")  //
+      ("prec",
+       po::value(&opts.precision)
+           ->default_value(std::numeric_limits<double>::infinity(), "infinity")
+           ->value_name("ORDER"),
+       "Desired absolute precision")  //
       ;
 
   po::options_description opts_desc(80, 50);

@@ -17,8 +17,10 @@
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
+#include "fmm_accuracy_estimator.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
@@ -58,10 +60,10 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  public:
-  impl(const Rbf& rbf, const Bbox& bbox, int order)
+  impl(const Rbf& rbf, const Bbox& bbox, double accuracy)
       : rbf_(rbf),
         kernel_(rbf),
-        order_(order),
+        accuracy_(accuracy),
         box_(make_box<Rbf, Box>(rbf, bbox)),
         near_field_(kernel_, false) {}
 
@@ -168,6 +170,16 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   }
 
  private:
+  int find_best_order(int tree_height) const {
+    if (best_order_.contains(tree_height)) {
+      return best_order_.at(tree_height);
+    }
+
+    auto order = fmm_accuracy_estimator<Rbf, Kernel>::find_best_order(rbf_, src_particles_, box_,
+                                                                      tree_height, accuracy_);
+    return best_order_[tree_height] = order;
+  }
+
   vectord potentials() const {
     vectord potentials = vectord::Zero(kn * n_trg_points_);
 
@@ -195,7 +207,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   }
 
   void prepare() const {
-    if (n_src_points_ * n_trg_points_ < 1024 * 1024) {
+    if (n_src_points_ * n_trg_points_ == 0) {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
@@ -206,8 +218,10 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     }
 
     auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_trg_points_));
+    auto order = find_best_order(tree_height);
+
     if (tree_height_ != tree_height) {
-      interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
+      interpolator_ = std::make_unique<Interpolator>(kernel_, order, tree_height, box_.width(0));
       far_field_ = std::make_unique<FarField>(*interpolator_);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       reset_src_tree();
@@ -216,14 +230,14 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     }
 
     if (!src_tree_) {
-      src_tree_ = std::make_unique<SourceTree>(tree_height, order_, box_, 10, 10, src_particles_);
+      src_tree_ = std::make_unique<SourceTree>(tree_height, order, box_, 10, 10, src_particles_);
       src_particles_.clear();
       src_particles_.shrink_to_fit();
       multipole_dirty_ = true;
     }
 
     if (!trg_tree_) {
-      trg_tree_ = std::make_unique<TargetTree>(tree_height, order_, box_, 10, 10, trg_particles_);
+      trg_tree_ = std::make_unique<TargetTree>(tree_height, order, box_, 10, 10, trg_particles_);
       trg_particles_.clear();
       trg_particles_.shrink_to_fit();
     }
@@ -280,7 +294,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
   const Rbf& rbf_;
   const Kernel kernel_;
-  const int order_;
+  const double accuracy_;
   const Box box_;
   const NearField near_field_;
 
@@ -295,12 +309,13 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<SourceTree> src_tree_;
   mutable std::unique_ptr<TargetTree> trg_tree_;
+  mutable std::unordered_map<int, int> best_order_;
 };
 
 template <class Rbf, class Kernel>
 fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox,
-                                                          int order)
-    : impl_(std::make_unique<impl>(rbf, bbox, order)) {}
+                                                          double accuracy)
+    : impl_(std::make_unique<impl>(rbf, bbox, accuracy)) {}
 
 template <class Rbf, class Kernel>
 fmm_generic_evaluator<Rbf, Kernel>::~fmm_generic_evaluator() = default;

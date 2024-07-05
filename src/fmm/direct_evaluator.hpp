@@ -35,7 +35,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
       /* variables */ index_t>;
 
  public:
-  impl(const Rbf& rbf, const Bbox& /*bbox*/, int /*order*/) : rbf_(rbf), kernel_(rbf) {}
+  impl(const Rbf& rbf, const Bbox& /*bbox*/, int /*accuracy*/) : rbf_(rbf), kernel_(rbf) {}
 
   vectord evaluate() const {
     for (auto& p : trg_particles_) {
@@ -142,8 +142,8 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
 template <class Rbf, class Kernel>
 fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox,
-                                                          int order)
-    : impl_(std::make_unique<impl>(rbf, bbox, order)) {}
+                                                          double accuracy)
+    : impl_(std::make_unique<impl>(rbf, bbox, accuracy)) {}
 
 template <class Rbf, class Kernel>
 fmm_generic_evaluator<Rbf, Kernel>::~fmm_generic_evaluator() = default;

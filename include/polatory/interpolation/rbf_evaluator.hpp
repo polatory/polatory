@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <limits>
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
@@ -17,6 +18,7 @@ namespace polatory::interpolation {
 template <int Dim>
 class rbf_evaluator {
   static constexpr int kDim = Dim;
+  static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::bboxNd<kDim>;
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
   using Model = model<kDim>;
@@ -25,31 +27,34 @@ class rbf_evaluator {
   using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
 
  public:
-  rbf_evaluator(const Model& model, const Points& source_points, int order)
-      : rbf_evaluator(model, source_points, Points(0, kDim), order) {}
+  rbf_evaluator(const Model& model, const Points& source_points, double accuracy = kInfinity)
+      : rbf_evaluator(model, source_points, Points(0, kDim), accuracy, accuracy) {}
 
   rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
-                int order)
+                double accuracy = kInfinity, double grad_accuracy = kInfinity)
       : rbf_evaluator(
             model, source_points, source_grad_points,
             Bbox::from_points(source_points).convex_hull(Bbox::from_points(source_grad_points)),
-            order) {}
+            accuracy, grad_accuracy) {}
 
-  rbf_evaluator(const Model& model, const Points& source_points, const Bbox& bbox, int order)
-      : rbf_evaluator(model, source_points, Points(0, kDim), bbox, order) {}
+  rbf_evaluator(const Model& model, const Points& source_points, const Bbox& bbox,
+                double accuracy = kInfinity)
+      : rbf_evaluator(model, source_points, Points(0, kDim), bbox, accuracy, accuracy) {}
 
   rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
-                const Bbox& bbox, int order)
-      : rbf_evaluator(model, bbox, order) {
+                const Bbox& bbox, double accuracy = kInfinity, double grad_accuracy = kInfinity)
+      : rbf_evaluator(model, bbox, accuracy, grad_accuracy) {
     set_source_points(source_points, source_grad_points);
   }
 
-  rbf_evaluator(const Model& model, const Bbox& bbox, int order) : l_(model.poly_basis_size()) {
+  rbf_evaluator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
+                double grad_accuracy = kInfinity)
+      : l_(model.poly_basis_size()) {
     for (const auto& rbf : model.rbfs()) {
-      a_.push_back(fmm::make_fmm_evaluator(rbf, bbox, order));
-      f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox, order));
-      ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox, order));
-      h_.push_back(fmm::make_fmm_hessian_evaluator(rbf, bbox, order));
+      a_.push_back(fmm::make_fmm_evaluator(rbf, bbox, accuracy));
+      f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox, accuracy));
+      ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox, grad_accuracy));
+      h_.push_back(fmm::make_fmm_hessian_evaluator(rbf, bbox, grad_accuracy));
     }
 
     if (l_ > 0) {

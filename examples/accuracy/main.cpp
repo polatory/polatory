@@ -46,7 +46,7 @@ void main_impl(const options& opts) {
     p = (bbox.min().array() + bbox.width().array() * (p.array() + 1.0) / 2.0).eval();
   }
 
-  Evaluator eval(model, bbox, opts.order);
+  Evaluator eval(model, bbox, opts.precision);
   eval.set_source_points(points, grad_points);
   eval.set_weights(weights);
   eval.set_target_points(eval_points, grad_eval_points);

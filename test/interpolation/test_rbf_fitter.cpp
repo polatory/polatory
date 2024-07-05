@@ -5,7 +5,6 @@
 #include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 #include <utility>
@@ -14,7 +13,6 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::precision;
 using polatory::vectord;
 using polatory::interpolation::rbf_fitter;
 using polatory::interpolation::rbf_symmetric_evaluator;
@@ -48,7 +46,7 @@ void test(index_t n_points, index_t n_grad_points) {
 
   EXPECT_EQ(weights.rows(), n_points + kDim * n_grad_points + model.poly_basis_size());
 
-  rbf_symmetric_evaluator<kDim> eval(model, points, grad_points, precision::kPrecise);
+  rbf_symmetric_evaluator<kDim> eval(model, points, grad_points);
   eval.set_weights(weights);
 
   vectord values_fit = eval.evaluate();
