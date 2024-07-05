@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
+#include <iterator>
 #include <memory>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -393,6 +395,11 @@ class lattice : public primitive_lattice {
       const auto* bba = node_list_.node_ptr(ibba);
       const auto* bbb = node_list_.node_ptr(ibbb);
 
+      std::array<const Node*, 8> nodes{aaa, aab, aba, abb, baa, bab, bba, bbb};
+      if (std::any_of(nodes.begin(), nodes.end(), [](const auto* n) { return n == nullptr; })) {
+        continue;
+      }
+
       // __a and __b
       if (has_intersection(aaa, aab)) {  // o -> 2
         cells_to_add.insert(iaaa + kNeighborCellVectors[edge::k7]);
@@ -457,6 +464,54 @@ class lattice : public primitive_lattice {
         cells_to_add.insert(iabb);
         cells_to_add.insert(iabb + kNeighborCellVectors[edge::k7]);
         cells_to_add.insert(iabb + kNeighborCellVectors[edge::k9]);
+      }
+
+      // Descend along the gradient.
+
+      auto sum_xxa = aaa->value() + aba->value() + baa->value() + bba->value();
+      auto sum_xxb = aab->value() + abb->value() + bab->value() + bbb->value();
+      auto sum_xax = aaa->value() + aab->value() + baa->value() + bab->value();
+      auto sum_xbx = aba->value() + abb->value() + bba->value() + bbb->value();
+      auto sum_axx = aaa->value() + aab->value() + aba->value() + abb->value();
+      auto sum_bxx = baa->value() + bab->value() + bba->value() + bbb->value();
+
+      std::array<double, 6> values{sum_xxa, sum_xxb, sum_xax, sum_xbx, sum_axx, sum_bxx};
+      auto min_it = std::min_element(values.begin(), values.end(),
+                                     [](auto a, auto b) { return std::abs(a) < std::abs(b); });
+
+      switch (std::distance(values.begin(), min_it)) {
+        case 0:
+          if (sum_xxa * sum_xxb > 0.0) {
+            cells_to_add.insert(iaaa + kNeighborCellVectors[edge::k9]);
+          }
+          break;
+        case 1:
+          if (sum_xxa * sum_xxb > 0.0) {
+            cells_to_add.insert(iaab);
+          }
+          break;
+        case 2:
+          if (sum_xax * sum_xbx > 0.0) {
+            cells_to_add.insert(iaaa + kNeighborCellVectors[edge::k7]);
+          }
+          break;
+        case 3:
+          if (sum_xax * sum_xbx > 0.0) {
+            cells_to_add.insert(iaba);
+          }
+          break;
+        case 4:
+          if (sum_axx * sum_bxx > 0.0) {
+            cells_to_add.insert(iaaa + kNeighborCellVectors[edge::kD]);
+          }
+          break;
+        case 5:
+          if (sum_axx * sum_bxx > 0.0) {
+            cells_to_add.insert(ibaa);
+          }
+          break;
+        default:
+          break;
       }
     }
 
