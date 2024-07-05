@@ -8,6 +8,7 @@
 #include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
+#include <polatory/numeric/error.hpp>
 #include <polatory/types.hpp>
 #include <tuple>
 
@@ -67,9 +68,9 @@ class rbf_residual_evaluator {
 
       auto fit = direct_evaluator_.evaluate(points, grad_points);
       fit.head(trg_mu) += weights.head(trg_mu) * nugget;
-      residual = (values.head(trg_mu) - fit.head(trg_mu)).template lpNorm<Eigen::Infinity>();
-      grad_residual = (values.segment(mu_, kDim * trg_sigma) - fit.tail(kDim * trg_sigma))
-                          .template lpNorm<Eigen::Infinity>();
+      residual = numeric::absolute_error<Eigen::Infinity>(fit.head(trg_mu), values.head(trg_mu));
+      grad_residual = numeric::absolute_error<Eigen::Infinity>(
+          fit.tail(kDim * trg_sigma), values.segment(mu_, kDim * trg_sigma));
 
       if (residual > absolute_tolerance || grad_residual > grad_absolute_tolerance) {
         return {false, 0.0, 0.0};
@@ -89,8 +90,8 @@ class rbf_residual_evaluator {
       evaluator_.set_target_points(points);
       vectord fit = evaluator_.evaluate() + weights.segment(begin, end - begin) * nugget;
 
-      residual = std::max(
-          residual, (values.segment(begin, end - begin) - fit).template lpNorm<Eigen::Infinity>());
+      residual = std::max(residual, numeric::absolute_error<Eigen::Infinity>(
+                                        fit, values.segment(begin, end - begin)));
       if (residual > absolute_tolerance) {
         return {false, 0.0, 0.0};
       }
@@ -110,9 +111,9 @@ class rbf_residual_evaluator {
       evaluator_.set_target_points(Points(0, kDim), grad_points);
       auto fit = evaluator_.evaluate();
 
-      grad_residual =
-          std::max(grad_residual, (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit)
-                                      .template lpNorm<Eigen::Infinity>());
+      grad_residual = std::max(grad_residual,
+                               numeric::absolute_error<Eigen::Infinity>(
+                                   fit, values.segment(mu_ + kDim * begin, kDim * (end - begin))));
       if (grad_residual > grad_absolute_tolerance) {
         return {false, 0.0, 0.0};
       }
