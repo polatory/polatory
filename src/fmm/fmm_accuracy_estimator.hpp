@@ -57,11 +57,17 @@ class fmm_accuracy_estimator {
   using SourceTree = scalfmm::component::group_tree_view<Cell, SourceLeaf, Box>;
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
+  static constexpr int kMinimumOrder = 8;
+  static constexpr int kMaximumOrder = 14;
   static constexpr index_t kNumTargetPoints = 4096;
 
  public:
   static int find_best_order(const Rbf& rbf, const std::vector<SourceParticle>& src_particles,
                              const Box& box, int tree_height, double accuracy) {
+    if (accuracy == std::numeric_limits<double>::infinity()) {
+      return kMinimumOrder;
+    }
+
     std::vector<TargetParticle> trg_particles(kNumTargetPoints);
 
     auto center = box.center();
@@ -79,7 +85,7 @@ class fmm_accuracy_estimator {
 
     auto exact = evaluate(rbf, src_particles, trg_particles, box, 0, 0);
     auto last_error = std::numeric_limits<double>::infinity();
-    for (auto order = 8; order < 15; order++) {
+    for (auto order = kMinimumOrder; order <= kMaximumOrder; order++) {
       auto approx = evaluate(rbf, src_particles, trg_particles, box, tree_height, order);
       auto error = numeric::absolute_error(approx, exact);
       if (error <= accuracy) {
