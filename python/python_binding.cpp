@@ -241,12 +241,12 @@ PYBIND11_MODULE(_core, m) {
   py::class_<isosurface::field_function>(m, "_FieldFunction");
 
   py::class_<isosurface::rbf_field_function, isosurface::field_function>(m, "RbfFieldFunction")
-      .def(py::init<interpolant<3>&>(), "interpolant"_a, "accuracy"_a = kInfinity,
+      .def(py::init<interpolant<3>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
            "grad_accuracy"_a = kInfinity);
 
   py::class_<isosurface::rbf_field_function_25d, isosurface::field_function>(m,
                                                                              "RbfFieldFunction25d")
-      .def(py::init<interpolant<2>&>(), "interpolant"_a, "accuracy"_a = kInfinity,
+      .def(py::init<interpolant<2>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
            "grad_accuracy"_a = kInfinity);
 
   py::class_<isosurface::isosurface>(m, "Isosurface")
