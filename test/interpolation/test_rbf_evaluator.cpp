@@ -7,7 +7,6 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 #include <utility>
@@ -16,7 +15,6 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::precision;
 using polatory::vectord;
 using polatory::geometry::bboxNd;
 using polatory::geometry::pointNd;
@@ -53,7 +51,7 @@ TEST(rbf_evaluator, trivial) {
   vectord weights = vectord::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
   Bbox bbox{-Point::Ones(), Point::Ones()};
-  rbf_evaluator<kDim> eval(model, bbox, precision::kPrecise);
+  rbf_evaluator<kDim> eval(model, bbox);
   eval.set_source_points(points, grad_points);
   eval.set_weights(weights);
   eval.set_target_points(eval_points, grad_eval_points);

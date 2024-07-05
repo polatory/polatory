@@ -5,9 +5,9 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/interpolation/rbf_direct_evaluator.hpp>
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <tuple>
 
@@ -17,6 +17,7 @@ template <int Dim>
 class rbf_residual_evaluator {
   static constexpr int kDim = Dim;
   using Bbox = geometry::bboxNd<kDim>;
+  using DirectEvaluator = rbf_direct_evaluator<kDim>;
   using Evaluator = rbf_evaluator<kDim>;
   using Model = model<kDim>;
   using Points = geometry::pointsNd<kDim>;
@@ -31,10 +32,14 @@ class rbf_residual_evaluator {
         sigma_(grad_points.rows()),
         points_(points),
         grad_points_(grad_points),
-        evaluator_(model, points, grad_points, precision::kPrecise) {}
+        direct_evaluator_(model, points, grad_points),
+        evaluator_(model, points, grad_points) {}
 
   rbf_residual_evaluator(const Model& model, const Bbox& bbox)
-      : model_(model), l_(model.poly_basis_size()), evaluator_(model, bbox, precision::kPrecise) {}
+      : model_(model),
+        l_(model.poly_basis_size()),
+        direct_evaluator_(model),
+        evaluator_(model, bbox) {}
 
   template <class Derived, class Derived2>
   std::tuple<bool, double, double> converged(const Eigen::MatrixBase<Derived>& values,
@@ -44,16 +49,39 @@ class rbf_residual_evaluator {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
-    evaluator_.set_weights(weights);
-
-    auto chunk_size = kInitialChunkSize;
-    auto max_residual = 0.0;
-    auto max_grad_residual = 0.0;
+    auto residual = 0.0;
+    auto grad_residual = 0.0;
 
     auto nugget = model_.nugget();
-    for (index_t begin = 0;;) {
+
+    // Direct evaluation is faster for small number of target points.
+    // Moreover, if fast evaluation does not have enough accuracy,
+    // neither does the solution, thus it is likely to be trapped here.
+    {
+      direct_evaluator_.set_weights(weights);
+
+      auto trg_mu = std::min(mu_, kInitialChunkSize);
+      auto trg_sigma = std::min(sigma_, kInitialChunkSize);
+      Points points = points_.topRows(trg_mu);
+      Points grad_points = grad_points_.topRows(trg_sigma);
+
+      auto fit = direct_evaluator_.evaluate(points, grad_points);
+      fit.head(trg_mu) += weights.head(trg_mu) * nugget;
+      residual = (values.head(trg_mu) - fit.head(trg_mu)).template lpNorm<Eigen::Infinity>();
+      grad_residual = (values.segment(mu_, kDim * trg_sigma) - fit.tail(kDim * trg_sigma))
+                          .template lpNorm<Eigen::Infinity>();
+
+      if (residual > absolute_tolerance || grad_residual > grad_absolute_tolerance) {
+        return {false, 0.0, 0.0};
+      }
+    }
+
+    evaluator_.set_weights(weights);
+
+    auto chunk_size = 2 * kInitialChunkSize;
+    for (index_t begin = kInitialChunkSize;;) {
       auto end = std::min(mu_, begin + chunk_size);
-      if (begin == end) {
+      if (begin >= end) {
         break;
       }
 
@@ -61,20 +89,20 @@ class rbf_residual_evaluator {
       evaluator_.set_target_points(points);
       vectord fit = evaluator_.evaluate() + weights.segment(begin, end - begin) * nugget;
 
-      auto res = (values.segment(begin, end - begin) - fit).template lpNorm<Eigen::Infinity>();
-      if (res >= absolute_tolerance) {
+      residual = std::max(
+          residual, (values.segment(begin, end - begin) - fit).template lpNorm<Eigen::Infinity>());
+      if (residual > absolute_tolerance) {
         return {false, 0.0, 0.0};
       }
-
-      max_residual = std::max(max_residual, res);
 
       begin = end;
       chunk_size *= 2;
     }
 
-    for (index_t begin = 0;;) {
+    chunk_size = 2 * kInitialChunkSize;
+    for (index_t begin = kInitialChunkSize;;) {
       auto end = std::min(sigma_, begin + chunk_size);
-      if (begin == end) {
+      if (begin >= end) {
         break;
       }
 
@@ -82,19 +110,18 @@ class rbf_residual_evaluator {
       evaluator_.set_target_points(Points(0, kDim), grad_points);
       auto fit = evaluator_.evaluate();
 
-      auto res = (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit)
-                     .template lpNorm<Eigen::Infinity>();
-      if (res >= grad_absolute_tolerance) {
+      grad_residual =
+          std::max(grad_residual, (values.segment(mu_ + kDim * begin, kDim * (end - begin)) - fit)
+                                      .template lpNorm<Eigen::Infinity>());
+      if (grad_residual > grad_absolute_tolerance) {
         return {false, 0.0, 0.0};
       }
-
-      max_grad_residual = std::max(max_grad_residual, res);
 
       begin = end;
       chunk_size *= 2;
     }
 
-    return {true, max_residual, max_grad_residual};
+    return {true, residual, grad_residual};
   }
 
   void set_points(const Points& points, const Points& grad_points) {
@@ -103,6 +130,7 @@ class rbf_residual_evaluator {
     points_ = points;
     grad_points_ = grad_points;
 
+    direct_evaluator_.set_source_points(points, grad_points);
     evaluator_.set_source_points(points, grad_points);
   }
 
@@ -114,6 +142,7 @@ class rbf_residual_evaluator {
   index_t sigma_{};
   Points points_;
   Points grad_points_;
+  mutable DirectEvaluator direct_evaluator_;
   mutable Evaluator evaluator_;
 };
 

@@ -46,7 +46,7 @@ class fmm_generic_symmetric_evaluator final
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  fmm_generic_symmetric_evaluator(const Rbf& rbf, const Bbox& bbox, int order);
+  fmm_generic_symmetric_evaluator(const Rbf& rbf, const Bbox& bbox, double accuracy);
 
   ~fmm_generic_symmetric_evaluator() override;
 
@@ -76,10 +76,10 @@ using fmm_hessian_symmetric_evaluator = fmm_generic_symmetric_evaluator<Rbf, hes
 template <int Dim>
 FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                                   const geometry::bboxNd<Dim>& bbox,
-                                                                  int order);
+                                                                  double accuracy);
 
 template <int Dim>
 FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(
-    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox, int order);
+    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox, double accuracy);
 
 }  // namespace polatory::fmm

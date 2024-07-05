@@ -6,7 +6,6 @@
 #include <polatory/interpolation/rbf_evaluator.hpp>
 #include <polatory/interpolation/rbf_inequality_fitter.hpp>
 #include <polatory/model.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
@@ -16,7 +15,6 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::precision;
 using polatory::vectord;
 using polatory::geometry::points1d;
 using polatory::interpolation::rbf_evaluator;
@@ -48,7 +46,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), precision::kPrecise);
+  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all));
   eval.set_weights(weights);
   vectord values_fit = eval.evaluate(points);
 
@@ -89,7 +87,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   rbf_inequality_fitter<kDim> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
 
-  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), precision::kPrecise);
+  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all));
   eval.set_weights(weights);
   vectord values_fit = eval.evaluate(points);
 

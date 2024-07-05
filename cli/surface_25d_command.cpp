@@ -2,6 +2,7 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <polatory/polatory.hpp>
 #include <string>
@@ -25,6 +26,8 @@ namespace {
 struct options {
   std::string in_file;
   std::string seed_points_file;
+  double accuracy{};
+  double grad_accuracy{};
   bbox3d bbox;
   double resolution{};
   std::string out_file;
@@ -35,7 +38,7 @@ void run_impl(const options& opts) {
   auto bbox = opts.bbox;
 
   isosurface isosurf(bbox, opts.resolution);
-  rbf_field_function_25d field_fn(inter);
+  rbf_field_function_25d field_fn(inter, opts.accuracy, opts.grad_accuracy);
 
   points3d seed_points;
   if (!opts.seed_points_file.empty()) {
@@ -72,6 +75,16 @@ void surface_25d_command::run(const std::vector<std::string>& args,
        "Input 2D interpolant file")  //
       ("seeds", po::value(&opts.seed_points_file)->value_name("FILE"),
        "Input seed points file in CSV format:\n  X,Y,Z")  //
+      ("acc",
+       po::value(&opts.accuracy)
+           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+           ->value_name("ACC"),
+       "Absolute evaluation accuracy")  //
+      ("grad-acc",
+       po::value(&opts.grad_accuracy)
+           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+           ->value_name("ACC"),
+       "Absolute gradient evaluation accuracy")  //
       ("bbox",
        po::value(&opts.bbox)
            ->multitoken()

@@ -16,8 +16,10 @@
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
+#include "fmm_accuracy_estimator.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
@@ -49,10 +51,10 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
   using Tree = scalfmm::component::group_tree_view<Cell, Leaf, Box>;
 
  public:
-  impl(const Rbf& rbf, const Bbox& bbox, int order)
+  impl(const Rbf& rbf, const Bbox& bbox, double accuracy)
       : rbf_(rbf),
         kernel_(rbf),
-        order_(order),
+        accuracy_(accuracy),
         box_(make_box<Rbf, Box>(rbf, bbox)),
         near_field_(kernel_) {}
 
@@ -135,6 +137,16 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
   }
 
  private:
+  int find_best_order(int tree_height) const {
+    if (best_order_.contains(tree_height)) {
+      return best_order_.at(tree_height);
+    }
+
+    auto order = fmm_accuracy_estimator<Rbf, Kernel>::find_best_order(rbf_, particles_, box_,
+                                                                      tree_height, accuracy_);
+    return best_order_[tree_height] = order;
+  }
+
   void handle_self_interaction() const {
     if (n_points_ == 0) {
       return;
@@ -203,8 +215,10 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     }
 
     auto tree_height = fmm_tree_height<kDim>(n_points_);
+    auto order = find_best_order(tree_height);
+
     if (tree_height_ != tree_height) {
-      interpolator_ = std::make_unique<Interpolator>(kernel_, order_, tree_height, box_.width(0));
+      interpolator_ = std::make_unique<Interpolator>(kernel_, order, tree_height, box_.width(0));
       far_field_ = std::make_unique<FarField>(*interpolator_);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       reset_tree();
@@ -212,7 +226,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     }
 
     if (!tree_) {
-      tree_ = std::make_unique<Tree>(tree_height, order_, box_, 10, 10, particles_);
+      tree_ = std::make_unique<Tree>(tree_height, order, box_, 10, 10, particles_);
       particles_.clear();
       particles_.shrink_to_fit();
     }
@@ -245,7 +259,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
 
   const Rbf& rbf_;
   const Kernel kernel_;
-  const int order_;
+  const double accuracy_;
   const Box box_;
   const NearField near_field_;
 
@@ -256,13 +270,14 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<Tree> tree_;
+  mutable std::unordered_map<int, int> best_order_;
 };
 
 template <class Rbf, class Kernel>
 fmm_generic_symmetric_evaluator<Rbf, Kernel>::fmm_generic_symmetric_evaluator(const Rbf& rbf,
                                                                               const Bbox& bbox,
-                                                                              int order)
-    : impl_(std::make_unique<impl>(rbf, bbox, order)) {}
+                                                                              double accuracy)
+    : impl_(std::make_unique<impl>(rbf, bbox, accuracy)) {}
 
 template <class Rbf, class Kernel>
 fmm_generic_symmetric_evaluator<Rbf, Kernel>::~fmm_generic_symmetric_evaluator() = default;

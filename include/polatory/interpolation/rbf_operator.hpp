@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
@@ -18,6 +19,7 @@ namespace polatory::interpolation {
 template <int Dim>
 class rbf_operator : public krylov::linear_operator {
   static constexpr int kDim = Dim;
+  static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::bboxNd<kDim>;
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
   using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim>;
@@ -26,19 +28,21 @@ class rbf_operator : public krylov::linear_operator {
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  rbf_operator(const Model& model, const Points& points, const Points& grad_points, int order)
+  rbf_operator(const Model& model, const Points& points, const Points& grad_points,
+               double accuracy = kInfinity, double grad_accuracy = kInfinity)
       : rbf_operator(model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
-                     order) {
+                     accuracy, grad_accuracy) {
     set_points(points, grad_points);
   }
 
-  rbf_operator(const Model& model, const Bbox& bbox, int order)
+  rbf_operator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
+               double grad_accuracy = kInfinity)
       : model_(model), l_(model.poly_basis_size()) {
     for (const auto& rbf : model.rbfs()) {
-      a_.push_back(fmm::make_fmm_symmetric_evaluator(rbf, bbox, order));
-      f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox, order));
-      ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox, order));
-      h_.push_back(fmm::make_fmm_hessian_symmetric_evaluator(rbf, bbox, order));
+      a_.push_back(fmm::make_fmm_symmetric_evaluator(rbf, bbox, accuracy));
+      f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox, accuracy));
+      ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox, grad_accuracy));
+      h_.push_back(fmm::make_fmm_hessian_symmetric_evaluator(rbf, bbox, grad_accuracy));
     }
 
     if (l_ > 0) {

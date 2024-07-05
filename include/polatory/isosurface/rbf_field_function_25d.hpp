@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
@@ -9,10 +10,13 @@
 namespace polatory::isosurface {
 
 class rbf_field_function_25d : public field_function {
+  static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Interpolant = interpolant<2>;
 
  public:
-  explicit rbf_field_function_25d(Interpolant& interpolant) : interpolant_(interpolant) {}
+  explicit rbf_field_function_25d(Interpolant& interpolant, double accuracy = kInfinity,
+                                  double grad_accuracy = kInfinity)
+      : interpolant_(interpolant), accuracy_(accuracy), grad_accuracy_(grad_accuracy) {}
 
   vectord operator()(const geometry::points3d& points) const override {
     geometry::points2d points_2d(points.leftCols(2));
@@ -23,11 +27,13 @@ class rbf_field_function_25d : public field_function {
   void set_evaluation_bbox(const geometry::bbox3d& bbox) override {
     geometry::bbox2d bbox_2d{bbox.min().head<2>(), bbox.max().head<2>()};
 
-    interpolant_.set_evaluation_bbox_impl(bbox_2d);
+    interpolant_.set_evaluation_bbox_impl(bbox_2d, accuracy_, grad_accuracy_);
   }
 
  private:
   Interpolant& interpolant_;
+  double accuracy_;
+  double grad_accuracy_;
 };
 
 }  // namespace polatory::isosurface

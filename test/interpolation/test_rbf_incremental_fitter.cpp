@@ -5,7 +5,6 @@
 #include <polatory/interpolation/rbf_incremental_fitter.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/types.hpp>
 #include <utility>
@@ -14,7 +13,6 @@
 
 using polatory::index_t;
 using polatory::model;
-using polatory::precision;
 using polatory::vectord;
 using polatory::interpolation::rbf_evaluator;
 using polatory::interpolation::rbf_incremental_fitter;
@@ -50,7 +48,7 @@ TEST(rbf_incremental_fitter, trivial) {
   EXPECT_EQ(weights.rows(), indices.size() + kDim * grad_indices.size() + model.poly_basis_size());
 
   rbf_evaluator<kDim> eval(model, points(indices, Eigen::all),
-                           grad_points(grad_indices, Eigen::all), precision::kPrecise);
+                           grad_points(grad_indices, Eigen::all));
   eval.set_weights(weights);
   eval.set_target_points(points, grad_points);
   vectord values_fit = eval.evaluate();

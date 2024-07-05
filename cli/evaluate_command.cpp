@@ -1,4 +1,5 @@
 #include <boost/program_options.hpp>
+#include <limits>
 #include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
@@ -19,6 +20,8 @@ struct options {
   std::string points_file;
   int dim{};
   bool grads{};
+  double accuracy{};
+  double grad_accuracy{};
   std::string out_file;
 };
 
@@ -34,12 +37,12 @@ void run_impl(const options& opts) {
 
   auto n = points.rows();
   if (opts.grads) {
-    auto values = inter.evaluate(points, points);
+    auto values = inter.evaluate(points, points, opts.accuracy, opts.grad_accuracy);
     write_table(opts.out_file,
                 concatenate_cols(points, values.head(n),
                                  values.tail(Dim * n).template reshaped<Eigen::RowMajor>(n, Dim)));
   } else {
-    auto values = inter.evaluate(points);
+    auto values = inter.evaluate(points, opts.accuracy);
     write_table(opts.out_file, concatenate_cols(points, values));
   }
 }
@@ -62,6 +65,16 @@ void evaluate_command::run(const std::vector<std::string>& args,
        "Dimension of input points")  //
       ("grads", po::bool_switch(&opts.grads),
        "Evaluate gradients as well as values")  //
+      ("acc",
+       po::value(&opts.accuracy)
+           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+           ->value_name("ACC"),
+       "Absolute evaluation accuracy")  //
+      ("grad-acc",
+       po::value(&opts.grad_accuracy)
+           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+           ->value_name("ACC"),
+       "Absolute gradient evaluation accuracy")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output file in CSV format:\n  X[,Y[,Z]],VAL[,DX[,DY[,DZ]]]")  //
       ;

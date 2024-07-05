@@ -12,7 +12,6 @@
 #include <polatory/interpolation/rbf_solver.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/types.hpp>
 #include <set>
 #include <unordered_set>
@@ -56,7 +55,7 @@ class rbf_inequality_fitter {
     Points ineq_points = points_(ineq_idcs, Eigen::all);
 
     Solver solver(model_, bbox_);
-    Evaluator res_eval(model_, bbox_, precision::kPrecise);
+    Evaluator res_eval(model_, bbox_);
 
     vectord weights = vectord::Zero(n_points_ + n_poly_basis_);
     auto centers = eq_idcs;

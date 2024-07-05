@@ -65,7 +65,6 @@ int main(int argc, const char* argv[]) {
       variogram_command::run(args, opts);
     } else {
       throw std::runtime_error(std::format("unknown command: '{}'", command));
-      return 1;
     }
 
     return 0;

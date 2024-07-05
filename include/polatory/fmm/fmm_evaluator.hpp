@@ -48,7 +48,7 @@ class fmm_generic_evaluator final : public fmm_generic_evaluator_base<Rbf::kDim>
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox, int order);
+  fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox, double accuracy);
 
   ~fmm_generic_evaluator() override;
 
@@ -85,21 +85,21 @@ using fmm_hessian_evaluator = fmm_generic_evaluator<Rbf, hessian_kernel<Rbf>>;
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                               const geometry::bboxNd<Dim>& bbox, int order);
+                                               const geometry::bboxNd<Dim>& bbox, double accuracy);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                         const geometry::bboxNd<Dim>& bbox,
-                                                        int order);
+                                                        double accuracy);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                                   const geometry::bboxNd<Dim>& bbox,
-                                                                  int order);
+                                                                  double accuracy);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf::rbf_proxy<Dim>& rbf,
                                                        const geometry::bboxNd<Dim>& bbox,
-                                                       int order);
+                                                       double accuracy);
 
 }  // namespace polatory::fmm

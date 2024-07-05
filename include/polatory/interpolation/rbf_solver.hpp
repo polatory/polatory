@@ -13,7 +13,6 @@
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/precision.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 #include <polatory/types.hpp>
 
@@ -39,16 +38,13 @@ class rbf_solver {
         l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()),
-        op_(model, points, grad_points, precision::kPrecise),
+        op_(model, points, grad_points),
         res_eval_(model, points, grad_points) {
     set_points(points, grad_points);
   }
 
   rbf_solver(const Model& model, const Bbox& bbox)
-      : model_(model),
-        l_(model.poly_basis_size()),
-        op_(model, bbox, precision::kPrecise),
-        res_eval_(model, bbox) {}
+      : model_(model), l_(model.poly_basis_size()), op_(model, bbox), res_eval_(model, bbox) {}
 
   void set_points(const Points& points) { set_points(points, Points(0, kDim)); }
 
