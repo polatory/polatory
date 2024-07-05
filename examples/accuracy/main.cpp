@@ -19,6 +19,7 @@ using polatory::geometry::bboxNd;
 using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_evaluator;
 using polatory::interpolation::rbf_evaluator;
+using polatory::numeric::absolute_error;
 
 template <int Dim>
 void main_impl(const options& opts) {
@@ -61,7 +62,9 @@ void main_impl(const options& opts) {
   auto values = eval.evaluate();
   auto direct_values = direct_eval.evaluate();
 
-  std::cout << "Absolute error: " << (values.head(test_size) - direct_values).cwiseAbs().maxCoeff()
+  std::cout << "Absolute error: "
+            << absolute_error<Eigen::Infinity>(values.head(test_size),
+                                               direct_values.head(test_size))
             << std::endl;
 }
 
