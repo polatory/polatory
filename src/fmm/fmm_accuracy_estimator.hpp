@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <limits>
-#include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/types.hpp>
 #include <random>
