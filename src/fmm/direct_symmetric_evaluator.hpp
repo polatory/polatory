@@ -6,7 +6,6 @@
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/types.hpp>
-#include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <vector>
 
