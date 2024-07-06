@@ -23,7 +23,7 @@ class LDLT2 : public LDLT<MatrixType_, UpLo_> {
   using Base::Base;
 
   inline MatrixType& matrixLDLT() {
-    eigen_assert(m_isInitialized && "LDLT is not initialized.");
+    eigen_assert(Base::m_isInitialized && "LDLT is not initialized.");
     return this->m_matrix;
   }
 };
@@ -52,7 +52,7 @@ class fine_grid {
         mu_(static_cast<index_t>(point_idcs_.size())),
         sigma_(static_cast<index_t>(grad_point_idcs_.size())),
         m_(mu_ + kDim * sigma_) {
-    POLATORY_ASSERT(mu_ > l_);
+    POLATORY_ASSERT(mu_ >= l_ || (model_.poly_degree() == 1 && mu_ == 1 && sigma_ >= 1));
   }
 
   void setup(const Points& points_full, const Points& grad_points_full,
