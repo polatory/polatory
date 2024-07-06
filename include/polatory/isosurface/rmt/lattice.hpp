@@ -75,12 +75,8 @@ class lattice : public primitive_lattice {
     update_neighbor_cache();
   }
 
-  void add_cell_contains_point(const geometry::point3d& p) {
-    if (!extended_bbox().contains(p)) {
-      return;
-    }
-
-    add_cell(cell_vector_from_point(p));
+  void add_cell_from_point(const geometry::point3d& p) {
+    add_cell(cell_vector_from_point(clamp_to_bbox(p)));
   }
 
   void add_nodes_by_tracking(const field_function& field_fm, double isovalue) {

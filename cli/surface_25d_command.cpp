@@ -44,15 +44,6 @@ void run_impl(const options& opts) {
   if (!opts.seed_points_file.empty()) {
     matrixd table = read_table(opts.seed_points_file);
     seed_points = table(Eigen::all, {0, 1, 2});
-
-    std::vector<index_t> rows_to_keep;
-    for (index_t i = 0; i < seed_points.rows(); ++i) {
-      if (bbox.contains(seed_points.row(i))) {
-        rows_to_keep.push_back(i);
-      }
-    }
-
-    seed_points = seed_points(rows_to_keep, Eigen::all);
   }
 
   auto surface = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn)
