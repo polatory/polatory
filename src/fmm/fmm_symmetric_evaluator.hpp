@@ -110,6 +110,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     }
 
     tree_.reset(nullptr);
+    best_order_.clear();
   }
 
   void set_weights(const Eigen::Ref<const vectord>& weights) {
@@ -134,6 +135,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
                                           }
                                         });
     }
+
+    best_order_.clear();
   }
 
  private:

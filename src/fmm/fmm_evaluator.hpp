@@ -124,6 +124,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     }
 
     src_tree_.reset(nullptr);
+    best_order_.clear();
   }
 
   void set_target_points(const Points& points) {
@@ -167,6 +168,8 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
                                         });
       multipole_dirty_ = true;
     }
+
+    best_order_.clear();
   }
 
  private:
