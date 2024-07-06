@@ -210,7 +210,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   }
 
   void prepare() const {
-    if (n_src_points_ * n_trg_points_ == 0) {
+    if (n_src_points_ * n_trg_points_ < 1024 * 1024) {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
