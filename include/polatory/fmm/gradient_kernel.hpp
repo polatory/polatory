@@ -36,8 +36,9 @@ struct gradient_kernel {
     return vector_type<decayed_type>{decayed_type(-1.0)};
   }
 
-  auto evaluate(scalfmm::container::point<double, kDim> const& x,
-                scalfmm::container::point<double, kDim> const& y) const {
+  template <class T, class U>
+  auto evaluate(scalfmm::container::point<T, kDim> const& x,
+                scalfmm::container::point<U, kDim> const& y) const {
     Vector diff;
     for (auto i = 0; i < kDim; i++) {
       diff(i) = x.at(i) - y.at(i);

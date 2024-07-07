@@ -17,7 +17,6 @@
 #include <scalfmm/tree/leaf_view.hpp>
 #include <stdexcept>
 #include <tuple>
-#include <vector>
 
 namespace polatory::fmm {
 
@@ -42,6 +41,9 @@ class fmm_accuracy_estimator {
       /* outputs */ double, kn,
       /* variables */ index_t>;
 
+  using SourceContainer = scalfmm::container::particle_container<SourceParticle>;
+  using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
+
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
       scalfmm::interpolation::interpolator<double, kDim, Kernel, scalfmm::options::uniform_<>>;
@@ -57,24 +59,24 @@ class fmm_accuracy_estimator {
 
   static constexpr int kMinimumOrder = 8;
   static constexpr int kMaximumOrder = 14;
-  static constexpr index_t kNumTargetPoints = 4096;
+  static constexpr index_t kTargetSize = 4096;
 
  public:
-  static int find_best_order(const Rbf& rbf, const std::vector<SourceParticle>& src_particles,
-                             const Box& box, int tree_height, double accuracy) {
+  static int find_best_order(const Rbf& rbf, const SourceContainer& src_particles, const Box& box,
+                             int tree_height, double accuracy) {
     if (accuracy == std::numeric_limits<double>::infinity()) {
       return kMinimumOrder;
     }
 
-    std::vector<TargetParticle> trg_particles(kNumTargetPoints);
+    TargetContainer trg_particles(kTargetSize);
 
     auto center = box.center();
     auto radius = box.width(0) / 2.0;
     std::mt19937 gen;
     std::uniform_real_distribution<double> dist{-radius, radius};
 
-    for (index_t idx = 0; idx < kNumTargetPoints; idx++) {
-      auto& p = trg_particles.at(idx);
+    for (index_t idx = 0; idx < kTargetSize; idx++) {
+      auto p = trg_particles.at(idx);
       for (auto i = 0; i < kDim; i++) {
         p.position(i) = center.at(i) + dist(gen);
       }
@@ -98,18 +100,13 @@ class fmm_accuracy_estimator {
     throw std::runtime_error("failed to construct an evaluator that meets the given accuracy");
   }
 
-  static vectord evaluate(const Rbf& rbf, const std::vector<SourceParticle>& src_particles,
-                          std::vector<TargetParticle>& trg_particles, const Box& box,
-                          int tree_height, int order) {
+  static vectord evaluate(const Rbf& rbf, const SourceContainer& src_particles,
+                          TargetContainer& trg_particles, const Box& box, int tree_height,
+                          int order) {
     using namespace scalfmm::algorithms;
 
-    for (auto& p : trg_particles) {
-      for (auto i = 0; i < kn; i++) {
-        p.outputs(i) = 0.0;
-      }
-    }
-
-    vectord potentials = vectord::Zero(kn * kNumTargetPoints);
+    vectord potentials = vectord::Zero(kn * kTargetSize);
+    trg_particles.reset_outputs();
 
     Kernel kernel(rbf);
     if (tree_height > 0) {
@@ -118,7 +115,7 @@ class fmm_accuracy_estimator {
       FarField far_field(interpolator);
       FmmOperator fmm_operator(near_field, far_field);
 
-      SourceTree src_tree(tree_height, order, box, 10, 10, src_particles);
+      SourceTree src_tree(tree_height, order, box, 10, 10, src_particles, true);
       TargetTree trg_tree(tree_height, order, box, 10, 10, trg_particles);
 
       scalfmm::list::omp::build_interaction_lists(src_tree, trg_tree, 1, false);
@@ -138,8 +135,8 @@ class fmm_accuracy_estimator {
     } else {
       scalfmm::algorithms::full_direct(src_particles, trg_particles, kernel);
 
-      for (index_t idx = 0; idx < kNumTargetPoints; idx++) {
-        const auto& p = trg_particles.at(idx);
+      for (index_t idx = 0; idx < kTargetSize; idx++) {
+        const auto p = trg_particles.at(idx);
         for (auto i = 0; i < kn; i++) {
           potentials(kn * idx + i) = p.outputs(i);
         }

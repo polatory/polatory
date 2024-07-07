@@ -7,6 +7,7 @@
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/types.hpp>
 #include <scalfmm/container/particle.hpp>
+#include <scalfmm/container/particle_container.hpp>
 #include <vector>
 
 namespace polatory::fmm {
@@ -24,24 +25,21 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   using SourceParticle = scalfmm::container::particle<
       /* position */ double, kDim,
       /* inputs */ double, km,
-      /* outputs */ double, kn,  // should be 0
-      /* variables */ index_t>;
+      /* outputs */ double, kn>;  // should be 0
 
   using TargetParticle = scalfmm::container::particle<
       /* position */ double, kDim,
       /* inputs */ double, km,  // should be 0
-      /* outputs */ double, kn,
-      /* variables */ index_t>;
+      /* outputs */ double, kn>;
+
+  using SourceContainer = scalfmm::container::particle_container<SourceParticle>;
+  using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
 
  public:
   impl(const Rbf& rbf, const Bbox& /*bbox*/, int /*accuracy*/) : rbf_(rbf), kernel_(rbf) {}
 
   vectord evaluate() const {
-    for (auto& p : trg_particles_) {
-      for (auto i = 0; i < kn; i++) {
-        p.outputs(i) = 0.0;
-      }
-    }
+    trg_particles_.reset_outputs();
 
     auto radius = rbf_.support_radius_isotropic();
     std::vector<index_t> indices;
@@ -49,14 +47,14 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
 #pragma omp parallel for private(indices, distances)
     for (index_t trg_idx = 0; trg_idx < n_trg_points_; trg_idx++) {
-      auto& p = trg_particles_.at(trg_idx);
+      auto p = trg_particles_.at(trg_idx);
       Point point;
       for (auto i = 0; i < kDim; i++) {
         point(i) = p.position(i);
       }
       kdtree_->radius_search(point, radius, indices, distances);
       for (auto src_idx : indices) {
-        const auto& q = src_particles_.at(src_idx);
+        const auto q = src_particles_.at(src_idx);
         auto k = kernel_.evaluate(p.position(), q.position());
         for (auto i = 0; i < kn; i++) {
           for (auto j = 0; j < km; j++) {
@@ -76,12 +74,11 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
     auto a = rbf_.anisotropy();
     for (index_t idx = 0; idx < n_src_points_; idx++) {
-      auto& p = src_particles_.at(idx);
+      auto p = src_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
       for (auto i = 0; i < kDim; i++) {
         p.position(i) = ap(i);
       }
-      p.variables(idx);
     }
 
     Points apoints = geometry::transform_points<kDim>(a, points);
@@ -95,12 +92,11 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
     auto a = rbf_.anisotropy();
     for (index_t idx = 0; idx < n_trg_points_; idx++) {
-      auto& p = trg_particles_.at(idx);
+      auto p = trg_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
       for (auto i = 0; i < kDim; i++) {
         p.position(i) = ap(i);
       }
-      p.variables(idx);
     }
   }
 
@@ -108,7 +104,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     POLATORY_ASSERT(weights.rows() == km * n_src_points_);
 
     for (index_t idx = 0; idx < n_src_points_; idx++) {
-      auto& p = src_particles_.at(idx);
+      auto p = src_particles_.at(idx);
       for (auto i = 0; i < km; i++) {
         p.inputs(i) = weights(km * idx + i);
       }
@@ -120,7 +116,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     vectord potentials = vectord::Zero(kn * n_trg_points_);
 
     for (index_t idx = 0; idx < n_trg_points_; idx++) {
-      const auto& p = trg_particles_.at(idx);
+      const auto p = trg_particles_.at(idx);
       for (auto i = 0; i < kn; i++) {
         potentials(kn * idx + i) = p.outputs(i);
       }
@@ -134,8 +130,8 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
   index_t n_src_points_{};
   index_t n_trg_points_{};
-  mutable std::vector<SourceParticle> src_particles_;
-  mutable std::vector<TargetParticle> trg_particles_;
+  mutable SourceContainer src_particles_;
+  mutable TargetContainer trg_particles_;
   std::unique_ptr<point_cloud::kdtree<kDim>> kdtree_;
 };
 

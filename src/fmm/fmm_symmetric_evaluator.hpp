@@ -8,6 +8,7 @@
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
+#include <scalfmm/container/particle_container.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
 #include <scalfmm/operators/fmm_operators.hpp>
 #include <scalfmm/tree/box.hpp>
@@ -15,9 +16,9 @@
 #include <scalfmm/tree/for_each.hpp>
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
+#include <scalfmm/utils/sort.hpp>
 #include <tuple>
 #include <unordered_map>
-#include <vector>
 
 #include "fmm_accuracy_estimator.hpp"
 #include "utility.hpp"
@@ -38,6 +39,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
       /* inputs */ double, km,
       /* outputs */ double, kn,
       /* variables */ index_t>;
+
+  using Container = scalfmm::container::particle_container<Particle>;
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
   using Interpolator =
@@ -76,11 +79,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
           (*tree_, *fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
     } else {
-      for (auto& p : particles_) {
-        for (auto i = 0; i < kn; i++) {
-          p.outputs(i) = 0.0;
-        }
-      }
+      particles_.reset_outputs();
       scalfmm::algorithms::full_direct(particles_, kernel_);
     }
 
@@ -88,8 +87,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
 
     auto result = potentials();
 
-    // Release some memory.
-    reset_tree();
+    // Release memory held by the tree.
+    tree_.reset(nullptr);
 
     return result;
   }
@@ -101,7 +100,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
 
     auto a = rbf_.anisotropy();
     for (index_t idx = 0; idx < n_points_; idx++) {
-      auto& p = particles_.at(idx);
+      auto p = particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
       for (auto i = 0; i < kDim; i++) {
         p.position(i) = ap(i);
@@ -109,6 +108,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
       p.variables(idx);
     }
 
+    sorted_level_ = 0;
     tree_.reset(nullptr);
     best_order_.clear();
   }
@@ -118,9 +118,10 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
 
     if (!tree_) {
       for (index_t idx = 0; idx < n_points_; idx++) {
-        auto& p = particles_.at(idx);
+        auto p = particles_.at(idx);
+        auto orig_idx = std::get<0>(p.variables());
         for (auto i = 0; i < km; i++) {
-          p.inputs(i) = weights(km * idx + i);
+          p.inputs(i) = weights(km * orig_idx + i);
         }
       }
     } else {
@@ -171,7 +172,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
                                           }
                                         });
     } else {
-      for (auto& p : particles_) {
+      for (index_t idx = 0; idx < n_points_; idx++) {
+        auto p = particles_.at(idx);
         for (auto i = 0; i < kn; i++) {
           for (auto j = 0; j < km; j++) {
             p.outputs(i) += p.inputs(j) * k.at(km * i + j);
@@ -197,9 +199,10 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
                                         });
     } else {
       for (auto idx = 0; idx < n_points_; idx++) {
-        const auto& p = particles_.at(idx);
+        const auto p = particles_.at(idx);
+        auto orig_idx = std::get<0>(p.variables());
         for (auto i = 0; i < kn; i++) {
-          potentials(kn * idx + i) = p.outputs(i);
+          potentials(kn * orig_idx + i) = p.outputs(i);
         }
       }
     }
@@ -212,53 +215,32 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
-      reset_tree();
+      tree_.reset(nullptr);
       tree_height_ = 0;
       return;
     }
 
     auto tree_height = fmm_tree_height<kDim>(n_points_);
+
+    if (sorted_level_ < tree_height - 1) {
+      scalfmm::utils::sort_container(box_, tree_height - 1, particles_);
+      sorted_level_ = tree_height - 1;
+    }
+
     auto order = find_best_order(tree_height);
 
     if (tree_height_ != tree_height || order_ != order) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, order, tree_height, box_.width(0));
       far_field_ = std::make_unique<FarField>(*interpolator_);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
-      reset_tree();
+      tree_.reset(nullptr);
       tree_height_ = tree_height;
       order_ = order;
     }
 
     if (!tree_) {
-      tree_ = std::make_unique<Tree>(tree_height, order, box_, 10, 10, particles_);
-      particles_.clear();
-      particles_.shrink_to_fit();
+      tree_ = std::make_unique<Tree>(tree_height, order, box_, 10, 10, particles_, true);
     }
-  }
-
-  void reset_tree() const {
-    if (!tree_) {
-      return;
-    }
-
-    particles_.resize(n_points_);
-
-    scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_), [&](const auto& leaf) {
-      for (auto p_ref : leaf) {
-        auto p = typename Leaf::proxy_type(p_ref);
-        auto idx = std::get<0>(p.variables());
-        auto& new_p = particles_.at(idx);
-        for (auto i = 0; i < kDim; i++) {
-          new_p.position(i) = p.position(i);
-        }
-        for (auto i = 0; i < km; i++) {
-          new_p.inputs(i) = p.inputs(i);
-        }
-        new_p.variables(idx);
-      }
-    });
-
-    tree_.reset(nullptr);
   }
 
   const Rbf& rbf_;
@@ -268,7 +250,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
   const NearField near_field_;
 
   index_t n_points_{};
-  mutable std::vector<Particle> particles_;
+  mutable Container particles_;
+  mutable int sorted_level_{};
   mutable int tree_height_{};
   mutable int order_{};
   mutable std::unique_ptr<Interpolator> interpolator_;
