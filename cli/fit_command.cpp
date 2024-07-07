@@ -30,8 +30,8 @@ struct options {
   std::string model_file;
   model_options model_opts;
   std::string initial_interpolant_file;
-  double absolute_tolerance{};
-  double grad_absolute_tolerance{};
+  double tolerance{};
+  double grad_tolerance{};
   int max_iter{};
   double accuracy{};
   double grad_accuracy{};
@@ -78,15 +78,14 @@ void run_impl(const options& opts) {
 
   Interpolant inter(std::move(model));
   if (opts.ineq) {
-    inter.fit_inequality(points, values, *values_lb, *values_ub, opts.absolute_tolerance,
-                         opts.max_iter, opts.accuracy);
+    inter.fit_inequality(points, values, *values_lb, *values_ub, opts.tolerance, opts.max_iter,
+                         opts.accuracy);
   } else if (opts.reduce) {
-    inter.fit_incrementally(points, grad_points, rhs, opts.absolute_tolerance,
-                            opts.grad_absolute_tolerance, opts.max_iter, opts.accuracy,
-                            opts.grad_accuracy);
+    inter.fit_incrementally(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance,
+                            opts.max_iter, opts.accuracy, opts.grad_accuracy);
   } else {
-    inter.fit(points, grad_points, rhs, opts.absolute_tolerance, opts.grad_absolute_tolerance,
-              opts.max_iter, opts.accuracy, opts.grad_accuracy, initial ? &*initial : nullptr);
+    inter.fit(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance, opts.max_iter,
+              opts.accuracy, opts.grad_accuracy, initial ? &*initial : nullptr);
   }
 
   inter.save(opts.out_file);
@@ -111,12 +110,10 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
        "Input model file")  //
       ("initial", po::value(&opts.initial_interpolant_file)->value_name("FILE"),
        "Input interpolant file to be used as the initial solution")  //
-      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("TOL"),
+      ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
        "Absolute fitting tolerance")  //
       ("grad-tol",
-       po::value(&opts.grad_absolute_tolerance)
-           ->default_value(-1.0, "SAME AS --tol")
-           ->value_name("TOL"),
+       po::value(&opts.grad_tolerance)->default_value(-1.0, "SAME AS --tol")->value_name("TOL"),
        "Absolute gradient fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //
@@ -169,8 +166,8 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
     throw std::runtime_error("--initial cannot be used in conjunction with --ineq or --reduce");
   }
 
-  if (opts.grad_absolute_tolerance == -1.0) {
-    opts.grad_absolute_tolerance = opts.absolute_tolerance;
+  if (opts.grad_tolerance == -1.0) {
+    opts.grad_tolerance = opts.tolerance;
   }
 
   switch (opts.dim) {

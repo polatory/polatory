@@ -18,13 +18,12 @@ class rbf_fitter {
   rbf_fitter(const Model& model, const Points& points, const Points& grad_points)
       : model_(model), points_(points), grad_points_(grad_points) {}
 
-  vectord fit(const vectord& values, double absolute_tolerance, double grad_absolute_tolerance,
-              int max_iter, double accuracy, double grad_accuracy,
+  vectord fit(const vectord& values, double tolerance, double grad_tolerance, int max_iter,
+              double accuracy, double grad_accuracy,
               const vectord* initial_weights = nullptr) const {
     Solver solver(model_, points_, grad_points_, accuracy, grad_accuracy);
 
-    return solver.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter,
-                        initial_weights);
+    return solver.solve(values, tolerance, grad_tolerance, max_iter, initial_weights);
   }
 
  private:

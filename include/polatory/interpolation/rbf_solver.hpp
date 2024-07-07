@@ -66,15 +66,14 @@ class rbf_solver {
   }
 
   template <class DerivedValues, class DerivedInitialWeights = vectord>
-  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance,
-                int max_iter,
+  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double tolerance, int max_iter,
                 const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
-    return solve(values, absolute_tolerance, absolute_tolerance, max_iter, initial_weights);
+    return solve(values, tolerance, tolerance, max_iter, initial_weights);
   }
 
   template <class DerivedValues, class DerivedInitialWeights = vectord>
-  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double absolute_tolerance,
-                double grad_absolute_tolerance, int max_iter,
+  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double tolerance,
+                double grad_tolerance, int max_iter,
                 const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(initial_weights == nullptr ||
@@ -117,7 +116,7 @@ class rbf_solver {
                 << solver.relative_residual() << std::defaultfloat << std::endl;
 
       auto [converged, res, grad_res] =
-          res_eval_.converged(values, weights, absolute_tolerance, grad_absolute_tolerance);
+          res_eval_.converged(values, weights, tolerance, grad_tolerance);
       if (converged) {
         if (mu_ > 0) {
           std::cout << "Achieved absolute residual: " << res << std::endl;

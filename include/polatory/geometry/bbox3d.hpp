@@ -19,7 +19,7 @@ class bboxNd {
       : min_(Point::Constant(std::numeric_limits<double>::infinity())),
         max_(Point::Constant(-std::numeric_limits<double>::infinity())) {}
 
-  bboxNd(const Point& min, const Point& max) : min_(min), max_(max){};
+  bboxNd(const Point& min, const Point& max) : min_(min), max_(max) {};
 
   bool operator==(const bboxNd& other) const = default;
 

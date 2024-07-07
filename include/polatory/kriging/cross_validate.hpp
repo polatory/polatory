@@ -14,7 +14,7 @@ namespace polatory::kriging {
 template <int Dim>
 inline vectord cross_validate(const model<Dim>& model, const geometry::pointsNd<Dim>& points,
                               const vectord& values, const Eigen::VectorXi& set_ids,
-                              double absolute_tolerance, int max_iter, double accuracy) {
+                              double tolerance, int max_iter, double accuracy) {
   auto n_points = points.rows();
   vectord predictions = vectord::Zero(n_points);
 
@@ -35,7 +35,7 @@ inline vectord cross_validate(const model<Dim>& model, const geometry::pointsNd<
     vectord train_values = values(train_set, Eigen::all);
 
     interpolant<Dim> interpolant(model);
-    interpolant.fit(train_points, train_values, absolute_tolerance, max_iter, accuracy);
+    interpolant.fit(train_points, train_values, tolerance, max_iter, accuracy);
     auto test_values_fit = interpolant.evaluate(test_points, accuracy);
 
     for (index_t j = 0; j < static_cast<index_t>(test_set.size()); j++) {

@@ -26,8 +26,8 @@ TEST(rbf_inequality_fitter, inequality_only) {
   constexpr int kDim = 3;
 
   index_t n_points = 10000;
-  auto absolute_tolerance = 1e-4;
-  auto accuracy = absolute_tolerance / 100.0;
+  auto tolerance = 1e-4;
+  auto accuracy = tolerance / 100.0;
 
   auto aniso = random_anisotropy<kDim>();
   auto [points, values] = sample_data(n_points, aniso);
@@ -43,8 +43,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   model<kDim> model(std::move(rbf), poly_degree);
 
   rbf_inequality_fitter<kDim> fitter(model, points);
-  auto [indices, weights] =
-      fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32, accuracy);
+  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, tolerance, 32, accuracy);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
@@ -53,8 +52,8 @@ TEST(rbf_inequality_fitter, inequality_only) {
   vectord values_fit = eval.evaluate(points);
 
   for (index_t i = 0; i < n_points; i++) {
-    EXPECT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
-    EXPECT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
+    EXPECT_GT(values_fit(i), values_lb(i) - tolerance);
+    EXPECT_LT(values_fit(i), values_ub(i) + tolerance);
   }
 }
 
@@ -63,8 +62,8 @@ TEST(rbf_inequality_fitter, kostov86) {
   constexpr int kDim = 1;
 
   index_t n_points = 25;
-  auto absolute_tolerance = 1e-5;
-  auto accuracy = absolute_tolerance / 100.0;
+  auto tolerance = 1e-5;
+  auto accuracy = tolerance / 100.0;
 
   points1d points = points1d::Zero(n_points, kDim);
   for (index_t i = 0; i < n_points; i++) {
@@ -88,8 +87,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   model<kDim> model(std::move(rbf), -1);
 
   rbf_inequality_fitter<kDim> fitter(model, points);
-  auto [indices, weights] =
-      fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32, accuracy);
+  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, tolerance, 32, accuracy);
 
   rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), accuracy);
   eval.set_weights(weights);
@@ -97,13 +95,13 @@ TEST(rbf_inequality_fitter, kostov86) {
 
   for (index_t i = 0; i < n_points; i++) {
     if (!std::isnan(values(i))) {
-      EXPECT_LT(std::abs(values_fit(i) - values(i)), absolute_tolerance);
+      EXPECT_LT(std::abs(values_fit(i) - values(i)), tolerance);
     } else {
       if (!std::isnan(values_lb(i))) {
-        EXPECT_GT(values_fit(i), values_lb(i) - absolute_tolerance);
+        EXPECT_GT(values_fit(i), values_lb(i) - tolerance);
       }
       if (!std::isnan(values_ub(i))) {
-        EXPECT_LT(values_fit(i), values_ub(i) + absolute_tolerance);
+        EXPECT_LT(values_fit(i), values_ub(i) + tolerance);
       }
     }
   }

@@ -17,7 +17,7 @@ int main(int /*argc*/, char* argv[]) {
     vectord values = read_table(argv[2]);
     points3d prediction_points = read_table(argv[3]);
 
-    double absolute_tolerance = 1e-4;
+    double tolerance = 1e-4;
 
     cov_exponential<3> rbf({1.0, 0.02});
 
@@ -26,7 +26,7 @@ int main(int /*argc*/, char* argv[]) {
 
     interpolant<3> interpolant(model);
 
-    interpolant.fit(points, values, absolute_tolerance);
+    interpolant.fit(points, values, tolerance);
     auto prediction_values = interpolant.evaluate(prediction_points);
 
     write_table(argv[4], prediction_values);

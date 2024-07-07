@@ -40,7 +40,7 @@ class rbf_inequality_fitter {
         bbox_(Bbox::from_points(points)) {}
 
   std::pair<std::vector<index_t>, vectord> fit(const vectord& values, const vectord& values_lb,
-                                               const vectord& values_ub, double absolute_tolerance,
+                                               const vectord& values_ub, double tolerance,
                                                int max_iter, double accuracy) const {
     double filtering_distance = bbox_.width().norm();
 
@@ -95,7 +95,7 @@ class rbf_inequality_fitter {
         center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
 
         solver.set_points(center_points);
-        center_weights = solver.solve(center_values, absolute_tolerance, max_iter, &center_weights);
+        center_weights = solver.solve(center_values, tolerance, max_iter, &center_weights);
 
         for (index_t i = 0; i < n_centers; i++) {
           auto idx = centers.at(i);
@@ -143,7 +143,7 @@ class rbf_inequality_fitter {
               active_set_changed = true;
             }
           } else {
-            if (values_fit(i) < values_lb(idx) - absolute_tolerance) {
+            if (values_fit(i) < values_lb(idx) - tolerance) {
               if (filtered_indices.contains(idx)) {
                 active_lb_idcs.insert(idx);
                 weights(idx) = 0.0;
@@ -159,7 +159,7 @@ class rbf_inequality_fitter {
               active_set_changed = true;
             }
           } else {
-            if (values_fit(i) > values_ub(idx) + absolute_tolerance) {
+            if (values_fit(i) > values_ub(idx) + tolerance) {
               if (filtered_indices.contains(idx)) {
                 active_ub_idcs.insert(idx);
                 weights(idx) = 0.0;

@@ -28,7 +28,7 @@ struct options {
   int dim;
   std::string model_file;
   model_options model_opts;
-  double absolute_tolerance;
+  double tolerance;
   int max_iter;
   double accuracy{};
   std::string out_file;
@@ -47,7 +47,7 @@ void run_impl(const options& opts) {
   auto model =
       !opts.model_file.empty() ? Model::load(opts.model_file) : make_model<Dim>(opts.model_opts);
 
-  auto predictions = cross_validate<Dim>(model, points, values, set_ids, opts.absolute_tolerance,
+  auto predictions = cross_validate<Dim>(model, points, values, set_ids, opts.tolerance,
                                          opts.max_iter, opts.accuracy);
 
   write_table(opts.out_file, concatenate_cols(table, predictions));
@@ -69,7 +69,7 @@ void cross_validate_command::run(const std::vector<std::string>& args,
        "Dimension of input points")  //
       ("model", po::value(&opts.model_file)->value_name("FILE"),
        "Input model file")  //
-      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("TOL"),
+      ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
        "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //

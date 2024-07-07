@@ -47,8 +47,7 @@ class rbf_residual_evaluator {
   template <class Derived, class Derived2>
   std::tuple<bool, double, double> converged(const Eigen::MatrixBase<Derived>& values,
                                              const Eigen::MatrixBase<Derived2>& weights,
-                                             double absolute_tolerance,
-                                             double grad_absolute_tolerance) const {
+                                             double tolerance, double grad_tolerance) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
@@ -73,7 +72,7 @@ class rbf_residual_evaluator {
       auto grad_residual = numeric::absolute_error<Eigen::Infinity>(
           fit.tail(kDim * trg_sigma), values.segment(mu_, kDim * trg_sigma));
 
-      if (residual > absolute_tolerance || grad_residual > grad_absolute_tolerance) {
+      if (residual > tolerance || grad_residual > grad_tolerance) {
         return {false, 0.0, 0.0};
       }
 
@@ -92,7 +91,7 @@ class rbf_residual_evaluator {
       auto grad_residual = numeric::absolute_error<Eigen::Infinity>(fit.tail(kDim * sigma_),
                                                                     values.tail(kDim * sigma_));
 
-      if (residual > absolute_tolerance || grad_residual > grad_absolute_tolerance) {
+      if (residual > tolerance || grad_residual > grad_tolerance) {
         return {false, 0.0, 0.0};
       }
 

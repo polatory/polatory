@@ -187,9 +187,9 @@ int main(int argc, const char* argv[]) {
     // Fit.
     interpolant<3> interpolant(model);
     if (opts.reduce) {
-      interpolant.fit_incrementally(C, S, opts.absolute_tolerance, opts.max_iter);
+      interpolant.fit_incrementally(C, S, opts.tolerance, opts.max_iter);
     } else {
-      interpolant.fit(C, S, opts.absolute_tolerance, opts.max_iter);
+      interpolant.fit(C, S, opts.tolerance, opts.max_iter);
     }
 
     // Generate the isosurface.

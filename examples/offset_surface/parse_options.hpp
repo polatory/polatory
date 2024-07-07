@@ -13,7 +13,7 @@ struct options {
   std::string in;
   std::string mesh_in;
   double min_distance;
-  double absolute_tolerance;
+  double tolerance;
   int max_iter;
   bool reduce;
   polatory::geometry::bbox3d mesh_bbox;
@@ -34,7 +34,7 @@ inline options parse_options(int argc, const char* argv[]) {
        "The mesh to offset in OBJ format")  //
       ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("DIST"),
        "Minimum separation distance of input points")  //
-      ("tol", po::value(&opts.absolute_tolerance)->required()->value_name("TOL"),
+      ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
        "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //

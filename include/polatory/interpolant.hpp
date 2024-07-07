@@ -82,16 +82,15 @@ class interpolant {
     return evaluator_->evaluate(points, grad_points);
   }
 
-  void fit(const Points& points, const vectord& values, double absolute_tolerance,
-           int max_iter = 100, double accuracy = kInfinity, const interpolant* initial = nullptr) {
-    fit(points, Points(0, kDim), values, absolute_tolerance, kInfinity, max_iter, accuracy,
-        kInfinity, initial);
+  void fit(const Points& points, const vectord& values, double tolerance, int max_iter = 100,
+           double accuracy = kInfinity, const interpolant* initial = nullptr) {
+    fit(points, Points(0, kDim), values, tolerance, kInfinity, max_iter, accuracy, kInfinity,
+        initial);
   }
 
-  void fit(const Points& points, const Points& grad_points, const vectord& values,
-           double absolute_tolerance, double grad_absolute_tolerance, int max_iter = 100,
-           double accuracy = kInfinity, double grad_accuracy = kInfinity,
-           const interpolant* initial = nullptr) {
+  void fit(const Points& points, const Points& grad_points, const vectord& values, double tolerance,
+           double grad_tolerance, int max_iter = 100, double accuracy = kInfinity,
+           double grad_accuracy = kInfinity, const interpolant* initial = nullptr) {
     check_num_points(points, grad_points);
 
     auto n_rhs = points.rows() + kDim * grad_points.rows();
@@ -99,12 +98,12 @@ class interpolant {
       throw std::invalid_argument(std::format("values.rows() must be equal to {}", n_rhs));
     }
 
-    if (!(absolute_tolerance > 0.0)) {
-      throw std::invalid_argument("absolute_tolerance must be positive");
+    if (!(tolerance > 0.0)) {
+      throw std::invalid_argument("tolerance must be positive");
     }
 
-    if (!(grad_absolute_tolerance > 0.0)) {
-      throw std::invalid_argument("grad_absolute_tolerance must be positive");
+    if (!(grad_tolerance > 0.0)) {
+      throw std::invalid_argument("grad_tolerance must be positive");
     }
 
     vectord initial_weights;
@@ -116,8 +115,8 @@ class interpolant {
     clear();
 
     Fitter fitter(model_, points, grad_points);
-    weights_ = fitter.fit(values, absolute_tolerance, grad_absolute_tolerance, max_iter, accuracy,
-                          grad_accuracy, initial != nullptr ? &initial_weights : nullptr);
+    weights_ = fitter.fit(values, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy,
+                          initial != nullptr ? &initial_weights : nullptr);
 
     fitted_ = true;
     centers_ = points;
@@ -125,16 +124,15 @@ class interpolant {
     bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
-  void fit_incrementally(const Points& points, const vectord& values, double absolute_tolerance,
+  void fit_incrementally(const Points& points, const vectord& values, double tolerance,
                          int max_iter = 100, double accuracy = kInfinity) {
-    fit_incrementally(points, Points(0, kDim), values, absolute_tolerance, kInfinity, max_iter,
-                      accuracy, kInfinity);
+    fit_incrementally(points, Points(0, kDim), values, tolerance, kInfinity, max_iter, accuracy,
+                      kInfinity);
   }
 
   void fit_incrementally(const Points& points, const Points& grad_points, const vectord& values,
-                         double absolute_tolerance, double grad_absolute_tolerance,
-                         int max_iter = 100, double accuracy = kInfinity,
-                         double grad_accuracy = kInfinity) {
+                         double tolerance, double grad_tolerance, int max_iter = 100,
+                         double accuracy = kInfinity, double grad_accuracy = kInfinity) {
     check_num_points(points, grad_points);
 
     if (values.rows() != points.rows() + kDim * grad_points.rows()) {
@@ -142,12 +140,12 @@ class interpolant {
                                               points.rows() + kDim * grad_points.rows()));
     }
 
-    if (!(absolute_tolerance > 0.0)) {
-      throw std::invalid_argument("absolute_tolerance must be positive");
+    if (!(tolerance > 0.0)) {
+      throw std::invalid_argument("tolerance must be positive");
     }
 
-    if (!(grad_absolute_tolerance > 0.0)) {
-      throw std::invalid_argument("grad_absolute_tolerance must be positive");
+    if (!(grad_tolerance > 0.0)) {
+      throw std::invalid_argument("grad_tolerance must be positive");
     }
 
     clear();
@@ -155,8 +153,8 @@ class interpolant {
     IncrementalFitter fitter(model_, points, grad_points);
     std::vector<index_t> center_indices;
     std::vector<index_t> grad_center_indices;
-    std::tie(center_indices, grad_center_indices, weights_) = fitter.fit(
-        values, absolute_tolerance, grad_absolute_tolerance, max_iter, accuracy, grad_accuracy);
+    std::tie(center_indices, grad_center_indices, weights_) =
+        fitter.fit(values, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy);
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
@@ -165,7 +163,7 @@ class interpolant {
   }
 
   void fit_inequality(const Points& points, const vectord& values, const vectord& values_lb,
-                      const vectord& values_ub, double absolute_tolerance, int max_iter = 100,
+                      const vectord& values_ub, double tolerance, int max_iter = 100,
                       double accuracy = kInfinity) {
     if (model_.nugget() != 0.0) {
       throw std::runtime_error("Non-zero nugget is not supported");
@@ -189,8 +187,8 @@ class interpolant {
       throw std::invalid_argument("values_ub.rows() must be equal to points.rows()");
     }
 
-    if (!(absolute_tolerance > 0.0)) {
-      throw std::invalid_argument("absolute_tolerance must be positive");
+    if (!(tolerance > 0.0)) {
+      throw std::invalid_argument("tolerance must be positive");
     }
 
     clear();
@@ -198,7 +196,7 @@ class interpolant {
     InequalityFitter fitter(model_, points);
     std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) =
-        fitter.fit(values, values_lb, values_ub, absolute_tolerance, max_iter, accuracy);
+        fitter.fit(values, values_lb, values_ub, tolerance, max_iter, accuracy);
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);

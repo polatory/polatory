@@ -116,30 +116,28 @@ void define_module(py::module& m) {
           "fit",
           py::overload_cast<const Points&, const vectord&, double, int, double, const Interpolant*>(
               &Interpolant::fit),
-          "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100,
-          "accuracy"_a = kInfinity, "initial"_a = nullptr)
+          "points"_a, "values"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
+          "initial"_a = nullptr)
       .def("fit",
            py::overload_cast<const Points&, const Points&, const vectord&, double, double, int,
                              double, double, const Interpolant*>(&Interpolant::fit),
-           "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
-           "grad_absolute_tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
-           "grad_accuracy"_a = kInfinity, "initial"_a = nullptr)
+           "points"_a, "grad_points"_a, "values"_a, "tolerance"_a, "grad_tolerance"_a,
+           "max_iter"_a = 100, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity,
+           "initial"_a = nullptr)
       .def("fit_incrementally",
            py::overload_cast<const Points&, const vectord&, double, int, double>(
                &Interpolant::fit_incrementally),
-           "points"_a, "values"_a, "absolute_tolerance"_a, "max_iter"_a = 100,
-           "accuracy"_a = kInfinity)
+           "points"_a, "values"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity)
       .def("fit_incrementally",
            py::overload_cast<const Points&, const Points&, const vectord&, double, double, int,
                              double, double>(&Interpolant::fit_incrementally),
-           "points"_a, "grad_points"_a, "values"_a, "absolute_tolerance"_a,
-           "grad_absolute_tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
-           "grad_accuracy"_a = kInfinity)
+           "points"_a, "grad_points"_a, "values"_a, "tolerance"_a, "grad_tolerance"_a,
+           "max_iter"_a = 100, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity)
       .def("fit_inequality",
            py::overload_cast<const Points&, const vectord&, const vectord&, const vectord&, double,
                              int, double>(&Interpolant::fit_inequality),
-           "points"_a, "values"_a, "values_lb"_a, "values_ub"_a, "absolute_tolerance"_a,
-           "max_iter"_a = 100, "accuracy"_a = kInfinity)
+           "points"_a, "values"_a, "values_lb"_a, "values_ub"_a, "tolerance"_a, "max_iter"_a = 100,
+           "accuracy"_a = kInfinity)
       .def_static("load", &Interpolant::load, "filename"_a)
       .def("save", &Interpolant::save, "filename"_a);
 
@@ -190,7 +188,7 @@ void define_module(py::module& m) {
       .def("save", &VariogramSet::save, "filename"_a);
 
   m.def("cross_validate", &kriging::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
-        "set_ids"_a, "absolute_tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity);
+        "set_ids"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity);
 
   m.def("detrend", &kriging::detrend<Dim>, "points"_a, "values"_a, "degree"_a);
 }

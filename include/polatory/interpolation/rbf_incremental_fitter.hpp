@@ -43,9 +43,11 @@ class rbf_incremental_fitter {
         grad_points_full_(grad_points_full),
         bbox_(Bbox::from_points(points_full).convex_hull(Bbox::from_points(grad_points_full))) {}
 
-  std::tuple<std::vector<index_t>, std::vector<index_t>, vectord> fit(
-      const vectord& values_full, double absolute_tolerance, double grad_absolute_tolerance,
-      int max_iter, double accuracy, double grad_accuracy) const {
+  std::tuple<std::vector<index_t>, std::vector<index_t>, vectord> fit(const vectord& values_full,
+                                                                      double tolerance,
+                                                                      double grad_tolerance,
+                                                                      int max_iter, double accuracy,
+                                                                      double grad_accuracy) const {
     POLATORY_ASSERT(values_full.size() == mu_full_ + kDim * sigma_full_);
 
     auto filtering_distance = bbox_.width().norm();
@@ -83,8 +85,7 @@ class rbf_incremental_fitter {
             values_full.tail(kDim * sigma_full_)
                 .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_centers, Eigen::all)
                 .template reshaped<Eigen::RowMajor>();
-        weights =
-            solver.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter, &weights);
+        weights = solver.solve(values, tolerance, grad_tolerance, max_iter, &weights);
       }
 
       if (mu == mu_full_ && sigma == sigma_full_) {
@@ -115,16 +116,16 @@ class rbf_incremental_fitter {
                        c_grad_residuals.end(),
                        [](const auto& a, const auto& b) { return a.second < b.second; });
 
-      // Count points with residuals larger than absolute_tolerance.
+      // Count points with residuals larger than tolerance.
 
-      auto lb = std::lower_bound(c_residuals.begin(), c_residuals.end(), absolute_tolerance);
+      auto lb = std::lower_bound(c_residuals.begin(), c_residuals.end(), tolerance);
       auto n_points_need_fitting = static_cast<index_t>(std::distance(lb, c_residuals.end()));
       if (mu_full_ > 0) {
         std::cout << "Number of points to fit: " << n_points_need_fitting << std::endl;
       }
 
-      auto grad_lb = std::lower_bound(c_grad_residuals.begin(), c_grad_residuals.end(),
-                                      grad_absolute_tolerance);
+      auto grad_lb =
+          std::lower_bound(c_grad_residuals.begin(), c_grad_residuals.end(), grad_tolerance);
       auto n_grad_points_need_fitting =
           static_cast<index_t>(std::distance(grad_lb, c_grad_residuals.end()));
       if (sigma_full_ > 0) {

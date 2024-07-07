@@ -23,11 +23,11 @@ namespace {
 
 void test(index_t n_points, index_t n_grad_points) {
   constexpr int kDim = 3;
-  auto absolute_tolerance = 1e-3;
-  auto grad_absolute_tolerance = 1e-2;
+  auto tolerance = 1e-3;
+  auto grad_tolerance = 1e-2;
   auto max_iter = 100;
-  auto accuracy = absolute_tolerance / 100.0;
-  auto grad_accuracy = grad_absolute_tolerance / 100.0;
+  auto accuracy = tolerance / 100.0;
+  auto grad_accuracy = grad_tolerance / 100.0;
 
   auto aniso = random_anisotropy<kDim>();
   auto [points, values] = sample_data(n_points, aniso);
@@ -44,8 +44,7 @@ void test(index_t n_points, index_t n_grad_points) {
   model.set_nugget(0.01);
 
   rbf_fitter<kDim> fitter(model, points, grad_points);
-  vectord weights = fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter, accuracy,
-                               grad_accuracy);
+  vectord weights = fitter.fit(rhs, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy);
 
   EXPECT_EQ(weights.rows(), n_points + kDim * n_grad_points + model.poly_basis_size());
 
@@ -56,12 +55,12 @@ void test(index_t n_points, index_t n_grad_points) {
   values_fit.head(n_points) += weights.head(n_points) * model.nugget();
 
   EXPECT_LT(absolute_error<Eigen::Infinity>(values_fit.head(n_points), rhs.head(n_points)),
-            absolute_tolerance);
+            tolerance);
 
   if (n_grad_points > 0) {
     EXPECT_LT(absolute_error<Eigen::Infinity>(values_fit.tail(kDim * n_grad_points),
                                               rhs.tail(kDim * n_grad_points)),
-              grad_absolute_tolerance);
+              grad_tolerance);
   }
 }
 
