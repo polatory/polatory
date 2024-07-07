@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <polatory/common/complementary_indices.hpp>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
@@ -23,6 +24,7 @@ namespace polatory::interpolation {
 template <int Dim>
 class rbf_inequality_fitter {
   static constexpr int kDim = Dim;
+  static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::bboxNd<kDim>;
   using Evaluator = rbf_evaluator<kDim>;
   using Model = model<kDim>;
@@ -39,7 +41,7 @@ class rbf_inequality_fitter {
 
   std::pair<std::vector<index_t>, vectord> fit(const vectord& values, const vectord& values_lb,
                                                const vectord& values_ub, double absolute_tolerance,
-                                               int max_iter) const {
+                                               int max_iter, double accuracy) const {
     double filtering_distance = bbox_.width().norm();
 
     auto not_nan = [](double d) { return !std::isnan(d); };
@@ -54,8 +56,8 @@ class rbf_inequality_fitter {
     auto n_ineq = static_cast<index_t>(ineq_idcs.size());
     Points ineq_points = points_(ineq_idcs, Eigen::all);
 
-    Solver solver(model_, bbox_);
-    Evaluator res_eval(model_, bbox_);
+    Solver solver(model_, bbox_, accuracy, kInfinity);
+    Evaluator res_eval(model_, bbox_, accuracy, kInfinity);
 
     vectord weights = vectord::Zero(n_points_ + n_poly_basis_);
     auto centers = eq_idcs;

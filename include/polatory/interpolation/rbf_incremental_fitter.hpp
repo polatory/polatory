@@ -45,7 +45,7 @@ class rbf_incremental_fitter {
 
   std::tuple<std::vector<index_t>, std::vector<index_t>, vectord> fit(
       const vectord& values_full, double absolute_tolerance, double grad_absolute_tolerance,
-      int max_iter) const {
+      int max_iter, double accuracy, double grad_accuracy) const {
     POLATORY_ASSERT(values_full.size() == mu_full_ + kDim * sigma_full_);
 
     auto filtering_distance = bbox_.width().norm();
@@ -61,8 +61,8 @@ class rbf_incremental_fitter {
     auto sigma = static_cast<index_t>(grad_centers.size());
     vectord weights = vectord::Zero(mu + kDim * sigma + l_);
 
-    Solver solver(model_, bbox_);
-    Evaluator res_eval(model_, bbox_);
+    Solver solver(model_, bbox_, accuracy, grad_accuracy);
+    Evaluator res_eval(model_, bbox_, accuracy, grad_accuracy);
 
     while (true) {
       if (mu_full_ > 0) {
