@@ -27,6 +27,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   index_t n_points = 10000;
   auto absolute_tolerance = 1e-4;
+  auto accuracy = absolute_tolerance / 100.0;
 
   auto aniso = random_anisotropy<kDim>();
   auto [points, values] = sample_data(n_points, aniso);
@@ -42,11 +43,12 @@ TEST(rbf_inequality_fitter, inequality_only) {
   model<kDim> model(std::move(rbf), poly_degree);
 
   rbf_inequality_fitter<kDim> fitter(model, points);
-  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
+  auto [indices, weights] =
+      fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32, accuracy);
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all));
+  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), accuracy);
   eval.set_weights(weights);
   vectord values_fit = eval.evaluate(points);
 
@@ -61,7 +63,8 @@ TEST(rbf_inequality_fitter, kostov86) {
   constexpr int kDim = 1;
 
   index_t n_points = 25;
-  const auto absolute_tolerance = 1e-5;
+  auto absolute_tolerance = 1e-5;
+  auto accuracy = absolute_tolerance / 100.0;
 
   points1d points = points1d::Zero(n_points, kDim);
   for (index_t i = 0; i < n_points; i++) {
@@ -85,9 +88,10 @@ TEST(rbf_inequality_fitter, kostov86) {
   model<kDim> model(std::move(rbf), -1);
 
   rbf_inequality_fitter<kDim> fitter(model, points);
-  auto [indices, weights] = fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32);
+  auto [indices, weights] =
+      fitter.fit(values, values_lb, values_ub, absolute_tolerance, 32, accuracy);
 
-  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all));
+  rbf_evaluator<kDim> eval(model, points(indices, Eigen::all), accuracy);
   eval.set_weights(weights);
   vectord values_fit = eval.evaluate(points);
 

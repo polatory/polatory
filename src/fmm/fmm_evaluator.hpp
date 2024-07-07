@@ -169,7 +169,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
       multipole_dirty_ = true;
     }
 
-    best_order_.clear();
+    // NOTE: If weights are changed significantly, the best order must be recomputed.
   }
 
  private:
@@ -223,13 +223,14 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_trg_points_));
     auto order = find_best_order(tree_height);
 
-    if (tree_height_ != tree_height) {
+    if (tree_height_ != tree_height || order_ != order) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, order, tree_height, box_.width(0));
       far_field_ = std::make_unique<FarField>(*interpolator_);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       reset_src_tree();
       reset_trg_tree();
       tree_height_ = tree_height;
+      order_ = order;
     }
 
     if (!src_tree_) {
@@ -307,6 +308,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   mutable std::vector<TargetParticle> trg_particles_;
   mutable bool multipole_dirty_{};
   mutable int tree_height_{};
+  mutable int order_{};
   mutable std::unique_ptr<Interpolator> interpolator_;
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;

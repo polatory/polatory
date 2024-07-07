@@ -27,6 +27,8 @@ TEST(rbf_incremental_fitter, trivial) {
   auto absolute_tolerance = 1e-2;
   auto grad_absolute_tolerance = 1e-1;
   auto max_iter = 100;
+  auto accuracy = absolute_tolerance / 100.0;
+  auto grad_accuracy = grad_absolute_tolerance / 100.0;
 
   auto aniso = random_anisotropy<kDim>();
   auto [points, values] = sample_data(n_points, aniso);
@@ -42,13 +44,13 @@ TEST(rbf_incremental_fitter, trivial) {
   model<kDim> model(std::move(rbf), poly_degree);
 
   rbf_incremental_fitter<kDim> fitter(model, points, grad_points);
-  auto [indices, grad_indices, weights] =
-      fitter.fit(rhs, absolute_tolerance, grad_absolute_tolerance, max_iter);
+  auto [indices, grad_indices, weights] = fitter.fit(
+      rhs, absolute_tolerance, grad_absolute_tolerance, max_iter, accuracy, grad_accuracy);
 
   EXPECT_EQ(weights.rows(), indices.size() + kDim * grad_indices.size() + model.poly_basis_size());
 
   rbf_evaluator<kDim> eval(model, points(indices, Eigen::all),
-                           grad_points(grad_indices, Eigen::all));
+                           grad_points(grad_indices, Eigen::all), accuracy, grad_accuracy);
   eval.set_weights(weights);
   eval.set_target_points(points, grad_points);
   vectord values_fit = eval.evaluate();

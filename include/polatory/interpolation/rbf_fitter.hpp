@@ -12,28 +12,25 @@ class rbf_fitter {
   static constexpr int kDim = Dim;
   using Model = model<kDim>;
   using Points = geometry::pointsNd<kDim>;
-  using RbfSolver = rbf_solver<kDim>;
+  using Solver = rbf_solver<kDim>;
 
  public:
-  rbf_fitter(const Model& model, const Points& points)
-      : rbf_fitter(model, points, Points(0, kDim)) {}
-
   rbf_fitter(const Model& model, const Points& points, const Points& grad_points)
-      : solver_(model, points, grad_points) {}
-
-  vectord fit(const vectord& values, double absolute_tolerance, int max_iter,
-              const vectord* initial_weights = nullptr) const {
-    return fit(values, absolute_tolerance, absolute_tolerance, max_iter, initial_weights);
-  }
+      : model_(model), points_(points), grad_points_(grad_points) {}
 
   vectord fit(const vectord& values, double absolute_tolerance, double grad_absolute_tolerance,
-              int max_iter, const vectord* initial_weights = nullptr) const {
-    return solver_.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter,
-                         initial_weights);
+              int max_iter, double accuracy, double grad_accuracy,
+              const vectord* initial_weights = nullptr) const {
+    Solver solver(model_, points_, grad_points_, accuracy, grad_accuracy);
+
+    return solver.solve(values, absolute_tolerance, grad_absolute_tolerance, max_iter,
+                        initial_weights);
   }
 
  private:
-  RbfSolver solver_;
+  const Model& model_;
+  const Points& points_;
+  const Points& grad_points_;
 };
 
 }  // namespace polatory::interpolation

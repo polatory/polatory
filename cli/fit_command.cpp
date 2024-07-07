@@ -33,6 +33,8 @@ struct options {
   double absolute_tolerance{};
   double grad_absolute_tolerance{};
   int max_iter{};
+  double accuracy{};
+  double grad_accuracy{};
   bool ineq{};
   bool reduce{};
   std::string out_file;
@@ -77,13 +79,14 @@ void run_impl(const options& opts) {
   Interpolant inter(std::move(model));
   if (opts.ineq) {
     inter.fit_inequality(points, values, *values_lb, *values_ub, opts.absolute_tolerance,
-                         opts.max_iter);
+                         opts.max_iter, opts.accuracy);
   } else if (opts.reduce) {
     inter.fit_incrementally(points, grad_points, rhs, opts.absolute_tolerance,
-                            opts.grad_absolute_tolerance, opts.max_iter);
+                            opts.grad_absolute_tolerance, opts.max_iter, opts.accuracy,
+                            opts.grad_accuracy);
   } else {
     inter.fit(points, grad_points, rhs, opts.absolute_tolerance, opts.grad_absolute_tolerance,
-              opts.max_iter, initial ? &*initial : nullptr);
+              opts.max_iter, opts.accuracy, opts.grad_accuracy, initial ? &*initial : nullptr);
   }
 
   inter.save(opts.out_file);
@@ -117,6 +120,16 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
        "Absolute gradient fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //
+      ("acc",
+       po::value(&opts.accuracy)
+           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+           ->value_name("ACC"),
+       "Absolute evaluation accuracy")  //
+      ("grad-acc",
+       po::value(&opts.grad_accuracy)
+           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+           ->value_name("ACC"),
+       "Absolute gradient evaluation accuracy")  //
       ("ineq", po::bool_switch(&opts.ineq),
        "Use inequality constraints")  //
       ("reduce", po::bool_switch(&opts.reduce),
