@@ -48,7 +48,7 @@ class random_field_function : public field_function {
 }  // namespace
 
 TEST(isosurface, generate) {
-  const bbox3d bbox(point3d(-2.0, -2.0, -2.0), point3d(2.0, 2.0, 2.0));
+  const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
 
   isosurface isosurf(bbox, resolution);
@@ -87,7 +87,7 @@ TEST(isosurface, generate_entire) {
 }
 
 TEST(isosurface, generate_from_seed_points) {
-  const bbox3d bbox(point3d(-2.0, -2.0, -2.0), point3d(2.0, 2.0, 2.0));
+  const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
 
   points3d seed_points(1, 3);
@@ -100,6 +100,42 @@ TEST(isosurface, generate_from_seed_points) {
 
   ASSERT_EQ(1082, surface.vertices().rows());
   ASSERT_EQ(2160, surface.faces().rows());
+}
+
+TEST(isosurface, generate_from_seed_points_gradient_search) {
+  for (const auto& bbox : {
+           bbox3d{point3d{-1.2, -1.2, -1.2}, point3d{0.0, 0.0, 0.0}},
+           bbox3d{point3d{0.0, -1.2, -1.2}, point3d{1.2, 0.0, 0.0}},
+           bbox3d{point3d{-1.2, 0.0, -1.2}, point3d{0.0, 1.2, 0.0}},
+           bbox3d{point3d{0.0, 0.0, -1.2}, point3d{1.2, 1.2, 0.0}},
+           bbox3d{point3d{-1.2, -1.2, 0.0}, point3d{0.0, 0.0, 1.2}},
+           bbox3d{point3d{0.0, -1.2, 0.0}, point3d{1.2, 0.0, 1.2}},
+           bbox3d{point3d{-1.2, 0.0, 0.0}, point3d{0.0, 1.2, 1.2}},
+           bbox3d{point3d{0.0, 0.0, 0.0}, point3d{1.2, 1.2, 1.2}},
+       }) {
+    for (const auto& seed_point : {
+             point3d{-2.0, -2.0, -2.0},
+             point3d{2.0, -2.0, -2.0},
+             point3d{-2.0, 2.0, -2.0},
+             point3d{2.0, 2.0, -2.0},
+             point3d{-2.0, -2.0, 2.0},
+             point3d{2.0, -2.0, 2.0},
+             point3d{-2.0, 2.0, 2.0},
+             point3d{2.0, 2.0, 2.0},
+         }) {
+      const auto resolution = 0.1;
+
+      points3d seed_points(1, 3);
+      seed_points.row(0) = seed_point;
+
+      isosurface isosurf(bbox, resolution);
+      distance_from_origin field_fn;
+
+      auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
+
+      ASSERT_NE(0, surface.faces().rows());
+    }
+  }
 }
 
 TEST(isosurface, manifold) {
