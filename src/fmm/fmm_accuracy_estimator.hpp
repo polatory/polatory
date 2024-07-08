@@ -2,9 +2,10 @@
 
 #include <algorithm>
 #include <limits>
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/types.hpp>
-#include <random>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
@@ -24,7 +25,9 @@ template <class Rbf, class Kernel>
 class fmm_accuracy_estimator {
   static constexpr int kDim{Rbf::kDim};
   using Bbox = geometry::bboxNd<kDim>;
+  using Point = geometry::pointNd<kDim>;
   using Points = geometry::pointsNd<kDim>;
+  using Vector = geometry::vectorNd<kDim>;
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
@@ -62,23 +65,23 @@ class fmm_accuracy_estimator {
   static constexpr index_t kTargetSize = 4096;
 
  public:
-  static int find_best_order(const Rbf& rbf, const SourceContainer& src_particles, const Box& box,
-                             int tree_height, double accuracy) {
+  static int find_best_order(const Rbf& rbf, const Bbox& bbox, double accuracy,
+                             const SourceContainer& src_particles, const Box& box,
+                             int tree_height) {
     if (accuracy == std::numeric_limits<double>::infinity()) {
       return kMinimumOrder;
     }
 
     TargetContainer trg_particles(kTargetSize);
 
-    auto center = box.center();
-    auto radius = box.width(0) / 2.0;
-    std::mt19937 gen;
-    std::uniform_real_distribution<double> dist{-radius, radius};
-
+    auto a = rbf.anisotropy();
+    Point center = bbox.center();
+    Vector radius = bbox.width() / 2.0;
     for (index_t idx = 0; idx < kTargetSize; idx++) {
       auto p = trg_particles.at(idx);
+      auto ap = geometry::transform_point<kDim>(a, center + radius.cwiseProduct(Point::Random()));
       for (auto i = 0; i < kDim; i++) {
-        p.position(i) = center.at(i) + dist(gen);
+        p.position(i) = ap(i);
       }
       p.variables(idx);
     }

@@ -66,9 +66,10 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
  public:
   impl(const Rbf& rbf, const Bbox& bbox, double accuracy)
       : rbf_(rbf),
-        kernel_(rbf),
+        bbox_(bbox),
         accuracy_(accuracy),
         box_(make_box<Rbf, Box>(rbf, bbox)),
+        kernel_(rbf),
         near_field_(kernel_, false) {}
 
   vectord evaluate() const {
@@ -181,8 +182,8 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
       return best_order_.at(tree_height);
     }
 
-    auto order = fmm_accuracy_estimator<Rbf, Kernel>::find_best_order(rbf_, src_particles_, box_,
-                                                                      tree_height, accuracy_);
+    auto order = fmm_accuracy_estimator<Rbf, Kernel>::find_best_order(
+        rbf_, bbox_, accuracy_, src_particles_, box_, tree_height);
     return best_order_[tree_height] = order;
   }
 
@@ -260,9 +261,10 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   }
 
   const Rbf& rbf_;
-  const Kernel kernel_;
+  const Bbox bbox_;
   const double accuracy_;
   const Box box_;
+  const Kernel kernel_;
   const NearField near_field_;
 
   index_t n_src_points_{};
