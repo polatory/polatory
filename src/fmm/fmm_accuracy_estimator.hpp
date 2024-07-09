@@ -16,6 +16,7 @@
 #include <scalfmm/tree/for_each.hpp>
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
+#include <scalfmm/utils/sort.hpp>
 #include <stdexcept>
 #include <tuple>
 
@@ -86,6 +87,8 @@ class fmm_accuracy_estimator {
       p.variables(idx);
     }
 
+    scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
+
     auto exact = evaluate(rbf, src_particles, trg_particles, box, 0, 0);
     auto last_error = std::numeric_limits<double>::infinity();
     for (auto order = kMinimumOrder; order <= kMaximumOrder; order++) {
@@ -119,7 +122,7 @@ class fmm_accuracy_estimator {
       FmmOperator fmm_operator(near_field, far_field);
 
       SourceTree src_tree(tree_height, order, box, 10, 10, src_particles, true);
-      TargetTree trg_tree(tree_height, order, box, 10, 10, trg_particles);
+      TargetTree trg_tree(tree_height, order, box, 10, 10, trg_particles, true);
 
       scalfmm::list::omp::build_interaction_lists(src_tree, trg_tree, 1, false);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
@@ -140,8 +143,9 @@ class fmm_accuracy_estimator {
 
       for (index_t idx = 0; idx < kTargetSize; idx++) {
         const auto p = trg_particles.at(idx);
+        auto orig_idx = std::get<0>(p.variables());
         for (auto i = 0; i < kn; i++) {
-          potentials(kn * idx + i) = p.outputs(i);
+          potentials(kn * orig_idx + i) = p.outputs(i);
         }
       }
     }

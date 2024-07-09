@@ -66,6 +66,8 @@ void test(index_t n_points, index_t n_grad_points) {
 
 }  // namespace
 
-TEST(rbf_fitter, trivial) { test(10000, 10000); }
+TEST(rbf_fitter, values) { test(10000, 0); }
+
+TEST(rbf_fitter, values_and_grads) { test(10000, 10000); }
 
 TEST(rbf_fitter, special_case) { test(1, 10000); }
