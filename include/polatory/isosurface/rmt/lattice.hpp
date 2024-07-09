@@ -257,24 +257,27 @@ class lattice : public primitive_lattice {
       return;
     }
 
-    auto interior_cell = true;
-    interior_cell &= add_node(cv);
-    interior_cell &= add_node(cv + kNeighborCellVectors[edge::k0]);
-    interior_cell &= add_node(cv + kNeighborCellVectors[edge::k1]);
-    interior_cell &= add_node(cv + kNeighborCellVectors[edge::k2]);
-    interior_cell &= add_node(cv + kNeighborCellVectors[edge::k3]);
-    interior_cell &= add_node(cv + kNeighborCellVectors[edge::k4]);
-    interior_cell &= add_node(cv + kNeighborCellVectors[edge::k5]);
-    interior_cell &= add_node(cv + kNeighborCellVectors[edge::k6]);
+    std::array<cell_vector, 8> node_cvs{cv,
+                                        cv + kNeighborCellVectors[edge::k0],
+                                        cv + kNeighborCellVectors[edge::k1],
+                                        cv + kNeighborCellVectors[edge::k2],
+                                        cv + kNeighborCellVectors[edge::k3],
+                                        cv + kNeighborCellVectors[edge::k4],
+                                        cv + kNeighborCellVectors[edge::k5],
+                                        cv + kNeighborCellVectors[edge::k6]};
 
-    added_cells_.emplace(cv, interior_cell);
+    for (const auto& node_cv : node_cvs) {
+      add_node(node_cv);
+    }
+
+    added_cells_.emplace(cv);
     last_added_cells_.push_back(cv);
   }
 
-  // Returns true if the node is added or already exists.
+  // Returns true if the node is added.
   bool add_node(const cell_vector& cv) {
     if (node_list_.contains(cv)) {
-      return true;
+      return false;
     }
 
     return add_node_unchecked(cv);
@@ -346,6 +349,23 @@ class lattice : public primitive_lattice {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
   }
 
+  // Returns true if all of the cell's vertices are in the extended bbox.
+  bool is_interior_cell(const cell_vector& cv) {
+    std::array<cell_vector, 8> node_cvs{cv,
+                                        cv + kNeighborCellVectors[edge::k0],
+                                        cv + kNeighborCellVectors[edge::k1],
+                                        cv + kNeighborCellVectors[edge::k2],
+                                        cv + kNeighborCellVectors[edge::k3],
+                                        cv + kNeighborCellVectors[edge::k4],
+                                        cv + kNeighborCellVectors[edge::k5],
+                                        cv + kNeighborCellVectors[edge::k6]};
+
+    return std::all_of(node_cvs.begin(), node_cvs.end(), [this](const auto& node_cv) {
+      auto p = cell_node_point(node_cv);
+      return extended_bbox().contains(p);
+    });
+  }
+
   // Removes nodes without any intersections.
   void remove_free_nodes(const std::vector<cell_vector>& node_cvs) {
     for (const auto& cv : node_cvs) {
@@ -377,42 +397,94 @@ class lattice : public primitive_lattice {
     // at which ends the field values take opposite signs.
     for (const auto& cv : last_added_cells) {
       auto iaaa = cv;
+      auto ibaa = cv + kNeighborCellVectors[edge::k0];
+      auto ibab = cv + kNeighborCellVectors[edge::k1];
       auto iaab = cv + kNeighborCellVectors[edge::k2];
-      auto iaba = cv + kNeighborCellVectors[edge::k0];
-      auto iabb = cv + kNeighborCellVectors[edge::k1];
-      auto ibaa = cv + kNeighborCellVectors[edge::k6];
-      auto ibab = cv + kNeighborCellVectors[edge::k5];
       auto ibba = cv + kNeighborCellVectors[edge::k3];
       auto ibbb = cv + kNeighborCellVectors[edge::k4];
+      auto iabb = cv + kNeighborCellVectors[edge::k5];
+      auto iaba = cv + kNeighborCellVectors[edge::k6];
 
       const auto* aaa = node_list_.node_ptr(iaaa);
-      const auto* aab = node_list_.node_ptr(iaab);
-      const auto* aba = node_list_.node_ptr(iaba);
-      const auto* abb = node_list_.node_ptr(iabb);
       const auto* baa = node_list_.node_ptr(ibaa);
       const auto* bab = node_list_.node_ptr(ibab);
+      const auto* aab = node_list_.node_ptr(iaab);
       const auto* bba = node_list_.node_ptr(ibba);
       const auto* bbb = node_list_.node_ptr(ibbb);
+      const auto* abb = node_list_.node_ptr(iabb);
+      const auto* aba = node_list_.node_ptr(iaba);
 
       auto found_intersection = false;
 
-      // __a and __b
+      // axx and bxx
+      if (has_intersection(aaa, baa)) {  // o -> 0
+        add_cell(iaaa + kNeighborCellVectors[edge::kD]);
+        add_cell(iaaa + kNeighborCellVectors[edge::kC]);
+        add_cell(iaaa + kNeighborCellVectors[edge::k9]);
+        found_intersection = true;
+      }
+      if (has_intersection(aab, bab)) {  // 2 -> 1
+        add_cell(iaab);
+        add_cell(iaab + kNeighborCellVectors[edge::kD]);
+        add_cell(iaab + kNeighborCellVectors[edge::kC]);
+        found_intersection = true;
+      }
+      if (has_intersection(aba, bba)) {  // 6 -> 3
+        add_cell(iaba);
+        add_cell(iaba + kNeighborCellVectors[edge::kC]);
+        add_cell(iaba + kNeighborCellVectors[edge::k9]);
+        found_intersection = true;
+      }
+      if (has_intersection(abb, bbb)) {  // 5 -> 4
+        add_cell(iabb);
+        add_cell(iabb + kNeighborCellVectors[edge::kD]);
+        add_cell(iabb + kNeighborCellVectors[edge::k9]);
+        found_intersection = true;
+      }
+
+      // xax and xbx
+      if (has_intersection(aaa, aba)) {  // o -> 6
+        add_cell(iaaa + kNeighborCellVectors[edge::k7]);
+        add_cell(iaaa + kNeighborCellVectors[edge::k8]);
+        add_cell(iaaa + kNeighborCellVectors[edge::k9]);
+        found_intersection = true;
+      }
+      if (has_intersection(aab, abb)) {  // 2 -> 5
+        add_cell(iaab);
+        add_cell(iaab + kNeighborCellVectors[edge::k7]);
+        add_cell(iaab + kNeighborCellVectors[edge::k8]);
+        found_intersection = true;
+      }
+      if (has_intersection(baa, bba)) {  // 0 -> 3
+        add_cell(ibaa);
+        add_cell(ibaa + kNeighborCellVectors[edge::k8]);
+        add_cell(ibaa + kNeighborCellVectors[edge::k9]);
+        found_intersection = true;
+      }
+      if (has_intersection(bab, bbb)) {  // 1 -> 4
+        add_cell(ibab);
+        add_cell(ibab + kNeighborCellVectors[edge::k7]);
+        add_cell(ibab + kNeighborCellVectors[edge::k9]);
+        found_intersection = true;
+      }
+
+      // xxa and xxb
       if (has_intersection(aaa, aab)) {  // o -> 2
         add_cell(iaaa + kNeighborCellVectors[edge::k7]);
         add_cell(iaaa + kNeighborCellVectors[edge::kA]);
         add_cell(iaaa + kNeighborCellVectors[edge::kD]);
         found_intersection = true;
       }
-      if (has_intersection(aba, abb)) {  // 0 -> 1
-        add_cell(iaba);
-        add_cell(iaba + kNeighborCellVectors[edge::kA]);
-        add_cell(iaba + kNeighborCellVectors[edge::kD]);
+      if (has_intersection(baa, bab)) {  // 0 -> 1
+        add_cell(ibaa);
+        add_cell(ibaa + kNeighborCellVectors[edge::kA]);
+        add_cell(ibaa + kNeighborCellVectors[edge::kD]);
         found_intersection = true;
       }
-      if (has_intersection(baa, bab)) {  // 6 -> 5
-        add_cell(ibaa);
-        add_cell(ibaa + kNeighborCellVectors[edge::k7]);
-        add_cell(ibaa + kNeighborCellVectors[edge::kA]);
+      if (has_intersection(aba, abb)) {  // 6 -> 5
+        add_cell(iaba);
+        add_cell(iaba + kNeighborCellVectors[edge::k7]);
+        add_cell(iaba + kNeighborCellVectors[edge::kA]);
         found_intersection = true;
       }
       if (has_intersection(bba, bbb)) {  // 3 -> 4
@@ -422,90 +494,155 @@ class lattice : public primitive_lattice {
         found_intersection = true;
       }
 
-      // _a_ and _b_
-      if (has_intersection(aaa, aba)) {  // o -> 0
-        add_cell(iaaa + kNeighborCellVectors[edge::kD]);
-        add_cell(iaaa + kNeighborCellVectors[edge::kC]);
-        add_cell(iaaa + kNeighborCellVectors[edge::k9]);
-        found_intersection = true;
-      }
-      if (has_intersection(aab, abb)) {  // 2 -> 1
-        add_cell(iaab);
-        add_cell(iaab + kNeighborCellVectors[edge::kD]);
-        add_cell(iaab + kNeighborCellVectors[edge::kC]);
-        found_intersection = true;
-      }
-      if (has_intersection(baa, bba)) {  // 6 -> 3
-        add_cell(ibaa);
-        add_cell(ibaa + kNeighborCellVectors[edge::kC]);
-        add_cell(ibaa + kNeighborCellVectors[edge::k9]);
-        found_intersection = true;
-      }
-      if (has_intersection(bab, bbb)) {  // 5 -> 4
-        add_cell(ibab);
-        add_cell(ibab + kNeighborCellVectors[edge::kD]);
-        add_cell(ibab + kNeighborCellVectors[edge::k9]);
-        found_intersection = true;
-      }
-
-      // a__ and b__
-      if (has_intersection(aaa, baa)) {  // o -> 6
-        add_cell(iaaa + kNeighborCellVectors[edge::k7]);
-        add_cell(iaaa + kNeighborCellVectors[edge::k8]);
-        add_cell(iaaa + kNeighborCellVectors[edge::k9]);
-        found_intersection = true;
-      }
-      if (has_intersection(aab, bab)) {  // 2 -> 5
-        add_cell(iaab);
-        add_cell(iaab + kNeighborCellVectors[edge::k7]);
-        add_cell(iaab + kNeighborCellVectors[edge::k8]);
-        found_intersection = true;
-      }
-      if (has_intersection(aba, bba)) {  // 0 -> 3
-        add_cell(iaba);
-        add_cell(iaba + kNeighborCellVectors[edge::k8]);
-        add_cell(iaba + kNeighborCellVectors[edge::k9]);
-        found_intersection = true;
-      }
-      if (has_intersection(abb, bbb)) {  // 1 -> 4
-        add_cell(iabb);
-        add_cell(iabb + kNeighborCellVectors[edge::k7]);
-        add_cell(iabb + kNeighborCellVectors[edge::k9]);
-        found_intersection = true;
-      }
-
       if (found_intersection) {
         continue;
       }
 
       // Descend along the gradient.
 
-      std::array<const Node*, 8> nodes{aaa, aab, aba, abb, baa, bab, bba, bbb};
+      std::array<const Node*, 8> nodes{aaa, baa, aba, bba, aab, bab, abb, bbb};
       if (std::any_of(nodes.begin(), nodes.end(), [](const auto* n) { return n == nullptr; })) {
         continue;
       }
 
-      auto sum_xxa = std::abs(aaa->value() + aba->value() + baa->value() + bba->value());
-      auto sum_xxb = std::abs(aab->value() + abb->value() + bab->value() + bbb->value());
-      auto sum_xax = std::abs(aaa->value() + aab->value() + baa->value() + bab->value());
-      auto sum_xbx = std::abs(aba->value() + abb->value() + bba->value() + bbb->value());
-      auto sum_axx = std::abs(aaa->value() + aab->value() + aba->value() + abb->value());
-      auto sum_bxx = std::abs(baa->value() + bab->value() + bba->value() + bbb->value());
+      // Vertex-neighbor cells.
+      {
+        std::array<double, 8> values{
+            std::abs(aaa->value()),  // aaa
+            std::abs(baa->value()),  // baa
+            std::abs(aba->value()),  // aba
+            std::abs(bba->value()),  // bba
+            std::abs(aab->value()),  // aab
+            std::abs(bab->value()),  // bab
+            std::abs(abb->value()),  // abb
+            std::abs(bbb->value()),  // bbb
+        };
+        std::array<cell_vector, 8> neighbors{
+            cv + cell_vector(-1, -1, -1),  // aaa
+            cv + cell_vector(1, -1, -1),   // baa
+            cv + cell_vector(-1, 1, -1),   // aba
+            cv + cell_vector(1, 1, -1),    // bba
+            cv + cell_vector(-1, -1, 1),   // aab
+            cv + cell_vector(1, -1, 1),    // bab
+            cv + cell_vector(-1, 1, 1),    // abb
+            cv + cell_vector(1, 1, 1),     // bbb
+        };
+        std::array<bool, 8> feasible{};
+        std::transform(neighbors.begin(), neighbors.end(), feasible.begin(),
+                       [this](const auto& neighbor) { return is_interior_cell(neighbor); });
 
-      std::array<double, 6> values{sum_xxa, sum_xxb, sum_xax, sum_xbx, sum_axx, sum_bxx};
-      std::array<int, 6> indices{0, 1, 2, 3, 4, 5};
-      std::array<cell_vector, 6> neighbors{
-          iaaa + kNeighborCellVectors[edge::k9], iaab, iaaa + kNeighborCellVectors[edge::k7], iaba,
-          iaaa + kNeighborCellVectors[edge::kD], ibaa,
-      };
-      std::partial_sort(indices.begin(), indices.begin() + 3, indices.end(),
-                        [&values](auto i, auto j) { return values.at(i) < values.at(j); });
+        std::array<int, 8> indices{0, 1, 2, 3, 4, 5, 6, 7};
+        std::sort(indices.begin(), indices.end(), [&values, &feasible](auto i, auto j) {
+          return values.at(i) != values.at(j) ? values.at(i) < values.at(j)
+                                              : feasible.at(i) < feasible.at(j);
+        });
+        auto begin = std::find_if(indices.begin(), indices.end(),
+                                  [&feasible](auto i) { return feasible.at(i); });
+        auto end = std::upper_bound(begin, indices.end(), *begin, [&values](auto i, auto j) {
+          return values.at(i) < values.at(j);
+        });
 
-      for (auto i = 0; i < 3; i++) {
-        auto cv = neighbors.at(indices.at(i));
-        add_cell(cv);
-        if (added_cells_.at(cv)) {
-          break;
+        if (std::distance(indices.begin(), begin) < 4) {
+          for (auto it = begin; it != end; ++it) {
+            auto neighbor = neighbors.at(*it);
+            add_cell(neighbor);
+          }
+          continue;
+        }
+      }
+
+      // Edge-neighbor cells.
+      {
+        std::array<double, 12> values{
+            std::abs(aaa->value() + aab->value()),  // aax
+            std::abs(aba->value() + abb->value()),  // abx
+            std::abs(baa->value() + bab->value()),  // bax
+            std::abs(bba->value() + bbb->value()),  // bbx
+            std::abs(aaa->value() + aba->value()),  // axa
+            std::abs(aab->value() + abb->value()),  // axb
+            std::abs(baa->value() + bba->value()),  // bxa
+            std::abs(bab->value() + bbb->value()),  // bxb
+            std::abs(aaa->value() + baa->value()),  // xaa
+            std::abs(aab->value() + bab->value()),  // xab
+            std::abs(aba->value() + bba->value()),  // xba
+            std::abs(abb->value() + bbb->value()),  // xbb
+        };
+        std::array<cell_vector, 12> neighbors{
+            cv + cell_vector(-1, -1, 0),  // aax
+            cv + cell_vector(-1, 1, 0),   // abx
+            cv + cell_vector(1, -1, 0),   // bax
+            cv + cell_vector(1, 1, 0),    // bbx
+            cv + cell_vector(-1, 0, -1),  // axa
+            cv + cell_vector(-1, 0, 1),   // axb
+            cv + cell_vector(1, 0, -1),   // bxa
+            cv + cell_vector(1, 0, 1),    // bxb
+            cv + cell_vector(0, -1, -1),  // xaa
+            cv + cell_vector(0, -1, 1),   // xab
+            cv + cell_vector(0, 1, -1),   // xba
+            cv + cell_vector(0, 1, 1),    // xbb
+        };
+        std::array<bool, 12> feasible{};
+        std::transform(neighbors.begin(), neighbors.end(), feasible.begin(),
+                       [this](const auto& neighbor) { return is_interior_cell(neighbor); });
+
+        std::array<int, 12> indices{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+        std::sort(indices.begin(), indices.end(), [&values, &feasible](auto i, auto j) {
+          return values.at(i) != values.at(j) ? values.at(i) < values.at(j)
+                                              : feasible.at(i) < feasible.at(j);
+        });
+        auto begin = std::find_if(indices.begin(), indices.end(),
+                                  [&feasible](auto i) { return feasible.at(i); });
+        auto end = std::upper_bound(begin, indices.end(), *begin, [&values](auto i, auto j) {
+          return values.at(i) < values.at(j);
+        });
+
+        if (std::distance(indices.begin(), begin) < 6) {
+          for (auto it = begin; it != end; ++it) {
+            auto neighbor = neighbors.at(*it);
+            add_cell(neighbor);
+          }
+          continue;
+        }
+      }
+
+      // Face-neighbor cells.
+      {
+        std::array<double, 6> values{
+            std::abs(aaa->value() + aab->value() + aba->value() + abb->value()),  // axx
+            std::abs(baa->value() + bab->value() + bba->value() + bbb->value()),  // bxx
+            std::abs(aaa->value() + aab->value() + baa->value() + bab->value()),  // xax
+            std::abs(aba->value() + abb->value() + bba->value() + bbb->value()),  // xbx
+            std::abs(aaa->value() + baa->value() + aba->value() + bba->value()),  // xxa
+            std::abs(aab->value() + bab->value() + abb->value() + bbb->value()),  // xxb
+        };
+        std::array<cell_vector, 6> neighbors{
+            cv + cell_vector(-1, 0, 0),  // axx
+            cv + cell_vector(1, 0, 0),   // bxx
+            cv + cell_vector(0, -1, 0),  // xax
+            cv + cell_vector(0, 1, 0),   // xbx
+            cv + cell_vector(0, 0, -1),  // xxa
+            cv + cell_vector(0, 0, 1),   // xxb
+        };
+        std::array<bool, 6> feasible{};
+        std::transform(neighbors.begin(), neighbors.end(), feasible.begin(),
+                       [this](const auto& neighbor) { return is_interior_cell(neighbor); });
+
+        std::array<int, 6> indices{0, 1, 2, 3, 4, 5};
+        std::sort(indices.begin(), indices.end(), [&values, &feasible](auto i, auto j) {
+          return values.at(i) != values.at(j) ? values.at(i) < values.at(j)
+                                              : feasible.at(i) < feasible.at(j);
+        });
+        auto begin = std::find_if(indices.begin(), indices.end(),
+                                  [&feasible](auto i) { return feasible.at(i); });
+        auto end = std::upper_bound(begin, indices.end(), *begin, [&values](auto i, auto j) {
+          return values.at(i) < values.at(j);
+        });
+
+        if (std::distance(indices.begin(), begin) < 3) {
+          for (auto it = begin; it != end; ++it) {
+            const auto& neighbor = neighbors.at(*it);
+            add_cell(neighbor);
+          }
         }
       }
     }
@@ -528,7 +665,7 @@ class lattice : public primitive_lattice {
 
   NodeList node_list_;
   std::vector<cell_vector> nodes_to_evaluate_;
-  std::unordered_map<cell_vector, bool, cell_vector_hash> added_cells_;
+  std::unordered_set<cell_vector, cell_vector_hash> added_cells_;
   std::vector<cell_vector> last_added_cells_;
   double value_at_arbitrary_point_{kZeroValueReplacement};
   std::vector<geometry::point3d> vertices_;
