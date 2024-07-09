@@ -7,7 +7,6 @@
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
-#include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/container/particle_container.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -22,6 +21,7 @@
 #include <unordered_map>
 
 #include "fmm_accuracy_estimator.hpp"
+#include "full_direct.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
@@ -97,7 +97,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
           (*src_tree_, *trg_tree_, *fmm_operator_, m2l | l2l | l2p | p2p);
     } else {
       trg_particles_.reset_outputs();
-      scalfmm::algorithms::full_direct(src_particles_, trg_particles_, kernel_);
+      full_direct(src_particles_, trg_particles_, kernel_);
     }
 
     auto result = potentials();

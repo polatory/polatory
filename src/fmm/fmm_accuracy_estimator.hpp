@@ -7,7 +7,6 @@
 #include <polatory/numeric/error.hpp>
 #include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
-#include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
 #include <scalfmm/operators/fmm_operators.hpp>
@@ -19,6 +18,8 @@
 #include <scalfmm/utils/sort.hpp>
 #include <stdexcept>
 #include <tuple>
+
+#include "full_direct.hpp"
 
 namespace polatory::fmm {
 
@@ -139,7 +140,7 @@ class fmm_accuracy_estimator {
                                           }
                                         });
     } else {
-      scalfmm::algorithms::full_direct(src_particles, trg_particles, kernel);
+      full_direct(src_particles, trg_particles, kernel);
 
       for (index_t idx = 0; idx < kTargetSize; idx++) {
         const auto p = trg_particles.at(idx);

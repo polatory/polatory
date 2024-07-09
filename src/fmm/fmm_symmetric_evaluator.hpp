@@ -6,7 +6,6 @@
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
-#include <scalfmm/algorithms/full_direct.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/container/particle_container.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -21,6 +20,7 @@
 #include <unordered_map>
 
 #include "fmm_accuracy_estimator.hpp"
+#include "full_direct.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
@@ -81,7 +81,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
           (*tree_, *fmm_operator_, p2m | m2m | m2l | l2l | l2p | p2p);
     } else {
       particles_.reset_outputs();
-      scalfmm::algorithms::full_direct(particles_, kernel_);
+      full_direct(particles_, kernel_);
     }
 
     handle_self_interaction();
