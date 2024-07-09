@@ -59,13 +59,7 @@ class interpolant {
                    double grad_accuracy = kInfinity) {
     throw_if_not_fitted();
 
-    if (!(accuracy > 0.0)) {
-      throw std::invalid_argument("accuracy must be positive");
-    }
-
-    if (!(grad_accuracy > 0.0)) {
-      throw std::invalid_argument("grad_accuracy must be positive");
-    }
+    check_accuracy(accuracy, grad_accuracy);
 
     set_evaluation_bbox_impl(Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
                              accuracy, grad_accuracy);
@@ -98,13 +92,9 @@ class interpolant {
       throw std::invalid_argument(std::format("values.rows() must be equal to {}", n_rhs));
     }
 
-    if (!(tolerance > 0.0)) {
-      throw std::invalid_argument("tolerance must be positive");
-    }
-
-    if (!(grad_tolerance > 0.0)) {
-      throw std::invalid_argument("grad_tolerance must be positive");
-    }
+    check_tolerance(tolerance, grad_tolerance);
+    check_max_iter(max_iter);
+    check_accuracy(accuracy, grad_accuracy);
 
     vectord initial_weights;
     if (initial != nullptr) {
@@ -140,13 +130,9 @@ class interpolant {
                                               points.rows() + kDim * grad_points.rows()));
     }
 
-    if (!(tolerance > 0.0)) {
-      throw std::invalid_argument("tolerance must be positive");
-    }
-
-    if (!(grad_tolerance > 0.0)) {
-      throw std::invalid_argument("grad_tolerance must be positive");
-    }
+    check_tolerance(tolerance, grad_tolerance);
+    check_max_iter(max_iter);
+    check_accuracy(accuracy, grad_accuracy);
 
     clear();
 
@@ -169,11 +155,7 @@ class interpolant {
       throw std::runtime_error("Non-zero nugget is not supported");
     }
 
-    auto min_n_points = model_.poly_basis_size();
-    if (points.rows() < min_n_points) {
-      throw std::invalid_argument(
-          std::format("points.rows() must be greater than or equal to {}", min_n_points));
-    }
+    check_num_points(points, Points(0, kDim));
 
     if (values.rows() != points.rows()) {
       throw std::invalid_argument("values.rows() must be equal to points.rows()");
@@ -187,9 +169,9 @@ class interpolant {
       throw std::invalid_argument("values_ub.rows() must be equal to points.rows()");
     }
 
-    if (!(tolerance > 0.0)) {
-      throw std::invalid_argument("tolerance must be positive");
-    }
+    check_tolerance(tolerance, kInfinity);
+    check_max_iter(max_iter);
+    check_accuracy(accuracy, kInfinity);
 
     clear();
 
@@ -285,6 +267,22 @@ class interpolant {
     return weights;
   }
 
+  void check_accuracy(double accuracy, double grad_accuracy) const {
+    if (!(accuracy > 0.0)) {
+      throw std::invalid_argument("accuracy must be positive");
+    }
+
+    if (!(grad_accuracy > 0.0)) {
+      throw std::invalid_argument("grad_accuracy must be positive");
+    }
+  }
+
+  void check_max_iter(int max_iter) const {
+    if (max_iter < 0) {
+      throw std::invalid_argument("max_iter must be nonnegative");
+    }
+  }
+
   void check_num_points(const Points& points, const Points& grad_points) const {
     auto l = model_.poly_basis_size();
     auto mu = points.rows();
@@ -298,6 +296,16 @@ class interpolant {
     if (mu < l) {
       throw std::invalid_argument(
           std::format("points.rows() must be greater than or equal to {}", l));
+    }
+  }
+
+  void check_tolerance(double tolerance, double grad_tolerance) const {
+    if (!(tolerance > 0.0)) {
+      throw std::invalid_argument("tolerance must be positive");
+    }
+
+    if (!(grad_tolerance > 0.0)) {
+      throw std::invalid_argument("grad_tolerance must be positive");
     }
   }
 
