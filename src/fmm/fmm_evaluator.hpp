@@ -22,6 +22,7 @@
 
 #include "fmm_accuracy_estimator.hpp"
 #include "full_direct.hpp"
+#include "interpolator_configuration.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
@@ -51,8 +52,8 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
-  using Interpolator =
-      scalfmm::interpolation::interpolator<double, kDim, Kernel, scalfmm::options::uniform_<>>;
+  using Interpolator = scalfmm::interpolation::interpolator<double, kDim, Kernel,
+                                                            scalfmm::options::modified_uniform_>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename SourceParticle::position_type;
@@ -126,7 +127,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
     src_sorted_level_ = 0;
     src_tree_.reset(nullptr);
-    best_order_.clear();
+    best_config_.clear();
   }
 
   void set_target_points(const Points& points) {
@@ -173,18 +174,18 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
       multipole_dirty_ = true;
     }
 
-    // NOTE: If weights are changed significantly, the best order must be recomputed.
+    // NOTE: If weights are changed significantly, the best configuration must be recomputed.
   }
 
  private:
-  int find_best_order(int tree_height) const {
-    if (best_order_.contains(tree_height)) {
-      return best_order_.at(tree_height);
+  interpolator_configuration find_best_configuration(int tree_height) const {
+    if (best_config_.contains(tree_height)) {
+      return best_config_.at(tree_height);
     }
 
-    auto order = fmm_accuracy_estimator<Rbf, Kernel>::find_best_order(
+    auto config = fmm_accuracy_estimator<Rbf, Kernel>::find_best_configuration(
         rbf_, bbox_, accuracy_, src_particles_, box_, tree_height);
-    return best_order_[tree_height] = order;
+    return best_config_[tree_height] = config;
   }
 
   vectord potentials() const {
@@ -236,27 +237,28 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
       trg_sorted_level_ = tree_height - 1;
     }
 
-    auto order = find_best_order(tree_height);
+    auto config = find_best_configuration(tree_height);
 
-    if (tree_height_ != tree_height || order_ != order) {
-      interpolator_ = std::make_unique<Interpolator>(kernel_, order, tree_height, box_.width(0));
+    if (tree_height_ != tree_height || config_ != config) {
+      interpolator_ = std::make_unique<Interpolator>(kernel_, config.order, tree_height,
+                                                     box_.width(0), config.d);
       far_field_ = std::make_unique<FarField>(*interpolator_);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       src_tree_.reset(nullptr);
       trg_tree_.reset(nullptr);
       tree_height_ = tree_height;
-      order_ = order;
+      config_ = config;
     }
 
     if (!src_tree_) {
-      src_tree_ =
-          std::make_unique<SourceTree>(tree_height, order, box_, 10, 10, src_particles_, true);
+      src_tree_ = std::make_unique<SourceTree>(tree_height, config.order, box_, 10, 10,
+                                               src_particles_, true);
       multipole_dirty_ = true;
     }
 
     if (!trg_tree_) {
-      trg_tree_ =
-          std::make_unique<TargetTree>(tree_height, order, box_, 10, 10, trg_particles_, true);
+      trg_tree_ = std::make_unique<TargetTree>(tree_height, config.order, box_, 10, 10,
+                                               trg_particles_, true);
     }
   }
 
@@ -275,13 +277,13 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   mutable int trg_sorted_level_{};
   mutable bool multipole_dirty_{};
   mutable int tree_height_{};
-  mutable int order_{};
+  mutable interpolator_configuration config_{};
   mutable std::unique_ptr<Interpolator> interpolator_;
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<SourceTree> src_tree_;
   mutable std::unique_ptr<TargetTree> trg_tree_;
-  mutable std::unordered_map<int, int> best_order_;
+  mutable std::unordered_map<int, interpolator_configuration> best_config_;
 };
 
 template <class Rbf, class Kernel>

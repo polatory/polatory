@@ -20,6 +20,7 @@
 #include <tuple>
 
 #include "full_direct.hpp"
+#include "interpolator_configuration.hpp"
 
 namespace polatory::fmm {
 
@@ -50,8 +51,8 @@ class fmm_accuracy_estimator {
   using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
 
   using NearField = scalfmm::operators::near_field_operator<Kernel>;
-  using Interpolator =
-      scalfmm::interpolation::interpolator<double, kDim, Kernel, scalfmm::options::uniform_<>>;
+  using Interpolator = scalfmm::interpolation::interpolator<double, kDim, Kernel,
+                                                            scalfmm::options::modified_uniform_>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
   using Position = typename SourceParticle::position_type;
@@ -63,15 +64,17 @@ class fmm_accuracy_estimator {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
   static constexpr int kMinimumOrder = 8;
-  static constexpr int kMaximumOrder = 14;
+  static constexpr int kMaximumOrder = 20;
+  static constexpr int kClassic = interpolator_configuration::kClassic;
   static constexpr index_t kTargetSize = 4096;
 
  public:
-  static int find_best_order(const Rbf& rbf, const Bbox& bbox, double accuracy,
-                             const SourceContainer& src_particles, const Box& box,
-                             int tree_height) {
+  static interpolator_configuration find_best_configuration(const Rbf& rbf, const Bbox& bbox,
+                                                            double accuracy,
+                                                            const SourceContainer& src_particles,
+                                                            const Box& box, int tree_height) {
     if (accuracy == std::numeric_limits<double>::infinity()) {
-      return kMinimumOrder;
+      return {kMinimumOrder, kClassic};
     }
 
     TargetContainer trg_particles(kTargetSize);
@@ -90,26 +93,46 @@ class fmm_accuracy_estimator {
 
     scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
 
-    auto exact = evaluate(rbf, src_particles, trg_particles, box, 0, 0);
+    auto exact = evaluate(rbf, src_particles, trg_particles, box);
+    auto use_d = false;
+    auto best_d = kClassic;
     auto last_error = std::numeric_limits<double>::infinity();
     for (auto order = kMinimumOrder; order <= kMaximumOrder; order++) {
-      auto approx = evaluate(rbf, src_particles, trg_particles, box, tree_height, order);
-      auto error = numeric::absolute_error(approx, exact);
-      if (error <= accuracy) {
-        return order;
+      auto min_d = kClassic;
+      auto max_d = kClassic;
+      if (use_d) {
+        // d = order - 1 give the same result as d = order - 2.
+        min_d = best_d != kClassic ? std::max(best_d - 1, 3) : 3;
+        max_d = best_d != kClassic ? std::min(best_d + 1, order - 2) : order - 2;
       }
-      if (error > last_error) {
-        break;
+      auto best_error = std::numeric_limits<double>::infinity();
+      for (auto d = min_d; d <= max_d; d++) {
+        auto approx = evaluate(rbf, src_particles, trg_particles, box, tree_height, order, d);
+        auto error = numeric::absolute_error(approx, exact);
+        if (error <= accuracy) {
+          return {order, d};
+        }
+        if (use_d) {
+          if (error < best_error) {
+            best_d = d;
+            best_error = error;
+          }
+        } else {
+          if (error > last_error) {
+            use_d = true;
+            order--;
+          }
+          last_error = error;
+        }
       }
-      last_error = error;
     }
 
     throw std::runtime_error("failed to construct an evaluator that meets the given accuracy");
   }
 
   static vectord evaluate(const Rbf& rbf, const SourceContainer& src_particles,
-                          TargetContainer& trg_particles, const Box& box, int tree_height,
-                          int order) {
+                          TargetContainer& trg_particles, const Box& box, int tree_height = 0,
+                          int order = 0, int d = kClassic) {
     using namespace scalfmm::algorithms;
 
     vectord potentials = vectord::Zero(kn * kTargetSize);
@@ -118,7 +141,7 @@ class fmm_accuracy_estimator {
     Kernel kernel(rbf);
     if (tree_height > 0) {
       NearField near_field(kernel, false);
-      Interpolator interpolator(kernel, order, tree_height, box.width(0));
+      Interpolator interpolator(kernel, order, tree_height, box.width(0), d);
       FarField far_field(interpolator);
       FmmOperator fmm_operator(near_field, far_field);
 
