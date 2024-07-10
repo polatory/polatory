@@ -1,7 +1,35 @@
 set(TARGET Unittest)
 
-file(GLOB_RECURSE SOURCES "*.cpp")
-add_executable(${TARGET} ${SOURCES})
+add_executable(${TARGET}
+    common/test_eigen_utility.cpp
+    common/test_orthonormalize.cpp
+    common/test_zip_sort.cpp
+    geometry/test_bbox3d.cpp
+    interpolation/test_rbf_evaluator.cpp
+    interpolation/test_rbf_fitter.cpp
+    interpolation/test_rbf_incremental_fitter.cpp
+    interpolation/test_rbf_inequality_fitter.cpp
+    interpolation/test_rbf_operator.cpp
+    interpolation/test_rbf_symmetric_evaluator.cpp
+    isosurface/test_bit.cpp
+    isosurface/test_isosurface.cpp
+    isosurface/test_rmt.cpp
+    kriging/test_detrend.cpp
+    kriging/test_variogram_calculator.cpp
+    krylov/test_krylov.cpp
+    numeric/test_conv.cpp
+    point_cloud/test_distance_filter.cpp
+    point_cloud/test_kdtree.cpp
+    point_cloud/test_normal_estimator.cpp
+    point_cloud/test_plane_estimator.cpp
+    point_cloud/test_sdf_data_generator.cpp
+    polynomial/test_lagrange_basis.cpp
+    polynomial/test_polynomial_basis_base.cpp
+    preconditioner/test_coarse_grid.cpp
+    preconditioner/test_domain_divider.cpp
+    preconditioner/test_fine_grid.cpp
+    rbf/test_rbf.cpp
+)
 
 target_link_libraries(${TARGET} PRIVATE
     GTest::gtest GTest::gtest_main
@@ -15,17 +43,4 @@ endif()
 add_test(
     NAME ${TARGET}
     COMMAND $<TARGET_FILE:${TARGET}>
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=coarse_grid.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=conv.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=domain_divider.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=fine_grid.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=isosurface.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=lagrange_basis.hoge
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_evaluator.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_fitter.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_incremental_fitter.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_inequality_fitter.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_operator.*
-    # COMMAND $<TARGET_FILE:${TARGET}> --gtest_filter=rbf_symmetric_evaluator.*
 )
