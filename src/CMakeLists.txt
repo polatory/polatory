@@ -136,7 +136,7 @@ externalproject_add(
     GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
     GIT_TAG polatory
     GIT_SHALLOW ON
-    GIT_PROGRESS ON
+    GIT_REMOTE_UPDATE_STRATEGY CHECKOUT
     CMAKE_ARGS ${SCALFMM_CMAKE_ARGS}
 )
 
