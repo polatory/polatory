@@ -149,7 +149,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     }
 
     auto config = fmm_accuracy_estimator<Rbf, Kernel>::find_best_configuration(
-        rbf_, bbox_, accuracy_, particles_, box_, tree_height);
+        rbf_, accuracy_, particles_, box_, tree_height);
     return best_config_[tree_height] = config;
   }
 

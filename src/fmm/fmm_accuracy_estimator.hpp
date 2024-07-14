@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <limits>
+#include <numeric>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/types.hpp>
+#include <random>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/interpolation/interpolation.hpp>
@@ -66,27 +68,33 @@ class fmm_accuracy_estimator {
   static constexpr int kMinimumOrder = 8;
   static constexpr int kMaximumOrder = 20;
   static constexpr int kClassic = interpolator_configuration::kClassic;
-  static constexpr index_t kTargetSize = 4096;
+  static constexpr index_t kMaxTargetSize = 10000;
 
  public:
-  static interpolator_configuration find_best_configuration(const Rbf& rbf, const Bbox& bbox,
-                                                            double accuracy,
+  static interpolator_configuration find_best_configuration(const Rbf& rbf, double accuracy,
                                                             const SourceContainer& src_particles,
                                                             const Box& box, int tree_height) {
     if (accuracy == std::numeric_limits<double>::infinity()) {
       return {kMinimumOrder, kClassic};
     }
 
-    TargetContainer trg_particles(kTargetSize);
+    // Errors at the data points are larger than those at randomly distributed points.
 
-    auto a = rbf.anisotropy();
-    Point center = bbox.center();
-    Vector radius = bbox.width() / 2.0;
-    for (index_t idx = 0; idx < kTargetSize; idx++) {
+    auto src_size = static_cast<index_t>(src_particles.size());
+    auto trg_size = std::min(src_size, kMaxTargetSize);
+    TargetContainer trg_particles(trg_size);
+
+    std::mt19937 gen;
+    std::vector<index_t> src_indices(src_size);
+    std::iota(std::begin(src_indices), std::end(src_indices), 0);
+    std::shuffle(std::begin(src_indices), std::end(src_indices), gen);
+
+    for (index_t idx = 0; idx < trg_size; idx++) {
       auto p = trg_particles.at(idx);
-      auto ap = geometry::transform_point<kDim>(a, center + radius.cwiseProduct(Point::Random()));
+      auto src_idx = src_indices.at(idx);
+      const auto src_p = src_particles.at(src_idx);
       for (auto i = 0; i < kDim; i++) {
-        p.position(i) = ap(i);
+        p.position(i) = src_p.position(i);
       }
       p.variables(idx);
     }
@@ -108,7 +116,7 @@ class fmm_accuracy_estimator {
       auto best_error = std::numeric_limits<double>::infinity();
       for (auto d = min_d; d <= max_d; d++) {
         auto approx = evaluate(rbf, src_particles, trg_particles, box, tree_height, order, d);
-        auto error = numeric::absolute_error(approx, exact);
+        auto error = numeric::absolute_error<Eigen::Infinity>(approx, exact);
         if (error <= accuracy) {
           return {order, d};
         }
@@ -135,7 +143,9 @@ class fmm_accuracy_estimator {
                           int order = 0, int d = kClassic) {
     using namespace scalfmm::algorithms;
 
-    vectord potentials = vectord::Zero(kn * kTargetSize);
+    auto trg_size = static_cast<index_t>(trg_particles.size());
+
+    vectord potentials = vectord::Zero(kn * trg_size);
     trg_particles.reset_outputs();
 
     Kernel kernel(rbf);
@@ -165,7 +175,7 @@ class fmm_accuracy_estimator {
     } else {
       full_direct(src_particles, trg_particles, kernel);
 
-      for (index_t idx = 0; idx < kTargetSize; idx++) {
+      for (index_t idx = 0; idx < trg_size; idx++) {
         const auto p = trg_particles.at(idx);
         auto orig_idx = std::get<0>(p.variables());
         for (auto i = 0; i < kn; i++) {
