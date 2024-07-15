@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
@@ -65,10 +66,9 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  public:
-  impl(const Rbf& rbf, const Bbox& bbox, double accuracy)
+  impl(const Rbf& rbf, const Bbox& bbox)
       : rbf_(rbf),
         bbox_(bbox),
-        accuracy_(accuracy),
         box_(make_box<Rbf, Box>(rbf, bbox)),
         kernel_(rbf),
         near_field_(kernel_, false) {}
@@ -108,6 +108,12 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     trg_tree_.reset(nullptr);
 
     return result;
+  }
+
+  void set_accuracy(double accuracy) {
+    accuracy_ = accuracy;
+
+    best_config_.clear();
   }
 
   void set_source_points(const Points& points) {
@@ -264,11 +270,11 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 
   const Rbf& rbf_;
   const Bbox bbox_;
-  const double accuracy_;
   const Box box_;
   const Kernel kernel_;
   const NearField near_field_;
 
+  double accuracy_{std::numeric_limits<double>::infinity()};
   index_t n_src_points_{};
   index_t n_trg_points_{};
   mutable SourceContainer src_particles_;
@@ -287,9 +293,8 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 };
 
 template <class Rbf, class Kernel>
-fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox,
-                                                          double accuracy)
-    : impl_(std::make_unique<impl>(rbf, bbox, accuracy)) {}
+fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox)
+    : impl_(std::make_unique<impl>(rbf, bbox)) {}
 
 template <class Rbf, class Kernel>
 fmm_generic_evaluator<Rbf, Kernel>::~fmm_generic_evaluator() = default;
@@ -300,13 +305,18 @@ vectord fmm_generic_evaluator<Rbf, Kernel>::evaluate() const {
 }
 
 template <class Rbf, class Kernel>
-void fmm_generic_evaluator<Rbf, Kernel>::set_target_points(const Points& points) {
-  impl_->set_target_points(points);
+void fmm_generic_evaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+  impl_->set_accuracy(accuracy);
 }
 
 template <class Rbf, class Kernel>
 void fmm_generic_evaluator<Rbf, Kernel>::set_source_points(const Points& points) {
   impl_->set_source_points(points);
+}
+
+template <class Rbf, class Kernel>
+void fmm_generic_evaluator<Rbf, Kernel>::set_target_points(const Points& points) {
+  impl_->set_target_points(points);
 }
 
 template <class Rbf, class Kernel>

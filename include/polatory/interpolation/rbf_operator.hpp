@@ -37,12 +37,15 @@ class rbf_operator : public krylov::linear_operator {
 
   rbf_operator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
                double grad_accuracy = kInfinity)
-      : model_(model), l_(model.poly_basis_size()) {
+      : model_(model),
+        l_(model.poly_basis_size()),
+        accuracy_(accuracy),
+        grad_accuracy_(grad_accuracy) {
     for (const auto& rbf : model.rbfs()) {
-      a_.push_back(fmm::make_fmm_symmetric_evaluator(rbf, bbox, accuracy));
-      f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox, accuracy));
-      ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox, grad_accuracy));
-      h_.push_back(fmm::make_fmm_hessian_symmetric_evaluator(rbf, bbox, grad_accuracy));
+      a_.push_back(fmm::make_fmm_symmetric_evaluator(rbf, bbox));
+      f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox));
+      ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox));
+      h_.push_back(fmm::make_fmm_hessian_symmetric_evaluator(rbf, bbox));
     }
 
     if (l_ > 0) {
@@ -82,6 +85,10 @@ class rbf_operator : public krylov::linear_operator {
     mu_ = points.rows();
     sigma_ = grad_points.rows();
 
+    auto accuracy = (sigma_ > 0 ? accuracy_ / 2.0 : accuracy_) / static_cast<double>(a_.size());
+    auto grad_accuracy =
+        (sigma_ > 0 ? grad_accuracy_ / 2.0 : grad_accuracy_) / static_cast<double>(a_.size());
+
     for (std::size_t i = 0; i < a_.size(); ++i) {
       a_.at(i)->set_points(points);
       f_.at(i)->set_source_points(grad_points);
@@ -89,6 +96,11 @@ class rbf_operator : public krylov::linear_operator {
       ft_.at(i)->set_source_points(points);
       ft_.at(i)->set_target_points(grad_points);
       h_.at(i)->set_points(grad_points);
+
+      a_.at(i)->set_accuracy(accuracy);
+      f_.at(i)->set_accuracy(accuracy);
+      ft_.at(i)->set_accuracy(grad_accuracy);
+      h_.at(i)->set_accuracy(grad_accuracy);
     }
 
     if (l_ > 0) {
@@ -101,6 +113,8 @@ class rbf_operator : public krylov::linear_operator {
  private:
   const Model& model_;
   const index_t l_;
+  const double accuracy_;
+  const double grad_accuracy_;
   index_t mu_{};
   index_t sigma_{};
 

@@ -30,6 +30,8 @@ class fmm_generic_symmetric_evaluator_base {
 
   virtual vectord evaluate() const = 0;
 
+  virtual void set_accuracy(double accuracy) = 0;
+
   virtual void set_points(const Points& points) = 0;
 
   virtual void set_weights(const Eigen::Ref<const vectord>& weights) = 0;
@@ -46,7 +48,7 @@ class fmm_generic_symmetric_evaluator final
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  fmm_generic_symmetric_evaluator(const Rbf& rbf, const Bbox& bbox, double accuracy);
+  fmm_generic_symmetric_evaluator(const Rbf& rbf, const Bbox& bbox);
 
   ~fmm_generic_symmetric_evaluator() override;
 
@@ -56,6 +58,8 @@ class fmm_generic_symmetric_evaluator final
   fmm_generic_symmetric_evaluator& operator=(fmm_generic_symmetric_evaluator&&) = delete;
 
   vectord evaluate() const override;
+
+  void set_accuracy(double accuracy) override;
 
   void set_points(const Points& points) override;
 
@@ -74,12 +78,11 @@ template <class Rbf>
 using fmm_hessian_symmetric_evaluator = fmm_generic_symmetric_evaluator<Rbf, hessian_kernel<Rbf>>;
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                                                  const geometry::bboxNd<Dim>& bbox,
-                                                                  double accuracy);
+FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(
+    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox);
 
 template <int Dim>
 FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(
-    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox, double accuracy);
+    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox);
 
 }  // namespace polatory::fmm

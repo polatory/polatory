@@ -18,7 +18,7 @@ using polatory::vectord;
 using polatory::geometry::pointsNd;
 using polatory::interpolation::rbf_direct_operator;
 using polatory::interpolation::rbf_operator;
-using polatory::numeric::relative_error;
+using polatory::numeric::absolute_error;
 using polatory::rbf::triharmonic3d;
 
 TEST(rbf_operator, trivial) {
@@ -27,7 +27,8 @@ TEST(rbf_operator, trivial) {
 
   index_t n_points = 1024;
   index_t n_grad_points = 1024;
-  auto relative_tolerance = 5e-7;
+  auto accuracy = 1e-4;
+  auto grad_accuracy = 1e-4;
 
   triharmonic3d<kDim> rbf({1.0});
   rbf.set_anisotropy(random_anisotropy<kDim>());
@@ -41,7 +42,7 @@ TEST(rbf_operator, trivial) {
 
   vectord weights = vectord::Random(n_points + kDim * n_grad_points + model.poly_basis_size());
 
-  rbf_operator<kDim> op(model, points, grad_points);
+  rbf_operator<kDim> op(model, points, grad_points, accuracy, grad_accuracy);
 
   rbf_direct_operator<kDim> direct_op(model, points, grad_points);
 
@@ -51,5 +52,11 @@ TEST(rbf_operator, trivial) {
   EXPECT_EQ(n_points + kDim * n_grad_points + model.poly_basis_size(), op_weights.rows());
   EXPECT_EQ(n_points + kDim * n_grad_points + model.poly_basis_size(), direct_op_weights.rows());
 
-  EXPECT_LT(relative_error(op_weights, direct_op_weights), relative_tolerance);
+  EXPECT_LT(
+      absolute_error<Eigen::Infinity>(op_weights.head(n_points), direct_op_weights.head(n_points)),
+      accuracy);
+  EXPECT_LT(
+      absolute_error<Eigen::Infinity>(op_weights.segment(n_points, kDim * n_grad_points),
+                                      direct_op_weights.segment(n_points, kDim * n_grad_points)),
+      grad_accuracy);
 }

@@ -43,13 +43,12 @@ using polatory::rbf::internal::triharmonic3d;
 namespace polatory::fmm {
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf_proxy<Dim>& rbf, const bboxNd<Dim>& bbox,
-                                               double accuracy) {
+FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf_proxy<Dim>& rbf, const bboxNd<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
-#define CASE(RBF_NAME)                                                               \
-  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                          \
-    return std::make_unique<fmm_evaluator<RBF_NAME<Dim>>>(*derived, bbox, accuracy); \
+#define CASE(RBF_NAME)                                                     \
+  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                \
+    return std::make_unique<fmm_evaluator<RBF_NAME<Dim>>>(*derived, bbox); \
   }
 
   CASE(biharmonic2d);
@@ -78,22 +77,22 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf_proxy<Dim>& rbf, const 
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_evaluator<1>(const rbf_proxy<1>& rbf,
-                                                         const bboxNd<1>& bbox, double accuracy);
+                                                         const bboxNd<1>& bbox);
 
 template FmmGenericEvaluatorPtr<2> make_fmm_evaluator<2>(const rbf_proxy<2>& rbf,
-                                                         const bboxNd<2>& bbox, double accuracy);
+                                                         const bboxNd<2>& bbox);
 
 template FmmGenericEvaluatorPtr<3> make_fmm_evaluator<3>(const rbf_proxy<3>& rbf,
-                                                         const bboxNd<3>& bbox, double accuracy);
+                                                         const bboxNd<3>& bbox);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf_proxy<Dim>& rbf,
-                                                        const bboxNd<Dim>& bbox, double accuracy) {
+                                                        const bboxNd<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
-#define CASE(RBF_NAME)                                                                        \
-  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                   \
-    return std::make_unique<fmm_gradient_evaluator<RBF_NAME<Dim>>>(*derived, bbox, accuracy); \
+#define CASE(RBF_NAME)                                                              \
+  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                         \
+    return std::make_unique<fmm_gradient_evaluator<RBF_NAME<Dim>>>(*derived, bbox); \
   }
 
   CASE(biharmonic2d);
@@ -122,27 +121,22 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf_proxy<Dim>& rb
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_gradient_evaluator<1>(const rbf_proxy<1>& rbf,
-                                                                  const bboxNd<1>& bbox,
-                                                                  double accuracy);
+                                                                  const bboxNd<1>& bbox);
 
 template FmmGenericEvaluatorPtr<2> make_fmm_gradient_evaluator<2>(const rbf_proxy<2>& rbf,
-                                                                  const bboxNd<2>& bbox,
-                                                                  double accuracy);
+                                                                  const bboxNd<2>& bbox);
 
 template FmmGenericEvaluatorPtr<3> make_fmm_gradient_evaluator<3>(const rbf_proxy<3>& rbf,
-                                                                  const bboxNd<3>& bbox,
-                                                                  double accuracy);
+                                                                  const bboxNd<3>& bbox);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf_proxy<Dim>& rbf,
-                                                                  const bboxNd<Dim>& bbox,
-                                                                  double accuracy) {
+                                                                  const bboxNd<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
-#define CASE(RBF_NAME)                                                                       \
-  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                  \
-    return std::make_unique<fmm_gradient_transpose_evaluator<RBF_NAME<Dim>>>(*derived, bbox, \
-                                                                             accuracy);      \
+#define CASE(RBF_NAME)                                                                        \
+  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                   \
+    return std::make_unique<fmm_gradient_transpose_evaluator<RBF_NAME<Dim>>>(*derived, bbox); \
   }
 
   CASE(biharmonic2d);
@@ -171,25 +165,22 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf_prox
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_gradient_transpose_evaluator<1>(const rbf_proxy<1>& rbf,
-                                                                            const bboxNd<1>& bbox,
-                                                                            double accuracy);
+                                                                            const bboxNd<1>& bbox);
 
 template FmmGenericEvaluatorPtr<2> make_fmm_gradient_transpose_evaluator<2>(const rbf_proxy<2>& rbf,
-                                                                            const bboxNd<2>& bbox,
-                                                                            double accuracy);
+                                                                            const bboxNd<2>& bbox);
 
 template FmmGenericEvaluatorPtr<3> make_fmm_gradient_transpose_evaluator<3>(const rbf_proxy<3>& rbf,
-                                                                            const bboxNd<3>& bbox,
-                                                                            double accuracy);
+                                                                            const bboxNd<3>& bbox);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf_proxy<Dim>& rbf,
-                                                       const bboxNd<Dim>& bbox, double accuracy) {
+                                                       const bboxNd<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
-#define CASE(RBF_NAME)                                                                       \
-  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                  \
-    return std::make_unique<fmm_hessian_evaluator<RBF_NAME<Dim>>>(*derived, bbox, accuracy); \
+#define CASE(RBF_NAME)                                                             \
+  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                        \
+    return std::make_unique<fmm_hessian_evaluator<RBF_NAME<Dim>>>(*derived, bbox); \
   }
 
   CASE(biharmonic2d);
@@ -218,26 +209,22 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf_proxy<Dim>& rbf
 }
 
 template FmmGenericEvaluatorPtr<1> make_fmm_hessian_evaluator<1>(const rbf_proxy<1>& rbf,
-                                                                 const bboxNd<1>& bbox,
-                                                                 double accuracy);
+                                                                 const bboxNd<1>& bbox);
 
 template FmmGenericEvaluatorPtr<2> make_fmm_hessian_evaluator<2>(const rbf_proxy<2>& rbf,
-                                                                 const bboxNd<2>& bbox,
-                                                                 double accuracy);
+                                                                 const bboxNd<2>& bbox);
 
 template FmmGenericEvaluatorPtr<3> make_fmm_hessian_evaluator<3>(const rbf_proxy<3>& rbf,
-                                                                 const bboxNd<3>& bbox,
-                                                                 double accuracy);
+                                                                 const bboxNd<3>& bbox);
 
 template <int Dim>
 FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf_proxy<Dim>& rbf,
-                                                                  const bboxNd<Dim>& bbox,
-                                                                  double accuracy) {
+                                                                  const bboxNd<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
-#define CASE(RBF_NAME)                                                                         \
-  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                    \
-    return std::make_unique<fmm_symmetric_evaluator<RBF_NAME<Dim>>>(*derived, bbox, accuracy); \
+#define CASE(RBF_NAME)                                                               \
+  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                          \
+    return std::make_unique<fmm_symmetric_evaluator<RBF_NAME<Dim>>>(*derived, bbox); \
   }
 
   CASE(biharmonic2d);
@@ -266,27 +253,22 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf_prox
 }
 
 template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_symmetric_evaluator<1>(const rbf_proxy<1>& rbf,
-                                                                            const bboxNd<1>& bbox,
-                                                                            double accuracy);
+                                                                            const bboxNd<1>& bbox);
 
 template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_symmetric_evaluator<2>(const rbf_proxy<2>& rbf,
-                                                                            const bboxNd<2>& bbox,
-                                                                            double accuracy);
+                                                                            const bboxNd<2>& bbox);
 
 template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_symmetric_evaluator<3>(const rbf_proxy<3>& rbf,
-                                                                            const bboxNd<3>& bbox,
-                                                                            double accuracy);
+                                                                            const bboxNd<3>& bbox);
 
 template <int Dim>
 FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const rbf_proxy<Dim>& rbf,
-                                                                          const bboxNd<Dim>& bbox,
-                                                                          double accuracy) {
+                                                                          const bboxNd<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
-#define CASE(RBF_NAME)                                                                      \
-  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                 \
-    return std::make_unique<fmm_hessian_symmetric_evaluator<RBF_NAME<Dim>>>(*derived, bbox, \
-                                                                            accuracy);      \
+#define CASE(RBF_NAME)                                                                       \
+  if (auto* derived = dynamic_cast<RBF_NAME<Dim>*>(base)) {                                  \
+    return std::make_unique<fmm_hessian_symmetric_evaluator<RBF_NAME<Dim>>>(*derived, bbox); \
   }
 
   CASE(biharmonic2d);
@@ -315,12 +297,12 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const 
 }
 
 template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_hessian_symmetric_evaluator<1>(
-    const rbf_proxy<1>& rbf, const bboxNd<1>& bbox, double accuracy);
+    const rbf_proxy<1>& rbf, const bboxNd<1>& bbox);
 
 template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_hessian_symmetric_evaluator<2>(
-    const rbf_proxy<2>& rbf, const bboxNd<2>& bbox, double accuracy);
+    const rbf_proxy<2>& rbf, const bboxNd<2>& bbox);
 
 template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_hessian_symmetric_evaluator<3>(
-    const rbf_proxy<3>& rbf, const bboxNd<3>& bbox, double accuracy);
+    const rbf_proxy<3>& rbf, const bboxNd<3>& bbox);
 
 }  // namespace polatory::fmm

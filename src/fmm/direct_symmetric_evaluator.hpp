@@ -30,7 +30,7 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
   using Container = scalfmm::container::particle_container<Particle>;
 
  public:
-  impl(const Rbf& rbf, const Bbox& /*bbox*/, int /*accuracy*/) : rbf_(rbf), kernel_(rbf) {}
+  impl(const Rbf& rbf, const Bbox& /*bbox*/) : rbf_(rbf), kernel_(rbf) {}
 
   vectord evaluate() const {
     particles_.reset_outputs();
@@ -64,6 +64,10 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
     handle_self_interaction();
 
     return potentials();
+  }
+
+  void set_accuracy(double /*accuracy*/) {
+    // Do nothing.
   }
 
   void set_points(const Points& points) {
@@ -137,9 +141,8 @@ class fmm_generic_symmetric_evaluator<Rbf, Kernel>::impl {
 
 template <class Rbf, class Kernel>
 fmm_generic_symmetric_evaluator<Rbf, Kernel>::fmm_generic_symmetric_evaluator(const Rbf& rbf,
-                                                                              const Bbox& bbox,
-                                                                              double accuracy)
-    : impl_(std::make_unique<impl>(rbf, bbox, accuracy)) {}
+                                                                              const Bbox& bbox)
+    : impl_(std::make_unique<impl>(rbf, bbox)) {}
 
 template <class Rbf, class Kernel>
 fmm_generic_symmetric_evaluator<Rbf, Kernel>::~fmm_generic_symmetric_evaluator() = default;
@@ -147,6 +150,11 @@ fmm_generic_symmetric_evaluator<Rbf, Kernel>::~fmm_generic_symmetric_evaluator()
 template <class Rbf, class Kernel>
 vectord fmm_generic_symmetric_evaluator<Rbf, Kernel>::evaluate() const {
   return impl_->evaluate();
+}
+
+template <class Rbf, class Kernel>
+void fmm_generic_symmetric_evaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+  impl_->set_accuracy(accuracy);
 }
 
 template <class Rbf, class Kernel>

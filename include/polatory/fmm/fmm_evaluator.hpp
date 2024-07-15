@@ -31,6 +31,8 @@ class fmm_generic_evaluator_base {
 
   virtual vectord evaluate() const = 0;
 
+  virtual void set_accuracy(double accuracy) = 0;
+
   virtual void set_source_points(const Points& points) = 0;
 
   virtual void set_target_points(const Points& points) = 0;
@@ -48,7 +50,7 @@ class fmm_generic_evaluator final : public fmm_generic_evaluator_base<Rbf::kDim>
   using Points = geometry::pointsNd<kDim>;
 
  public:
-  fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox, double accuracy);
+  fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox);
 
   ~fmm_generic_evaluator() override;
 
@@ -58,6 +60,8 @@ class fmm_generic_evaluator final : public fmm_generic_evaluator_base<Rbf::kDim>
   fmm_generic_evaluator& operator=(fmm_generic_evaluator&&) = delete;
 
   vectord evaluate() const override;
+
+  void set_accuracy(double accuracy) override;
 
   void set_source_points(const Points& points) override;
 
@@ -85,21 +89,18 @@ using fmm_hessian_evaluator = fmm_generic_evaluator<Rbf, hessian_kernel<Rbf>>;
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                               const geometry::bboxNd<Dim>& bbox, double accuracy);
+                                               const geometry::bboxNd<Dim>& bbox);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                                        const geometry::bboxNd<Dim>& bbox,
-                                                        double accuracy);
+                                                        const geometry::bboxNd<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                                                  const geometry::bboxNd<Dim>& bbox,
-                                                                  double accuracy);
+FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(
+    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                                       const geometry::bboxNd<Dim>& bbox,
-                                                       double accuracy);
+                                                       const geometry::bboxNd<Dim>& bbox);
 
 }  // namespace polatory::fmm

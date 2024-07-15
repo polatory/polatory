@@ -36,7 +36,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
 
  public:
-  impl(const Rbf& rbf, const Bbox& /*bbox*/, int /*accuracy*/) : rbf_(rbf), kernel_(rbf) {}
+  impl(const Rbf& rbf, const Bbox& /*bbox*/) : rbf_(rbf), kernel_(rbf) {}
 
   vectord evaluate() const {
     trg_particles_.reset_outputs();
@@ -65,6 +65,10 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     }
 
     return potentials();
+  }
+
+  void set_accuracy(double /*accuracy*/) {
+    // Do nothing.
   }
 
   void set_source_points(const Points& points) {
@@ -136,9 +140,8 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
 };
 
 template <class Rbf, class Kernel>
-fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox,
-                                                          double accuracy)
-    : impl_(std::make_unique<impl>(rbf, bbox, accuracy)) {}
+fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox)
+    : impl_(std::make_unique<impl>(rbf, bbox)) {}
 
 template <class Rbf, class Kernel>
 fmm_generic_evaluator<Rbf, Kernel>::~fmm_generic_evaluator() = default;
@@ -149,13 +152,18 @@ vectord fmm_generic_evaluator<Rbf, Kernel>::evaluate() const {
 }
 
 template <class Rbf, class Kernel>
-void fmm_generic_evaluator<Rbf, Kernel>::set_target_points(const Points& points) {
-  impl_->set_target_points(points);
+void fmm_generic_evaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+  impl_->set_accuracy(accuracy);
 }
 
 template <class Rbf, class Kernel>
 void fmm_generic_evaluator<Rbf, Kernel>::set_source_points(const Points& points) {
   impl_->set_source_points(points);
+}
+
+template <class Rbf, class Kernel>
+void fmm_generic_evaluator<Rbf, Kernel>::set_target_points(const Points& points) {
+  impl_->set_target_points(points);
 }
 
 template <class Rbf, class Kernel>
