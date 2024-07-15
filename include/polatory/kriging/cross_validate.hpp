@@ -12,9 +12,9 @@
 namespace polatory::kriging {
 
 template <int Dim>
-inline vectord cross_validate(const model<Dim>& model, const geometry::pointsNd<Dim>& points,
-                              const vectord& values, const Eigen::VectorXi& set_ids,
-                              double tolerance, int max_iter, double accuracy) {
+vectord cross_validate(const model<Dim>& model, const geometry::pointsNd<Dim>& points,
+                       const vectord& values, const Eigen::VectorXi& set_ids, double tolerance,
+                       int max_iter, double accuracy) {
   auto n_points = points.rows();
   vectord predictions = vectord::Zero(n_points);
 

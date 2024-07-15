@@ -10,7 +10,7 @@
 namespace polatory::fmm {
 
 template <int Dim>
-inline int fmm_tree_height(index_t n_points) {
+int fmm_tree_height(index_t n_points) {
   return std::max(2,
                   static_cast<int>(std::round(std::log(n_points) / std::log(std::pow(2.0, Dim)))));
 }
