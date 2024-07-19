@@ -1,16 +1,13 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <Eigen/LU>
 #include <array>
 #include <boost/container_hash/hash.hpp>
 #include <cmath>
-#include <functional>
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <stdexcept>
 
 namespace polatory::isosurface::rmt {
 
@@ -20,51 +17,44 @@ using cell_vectors = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
 struct cell_vector_hash {
   std::size_t operator()(const cell_vector& cv) const noexcept {
     std::size_t seed{};
-    boost::hash_combine(seed, std::hash<int>()(cv(0)));
-    boost::hash_combine(seed, std::hash<int>()(cv(1)));
-    boost::hash_combine(seed, std::hash<int>()(cv(2)));
+    boost::hash_combine(seed, cv(0));
+    boost::hash_combine(seed, cv(1));
+    boost::hash_combine(seed, cv(2));
     return seed;
   }
 };
 
-// Rotates the lattice so that the space spanned by the first and third primitive vectors
-// is the xy-plane.
-inline geometry::vector3d rotate(const geometry::vector3d& v) {
-  static const geometry::matrix3d rotation =
-      (Eigen::AngleAxisd(-std::numbers::pi / 2.0, geometry::vector3d::UnitZ()) *
-       Eigen::AngleAxisd(-std::numbers::pi / 4.0, geometry::vector3d::UnitY()))
-          .toRotationMatrix();
-
-  return geometry::transform_vector<3>(rotation, v);
-}
-
-inline constexpr double inv_sqrt2 = std::numbers::sqrt2 / 2.0;
+inline constexpr double inv_sqrt2 = 0.5 * std::numbers::sqrt2;
 
 // Primitive vectors of the body-centered cubic lattice.
 inline const std::array<geometry::vector3d, 3> kLatticeVectors{
-    {rotate(inv_sqrt2 * geometry::vector3d{-1.0, 1.0, 1.0}),
-     rotate(inv_sqrt2* geometry::vector3d{1.0, -1.0, 1.0}),
-     rotate(inv_sqrt2* geometry::vector3d{1.0, 1.0, -1.0})}};
+    geometry::vector3d{inv_sqrt2, 1.0, 0.0}, geometry::vector3d{-inv_sqrt2, 0.0, 1.0},
+    geometry::vector3d{inv_sqrt2, -1.0, 0.0}};
 
 // Reciprocal primitive vectors of the body-centered cubic lattice.
 inline const std::array<geometry::vector3d, 3> kDualLatticeVectors{
-    {rotate(inv_sqrt2 * geometry::vector3d{0.0, 1.0, 1.0}),
-     rotate(inv_sqrt2* geometry::vector3d{1.0, 0.0, 1.0}),
-     rotate(inv_sqrt2* geometry::vector3d{1.0, 1.0, 0.0})}};
+    geometry::vector3d{inv_sqrt2, 0.5, 0.5}, geometry::vector3d{0.0, 0.0, 1.0},
+    geometry::vector3d{inv_sqrt2, -0.5, 0.5}};
 
 class primitive_lattice {
  public:
-  primitive_lattice(const geometry::bbox3d& bbox, double resolution)
+  primitive_lattice(const geometry::bbox3d& bbox, double resolution,
+                    const geometry::matrix3d& aniso)
       : bbox_(bbox),
         resolution_(resolution),
-        a0_(resolution_ * kLatticeVectors[0]),
-        a1_(resolution_ * kLatticeVectors[1]),
-        a2_(resolution_ * kLatticeVectors[2]),
-        b0_(kDualLatticeVectors[0] / resolution_),
-        b1_(kDualLatticeVectors[1] / resolution_),
-        b2_(kDualLatticeVectors[2] / resolution_),
+        aniso_is_diagonal_(aniso.isDiagonal()),
+        inv_aniso_(aniso.inverse()),
+        trans_aniso_(aniso.transpose()),
+        a0_(geometry::transform_vector<3>(inv_aniso_, resolution_ * kLatticeVectors[0])),
+        a1_(geometry::transform_vector<3>(inv_aniso_, resolution_ * kLatticeVectors[1])),
+        a2_(geometry::transform_vector<3>(inv_aniso_, resolution_ * kLatticeVectors[2])),
+        b0_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeVectors[0] / resolution_)),
+        b1_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeVectors[1] / resolution_)),
+        b2_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeVectors[2] / resolution_)),
         cv_offset_(compute_cv_offset()),
         ext_bbox_(compute_extended_bbox()) {}
+
+  bool aniso_is_diagonal() const { return aniso_is_diagonal_; }
 
   const geometry::bbox3d& bbox() const { return bbox_; }
 
@@ -115,6 +105,9 @@ class primitive_lattice {
 
   const geometry::bbox3d bbox_;
   const double resolution_;
+  const bool aniso_is_diagonal_;
+  const geometry::matrix3d inv_aniso_;
+  const geometry::matrix3d trans_aniso_;
   const geometry::vector3d a0_;
   const geometry::vector3d a1_;
   const geometry::vector3d a2_;

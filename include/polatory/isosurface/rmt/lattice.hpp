@@ -32,7 +32,8 @@ class lattice : public primitive_lattice {
   static constexpr double kZeroValueReplacement = 1e-100;
 
  public:
-  lattice(const geometry::bbox3d& bbox, double resolution) : Base(bbox, resolution) {}
+  lattice(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
+      : Base(bbox, resolution, aniso) {}
 
   // Add all nodes inside the boundary.
   void add_all_nodes(const field_function& field_fn, double isovalue) {
@@ -105,11 +106,15 @@ class lattice : public primitive_lattice {
   }
 
   void cluster_vertices() {
+    const auto& min = bbox().min();
+    const auto& max = bbox().max();
+
     for (auto& cv_node : node_list_) {
       auto& node = cv_node.second;
       const auto& p = node.position();
-      if ((p.array() == bbox().min().array() || p.array() == bbox().max().array()).any()) {
-        // Do not cluster boundary nodes' vertices.
+      if ((p.array() <= min.array() || p.array() >= max.array()).any()) {
+        // Do not cluster vertices of a node on/outside the bbox,
+        // as this can produce a boundary vertex inside the bbox.
         continue;
       }
       node.cluster(vertices_, cluster_map_);
@@ -165,7 +170,7 @@ class lattice : public primitive_lattice {
     }
   }
 
-  geometry::points3d get_vertices() {
+  geometry::points3d get_vertices() const {
     geometry::points3d vertices(static_cast<index_t>(vertices_.size()), 3);
     auto it = vertices.rowwise().begin();
     for (const auto& v : vertices_) {
@@ -234,16 +239,21 @@ class lattice : public primitive_lattice {
     }
   }
 
-  void uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
+  index_t uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
+    index_t num_unclustered = 0;
+
     auto it = cluster_map_.begin();
     while (it != cluster_map_.end()) {
       if (vis.contains(it->second)) {
         // Uncluster.
         it = cluster_map_.erase(it);
+        ++num_unclustered;
       } else {
         ++it;
       }
     }
+
+    return num_unclustered;
   }
 
   double value_at_arbitrary_point() const { return value_at_arbitrary_point_; }
@@ -291,17 +301,11 @@ class lattice : public primitive_lattice {
       return false;
     }
 
-    // To prevent generation of near-degenerate tetrahedra,
-    // project the point on the bounding box if it is very close to it.
+    if (aniso_is_diagonal()) {
+      p = clamp_to_bbox(p);
+    }
 
-    const auto& min = bbox().min();
-    const auto& max = bbox().max();
-    auto tiny = 1e-10 * resolution();
-
-    p = ((p.array() - min.array()).abs() < tiny).select(min, p);
-    p = ((p.array() - max.array()).abs() < tiny).select(max, p);
-
-    node_list_.emplace(cv, Node{clamp_to_bbox(p)});
+    node_list_.emplace(cv, Node{p});
 
     nodes_to_evaluate_.push_back(cv);
     return true;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
@@ -12,7 +13,17 @@ namespace polatory::isosurface {
 
 class isosurface {
  public:
-  isosurface(const geometry::bbox3d& bbox, double resolution) : rmt_lattice_(bbox, resolution) {}
+  isosurface(const geometry::bbox3d& bbox, double resolution)
+      : isosurface(bbox, resolution, geometry::matrix3d::Identity()) {}
+
+  isosurface(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
+      : rmt_lattice_(bbox, resolution, aniso) {
+    if (!aniso.isDiagonal()) {
+      std::cerr
+          << "warning: exact clipping of isosurfaces is not supported for non-diagonal anisotropy"
+          << std::endl;
+    }
+  }
 
   surface generate(field_function& field_fn, double isovalue = 0.0, bool refine = true) {
     field_fn.set_evaluation_bbox(rmt_lattice_.bbox());
@@ -67,10 +78,8 @@ class isosurface {
         vertices_to_uncluster.insert(f(2));
       }
 
-      rmt_lattice_.uncluster_vertices(vertices_to_uncluster);
-
-      // fis.empty() is not checked as it is not possible to eliminate all self intersections.
-      if (vis.empty()) {
+      auto num_unclustered = rmt_lattice_.uncluster_vertices(vertices_to_uncluster);
+      if (num_unclustered == 0) {
         break;
       }
     }

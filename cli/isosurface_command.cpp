@@ -15,10 +15,12 @@ using polatory::interpolant;
 using polatory::matrixd;
 using polatory::read_table;
 using polatory::geometry::bbox3d;
+using polatory::geometry::matrix3d;
 using polatory::geometry::points3d;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::rbf_field_function;
 using polatory::isosurface::surface;
+using polatory::numeric::to_double;
 
 namespace {
 
@@ -30,6 +32,7 @@ struct options {
   double isovalue{};
   bbox3d bbox;
   double resolution{};
+  matrix3d aniso{};
   std::string out_file;
 };
 
@@ -37,7 +40,7 @@ void run_impl(const options& opts) {
   auto inter = interpolant<3>::load(opts.in_file);
   auto bbox = opts.bbox.is_empty() ? inter.bbox() : opts.bbox;
 
-  isosurface isosurf(bbox, opts.resolution);
+  isosurface isosurf(bbox, opts.resolution, opts.aniso);
   rbf_field_function field_fn(inter, opts.accuracy, opts.grad_accuracy);
 
   points3d seed_points;
@@ -85,6 +88,12 @@ void isosurface_command::run(const std::vector<std::string>& args,
        "Output mesh bounding box")  //
       ("res", po::value(&opts.resolution)->required()->value_name("RES"),
        "Output mesh resolution")  //
+      ("aniso",
+       po::value(&opts.aniso)
+           ->multitoken()
+           ->default_value(matrix3d::Identity(), "1 0 0 0 1 0 0 0 1")
+           ->value_name("A_11 A_12 ... A_33"),
+       "Elements of the anisotropy matrix")  //
       ("isoval", po::value(&opts.isovalue)->default_value(0.0, "0.0")->value_name("VAL"),
        "Output mesh isovalue")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
@@ -111,3 +120,22 @@ void isosurface_command::run(const std::vector<std::string>& args,
 
   run_impl(opts);
 }
+
+namespace Eigen {
+
+inline void validate(boost::any& v, const std::vector<std::string>& values, matrix3d*, int) {
+  namespace po = boost::program_options;
+
+  if (values.size() != 9) {
+    throw po::validation_error(po::validation_error::invalid_option_value);
+  }
+
+  matrix3d aniso;
+  aniso << to_double(values.at(0)), to_double(values.at(1)), to_double(values.at(2)),
+      to_double(values.at(3)), to_double(values.at(4)), to_double(values.at(5)),
+      to_double(values.at(6)), to_double(values.at(7)), to_double(values.at(8));
+
+  v = aniso;
+}
+
+}  // namespace Eigen

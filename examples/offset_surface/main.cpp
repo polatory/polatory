@@ -39,8 +39,8 @@ class mesh_distance {
   struct halfedge_hash {
     std::size_t operator()(const halfedge& edge) const noexcept {
       std::size_t seed{};
-      boost::hash_combine(seed, std::hash<index_t>{}(edge.first));
-      boost::hash_combine(seed, std::hash<index_t>{}(edge.second));
+      boost::hash_combine(seed, edge.first);
+      boost::hash_combine(seed, edge.second);
       return seed;
     }
   };
