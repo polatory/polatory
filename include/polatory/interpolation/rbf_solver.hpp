@@ -15,6 +15,7 @@
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/preconditioner/ras_preconditioner.hpp>
 #include <polatory/types.hpp>
+#include <stdexcept>
 
 namespace polatory::interpolation {
 
@@ -128,10 +129,7 @@ class rbf_solver {
       }
 
       if (solver.iteration_count() == solver.max_iterations()) {
-        std::cerr
-            << "warning: reached the maximum number of iterations, returning the current solution"
-            << std::endl;
-        break;
+        throw std::runtime_error("reached the maximum number of iterations");
       }
     }
 
