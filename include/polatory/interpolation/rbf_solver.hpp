@@ -106,31 +106,34 @@ class rbf_solver {
       return weights;
     }
 
-    std::cout << std::setw(4) << "iter" << std::setw(16) << "rel_res" << std::endl
-              << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
-              << solver.relative_residual() << std::defaultfloat << std::endl;
+    std::cout << std::setw(8) << "iter"            //
+              << std::setw(16) << "residual"       //
+              << std::setw(16) << "grad_residual"  //
+              << std::endl;
 
     while (true) {
-      solver.iterate_process();
       weights = solver.solution_vector();
-      std::cout << std::setw(4) << solver.iteration_count() << std::setw(16) << std::scientific
-                << solver.relative_residual() << std::defaultfloat << std::endl;
 
-      auto [converged, res, grad_res] =
-          res_eval_.converged(values, weights, tolerance, grad_tolerance);
-      if (converged) {
-        if (mu_ > 0) {
-          std::cout << "Achieved absolute residual: " << res << std::endl;
-        }
-        if (sigma_ > 0) {
-          std::cout << "Achieved absolute grad residual: " << grad_res << std::endl;
-        }
+      auto convergence = res_eval_.converged(values, weights, tolerance, grad_tolerance);
+
+      auto prefix = convergence.exact_residual ? "" : "~";
+      auto grad_prefix = convergence.exact_grad_residual ? "" : "~";
+      std::cout << std::scientific                                                            //
+                << std::setw(8) << solver.iteration_count()                                   //
+                << std::setw(4) << prefix << std::setw(12) << convergence.residual            //
+                << std::setw(4) << grad_prefix << std::setw(12) << convergence.grad_residual  //
+                << std::endl                                                                  //
+                << std::defaultfloat;
+
+      if (convergence.converged) {
         break;
       }
 
       if (solver.iteration_count() == solver.max_iterations()) {
         throw std::runtime_error("reached the maximum number of iterations");
       }
+
+      solver.iterate_process();
     }
 
     return weights;

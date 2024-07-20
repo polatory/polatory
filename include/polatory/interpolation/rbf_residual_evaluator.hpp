@@ -10,9 +10,16 @@
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/types.hpp>
-#include <tuple>
 
 namespace polatory::interpolation {
+
+struct convergence {
+  bool converged{};
+  double residual{};
+  double grad_residual{};
+  bool exact_residual{};
+  bool exact_grad_residual{};
+};
 
 template <int Dim>
 class rbf_residual_evaluator {
@@ -45,9 +52,9 @@ class rbf_residual_evaluator {
         evaluator_(model, bbox, accuracy, grad_accuracy) {}
 
   template <class Derived, class Derived2>
-  std::tuple<bool, double, double> converged(const Eigen::MatrixBase<Derived>& values,
-                                             const Eigen::MatrixBase<Derived2>& weights,
-                                             double tolerance, double grad_tolerance) const {
+  convergence converged(const Eigen::MatrixBase<Derived>& values,
+                        const Eigen::MatrixBase<Derived2>& weights, double tolerance,
+                        double grad_tolerance) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
@@ -72,12 +79,15 @@ class rbf_residual_evaluator {
       auto grad_residual = numeric::absolute_error<Eigen::Infinity>(
           fit.tail(kDim * trg_sigma), values.segment(mu_, kDim * trg_sigma));
 
+      auto exact_residual = trg_mu == mu_;
+      auto exact_grad_residual = trg_sigma == sigma_;
+
       if (residual > tolerance || grad_residual > grad_tolerance) {
-        return {false, 0.0, 0.0};
+        return {false, residual, grad_residual, exact_residual, exact_grad_residual};
       }
 
-      if (trg_mu == mu_ && trg_sigma == sigma_) {
-        return {true, residual, grad_residual};
+      if (exact_residual && exact_grad_residual) {
+        return {true, residual, grad_residual, exact_residual, exact_grad_residual};
       }
     }
 
@@ -92,10 +102,10 @@ class rbf_residual_evaluator {
                                                                     values.tail(kDim * sigma_));
 
       if (residual > tolerance || grad_residual > grad_tolerance) {
-        return {false, 0.0, 0.0};
+        return {false, residual, grad_residual, true, true};
       }
 
-      return {true, residual, grad_residual};
+      return {true, residual, grad_residual, true, true};
     }
   }
 
