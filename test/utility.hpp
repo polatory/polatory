@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Eigen/LU>
 #include <cmath>
 #include <numbers>
 #include <polatory/common/orthonormalize.hpp>
@@ -11,22 +10,33 @@
 #include <utility>
 
 template <int Dim>
-polatory::geometry::matrixNd<Dim> random_anisotropy() {
+polatory::geometry::matrixNd<Dim> random_rotation() {
   using polatory::common::orthonormalize_cols;
+  using Matrix = polatory::geometry::matrixNd<Dim>;
+
+  Matrix rot = Matrix::Random();
+  orthonormalize_cols(rot);
+  if (rot.determinant() < 0.0) {
+    rot.col(0) *= -1.0;
+  }
+
+  return rot;
+}
+
+template <int Dim>
+polatory::geometry::matrixNd<Dim> random_scaling() {
   using Vector = polatory::geometry::vectorNd<Dim>;
   using Matrix = polatory::geometry::matrixNd<Dim>;
 
-  // Rotation.
-  Matrix a = Matrix::Random();
-  orthonormalize_cols(a);
-  if (a.determinant() < 0.0) {
-    a.col(0) *= -1.0;
-  }
+  Matrix scale = Matrix::Identity();
+  scale.diagonal().array() *= pow(10.0, Vector::Random().array());
 
-  // Scaling.
-  a.diagonal().array() *= pow(10.0, Vector::Random().array());
+  return scale;
+}
 
-  return a;
+template <int Dim>
+polatory::geometry::matrixNd<Dim> random_anisotropy() {
+  return random_scaling<Dim>() * random_rotation<Dim>();
 }
 
 template <int Dim>
