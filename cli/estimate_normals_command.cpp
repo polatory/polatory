@@ -2,6 +2,7 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <polatory/polatory.hpp>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -125,9 +126,9 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
   if (num_estimation_opts > 1) {
     throw std::runtime_error("only either --k or --radius can be specified");
   }
-  if (vm.contains("k")) {
+  if (vm.count("k") == 1) {
     opts.normal_method = normal_estimation_method::kKNN;
-  } else if (vm.contains("radius")) {
+  } else if (vm.count("radius") == 1) {
     opts.normal_method = normal_estimation_method::kRadius;
   } else {
     opts.normal_method = normal_estimation_method::kKNN;
@@ -138,11 +139,11 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
   if (num_orientation_opts > 1) {
     throw std::runtime_error("only one of --point, --direction, or --closed can be specified");
   }
-  if (vm.contains("point")) {
+  if (vm.count("point") == 1) {
     opts.orientation_method = orientation_estimation_method::kPoint;
-  } else if (vm.contains("direction")) {
+  } else if (vm.count("direction") == 1) {
     opts.orientation_method = orientation_estimation_method::kDirection;
-  } else if (vm.contains("closed")) {
+  } else if (vm.count("closed") == 1) {
     opts.orientation_method = orientation_estimation_method::kClosed;
   } else {
     opts.orientation_method = orientation_estimation_method::kClosed;
