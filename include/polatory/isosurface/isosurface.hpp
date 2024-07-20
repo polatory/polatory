@@ -7,6 +7,7 @@
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/rmt/surface_generator.hpp>
 #include <polatory/isosurface/surface.hpp>
+#include <stdexcept>
 #include <unordered_set>
 
 namespace polatory::isosurface {
@@ -18,6 +19,10 @@ class isosurface {
 
   isosurface(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
       : rmt_lattice_(bbox, resolution, aniso) {
+    if (!(aniso.determinant() > 0.0)) {
+      throw std::invalid_argument("aniso must have a positive determinant");
+    }
+
     if (!aniso.isDiagonal()) {
       std::cerr
           << "warning: exact clipping of isosurfaces is not supported for non-diagonal anisotropy"
