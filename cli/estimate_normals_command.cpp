@@ -1,3 +1,4 @@
+#include <boost/any.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <polatory/polatory.hpp>
@@ -14,18 +15,25 @@ using polatory::common::concatenate_cols;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::geometry::vector3d;
+using polatory::numeric::to_double;
 using polatory::point_cloud::normal_estimator;
 
 namespace {
 
+enum class normal_estimation_method { kKNN, kRadius };
+
+enum class orientation_estimation_method { kPoint, kDirection, kClosed };
+
 struct options {
   std::string in_file;
+  normal_estimation_method normal_method{};
   std::vector<index_t> ks;
   std::vector<double> radii;
   double threshold{};
-  std::vector<double> point{};
-  std::vector<double> direction{};
-  int closed{};
+  orientation_estimation_method orientation_method{};
+  point3d point;
+  vector3d direction;
+  index_t k_closed{};
   std::string out_file;
 };
 
@@ -35,23 +43,27 @@ void run_impl(const options& opts) {
 
   normal_estimator estimator(points);
 
-  if (!opts.ks.empty()) {
-    estimator.estimate_with_knn(opts.ks);
-  } else if (!opts.radii.empty()) {
-    estimator.estimate_with_radius(opts.radii);
-  } else {
-    estimator.estimate_with_knn(std::vector<index_t>{10, 30, 100, 300});
+  switch (opts.normal_method) {
+    case normal_estimation_method::kKNN:
+      estimator.estimate_with_knn(opts.ks);
+      break;
+    case normal_estimation_method::kRadius:
+      estimator.estimate_with_radius(opts.radii);
+      break;
   }
 
   estimator.filter_by_plane_factor(opts.threshold);
 
-  if (opts.point.size() == 3) {
-    estimator.orient_toward_point(point3d{opts.point[0], opts.point[1], opts.point[2]});
-  } else if (opts.direction.size() == 3) {
-    estimator.orient_toward_direction(
-        vector3d{opts.direction[0], opts.direction[1], opts.direction[2]});
-  } else if (opts.closed) {
-    estimator.orient_closed_surface(100);
+  switch (opts.orientation_method) {
+    case orientation_estimation_method::kPoint:
+      estimator.orient_toward_point(opts.point);
+      break;
+    case orientation_estimation_method::kDirection:
+      estimator.orient_toward_direction(opts.direction);
+      break;
+    case orientation_estimation_method::kClosed:
+      estimator.orient_closed_surface(opts.k_closed);
+      break;
   }
 
   const auto& normals = estimator.normals();
@@ -72,17 +84,21 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
        "Input file in CSV format:\n  X,Y,Z")  //
       ("k", po::value(&opts.ks)->multitoken()->value_name("K ..."),
-       "Number of points for k-NN search during normal estimation")  //
+       "Use k-NN search with the specified number of points for normal estimation\n"
+       "When multiple values are supplied, the best one is selected per point\n"
+       "This option with 10 30 100 300 is default")  //
       ("radius", po::value(&opts.radii)->multitoken()->value_name("RADIUS ..."),
-       "Radius for radius search during normal estimation")  //
+       "Use radius search with the specified radius for normal estimation\n"
+       "When multiple values are supplied, the best one is selected per point")  //
       ("threshold", po::value(&opts.threshold)->default_value(1.8, "1.8")->value_name("THRES"),
        "Threshold for plane factor filtering, set to 1.0 to disable filtering")  //
       ("point", po::value(&opts.point)->multitoken()->value_name("X Y Z"),
        "Orient normals toward the point")  //
       ("direction", po::value(&opts.direction)->multitoken()->value_name("X Y Z"),
        "Orient normals toward the direction")  //
-      ("closed", po::value(&opts.closed)->value_name("K"),
-       "Orient normals for closed surface(s) with specified number of points for k-NN search")  //
+      ("closed", po::value(&opts.k_closed)->value_name("K"),
+       "Orient normals of closed surface(s) using k-NN search with the specified number of points\n"
+       "This option with 100 is default")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output file in CSV format:\n  X,Y,Z,NX,NY,NZ")  //
       ;
@@ -106,26 +122,46 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
   }
 
   auto num_estimation_opts = vm.count("k") + vm.count("radius");
-  if (num_estimation_opts == 0) {
-    opts.ks = {10, 30, 100, 300};
-  } else if (num_estimation_opts > 1) {
+  if (num_estimation_opts > 1) {
     throw std::runtime_error("only either --k or --radius can be specified");
+  }
+  if (vm.contains("k")) {
+    opts.normal_method = normal_estimation_method::kKNN;
+  } else if (vm.contains("radius")) {
+    opts.normal_method = normal_estimation_method::kRadius;
+  } else {
+    opts.normal_method = normal_estimation_method::kKNN;
+    opts.ks = {10, 30, 100, 300};
   }
 
   auto num_orientation_opts = vm.count("point") + vm.count("direction") + vm.count("closed");
-  if (num_orientation_opts == 0) {
-    opts.closed = 100;
-  } else if (num_orientation_opts > 1) {
+  if (num_orientation_opts > 1) {
     throw std::runtime_error("only one of --point, --direction, or --closed can be specified");
   }
-
-  if (vm.count("point") && opts.point.size() != 3) {
-    throw std::runtime_error("--point takes exactly 3 values");
-  }
-
-  if (vm.count("direction") && opts.direction.size() != 3) {
-    throw std::runtime_error("--direction takes exactly 3 values");
+  if (vm.contains("point")) {
+    opts.orientation_method = orientation_estimation_method::kPoint;
+  } else if (vm.contains("direction")) {
+    opts.orientation_method = orientation_estimation_method::kDirection;
+  } else if (vm.contains("closed")) {
+    opts.orientation_method = orientation_estimation_method::kClosed;
+  } else {
+    opts.orientation_method = orientation_estimation_method::kClosed;
+    opts.k_closed = 100;
   }
 
   run_impl(opts);
 }
+
+namespace Eigen {
+
+inline void validate(boost::any& v, const std::vector<std::string>& values, vector3d*, int) {
+  namespace po = boost::program_options;
+
+  if (values.size() != 3) {
+    throw po::validation_error(po::validation_error::invalid_option_value);
+  }
+
+  v = vector3d{to_double(values.at(0)), to_double(values.at(1)), to_double(values.at(2))};
+}
+
+}  // namespace Eigen
