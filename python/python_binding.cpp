@@ -5,7 +5,6 @@
 #include <pybind11/stl.h>
 
 #include <limits>
-#include <memory>
 #include <polatory/kriging.hpp>
 #include <polatory/polatory.hpp>
 #include <string>
@@ -194,6 +193,8 @@ void define_module(py::module& m) {
 }
 
 PYBIND11_MODULE(_core, m) {
+  using Bbox = geometry::bbox3d;
+  using Matrix = geometry::matrix3d;
   using NormalEstimator = point_cloud::normal_estimator;
 
   py::class_<NormalEstimator>(m, "NormalEstimator")
@@ -234,9 +235,10 @@ PYBIND11_MODULE(_core, m) {
            "k"_a = 100);
 
   py::class_<point_cloud::sdf_data_generator>(m, "SdfDataGenerator")
-      .def(
-          py::init<const geometry::points3d&, const geometry::vectors3d&, double, double, double>(),
-          "points"_a, "normals"_a, "min_distance"_a, "max_distance"_a, "multiplication"_a = 2.0)
+      .def(py::init<const geometry::points3d&, const geometry::vectors3d&, double, double,
+                    const Matrix&>(),
+           "points"_a, "normals"_a, "min_distance"_a, "max_distance"_a,
+           "aniso"_a = Matrix::Identity())
       .def_property_readonly("sdf_points", &point_cloud::sdf_data_generator::sdf_points)
       .def_property_readonly("sdf_values", &point_cloud::sdf_data_generator::sdf_values);
 
@@ -252,7 +254,8 @@ PYBIND11_MODULE(_core, m) {
            "grad_accuracy"_a = kInfinity);
 
   py::class_<isosurface::isosurface>(m, "Isosurface")
-      .def(py::init<const geometry::bbox3d&, double>(), "bbox"_a, "resolution"_a)
+      .def(py::init<const Bbox&, double, const Matrix&>(), "bbox"_a, "resolution"_a,
+           "aniso"_a = Matrix::Identity())
       .def("generate", &isosurface::isosurface::generate, "field_fn"_a, "isovalue"_a = 0.0,
            "refine"_a = true)
       .def("generate_from_seed_points", &isosurface::isosurface::generate_from_seed_points,
