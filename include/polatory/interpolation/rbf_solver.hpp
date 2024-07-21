@@ -106,6 +106,8 @@ class rbf_solver {
       return weights;
     }
 
+    res_eval_.set_values(values);
+
     std::cout << std::setw(8) << "iter"            //
               << std::setw(16) << "residual"       //
               << std::setw(16) << "grad_residual"  //
@@ -114,7 +116,7 @@ class rbf_solver {
     while (true) {
       weights = solver.solution_vector();
 
-      auto convergence = res_eval_.converged(values, weights, tolerance, grad_tolerance);
+      auto convergence = res_eval_.converged(weights, tolerance, grad_tolerance);
 
       auto prefix = convergence.exact_residual ? "" : "~";
       auto grad_prefix = convergence.exact_grad_residual ? "" : "~";
@@ -146,7 +148,7 @@ class rbf_solver {
   index_t mu_{};
   index_t sigma_{};
   Operator op_;
-  ResidualEvaluator res_eval_;
+  mutable ResidualEvaluator res_eval_;
   std::unique_ptr<Preconditioner> pc_;
   matrixd p_;
 };
