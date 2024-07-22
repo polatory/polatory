@@ -117,16 +117,16 @@ class ras_preconditioner : public krylov::linear_operator {
       auto mu = static_cast<index_t>(point_idcs_.at(level).size());
       auto sigma = static_cast<index_t>(grad_point_idcs_.at(level).size());
 
-      auto divider = std::make_unique<DomainDivider>(points_, grad_points_, point_idcs_.at(level),
-                                                     grad_point_idcs_.at(level), poly_point_idcs);
+      DomainDivider divider(points_, grad_points_, point_idcs_.at(level),
+                            grad_point_idcs_.at(level), poly_point_idcs);
 
       auto ratio = level == 1 ? static_cast<double>(kNCoarsestPoints) /
                                     static_cast<double>(mu + kDim * sigma)
                               : kCoarseRatio;
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
-          divider->choose_coarse_points(ratio);
+          divider.choose_coarse_points(ratio);
 
-      for (auto&& d : divider->into_domains()) {
+      for (auto&& d : divider.into_domains()) {
         fine_grids_.at(level).emplace_back(model, std::move(d), cache_);
       }
 

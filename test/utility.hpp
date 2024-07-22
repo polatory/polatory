@@ -29,7 +29,7 @@ polatory::geometry::matrixNd<Dim> random_scaling() {
   using Matrix = polatory::geometry::matrixNd<Dim>;
 
   Matrix scale = Matrix::Identity();
-  scale.diagonal().array() *= pow(10.0, Vector::Random().array());
+  scale.diagonal().array() *= pow(10.0, 0.5 * Vector::Random().array());
 
   return scale;
 }
