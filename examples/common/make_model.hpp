@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <format>
 #include <polatory/polatory.hpp>
 #include <regex>
@@ -16,10 +17,25 @@ inline bool is_identifier(const std::string& token) {
   return std::regex_match(token, re);
 }
 
+inline bool is_integer(const std::string& token) {
+  static const std::regex re{"0|-?[1-9][0-9]*"};
+
+  return std::regex_match(token, re);
+}
+
 inline bool is_number(const std::string& token) {
   static const std::regex re{"-?([0-9]+\\.?|[0-9]*\\.[0-9]+)([Ee][+-]?[0-9]+)?"};
 
   return std::regex_match(token, re);
+}
+
+template <class Iterator>
+void throw_unexpected_input(const Iterator& it, const Iterator& end) {
+  if (it == end) {
+    throw std::runtime_error("unexpected end of input");
+  }
+
+  throw std::runtime_error(std::format("unexpected token: '{}'", *it));
 }
 
 template <int Dim>
@@ -42,31 +58,47 @@ polatory::model<Dim> make_model(const model_options& opts) {
 
     auto rbf = polatory::rbf::make_rbf<Dim>(name, params);
 
-    if (it != end && *it == "aniso") {
-      ++it;
+    while (it != end) {
+      if (*it == "aniso") {
+        ++it;
 
-      std::vector<double> aniso_elems;
-      while (it != end && is_number(*it)) {
-        aniso_elems.push_back(polatory::numeric::to_double(*it++));
-      }
-      if (aniso_elems.size() != Dim * Dim) {
-        throw std::runtime_error("wrong anisotropy size");
-      }
-
-      Matrix aniso;
-      for (auto i = 0; i < Dim; ++i) {
-        for (auto j = 0; j < Dim; ++j) {
-          aniso(i, j) = aniso_elems.at(Dim * i + j);
+        std::vector<double> aniso;
+        for (auto i = 0; i < Dim * Dim; i++) {
+          if (it != end && is_number(*it)) {
+            aniso.push_back(polatory::numeric::to_double(*it++));
+          } else {
+            throw_unexpected_input(it, end);
+          }
         }
+
+        rbf.set_anisotropy(Eigen::Map<Matrix>(aniso.data()));
+      } else if (*it == "config") {
+        ++it;
+
+        int order{};
+        int d{};
+        if (it != end && is_integer(*it)) {
+          order = std::stoi(*it++);
+        } else {
+          throw_unexpected_input(it, end);
+        }
+        if (it != end && is_integer(*it)) {
+          d = std::stoi(*it++);
+        } else {
+          throw_unexpected_input(it, end);
+        }
+
+        rbf.set_interpolator_configuration({order, d});
+      } else {
+        break;
       }
-      rbf.set_anisotropy(aniso);
     }
 
     rbfs.push_back(std::move(rbf));
   }
 
   if (it != end) {
-    throw std::runtime_error(std::format("unexpected argument to --rbf: '{}'", *it));
+    throw_unexpected_input(it, end);
   }
 
   Model m{std::move(rbfs), opts.poly_degree};

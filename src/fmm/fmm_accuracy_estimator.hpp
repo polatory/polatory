@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <numeric>
+#include <polatory/fmm/interpolator_configuration.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/error.hpp>
@@ -22,7 +23,6 @@
 #include <tuple>
 
 #include "full_direct.hpp"
-#include "interpolator_configuration.hpp"
 
 namespace polatory::fmm {
 
@@ -65,17 +65,18 @@ class fmm_accuracy_estimator {
   using SourceTree = scalfmm::component::group_tree_view<Cell, SourceLeaf, Box>;
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
-  static constexpr int kMinimumOrder = 8;
-  static constexpr int kMaximumOrder = 20;
   static constexpr int kClassic = interpolator_configuration::kClassic;
+  static constexpr int kMaxOrder = 20;
   static constexpr index_t kMaxTargetSize = 10000;
 
  public:
   static interpolator_configuration find_best_configuration(const Rbf& rbf, double accuracy,
                                                             const SourceContainer& src_particles,
                                                             const Box& box, int tree_height) {
+    const auto& config = rbf.interpolator_configuration();
+
     if (accuracy == std::numeric_limits<double>::infinity()) {
-      return {kMinimumOrder, kClassic};
+      return config;
     }
 
     // Errors at the data points are larger than those at randomly distributed points.
@@ -102,10 +103,10 @@ class fmm_accuracy_estimator {
     scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
 
     auto exact = evaluate(rbf, src_particles, trg_particles, box);
-    auto use_d = false;
-    auto best_d = kClassic;
+    auto use_d = config.d != kClassic;
+    auto best_d = config.d;
     auto last_error = std::numeric_limits<double>::infinity();
-    for (auto order = kMinimumOrder; order <= kMaximumOrder; order++) {
+    for (auto order = config.order; order <= kMaxOrder; order++) {
       auto min_d = kClassic;
       auto max_d = kClassic;
       if (use_d) {

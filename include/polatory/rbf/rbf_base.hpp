@@ -4,6 +4,7 @@
 #include <format>
 #include <limits>
 #include <memory>
+#include <polatory/fmm/interpolator_configuration.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -58,6 +59,8 @@ class rbf_base {
 
   virtual Matrix evaluate_hessian_isotropic(const Vector& diff) const = 0;
 
+  const fmm::interpolator_configuration& interpolator_configuration() const { return config_; }
+
   virtual bool is_covariance_function() const { return false; }
 
   virtual index_t num_parameters() const = 0;
@@ -76,6 +79,10 @@ class rbf_base {
     }
 
     aniso_ = aniso;
+  }
+
+  void set_interpolator_configuration(const fmm::interpolator_configuration& config) {
+    config_ = config;
   }
 
   void set_parameters(const std::vector<double>& params) {
@@ -98,6 +105,7 @@ class rbf_base {
  private:
   std::vector<double> params_;
   Matrix aniso_{Matrix::Identity()};
+  fmm::interpolator_configuration config_{8, fmm::interpolator_configuration::kClassic};
 };
 
 }  // namespace polatory::rbf::internal

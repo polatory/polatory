@@ -5,6 +5,7 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <polatory/fmm/interpolator_configuration.hpp>
 #include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
@@ -22,7 +23,6 @@
 
 #include "fmm_accuracy_estimator.hpp"
 #include "full_direct.hpp"
-#include "interpolator_configuration.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {

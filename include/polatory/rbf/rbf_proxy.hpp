@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <polatory/common/io.hpp>
+#include <polatory/fmm/interpolator_configuration.hpp>
 #include <polatory/rbf/rbf_base.hpp>
 #include <string>
 #include <vector>
@@ -60,6 +61,10 @@ class rbf_proxy {
 
   RbfBase* get_raw_pointer() const { return rbf_.get(); }
 
+  const fmm::interpolator_configuration& interpolator_configuration() const {
+    return rbf_->interpolator_configuration();
+  }
+
   bool is_covariance_function() const { return rbf_->is_covariance_function(); }
 
   index_t num_parameters() const { return rbf_->num_parameters(); }
@@ -77,6 +82,10 @@ class rbf_proxy {
   const std::vector<double>& parameters() const { return rbf_->parameters(); }
 
   void set_anisotropy(const Matrix& aniso) { rbf_->set_anisotropy(aniso); }
+
+  void set_interpolator_configuration(const fmm::interpolator_configuration& config) {
+    rbf_->set_interpolator_configuration(config);
+  }
 
   void set_parameters(const std::vector<double>& params) { rbf_->set_parameters(params); }
 
