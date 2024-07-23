@@ -41,7 +41,7 @@ class CMakeBuild(build_ext):
         vcvars64 = (vs_dir / "VC/Auxiliary/Build/vcvars64.bat").resolve()
 
         output = subprocess.run(
-            f'"{vcvars64}" && set', stdout=subprocess.PIPE, check=True, text=True
+            f'"{vcvars64}" -vcvars_ver=14.39 && set', stdout=subprocess.PIPE, check=True, text=True
         ).stdout
 
         env = {}
