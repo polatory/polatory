@@ -79,7 +79,7 @@ void run_impl(const options& opts) {
   Interpolant inter(std::move(model));
   if (opts.ineq) {
     inter.fit_inequality(points, values, *values_lb, *values_ub, opts.tolerance, opts.max_iter,
-                         opts.accuracy);
+                         opts.accuracy, initial ? &*initial : nullptr);
   } else if (opts.reduce) {
     inter.fit_incrementally(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance,
                             opts.max_iter, opts.accuracy, opts.grad_accuracy);
@@ -162,8 +162,8 @@ void fit_command::run(const std::vector<std::string>& args, const global_options
     throw std::runtime_error("--grad-in cannot be used in conjunction with --ineq");
   }
 
-  if (!opts.initial_interpolant_file.empty() && (opts.ineq || opts.reduce)) {
-    throw std::runtime_error("--initial cannot be used in conjunction with --ineq or --reduce");
+  if (!opts.initial_interpolant_file.empty() && opts.reduce) {
+    throw std::runtime_error("--initial cannot be used in conjunction with --reduce");
   }
 
   if (opts.grad_tolerance == -1.0) {

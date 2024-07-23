@@ -41,7 +41,8 @@ class rbf_inequality_fitter {
 
   std::pair<std::vector<index_t>, vectord> fit(const vectord& values, const vectord& values_lb,
                                                const vectord& values_ub, double tolerance,
-                                               int max_iter, double accuracy) const {
+                                               int max_iter, double accuracy,
+                                               const vectord* initial_weights = nullptr) const {
     double filtering_distance = bbox_.width().norm();
 
     auto not_nan = [](double d) { return !std::isnan(d); };
@@ -60,6 +61,9 @@ class rbf_inequality_fitter {
     Evaluator res_eval(model_, bbox_, accuracy, kInfinity);
 
     vectord weights = vectord::Zero(n_points_ + n_poly_basis_);
+    if (initial_weights != nullptr) {
+      weights = *initial_weights;
+    }
     auto centers = eq_idcs;
     vectord center_weights;
     std::set<index_t> active_lb_idcs;

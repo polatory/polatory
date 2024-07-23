@@ -134,9 +134,9 @@ void define_module(py::module& m) {
            "max_iter"_a = 100, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity)
       .def("fit_inequality",
            py::overload_cast<const Points&, const vectord&, const vectord&, const vectord&, double,
-                             int, double>(&Interpolant::fit_inequality),
+                             int, double, const Interpolant*>(&Interpolant::fit_inequality),
            "points"_a, "values"_a, "values_lb"_a, "values_ub"_a, "tolerance"_a, "max_iter"_a = 100,
-           "accuracy"_a = kInfinity)
+           "accuracy"_a = kInfinity, "initial"_a = nullptr)
       .def_static("load", &Interpolant::load, "filename"_a)
       .def("save", &Interpolant::save, "filename"_a);
 

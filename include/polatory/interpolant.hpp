@@ -150,7 +150,7 @@ class interpolant {
 
   void fit_inequality(const Points& points, const vectord& values, const vectord& values_lb,
                       const vectord& values_ub, double tolerance, int max_iter = 100,
-                      double accuracy = kInfinity) {
+                      double accuracy = kInfinity, const interpolant* initial = nullptr) {
     if (model_.nugget() != 0.0) {
       throw std::runtime_error("Non-zero nugget is not supported");
     }
@@ -173,12 +173,19 @@ class interpolant {
     check_max_iter(max_iter);
     check_accuracy(accuracy, kInfinity);
 
+    vectord initial_weights;
+    if (initial != nullptr) {
+      initial_weights = build_initial_weights(points, Points(0, kDim), *initial);
+    }
+
+    // Clear after the initial weights are built as `initial` can be `this`.
     clear();
 
     InequalityFitter fitter(model_, points);
     std::vector<index_t> center_indices;
     std::tie(center_indices, weights_) =
-        fitter.fit(values, values_lb, values_ub, tolerance, max_iter, accuracy);
+        fitter.fit(values, values_lb, values_ub, tolerance, max_iter, accuracy,
+                   initial != nullptr ? &initial_weights : nullptr);
 
     fitted_ = true;
     centers_ = points(center_indices, Eigen::all);
