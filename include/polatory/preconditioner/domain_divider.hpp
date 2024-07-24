@@ -119,15 +119,22 @@ class domain_divider {
       mixed_points.emplace_back(d.grad_point_indices.at(i), d.inner_grad_point.at(i), true);
     }
 
-    auto bbox = domain_bbox(d);
-    index_t split_axis{};
-    bbox.width().maxCoeff(&split_axis);
-
-    // TODO(mizuno): Sort all points along each axis and cache the result as a permutation.
+    // If the points are axis-aligned, it is important to sort them
+    // not only along the longest axis but also along the other axes.
+    auto width = domain_bbox(d).width();
+    std::array<int, kDim> axes;
+    std::iota(axes.begin(), axes.end(), 0);
+    std::sort(axes.begin(), axes.end(), [&width](auto i, auto j) { return width(i) > width(j); });
     std::sort(mixed_points.begin(), mixed_points.end(),
-              [this, split_axis](const auto& a, const auto& b) {
-                return a.point(points_, grad_points_)(split_axis) <
-                       b.point(points_, grad_points_)(split_axis);
+              [this, &axes](const auto& a, const auto& b) {
+                auto p = a.point(points_, grad_points_);
+                auto q = b.point(points_, grad_points_);
+                for (auto axis : axes) {
+                  if (p(axis) != q(axis)) {
+                    return p(axis) < q(axis);
+                  }
+                }
+                return false;
               });
 
     std::vector<index_t> prefix_sum_mult{0};
