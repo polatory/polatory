@@ -107,6 +107,17 @@ class ras_preconditioner : public krylov::linear_operator {
       std::iota(grad_point_idcs_.at(level).begin(), grad_point_idcs_.at(level).end(), 0);
     }
 
+    const auto& aniso = model_.rbfs().at(0).anisotropy();
+    Points a_points;
+    Points a_grad_points;
+    if (model_.num_rbfs() == 1 && !aniso.isIdentity()) {
+      a_points = geometry::transform_points<kDim>(aniso, points_);
+      a_grad_points = geometry::transform_points<kDim>(aniso, grad_points_);
+    } else {
+      a_points = points_;
+      a_grad_points = grad_points_;
+    }
+
     fine_grids_.resize(n_levels_);
 
     std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", "level", "n_domains", "n_points",
@@ -117,7 +128,7 @@ class ras_preconditioner : public krylov::linear_operator {
       auto mu = static_cast<index_t>(point_idcs_.at(level).size());
       auto sigma = static_cast<index_t>(grad_point_idcs_.at(level).size());
 
-      DomainDivider divider(points_, grad_points_, point_idcs_.at(level),
+      DomainDivider divider(a_points, a_grad_points, point_idcs_.at(level),
                             grad_point_idcs_.at(level), poly_point_idcs);
 
       auto ratio = level == 1 ? static_cast<double>(kNCoarsestPoints) /
