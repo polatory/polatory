@@ -16,7 +16,7 @@ int main(int /*argc*/, char* argv[]) {
     auto seed = std::stoi(argv[2]);
 
     auto points = random_points(sphere3d(), n_points, seed);
-    points = distance_filter(points, 1e-8)(points);
+    points = distance_filter(points).filter(1e-8)(points);
 
     write_table(argv[3], points);
 

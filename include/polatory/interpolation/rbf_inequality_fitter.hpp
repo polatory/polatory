@@ -44,6 +44,7 @@ class rbf_inequality_fitter {
                                                int max_iter, double accuracy,
                                                const vectord* initial_weights = nullptr) const {
     double filtering_distance = bbox_.width().norm();
+    point_cloud::distance_filter filter(points_);
 
     auto not_nan = [](double d) { return !std::isnan(d); };
     auto eq_idcs = arg_where(values, not_nan);
@@ -130,7 +131,7 @@ class rbf_inequality_fitter {
       }
       common::zip_sort(indices.begin(), indices.end(), residuals.begin(), residuals.end(),
                        [](const auto& a, const auto& b) { return a.second > b.second; });
-      point_cloud::distance_filter filter(points_, filtering_distance, indices);
+      filter.filter(filtering_distance, indices);
       std::unordered_set<index_t> filtered_indices(filter.filtered_indices().begin(),
                                                    filter.filtered_indices().end());
 

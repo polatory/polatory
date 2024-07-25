@@ -24,14 +24,12 @@ struct options {
 
 template <int Dim>
 void run_impl(const options& opts) {
-  using DistanceFilter = distance_filter<Dim>;
   using Points = pointsNd<Dim>;
 
   matrixd table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
 
-  DistanceFilter filter(points, opts.dist);
-  table = filter(table);
+  table = distance_filter(points).filter(opts.dist)(table);
 
   write_table(opts.out_file, table);
 }

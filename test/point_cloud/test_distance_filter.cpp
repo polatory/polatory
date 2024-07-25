@@ -15,7 +15,8 @@ TEST(distance_filter, trivial) {
   points << point3d(0, 0, 0), point3d(0, 0, 0), point3d(0, 0, 0), point3d(1, 0, 0),
       point3d(1, 0, 0), point3d(1, 0, 0), point3d(2, 0, 0), point3d(2, 0, 0), point3d(2, 0, 0);
 
-  distance_filter filter(points, 0.5);
+  distance_filter filter(points);
+  filter.filter(0.5);
 
   std::vector<index_t> expected_filtered_indices{0, 3, 6};
 
@@ -27,7 +28,8 @@ TEST(distance_filter, filter_distance) {
   points << point3d(0, 0, 0), point3d(1, 0, 0), point3d(0, 1, 0), point3d(0, 0, 1),
       point3d(2, 0, 0), point3d(0, 2, 0), point3d(0, 0, 2);
 
-  distance_filter filter(points, 1.5);
+  distance_filter filter(points);
+  filter.filter(1.5);
 
   std::vector<index_t> expected_filtered_indices{0, 4, 5, 6};
 
@@ -41,7 +43,8 @@ TEST(distance_filter, non_trivial_indices) {
 
   std::vector<index_t> indices{8, 7, 6, 5, 4, 3, 2, 1};
 
-  distance_filter filter(points, 0.5, indices);
+  distance_filter filter(points);
+  filter.filter(0.5, indices);
 
   std::vector<index_t> expected_filtered_indices{8, 5, 2};
 

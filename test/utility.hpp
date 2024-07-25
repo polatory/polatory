@@ -49,7 +49,7 @@ std::pair<polatory::geometry::pointsNd<Dim>, polatory::vectord> sample_data(
   using Points = polatory::geometry::pointsNd<Dim>;
 
   Points points = Points::Random(n_points, Dim);
-  points = distance_filter(points, 1e-6)(points);
+  points = distance_filter(points).filter(1e-6)(points);
   n_points = points.rows();
 
   vectord values = vectord::Zero(n_points);
@@ -74,7 +74,7 @@ std::pair<polatory::geometry::pointsNd<Dim>, polatory::geometry::vectorsNd<Dim>>
   using Vectors = polatory::geometry::vectorsNd<Dim>;
 
   Points points = Points::Random(n_points, Dim);
-  points = distance_filter(points, 1e-6)(points);
+  points = distance_filter(points).filter(1e-6)(points);
   n_points = points.rows();
 
   Vectors grads(n_points, Dim);

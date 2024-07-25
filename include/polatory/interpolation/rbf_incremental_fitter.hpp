@@ -51,6 +51,8 @@ class rbf_incremental_fitter {
     POLATORY_ASSERT(values_full.size() == mu_full_ + kDim * sigma_full_);
 
     auto filtering_distance = bbox_.width().norm();
+    point_cloud::distance_filter filter(points_full_);
+    point_cloud::distance_filter grad_filter(grad_points_full_);
 
     std::vector<index_t> centers;
     std::vector<index_t> grad_centers;
@@ -143,7 +145,7 @@ class rbf_incremental_fitter {
 
       std::vector<index_t> indices(centers);
       std::copy(c_centers.rbegin(), c_centers.rend(), std::back_inserter(indices));
-      point_cloud::distance_filter filter(points_full_, filtering_distance, indices);
+      filter.filter(filtering_distance, indices);
       std::unordered_set<index_t> filtered_indices(filter.filtered_indices().begin(),
                                                    filter.filtered_indices().end());
 
@@ -155,7 +157,7 @@ class rbf_incremental_fitter {
 
       std::vector<index_t> grad_indices(grad_centers);
       std::copy(c_grad_centers.rbegin(), c_grad_centers.rend(), std::back_inserter(grad_indices));
-      point_cloud::distance_filter grad_filter(grad_points_full_, filtering_distance, grad_indices);
+      grad_filter.filter(filtering_distance, grad_indices);
       std::unordered_set<index_t> grad_filtered_indices(grad_filter.filtered_indices().begin(),
                                                         grad_filter.filtered_indices().end());
 

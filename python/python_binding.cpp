@@ -141,8 +141,9 @@ void define_module(py::module& m) {
       .def("save", &Interpolant::save, "filename"_a);
 
   py::class_<DistanceFilter>(m, "DistanceFilter")
-      .def(py::init<const Points&, double>(), "points"_a, "distance"_a)
-      .def_property_readonly("filtered_indices", &DistanceFilter::filtered_indices);
+      .def(py::init<const Points&>(), "points"_a)
+      .def_property_readonly("filtered_indices", &DistanceFilter::filtered_indices)
+      .def("filter", py::overload_cast<double>(&DistanceFilter::filter), "distance"_a);
 
   py::class_<Variogram>(m, "Variogram")
       .def_property_readonly("bin_distance", &Variogram::bin_distance)

@@ -19,29 +19,28 @@ class distance_filter {
   using Points = geometry::pointsNd<Dim>;
 
  public:
-  distance_filter(const Points& points, double distance)
-      : distance_filter(points, distance, trivial_indices(points.rows())) {}
+  explicit distance_filter(const Points& points) : points_(points), tree_(points) {}
 
-  distance_filter(const Points& points, double distance, const std::vector<index_t>& indices)
-      : n_points_(points.rows()) {
+  distance_filter& filter(double distance) {
+    return filter(distance, trivial_indices(points_.rows()));
+  }
+
+  distance_filter& filter(double distance, const std::vector<index_t>& indices) {
     if (!(distance >= 0.0)) {
       throw std::invalid_argument("distance must be non-negative");
     }
-
-    kdtree tree(points);
 
     std::unordered_set<index_t> indices_to_remove;
 
     std::vector<index_t> nn_indices;
     std::vector<double> nn_distances;
-
     for (auto i : indices) {
       if (indices_to_remove.contains(i)) {
         continue;
       }
 
-      auto p = points.row(i);
-      tree.radius_search(p, distance, nn_indices, nn_distances);
+      auto p = points_.row(i);
+      tree_.radius_search(p, distance, nn_indices, nn_distances);
 
       for (auto j : nn_indices) {
         if (j != i) {
@@ -50,16 +49,22 @@ class distance_filter {
       }
     }
 
+    filtered_indices_.clear();
     for (auto i : indices) {
       if (!indices_to_remove.contains(i)) {
         filtered_indices_.push_back(i);
       }
     }
+
+    filtered_ = true;
+    return *this;
   }
 
   template <class Derived>
   auto operator()(const Eigen::MatrixBase<Derived>& m) {
-    if (m.rows() != n_points_) {
+    throw_if_not_filtered();
+
+    if (m.rows() != points_.rows()) {
       throw std::invalid_argument("m.rows() must match with the original points");
     }
 
@@ -73,17 +78,28 @@ class distance_filter {
     return std::make_tuple(operator()(m), operator()(std::forward<Args>(args))...);
   }
 
-  const std::vector<index_t>& filtered_indices() const { return filtered_indices_; }
+  const std::vector<index_t>& filtered_indices() const {
+    throw_if_not_filtered();
+
+    return filtered_indices_;
+  }
 
  private:
+  void throw_if_not_filtered() const {
+    if (!filtered_) {
+      throw std::runtime_error("points have not been filtered");
+    }
+  }
+
   static std::vector<index_t> trivial_indices(index_t n_points) {
     std::vector<index_t> indices(n_points);
     std::iota(indices.begin(), indices.end(), index_t{0});
     return indices;
   }
 
-  const index_t n_points_;
-
+  const Points& points_;
+  const kdtree<Dim> tree_;
+  bool filtered_{};
   std::vector<index_t> filtered_indices_;
 };
 
