@@ -30,7 +30,7 @@ struct options {
   double min_offset{};
   double max_offset{};
   double ratio{};
-  matrix3d aniso{};
+  matrix3d aniso;
   std::string out_file;
 };
 

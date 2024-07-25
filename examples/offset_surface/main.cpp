@@ -3,7 +3,6 @@
 #include <igl/read_triangle_mesh.h>
 
 #include <Eigen/Core>
-#include <Eigen/LU>
 #include <cmath>
 #include <exception>
 #include <iostream>
@@ -140,8 +139,9 @@ class offset_field_function : public field_function {
   using Interpolant = interpolant<3>;
 
  public:
-  explicit offset_field_function(Interpolant& interpolant, const mesh_distance& dist)
-      : interpolant_(interpolant), dist_(dist) {}
+  explicit offset_field_function(Interpolant& interpolant, const mesh_distance& dist,
+                                 double accuracy)
+      : interpolant_(interpolant), dist_(dist), accuracy_(accuracy) {}
 
   vectord operator()(const points3d& points) const override {
     auto [C, S] = dist_(points);
@@ -150,12 +150,13 @@ class offset_field_function : public field_function {
   }
 
   void set_evaluation_bbox(const bbox3d& bbox) override {
-    interpolant_.set_evaluation_bbox_impl(bbox);
+    interpolant_.set_evaluation_bbox_impl(bbox, accuracy_);
   }
 
  private:
   Interpolant& interpolant_;
   const mesh_distance& dist_;
+  double accuracy_;
 };
 
 int main(int argc, const char* argv[]) {
@@ -187,14 +188,14 @@ int main(int argc, const char* argv[]) {
     // Fit.
     interpolant<3> interpolant(model);
     if (opts.reduce) {
-      interpolant.fit_incrementally(C, S, opts.tolerance, opts.max_iter);
+      interpolant.fit_incrementally(C, S, opts.tolerance, opts.max_iter, opts.accuracy);
     } else {
-      interpolant.fit(C, S, opts.tolerance, opts.max_iter);
+      interpolant.fit(C, S, opts.tolerance, opts.max_iter, opts.accuracy);
     }
 
     // Generate the isosurface.
     isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
-    offset_field_function field_fn(interpolant, mesh_dist);
+    offset_field_function field_fn(interpolant, mesh_dist, opts.accuracy);
 
     isosurf.generate_from_seed_points(P, field_fn).export_obj(opts.mesh_out);
 

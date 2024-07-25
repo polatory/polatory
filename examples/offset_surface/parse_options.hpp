@@ -1,8 +1,8 @@
 #pragma once
 
 #include <boost/program_options.hpp>
-#include <exception>
 #include <iostream>
+#include <limits>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
@@ -12,12 +12,13 @@
 struct options {
   std::string in;
   std::string mesh_in;
-  double min_distance;
-  double tolerance;
-  int max_iter;
-  bool reduce;
+  double min_distance{};
+  double tolerance{};
+  int max_iter{};
+  double accuracy{};
+  bool reduce{};
   polatory::geometry::bbox3d mesh_bbox;
-  double mesh_resolution;
+  double mesh_resolution{};
   std::string mesh_out;
 };
 
@@ -38,6 +39,11 @@ inline options parse_options(int argc, const char* argv[]) {
        "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
        "Maximum number of iterations")  //
+      ("acc",
+       po::value(&opts.accuracy)
+           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+           ->value_name("ACC"),
+       "Absolute evaluation accuracy")  //
       ("reduce", po::bool_switch(&opts.reduce),
        "Try to reduce the number of RBF centers (incremental fitting)")  //
       ("mesh-bbox",

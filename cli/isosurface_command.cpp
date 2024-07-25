@@ -33,7 +33,7 @@ struct options {
   double isovalue{};
   bbox3d bbox;
   double resolution{};
-  matrix3d aniso{};
+  matrix3d aniso;
   std::string out_file;
 };
 

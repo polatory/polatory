@@ -25,11 +25,11 @@ namespace {
 
 struct options {
   std::string in_file;
-  int dim;
+  int dim{};
   std::string model_file;
   model_options model_opts;
-  double tolerance;
-  int max_iter;
+  double tolerance{};
+  int max_iter{};
   double accuracy{};
   std::string out_file;
 };
