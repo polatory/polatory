@@ -27,7 +27,6 @@ using polatory::geometry::points3d;
 using polatory::geometry::vector3d;
 using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
-using polatory::point_cloud::distance_filter;
 using polatory::rbf::biharmonic3d;
 using face = Eigen::Matrix<index_t, 1, 3>;
 using faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
@@ -177,13 +176,9 @@ int main(int argc, const char* argv[]) {
     mesh_distance mesh_dist(std::move(V), std::move(F));
     auto [C, S] = mesh_dist(P);
 
-    // Remove very close points.
-    distance_filter filter(C, opts.min_distance);
-    std::tie(C, S) = filter(C, S);
-
     // Define the model.
     biharmonic3d<3> rbf({1.0});
-    model<3> model(std::move(rbf), 0);
+    model<3> model(std::move(rbf));
 
     // Fit.
     interpolant<3> interpolant(model);

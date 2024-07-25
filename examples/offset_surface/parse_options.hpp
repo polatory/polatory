@@ -33,8 +33,6 @@ inline options parse_options(int argc, const char* argv[]) {
        "The points to offset the mesh to in CSV format:\n  X,Y,Z")  //
       ("mesh-in", po::value(&opts.mesh_in)->required()->value_name("FILE"),
        "The mesh to offset in OBJ format")  //
-      ("min-dist", po::value(&opts.min_distance)->default_value(1e-10)->value_name("DIST"),
-       "Minimum separation distance of input points")  //
       ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
        "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
