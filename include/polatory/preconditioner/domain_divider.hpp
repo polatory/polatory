@@ -4,13 +4,14 @@
 #include <algorithm>
 #include <iterator>
 #include <list>
+#include <numbers>
 #include <numeric>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/types.hpp>
-#include <random>
 #include <utility>
 #include <vector>
 
@@ -52,8 +53,6 @@ class domain_divider {
     std::vector<index_t> idcs(poly_point_idcs_);
     std::vector<index_t> grad_idcs;
 
-    std::mt19937 gen;
-
     auto n_poly_points = static_cast<index_t>(poly_point_idcs_.size());
     for (const auto& d : domains_) {
       auto mu = d.num_points();
@@ -70,19 +69,40 @@ class domain_divider {
           mixed_points.emplace_back(d.grad_point_indices.at(i), true, true);
         }
       }
-      std::shuffle(mixed_points.begin(), mixed_points.end(), gen);
 
-      auto n_coarse_points = static_cast<index_t>(
-          round_half_to_even(ratio * static_cast<double>(mixed_points.size())));
+      auto n_mixed_points = static_cast<index_t>(mixed_points.size());
+      auto n_coarse_points =
+          static_cast<index_t>(round_half_to_even(ratio * static_cast<double>(n_mixed_points)));
 
-      index_t count{};
-      for (const auto& p : mixed_points) {
-        if (count == n_coarse_points) {
+      Points points(n_mixed_points, kDim);
+      for (index_t i = 0; i < n_mixed_points; i++) {
+        points.row(i) = mixed_points.at(i).point(points_, grad_points_);
+      }
+
+      auto bbox = Bbox::from_points(points);
+      auto filtering_distance = bbox.width().norm();
+      point_cloud::distance_filter filter(points);
+      while (true) {
+        filter.filter(filtering_distance);
+        const auto& indices = filter.filtered_indices();
+        auto n_indices = static_cast<index_t>(indices.size());
+        if (n_indices >= n_coarse_points) {
+          index_t count{};
+          for (auto i : indices) {
+            const auto& p = mixed_points.at(i);
+            if (count == n_coarse_points) {
+              break;
+            }
+
+            (p.grad ? grad_idcs : idcs).push_back(p.index);
+            count++;
+          }
           break;
         }
 
-        (p.grad ? grad_idcs : idcs).push_back(p.index);
-        count++;
+        filtering_distance *=
+            std::pow(static_cast<double>(n_coarse_points) / static_cast<double>(n_indices),
+                     -1.0 / static_cast<double>(kDim));
       }
     }
 
