@@ -261,6 +261,8 @@ class surface_generator {
 
     index_t n_faces = 0;
 
+    const auto& min = lattice_.bbox().min();
+    const auto& max = lattice_.bbox().max();
     auto it = faces.rowwise().begin();
     for (const auto& face : faces_) {
       auto v0 = lattice_.clustered_vertex_index(face[0]);
@@ -270,6 +272,22 @@ class surface_generator {
       if (v0 == v1 || v1 == v2 || v2 == v0) {
         // Degenerate face (due to vertex clustering).
         continue;
+      }
+
+      if (lattice_.exact_clipping_) {
+        const auto& p0 = lattice_.vertices_.at(v0);
+        const auto& p1 = lattice_.vertices_.at(v1);
+        const auto& p2 = lattice_.vertices_.at(v2);
+        geometry::vector3d xs(p0(0), p1(0), p2(0));
+        geometry::vector3d ys(p0(1), p1(1), p2(1));
+        geometry::vector3d zs(p0(2), p1(2), p2(2));
+        if ((xs.array() == min(0)).all() || (xs.array() == max(0)).all() ||
+            (ys.array() == min(1)).all() || (ys.array() == max(1)).all() ||
+            (zs.array() == min(2)).all() || (zs.array() == max(2)).all()) {
+          // To prevent degenerate faces, remove faces that would be completely outside the bbox
+          // if nodes were not clamped. This can happen due to an excessively loose etended bbox.
+          continue;
+        }
       }
 
       *it++ << v0, v1, v2;
