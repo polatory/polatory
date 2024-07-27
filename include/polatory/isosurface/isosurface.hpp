@@ -31,7 +31,7 @@ class isosurface {
   }
 
   surface generate(field_function& field_fn, double isovalue = 0.0, bool refine = true) {
-    field_fn.set_evaluation_bbox(rmt_lattice_.bbox());
+    field_fn.set_evaluation_bbox(rmt_lattice_.evaluation_bbox());
 
     rmt_lattice_.add_all_nodes(field_fn, isovalue);
     if (refine) {
@@ -43,7 +43,7 @@ class isosurface {
 
   surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn,
                                     double isovalue = 0.0, bool refine = true) {
-    field_fn.set_evaluation_bbox(rmt_lattice_.bbox());
+    field_fn.set_evaluation_bbox(rmt_lattice_.evaluation_bbox());
 
     for (auto p : seed_points.rowwise()) {
       rmt_lattice_.add_cell_from_point(p);

@@ -42,7 +42,6 @@ class primitive_lattice {
                     const geometry::matrix3d& aniso)
       : bbox_(bbox),
         resolution_(resolution),
-        aniso_is_diagonal_(aniso.isDiagonal()),
         inv_aniso_(aniso.inverse()),
         trans_aniso_(aniso.transpose()),
         a0_(geometry::transform_vector<3>(inv_aniso_, resolution_ * kLatticeVectors[0])),
@@ -53,8 +52,6 @@ class primitive_lattice {
         b2_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeVectors[2] / resolution_)),
         cv_offset_(compute_cv_offset()),
         ext_bbox_(compute_extended_bbox()) {}
-
-  bool aniso_is_diagonal() const { return aniso_is_diagonal_; }
 
   const geometry::bbox3d& bbox() const { return bbox_; }
 
@@ -105,7 +102,6 @@ class primitive_lattice {
 
   const geometry::bbox3d bbox_;
   const double resolution_;
-  const bool aniso_is_diagonal_;
   const geometry::matrix3d inv_aniso_;
   const geometry::matrix3d trans_aniso_;
   const geometry::vector3d a0_;
