@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Eigen/Core>
+#include <Eigen/QR>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -161,8 +163,16 @@ class lattice : public primitive_lattice {
 
           if (t < 0.5) {
             node0.insert_vertex(vi, ei);
+            vertices_to_refine_.emplace_back(&node0, &node1, ei, vi,                       //
+                                             0.0, v0,                                      //
+                                             t, std::numeric_limits<double>::quiet_NaN(),  //
+                                             1.0, v1);
           } else {
             node1.insert_vertex(vi, kOppositeEdge.at(ei));
+            vertices_to_refine_.emplace_back(&node1, &node0, kOppositeEdge.at(ei), vi,           //
+                                             0.0, v1,                                            //
+                                             1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
+                                             1.0, v0);
           }
 
           node0.set_intersection(ei);
@@ -181,62 +191,42 @@ class lattice : public primitive_lattice {
     return vertices;
   }
 
-  void refine_vertices(const field_function& field_fn, double isovalue) {
-    geometry::points3d vertices = get_vertices();
-    vectord vertex_values = field_fn(vertices).array() - isovalue;
-    std::vector<bool> processed(vertices_.size(), false);
+  void refine_vertices(const field_function& field_fn, double isovalue, int num_passes) {
+    if (num_passes <= 0) {
+      return;
+    }
 
-    for (auto& cv_node : node_list_) {
-      auto& node0 = cv_node.second;
-      if (node0.is_free()) {
-        continue;
+    auto n = static_cast<index_t>(vertices_to_refine_.size());
+    geometry::points3d vertices(n, 3);
+    for (index_t i = 0; i < n; i++) {
+      vertices.row(i) = vertices_.at(i);
+    }
+
+    for (auto pass = 0; pass < num_passes; pass++) {
+      vectord vertex_values = field_fn(vertices).array() - isovalue;
+
+      for (index_t i = 0; i < n; i++) {
+        auto& v = vertices_to_refine_.at(i);
+        v.v1 = vertex_values(i);
       }
 
-      const auto& p0 = node0.position();
-      auto v0 = node0.value();
+      refine_vertices(vertices_to_refine_);
 
-      for (edge_index ei = 0; ei < 14; ei++) {
-        if (!node0.has_intersection(ei)) {
-          continue;
-        }
+      for (index_t i = 0; i < n; i++) {
+        const auto& v = vertices_to_refine_.at(i);
+        const auto& p0 = v.node0->position();
+        const auto& p1 = v.node1->position();
+        vertices.row(i) = p0 + v.t1 * (p1 - p0);
+      }
+    }
 
-        auto vi = node0.vertex_on_edge(ei);
-        if (processed.at(vi)) {
-          continue;
-        }
-        processed.at(vi) = true;
+    for (index_t i = 0; i < n; i++) {
+      const auto& v = vertices_to_refine_.at(i);
+      vertices_.at(v.vi) = vertices.row(i);
 
-        auto& node1 = node0.neighbor(ei);
-        const auto& p1 = node1.position();
-        auto v1 = node1.value();
-
-        auto t = v0 / (v0 - v1);
-        if (t < 1e-3) {
-          // Avoid numerical instability.
-          continue;
-        }
-
-        auto vt = vertex_values(vi);
-        if (vt == 0.0) {
-          continue;
-        }
-
-        // Solve y = a x^2 + b x + c for a, b, c with (x, y) = (0, v0), (t, vt), (1, v1).
-        auto a = ((v1 - v0) * t + v0 - vt) / (t * (1.0 - t));
-        auto b = -((v1 - v0) * t * t + v0 - vt) / (t * (1.0 - t));
-        auto c = v0;
-
-        // Solve a x^2 + b x + c = 0 for x, where 0 < x < 1.
-        auto [s0, s1] = solve_quadratic(a, b, c);
-        auto s = 0.0 < s0 && s0 < 1.0 ? s0 : s1;
-
-        geometry::point3d vertex = p0 + s * (p1 - p0);
-        vertices_.at(vi) = vertex;
-
-        if (s >= 0.5) {
-          node0.remove_vertex(ei);
-          node1.insert_vertex(vi, kOppositeEdge.at(ei));
-        }
+      if (v.t1 >= 0.5) {
+        v.node0->remove_vertex(v.ei);
+        v.node1->insert_vertex(v.vi, kOppositeEdge.at(v.ei));
       }
     }
   }
@@ -262,6 +252,19 @@ class lattice : public primitive_lattice {
 
  private:
   friend class surface_generator;
+
+  struct vertex_to_refine {
+    Node* node0{};
+    Node* node1{};
+    edge_index ei{};
+    vertex_index vi{};
+    double t0{};
+    double v0{};
+    double t1{};
+    double v1{};
+    double t2{};
+    double v2{};
+  };
 
   // Add nodes corresponding to eight vertices of the cell.
   void add_cell(const cell_vector& cv) {
@@ -370,6 +373,37 @@ class lattice : public primitive_lattice {
       auto p = cell_node_point(node_cv);
       return extended_bbox().contains(p);
     });
+  }
+
+  static void refine_vertices(std::vector<vertex_to_refine>& vertices_to_refine) {
+    for (auto& v : vertices_to_refine) {
+      // Solve y = a x^2 + b x + c for a, b, c with (x, y) = (t0, v0), (t1, v1), (t2, v2).
+      Eigen::Matrix3d a;
+      a << v.t0 * v.t0, v.t0, 1.0, v.t1 * v.t1, v.t1, 1.0, v.t2 * v.t2, v.t2, 1.0;
+      Eigen::Vector3d b(v.v0, v.v1, v.v2);
+      Eigen::ColPivHouseholderQR<Eigen::Matrix3d> qr_a(a);
+      if (!qr_a.isInvertible()) {
+        continue;
+      }
+      Eigen::Vector3d c = qr_a.solve(b);
+
+      // Solve a x^2 + b x + c = 0 for x, where 0 < x < 1.
+      auto [s0, s1] = solve_quadratic(c(0), c(1), c(2));
+      auto s = v.t0 < s0 && s0 < v.t2 ? s0 : s1;
+
+      if (s < v.t1) {
+        // (t0', t1', t2') = (t0, s, t1).
+        v.t2 = v.t1;
+        v.v2 = v.v1;
+      } else {
+        // (t0', t1', t2') = (t1, s, t2).
+        v.t0 = v.t1;
+        v.v0 = v.v1;
+      }
+
+      v.t1 = s;
+      v.v1 = std::numeric_limits<double>::quiet_NaN();
+    }
   }
 
   // Removes nodes without any intersections.
@@ -676,6 +710,7 @@ class lattice : public primitive_lattice {
   std::vector<cell_vector> last_added_cells_;
   double value_at_arbitrary_point_{kZeroValueReplacement};
   std::vector<geometry::point3d> vertices_;
+  std::vector<vertex_to_refine> vertices_to_refine_;
   std::unordered_map<vertex_index, vertex_index> cluster_map_;
 };
 
