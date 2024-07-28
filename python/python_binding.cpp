@@ -258,9 +258,9 @@ PYBIND11_MODULE(_core, m) {
       .def(py::init<const Bbox&, double, const Matrix&>(), "bbox"_a, "resolution"_a,
            "aniso"_a = Matrix::Identity())
       .def("generate", &isosurface::isosurface::generate, "field_fn"_a, "isovalue"_a = 0.0,
-           "refine"_a = true)
+           "refine"_a = 1)
       .def("generate_from_seed_points", &isosurface::isosurface::generate_from_seed_points,
-           "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = true);
+           "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = 1);
 
   py::class_<isosurface::surface>(m, "Surface")
       .def("export_obj", &isosurface::surface::export_obj, "filename"_a)
