@@ -10,6 +10,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
+#include <polatory/isosurface/rmt/neighbor.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
 #include <polatory/isosurface/rmt/node_list.hpp>
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
@@ -132,13 +133,14 @@ class lattice : public primitive_lattice {
 #pragma omp parallel for
     // NOLINTNEXTLINE(modernize-loop-convert)
     for (std::size_t i = 0; i < node_cvs.size(); i++) {
-      const auto& cv = node_cvs.at(i);
-      auto& node0 = node_list_.at(cv);
+      const auto& cv0 = node_cvs.at(i);
+      auto& node0 = node_list_.at(cv0);
       const auto& p0 = node0.position();
       auto v0 = node0.value();
 
       for (auto ei : CellEdgeIndices) {
-        auto* node1_ptr = node_list_.neighbor_node_ptr(cv, ei);
+        auto cv1 = neighbor(cv0, ei);
+        auto* node1_ptr = node_list_.node_ptr(cv1);
         if (node1_ptr == nullptr) {
           // There is no neighbor node on the opposite end of the edge.
           continue;
@@ -161,22 +163,24 @@ class lattice : public primitive_lattice {
           auto vi = static_cast<vertex_index>(vertices_.size());
           vertices_.emplace_back(vertex);
 
+          auto opp_ei = kOppositeEdge.at(ei);
+
           if (t < 0.5) {
             node0.insert_vertex(vi, ei);
-            vertices_to_refine_.emplace_back(&node0, &node1, ei, vi,                       //
+            vertices_to_refine_.emplace_back(cv0, ei, vi,                                  //
                                              0.0, v0,                                      //
                                              t, std::numeric_limits<double>::quiet_NaN(),  //
                                              1.0, v1);
           } else {
-            node1.insert_vertex(vi, kOppositeEdge.at(ei));
-            vertices_to_refine_.emplace_back(&node1, &node0, kOppositeEdge.at(ei), vi,           //
+            node1.insert_vertex(vi, opp_ei);
+            vertices_to_refine_.emplace_back(cv1, opp_ei, vi,                                    //
                                              0.0, v1,                                            //
                                              1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
                                              1.0, v0);
           }
 
           node0.set_intersection(ei);
-          node1.set_intersection(kOppositeEdge.at(ei));
+          node1.set_intersection(opp_ei);
         }
       }
     }
@@ -214,8 +218,10 @@ class lattice : public primitive_lattice {
 
       for (index_t i = 0; i < n; i++) {
         const auto& v = vertices_to_refine_.at(i);
-        const auto& p0 = v.node0->position();
-        const auto& p1 = v.node1->position();
+        const auto& node0 = node_list_.at(v.node_cv);
+        const auto& node1 = node_list_.at(neighbor(v.node_cv, v.ei));
+        const auto& p0 = node0.position();
+        const auto& p1 = node1.position();
         vertices.row(i) = p0 + v.t1 * (p1 - p0);
       }
     }
@@ -225,8 +231,10 @@ class lattice : public primitive_lattice {
       vertices_.at(v.vi) = vertices.row(i);
 
       if (v.t1 >= 0.5) {
-        v.node0->remove_vertex(v.ei);
-        v.node1->insert_vertex(v.vi, kOppositeEdge.at(v.ei));
+        auto& node0 = node_list_.at(v.node_cv);
+        auto& node1 = node_list_.at(neighbor(v.node_cv, v.ei));
+        node0.remove_vertex(v.ei);
+        node1.insert_vertex(v.vi, kOppositeEdge.at(v.ei));
       }
     }
   }
@@ -254,8 +262,7 @@ class lattice : public primitive_lattice {
   friend class surface_generator;
 
   struct vertex_to_refine {
-    Node* node0{};
-    Node* node1{};
+    cell_vector node_cv;
     edge_index ei{};
     vertex_index vi{};
     double t0{};
@@ -273,13 +280,13 @@ class lattice : public primitive_lattice {
     }
 
     std::array<cell_vector, 8> node_cvs{cv,
-                                        cv + kNeighborCellVectors[edge::k0],
-                                        cv + kNeighborCellVectors[edge::k1],
-                                        cv + kNeighborCellVectors[edge::k2],
-                                        cv + kNeighborCellVectors[edge::k3],
-                                        cv + kNeighborCellVectors[edge::k4],
-                                        cv + kNeighborCellVectors[edge::k5],
-                                        cv + kNeighborCellVectors[edge::k6]};
+                                        neighbor(cv, edge::k0),
+                                        neighbor(cv, edge::k1),
+                                        neighbor(cv, edge::k2),
+                                        neighbor(cv, edge::k3),
+                                        neighbor(cv, edge::k4),
+                                        neighbor(cv, edge::k5),
+                                        neighbor(cv, edge::k6)};
 
     for (const auto& node_cv : node_cvs) {
       add_node(node_cv);
@@ -361,13 +368,13 @@ class lattice : public primitive_lattice {
   // Returns true if all of the cell's vertices are in the extended bbox.
   bool is_interior_cell(const cell_vector& cv) {
     std::array<cell_vector, 8> node_cvs{cv,
-                                        cv + kNeighborCellVectors[edge::k0],
-                                        cv + kNeighborCellVectors[edge::k1],
-                                        cv + kNeighborCellVectors[edge::k2],
-                                        cv + kNeighborCellVectors[edge::k3],
-                                        cv + kNeighborCellVectors[edge::k4],
-                                        cv + kNeighborCellVectors[edge::k5],
-                                        cv + kNeighborCellVectors[edge::k6]};
+                                        neighbor(cv, edge::k0),
+                                        neighbor(cv, edge::k1),
+                                        neighbor(cv, edge::k2),
+                                        neighbor(cv, edge::k3),
+                                        neighbor(cv, edge::k4),
+                                        neighbor(cv, edge::k5),
+                                        neighbor(cv, edge::k6)};
 
     return std::all_of(node_cvs.begin(), node_cvs.end(), [this](const auto& node_cv) {
       auto p = cell_node_point(node_cv);
@@ -437,13 +444,13 @@ class lattice : public primitive_lattice {
     // at which ends the field values take opposite signs.
     for (const auto& cv : last_added_cells) {
       auto iaaa = cv;
-      auto ibaa = cv + kNeighborCellVectors[edge::k0];
-      auto ibab = cv + kNeighborCellVectors[edge::k1];
-      auto iaab = cv + kNeighborCellVectors[edge::k2];
-      auto ibba = cv + kNeighborCellVectors[edge::k3];
-      auto ibbb = cv + kNeighborCellVectors[edge::k4];
-      auto iabb = cv + kNeighborCellVectors[edge::k5];
-      auto iaba = cv + kNeighborCellVectors[edge::k6];
+      auto ibaa = neighbor(cv, edge::k0);
+      auto ibab = neighbor(cv, edge::k1);
+      auto iaab = neighbor(cv, edge::k2);
+      auto ibba = neighbor(cv, edge::k3);
+      auto ibbb = neighbor(cv, edge::k4);
+      auto iabb = neighbor(cv, edge::k5);
+      auto iaba = neighbor(cv, edge::k6);
 
       const auto* aaa = node_list_.node_ptr(iaaa);
       const auto* baa = node_list_.node_ptr(ibaa);
@@ -458,79 +465,79 @@ class lattice : public primitive_lattice {
 
       // axx and bxx
       if (has_intersection(aaa, baa)) {  // o -> 0
-        add_cell(iaaa + kNeighborCellVectors[edge::kD]);
-        add_cell(iaaa + kNeighborCellVectors[edge::kC]);
-        add_cell(iaaa + kNeighborCellVectors[edge::k9]);
+        add_cell(neighbor(iaaa, edge::kD));
+        add_cell(neighbor(iaaa, edge::kC));
+        add_cell(neighbor(iaaa, edge::k9));
         found_intersection = true;
       }
       if (has_intersection(aab, bab)) {  // 2 -> 1
         add_cell(iaab);
-        add_cell(iaab + kNeighborCellVectors[edge::kD]);
-        add_cell(iaab + kNeighborCellVectors[edge::kC]);
+        add_cell(neighbor(iaab, edge::kD));
+        add_cell(neighbor(iaab, edge::kC));
         found_intersection = true;
       }
       if (has_intersection(aba, bba)) {  // 6 -> 3
         add_cell(iaba);
-        add_cell(iaba + kNeighborCellVectors[edge::kC]);
-        add_cell(iaba + kNeighborCellVectors[edge::k9]);
+        add_cell(neighbor(iaba, edge::kC));
+        add_cell(neighbor(iaba, edge::k9));
         found_intersection = true;
       }
       if (has_intersection(abb, bbb)) {  // 5 -> 4
         add_cell(iabb);
-        add_cell(iabb + kNeighborCellVectors[edge::kD]);
-        add_cell(iabb + kNeighborCellVectors[edge::k9]);
+        add_cell(neighbor(iabb, edge::kD));
+        add_cell(neighbor(iabb, edge::k9));
         found_intersection = true;
       }
 
       // xax and xbx
       if (has_intersection(aaa, aba)) {  // o -> 6
-        add_cell(iaaa + kNeighborCellVectors[edge::k7]);
-        add_cell(iaaa + kNeighborCellVectors[edge::k8]);
-        add_cell(iaaa + kNeighborCellVectors[edge::k9]);
+        add_cell(neighbor(iaaa, edge::k7));
+        add_cell(neighbor(iaaa, edge::k8));
+        add_cell(neighbor(iaaa, edge::k9));
         found_intersection = true;
       }
       if (has_intersection(aab, abb)) {  // 2 -> 5
         add_cell(iaab);
-        add_cell(iaab + kNeighborCellVectors[edge::k7]);
-        add_cell(iaab + kNeighborCellVectors[edge::k8]);
+        add_cell(neighbor(iaab, edge::k7));
+        add_cell(neighbor(iaab, edge::k8));
         found_intersection = true;
       }
       if (has_intersection(baa, bba)) {  // 0 -> 3
         add_cell(ibaa);
-        add_cell(ibaa + kNeighborCellVectors[edge::k8]);
-        add_cell(ibaa + kNeighborCellVectors[edge::k9]);
+        add_cell(neighbor(ibaa, edge::k8));
+        add_cell(neighbor(ibaa, edge::k9));
         found_intersection = true;
       }
       if (has_intersection(bab, bbb)) {  // 1 -> 4
         add_cell(ibab);
-        add_cell(ibab + kNeighborCellVectors[edge::k7]);
-        add_cell(ibab + kNeighborCellVectors[edge::k9]);
+        add_cell(neighbor(ibab, edge::k7));
+        add_cell(neighbor(ibab, edge::k9));
         found_intersection = true;
       }
 
       // xxa and xxb
       if (has_intersection(aaa, aab)) {  // o -> 2
-        add_cell(iaaa + kNeighborCellVectors[edge::k7]);
-        add_cell(iaaa + kNeighborCellVectors[edge::kA]);
-        add_cell(iaaa + kNeighborCellVectors[edge::kD]);
+        add_cell(neighbor(iaaa, edge::k7));
+        add_cell(neighbor(iaaa, edge::kA));
+        add_cell(neighbor(iaaa, edge::kD));
         found_intersection = true;
       }
       if (has_intersection(baa, bab)) {  // 0 -> 1
         add_cell(ibaa);
-        add_cell(ibaa + kNeighborCellVectors[edge::kA]);
-        add_cell(ibaa + kNeighborCellVectors[edge::kD]);
+        add_cell(neighbor(ibaa, edge::kA));
+        add_cell(neighbor(ibaa, edge::kD));
         found_intersection = true;
       }
       if (has_intersection(aba, abb)) {  // 6 -> 5
         add_cell(iaba);
-        add_cell(iaba + kNeighborCellVectors[edge::k7]);
-        add_cell(iaba + kNeighborCellVectors[edge::kA]);
+        add_cell(neighbor(iaba, edge::k7));
+        add_cell(neighbor(iaba, edge::kA));
         found_intersection = true;
       }
       if (has_intersection(bba, bbb)) {  // 3 -> 4
         add_cell(ibba);
-        add_cell(ibba + kNeighborCellVectors[edge::k7]);
-        add_cell(ibba + kNeighborCellVectors[edge::kD]);
+        add_cell(neighbor(ibba, edge::k7));
+        add_cell(neighbor(ibba, edge::kD));
         found_intersection = true;
       }
 
@@ -696,7 +703,7 @@ class lattice : public primitive_lattice {
       auto neighbors = std::make_unique<std::array<Node*, 14>>();
 
       for (edge_index ei = 0; ei < 14; ei++) {
-        neighbors->at(ei) = node_list_.neighbor_node_ptr(cv, ei);
+        neighbors->at(ei) = node_list_.node_ptr(neighbor(cv, ei));
       }
 
       node.set_neighbors(std::move(neighbors));
