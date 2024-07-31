@@ -20,6 +20,8 @@ class surface {
   using face_type = Eigen::Matrix<index_t, 1, 3>;
   using faces_type = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
+  surface() = default;
+
   surface(const vertices_type& vertices, const faces_type& faces)
       : vertices_(vertices.rows(), 3), faces_(faces.rows(), 3) {
     std::vector<index_t> vi_map(vertices.rows(), -1);
