@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace polatory::isosurface {
 
@@ -25,31 +24,6 @@ class surface {
 
   surface(Points vertices, Faces faces)
       : vertices_(std::move(vertices)), faces_(std::move(faces)) {}
-
-  void remove_unreferenced_vertices() {
-    Points new_vertices(vertices_.rows(), 3);
-
-    std::vector<index_t> v_map(vertices_.rows(), -1);
-
-    index_t n_vertices = 0;
-    for (auto face : faces_.rowwise()) {
-      Face new_face;
-      for (auto i = 0; i < 3; i++) {
-        auto old_v = face(i);
-        auto& new_v = v_map.at(old_v);
-        if (new_v == -1) {
-          new_v = n_vertices;
-          new_vertices.row(new_v) = vertices_.row(old_v);
-          n_vertices++;
-        }
-        new_face(i) = new_v;
-      }
-      face = new_face;
-    }
-
-    new_vertices.conservativeResize(n_vertices, 3);
-    vertices_ = std::move(new_vertices);
-  }
 
   explicit surface(entire_tag /*tag*/) : entire_(true) {}
 
