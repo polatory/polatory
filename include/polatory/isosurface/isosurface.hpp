@@ -1,8 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/clip.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/rmt/surface_generator.hpp>
@@ -22,12 +22,6 @@ class isosurface {
     if (!(aniso.determinant() > 0.0)) {
       throw std::invalid_argument("aniso must have a positive determinant");
     }
-
-    if (!aniso.isDiagonal()) {
-      std::cerr
-          << "warning: exact clipping of isosurfaces is not supported for non-diagonal anisotropy"
-          << std::endl;
-    }
   }
 
   surface generate(field_function& field_fn, double isovalue = 0.0, int refine = 1) {
@@ -35,7 +29,7 @@ class isosurface {
       throw std::runtime_error("refine must be non-negative");
     }
 
-    field_fn.set_evaluation_bbox(rmt_lattice_.evaluation_bbox());
+    field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     rmt_lattice_.add_all_nodes(field_fn, isovalue);
     rmt_lattice_.refine_vertices(field_fn, isovalue, refine);
@@ -49,7 +43,7 @@ class isosurface {
       throw std::runtime_error("refine must be non-negative");
     }
 
-    field_fn.set_evaluation_bbox(rmt_lattice_.evaluation_bbox());
+    field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
 
     for (auto p : seed_points.rowwise()) {
       rmt_lattice_.add_cell_from_point(p);
@@ -94,11 +88,14 @@ class isosurface {
     }
 
     surface surf(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
+    surf.remove_unreferenced_vertices();
 
     if (surf.is_empty()) {
       if (rmt_lattice_.value_at_arbitrary_point() < 0.0) {
         surf = surface(entire_tag{});
       }
+    } else {
+      surf = clip_surface(surf, rmt_lattice_.bbox());
     }
 
     rmt_lattice_.clear();

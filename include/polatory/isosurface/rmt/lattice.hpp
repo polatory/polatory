@@ -36,7 +36,7 @@ class lattice : public primitive_lattice {
 
  public:
   lattice(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
-      : Base(bbox, resolution, aniso), exact_clipping_(aniso.isDiagonal()) {}
+      : Base(bbox, resolution, aniso) {}
 
   // Add all nodes inside the boundary.
   void add_all_nodes(const field_function& field_fn, double isovalue) {
@@ -123,8 +123,6 @@ class lattice : public primitive_lattice {
       node.cluster(vertices_, cluster_map_);
     }
   }
-
-  geometry::bbox3d evaluation_bbox() const { return exact_clipping_ ? bbox() : extended_bbox(); }
 
   void generate_vertices(const std::vector<cell_vector>& node_cvs) {
     static constexpr std::array<edge_index, 7> CellEdgeIndices{
@@ -311,10 +309,6 @@ class lattice : public primitive_lattice {
 
     if (!extended_bbox().contains(p)) {
       return false;
-    }
-
-    if (exact_clipping_) {
-      p = clamp_to_bbox(p);
     }
 
     node_list_.emplace(cv, Node{p});
@@ -710,7 +704,6 @@ class lattice : public primitive_lattice {
     }
   }
 
-  const bool exact_clipping_;
   NodeList node_list_;
   std::vector<cell_vector> nodes_to_evaluate_;
   std::unordered_set<cell_vector, cell_vector_hash> added_cells_;

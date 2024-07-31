@@ -9,12 +9,12 @@
 namespace polatory::isosurface {
 
 class mesh_defects_finder {
-  using vertices_type = geometry::points3d;
-  using face_type = Eigen::Matrix<index_t, 1, 3>;
-  using faces_type = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
+  using Face = Eigen::Matrix<index_t, 1, 3>;
+  using Faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
+  using Points = geometry::points3d;
 
  public:
-  mesh_defects_finder(const vertices_type& vertices, const faces_type& faces);
+  mesh_defects_finder(const Points& vertices, const Faces& faces);
 
   std::unordered_set<index_t> intersecting_faces() const;
 
@@ -27,8 +27,8 @@ class mesh_defects_finder {
 
   index_t prev_vertex(index_t fi, index_t vi) const;
 
-  const vertices_type& vertices_;
-  const faces_type& faces_;
+  const Points& vertices_;
+  const Faces& faces_;
   std::vector<std::vector<index_t>> vf_map_;
 };
 
