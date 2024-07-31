@@ -170,6 +170,8 @@ class surface_clipper {
         auto t02 = (threshold - tri(0, 0)) / (tri(2, 0) - tri(0, 0));
         Point p01 = tri.row(0) + t01 * (tri.row(1) - tri.row(0));
         Point p02 = tri.row(0) + t02 * (tri.row(2) - tri.row(0));
+        p01(0) = threshold;
+        p02(0) = threshold;
         clipped.push_back((Triangle() << tri.row(0), p01, p02).finished());
         break;
       }
@@ -185,11 +187,13 @@ class surface_clipper {
           // (boundary, interior, exterior).
           auto t12 = (threshold - tri(1, 0)) / (tri(2, 0) - tri(1, 0));
           Point p12 = tri.row(1) + t12 * (tri.row(2) - tri.row(1));
+          p12(0) = threshold;
           clipped.push_back((Triangle() << tri.row(0), tri.row(1), p12).finished());
         } else {
           // (boundary, exterior, interior).
           auto t21 = (threshold - tri(2, 0)) / (tri(1, 0) - tri(2, 0));
           Point p21 = tri.row(2) + t21 * (tri.row(1) - tri.row(2));
+          p21(0) = threshold;
           clipped.push_back((Triangle() << tri.row(0), p21, tri.row(2)).finished());
         }
         break;
@@ -209,6 +213,8 @@ class surface_clipper {
         auto t20 = (threshold - tri(2, 0)) / (tri(0, 0) - tri(2, 0));
         Point p10 = tri.row(1) + t10 * (tri.row(0) - tri.row(1));
         Point p20 = tri.row(2) + t20 * (tri.row(0) - tri.row(2));
+        p10(0) = threshold;
+        p20(0) = threshold;
         // Delaunay triangulation.
         Vector normal = (tri.row(1) - tri.row(0)).cross(tri.row(2) - tri.row(0));
         auto [u, v] = plane_basis(normal);
