@@ -16,29 +16,34 @@
 namespace polatory::isosurface {
 
 class surface_clipper {
-  using Triangle = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
+  using Bbox = geometry::bbox3d;
   using Faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
+  using Matrix = geometry::matrix3d;
+  using Point = geometry::point3d;
+  using Point2 = geometry::point2d;
+  using Triangle = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
+  using Vector = geometry::vector3d;
 
  public:
-  surface_clipper(const surface& s, const geometry::bbox3d& bbox) {
+  surface_clipper(const surface& s, const Bbox& bbox) {
     const auto& vertices = s.vertices();
     const auto& faces = s.faces();
 
     std::vector<Triangle> triangles;
     for (auto f : faces.rowwise()) {
-      geometry::point3d p = vertices.row(f(0));
-      geometry::point3d q = vertices.row(f(1));
-      geometry::point3d r = vertices.row(f(2));
+      Point p = vertices.row(f(0));
+      Point q = vertices.row(f(1));
+      Point r = vertices.row(f(2));
       triangles.push_back((Triangle() << p, q, r).finished());
     }
 
-    std::array<geometry::matrix3d, 6> permutations{
-        (geometry::matrix3d() << 1, 0, 0, 0, 1, 0, 0, 0, 1).finished(),   // x, y, z
-        (geometry::matrix3d() << -1, 0, 0, 0, 0, 1, 0, 1, 0).finished(),  // -x, z, y
-        (geometry::matrix3d() << 0, 1, 0, 0, 0, 1, 1, 0, 0).finished(),   // y, z, x
-        (geometry::matrix3d() << 0, -1, 0, 1, 0, 0, 0, 0, 1).finished(),  // -y, x, z
-        (geometry::matrix3d() << 0, 0, 1, 1, 0, 0, 0, 1, 0).finished(),   // z, x, y
-        (geometry::matrix3d() << 0, 0, -1, 0, 1, 0, 1, 0, 0).finished()   // -z, y, x
+    std::array<Matrix, 6> permutations{
+        (Matrix() << 1, 0, 0, 0, 1, 0, 0, 0, 1).finished(),   // x, y, z
+        (Matrix() << -1, 0, 0, 0, 0, 1, 0, 1, 0).finished(),  // -x, z, y
+        (Matrix() << 0, 1, 0, 0, 0, 1, 1, 0, 0).finished(),   // y, z, x
+        (Matrix() << 0, -1, 0, 1, 0, 0, 0, 0, 1).finished(),  // -y, x, z
+        (Matrix() << 0, 0, 1, 1, 0, 0, 0, 1, 0).finished(),   // z, x, y
+        (Matrix() << 0, 0, -1, 0, 1, 0, 1, 0, 0).finished()   // -z, y, x
     };
     std::array<double, 6> thresholds{bbox.max()(0),  -bbox.min()(0), bbox.max()(1),
                                      -bbox.min()(1), bbox.max()(2),  -bbox.min()(2)};
@@ -58,7 +63,7 @@ class surface_clipper {
       clipped.clear();
     }
 
-    std::unordered_map<geometry::point3d, index_t, point_hash> vertex_map;
+    std::unordered_map<Point, index_t, point_hash> vertex_map;
     for (const auto& tri : triangles) {
       for (auto v : tri.rowwise()) {
         if (!vertex_map.contains(v)) {
@@ -82,14 +87,14 @@ class surface_clipper {
       face(2) = vertex_map.at(tri.row(2));
     }
 
-    clipped_surface_ = surface(clipped_vertices, clipped_faces);
+    clipped_surface_ = surface(std::move(clipped_vertices), std::move(clipped_faces));
   }
 
   const surface& clipped_surface() const { return clipped_surface_; }
 
  private:
   struct point_hash {
-    std::size_t operator()(const geometry::point3d& p) const noexcept {
+    std::size_t operator()(const Point& p) const noexcept {
       return boost::hash_range(p.begin(), p.end());
     }
   };
@@ -98,15 +103,14 @@ class surface_clipper {
     return 100 * interior + 10 * boundary + exterior;
   }
 
-  static std::pair<geometry::vector3d, geometry::vector3d> plane_basis(
-      const geometry::vector3d& normal) {
-    geometry::vector3d u;
+  static std::pair<Vector, Vector> plane_basis(const Vector& normal) {
+    Vector u;
     if (normal(0) == 0.0) {
-      u = geometry::vector3d::UnitX();
+      u = Vector::UnitX();
     } else if (normal(1) == 0.0) {
-      u = geometry::vector3d::UnitY();
+      u = Vector::UnitY();
     } else if (normal(2) == 0.0) {
-      u = geometry::vector3d::UnitZ();
+      u = Vector::UnitZ();
     } else {
       auto abs_nx = std::abs(normal(0));
       auto abs_ny = std::abs(normal(1));
@@ -120,13 +124,13 @@ class surface_clipper {
       }
     }
 
-    geometry::vector3d v = normal.cross(u);
+    Vector v = normal.cross(u);
 
     return {u.normalized(), v.normalized()};
   }
 
-  static double incircle2d_inexact(const geometry::point2d& a, const geometry::point2d& b,
-                                   const geometry::point2d& c, const geometry::point2d& d) {
+  static double incircle2d_inexact(const Point2& a, const Point2& b, const Point2& c,
+                                   const Point2& d) {
     auto m00 = a(0) - d(0);
     auto m01 = a(1) - d(1);
     auto m02 = m00 * m00 + m01 * m01;
@@ -164,8 +168,8 @@ class surface_clipper {
         // Now vertices are ordered as (interior, exterior, exterior).
         auto t01 = (threshold - tri(0, 0)) / (tri(1, 0) - tri(0, 0));
         auto t02 = (threshold - tri(0, 0)) / (tri(2, 0) - tri(0, 0));
-        geometry::point3d p01 = tri.row(0) + t01 * (tri.row(1) - tri.row(0));
-        geometry::point3d p02 = tri.row(0) + t02 * (tri.row(2) - tri.row(0));
+        Point p01 = tri.row(0) + t01 * (tri.row(1) - tri.row(0));
+        Point p02 = tri.row(0) + t02 * (tri.row(2) - tri.row(0));
         clipped.push_back((Triangle() << tri.row(0), p01, p02).finished());
         break;
       }
@@ -180,12 +184,12 @@ class surface_clipper {
         if (tri(1, 0) < tri(2, 0)) {
           // (boundary, interior, exterior).
           auto t12 = (threshold - tri(1, 0)) / (tri(2, 0) - tri(1, 0));
-          geometry::point3d p12 = tri.row(1) + t12 * (tri.row(2) - tri.row(1));
+          Point p12 = tri.row(1) + t12 * (tri.row(2) - tri.row(1));
           clipped.push_back((Triangle() << tri.row(0), tri.row(1), p12).finished());
         } else {
           // (boundary, exterior, interior).
           auto t21 = (threshold - tri(2, 0)) / (tri(1, 0) - tri(2, 0));
-          geometry::point3d p21 = tri.row(2) + t21 * (tri.row(1) - tri.row(2));
+          Point p21 = tri.row(2) + t21 * (tri.row(1) - tri.row(2));
           clipped.push_back((Triangle() << tri.row(0), p21, tri.row(2)).finished());
         }
         break;
@@ -203,15 +207,15 @@ class surface_clipper {
         // Now vertices are ordered as (exterior, interior, interior).
         auto t10 = (threshold - tri(1, 0)) / (tri(0, 0) - tri(1, 0));
         auto t20 = (threshold - tri(2, 0)) / (tri(0, 0) - tri(2, 0));
-        geometry::point3d p10 = tri.row(1) + t10 * (tri.row(0) - tri.row(1));
-        geometry::point3d p20 = tri.row(2) + t20 * (tri.row(0) - tri.row(2));
+        Point p10 = tri.row(1) + t10 * (tri.row(0) - tri.row(1));
+        Point p20 = tri.row(2) + t20 * (tri.row(0) - tri.row(2));
         // Delaunay triangulation.
-        geometry::vector3d normal = (tri.row(1) - tri.row(0)).cross(tri.row(2) - tri.row(0));
+        Vector normal = (tri.row(1) - tri.row(0)).cross(tri.row(2) - tri.row(0));
         auto [u, v] = plane_basis(normal);
-        geometry::point2d a{tri.row(1).dot(u), tri.row(1).dot(v)};
-        geometry::point2d b{tri.row(2).dot(u), tri.row(2).dot(v)};
-        geometry::point2d c{p20.dot(u), p20.dot(v)};
-        geometry::point2d d{p10.dot(u), p10.dot(v)};
+        Point2 a{tri.row(1).dot(u), tri.row(1).dot(v)};
+        Point2 b{tri.row(2).dot(u), tri.row(2).dot(v)};
+        Point2 c{p20.dot(u), p20.dot(v)};
+        Point2 d{p10.dot(u), p10.dot(v)};
         if (incircle2d_inexact(a, b, c, d) < 0.0) {
           clipped.push_back((Triangle() << tri.row(1), tri.row(2), p20).finished());
           clipped.push_back((Triangle() << tri.row(1), p20, p10).finished());

@@ -88,6 +88,7 @@ class isosurface {
     }
 
     surface surf(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
+    surf.remove_unreferenced_vertices();
 
     if (surf.is_empty()) {
       if (rmt_lattice_.value_at_arbitrary_point() < 0.0) {
