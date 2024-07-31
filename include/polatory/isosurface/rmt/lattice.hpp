@@ -311,8 +311,8 @@ class lattice : public primitive_lattice {
       return false;
     }
 
-    // To mitigate numerical issues during surface clipping,
-    // project the point onto the bbox if it is very close to it.
+    // To prevent surface clipping from generating tiny faces, which can cause
+    // various numerical issues, snap the point to the bbox if it is very close to it.
 
     const auto& min = bbox().min();
     const auto& max = bbox().max();
