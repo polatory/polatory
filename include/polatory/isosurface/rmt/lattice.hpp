@@ -311,6 +311,16 @@ class lattice : public primitive_lattice {
       return false;
     }
 
+    // To mitigate numerical issues during surface clipping,
+    // project the point onto the bbox if it is very close to it.
+
+    const auto& min = bbox().min();
+    const auto& max = bbox().max();
+    auto tiny = 1e-10 * resolution();
+
+    p = ((p.array() - min.array()).abs() < tiny).select(min, p);
+    p = ((p.array() - max.array()).abs() < tiny).select(max, p);
+
     node_list_.emplace(cv, Node{p});
 
     nodes_to_evaluate_.push_back(cv);
