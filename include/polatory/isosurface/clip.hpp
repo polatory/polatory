@@ -129,8 +129,8 @@ class surface_clipper {
     return {u.normalized(), v.normalized()};
   }
 
-  static double incircle2d_inexact(const Point2& a, const Point2& b, const Point2& c,
-                                   const Point2& d) {
+  static double incircle_inexact(const Point2& a, const Point2& b, const Point2& c,
+                                 const Point2& d) {
     auto m00 = a(0) - d(0);
     auto m01 = a(1) - d(1);
     auto m02 = m00 * m00 + m01 * m01;
@@ -140,8 +140,9 @@ class surface_clipper {
     auto m20 = c(0) - d(0);
     auto m21 = c(1) - d(1);
     auto m22 = m20 * m20 + m21 * m21;
-    return m00 * (m11 * m22 - m12 * m21) - m01 * (m10 * m22 - m12 * m20) +
-           m02 * (m10 * m21 - m11 * m20);
+    Matrix m;
+    m << m00, m01, m02, m10, m11, m12, m20, m21, m22;
+    return m.determinant();
   }
 
   static void clip_triangle(Triangle& tri, double threshold, std::vector<Triangle>& clipped) {
@@ -222,7 +223,7 @@ class surface_clipper {
         Point2 b{tri.row(2).dot(u), tri.row(2).dot(v)};
         Point2 c{p20.dot(u), p20.dot(v)};
         Point2 d{p10.dot(u), p10.dot(v)};
-        if (incircle2d_inexact(a, b, c, d) < 0.0) {
+        if (incircle_inexact(a, b, c, d) < 0.0) {
           clipped.push_back((Triangle() << tri.row(1), tri.row(2), p20).finished());
           clipped.push_back((Triangle() << tri.row(1), p20, p10).finished());
         } else {
