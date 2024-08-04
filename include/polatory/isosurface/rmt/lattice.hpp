@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Cholesky>
 #include <Eigen/Core>
 #include <Eigen/QR>
 #include <algorithm>
@@ -40,14 +41,14 @@ class lattice : public primitive_lattice {
 
   // Add all nodes inside the boundary.
   void add_all_nodes(const field_function& field_fn, double isovalue) {
-    auto ext_bbox_corners = extended_bbox().corners();
+    auto ext_bbox_corners = second_extended_bbox().corners();
 
     cell_vectors cvs(8, 3);
     for (index_t i = 0; i < 8; i++) {
       cvs.row(i) = cell_vector_from_point(ext_bbox_corners.row(i));
     }
 
-    // Bounds of cell vectors for enumerating all nodes in the extended bbox.
+    // Bounds of cell vectors for enumerating all nodes in the second extended bbox.
     cell_vector cv_min = cvs.colwise().minCoeff().array() + 1;
     cell_vector cv_max = cvs.colwise().maxCoeff();
 
@@ -74,19 +75,174 @@ class lattice : public primitive_lattice {
       new_nodes.clear();
     }
 
+    generate_vertices(prev_nodes);
     remove_free_nodes(prev_nodes);
 
     update_neighbor_cache();
   }
 
-  void add_cell_from_point(const geometry::point3d& p) {
-    add_cell(cell_vector_from_point(clamp_to_bbox(p)));
+  bool is_boundary_node(const cell_vector& cv) const {
+    for (edge_index ei = 0; ei < 14; ei++) {
+      geometry::vector3d p = cell_node_point(neighbor(cv, ei));
+      if (!second_extended_bbox().contains(p)) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  void add_nodes_by_tracking(const field_function& field_fm, double isovalue) {
-    evaluate_field(field_fm, isovalue);
-    while (!last_added_cells_.empty()) {
-      track_surface();
+  geometry::vector3d gradient(const auto& cv) const {
+    std::array<cell_vector, 7> cvs{cv,
+                                   // 6NN
+                                   neighbor(cv, edge::k1), neighbor(cv, edge::k3),
+                                   neighbor(cv, edge::k5), neighbor(cv, edge::k8),
+                                   neighbor(cv, edge::kA), neighbor(cv, edge::kC)};
+    matrixd a(7, 4);
+    vectord b(7);
+    for (index_t i = 0; i < 7; i++) {
+      const auto& n = node_list_.at(cvs.at(i));
+      a.row(i) << n.position().x(), n.position().y(), n.position().z(), 1.0;
+      b(i) = std::abs(n.value());
+    }
+
+    matrixd system = a.transpose() * a;
+    vectord rhs = a.transpose() * b;
+    vectord x = system.ldlt().solve(rhs);
+    return x.head<3>();
+  }
+
+  void add_nodes_from_seed_points(geometry::points3d seed_points, const field_function& field_fm,
+                                  double isovalue) {
+    std::vector<cell_vector> cvs;
+
+    for (auto seed_point : seed_points.rowwise()) {
+      const auto& min = bbox().min();
+      const auto& max = bbox().max();
+      geometry::point3d clamped = seed_point.array().max(min.array()).min(max.array());
+
+      auto cv = closest_cell_vector(clamped);
+      add_node(cv);
+      for (edge_index ei = 0; ei < 14; ei++) {
+        add_node(neighbor(cv, ei));
+      }
+      cvs.push_back(cv);
+
+      evaluate_field(field_fm, isovalue);
+    }
+
+    std::vector<cell_vector_pair> cv_pairs;
+
+    std::vector<cell_vector> new_cvs;
+    geometry::vector3d corrector = geometry::vector3d::Zero();
+    while (!cvs.empty()) {
+      for (const auto& cv : cvs) {
+        const auto& n = node_list_.at(cv);
+
+        std::vector<cell_vector> ncvs;
+        auto found_intersection = false;
+        for (edge_index ei = 0; ei < 14; ei++) {
+          auto ncv = neighbor(cv, ei);
+          if (is_boundary_node(ncv)) {
+            continue;
+          }
+
+          const auto& nn = node_list_.at(ncv);
+          if (nn.value_sign() != n.value_sign()) {
+            cv_pairs.push_back(make_cell_vector_pair(cv, ncv));
+            found_intersection = true;
+            break;
+          }
+
+          if (std::abs(nn.value()) < std::abs(n.value())) {
+            ncvs.push_back(ncv);
+          }
+        }
+
+        if (found_intersection) {
+          continue;
+        }
+
+        if (ncvs.empty()) {
+          continue;
+        }
+
+        geometry::vector3d neg_grad = -gradient(cv).normalized();
+
+        auto ncv_it = std::min_element(
+            ncvs.begin(), ncvs.end(),
+            [this, &n, &neg_grad, &corrector](const auto& cva, const auto& cvb) {
+              const auto& na = node_list_.at(cva);
+              const auto& nb = node_list_.at(cvb);
+              const auto& p = n.position();
+              const auto& pa = na.position();
+              const auto& pb = nb.position();
+              geometry::vector3d va = pa - p;
+              geometry::vector3d vb = pb - p;
+              geometry::vector3d corrector_va = corrector + va - va.dot(neg_grad) * neg_grad;
+              geometry::vector3d corrector_vb = corrector + vb - vb.dot(neg_grad) * neg_grad;
+              return corrector_va.norm() < corrector_vb.norm();
+            });
+
+        {
+          const auto& ncv = *ncv_it;
+          for (edge_index ei = 0; ei < 14; ei++) {
+            add_node(neighbor(ncv, ei));
+          }
+          new_cvs.push_back(ncv);
+
+          const auto& nn = node_list_.at(ncv);
+          geometry::vector3d v = nn.position() - n.position();
+          corrector += v - v.dot(neg_grad) * neg_grad;
+        }
+      }
+
+      std::swap(cvs, new_cvs);
+      new_cvs.clear();
+
+      evaluate_field(field_fm, isovalue);
+    }
+
+    std::unordered_set<cell_vector_pair, cell_vector_pair_hash> visited_cv_pairs;
+    std::vector<cell_vector_pair> new_cv_pairs;
+    while (!cv_pairs.empty()) {
+      for (const auto& pair : cv_pairs) {
+        if (visited_cv_pairs.contains(pair)) {
+          continue;
+        }
+        visited_cv_pairs.insert(pair);
+
+        const auto& [cv0, cv1] = pair;
+        const auto& n0 = node_list_.at(cv0);
+        const auto& n1 = node_list_.at(cv1);
+        if (n0.value_sign() == n1.value_sign()) {
+          continue;
+        }
+
+        std::vector<cell_vector> cv0_neighbors;
+        std::vector<cell_vector> cv1_neighbors;
+        for (edge_index ei = 0; ei < 14; ei++) {
+          cv0_neighbors.push_back(neighbor(cv0, ei));
+          cv1_neighbors.push_back(neighbor(cv1, ei));
+        }
+        std::sort(cv0_neighbors.begin(), cv0_neighbors.end(), cell_vector_less());
+        std::sort(cv1_neighbors.begin(), cv1_neighbors.end(), cell_vector_less());
+        std::vector<cell_vector> common_neighbors;
+        std::set_intersection(cv0_neighbors.begin(), cv0_neighbors.end(), cv1_neighbors.begin(),
+                              cv1_neighbors.end(), std::back_inserter(common_neighbors),
+                              cell_vector_less());
+
+        for (const auto& cv : common_neighbors) {
+          add_node(cv);
+          if (node_list_.contains(cv)) {
+            new_cv_pairs.push_back(make_cell_vector_pair(cv0, cv));
+            new_cv_pairs.push_back(make_cell_vector_pair(cv1, cv));
+          }
+        }
+      }
+
+      std::swap(cv_pairs, new_cv_pairs);
+      new_cv_pairs.clear();
+
       evaluate_field(field_fm, isovalue);
     }
 
@@ -104,13 +260,15 @@ class lattice : public primitive_lattice {
   void clear() {
     node_list_.clear();
     nodes_to_evaluate_.clear();
-    cluster_map_.clear();
+    value_at_arbitrary_point_.reset();
     vertices_.clear();
+    vertices_to_refine_.clear();
+    cluster_map_.clear();
   }
 
   void cluster_vertices() {
-    const auto& min = bbox().min();
-    const auto& max = bbox().max();
+    const auto& min = first_extended_bbox().min();
+    const auto& max = first_extended_bbox().max();
 
     for (auto& cv_node : node_list_) {
       auto& node = cv_node.second;
@@ -254,7 +412,7 @@ class lattice : public primitive_lattice {
     return num_unclustered;
   }
 
-  double value_at_arbitrary_point() const { return value_at_arbitrary_point_; }
+  double value_at_arbitrary_point() const { return value_at_arbitrary_point_.value(); }
 
  private:
   friend class surface_generator;
@@ -271,29 +429,6 @@ class lattice : public primitive_lattice {
     double v2{};
   };
 
-  // Add nodes corresponding to eight vertices of the cell.
-  void add_cell(const cell_vector& cv) {
-    if (added_cells_.contains(cv)) {
-      return;
-    }
-
-    std::array<cell_vector, 8> node_cvs{cv,
-                                        neighbor(cv, edge::k0),
-                                        neighbor(cv, edge::k1),
-                                        neighbor(cv, edge::k2),
-                                        neighbor(cv, edge::k3),
-                                        neighbor(cv, edge::k4),
-                                        neighbor(cv, edge::k5),
-                                        neighbor(cv, edge::k6)};
-
-    for (const auto& node_cv : node_cvs) {
-      add_node(node_cv);
-    }
-
-    added_cells_.emplace(cv);
-    last_added_cells_.push_back(cv);
-  }
-
   // Returns true if the node is added.
   bool add_node(const cell_vector& cv) {
     if (node_list_.contains(cv)) {
@@ -307,7 +442,7 @@ class lattice : public primitive_lattice {
   bool add_node_unchecked(const cell_vector& cv) {
     auto p = cell_node_point(cv);
 
-    if (!extended_bbox().contains(p)) {
+    if (!second_extended_bbox().contains(p)) {
       return false;
     }
 
@@ -321,14 +456,10 @@ class lattice : public primitive_lattice {
     p = ((p.array() - min.array()).abs() < tiny).select(min, p);
     p = ((p.array() - max.array()).abs() < tiny).select(max, p);
 
-    node_list_.emplace(cv, Node{p});
+    node_list_.emplace(cv, Node(p));
 
     nodes_to_evaluate_.push_back(cv);
     return true;
-  }
-
-  geometry::point3d clamp_to_bbox(const geometry::point3d& p) const {
-    return p.array().max(bbox().min().array()).min(bbox().max().array());
   }
 
   vertex_index clustered_vertex_index(vertex_index vi) const {
@@ -349,7 +480,7 @@ class lattice : public primitive_lattice {
     }
 
     vectord values = field_fn(points).array() - isovalue;
-    value_at_arbitrary_point_ = values(0);
+    value_at_arbitrary_point_.emplace(values(0));
 
     index_t i{};
     for (const auto& cv : nodes_to_evaluate_) {
@@ -367,23 +498,6 @@ class lattice : public primitive_lattice {
 
   static bool has_intersection(const Node* a, const Node* b) {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
-  }
-
-  // Returns true if all of the cell's vertices are in the extended bbox.
-  bool is_interior_cell(const cell_vector& cv) {
-    std::array<cell_vector, 8> node_cvs{cv,
-                                        neighbor(cv, edge::k0),
-                                        neighbor(cv, edge::k1),
-                                        neighbor(cv, edge::k2),
-                                        neighbor(cv, edge::k3),
-                                        neighbor(cv, edge::k4),
-                                        neighbor(cv, edge::k5),
-                                        neighbor(cv, edge::k6)};
-
-    return std::all_of(node_cvs.begin(), node_cvs.end(), [this](const auto& node_cv) {
-      auto p = cell_node_point(node_cv);
-      return extended_bbox().contains(p);
-    });
   }
 
   static void refine_vertices(std::vector<vertex_to_refine>& vertices_to_refine) {
@@ -440,265 +554,6 @@ class lattice : public primitive_lattice {
     return {(-b - sqrt_d) / (2.0 * a), (-b + sqrt_d) / (2.0 * a)};
   }
 
-  void track_surface() {
-    std::vector<cell_vector> last_added_cells(std::move(last_added_cells_));
-    last_added_cells_.clear();
-
-    // Check 12 edges of each cell and add neighbor cells adjacent to an edge
-    // at which ends the field values take opposite signs.
-    for (const auto& cv : last_added_cells) {
-      auto iaaa = cv;
-      auto ibaa = neighbor(cv, edge::k0);
-      auto ibab = neighbor(cv, edge::k1);
-      auto iaab = neighbor(cv, edge::k2);
-      auto ibba = neighbor(cv, edge::k3);
-      auto ibbb = neighbor(cv, edge::k4);
-      auto iabb = neighbor(cv, edge::k5);
-      auto iaba = neighbor(cv, edge::k6);
-
-      const auto* aaa = node_list_.node_ptr(iaaa);
-      const auto* baa = node_list_.node_ptr(ibaa);
-      const auto* bab = node_list_.node_ptr(ibab);
-      const auto* aab = node_list_.node_ptr(iaab);
-      const auto* bba = node_list_.node_ptr(ibba);
-      const auto* bbb = node_list_.node_ptr(ibbb);
-      const auto* abb = node_list_.node_ptr(iabb);
-      const auto* aba = node_list_.node_ptr(iaba);
-
-      auto found_intersection = false;
-
-      // axx and bxx
-      if (has_intersection(aaa, baa)) {  // o -> 0
-        add_cell(neighbor(iaaa, edge::kD));
-        add_cell(neighbor(iaaa, edge::kC));
-        add_cell(neighbor(iaaa, edge::k9));
-        found_intersection = true;
-      }
-      if (has_intersection(aab, bab)) {  // 2 -> 1
-        add_cell(iaab);
-        add_cell(neighbor(iaab, edge::kD));
-        add_cell(neighbor(iaab, edge::kC));
-        found_intersection = true;
-      }
-      if (has_intersection(aba, bba)) {  // 6 -> 3
-        add_cell(iaba);
-        add_cell(neighbor(iaba, edge::kC));
-        add_cell(neighbor(iaba, edge::k9));
-        found_intersection = true;
-      }
-      if (has_intersection(abb, bbb)) {  // 5 -> 4
-        add_cell(iabb);
-        add_cell(neighbor(iabb, edge::kD));
-        add_cell(neighbor(iabb, edge::k9));
-        found_intersection = true;
-      }
-
-      // xax and xbx
-      if (has_intersection(aaa, aba)) {  // o -> 6
-        add_cell(neighbor(iaaa, edge::k7));
-        add_cell(neighbor(iaaa, edge::k8));
-        add_cell(neighbor(iaaa, edge::k9));
-        found_intersection = true;
-      }
-      if (has_intersection(aab, abb)) {  // 2 -> 5
-        add_cell(iaab);
-        add_cell(neighbor(iaab, edge::k7));
-        add_cell(neighbor(iaab, edge::k8));
-        found_intersection = true;
-      }
-      if (has_intersection(baa, bba)) {  // 0 -> 3
-        add_cell(ibaa);
-        add_cell(neighbor(ibaa, edge::k8));
-        add_cell(neighbor(ibaa, edge::k9));
-        found_intersection = true;
-      }
-      if (has_intersection(bab, bbb)) {  // 1 -> 4
-        add_cell(ibab);
-        add_cell(neighbor(ibab, edge::k7));
-        add_cell(neighbor(ibab, edge::k9));
-        found_intersection = true;
-      }
-
-      // xxa and xxb
-      if (has_intersection(aaa, aab)) {  // o -> 2
-        add_cell(neighbor(iaaa, edge::k7));
-        add_cell(neighbor(iaaa, edge::kA));
-        add_cell(neighbor(iaaa, edge::kD));
-        found_intersection = true;
-      }
-      if (has_intersection(baa, bab)) {  // 0 -> 1
-        add_cell(ibaa);
-        add_cell(neighbor(ibaa, edge::kA));
-        add_cell(neighbor(ibaa, edge::kD));
-        found_intersection = true;
-      }
-      if (has_intersection(aba, abb)) {  // 6 -> 5
-        add_cell(iaba);
-        add_cell(neighbor(iaba, edge::k7));
-        add_cell(neighbor(iaba, edge::kA));
-        found_intersection = true;
-      }
-      if (has_intersection(bba, bbb)) {  // 3 -> 4
-        add_cell(ibba);
-        add_cell(neighbor(ibba, edge::k7));
-        add_cell(neighbor(ibba, edge::kD));
-        found_intersection = true;
-      }
-
-      if (found_intersection) {
-        continue;
-      }
-
-      // Descend along the gradient.
-
-      std::array<const Node*, 8> nodes{aaa, baa, aba, bba, aab, bab, abb, bbb};
-      if (std::any_of(nodes.begin(), nodes.end(), [](const auto* n) { return n == nullptr; })) {
-        continue;
-      }
-
-      // Vertex-neighbor cells.
-      {
-        std::array<double, 8> values{
-            std::abs(aaa->value()),  // aaa
-            std::abs(baa->value()),  // baa
-            std::abs(aba->value()),  // aba
-            std::abs(bba->value()),  // bba
-            std::abs(aab->value()),  // aab
-            std::abs(bab->value()),  // bab
-            std::abs(abb->value()),  // abb
-            std::abs(bbb->value()),  // bbb
-        };
-        std::array<cell_vector, 8> neighbors{
-            cv + cell_vector(-1, -1, -1),  // aaa
-            cv + cell_vector(1, -1, -1),   // baa
-            cv + cell_vector(-1, 1, -1),   // aba
-            cv + cell_vector(1, 1, -1),    // bba
-            cv + cell_vector(-1, -1, 1),   // aab
-            cv + cell_vector(1, -1, 1),    // bab
-            cv + cell_vector(-1, 1, 1),    // abb
-            cv + cell_vector(1, 1, 1),     // bbb
-        };
-        std::array<bool, 8> feasible{};
-        std::transform(neighbors.begin(), neighbors.end(), feasible.begin(),
-                       [this](const auto& neighbor) { return is_interior_cell(neighbor); });
-
-        std::array<int, 8> indices{0, 1, 2, 3, 4, 5, 6, 7};
-        std::sort(indices.begin(), indices.end(), [&values, &feasible](auto i, auto j) {
-          return values.at(i) != values.at(j) ? values.at(i) < values.at(j)
-                                              : feasible.at(i) < feasible.at(j);
-        });
-        auto begin = std::find_if(indices.begin(), indices.end(),
-                                  [&feasible](auto i) { return feasible.at(i); });
-        auto end = std::upper_bound(begin, indices.end(), *begin, [&values](auto i, auto j) {
-          return values.at(i) < values.at(j);
-        });
-
-        if (std::distance(indices.begin(), begin) < 4) {
-          for (auto it = begin; it != end; ++it) {
-            auto neighbor = neighbors.at(*it);
-            add_cell(neighbor);
-          }
-          continue;
-        }
-      }
-
-      // Edge-neighbor cells.
-      {
-        std::array<double, 12> values{
-            std::abs(aaa->value() + aab->value()),  // aax
-            std::abs(aba->value() + abb->value()),  // abx
-            std::abs(baa->value() + bab->value()),  // bax
-            std::abs(bba->value() + bbb->value()),  // bbx
-            std::abs(aaa->value() + aba->value()),  // axa
-            std::abs(aab->value() + abb->value()),  // axb
-            std::abs(baa->value() + bba->value()),  // bxa
-            std::abs(bab->value() + bbb->value()),  // bxb
-            std::abs(aaa->value() + baa->value()),  // xaa
-            std::abs(aab->value() + bab->value()),  // xab
-            std::abs(aba->value() + bba->value()),  // xba
-            std::abs(abb->value() + bbb->value()),  // xbb
-        };
-        std::array<cell_vector, 12> neighbors{
-            cv + cell_vector(-1, -1, 0),  // aax
-            cv + cell_vector(-1, 1, 0),   // abx
-            cv + cell_vector(1, -1, 0),   // bax
-            cv + cell_vector(1, 1, 0),    // bbx
-            cv + cell_vector(-1, 0, -1),  // axa
-            cv + cell_vector(-1, 0, 1),   // axb
-            cv + cell_vector(1, 0, -1),   // bxa
-            cv + cell_vector(1, 0, 1),    // bxb
-            cv + cell_vector(0, -1, -1),  // xaa
-            cv + cell_vector(0, -1, 1),   // xab
-            cv + cell_vector(0, 1, -1),   // xba
-            cv + cell_vector(0, 1, 1),    // xbb
-        };
-        std::array<bool, 12> feasible{};
-        std::transform(neighbors.begin(), neighbors.end(), feasible.begin(),
-                       [this](const auto& neighbor) { return is_interior_cell(neighbor); });
-
-        std::array<int, 12> indices{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-        std::sort(indices.begin(), indices.end(), [&values, &feasible](auto i, auto j) {
-          return values.at(i) != values.at(j) ? values.at(i) < values.at(j)
-                                              : feasible.at(i) < feasible.at(j);
-        });
-        auto begin = std::find_if(indices.begin(), indices.end(),
-                                  [&feasible](auto i) { return feasible.at(i); });
-        auto end = std::upper_bound(begin, indices.end(), *begin, [&values](auto i, auto j) {
-          return values.at(i) < values.at(j);
-        });
-
-        if (std::distance(indices.begin(), begin) < 6) {
-          for (auto it = begin; it != end; ++it) {
-            auto neighbor = neighbors.at(*it);
-            add_cell(neighbor);
-          }
-          continue;
-        }
-      }
-
-      // Face-neighbor cells.
-      {
-        std::array<double, 6> values{
-            std::abs(aaa->value() + aab->value() + aba->value() + abb->value()),  // axx
-            std::abs(baa->value() + bab->value() + bba->value() + bbb->value()),  // bxx
-            std::abs(aaa->value() + aab->value() + baa->value() + bab->value()),  // xax
-            std::abs(aba->value() + abb->value() + bba->value() + bbb->value()),  // xbx
-            std::abs(aaa->value() + baa->value() + aba->value() + bba->value()),  // xxa
-            std::abs(aab->value() + bab->value() + abb->value() + bbb->value()),  // xxb
-        };
-        std::array<cell_vector, 6> neighbors{
-            cv + cell_vector(-1, 0, 0),  // axx
-            cv + cell_vector(1, 0, 0),   // bxx
-            cv + cell_vector(0, -1, 0),  // xax
-            cv + cell_vector(0, 1, 0),   // xbx
-            cv + cell_vector(0, 0, -1),  // xxa
-            cv + cell_vector(0, 0, 1),   // xxb
-        };
-        std::array<bool, 6> feasible{};
-        std::transform(neighbors.begin(), neighbors.end(), feasible.begin(),
-                       [this](const auto& neighbor) { return is_interior_cell(neighbor); });
-
-        std::array<int, 6> indices{0, 1, 2, 3, 4, 5};
-        std::sort(indices.begin(), indices.end(), [&values, &feasible](auto i, auto j) {
-          return values.at(i) != values.at(j) ? values.at(i) < values.at(j)
-                                              : feasible.at(i) < feasible.at(j);
-        });
-        auto begin = std::find_if(indices.begin(), indices.end(),
-                                  [&feasible](auto i) { return feasible.at(i); });
-        auto end = std::upper_bound(begin, indices.end(), *begin, [&values](auto i, auto j) {
-          return values.at(i) < values.at(j);
-        });
-
-        if (std::distance(indices.begin(), begin) < 3) {
-          for (auto it = begin; it != end; ++it) {
-            const auto& neighbor = neighbors.at(*it);
-            add_cell(neighbor);
-          }
-        }
-      }
-    }
-  }
-
   void update_neighbor_cache() {
     for (auto& cv_node : node_list_) {
       const auto& cv = cv_node.first;
@@ -716,9 +571,7 @@ class lattice : public primitive_lattice {
 
   NodeList node_list_;
   std::vector<cell_vector> nodes_to_evaluate_;
-  std::unordered_set<cell_vector, cell_vector_hash> added_cells_;
-  std::vector<cell_vector> last_added_cells_;
-  double value_at_arbitrary_point_{kZeroValueReplacement};
+  std::optional<double> value_at_arbitrary_point_;
   std::vector<geometry::point3d> vertices_;
   std::vector<vertex_to_refine> vertices_to_refine_;
   std::unordered_map<vertex_index, vertex_index> cluster_map_;

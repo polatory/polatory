@@ -1,8 +1,7 @@
 #pragma once
 
 #include <array>
-#include <polatory/isosurface/rmt/node.hpp>
-#include <polatory/isosurface/rmt/primitive_lattice.hpp>
+#include <polatory/isosurface/rmt/types.hpp>
 
 namespace polatory::isosurface::rmt {
 

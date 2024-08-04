@@ -6,6 +6,7 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
+#include <polatory/isosurface/rmt/types.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <unordered_map>
 #include <vector>
@@ -16,9 +17,6 @@ namespace polatory::isosurface::rmt {
 using edge_bitset = std::uint16_t;
 
 inline constexpr edge_bitset kEdgeSetMask = 0x3fff;
-
-// Edge index per node: 0 - 13
-using edge_index = int;
 
 // Adjacent edges (4 or 6) of each edge.
 inline const std::array<edge_bitset, 14> kNeighborMasks{

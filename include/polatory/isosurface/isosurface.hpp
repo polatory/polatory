@@ -24,12 +24,14 @@ class isosurface {
     }
   }
 
+  void clear() { rmt_lattice_.clear(); }
+
   surface generate(field_function& field_fn, double isovalue = 0.0, int refine = 1) {
     if (refine < 0) {
       throw std::runtime_error("refine must be non-negative");
     }
 
-    field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
+    field_fn.set_evaluation_bbox(rmt_lattice_.second_extended_bbox());
 
     rmt_lattice_.add_all_nodes(field_fn, isovalue);
     rmt_lattice_.refine_vertices(field_fn, isovalue, refine);
@@ -43,12 +45,9 @@ class isosurface {
       throw std::runtime_error("refine must be non-negative");
     }
 
-    field_fn.set_evaluation_bbox(rmt_lattice_.extended_bbox());
+    field_fn.set_evaluation_bbox(rmt_lattice_.second_extended_bbox());
 
-    for (auto p : seed_points.rowwise()) {
-      rmt_lattice_.add_cell_from_point(p);
-    }
-    rmt_lattice_.add_nodes_by_tracking(field_fn, isovalue);
+    rmt_lattice_.add_nodes_from_seed_points(seed_points, field_fn, isovalue);
     rmt_lattice_.refine_vertices(field_fn, isovalue, refine);
 
     return generate_common();
