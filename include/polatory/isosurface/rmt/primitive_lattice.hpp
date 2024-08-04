@@ -8,21 +8,10 @@
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/rmt/neighbor.hpp>
+#include <polatory/isosurface/rmt/types.hpp>
 
 namespace polatory::isosurface::rmt {
-
-using cell_vector = Eigen::Vector3i;
-using cell_vectors = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
-
-struct cell_vector_hash {
-  std::size_t operator()(const cell_vector& cv) const noexcept {
-    std::size_t seed{};
-    boost::hash_combine(seed, cv(0));
-    boost::hash_combine(seed, cv(1));
-    boost::hash_combine(seed, cv(2));
-    return seed;
-  }
-};
 
 inline constexpr double inv_sqrt2 = 0.5 * std::numbers::sqrt2;
 
@@ -51,7 +40,8 @@ class primitive_lattice {
         b1_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeVectors[1] / resolution_)),
         b2_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeVectors[2] / resolution_)),
         cv_offset_(compute_cv_offset()),
-        ext_bbox_(compute_extended_bbox()) {}
+        first_ext_bbox_(compute_extended_bbox(1)),
+        second_ext_bbox_(compute_extended_bbox(2)) {}
 
   const geometry::bbox3d& bbox() const { return bbox_; }
 
@@ -67,11 +57,19 @@ class primitive_lattice {
             static_cast<int>(std::floor(p.dot(b2_)) - cv_offset_(2))};
   }
 
-  // All nodes in the extended bbox must be evaluated
-  // to ensure that the isosurface does not have boundary in the bbox.
-  const geometry::bbox3d& extended_bbox() const { return ext_bbox_; }
+  cell_vector closest_cell_vector(const geometry::point3d& p) const {
+    return {static_cast<int>(std::round(p.dot(b0_)) - cv_offset_(0)),
+            static_cast<int>(std::round(p.dot(b1_)) - cv_offset_(1)),
+            static_cast<int>(std::round(p.dot(b2_)) - cv_offset_(2))};
+  }
+
+  // Returns the bounding box that contains all nodes to be clustered.
+  const geometry::bbox3d& first_extended_bbox() const { return first_ext_bbox_; }
 
   double resolution() const { return resolution_; }
+
+  // Returns the bounding box that contains all nodes eligible to be added to the lattice.
+  const geometry::bbox3d& second_extended_bbox() const { return second_ext_bbox_; }
 
  private:
   geometry::vector3d compute_cv_offset() const {
@@ -79,25 +77,17 @@ class primitive_lattice {
     return {std::floor(center.dot(b0_)), std::floor(center.dot(b1_)), std::floor(center.dot(b2_))};
   }
 
-  // Returns the bounding box of all cells surrounding all nodes in bbox_.
-  geometry::bbox3d compute_extended_bbox() {
-    geometry::points3d cell_vertices(8, 3);
-    geometry::point3d o = geometry::point3d::Zero();
-    cell_vertices <<         //
-        o,                   //
-        o + a0_,             //
-        o + a1_,             //
-        o + a2_,             //
-        o + a0_ + a1_,       //
-        o + a0_ + a2_,       //
-        o + a1_ + a2_,       //
-        o + a0_ + a1_ + a2_  //
-        ;
+  geometry::bbox3d compute_extended_bbox(int extension) const {
+    geometry::vectors3d neigh(14, 3);
+    for (edge_index ei = 0; ei < 14; ei++) {
+      auto cv = kNeighborCellVectors.at(ei);
+      neigh.row(ei) = cv(0) * a0_ + cv(1) * a1_ + cv(2) * a2_;
+    }
 
-    geometry::vector3d cell_bbox_width =
-        1.01 * geometry::bbox3d::from_points(cell_vertices).width();
+    geometry::vector3d min_ext = extension * 1.01 * neigh.colwise().minCoeff();
+    geometry::vector3d max_ext = extension * 1.01 * neigh.colwise().maxCoeff();
 
-    return {bbox_.min() - cell_bbox_width, bbox_.max() + cell_bbox_width};
+    return {bbox_.min() + min_ext, bbox_.max() + max_ext};
   }
 
   const geometry::bbox3d bbox_;
@@ -111,7 +101,8 @@ class primitive_lattice {
   const geometry::vector3d b1_;
   const geometry::vector3d b2_;
   const geometry::vector3d cv_offset_;
-  const geometry::bbox3d ext_bbox_;
+  const geometry::bbox3d first_ext_bbox_;
+  const geometry::bbox3d second_ext_bbox_;
 };
 
 }  // namespace polatory::isosurface::rmt
