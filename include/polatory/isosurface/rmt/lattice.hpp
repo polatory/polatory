@@ -113,7 +113,7 @@ class lattice : public primitive_lattice {
 
   void add_nodes_from_seed_points(geometry::points3d seed_points, const field_function& field_fm,
                                   double isovalue) {
-    std::vector<cell_vector> cvs;
+    std::vector<seed_node> seed_nodes;
 
     for (auto seed_point : seed_points.rowwise()) {
       const auto& min = bbox().min();
@@ -125,17 +125,18 @@ class lattice : public primitive_lattice {
       for (edge_index ei = 0; ei < 14; ei++) {
         add_node(neighbor(cv, ei));
       }
-      cvs.push_back(cv);
+      seed_nodes.emplace_back(cv, geometry::vector3d::Zero());
 
       evaluate_field(field_fm, isovalue);
     }
 
     std::vector<cell_vector_pair> cv_pairs;
 
-    std::vector<cell_vector> new_cvs;
-    geometry::vector3d corrector = geometry::vector3d::Zero();
-    while (!cvs.empty()) {
-      for (const auto& cv : cvs) {
+    std::vector<seed_node> new_seed_nodes;
+    while (!seed_nodes.empty()) {
+      for (const auto& seed : seed_nodes) {
+        const auto& cv = seed.cv;
+        const auto& corrector = seed.corrector;
         const auto& n = node_list_.at(cv);
 
         std::vector<cell_vector> ncvs;
@@ -178,9 +179,9 @@ class lattice : public primitive_lattice {
               const auto& pb = nb.position();
               geometry::vector3d va = pa - p;
               geometry::vector3d vb = pb - p;
-              geometry::vector3d corrector_va = corrector + va - va.dot(neg_grad) * neg_grad;
-              geometry::vector3d corrector_vb = corrector + vb - vb.dot(neg_grad) * neg_grad;
-              return corrector_va.norm() < corrector_vb.norm();
+              geometry::vector3d corrector_a = corrector + va - va.dot(neg_grad) * neg_grad;
+              geometry::vector3d corrector_b = corrector + vb - vb.dot(neg_grad) * neg_grad;
+              return corrector_a.norm() < corrector_b.norm();
             });
 
         {
@@ -188,16 +189,15 @@ class lattice : public primitive_lattice {
           for (edge_index ei = 0; ei < 14; ei++) {
             add_node(neighbor(ncv, ei));
           }
-          new_cvs.push_back(ncv);
 
           const auto& nn = node_list_.at(ncv);
           geometry::vector3d v = nn.position() - n.position();
-          corrector += v - v.dot(neg_grad) * neg_grad;
+          new_seed_nodes.emplace_back(ncv, corrector + v - v.dot(neg_grad) * neg_grad);
         }
       }
 
-      std::swap(cvs, new_cvs);
-      new_cvs.clear();
+      std::swap(seed_nodes, new_seed_nodes);
+      new_seed_nodes.clear();
 
       evaluate_field(field_fm, isovalue);
     }
@@ -416,6 +416,11 @@ class lattice : public primitive_lattice {
 
  private:
   friend class surface_generator;
+
+  struct seed_node {
+    cell_vector cv;
+    geometry::vector3d corrector;
+  };
 
   struct vertex_to_refine {
     cell_vector node_cv;
