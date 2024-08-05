@@ -186,7 +186,9 @@ TEST(isosurface, boundary_coordinates) {
   points3d seed_points(1, 3);
   seed_points.row(0) = point3d(0.0, 0.0, 0.0);
 
-  auto surface = isosurf.generate_from_seed_points(seed_points, field_fn);
+  // Do not use vertex refinement with random_field_function,
+  // as it may create non-manifold vertices.
+  auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
 
   std::unordered_set<halfedge, halfedge_hash> boundary_hes;
   for (auto f : surface.faces().rowwise()) {
