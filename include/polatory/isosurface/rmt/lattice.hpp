@@ -285,9 +285,6 @@ class lattice : public primitive_lattice {
   }
 
   void generate_vertices(const std::vector<cell_vector>& node_cvs) {
-    static constexpr std::array<edge_index, 7> CellEdgeIndices{
-        edge::k0, edge::k1, edge::k2, edge::k3, edge::k4, edge::k5, edge::k6};
-
 #pragma omp parallel for
     // NOLINTNEXTLINE(modernize-loop-convert)
     for (std::size_t i = 0; i < node_cvs.size(); i++) {
@@ -296,8 +293,12 @@ class lattice : public primitive_lattice {
       const auto& p0 = node0.position();
       auto v0 = node0.value();
 
-      for (auto ei : CellEdgeIndices) {
+      for (edge_index ei = 0; ei < 14; ei++) {
         auto cv1 = neighbor(cv0, ei);
+        if (!cell_vector_less()(cv0, cv1)) {
+          continue;
+        }
+
         auto* node1_ptr = node_list_.node_ptr(cv1);
         if (node1_ptr == nullptr) {
           // There is no neighbor node on the opposite end of the edge.
