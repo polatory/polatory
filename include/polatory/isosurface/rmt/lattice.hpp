@@ -91,26 +91,6 @@ class lattice : public primitive_lattice {
     return false;
   }
 
-  geometry::vector3d gradient(const auto& cv) const {
-    std::array<cell_vector, 7> cvs{cv,
-                                   // 6NN
-                                   neighbor(cv, edge::k1), neighbor(cv, edge::k3),
-                                   neighbor(cv, edge::k5), neighbor(cv, edge::k8),
-                                   neighbor(cv, edge::kA), neighbor(cv, edge::kC)};
-    matrixd a(7, 4);
-    vectord b(7);
-    for (index_t i = 0; i < 7; i++) {
-      const auto& n = node_list_.at(cvs.at(i));
-      a.row(i) << n.position().x(), n.position().y(), n.position().z(), 1.0;
-      b(i) = std::abs(n.value());
-    }
-
-    matrixd system = a.transpose() * a;
-    vectord rhs = a.transpose() * b;
-    vectord x = system.ldlt().solve(rhs);
-    return x.head<3>();
-  }
-
   void add_nodes_from_seed_points(geometry::points3d seed_points, const field_function& field_fm,
                                   double isovalue) {
     std::vector<seed_node> seed_nodes;
@@ -122,10 +102,10 @@ class lattice : public primitive_lattice {
 
       auto cv = closest_cell_vector(clamped);
       add_node(cv);
-      for (edge_index ei = 0; ei < 14; ei++) {
-        add_node(neighbor(cv, ei));
+      for (const auto& ncv : knn_nodes(cv, 1)) {
+        add_node(ncv);
       }
-      seed_nodes.emplace_back(cv, geometry::vector3d::Zero());
+      seed_nodes.emplace_back(cv, geometry::vector3d::Zero(), 1);
 
       evaluate_field(field_fm, isovalue);
     }
@@ -137,21 +117,28 @@ class lattice : public primitive_lattice {
       for (const auto& seed : seed_nodes) {
         const auto& cv = seed.cv;
         const auto& corrector = seed.corrector;
+        auto k = seed.k;
         const auto& n = node_list_.at(cv);
 
         std::vector<cell_vector> ncvs;
         auto found_intersection = false;
-        for (edge_index ei = 0; ei < 14; ei++) {
-          auto ncv = neighbor(cv, ei);
-          if (is_boundary_node(ncv)) {
-            continue;
-          }
+        for (const auto& ncv : knn_nodes(cv, k)) {
+          auto boundary_node = is_boundary_node(ncv);
 
           const auto& nn = node_list_.at(ncv);
-          if (nn.value_sign() != n.value_sign()) {
+          if (k == 1 && nn.value_sign() != n.value_sign()) {
+            // The following usage of the if statement maximizes the chances of successful
+            // surface tracking.
             cv_pairs.push_back(make_cell_vector_pair(cv, ncv));
-            found_intersection = true;
-            break;
+            if (!boundary_node) {
+              found_intersection = true;
+              break;
+            }
+          }
+
+          if (boundary_node) {
+            // The gradient cannot be computed at a boundary node.
+            continue;
           }
 
           if (std::abs(nn.value()) < std::abs(n.value())) {
@@ -164,6 +151,19 @@ class lattice : public primitive_lattice {
         }
 
         if (ncvs.empty()) {
+          if (k >= 10) {
+            // Give up.
+            continue;
+          }
+          auto nn_cvs = knn_nodes(cv, k + 1);
+          if (nn_cvs.empty()) {
+            // No more nodes in the second extended bbox.
+            continue;
+          }
+          for (const auto& nncv : nn_cvs) {
+            add_node(nncv);
+          }
+          new_seed_nodes.emplace_back(cv, corrector, k + 1);
           continue;
         }
 
@@ -186,13 +186,13 @@ class lattice : public primitive_lattice {
 
         {
           const auto& ncv = *ncv_it;
-          for (edge_index ei = 0; ei < 14; ei++) {
-            add_node(neighbor(ncv, ei));
+          for (const auto& nncv : knn_nodes(ncv, 1)) {
+            add_node(nncv);
           }
 
           const auto& nn = node_list_.at(ncv);
           geometry::vector3d v = nn.position() - n.position();
-          new_seed_nodes.emplace_back(ncv, corrector + v - v.dot(neg_grad) * neg_grad);
+          new_seed_nodes.emplace_back(ncv, corrector + v - v.dot(neg_grad) * neg_grad, 1);
         }
       }
 
@@ -220,9 +220,11 @@ class lattice : public primitive_lattice {
 
         std::vector<cell_vector> cv0_neighbors;
         std::vector<cell_vector> cv1_neighbors;
-        for (edge_index ei = 0; ei < 14; ei++) {
-          cv0_neighbors.push_back(neighbor(cv0, ei));
-          cv1_neighbors.push_back(neighbor(cv1, ei));
+        for (const auto& ncv : knn_nodes(cv0, 1)) {
+          cv0_neighbors.push_back(ncv);
+        }
+        for (const auto& ncv : knn_nodes(cv1, 1)) {
+          cv1_neighbors.push_back(ncv);
         }
         std::sort(cv0_neighbors.begin(), cv0_neighbors.end(), cell_vector_less());
         std::sort(cv1_neighbors.begin(), cv1_neighbors.end(), cell_vector_less());
@@ -420,6 +422,7 @@ class lattice : public primitive_lattice {
   struct seed_node {
     cell_vector cv;
     geometry::vector3d corrector;
+    int k;
   };
 
   struct vertex_to_refine {
@@ -501,8 +504,58 @@ class lattice : public primitive_lattice {
     nodes_to_evaluate_.clear();
   }
 
+  geometry::vector3d gradient(const auto& cv) const {
+    std::array<cell_vector, 7> cvs{cv,
+                                   // 6NN
+                                   neighbor(cv, edge::k1), neighbor(cv, edge::k3),
+                                   neighbor(cv, edge::k5), neighbor(cv, edge::k8),
+                                   neighbor(cv, edge::kA), neighbor(cv, edge::kC)};
+    matrixd a(7, 4);
+    vectord b(7);
+    for (index_t i = 0; i < 7; i++) {
+      const auto& n = node_list_.at(cvs.at(i));
+      a.row(i) << n.position().x(), n.position().y(), n.position().z(), 1.0;
+      b(i) = std::abs(n.value());
+    }
+
+    matrixd system = a.transpose() * a;
+    vectord rhs = a.transpose() * b;
+    vectord x = system.ldlt().solve(rhs);
+    return x.head<3>();
+  }
+
   static bool has_intersection(const Node* a, const Node* b) {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
+  }
+
+  std::vector<cell_vector> knn_nodes(const cell_vector& cv, int k) const {
+    std::unordered_set<cell_vector, cell_vector_hash> visited;
+    visited.insert(cv);
+
+    std::vector<cell_vector> frontier{cv};
+    std::vector<cell_vector> next_frontier;
+
+    for (int i = 0; i < k; i++) {
+      for (const auto& ncv : frontier) {
+        for (edge_index ei = 0; ei < 14; ei++) {
+          auto nncv = neighbor(ncv, ei);
+          if (visited.contains(nncv)) {
+            continue;
+          }
+          auto p = cell_node_point(nncv);
+          if (!second_extended_bbox().contains(p)) {
+            continue;
+          }
+          visited.insert(nncv);
+          next_frontier.push_back(nncv);
+        }
+      }
+
+      std::swap(frontier, next_frontier);
+      next_frontier.clear();
+    }
+
+    return frontier;
   }
 
   static void refine_vertices(std::vector<vertex_to_refine>& vertices_to_refine) {
