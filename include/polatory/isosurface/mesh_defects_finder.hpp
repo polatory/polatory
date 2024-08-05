@@ -21,7 +21,7 @@ class mesh_defects_finder {
   std::unordered_set<index_t> singular_vertices() const;
 
  private:
-  bool segment_triangle_intersect(index_t vi, index_t vj, index_t fi) const;
+  bool edge_face_intersect(index_t vi, index_t vj, index_t fi) const;
 
   index_t next_vertex(index_t fi, index_t vi) const;
 

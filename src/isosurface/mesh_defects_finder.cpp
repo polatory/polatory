@@ -1,3 +1,4 @@
+#include <Eigen/Geometry>
 #include <Eigen/LU>
 #include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
@@ -41,7 +42,7 @@ std::unordered_set<index_t> mesh_defects_finder::intersecting_faces() const {
           continue;
         }
 
-        if (segment_triangle_intersect(a, b, fj) || segment_triangle_intersect(c, d, fi)) {
+        if (edge_face_intersect(a, b, fj) || edge_face_intersect(c, d, fi)) {
 #pragma omp critical
           {
             result.insert(fi);
@@ -133,54 +134,90 @@ double orient3d_inexact(const geometry::point3d& a, const geometry::point3d& b,
   return m.determinant();
 }
 
-double coplanar_orientation(const geometry::point3d& a, const geometry::point3d& b,
-                            const geometry::point3d& c) {
+bool segment2_segment2_intersect(const geometry::point2d& p, const geometry::point2d& q,
+                                 const geometry::point2d& r, const geometry::point2d& s) {
+  auto pqr = orient2d_inexact(p, q, r);
+  auto pqs = orient2d_inexact(p, q, s);
+  auto rsp = orient2d_inexact(r, s, p);
+  auto rsq = orient2d_inexact(r, s, q);
+
+  return pqr * pqs <= 0.0 && rsp * rsq <= 0.0;
+}
+
+bool point2_triangle2_intersect(const geometry::point2d& p, const geometry::point2d& a,
+                                const geometry::point2d& b, const geometry::point2d& c) {
+  auto pab = orient2d_inexact(p, a, b);
+  auto pbc = orient2d_inexact(p, b, c);
+  auto pca = orient2d_inexact(p, c, a);
+
+  return (pab >= 0.0 && pbc >= 0.0 && pca >= 0.0) || (pab <= 0.0 && pbc <= 0.0 && pca <= 0.0);
+}
+
+bool segment2_triangle2_intersect(const geometry::point2d& p, const geometry::point2d& q,
+                                  const geometry::point2d& a, const geometry::point2d& b,
+                                  const geometry::point2d& c) {
+  return segment2_segment2_intersect(p, q, a, b) || segment2_segment2_intersect(p, q, b, c) ||
+         segment2_segment2_intersect(p, q, c, a) || point2_triangle2_intersect(p, a, b, c) ||
+         // This check is redundant, though.
+         point2_triangle2_intersect(q, a, b, c);
+}
+
+bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geometry::point3d& q,
+                                           const geometry::point3d& a, const geometry::point3d& b,
+                                           const geometry::point3d& c) {
+  geometry::vector3d n = (b - a).cross(c - a);
+  auto abs_nx = std::abs(n(0));
+  auto abs_ny = std::abs(n(1));
+  auto abs_nz = std::abs(n(2));
+
+  if (abs_nx >= abs_ny && abs_nx >= abs_nz) {
+    geometry::point2d p_yz(p(1), p(2));
+    geometry::point2d q_yz(q(1), q(2));
+    geometry::point2d a_yz(a(1), a(2));
+    geometry::point2d b_yz(b(1), b(2));
+    geometry::point2d c_yz(c(1), c(2));
+
+    return segment2_triangle2_intersect(p_yz, q_yz, a_yz, b_yz, c_yz);
+  }
+
+  if (abs_ny >= abs_nx && abs_ny >= abs_nz) {
+    geometry::point2d p_zx(p(2), p(0));
+    geometry::point2d q_zx(q(2), q(0));
+    geometry::point2d a_zx(a(2), a(0));
+    geometry::point2d b_zx(b(2), b(0));
+    geometry::point2d c_zx(c(2), c(0));
+
+    return segment2_triangle2_intersect(p_zx, q_zx, a_zx, b_zx, c_zx);
+  }
+
+  geometry::point2d p_xy(p(0), p(1));
+  geometry::point2d q_xy(q(0), q(1));
   geometry::point2d a_xy(a(0), a(1));
   geometry::point2d b_xy(b(0), b(1));
   geometry::point2d c_xy(c(0), c(1));
-  auto abc_xy = orient2d_inexact(a_xy, b_xy, c_xy);
-  if (abc_xy != 0.0) {
-    return abc_xy;
-  }
 
-  geometry::point2d a_yz(a(1), a(2));
-  geometry::point2d b_yz(b(1), b(2));
-  geometry::point2d c_yz(c(1), c(2));
-  auto abc_yz = orient2d_inexact(a_yz, b_yz, c_yz);
-  if (abc_yz != 0.0) {
-    return abc_yz;
-  }
-
-  geometry::point2d a_zx(a(2), a(0));
-  geometry::point2d b_zx(b(2), b(0));
-  geometry::point2d c_zx(c(2), c(0));
-  auto abc_zx = orient2d_inexact(a_zx, b_zx, c_zx);
-  return abc_zx;
+  return segment2_triangle2_intersect(p_xy, q_xy, a_xy, b_xy, c_xy);
 }
 
-bool mesh_defects_finder::segment_triangle_intersect(index_t vi, index_t vj, index_t fi) const {
-  auto f = faces_.row(fi);
-
-  auto a = vertices_.row(f(0));
-  auto b = vertices_.row(f(1));
-  auto c = vertices_.row(f(2));
-  auto p = vertices_.row(vi);
-  auto q = vertices_.row(vj);
-
+bool segment3_triangle3_intersect(const geometry::point3d& p, const geometry::point3d& q,
+                                  const geometry::point3d& a, const geometry::point3d& b,
+                                  const geometry::point3d& c) {
   auto abcp = orient3d_inexact(a, b, c, p);
   auto abcq = orient3d_inexact(a, b, c, q);
+
+  if (std::abs(abcp) < 1e-10) {
+    abcp = 0.0;
+  }
+  if (std::abs(abcq) < 1e-10) {
+    abcq = 0.0;
+  }
 
   if ((abcp > 0.0 && abcq > 0.0) || (abcp < 0.0 && abcq < 0.0)) {
     return false;
   }
 
   if (abcp == 0.0 && abcq == 0.0) {
-    auto pqa = coplanar_orientation(p, q, a);
-    auto pqb = coplanar_orientation(p, q, b);
-    auto pqc = coplanar_orientation(p, q, c);
-
-    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-    return !((pqa > 0.0 && pqb > 0.0 && pqc > 0.0) || (pqa < 0.0 && pqb < 0.0 && pqc < 0.0));
+    return segment3_triangle3_intersect_coplanar(p, q, a, b, c);
   }
 
   auto pqab = orient3d_inexact(p, q, a, b);
@@ -188,6 +225,18 @@ bool mesh_defects_finder::segment_triangle_intersect(index_t vi, index_t vj, ind
   auto pqca = orient3d_inexact(p, q, c, a);
 
   return (pqab >= 0.0 && pqbc >= 0.0 && pqca >= 0.0) || (pqab <= 0.0 && pqbc <= 0.0 && pqca <= 0.0);
+}
+
+bool mesh_defects_finder::edge_face_intersect(index_t vi, index_t vj, index_t fi) const {
+  auto f = faces_.row(fi);
+
+  const auto& p = vertices_.row(vi);
+  const auto& q = vertices_.row(vj);
+  const auto& a = vertices_.row(f(0));
+  const auto& b = vertices_.row(f(1));
+  const auto& c = vertices_.row(f(2));
+
+  return segment3_triangle3_intersect(p, q, a, b, c);
 }
 
 }  // namespace polatory::isosurface

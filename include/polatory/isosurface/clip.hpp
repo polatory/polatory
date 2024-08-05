@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <Eigen/LU>
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
 #include <iterator>
