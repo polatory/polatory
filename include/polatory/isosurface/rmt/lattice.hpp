@@ -58,16 +58,15 @@ class lattice : public primitive_lattice {
       }
 
       evaluate_field(field_fn, isovalue);
-      generate_vertices(nodes);
+      generate_vertices(new_nodes);
       remove_free_nodes(nodes);
+      if (cv2 == cv2_max) {
+        remove_free_nodes(new_nodes);
+      }
 
       nodes.swap(new_nodes);
       new_nodes.clear();
     }
-
-    evaluate_field(field_fn, isovalue);
-    generate_vertices(nodes);
-    remove_free_nodes(nodes);
 
     update_neighbor_cache();
   }
@@ -286,7 +285,7 @@ class lattice : public primitive_lattice {
 
       for (edge_index ei = 0; ei < 14; ei++) {
         auto cv1 = neighbor(cv0, ei);
-        if (!cell_vector_less()(cv0, cv1)) {
+        if (!cell_vector_less()(cv1, cv0)) {
           continue;
         }
 
