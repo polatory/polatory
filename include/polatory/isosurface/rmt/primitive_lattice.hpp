@@ -3,8 +3,8 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <array>
-#include <boost/container_hash/hash.hpp>
 #include <cmath>
+#include <limits>
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -51,10 +51,77 @@ class primitive_lattice {
            (cv_offset_(2) + static_cast<double>(cv(2))) * a2_;
   }
 
-  cell_vector cell_vector_from_point(const geometry::point3d& p) const {
-    return {static_cast<int>(std::floor(p.dot(b0_)) - cv_offset_(0)),
-            static_cast<int>(std::floor(p.dot(b1_)) - cv_offset_(1)),
-            static_cast<int>(std::floor(p.dot(b2_)) - cv_offset_(2))};
+  std::pair<int, int> first_cell_vector_range(int m1, int m2) const {
+    geometry::point3d point = m1 * a1_ + m2 * a2_;
+    geometry::point3d direction = a0_;
+    const auto& bbox = second_extended_bbox();
+
+    auto min_t = -std::numeric_limits<double>::infinity();
+    auto max_t = std::numeric_limits<double>::infinity();
+
+    for (auto i = 0; i < 3; i++) {
+      if (direction(i) == 0.0) {
+        continue;
+      }
+
+      auto t0 = (bbox.min()(i) - point(i)) / direction(i);
+      auto t1 = (bbox.max()(i) - point(i)) / direction(i);
+      if (t0 > t1) {
+        std::swap(t0, t1);
+      }
+
+      min_t = std::max(min_t, t0);
+      max_t = std::min(max_t, t1);
+    }
+
+    auto min = cell_vector_from_point_unrounded(point + min_t * direction)(0);
+    auto max = cell_vector_from_point_unrounded(point + max_t * direction)(0);
+    return {static_cast<int>(std::floor(min)), static_cast<int>(std::ceil(max))};
+  }
+
+  std::pair<int, int> second_cell_vector_range(int m2) const {
+    std::vector<geometry::vector3d> vertices;
+
+    geometry::vector3d normal = a0_.cross(a1_);
+    auto d = -normal.dot(m2 * a2_);
+    auto bbox_vertices = second_extended_bbox().corners();
+    for (auto i = 0; i < 7; i++) {
+      for (auto j = i + 1; j < 8; j++) {
+        if (std::popcount(static_cast<unsigned>(i) ^ static_cast<unsigned>(j)) != 1) {
+          // Not an edge.
+          continue;
+        }
+
+        geometry::point3d p = bbox_vertices.row(i);
+        geometry::point3d q = bbox_vertices.row(j);
+        geometry::vector3d pq = q - p;
+        auto t = -(normal.dot(p) + d) / normal.dot(pq);
+        if (t >= 0 && t <= 1) {
+          vertices.push_back(p + t * pq);
+        }
+      }
+    }
+
+    auto min = std::numeric_limits<double>::infinity();
+    auto max = -std::numeric_limits<double>::infinity();
+    for (auto v : vertices) {
+      auto cv = cell_vector_from_point_unrounded(v);
+      min = std::min(min, cv(1));
+      max = std::max(max, cv(1));
+    }
+    return {static_cast<int>(std::floor(min)), static_cast<int>(std::ceil(max))};
+  }
+
+  std::pair<int, int> third_cell_vector_range() const {
+    auto vertices = second_extended_bbox().corners();
+    auto min = std::numeric_limits<double>::infinity();
+    auto max = -std::numeric_limits<double>::infinity();
+    for (auto v : vertices.rowwise()) {
+      auto cv = cell_vector_from_point_unrounded(v);
+      min = std::min(min, cv(2));
+      max = std::max(max, cv(2));
+    }
+    return {static_cast<int>(std::floor(min)), static_cast<int>(std::ceil(max))};
   }
 
   cell_vector closest_cell_vector(const geometry::point3d& p) const {
@@ -72,6 +139,10 @@ class primitive_lattice {
   const geometry::bbox3d& second_extended_bbox() const { return second_ext_bbox_; }
 
  private:
+  geometry::vector3d cell_vector_from_point_unrounded(const geometry::point3d& p) const {
+    return {p.dot(b0_) - cv_offset_(0), p.dot(b1_) - cv_offset_(1), p.dot(b2_) - cv_offset_(2)};
+  }
+
   geometry::vector3d compute_cv_offset() const {
     geometry::point3d center = bbox_.center();
     return {std::floor(center.dot(b0_)), std::floor(center.dot(b1_)), std::floor(center.dot(b2_))};

@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <boost/container_hash/hash.hpp>
-#include <polatory/geometry/point3d.hpp>
 
 namespace polatory::isosurface::rmt {
 

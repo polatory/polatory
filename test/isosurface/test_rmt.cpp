@@ -45,7 +45,7 @@ TEST(rmt, lattice) {
   auto points = random_points(cuboid3d(min, max), 100);
 
   for (auto p : points.rowwise()) {
-    auto cv = lat.cell_vector_from_point(p);
+    auto cv = lat.closest_cell_vector(p);
     auto cp = lat.cell_node_point(cv);
 
     EXPECT_LT((p - cp).norm(), std::sqrt(2.0) * resolution);

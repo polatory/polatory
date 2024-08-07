@@ -39,25 +39,17 @@ class lattice : public primitive_lattice {
   lattice(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
       : Base(bbox, resolution, aniso) {}
 
-  // Add all nodes inside the boundary.
+  // Add all nodes within the second extended bbox.
   void add_all_nodes(const field_function& field_fn, double isovalue) {
-    auto ext_bbox_corners = second_extended_bbox().corners();
-
-    cell_vectors cvs(8, 3);
-    for (index_t i = 0; i < 8; i++) {
-      cvs.row(i) = cell_vector_from_point(ext_bbox_corners.row(i));
-    }
-
-    // Bounds of cell vectors for enumerating all nodes in the second extended bbox.
-    cell_vector cv_min = cvs.colwise().minCoeff().array() + 1;
-    cell_vector cv_max = cvs.colwise().maxCoeff();
-
+    std::vector<cell_vector> nodes;
     std::vector<cell_vector> new_nodes;
-    std::vector<cell_vector> prev_nodes;
 
-    for (auto cv2 = cv_min(2); cv2 <= cv_max(2); cv2++) {
-      for (auto cv1 = cv_min(1); cv1 <= cv_max(1); cv1++) {
-        for (auto cv0 = cv_min(0); cv0 <= cv_max(0); cv0++) {
+    auto [cv2_min, cv2_max] = third_cell_vector_range();
+    for (auto cv2 = cv2_min; cv2 <= cv2_max; cv2++) {
+      auto [cv1_min, cv1_max] = second_cell_vector_range(cv2);
+      for (auto cv1 = cv1_min; cv1 <= cv1_max; cv1++) {
+        auto [cv0_min, cv0_max] = first_cell_vector_range(cv1, cv2);
+        for (auto cv0 = cv0_min; cv0 <= cv0_max; cv0++) {
           cell_vector cv(cv0, cv1, cv2);
           if (add_node_unchecked(cv)) {
             new_nodes.push_back(cv);
@@ -65,18 +57,17 @@ class lattice : public primitive_lattice {
         }
       }
 
-      if (cv2 > cv_min(2)) {
-        evaluate_field(field_fn, isovalue);
-        generate_vertices(prev_nodes);
-        remove_free_nodes(prev_nodes);
-      }
+      evaluate_field(field_fn, isovalue);
+      generate_vertices(nodes);
+      remove_free_nodes(nodes);
 
-      prev_nodes.swap(new_nodes);
+      nodes.swap(new_nodes);
       new_nodes.clear();
     }
 
-    generate_vertices(prev_nodes);
-    remove_free_nodes(prev_nodes);
+    evaluate_field(field_fn, isovalue);
+    generate_vertices(nodes);
+    remove_free_nodes(nodes);
 
     update_neighbor_cache();
   }

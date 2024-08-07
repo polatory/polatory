@@ -20,6 +20,7 @@ using polatory::geometry::vector3d;
 using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
 using polatory::isosurface::mesh_defects_finder;
+using polatory::isosurface::surface;
 using polatory::isosurface::vertex_index;
 
 namespace {
@@ -70,6 +71,50 @@ class signed_distance_from_plane : public field_function {
   vector3d normal_;
   double d_;
 };
+
+using halfedge = std::pair<vertex_index, vertex_index>;
+
+struct halfedge_hash {
+  std::size_t operator()(const halfedge& e) const noexcept {
+    std::size_t seed{};
+    boost::hash_combine(seed, e.first);
+    boost::hash_combine(seed, e.second);
+    return seed;
+  }
+};
+
+bool test_boundary_coordinates(const surface& surface, const bbox3d& bbox) {
+  std::unordered_set<halfedge, halfedge_hash> boundary_hes;
+  for (auto f : surface.faces().rowwise()) {
+    for (auto i = 0; i < 3; i++) {
+      auto he = std::make_pair(f(i), f((i + 1) % 3));
+      auto opp_he = std::make_pair(he.second, he.first);
+      auto it = boundary_hes.find(opp_he);
+      if (it == boundary_hes.end()) {
+        boundary_hes.insert(he);
+      } else {
+        boundary_hes.erase(it);
+      }
+    }
+  }
+
+  std::unordered_set<vertex_index> boundary_vertices;
+  for (const auto& he : boundary_hes) {
+    boundary_vertices.insert(he.first);
+    boundary_vertices.insert(he.second);
+  }
+
+  const auto& min = bbox.min();
+  const auto& max = bbox.max();
+  for (auto vi : boundary_vertices) {
+    auto p = surface.vertices().row(vi);
+    if (!(bbox.contains(p) && (p.array() == min.array() || p.array() == max.array()).any())) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 }  // namespace
 
@@ -157,25 +202,28 @@ TEST(isosurface, manifold) {
   isosurface isosurf(bbox, resolution, aniso);
   random_field_function field_fn;
 
-  auto surface = isosurf.generate(field_fn);
+  // Do not use vertex refinement with random_field_function, as it may create singular vertices.
+  auto surface = isosurf.generate(field_fn, 0.0, 0);
 
   mesh_defects_finder defects(surface.vertices(), surface.faces());
 
   ASSERT_TRUE(defects.singular_vertices().empty());
 }
 
-using halfedge = std::pair<vertex_index, vertex_index>;
-
-struct halfedge_hash {
-  std::size_t operator()(const halfedge& e) const noexcept {
-    std::size_t seed{};
-    boost::hash_combine(seed, e.first);
-    boost::hash_combine(seed, e.second);
-    return seed;
-  }
-};
-
 TEST(isosurface, boundary_coordinates) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+  const auto aniso = random_anisotropy<3>();
+
+  isosurface isosurf(bbox, resolution, aniso);
+  random_field_function field_fn;
+
+  auto surface = isosurf.generate(field_fn, 0.0, 0);
+
+  ASSERT_TRUE(test_boundary_coordinates(surface, bbox));
+}
+
+TEST(isosurface, boundary_coordinates_seed_points) {
   const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();
@@ -186,32 +234,8 @@ TEST(isosurface, boundary_coordinates) {
   points3d seed_points(1, 3);
   seed_points.row(0) = point3d(0.0, 0.0, 0.0);
 
-  // Do not use vertex refinement with random_field_function,
-  // as it may create non-manifold vertices.
+  // Do not use vertex refinement with random_field_function, as it may create singular vertices.
   auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
 
-  std::unordered_set<halfedge, halfedge_hash> boundary_hes;
-  for (auto f : surface.faces().rowwise()) {
-    for (auto i = 0; i < 3; i++) {
-      auto he = std::make_pair(f(i), f((i + 1) % 3));
-      auto opp_he = std::make_pair(he.second, he.first);
-      auto it = boundary_hes.find(opp_he);
-      if (it == boundary_hes.end()) {
-        boundary_hes.insert(he);
-      } else {
-        boundary_hes.erase(it);
-      }
-    }
-  }
-
-  std::unordered_set<vertex_index> boundary_vertices;
-  for (const auto& he : boundary_hes) {
-    boundary_vertices.insert(he.first);
-    boundary_vertices.insert(he.second);
-  }
-
-  for (auto vi : boundary_vertices) {
-    auto p = surface.vertices().row(vi);
-    ASSERT_TRUE((p.array() == bbox.min().array() || p.array() == bbox.max().array()).any());
-  }
+  ASSERT_TRUE(test_boundary_coordinates(surface, bbox));
 }
