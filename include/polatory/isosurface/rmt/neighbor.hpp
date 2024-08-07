@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/rmt/types.hpp>
 
 namespace polatory::isosurface::rmt {

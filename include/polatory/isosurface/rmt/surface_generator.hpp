@@ -4,7 +4,6 @@
 #include <array>
 #include <boost/iterator/iterator_facade.hpp>
 #include <iterator>
-#include <memory>
 #include <optional>
 #include <polatory/common/macros.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>

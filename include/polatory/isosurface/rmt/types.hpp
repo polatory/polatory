@@ -39,7 +39,4 @@ inline cell_vector_pair make_cell_vector_pair(const cell_vector& cv1, const cell
   return cell_vector_less()(cv1, cv2) ? std::make_pair(cv1, cv2) : std::make_pair(cv2, cv1);
 }
 
-// Edge index per node: 0 - 13
-using edge_index = int;
-
 }  // namespace polatory::isosurface::rmt

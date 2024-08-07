@@ -24,10 +24,6 @@
 
 namespace polatory::isosurface::rmt {
 
-inline const std::array<edge_index, 14> kOppositeEdge{
-    edge::k7, edge::k8, edge::k9, edge::kA, edge::kB, edge::kC, edge::kD,
-    edge::k0, edge::k1, edge::k2, edge::k3, edge::k4, edge::k5, edge::k6};
-
 class lattice : public primitive_lattice {
   using Base = primitive_lattice;
   using Node = node;

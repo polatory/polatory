@@ -8,6 +8,7 @@
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/rmt/neighbor.hpp>
 #include <polatory/isosurface/rmt/types.hpp>
 

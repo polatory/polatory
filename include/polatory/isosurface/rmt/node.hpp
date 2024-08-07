@@ -6,7 +6,7 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
-#include <polatory/isosurface/rmt/types.hpp>
+#include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <unordered_map>
 #include <vector>

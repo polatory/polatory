@@ -7,10 +7,10 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
-#include <polatory/isosurface/rmt/lattice.hpp>
+#include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
-#include <polatory/isosurface/rmt/node_list.hpp>
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
+#include <polatory/isosurface/rmt/types.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
 using polatory::geometry::bbox3d;
@@ -110,7 +110,7 @@ TEST(rmt, neighbor_cell_vectors) {
       inv_sqrt2 * vector3d{0.0, 0.0, -2.0},    // A
       inv_sqrt2 * vector3d{-1.0, -1.0, -1.0},  // B
       inv_sqrt2 * vector3d{-2.0, 0.0, 0.0},    // C
-      inv_sqrt2 * vector3d{-1.0, +1.0, -1.0},  // D
+      inv_sqrt2 * vector3d{-1.0, 1.0, -1.0},   // D
   };
 
   for (edge_index ei = 0; ei < 14; ei++) {
