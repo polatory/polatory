@@ -29,6 +29,7 @@ class lattice : public primitive_lattice {
   using Node = node;
   using NodeList = node_list;
 
+  static constexpr double kVertexPositionMinimumOffset = 1e-6;
   static constexpr double kZeroValueReplacement = 1e-100;
 
  public:
@@ -276,7 +277,6 @@ class lattice : public primitive_lattice {
     for (std::size_t i = 0; i < node_cvs.size(); i++) {
       const auto& cv0 = node_cvs.at(i);
       auto& node0 = node_list_.at(cv0);
-      const auto& p0 = node0.position();
       auto v0 = node0.value();
 
       for (edge_index ei = 0; ei < 14; ei++) {
@@ -292,7 +292,6 @@ class lattice : public primitive_lattice {
         }
 
         auto& node1 = *node1_ptr;
-        const auto& p1 = node1.position();
         auto v1 = node1.value();
 
         if (v0 * v1 > 0.0) {
@@ -301,13 +300,10 @@ class lattice : public primitive_lattice {
         }
 
         auto t = v0 / (v0 - v1);
-        geometry::point3d vertex = p0 + t * (p1 - p0);
 
 #pragma omp critical
         {
           auto vi = static_cast<vertex_index>(vertices_.size());
-          vertices_.emplace_back(vertex);
-
           auto opp_ei = kOppositeEdge.at(ei);
 
           if (t < 0.5) {
@@ -326,6 +322,9 @@ class lattice : public primitive_lattice {
 
           node0.set_intersection(ei);
           node1.set_intersection(opp_ei);
+
+          const auto& v = vertices_to_refine_.back();
+          vertices_.emplace_back(v.position_clamped(node_list_));
         }
       }
     }
@@ -347,12 +346,15 @@ class lattice : public primitive_lattice {
 
     auto n = static_cast<index_t>(vertices_to_refine_.size());
     geometry::points3d vertices(n, 3);
-    for (index_t i = 0; i < n; i++) {
-      vertices.row(i) = vertices_.at(i);
-    }
 
     for (auto pass = 0; pass < num_passes; pass++) {
+      for (index_t i = 0; i < n; i++) {
+        const auto& v = vertices_to_refine_.at(i);
+        vertices.row(i) = v.position_unclamped(node_list_);
+      }
+
       vectord vertex_values = field_fn(vertices).array() - isovalue;
+      vertex_values = (vertex_values.array() == 0.0).select(kZeroValueReplacement, vertex_values);
 
       for (index_t i = 0; i < n; i++) {
         auto& v = vertices_to_refine_.at(i);
@@ -360,20 +362,11 @@ class lattice : public primitive_lattice {
       }
 
       refine_vertices(vertices_to_refine_);
-
-      for (index_t i = 0; i < n; i++) {
-        const auto& v = vertices_to_refine_.at(i);
-        const auto& node0 = node_list_.at(v.node_cv);
-        const auto& node1 = node_list_.at(neighbor(v.node_cv, v.ei));
-        const auto& p0 = node0.position();
-        const auto& p1 = node1.position();
-        vertices.row(i) = p0 + v.t1 * (p1 - p0);
-      }
     }
 
     for (index_t i = 0; i < n; i++) {
       const auto& v = vertices_to_refine_.at(i);
-      vertices_.at(v.vi) = vertices.row(i);
+      vertices_.at(v.vi) = v.position_clamped(node_list_);
 
       if (v.t1 >= 0.5) {
         auto& node0 = node_list_.at(v.node_cv);
@@ -422,6 +415,24 @@ class lattice : public primitive_lattice {
     double v1{};
     double t2{};
     double v2{};
+
+    geometry::point3d position_clamped(const NodeList& node_list) const {
+      const auto& node0 = node_list.at(node_cv);
+      const auto& node1 = node_list.at(neighbor(node_cv, ei));
+      const auto& p0 = node0.position();
+      const auto& p1 = node1.position();
+      auto t = std::clamp(t1, kVertexPositionMinimumOffset, 1.0 - kVertexPositionMinimumOffset);
+      return p0 + t * (p1 - p0);
+    }
+
+    geometry::point3d position_unclamped(const NodeList& node_list) const {
+      const auto& node0 = node_list.at(node_cv);
+      const auto& node1 = node_list.at(neighbor(node_cv, ei));
+      const auto& p0 = node0.position();
+      const auto& p1 = node1.position();
+      auto t = t1;
+      return p0 + t * (p1 - p0);
+    }
   };
 
   // Returns true if the node is added.
@@ -475,15 +486,12 @@ class lattice : public primitive_lattice {
     }
 
     vectord values = field_fn(points).array() - isovalue;
+    values = (values.array() == 0.0).select(kZeroValueReplacement, values);
     value_at_arbitrary_point_.emplace(values(0));
 
     index_t i{};
     for (const auto& cv : nodes_to_evaluate_) {
       auto value = values(i);
-      if (value == 0.0) {
-        value = kZeroValueReplacement;
-      }
-
       node_list_.at(cv).set_value(value);
       i++;
     }

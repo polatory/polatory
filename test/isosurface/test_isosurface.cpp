@@ -54,7 +54,10 @@ class distance_from_point : public field_function {
 class random_field_function : public field_function {
  public:
   vectord operator()(const points3d& points) const override {
-    return vectord::Random(points.rows());
+    vectord values = vectord::Random(points.rows());
+    // Randomly replace some values with 0.0.
+    values = (vectord::Random(points.rows()).array().abs() < 0.1).select(0.0, values);
+    return values;
   }
 };
 
@@ -184,7 +187,7 @@ TEST(isosurface, generate_from_seed_points_gradient_search) {
     signed_distance_from_plane field_fn(bbox.center(), vector3d::Random().normalized());
 
     points3d seed_points(1, 3);
-    seed_points << vector3d::Zero();
+    seed_points << point3d::Zero();
 
     auto expected = isosurf.generate(field_fn, 1.0);
     isosurf.clear();
@@ -192,6 +195,19 @@ TEST(isosurface, generate_from_seed_points_gradient_search) {
 
     ASSERT_EQ(expected.faces().rows(), actual.faces().rows());
   }
+}
+
+TEST(isosurface, generate_plane) {
+  const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+
+  auto surface = isosurf.generate(field_fn);
+
+  ASSERT_EQ(818, surface.vertices().rows());
+  ASSERT_EQ(1419, surface.faces().rows());
 }
 
 TEST(isosurface, manifold) {
@@ -202,7 +218,6 @@ TEST(isosurface, manifold) {
   isosurface isosurf(bbox, resolution, aniso);
   random_field_function field_fn;
 
-  // Do not use vertex refinement with random_field_function, as it may create singular vertices.
   auto surface = isosurf.generate(field_fn, 0.0, 0);
 
   mesh_defects_finder defects(surface.vertices(), surface.faces());
@@ -234,7 +249,6 @@ TEST(isosurface, boundary_coordinates_seed_points) {
   points3d seed_points(1, 3);
   seed_points.row(0) = point3d(0.0, 0.0, 0.0);
 
-  // Do not use vertex refinement with random_field_function, as it may create singular vertices.
   auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
 
   ASSERT_TRUE(test_boundary_coordinates(surface, bbox));

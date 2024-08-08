@@ -135,10 +135,7 @@ class node {
     value_ = value;
   }
 
-  double value() const {
-    POLATORY_ASSERT(value_.has_value());
-    return *value_;
-  }
+  double value() const { return value_.value(); }
 
   binary_sign value_sign() const { return value() < 0 ? Neg : Pos; }
 
