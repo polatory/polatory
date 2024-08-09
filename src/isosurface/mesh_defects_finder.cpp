@@ -119,6 +119,19 @@ index_t mesh_defects_finder::prev_vertex(index_t fi, index_t vi) const {
   return f(1);
 }
 
+template <class T>
+constexpr int make_class(T a, T b, T c) {
+  return 9 * (a > 0   ? 2
+              : a < 0 ? 1
+                      : 0) +
+         3 * (b > 0   ? 2
+              : b < 0 ? 1
+                      : 0) +
+         (c > 0   ? 2
+          : c < 0 ? 1
+                  : 0);
+}
+
 double orient2d_inexact(const geometry::point2d& a, const geometry::point2d& b,
                         const geometry::point2d& c) {
   geometry::matrix2d m;
@@ -134,34 +147,6 @@ double orient3d_inexact(const geometry::point3d& a, const geometry::point3d& b,
   return m.determinant();
 }
 
-bool segment2_segment2_intersect(const geometry::point2d& p, const geometry::point2d& q,
-                                 const geometry::point2d& r, const geometry::point2d& s) {
-  auto pqr = orient2d_inexact(p, q, r);
-  auto pqs = orient2d_inexact(p, q, s);
-  auto rsp = orient2d_inexact(r, s, p);
-  auto rsq = orient2d_inexact(r, s, q);
-
-  return pqr * pqs <= 0.0 && rsp * rsq <= 0.0;
-}
-
-bool point2_triangle2_intersect(const geometry::point2d& p, const geometry::point2d& a,
-                                const geometry::point2d& b, const geometry::point2d& c) {
-  auto pab = orient2d_inexact(p, a, b);
-  auto pbc = orient2d_inexact(p, b, c);
-  auto pca = orient2d_inexact(p, c, a);
-
-  return (pab >= 0.0 && pbc >= 0.0 && pca >= 0.0) || (pab <= 0.0 && pbc <= 0.0 && pca <= 0.0);
-}
-
-bool segment2_triangle2_intersect(const geometry::point2d& p, const geometry::point2d& q,
-                                  const geometry::point2d& a, const geometry::point2d& b,
-                                  const geometry::point2d& c) {
-  return segment2_segment2_intersect(p, q, a, b) || segment2_segment2_intersect(p, q, b, c) ||
-         segment2_segment2_intersect(p, q, c, a) || point2_triangle2_intersect(p, a, b, c) ||
-         // This check is redundant, though.
-         point2_triangle2_intersect(q, a, b, c);
-}
-
 bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geometry::point3d& q,
                                            const geometry::point3d& a, const geometry::point3d& b,
                                            const geometry::point3d& c) {
@@ -170,33 +155,97 @@ bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geo
   auto abs_ny = std::abs(n(1));
   auto abs_nz = std::abs(n(2));
 
+  auto i = -1;
+  auto j = -1;
   if (abs_nx >= abs_ny && abs_nx >= abs_nz) {
-    geometry::point2d p_yz(p(1), p(2));
-    geometry::point2d q_yz(q(1), q(2));
-    geometry::point2d a_yz(a(1), a(2));
-    geometry::point2d b_yz(b(1), b(2));
-    geometry::point2d c_yz(c(1), c(2));
-
-    return segment2_triangle2_intersect(p_yz, q_yz, a_yz, b_yz, c_yz);
+    std::tie(i, j) = n(0) > 0 ? std::make_tuple(1, 2) : std::make_tuple(2, 1);
+  } else if (abs_ny >= abs_nx && abs_ny >= abs_nz) {
+    std::tie(i, j) = n(1) > 0 ? std::make_tuple(2, 0) : std::make_tuple(0, 2);
+  } else {
+    std::tie(i, j) = n(2) > 0 ? std::make_tuple(0, 1) : std::make_tuple(1, 0);
   }
 
-  if (abs_ny >= abs_nx && abs_ny >= abs_nz) {
-    geometry::point2d p_zx(p(2), p(0));
-    geometry::point2d q_zx(q(2), q(0));
-    geometry::point2d a_zx(a(2), a(0));
-    geometry::point2d b_zx(b(2), b(0));
-    geometry::point2d c_zx(c(2), c(0));
+  geometry::point2d p2(p(i), p(j));
+  geometry::point2d q2(q(i), q(j));
+  geometry::point2d a2(a(i), a(j));
+  geometry::point2d b2(b(i), b(j));
+  geometry::point2d c2(c(i), c(j));
 
-    return segment2_triangle2_intersect(p_zx, q_zx, a_zx, b_zx, c_zx);
+  auto pqa = orient2d_inexact(p2, q2, a2);
+  auto pqb = orient2d_inexact(p2, q2, b2);
+  auto pqc = orient2d_inexact(p2, q2, c2);
+
+  switch (make_class(pqa, pqb, pqc)) {
+    case make_class(1, 1, 1):
+      return false;
+
+    case make_class(1, 1, -1):
+    case make_class(0, 1, -1):
+    case make_class(1, 0, -1):
+    case make_class(0, 0, -1):
+    case make_class(1, 1, 0):
+      //    B   A                  A              B                                     B   A
+      // P ------- Q   or   P -B----- Q   or   P -----A- Q   or   P -B---A- Q   or   P ---C--- Q
+      //      C                    C              C                    C
+      return orient2d_inexact(p2, c2, a2) >= 0.0 && orient2d_inexact(q2, b2, c2) >= 0.0;
+
+    case make_class(1, -1, 1):
+    case make_class(0, -1, 1):
+    case make_class(1, -1, 0):
+    case make_class(0, -1, 0):
+    case make_class(1, 0, 1):
+      //    A   C                  C              A                                     A   C
+      // P ------- Q   or   P -A----- Q   or   P -----C- Q   or   P -A---C- Q   or   P ---B--- Q
+      //      B                    B              B                    B
+      return orient2d_inexact(p2, b2, c2) >= 0.0 && orient2d_inexact(q2, a2, b2) >= 0.0;
+
+    case make_class(-1, 1, 1):
+    case make_class(-1, 1, 0):
+    case make_class(-1, 0, 1):
+    case make_class(-1, 0, 0):
+    case make_class(0, 1, 1):
+      //    C   B                  B              C                                     C   B
+      // P ------- Q   or   P -C----- Q   or   P -----B- Q   or   P -C---B- Q   or   P ---A--- Q
+      //      A                    A              A                    A
+      return orient2d_inexact(p2, a2, b2) >= 0.0 && orient2d_inexact(q2, c2, a2) >= 0.0;
+
+    case make_class(1, -1, -1):
+    // case make_class(1, 0, -1):
+    // case make_class(1, -1, 0):
+    case make_class(1, 0, 0):
+    case make_class(0, -1, -1):
+      //      A                    A              A                    A
+      // P ------- Q   or   P -B----- Q   or   P -----C- Q   or   P -B---C- Q   or   P ---A--- Q
+      //    B   C                  C              B                                     B   C
+      return orient2d_inexact(p2, c2, a2) >= 0.0 && orient2d_inexact(q2, a2, b2) >= 0.0;
+
+    case make_class(-1, 1, -1):
+    // case make_class(-1, 1, 0):
+    // case make_class(0, 1, -1):
+    case make_class(0, 1, 0):
+    case make_class(-1, 0, -1):
+      //      B                    B              B                    B
+      // P ------- Q   or   P -C----- Q   or   P -----A- Q   or   P -C---A- Q   or   P ---B--- Q
+      //    C   A                  A              C                                     C   A
+      return orient2d_inexact(p2, a2, b2) >= 0.0 && orient2d_inexact(q2, b2, c2) >= 0.0;
+
+    case make_class(-1, -1, 1):
+    // case make_class(0, -1, 1):
+    // case make_class(-1, 0, 1):
+    case make_class(0, 0, 1):
+    case make_class(-1, -1, 0):
+      //      C                    C              C                    C
+      // P ------- Q   or   P -A----- Q   or   P -----B- Q   or   P -A---B- Q   or   P ---C--- Q
+      //    A   B                  B              A                                     A   B
+      return orient2d_inexact(p2, b2, c2) >= 0.0 && orient2d_inexact(q2, c2, a2) >= 0.0;
+
+    case make_class(-1, -1, -1):
+      return false;
+
+    default:
+      // The segment or the triangle is degenerate.
+      return false;
   }
-
-  geometry::point2d p_xy(p(0), p(1));
-  geometry::point2d q_xy(q(0), q(1));
-  geometry::point2d a_xy(a(0), a(1));
-  geometry::point2d b_xy(b(0), b(1));
-  geometry::point2d c_xy(c(0), c(1));
-
-  return segment2_triangle2_intersect(p_xy, q_xy, a_xy, b_xy, c_xy);
 }
 
 bool segment3_triangle3_intersect(const geometry::point3d& p, const geometry::point3d& q,
@@ -205,19 +254,17 @@ bool segment3_triangle3_intersect(const geometry::point3d& p, const geometry::po
   auto abcp = orient3d_inexact(a, b, c, p);
   auto abcq = orient3d_inexact(a, b, c, q);
 
-  if (std::abs(abcp) < 1e-10) {
-    abcp = 0.0;
-  }
-  if (std::abs(abcq) < 1e-10) {
-    abcq = 0.0;
-  }
-
   if ((abcp > 0.0 && abcq > 0.0) || (abcp < 0.0 && abcq < 0.0)) {
     return false;
   }
 
+  // For robustness.
+  if (!segment3_triangle3_intersect_coplanar(p, q, a, b, c)) {
+    return false;
+  }
+
   if (abcp == 0.0 && abcq == 0.0) {
-    return segment3_triangle3_intersect_coplanar(p, q, a, b, c);
+    return true;
   }
 
   auto pqab = orient3d_inexact(p, q, a, b);
