@@ -244,7 +244,9 @@ bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geo
 
     default:
       // The segment or the triangle is degenerate.
-      return false;
+      // This can happen when the segment and the triangle are not coplanar.
+      // Return true to enable further checks.
+      return true;
   }
 }
 
