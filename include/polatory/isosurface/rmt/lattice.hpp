@@ -30,7 +30,6 @@ class lattice : public primitive_lattice {
   using NodeList = node_list;
 
   static constexpr double kVertexPositionMinimumOffset = 1e-6;
-  static constexpr double kZeroValueReplacement = 1e-100;
 
  public:
   lattice(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
@@ -278,6 +277,7 @@ class lattice : public primitive_lattice {
       const auto& cv0 = node_cvs.at(i);
       auto& node0 = node_list_.at(cv0);
       auto v0 = node0.value();
+      auto sign_v0 = node0.value_sign();
 
       for (edge_index ei = 0; ei < 14; ei++) {
         auto cv1 = neighbor(cv0, ei);
@@ -293,8 +293,9 @@ class lattice : public primitive_lattice {
 
         auto& node1 = *node1_ptr;
         auto v1 = node1.value();
+        auto sign_v1 = node1.value_sign();
 
-        if (v0 * v1 > 0.0) {
+        if (sign_v0 == sign_v1) {
           // There is no intersection on the edge.
           continue;
         }
@@ -354,7 +355,6 @@ class lattice : public primitive_lattice {
       }
 
       vectord vertex_values = field_fn(vertices).array() - isovalue;
-      vertex_values = (vertex_values.array() == 0.0).select(kZeroValueReplacement, vertex_values);
 
       for (index_t i = 0; i < n; i++) {
         auto& v = vertices_to_refine_.at(i);
@@ -486,7 +486,6 @@ class lattice : public primitive_lattice {
     }
 
     vectord values = field_fn(points).array() - isovalue;
-    values = (values.array() == 0.0).select(kZeroValueReplacement, values);
     value_at_arbitrary_point_.emplace(values(0));
 
     index_t i{};

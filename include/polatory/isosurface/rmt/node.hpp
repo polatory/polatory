@@ -137,7 +137,7 @@ class node {
 
   double value() const { return value_.value(); }
 
-  binary_sign value_sign() const { return value() < 0 ? Neg : Pos; }
+  binary_sign value_sign() const { return value() < 0.0 ? Neg : Pos; }
 
   vertex_index vertex_on_edge(edge_index edge_idx) const {
     POLATORY_ASSERT(has_intersection(edge_idx));
