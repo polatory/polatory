@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <boost/container_hash/hash.hpp>
+#include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>
@@ -24,18 +25,6 @@ using polatory::isosurface::surface;
 using polatory::isosurface::vertex_index;
 
 namespace {
-
-class constant_field_function : public field_function {
- public:
-  explicit constant_field_function(double value) : value_(value) {}
-
-  vectord operator()(const points3d& points) const override {
-    return vectord::Constant(points.rows(), value_);
-  }
-
- private:
-  double value_;
-};
 
 class distance_from_point : public field_function {
  public:
@@ -134,32 +123,6 @@ TEST(isosurface, generate) {
   ASSERT_EQ(2160, surface.faces().rows());
 }
 
-TEST(isosurface, generate_empty) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
-  const auto resolution = 0.1;
-
-  isosurface isosurf(bbox, resolution);
-  constant_field_function field_fn(1.0);
-
-  auto surface = isosurf.generate(field_fn);
-
-  ASSERT_TRUE(surface.is_empty());
-  ASSERT_FALSE(surface.is_entire());
-}
-
-TEST(isosurface, generate_entire) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
-  const auto resolution = 0.1;
-
-  isosurface isosurf(bbox, resolution);
-  constant_field_function field_fn(-1.0);
-
-  auto surface = isosurf.generate(field_fn);
-
-  ASSERT_FALSE(surface.is_empty());
-  ASSERT_TRUE(surface.is_entire());
-}
-
 TEST(isosurface, generate_from_seed_points) {
   const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
@@ -174,6 +137,66 @@ TEST(isosurface, generate_from_seed_points) {
 
   ASSERT_EQ(1082, surface.vertices().rows());
   ASSERT_EQ(2160, surface.faces().rows());
+}
+
+TEST(isosurface, generate_empty) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+
+  auto surface = isosurf.generate(field_fn, -1.01 * std::numbers::sqrt3);
+
+  ASSERT_TRUE(surface.is_empty());
+  ASSERT_FALSE(surface.is_entire());
+}
+
+TEST(isosurface, generate_empty_from_seed_points) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+
+  points3d seed_points(1, 3);
+  seed_points << point3d::Zero();
+
+  auto surface =
+      isosurf.generate_from_seed_points(seed_points, field_fn, -1.01 * std::numbers::sqrt3);
+
+  ASSERT_TRUE(surface.is_empty());
+  ASSERT_FALSE(surface.is_entire());
+}
+
+TEST(isosurface, generate_entire) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+
+  auto surface = isosurf.generate(field_fn, 1.01 * std::numbers::sqrt3);
+
+  ASSERT_FALSE(surface.is_empty());
+  ASSERT_TRUE(surface.is_entire());
+}
+
+TEST(isosurface, generate_entire_from_seed_points) {
+  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const auto resolution = 0.1;
+
+  isosurface isosurf(bbox, resolution);
+  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+
+  points3d seed_points(1, 3);
+  seed_points << point3d::Zero();
+
+  auto surface =
+      isosurf.generate_from_seed_points(seed_points, field_fn, 1.01 * std::numbers::sqrt3);
+
+  ASSERT_FALSE(surface.is_empty());
+  ASSERT_TRUE(surface.is_entire());
 }
 
 TEST(isosurface, generate_from_seed_points_gradient_search) {

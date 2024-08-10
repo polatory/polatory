@@ -5,7 +5,7 @@
 
 namespace polatory::isosurface::rmt {
 
-using cell_vector = Eigen::Vector3i;
+using cell_vector = Eigen::RowVector3i;
 using cell_vectors = Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 struct cell_vector_hash {

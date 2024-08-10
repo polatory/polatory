@@ -41,6 +41,10 @@ class isosurface {
 
   surface generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn,
                                     double isovalue = 0.0, int refine = 1) {
+    if (seed_points.rows() == 0) {
+      throw std::runtime_error("seed points must not be empty");
+    }
+
     if (refine < 0) {
       throw std::runtime_error("refine must be non-negative");
     }
@@ -88,12 +92,10 @@ class isosurface {
 
     surface surf(rmt_lattice_.get_vertices(), rmt_surf.get_faces());
 
-    if (surf.is_empty()) {
-      if (rmt_lattice_.value_at_arbitrary_point() < 0.0) {
-        surf = surface(entire_tag{});
-      }
-    } else {
-      surf = clip_surface(surf, rmt_lattice_.bbox());
+    surf = clip_surface(surf, rmt_lattice_.bbox());
+
+    if (surf.is_empty() && rmt_lattice_.value_at_arbitrary_point_within_bbox() < 0.0) {
+      surf = surface(entire_tag{});
     }
 
     rmt_lattice_.clear();

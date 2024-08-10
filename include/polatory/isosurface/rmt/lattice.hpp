@@ -37,6 +37,8 @@ class lattice : public primitive_lattice {
 
   // Add all nodes within the second extended bbox.
   void add_all_nodes(const field_function& field_fn, double isovalue) {
+    value_at_arbitrary_point_.emplace(bbox().center(), *this);
+
     std::vector<cell_vector> nodes;
     std::vector<cell_vector> new_nodes;
 
@@ -67,23 +69,17 @@ class lattice : public primitive_lattice {
     update_neighbor_cache();
   }
 
-  bool is_boundary_node(const cell_vector& cv) const {
-    for (edge_index ei = 0; ei < 14; ei++) {
-      geometry::vector3d p = cell_node_point(neighbor(cv, ei));
-      if (!second_extended_bbox().contains(p)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   void add_nodes_from_seed_points(geometry::points3d seed_points, const field_function& field_fm,
                                   double isovalue) {
+    const auto& min = bbox().min();
+    const auto& max = bbox().max();
+
+    value_at_arbitrary_point_.emplace(seed_points.row(0).array().max(min.array()).min(max.array()),
+                                      *this);
+
     std::vector<seed_node> seed_nodes;
 
     for (auto seed_point : seed_points.rowwise()) {
-      const auto& min = bbox().min();
-      const auto& max = bbox().max();
       geometry::point3d clamped = seed_point.array().max(min.array()).min(max.array());
 
       auto cv = closest_cell_vector(clamped);
@@ -248,10 +244,10 @@ class lattice : public primitive_lattice {
   void clear() {
     node_list_.clear();
     nodes_to_evaluate_.clear();
-    value_at_arbitrary_point_.reset();
     vertices_.clear();
     vertices_to_refine_.clear();
     cluster_map_.clear();
+    value_at_arbitrary_point_.reset();
   }
 
   void cluster_vertices() {
@@ -394,7 +390,9 @@ class lattice : public primitive_lattice {
     return num_unclustered;
   }
 
-  double value_at_arbitrary_point() const { return value_at_arbitrary_point_.value(); }
+  double value_at_arbitrary_point_within_bbox() const {
+    return value_at_arbitrary_point_.value().value();
+  }
 
  private:
   friend class surface_generator;
@@ -403,6 +401,42 @@ class lattice : public primitive_lattice {
     cell_vector cv;
     geometry::vector3d corrector;
     int k;
+  };
+
+  class interpolated_value {
+   public:
+    explicit interpolated_value(const geometry::point3d& p, const Base& lattice) {
+      cvs_ = lattice.tetrahedron(p);
+      auto p0 = lattice.cell_node_point(cvs_.row(0));
+      auto p1 = lattice.cell_node_point(cvs_.row(1));
+      auto p2 = lattice.cell_node_point(cvs_.row(2));
+      auto p3 = lattice.cell_node_point(cvs_.row(3));
+      weights_ = barycentric_coordinates(p, p0, p1, p2, p3);
+    }
+
+    void tell(const cell_vector& cv, double value) {
+      for (index_t i = 0; i < 4; i++) {
+        if (cvs_.row(i) == cv) {
+          values_(i) = value;
+          populated_.at(i) = true;
+          break;
+        }
+      }
+    }
+
+    double value() const {
+      if (std::any_of(populated_.begin(), populated_.end(), [](auto init) { return !init; })) {
+        throw std::runtime_error("not all values are populated");
+      }
+
+      return weights_.dot(values_);
+    }
+
+   private:
+    cell_vectors cvs_;
+    geometry::vectorNd<4> weights_;
+    geometry::vectorNd<4> values_;
+    std::array<bool, 4> populated_{false, false, false, false};
   };
 
   struct vertex_to_refine {
@@ -468,6 +502,24 @@ class lattice : public primitive_lattice {
     return true;
   }
 
+  static geometry::vectorNd<4> barycentric_coordinates(const geometry::point3d& p,
+                                                       const geometry::point3d& a,
+                                                       const geometry::point3d& b,
+                                                       const geometry::point3d& c,
+                                                       const geometry::point3d& d) {
+    auto volume = [](const geometry::point3d& aa, const geometry::point3d& bb,
+                     const geometry::point3d& cc, const geometry::point3d& dd) -> double {
+      return (bb - aa).cross(cc - aa).dot(dd - aa) / 6.0;
+    };
+
+    auto v = volume(a, b, c, d);
+    auto va = volume(b, d, c, p);
+    auto vb = volume(a, c, d, p);
+    auto vc = volume(a, d, b, p);
+    auto vd = volume(a, b, c, p);
+    return geometry::vectorNd<4>(va, vb, vc, vd) / v;
+  }
+
   vertex_index clustered_vertex_index(vertex_index vi) const {
     return cluster_map_.contains(vi) ? cluster_map_.at(vi) : vi;
   }
@@ -486,12 +538,13 @@ class lattice : public primitive_lattice {
     }
 
     vectord values = field_fn(points).array() - isovalue;
-    value_at_arbitrary_point_.emplace(values(0));
+    auto& arb_value = value_at_arbitrary_point_.value();
 
     index_t i{};
     for (const auto& cv : nodes_to_evaluate_) {
       auto value = values(i);
       node_list_.at(cv).set_value(value);
+      arb_value.tell(cv, value);
       i++;
     }
 
@@ -520,6 +573,16 @@ class lattice : public primitive_lattice {
 
   static bool has_intersection(const Node* a, const Node* b) {
     return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
+  }
+
+  bool is_boundary_node(const cell_vector& cv) const {
+    for (edge_index ei = 0; ei < 14; ei++) {
+      geometry::vector3d p = cell_node_point(neighbor(cv, ei));
+      if (!second_extended_bbox().contains(p)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   std::vector<cell_vector> knn_nodes(const cell_vector& cv, int k) const {
@@ -623,10 +686,10 @@ class lattice : public primitive_lattice {
 
   NodeList node_list_;
   std::vector<cell_vector> nodes_to_evaluate_;
-  std::optional<double> value_at_arbitrary_point_;
   std::vector<geometry::point3d> vertices_;
   std::vector<vertex_to_refine> vertices_to_refine_;
   std::unordered_map<vertex_index, vertex_index> cluster_map_;
+  std::optional<interpolated_value> value_at_arbitrary_point_;
 };
 
 }  // namespace polatory::isosurface::rmt

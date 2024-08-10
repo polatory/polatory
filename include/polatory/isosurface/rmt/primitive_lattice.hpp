@@ -2,10 +2,12 @@
 
 #include <Eigen/Core>
 #include <Eigen/LU>
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <limits>
 #include <numbers>
+#include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
@@ -126,9 +128,52 @@ class primitive_lattice {
   }
 
   cell_vector closest_cell_vector(const geometry::point3d& p) const {
-    return {static_cast<int>(std::round(p.dot(b0_)) - cv_offset_(0)),
-            static_cast<int>(std::round(p.dot(b1_)) - cv_offset_(1)),
-            static_cast<int>(std::round(p.dot(b2_)) - cv_offset_(2))};
+    return cell_vector_from_point_unrounded(p).array().round().cast<int>();
+  }
+
+  // Returns a positively-oriented tetrahedron containing the given point.
+  cell_vectors tetrahedron(const geometry::point3d& p) const {
+    cell_vectors cvs(4, 3);
+    auto cvd = cell_vector_from_point_unrounded(p);
+    geometry::vector3d cvd_int = cvd.array().floor();
+    geometry::vector3d cvd_frac = cvd - cvd_int;
+    cell_vector cv = cvd_int.cast<int>();
+    std::array<int, 3> rank = {0, 1, 2};
+    std::sort(rank.begin(), rank.end(), [&](auto i, auto j) { return cvd_frac(i) < cvd_frac(j); });
+
+    cvs.row(0) = cv;
+    auto make_class = [](int i, int j, int k) constexpr -> int { return 9 * i + 3 * j + k; };
+    switch (make_class(rank.at(0), rank.at(1), rank.at(2))) {
+      case make_class(2, 1, 0):
+        cvs.row(1) = neighbor(cv, edge::k0);
+        cvs.row(2) = neighbor(cv, edge::k3);
+        break;
+      case make_class(2, 0, 1):
+        cvs.row(1) = neighbor(cv, edge::k3);
+        cvs.row(2) = neighbor(cv, edge::k6);
+        break;
+      case make_class(0, 2, 1):
+        cvs.row(1) = neighbor(cv, edge::k6);
+        cvs.row(2) = neighbor(cv, edge::k5);
+        break;
+      case make_class(0, 1, 2):
+        cvs.row(1) = neighbor(cv, edge::k5);
+        cvs.row(2) = neighbor(cv, edge::k2);
+        break;
+      case make_class(1, 0, 2):
+        cvs.row(1) = neighbor(cv, edge::k2);
+        cvs.row(2) = neighbor(cv, edge::k1);
+        break;
+      case make_class(1, 2, 0):
+        cvs.row(1) = neighbor(cv, edge::k1);
+        cvs.row(2) = neighbor(cv, edge::k0);
+        break;
+      default:
+        POLATORY_UNREACHABLE();
+        break;
+    }
+    cvs.row(3) = neighbor(cv, edge::k4);
+    return cvs;
   }
 
   // Returns the bounding box that contains all nodes to be clustered.
