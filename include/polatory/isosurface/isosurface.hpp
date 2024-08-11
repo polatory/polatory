@@ -6,6 +6,7 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/rmt/surface_generator.hpp>
+#include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/surface.hpp>
 #include <stdexcept>
 #include <unordered_set>
@@ -94,7 +95,8 @@ class isosurface {
 
     surf = clip_surface(surf, rmt_lattice_.bbox());
 
-    if (surf.is_empty() && rmt_lattice_.value_at_arbitrary_point_within_bbox() < 0.0) {
+    if (surf.is_empty() &&
+        rmt_lattice_.value_sign_at_arbitrary_point_within_bbox() == binary_sign::kNeg) {
       surf = surface(entire_tag{});
     }
 

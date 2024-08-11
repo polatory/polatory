@@ -7,6 +7,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
+#include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <unordered_map>
 #include <vector>
@@ -35,8 +36,6 @@ inline const std::array<edge_bitset, 14> kNeighborMasks{
     0b10101000000001,  // C
     0b01110000000111,  // D
 };
-
-enum binary_sign { Pos = 0, Neg = 1 };
 
 class node {
  public:
@@ -137,7 +136,7 @@ class node {
 
   double value() const { return value_.value(); }
 
-  binary_sign value_sign() const { return value() < 0.0 ? Neg : Pos; }
+  binary_sign value_sign() const { return sign(value()); }
 
   vertex_index vertex_on_edge(edge_index edge_idx) const {
     POLATORY_ASSERT(has_intersection(edge_idx));

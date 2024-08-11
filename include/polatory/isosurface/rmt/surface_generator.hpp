@@ -9,6 +9,7 @@
 #include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
+#include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <vector>
@@ -45,12 +46,6 @@ class tetrahedron {
        {edge::k9, edge::k7, edge::k1},
        {edge::k8, edge::k2, edge::k0}}};
 
-  // Encode four signs of tetrahedron nodes into an integer.
-  template <binary_sign s, binary_sign s0, binary_sign s1, binary_sign s2>
-  static constexpr int tetrahedron_type() {
-    return (s2 << 3) | (s1 << 2) | (s0 << 1) | s;
-  }
-
  public:
   tetrahedron(const Node& node, int index) : node_(node), index_(index) {}
 
@@ -61,94 +56,77 @@ class tetrahedron {
     auto ei1 = kEdgeIndices.at(index_)[1];
     auto ei2 = kEdgeIndices.at(index_)[2];
 
-    const auto& node0 = node_.neighbor(ei0);
-    const auto& node1 = node_.neighbor(ei1);
-    const auto& node2 = node_.neighbor(ei2);
-
-    if (degenerate(node_, node0, node1, node2)) {
-      return;
-    }
+    const auto& n0 = node_.neighbor(ei0);
+    const auto& n1 = node_.neighbor(ei1);
+    const auto& n2 = node_.neighbor(ei2);
 
     auto oei0 = kOuterEdgeIndices.at(index_)[0];
     auto oei1 = kOuterEdgeIndices.at(index_)[1];
     auto oei2 = kOuterEdgeIndices.at(index_)[2];
 
-    // Check six edges to obtain vertices
+    // Possible vertices on the six edges of the tetrahedron.
+    auto v0 = vertex_on_edge(node_, ei0, n0);
+    auto v1 = vertex_on_edge(node_, ei1, n1);
+    auto v2 = vertex_on_edge(node_, ei2, n2);
+    auto v3 = vertex_on_edge(n0, oei0, n1);
+    auto v4 = vertex_on_edge(n1, oei1, n2);
+    auto v5 = vertex_on_edge(n2, oei2, n0);
 
-    auto v0 = vertex_on_edge(node_, ei0, node0);
-    auto v1 = vertex_on_edge(node_, ei1, node1);
-    auto v2 = vertex_on_edge(node_, ei2, node2);
-    auto v3 = vertex_on_edge(node0, oei0, node1);
-    auto v4 = vertex_on_edge(node1, oei1, node2);
-    auto v5 = vertex_on_edge(node2, oei2, node0);
-
-    auto tetra = tetrahedron_type(node_.value_sign(), node0.value_sign(), node1.value_sign(),
-                                  node2.value_sign());
-
-    switch (tetra) {
-      case tetrahedron_type<Pos, Pos, Pos, Pos>():
-      case tetrahedron_type<Neg, Neg, Neg, Neg>():
+    auto make_class = [](binary_sign a, binary_sign b, binary_sign c,
+                         binary_sign d) constexpr -> int {
+      return (a == binary_sign::kNeg ? 8 : 0) + (b == binary_sign::kNeg ? 4 : 0) +
+             (c == binary_sign::kNeg ? 2 : 0) + (d == binary_sign::kNeg ? 1 : 0);
+    };
+    switch (make_class(node_.value_sign(), n0.value_sign(), n1.value_sign(), n2.value_sign())) {
+      case make_class(binary_sign::kPos, binary_sign::kPos, binary_sign::kPos, binary_sign::kPos):
+      case make_class(binary_sign::kNeg, binary_sign::kNeg, binary_sign::kNeg, binary_sign::kNeg):
         // No faces.
         break;
-      case tetrahedron_type<Neg, Pos, Pos, Pos>():
-        // v0-v1-v2
+      case make_class(binary_sign::kNeg, binary_sign::kPos, binary_sign::kPos, binary_sign::kPos):
         *faces++ = {v0.value(), v1.value(), v2.value()};
         break;
-      case tetrahedron_type<Pos, Neg, Neg, Neg>():
-        // v0-v2-v1
+      case make_class(binary_sign::kPos, binary_sign::kNeg, binary_sign::kNeg, binary_sign::kNeg):
         *faces++ = {v0.value(), v2.value(), v1.value()};
         break;
-      case tetrahedron_type<Pos, Neg, Pos, Pos>():
-        // v0-v5-v3
+      case make_class(binary_sign::kPos, binary_sign::kNeg, binary_sign::kPos, binary_sign::kPos):
         *faces++ = {v0.value(), v5.value(), v3.value()};
         break;
-      case tetrahedron_type<Neg, Pos, Neg, Neg>():
-        // v0-v3-v5
+      case make_class(binary_sign::kNeg, binary_sign::kPos, binary_sign::kNeg, binary_sign::kNeg):
         *faces++ = {v0.value(), v3.value(), v5.value()};
         break;
-      case tetrahedron_type<Pos, Pos, Neg, Pos>():
-        // v1-v3-v4
+      case make_class(binary_sign::kPos, binary_sign::kPos, binary_sign::kNeg, binary_sign::kPos):
         *faces++ = {v1.value(), v3.value(), v4.value()};
         break;
-      case tetrahedron_type<Neg, Neg, Pos, Neg>():
-        // v1-v4-v3
+      case make_class(binary_sign::kNeg, binary_sign::kNeg, binary_sign::kPos, binary_sign::kNeg):
         *faces++ = {v1.value(), v4.value(), v3.value()};
         break;
-      case tetrahedron_type<Pos, Pos, Pos, Neg>():
-        // v2-v4-v5
+      case make_class(binary_sign::kPos, binary_sign::kPos, binary_sign::kPos, binary_sign::kNeg):
         *faces++ = {v2.value(), v4.value(), v5.value()};
         break;
-      case tetrahedron_type<Neg, Neg, Neg, Pos>():
-        // v2-v5-v4
+      case make_class(binary_sign::kNeg, binary_sign::kNeg, binary_sign::kNeg, binary_sign::kPos):
         *faces++ = {v2.value(), v5.value(), v4.value()};
         break;
-      case tetrahedron_type<Neg, Neg, Pos, Pos>():
-        // v5-v3-v1, v5-v1-v2
+      case make_class(binary_sign::kNeg, binary_sign::kNeg, binary_sign::kPos, binary_sign::kPos):
         *faces++ = {v5.value(), v3.value(), v1.value()};
         *faces++ = {v5.value(), v1.value(), v2.value()};
         break;
-      case tetrahedron_type<Pos, Pos, Neg, Neg>():
-        // v5-v1-v3, v5-v2-v1
+      case make_class(binary_sign::kPos, binary_sign::kPos, binary_sign::kNeg, binary_sign::kNeg):
         *faces++ = {v5.value(), v1.value(), v3.value()};
         *faces++ = {v5.value(), v2.value(), v1.value()};
         break;
-      case tetrahedron_type<Neg, Pos, Neg, Pos>():
-        // v0-v3-v4, v0-v4-v2
+      case make_class(binary_sign::kNeg, binary_sign::kPos, binary_sign::kNeg, binary_sign::kPos):
         *faces++ = {v0.value(), v3.value(), v4.value()};
         *faces++ = {v0.value(), v4.value(), v2.value()};
         break;
-      case tetrahedron_type<Pos, Neg, Pos, Neg>():
-        // v0-v4-v3, v0-v2-v4
+      case make_class(binary_sign::kPos, binary_sign::kNeg, binary_sign::kPos, binary_sign::kNeg):
         *faces++ = {v0.value(), v4.value(), v3.value()};
         *faces++ = {v0.value(), v2.value(), v4.value()};
         break;
-      case tetrahedron_type<Neg, Pos, Pos, Neg>():
-        // v5-v0-v1, v5-v1-v4
+      case make_class(binary_sign::kNeg, binary_sign::kPos, binary_sign::kPos, binary_sign::kNeg):
         *faces++ = {v5.value(), v0.value(), v1.value()};
         *faces++ = {v5.value(), v1.value(), v4.value()};
         break;
-      case tetrahedron_type<Pos, Neg, Neg, Pos>():
-        // v5-v1-v0, v5-v4-v1
+      case make_class(binary_sign::kPos, binary_sign::kNeg, binary_sign::kNeg, binary_sign::kPos):
         *faces++ = {v5.value(), v1.value(), v0.value()};
         *faces++ = {v5.value(), v4.value(), v1.value()};
         break;
@@ -160,21 +138,6 @@ class tetrahedron {
 
  private:
   friend class tetrahedron_iterator;
-
-  // Test if the tetrahedron is degenerate due to clamping within the bbox.
-  static bool degenerate(const Node& node, const Node& node0, const Node& node1,
-                         const Node& node2) {
-    const auto& p = node.position();
-    const auto& p0 = node0.position();
-    const auto& p1 = node1.position();
-    const auto& p2 = node2.position();
-
-    return (p.array() == p0.array() && p.array() == p1.array() && p.array() == p2.array()).any();
-  }
-
-  static int tetrahedron_type(binary_sign s, binary_sign s0, binary_sign s1, binary_sign s2) {
-    return (s2 << 3) | (s1 << 2) | (s0 << 1) | s;
-  }
 
   static std::optional<vertex_index> vertex_on_edge(const Node& node, edge_index edge_idx,
                                                     const Node& opp_node) {

@@ -270,7 +270,7 @@ TEST(isosurface, boundary_coordinates_seed_points) {
   random_field_function field_fn;
 
   points3d seed_points(1, 3);
-  seed_points.row(0) = point3d(0.0, 0.0, 0.0);
+  seed_points << point3d::Zero();
 
   auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
 

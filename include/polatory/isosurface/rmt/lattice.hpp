@@ -15,6 +15,7 @@
 #include <polatory/isosurface/rmt/node.hpp>
 #include <polatory/isosurface/rmt/node_list.hpp>
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
+#include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <unordered_map>
@@ -390,8 +391,8 @@ class lattice : public primitive_lattice {
     return num_unclustered;
   }
 
-  double value_at_arbitrary_point_within_bbox() const {
-    return value_at_arbitrary_point_.value().value();
+  binary_sign value_sign_at_arbitrary_point_within_bbox() const {
+    return value_at_arbitrary_point_.value().value_sign();
   }
 
  private:
@@ -431,6 +432,8 @@ class lattice : public primitive_lattice {
 
       return weights_.dot(values_);
     }
+
+    binary_sign value_sign() const { return sign(value()); }
 
    private:
     cell_vectors cvs_;
