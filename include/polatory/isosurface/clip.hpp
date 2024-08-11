@@ -55,7 +55,7 @@ class surface_clipper {
       auto threshold = thresholds.at(face);
       for (auto& tri : triangles) {
         tri = geometry::transform_points<3>(perm, tri);
-        clip_triangle(tri, threshold, clipped);
+        clip(tri, threshold, clipped);
       }
       for (auto& tri : clipped) {
         tri = geometry::transform_points<3>(perm.transpose(), tri);
@@ -100,8 +100,125 @@ class surface_clipper {
     }
   };
 
-  static constexpr int make_class(int interior, int boundary, int exterior) {
-    return 100 * interior + 10 * boundary + exterior;
+  static void clip(Triangle& tri, double threshold, std::vector<Triangle>& clipped) {
+    auto interior = 0;
+    auto boundary = 0;
+    auto exterior = 0;
+
+    for (auto v : tri.rowwise()) {
+      if (v(0) < threshold) {
+        interior++;
+      } else if (v(0) == threshold) {
+        boundary++;
+      } else {
+        exterior++;
+      }
+    }
+
+    auto make_class = [](int i, int j, int k) constexpr -> int { return 16 * i + 4 * j + k; };
+    auto append = [&clipped](const Triangle& t) {
+      if (!degenerate(t)) {
+        clipped.push_back(t);
+      }
+    };
+    switch (make_class(interior, boundary, exterior)) {
+      case make_class(1, 0, 2): {
+        auto i = std::distance(tri.rowwise().begin(),
+                               std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
+                                            [threshold](auto v) { return v(0) < threshold; }));
+        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
+        // Now vertices are ordered as (interior, exterior, exterior).
+        auto t01 = (threshold - tri(0, 0)) / (tri(1, 0) - tri(0, 0));
+        auto t02 = (threshold - tri(0, 0)) / (tri(2, 0) - tri(0, 0));
+        Point p01 = tri.row(0) + t01 * (tri.row(1) - tri.row(0));
+        Point p02 = tri.row(0) + t02 * (tri.row(2) - tri.row(0));
+        p01(0) = threshold;
+        p02(0) = threshold;
+        append((Triangle() << tri.row(0), p01, p02).finished());
+        break;
+      }
+
+      case make_class(1, 1, 1): {
+        auto i = std::distance(tri.rowwise().begin(),
+                               std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
+                                            [threshold](auto v) { return v(0) == threshold; }));
+        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
+        // Now vertices are ordered as either (boundary, interior, exterior)
+        // or (boundary, exterior, interior).
+        if (tri(1, 0) < tri(2, 0)) {
+          // (boundary, interior, exterior).
+          auto t12 = (threshold - tri(1, 0)) / (tri(2, 0) - tri(1, 0));
+          Point p12 = tri.row(1) + t12 * (tri.row(2) - tri.row(1));
+          p12(0) = threshold;
+          append((Triangle() << tri.row(0), tri.row(1), p12).finished());
+        } else {
+          // (boundary, exterior, interior).
+          auto t21 = (threshold - tri(2, 0)) / (tri(1, 0) - tri(2, 0));
+          Point p21 = tri.row(2) + t21 * (tri.row(1) - tri.row(2));
+          p21(0) = threshold;
+          append((Triangle() << tri.row(0), p21, tri.row(2)).finished());
+        }
+        break;
+      }
+
+      case make_class(2, 0, 1): {
+        auto i = std::distance(tri.rowwise().begin(),
+                               std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
+                                            [threshold](auto v) { return v(0) > threshold; }));
+        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
+        // Now vertices are ordered as (exterior, interior, interior).
+        auto t10 = (threshold - tri(1, 0)) / (tri(0, 0) - tri(1, 0));
+        auto t20 = (threshold - tri(2, 0)) / (tri(0, 0) - tri(2, 0));
+        Point p10 = tri.row(1) + t10 * (tri.row(0) - tri.row(1));
+        Point p20 = tri.row(2) + t20 * (tri.row(0) - tri.row(2));
+        p10(0) = threshold;
+        p20(0) = threshold;
+        // Delaunay triangulation.
+        Vector normal = (tri.row(1) - tri.row(0)).cross(tri.row(2) - tri.row(0));
+        auto [u, v] = plane_basis(normal);
+        Point2 a{tri.row(1).dot(u), tri.row(1).dot(v)};
+        Point2 b{tri.row(2).dot(u), tri.row(2).dot(v)};
+        Point2 c{p20.dot(u), p20.dot(v)};
+        Point2 d{p10.dot(u), p10.dot(v)};
+        if (incircle_inexact(a, b, c, d) < 0.0) {
+          append((Triangle() << tri.row(1), tri.row(2), p20).finished());
+          append((Triangle() << tri.row(1), p20, p10).finished());
+        } else {
+          append((Triangle() << tri.row(1), tri.row(2), p10).finished());
+          append((Triangle() << tri.row(2), p20, p10).finished());
+        }
+        break;
+      }
+
+      case make_class(1, 2, 0):
+      case make_class(2, 1, 0):
+      case make_class(3, 0, 0):
+        append(tri);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  static bool degenerate(const Triangle& tri) {
+    return tri.row(0) == tri.row(1) || tri.row(0) == tri.row(2) || tri.row(1) == tri.row(2);
+  }
+
+  static double incircle_inexact(const Point2& a, const Point2& b, const Point2& c,
+                                 const Point2& d) {
+    auto m00 = a(0) - d(0);
+    auto m01 = a(1) - d(1);
+    auto m02 = m00 * m00 + m01 * m01;
+    auto m10 = b(0) - d(0);
+    auto m11 = b(1) - d(1);
+    auto m12 = m10 * m10 + m11 * m11;
+    auto m20 = c(0) - d(0);
+    auto m21 = c(1) - d(1);
+    auto m22 = m20 * m20 + m21 * m21;
+    Matrix m;
+    m << m00, m01, m02, m10, m11, m12, m20, m21, m22;
+    return m.determinant();
   }
 
   static std::pair<Vector, Vector> plane_basis(const Vector& normal) {
@@ -128,123 +245,6 @@ class surface_clipper {
     Vector v = normal.cross(u);
 
     return {u.normalized(), v.normalized()};
-  }
-
-  static double incircle_inexact(const Point2& a, const Point2& b, const Point2& c,
-                                 const Point2& d) {
-    auto m00 = a(0) - d(0);
-    auto m01 = a(1) - d(1);
-    auto m02 = m00 * m00 + m01 * m01;
-    auto m10 = b(0) - d(0);
-    auto m11 = b(1) - d(1);
-    auto m12 = m10 * m10 + m11 * m11;
-    auto m20 = c(0) - d(0);
-    auto m21 = c(1) - d(1);
-    auto m22 = m20 * m20 + m21 * m21;
-    Matrix m;
-    m << m00, m01, m02, m10, m11, m12, m20, m21, m22;
-    return m.determinant();
-  }
-
-  static void clip_triangle(Triangle& tri, double threshold, std::vector<Triangle>& clipped) {
-    auto interior = 0;
-    auto boundary = 0;
-    auto exterior = 0;
-
-    for (auto v : tri.rowwise()) {
-      if (v(0) < threshold) {
-        interior++;
-      } else if (v(0) == threshold) {
-        boundary++;
-      } else {
-        exterior++;
-      }
-    }
-
-    switch (make_class(interior, boundary, exterior)) {
-      case make_class(1, 0, 2): {
-        auto i = std::distance(tri.rowwise().begin(),
-                               std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
-                                            [threshold](auto v) { return v(0) < threshold; }));
-        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
-        // Now vertices are ordered as (interior, exterior, exterior).
-        auto t01 = (threshold - tri(0, 0)) / (tri(1, 0) - tri(0, 0));
-        auto t02 = (threshold - tri(0, 0)) / (tri(2, 0) - tri(0, 0));
-        Point p01 = tri.row(0) + t01 * (tri.row(1) - tri.row(0));
-        Point p02 = tri.row(0) + t02 * (tri.row(2) - tri.row(0));
-        p01(0) = threshold;
-        p02(0) = threshold;
-        clipped.push_back((Triangle() << tri.row(0), p01, p02).finished());
-        break;
-      }
-
-      case make_class(1, 1, 1): {
-        auto i = std::distance(tri.rowwise().begin(),
-                               std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
-                                            [threshold](auto v) { return v(0) == threshold; }));
-        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
-        // Now vertices are ordered as either (boundary, interior, exterior)
-        // or (boundary, exterior, interior).
-        if (tri(1, 0) < tri(2, 0)) {
-          // (boundary, interior, exterior).
-          auto t12 = (threshold - tri(1, 0)) / (tri(2, 0) - tri(1, 0));
-          Point p12 = tri.row(1) + t12 * (tri.row(2) - tri.row(1));
-          p12(0) = threshold;
-          clipped.push_back((Triangle() << tri.row(0), tri.row(1), p12).finished());
-        } else {
-          // (boundary, exterior, interior).
-          auto t21 = (threshold - tri(2, 0)) / (tri(1, 0) - tri(2, 0));
-          Point p21 = tri.row(2) + t21 * (tri.row(1) - tri.row(2));
-          p21(0) = threshold;
-          clipped.push_back((Triangle() << tri.row(0), p21, tri.row(2)).finished());
-        }
-        break;
-      }
-
-      case make_class(1, 2, 0):
-        clipped.push_back(tri);
-        break;
-
-      case make_class(2, 0, 1): {
-        auto i = std::distance(tri.rowwise().begin(),
-                               std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
-                                            [threshold](auto v) { return v(0) > threshold; }));
-        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
-        // Now vertices are ordered as (exterior, interior, interior).
-        auto t10 = (threshold - tri(1, 0)) / (tri(0, 0) - tri(1, 0));
-        auto t20 = (threshold - tri(2, 0)) / (tri(0, 0) - tri(2, 0));
-        Point p10 = tri.row(1) + t10 * (tri.row(0) - tri.row(1));
-        Point p20 = tri.row(2) + t20 * (tri.row(0) - tri.row(2));
-        p10(0) = threshold;
-        p20(0) = threshold;
-        // Delaunay triangulation.
-        Vector normal = (tri.row(1) - tri.row(0)).cross(tri.row(2) - tri.row(0));
-        auto [u, v] = plane_basis(normal);
-        Point2 a{tri.row(1).dot(u), tri.row(1).dot(v)};
-        Point2 b{tri.row(2).dot(u), tri.row(2).dot(v)};
-        Point2 c{p20.dot(u), p20.dot(v)};
-        Point2 d{p10.dot(u), p10.dot(v)};
-        if (incircle_inexact(a, b, c, d) < 0.0) {
-          clipped.push_back((Triangle() << tri.row(1), tri.row(2), p20).finished());
-          clipped.push_back((Triangle() << tri.row(1), p20, p10).finished());
-        } else {
-          clipped.push_back((Triangle() << tri.row(1), tri.row(2), p10).finished());
-          clipped.push_back((Triangle() << tri.row(2), p20, p10).finished());
-        }
-        break;
-      }
-
-      case make_class(2, 1, 0):
-        clipped.push_back(tri);
-        break;
-
-      case make_class(3, 0, 0):
-        clipped.push_back(tri);
-        break;
-
-      default:
-        break;
-    }
   }
 
   surface clipped_surface_;
