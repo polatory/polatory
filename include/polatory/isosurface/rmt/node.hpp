@@ -76,8 +76,6 @@ class node {
     return (intersections_ & edge_bit) != 0;
   }
 
-  bool has_neighbor(edge_index edge) const { return neighbors_->at(edge) != nullptr; }
-
   void insert_vertex(vertex_index vi, edge_index edge_idx) {
     POLATORY_ASSERT(!has_intersection(edge_idx));
 
@@ -98,16 +96,6 @@ class node {
 
   bool is_free() const { return all_intersections_ == 0; }
 
-  node& neighbor(edge_index edge) {
-    POLATORY_ASSERT(has_neighbor(edge));
-    return *neighbors_->at(edge);
-  }
-
-  const node& neighbor(edge_index edge) const {
-    POLATORY_ASSERT(has_neighbor(edge));
-    return *neighbors_->at(edge);
-  }
-
   const geometry::point3d& position() const { return position_; }
 
   void remove_vertex(edge_index edge_idx) {
@@ -126,10 +114,6 @@ class node {
     edge_bitset edge_bit = 1 << edge_idx;
 
     all_intersections_ |= edge_bit;
-  }
-
-  void set_neighbors(std::unique_ptr<std::array<node*, 14>> neighbors) {
-    neighbors_.swap(neighbors);
   }
 
   void set_value(double value) {
@@ -178,8 +162,6 @@ class node {
   edge_bitset all_intersections_{};
 
   std::unique_ptr<std::vector<vertex_index>> vis_;
-
-  std::unique_ptr<std::array<node*, 14>> neighbors_;
 };
 
 }  // namespace polatory::isosurface::rmt

@@ -66,8 +66,6 @@ class lattice : public primitive_lattice {
       nodes.swap(new_nodes);
       new_nodes.clear();
     }
-
-    update_neighbor_cache();
   }
 
   void add_nodes_from_seed_points(geometry::points3d seed_points, const field_function& field_fm,
@@ -238,8 +236,6 @@ class lattice : public primitive_lattice {
 
     generate_vertices(all_nodes);
     remove_free_nodes(all_nodes);
-
-    update_neighbor_cache();
   }
 
   void clear() {
@@ -678,21 +674,6 @@ class lattice : public primitive_lattice {
       return {2.0 * c / (-b + sqrt_d), (-b + sqrt_d) / (2.0 * a)};
     }
     return {(-b - sqrt_d) / (2.0 * a), (-b + sqrt_d) / (2.0 * a)};
-  }
-
-  void update_neighbor_cache() {
-    for (auto& cv_node : node_list_) {
-      const auto& cv = cv_node.first;
-      auto& node = cv_node.second;
-
-      auto neighbors = std::make_unique<std::array<Node*, 14>>();
-
-      for (edge_index ei = 0; ei < 14; ei++) {
-        neighbors->at(ei) = node_list_.node_ptr(neighbor(cv, ei));
-      }
-
-      node.set_neighbors(std::move(neighbors));
-    }
   }
 
   NodeList node_list_;

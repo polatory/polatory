@@ -8,7 +8,9 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
+#include <polatory/isosurface/rmt/neighbor.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
+#include <polatory/isosurface/rmt/node_list.hpp>
 #include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
@@ -20,6 +22,7 @@ namespace detail {
 
 class tetrahedron {
   using Node = node;
+  using NodeList = node_list;
 
   // List of indices of the three edges of each tetrahedron.
   static constexpr std::array<std::array<edge_index, 3>, 6> kEdgeIndices{
@@ -47,7 +50,8 @@ class tetrahedron {
        {edge::k8, edge::k2, edge::k0}}};
 
  public:
-  tetrahedron(const Node& node, int index) : node_(node), index_(index) {}
+  tetrahedron(const cell_vector& cv, const NodeList& node_list, int index)
+      : cv_(cv), node_list_(node_list), index_(index) {}
 
   // Adds 0, 1 or 2 triangular faces of the isosurface in this tetrahedron.
   template <class OutputIterator>
@@ -56,18 +60,19 @@ class tetrahedron {
     auto ei1 = kEdgeIndices.at(index_)[1];
     auto ei2 = kEdgeIndices.at(index_)[2];
 
-    const auto& n0 = node_.neighbor(ei0);
-    const auto& n1 = node_.neighbor(ei1);
-    const auto& n2 = node_.neighbor(ei2);
+    const auto& n = node_list_.at(cv_);
+    const auto& n0 = node_list_.at(neighbor(cv_, ei0));
+    const auto& n1 = node_list_.at(neighbor(cv_, ei1));
+    const auto& n2 = node_list_.at(neighbor(cv_, ei2));
 
     auto oei0 = kOuterEdgeIndices.at(index_)[0];
     auto oei1 = kOuterEdgeIndices.at(index_)[1];
     auto oei2 = kOuterEdgeIndices.at(index_)[2];
 
     // Possible vertices on the six edges of the tetrahedron.
-    auto v0 = vertex_on_edge(node_, ei0, n0);
-    auto v1 = vertex_on_edge(node_, ei1, n1);
-    auto v2 = vertex_on_edge(node_, ei2, n2);
+    auto v0 = vertex_on_edge(n, ei0, n0);
+    auto v1 = vertex_on_edge(n, ei1, n1);
+    auto v2 = vertex_on_edge(n, ei2, n2);
     auto v3 = vertex_on_edge(n0, oei0, n1);
     auto v4 = vertex_on_edge(n1, oei1, n2);
     auto v5 = vertex_on_edge(n2, oei2, n0);
@@ -77,7 +82,7 @@ class tetrahedron {
       return (a == binary_sign::kNeg ? 8 : 0) + (b == binary_sign::kNeg ? 4 : 0) +
              (c == binary_sign::kNeg ? 2 : 0) + (d == binary_sign::kNeg ? 1 : 0);
     };
-    switch (make_class(node_.value_sign(), n0.value_sign(), n1.value_sign(), n2.value_sign())) {
+    switch (make_class(n.value_sign(), n0.value_sign(), n1.value_sign(), n2.value_sign())) {
       case make_class(binary_sign::kPos, binary_sign::kPos, binary_sign::kPos, binary_sign::kPos):
       case make_class(binary_sign::kNeg, binary_sign::kNeg, binary_sign::kNeg, binary_sign::kNeg):
         // No faces.
@@ -153,7 +158,8 @@ class tetrahedron {
     return {};
   }
 
-  const Node& node_;
+  const cell_vector& cv_;
+  const NodeList& node_list_;
   const int index_;
 };
 
@@ -161,12 +167,14 @@ class tetrahedron_iterator
     : public boost::iterator_facade<tetrahedron_iterator, tetrahedron, std::input_iterator_tag,
                                     tetrahedron, int> {
   using Node = node;
+  using NodeList = node_list;
 
   // The number of tetrahedra in a cell.
   static constexpr int kNumTetrahedra = 6;
 
  public:
-  explicit tetrahedron_iterator(const Node& node) : node_(node) {
+  explicit tetrahedron_iterator(const cell_vector& cv, const NodeList& node_list)
+      : cv_(cv), node_list_(node_list) {
     while (is_valid() && !tetrahedron_exists()) {
       // Some of the tetrahedron nodes do not exist.
       index_++;
@@ -181,11 +189,12 @@ class tetrahedron_iterator
   reference dereference() const {
     POLATORY_ASSERT(is_valid());
 
-    return {node_, index_};
+    return {cv_, node_list_, index_};
   }
 
   bool equal(const tetrahedron_iterator& other) const {
-    POLATORY_ASSERT(std::addressof(node_) == std::addressof(other.node_));
+    POLATORY_ASSERT(cv_ == other.cv_);
+    POLATORY_ASSERT(std::addressof(node_list_) == std::addressof(other.node_list_));
 
     return index_ == other.index_;
   }
@@ -200,12 +209,13 @@ class tetrahedron_iterator
 
   // Returns if all nodes corresponding to three vertices of the tetrahedron exist.
   bool tetrahedron_exists() const {
-    return node_.has_neighbor(tetrahedron::kEdgeIndices.at(index_)[0]) &&
-           node_.has_neighbor(tetrahedron::kEdgeIndices.at(index_)[1]) &&
-           node_.has_neighbor(tetrahedron::kEdgeIndices.at(index_)[2]);
+    return node_list_.contains(neighbor(cv_, tetrahedron::kEdgeIndices.at(index_)[0])) &&
+           node_list_.contains(neighbor(cv_, tetrahedron::kEdgeIndices.at(index_)[1])) &&
+           node_list_.contains(neighbor(cv_, tetrahedron::kEdgeIndices.at(index_)[2]));
   }
 
-  const Node& node_;
+  const cell_vector& cv_;
+  const node_list& node_list_;
   int index_{};
 };
 
@@ -247,10 +257,10 @@ class surface_generator {
 
     auto inserter = std::back_inserter(faces_);
 
-    for (const auto& ci_node : lattice_.node_list_) {
-      const auto& node = ci_node.second;
+    for (const auto& cv_node : lattice_.node_list_) {
+      const auto& cv = cv_node.first;
 
-      for (detail::tetrahedron_iterator it(node); it.is_valid(); ++it) {
+      for (detail::tetrahedron_iterator it(cv, lattice_.node_list_); it.is_valid(); ++it) {
         it->get_faces(inserter);
       }
     }
