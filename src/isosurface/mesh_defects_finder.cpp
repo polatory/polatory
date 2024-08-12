@@ -119,19 +119,6 @@ index_t mesh_defects_finder::prev_vertex(index_t fi, index_t vi) const {
   return f(1);
 }
 
-template <class T>
-constexpr int make_class(T a, T b, T c) {
-  return 9 * (a > 0   ? 2
-              : a < 0 ? 1
-                      : 0) +
-         3 * (b > 0   ? 2
-              : b < 0 ? 1
-                      : 0) +
-         (c > 0   ? 2
-          : c < 0 ? 1
-                  : 0);
-}
-
 double orient2d_inexact(const geometry::point2d& a, const geometry::point2d& b,
                         const geometry::point2d& c) {
   geometry::matrix2d m;
@@ -175,7 +162,11 @@ bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geo
   auto pqb = orient2d_inexact(p2, q2, b2);
   auto pqc = orient2d_inexact(p2, q2, c2);
 
-  switch (make_class(pqa, pqb, pqc)) {
+  auto sign = [](double x) -> int { return x > 0.0 ? 1 : x < 0.0 ? -1 : 0; };
+  auto make_class = [](int a, int b, int c) constexpr -> int {
+    return 9 * (a + 1) + 3 * (b + 1) + c + 1;
+  };
+  switch (make_class(sign(pqa), sign(pqb), sign(pqc))) {
     case make_class(1, 1, 1):
       return false;
 
