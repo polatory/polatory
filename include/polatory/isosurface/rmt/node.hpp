@@ -153,14 +153,16 @@ class node {
   geometry::point3d position_;
   std::optional<double> value_;
 
-  // The corresponding bit is set if an edge crosses the isosurface
+  // The corresponding bit is set if the isosurface crosses the edge
   // at a point nearer than the midpoint.
   // Such intersections are called "near intersections".
   edge_bitset intersections_{};
 
-  // The corresponding bit is set if an edge crosses the isosurface.
+  // The corresponding bit is set if the isosurface crosses the edge.
   edge_bitset all_intersections_{};
 
+  // Packed vertex indices for the near intersections.
+  // Wrapped in a unique_ptr to reduce memory usage when the node is free.
   std::unique_ptr<std::vector<index_t>> vis_;
 };
 

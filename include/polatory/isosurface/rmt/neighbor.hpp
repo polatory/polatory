@@ -6,8 +6,6 @@
 
 namespace polatory::isosurface::rmt {
 
-// Coefficients for the three primitive vectors
-// to reproduce each NeighborVectors.
 inline const std::array<cell_vector, 14> kNeighborCellVectors{{
     cell_vector(1, 0, 0),     // 0
     cell_vector(1, 0, 1),     // 1
