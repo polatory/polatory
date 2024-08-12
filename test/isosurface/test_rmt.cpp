@@ -8,9 +8,9 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
+#include <polatory/isosurface/rmt/lattice_coordinates.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
-#include <polatory/isosurface/rmt/types.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
 using polatory::geometry::bbox3d;
@@ -21,15 +21,15 @@ using polatory::geometry::transform_vector;
 using polatory::geometry::vector3d;
 using polatory::isosurface::bit_count;
 using polatory::isosurface::bit_pop;
-using polatory::isosurface::rmt::cell_vector;
 using polatory::isosurface::rmt::edge_bitset;
 using polatory::isosurface::rmt::edge_index;
 using polatory::isosurface::rmt::inv_sqrt2;
-using polatory::isosurface::rmt::kDualLatticeVectors;
-using polatory::isosurface::rmt::kLatticeVectors;
-using polatory::isosurface::rmt::kNeighborCellVectors;
+using polatory::isosurface::rmt::kDualLatticeBasis;
+using polatory::isosurface::rmt::kLatticeBasis;
+using polatory::isosurface::rmt::kNeighborLatticeCoordinatesDeltas;
 using polatory::isosurface::rmt::kNeighborMasks;
 using polatory::isosurface::rmt::kOppositeEdge;
+using polatory::isosurface::rmt::lattice_coordinates;
 using polatory::isosurface::rmt::primitive_lattice;
 using polatory::point_cloud::random_points;
 
@@ -45,14 +45,14 @@ TEST(rmt, lattice) {
   auto points = random_points(cuboid3d(min, max), 100);
 
   for (auto p : points.rowwise()) {
-    auto cv = lat.closest_cell_vector(p);
-    auto cp = lat.cell_node_point(cv);
+    auto lc = lat.lattice_coordinates_rounded(p);
+    auto lp = lat.position(lc);
 
-    EXPECT_LT((p - cp).norm(), std::sqrt(2.0) * resolution);
+    EXPECT_LT((p - lp).norm(), std::sqrt(2.0) * resolution);
   }
 }
 
-TEST(rmt, lattice_vector_construction) {
+TEST(rmt, construction_of_basis) {
   auto pi = std::numbers::pi;
 
   // Rotates the lattice so that the plane formed by the first and third primitive vectors
@@ -65,23 +65,23 @@ TEST(rmt, lattice_vector_construction) {
   vector3d a1 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, -1.0, 1.0});
   vector3d a2 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, 1.0, -1.0});
 
-  EXPECT_NEAR(0.0, (kLatticeVectors[0] - a0).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kLatticeVectors[1] - a1).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kLatticeVectors[2] - a2).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kLatticeBasis[0] - a0).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kLatticeBasis[1] - a1).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kLatticeBasis[2] - a2).norm(), 1e-15);
 
   vector3d b0 = transform_vector<3>(rot, inv_sqrt2 * vector3d{0.0, 1.0, 1.0});
   vector3d b1 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, 0.0, 1.0});
   vector3d b2 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, 1.0, 0.0});
 
-  EXPECT_NEAR(0.0, (kDualLatticeVectors[0] - b0).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kDualLatticeVectors[1] - b1).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kDualLatticeVectors[2] - b2).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kDualLatticeBasis[0] - b0).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kDualLatticeBasis[1] - b1).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kDualLatticeBasis[2] - b2).norm(), 1e-15);
 }
 
-TEST(rmt, lattice_vector_duality) {
+TEST(rmt, duality_of_basis) {
   for (auto i = 0; i < 3; i++) {
     for (auto j = 0; j < 3; j++) {
-      auto dot = kLatticeVectors.at(i).dot(kDualLatticeVectors.at(j));
+      auto dot = kLatticeBasis.at(i).dot(kDualLatticeBasis.at(j));
       if (i == j) {
         EXPECT_NEAR(1.0, dot, 1e-15);
       } else {
@@ -114,8 +114,8 @@ TEST(rmt, neighbor_cell_vectors) {
   };
 
   for (edge_index ei = 0; ei < 14; ei++) {
-    const auto& cv = kNeighborCellVectors.at(ei);
-    vector3d v = cv(0) * a0 + cv(1) * a1 + cv(2) * a2;
+    const auto& lc = kNeighborLatticeCoordinatesDeltas.at(ei);
+    vector3d v = lc(0) * a0 + lc(1) * a1 + lc(2) * a2;
 
     EXPECT_EQ(neighbor_vectors.at(ei), v);
   }
@@ -131,12 +131,12 @@ TEST(rmt, neighbor_masks) {
     auto count = bit_count(mask);
     EXPECT_TRUE(count == 4 || count == 6);
 
-    const auto& cvi = kNeighborCellVectors.at(i);
-    vector3d vi = cvi(0) * a0 + cvi(1) * a1 + cvi(2) * a2;
+    const auto& lci = kNeighborLatticeCoordinatesDeltas.at(i);
+    vector3d vi = lci(0) * a0 + lci(1) * a1 + lci(2) * a2;
     for (auto k = 0; k < count; k++) {
       auto j = bit_pop(&mask);
-      const auto& cvj = kNeighborCellVectors.at(j);
-      vector3d vj = cvj(0) * a0 + cvj(1) * a1 + cvj(2) * a2;
+      const auto& lcj = kNeighborLatticeCoordinatesDeltas.at(j);
+      vector3d vj = lcj(0) * a0 + lcj(1) * a1 + lcj(2) * a2;
       auto vij2 = (vj - vi).squaredNorm();
       if (vij2 > 1.75) {
         EXPECT_DOUBLE_EQ(2.0, vij2);
@@ -149,6 +149,7 @@ TEST(rmt, neighbor_masks) {
 
 TEST(rmt, opposite_edge) {
   for (edge_index ei = 0; ei < 14; ei++) {
-    EXPECT_EQ(-kNeighborCellVectors.at(ei), kNeighborCellVectors.at(kOppositeEdge.at(ei)));
+    EXPECT_EQ(-kNeighborLatticeCoordinatesDeltas.at(ei),
+              kNeighborLatticeCoordinatesDeltas.at(kOppositeEdge.at(ei)));
   }
 }

@@ -44,8 +44,8 @@ class tetrahedron {
        {edge::k8, edge::k2, edge::k0}}};
 
  public:
-  tetrahedron(const cell_vector& cv, const NodeList& node_list, int index)
-      : cv_(cv), node_list_(node_list), index_(index) {}
+  tetrahedron(const lattice_coordinates& lc, const NodeList& node_list, int index)
+      : lc_(lc), node_list_(node_list), index_(index) {}
 
   // Adds 0, 1 or 2 triangular faces of the isosurface in this tetrahedron.
   template <class OutputIterator>
@@ -54,10 +54,10 @@ class tetrahedron {
     auto ei1 = kEdgeIndices.at(index_)[1];
     auto ei2 = kEdgeIndices.at(index_)[2];
 
-    const auto& n = node_list_.at(cv_);
-    const auto& n0 = node_list_.at(neighbor(cv_, ei0));
-    const auto& n1 = node_list_.at(neighbor(cv_, ei1));
-    const auto& n2 = node_list_.at(neighbor(cv_, ei2));
+    const auto& n = node_list_.at(lc_);
+    const auto& n0 = node_list_.at(neighbor(lc_, ei0));
+    const auto& n1 = node_list_.at(neighbor(lc_, ei1));
+    const auto& n2 = node_list_.at(neighbor(lc_, ei2));
 
     auto oei0 = kOuterEdgeIndices.at(index_)[0];
     auto oei1 = kOuterEdgeIndices.at(index_)[1];
@@ -152,7 +152,7 @@ class tetrahedron {
     return {};
   }
 
-  const cell_vector& cv_;
+  const lattice_coordinates& lc_;
   const NodeList& node_list_;
   const int index_;
 };
@@ -167,8 +167,8 @@ class tetrahedron_iterator
   static constexpr int kNumTetrahedra = 6;
 
  public:
-  explicit tetrahedron_iterator(const cell_vector& cv, const NodeList& node_list)
-      : cv_(cv), node_list_(node_list) {
+  explicit tetrahedron_iterator(const lattice_coordinates& lc, const NodeList& node_list)
+      : lc_(lc), node_list_(node_list) {
     while (is_valid() && !tetrahedron_exists()) {
       // Some of the tetrahedron nodes do not exist.
       index_++;
@@ -183,11 +183,11 @@ class tetrahedron_iterator
   reference dereference() const {
     POLATORY_ASSERT(is_valid());
 
-    return {cv_, node_list_, index_};
+    return {lc_, node_list_, index_};
   }
 
   bool equal(const tetrahedron_iterator& other) const {
-    POLATORY_ASSERT(cv_ == other.cv_);
+    POLATORY_ASSERT(lc_ == other.lc_);
     POLATORY_ASSERT(std::addressof(node_list_) == std::addressof(other.node_list_));
 
     return index_ == other.index_;
@@ -203,12 +203,12 @@ class tetrahedron_iterator
 
   // Returns if all nodes corresponding to three vertices of the tetrahedron exist.
   bool tetrahedron_exists() const {
-    return node_list_.contains(neighbor(cv_, tetrahedron::kEdgeIndices.at(index_)[0])) &&
-           node_list_.contains(neighbor(cv_, tetrahedron::kEdgeIndices.at(index_)[1])) &&
-           node_list_.contains(neighbor(cv_, tetrahedron::kEdgeIndices.at(index_)[2]));
+    return node_list_.contains(neighbor(lc_, tetrahedron::kEdgeIndices.at(index_)[0])) &&
+           node_list_.contains(neighbor(lc_, tetrahedron::kEdgeIndices.at(index_)[1])) &&
+           node_list_.contains(neighbor(lc_, tetrahedron::kEdgeIndices.at(index_)[2]));
   }
 
-  const cell_vector& cv_;
+  const lattice_coordinates& lc_;
   const node_list& node_list_;
   int index_{};
 };

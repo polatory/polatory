@@ -1,15 +1,15 @@
 #pragma once
 
+#include <polatory/isosurface/rmt/lattice_coordinates.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
-#include <polatory/isosurface/rmt/types.hpp>
 #include <unordered_map>
 
 namespace polatory::isosurface::rmt {
 
-class node_list : public std::unordered_map<cell_vector, node, cell_vector_hash> {
+class node_list : public std::unordered_map<lattice_coordinates, node, lattice_coordinates_hash> {
  public:
-  node* node_ptr(const cell_vector& cv) {
-    auto it = find(cv);
+  node* node_ptr(const lattice_coordinates& lc) {
+    auto it = find(lc);
     return it != end() ? &it->second : nullptr;
   }
 };

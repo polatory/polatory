@@ -45,18 +45,18 @@ class lattice : public primitive_lattice {
   void add_all_nodes(const field_function& field_fn, double isovalue) {
     value_at_arbitrary_point_.emplace(bbox().center(), *this);
 
-    std::vector<cell_vector> nodes;
-    std::vector<cell_vector> new_nodes;
+    std::vector<lattice_coordinates> nodes;
+    std::vector<lattice_coordinates> new_nodes;
 
-    auto [cv2_min, cv2_max] = third_cell_vector_range();
-    for (auto cv2 = cv2_min; cv2 <= cv2_max; cv2++) {
-      auto [cv1_min, cv1_max] = second_cell_vector_range(cv2);
-      for (auto cv1 = cv1_min; cv1 <= cv1_max; cv1++) {
-        auto [cv0_min, cv0_max] = first_cell_vector_range(cv1, cv2);
-        for (auto cv0 = cv0_min; cv0 <= cv0_max; cv0++) {
-          cell_vector cv(cv0, cv1, cv2);
-          if (add_node_unchecked(cv)) {
-            new_nodes.push_back(cv);
+    auto [lc2_min, lc2_max] = third_lattice_coordinate_range();
+    for (auto lc2 = lc2_min; lc2 <= lc2_max; lc2++) {
+      auto [lc1_min, lc1_max] = second_lattice_coordinate_range(lc2);
+      for (auto lc1 = lc1_min; lc1 <= lc1_max; lc1++) {
+        auto [lc0_min, lc0_max] = first_lattice_coordinate_range(lc1, lc2);
+        for (auto lc0 = lc0_min; lc0 <= lc0_max; lc0++) {
+          lattice_coordinates lc(lc0, lc1, lc2);
+          if (add_node_unchecked(lc)) {
+            new_nodes.push_back(lc);
           }
         }
       }
@@ -64,7 +64,7 @@ class lattice : public primitive_lattice {
       evaluate_field(field_fn, isovalue);
       generate_vertices(new_nodes);
       remove_free_nodes(nodes);
-      if (cv2 == cv2_max) {
+      if (lc2 == lc2_max) {
         remove_free_nodes(new_nodes);
       }
 
@@ -86,36 +86,36 @@ class lattice : public primitive_lattice {
     for (auto seed_point : seed_points.rowwise()) {
       geometry::point3d clamped = seed_point.array().max(min.array()).min(max.array());
 
-      auto cv = closest_cell_vector(clamped);
-      add_node(cv);
-      for (const auto& ncv : knn_nodes(cv, 1)) {
-        add_node(ncv);
+      auto lc = lattice_coordinates_rounded(clamped);
+      add_node(lc);
+      for (const auto& nlc : knn_nodes(lc, 1)) {
+        add_node(nlc);
       }
-      seed_nodes.emplace_back(cv, geometry::vector3d::Zero(), 1);
+      seed_nodes.emplace_back(lc, geometry::vector3d::Zero(), 1);
 
       evaluate_field(field_fm, isovalue);
     }
 
-    std::vector<cell_vector_pair> cv_pairs;
+    std::vector<lattice_coordinates_pair> pairs;
 
     std::vector<seed_node> new_seed_nodes;
     while (!seed_nodes.empty()) {
       for (const auto& seed : seed_nodes) {
-        const auto& cv = seed.cv;
+        const auto& lc = seed.lc;
         const auto& corrector = seed.corrector;
         auto k = seed.k;
-        const auto& n = node_list_.at(cv);
+        const auto& n = node_list_.at(lc);
 
-        std::vector<cell_vector> ncvs;
+        std::vector<lattice_coordinates> nlcs;
         auto found_intersection = false;
-        for (const auto& ncv : knn_nodes(cv, k)) {
-          auto boundary_node = is_boundary_node(ncv);
+        for (const auto& nlc : knn_nodes(lc, k)) {
+          auto boundary_node = is_boundary_node(nlc);
 
-          const auto& nn = node_list_.at(ncv);
+          const auto& nn = node_list_.at(nlc);
           if (k == 1 && nn.value_sign() != n.value_sign()) {
             // The following usage of the if statement maximizes the chances of successful
             // surface tracking.
-            cv_pairs.push_back(make_cell_vector_pair(cv, ncv));
+            pairs.push_back(make_lattice_coordinates_pair(lc, nlc));
             if (!boundary_node) {
               found_intersection = true;
               break;
@@ -128,7 +128,7 @@ class lattice : public primitive_lattice {
           }
 
           if (std::abs(nn.value()) < std::abs(n.value())) {
-            ncvs.push_back(ncv);
+            nlcs.push_back(nlc);
           }
         }
 
@@ -136,30 +136,30 @@ class lattice : public primitive_lattice {
           continue;
         }
 
-        if (ncvs.empty()) {
+        if (nlcs.empty()) {
           if (k >= 10) {
             // Give up.
             continue;
           }
-          auto nn_cvs = knn_nodes(cv, k + 1);
-          if (nn_cvs.empty()) {
+          auto nnlcs = knn_nodes(lc, k + 1);
+          if (nnlcs.empty()) {
             // No more nodes in the second extended bbox.
             continue;
           }
-          for (const auto& nncv : nn_cvs) {
-            add_node(nncv);
+          for (const auto& nnlc : nnlcs) {
+            add_node(nnlc);
           }
-          new_seed_nodes.emplace_back(cv, corrector, k + 1);
+          new_seed_nodes.emplace_back(lc, corrector, k + 1);
           continue;
         }
 
-        geometry::vector3d neg_grad = -gradient(cv).normalized();
+        geometry::vector3d neg_grad = -gradient(lc).normalized();
 
-        auto ncv_it = std::min_element(
-            ncvs.begin(), ncvs.end(),
-            [this, &n, &neg_grad, &corrector](const auto& cva, const auto& cvb) {
-              const auto& na = node_list_.at(cva);
-              const auto& nb = node_list_.at(cvb);
+        auto nlc_it = std::min_element(
+            nlcs.begin(), nlcs.end(),
+            [this, &n, &neg_grad, &corrector](const auto& lca, const auto& lcb) {
+              const auto& na = node_list_.at(lca);
+              const auto& nb = node_list_.at(lcb);
               const auto& p = n.position();
               const auto& pa = na.position();
               const auto& pb = nb.position();
@@ -171,14 +171,14 @@ class lattice : public primitive_lattice {
             });
 
         {
-          const auto& ncv = *ncv_it;
-          for (const auto& nncv : knn_nodes(ncv, 1)) {
-            add_node(nncv);
+          const auto& nlc = *nlc_it;
+          for (const auto& nnlc : knn_nodes(nlc, 1)) {
+            add_node(nnlc);
           }
 
-          const auto& nn = node_list_.at(ncv);
+          const auto& nn = node_list_.at(nlc);
           geometry::vector3d v = nn.position() - n.position();
-          new_seed_nodes.emplace_back(ncv, corrector + v - v.dot(neg_grad) * neg_grad, 1);
+          new_seed_nodes.emplace_back(nlc, corrector + v - v.dot(neg_grad) * neg_grad, 1);
         }
       }
 
@@ -188,55 +188,55 @@ class lattice : public primitive_lattice {
       evaluate_field(field_fm, isovalue);
     }
 
-    std::unordered_set<cell_vector_pair, cell_vector_pair_hash> visited_cv_pairs;
-    std::vector<cell_vector_pair> new_cv_pairs;
-    while (!cv_pairs.empty()) {
-      for (const auto& pair : cv_pairs) {
-        if (visited_cv_pairs.contains(pair)) {
+    std::unordered_set<lattice_coordinates_pair, lattice_coordinates_pair_hash> visited_pairs;
+    std::vector<lattice_coordinates_pair> new_pairs;
+    while (!pairs.empty()) {
+      for (const auto& pair : pairs) {
+        if (visited_pairs.contains(pair)) {
           continue;
         }
-        visited_cv_pairs.insert(pair);
+        visited_pairs.insert(pair);
 
-        const auto& [cv0, cv1] = pair;
-        const auto& n0 = node_list_.at(cv0);
-        const auto& n1 = node_list_.at(cv1);
+        const auto& [lc0, lc1] = pair;
+        const auto& n0 = node_list_.at(lc0);
+        const auto& n1 = node_list_.at(lc1);
         if (n0.value_sign() == n1.value_sign()) {
           continue;
         }
 
-        std::vector<cell_vector> cv0_neighbors;
-        std::vector<cell_vector> cv1_neighbors;
-        for (const auto& ncv : knn_nodes(cv0, 1)) {
-          cv0_neighbors.push_back(ncv);
+        std::vector<lattice_coordinates> lc0_neighbors;
+        std::vector<lattice_coordinates> lc1_neighbors;
+        for (const auto& nlc : knn_nodes(lc0, 1)) {
+          lc0_neighbors.push_back(nlc);
         }
-        for (const auto& ncv : knn_nodes(cv1, 1)) {
-          cv1_neighbors.push_back(ncv);
+        for (const auto& nlc : knn_nodes(lc1, 1)) {
+          lc1_neighbors.push_back(nlc);
         }
-        std::sort(cv0_neighbors.begin(), cv0_neighbors.end(), cell_vector_less());
-        std::sort(cv1_neighbors.begin(), cv1_neighbors.end(), cell_vector_less());
-        std::vector<cell_vector> common_neighbors;
-        std::set_intersection(cv0_neighbors.begin(), cv0_neighbors.end(), cv1_neighbors.begin(),
-                              cv1_neighbors.end(), std::back_inserter(common_neighbors),
-                              cell_vector_less());
+        std::sort(lc0_neighbors.begin(), lc0_neighbors.end(), lattice_coordinates_less());
+        std::sort(lc1_neighbors.begin(), lc1_neighbors.end(), lattice_coordinates_less());
+        std::vector<lattice_coordinates> common_neighbors;
+        std::set_intersection(lc0_neighbors.begin(), lc0_neighbors.end(), lc1_neighbors.begin(),
+                              lc1_neighbors.end(), std::back_inserter(common_neighbors),
+                              lattice_coordinates_less());
 
-        for (const auto& cv : common_neighbors) {
-          add_node(cv);
-          if (node_list_.contains(cv)) {
-            new_cv_pairs.push_back(make_cell_vector_pair(cv0, cv));
-            new_cv_pairs.push_back(make_cell_vector_pair(cv1, cv));
+        for (const auto& nlc : common_neighbors) {
+          add_node(nlc);
+          if (node_list_.contains(nlc)) {
+            new_pairs.push_back(make_lattice_coordinates_pair(lc0, nlc));
+            new_pairs.push_back(make_lattice_coordinates_pair(lc1, nlc));
           }
         }
       }
 
-      std::swap(cv_pairs, new_cv_pairs);
-      new_cv_pairs.clear();
+      std::swap(pairs, new_pairs);
+      new_pairs.clear();
 
       evaluate_field(field_fm, isovalue);
     }
 
-    std::vector<cell_vector> all_nodes;
-    for (const auto& cv_node : node_list_) {
-      all_nodes.push_back(cv_node.first);
+    std::vector<lattice_coordinates> all_nodes;
+    for (const auto& lc_node : node_list_) {
+      all_nodes.push_back(lc_node.first);
     }
 
     generate_vertices(all_nodes);
@@ -263,8 +263,8 @@ class lattice : public primitive_lattice {
     const auto& min = first_extended_bbox().min();
     const auto& max = first_extended_bbox().max();
 
-    for (auto& cv_node : node_list_) {
-      auto& node = cv_node.second;
+    for (auto& lc_node : node_list_) {
+      auto& node = lc_node.second;
       const auto& p = node.position();
       if ((p.array() <= min.array() || p.array() >= max.array()).any()) {
         // Do not cluster vertices of a node on/outside the bbox,
@@ -278,9 +278,9 @@ class lattice : public primitive_lattice {
   Mesh get_mesh() const {
     std::vector<face> faces_v;
     auto inserter = std::back_inserter(faces_v);
-    for (const auto& cv_node : node_list_) {
-      const auto& cv = cv_node.first;
-      for (tetrahedron_iterator it(cv, node_list_); it.is_valid(); ++it) {
+    for (const auto& lc_node : node_list_) {
+      const auto& lc = lc_node.first;
+      for (tetrahedron_iterator it(lc, node_list_); it.is_valid(); ++it) {
         it->get_faces(inserter);
       }
     }
@@ -334,8 +334,8 @@ class lattice : public primitive_lattice {
 
     for (const auto& v : vertices_) {
       if (v.t1 >= 0.5) {
-        auto& node0 = node_list_.at(v.node_cv);
-        auto& node1 = node_list_.at(neighbor(v.node_cv, v.ei));
+        auto& node0 = node_list_.at(v.node_lc);
+        auto& node1 = node_list_.at(neighbor(v.node_lc, v.ei));
         node0.remove_vertex(v.ei);
         node1.insert_vertex(v.vi, kOppositeEdge.at(v.ei));
       }
@@ -365,25 +365,22 @@ class lattice : public primitive_lattice {
 
  private:
   struct seed_node {
-    cell_vector cv;
+    lattice_coordinates lc;
     geometry::vector3d corrector;
     int k;
   };
 
   class interpolated_value {
    public:
-    explicit interpolated_value(const geometry::point3d& p, const Base& lattice) {
-      cvs_ = lattice.tetrahedron(p);
-      auto p0 = lattice.cell_node_point(cvs_.row(0));
-      auto p1 = lattice.cell_node_point(cvs_.row(1));
-      auto p2 = lattice.cell_node_point(cvs_.row(2));
-      auto p3 = lattice.cell_node_point(cvs_.row(3));
-      weights_ = barycentric_coordinates(p, p0, p1, p2, p3);
-    }
+    explicit interpolated_value(const geometry::point3d& p, const Base& lattice)
+        : tet_(lattice.tetrahedron(p)),
+          weights_(barycentric_coordinates(
+              p, lattice.position(tet_.row(0)), lattice.position(tet_.row(1)),
+              lattice.position(tet_.row(2)), lattice.position(tet_.row(3)))) {}
 
-    void tell(const cell_vector& cv, double value) {
+    void tell(const lattice_coordinates& lc, double value) {
       for (index_t i = 0; i < 4; i++) {
-        if (cvs_.row(i) == cv) {
+        if (tet_.row(i) == lc) {
           values_(i) = value;
           populated_.at(i) = true;
           break;
@@ -402,14 +399,14 @@ class lattice : public primitive_lattice {
     binary_sign value_sign() const { return sign(value()); }
 
    private:
-    cell_vectors cvs_;
-    geometry::vectorNd<4> weights_;
+    const Eigen::Matrix<int, 4, 3, Eigen::RowMajor> tet_;
+    const geometry::vectorNd<4> weights_;
     geometry::vectorNd<4> values_;
     std::array<bool, 4> populated_{false, false, false, false};
   };
 
   struct vertex_data {
-    cell_vector node_cv;
+    lattice_coordinates node_lc;
     edge_index ei{};
     index_t vi{};
     double t0{};
@@ -420,8 +417,8 @@ class lattice : public primitive_lattice {
     double v2{};
 
     geometry::point3d position_clamped(const NodeList& node_list) const {
-      const auto& node0 = node_list.at(node_cv);
-      const auto& node1 = node_list.at(neighbor(node_cv, ei));
+      const auto& node0 = node_list.at(node_lc);
+      const auto& node1 = node_list.at(neighbor(node_lc, ei));
       const auto& p0 = node0.position();
       const auto& p1 = node1.position();
       auto t = std::clamp(t1, kVertexPositionMinimumOffset, 1.0 - kVertexPositionMinimumOffset);
@@ -429,8 +426,8 @@ class lattice : public primitive_lattice {
     }
 
     geometry::point3d position_unclamped(const NodeList& node_list) const {
-      const auto& node0 = node_list.at(node_cv);
-      const auto& node1 = node_list.at(neighbor(node_cv, ei));
+      const auto& node0 = node_list.at(node_lc);
+      const auto& node1 = node_list.at(neighbor(node_lc, ei));
       const auto& p0 = node0.position();
       const auto& p1 = node1.position();
       auto t = t1;
@@ -439,24 +436,24 @@ class lattice : public primitive_lattice {
   };
 
   // Returns true if the node is added.
-  bool add_node(const cell_vector& cv) {
-    if (node_list_.contains(cv)) {
+  bool add_node(const lattice_coordinates& lc) {
+    if (node_list_.contains(lc)) {
       return false;
     }
 
-    return add_node_unchecked(cv);
+    return add_node_unchecked(lc);
   }
 
   // Returns true if the node is added.
-  bool add_node_unchecked(const cell_vector& cv) {
-    auto p = cell_node_point(cv);
+  bool add_node_unchecked(const lattice_coordinates& lc) {
+    auto p = position(lc);
 
     if (!second_extended_bbox().contains(p)) {
       return false;
     }
 
-    node_list_.emplace(cv, Node(p));
-    nodes_to_evaluate_.push_back(cv);
+    node_list_.emplace(lc, Node(p));
+    nodes_to_evaluate_.push_back(lc);
 
     return true;
   }
@@ -492,40 +489,40 @@ class lattice : public primitive_lattice {
     geometry::points3d points(nodes_to_evaluate_.size(), 3);
 
     auto point_it = points.rowwise().begin();
-    for (const auto& cv : nodes_to_evaluate_) {
-      *point_it++ = node_list_.at(cv).position();
+    for (const auto& lc : nodes_to_evaluate_) {
+      *point_it++ = node_list_.at(lc).position();
     }
 
     vectord values = field_fn(points).array() - isovalue;
     auto& arb_value = value_at_arbitrary_point_.value();
 
     index_t i{};
-    for (const auto& cv : nodes_to_evaluate_) {
+    for (const auto& lc : nodes_to_evaluate_) {
       auto value = values(i);
-      node_list_.at(cv).set_value(value);
-      arb_value.tell(cv, value);
+      node_list_.at(lc).set_value(value);
+      arb_value.tell(lc, value);
       i++;
     }
 
     nodes_to_evaluate_.clear();
   }
 
-  void generate_vertices(const std::vector<cell_vector>& node_cvs) {
+  void generate_vertices(const std::vector<lattice_coordinates>& node_lcs) {
 #pragma omp parallel for
     // NOLINTNEXTLINE(modernize-loop-convert)
-    for (std::size_t i = 0; i < node_cvs.size(); i++) {
-      const auto& cv0 = node_cvs.at(i);
-      auto& node0 = node_list_.at(cv0);
+    for (std::size_t i = 0; i < node_lcs.size(); i++) {
+      const auto& lc0 = node_lcs.at(i);
+      auto& node0 = node_list_.at(lc0);
       auto v0 = node0.value();
       auto sign_v0 = node0.value_sign();
 
       for (edge_index ei = 0; ei < 14; ei++) {
-        auto cv1 = neighbor(cv0, ei);
-        if (!cell_vector_less()(cv1, cv0)) {
+        auto lc1 = neighbor(lc0, ei);
+        if (!lattice_coordinates_less()(lc1, lc0)) {
           continue;
         }
 
-        auto* node1_ptr = node_list_.node_ptr(cv1);
+        auto* node1_ptr = node_list_.node_ptr(lc1);
         if (node1_ptr == nullptr) {
           // There is no neighbor node on the opposite end of the edge.
           continue;
@@ -549,13 +546,13 @@ class lattice : public primitive_lattice {
 
           if (t < 0.5) {
             node0.insert_vertex(vi, ei);
-            vertices_.emplace_back(cv0, ei, vi,                                  //
+            vertices_.emplace_back(lc0, ei, vi,                                  //
                                    0.0, v0,                                      //
                                    t, std::numeric_limits<double>::quiet_NaN(),  //
                                    1.0, v1);
           } else {
             node1.insert_vertex(vi, opp_ei);
-            vertices_.emplace_back(cv1, opp_ei, vi,                                    //
+            vertices_.emplace_back(lc1, opp_ei, vi,                                    //
                                    0.0, v1,                                            //
                                    1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
                                    1.0, v0);
@@ -594,18 +591,18 @@ class lattice : public primitive_lattice {
     return vertices;
   }
 
-  geometry::vector3d gradient(const auto& cv) const {
-    std::array<cell_vector, 7> cvs{cv,
-                                   neighbor(cv, edge::k1),
-                                   neighbor(cv, edge::k3),
-                                   neighbor(cv, edge::k5),
-                                   neighbor(cv, edge::k8),
-                                   neighbor(cv, edge::kA),
-                                   neighbor(cv, edge::kC)};
+  geometry::vector3d gradient(const lattice_coordinates& lc) const {
+    std::array<lattice_coordinates, 7> lcs{lc,
+                                           neighbor(lc, edge::k1),
+                                           neighbor(lc, edge::k3),
+                                           neighbor(lc, edge::k5),
+                                           neighbor(lc, edge::k8),
+                                           neighbor(lc, edge::kA),
+                                           neighbor(lc, edge::kC)};
     matrixd a(7, 4);
     vectord b(7);
     for (index_t i = 0; i < 7; i++) {
-      const auto& n = node_list_.at(cvs.at(i));
+      const auto& n = node_list_.at(lcs.at(i));
       a.row(i) << n.position().x(), n.position().y(), n.position().z(), 1.0;
       b(i) = std::abs(n.value());
     }
@@ -616,9 +613,9 @@ class lattice : public primitive_lattice {
     return x.head<3>();
   }
 
-  bool is_boundary_node(const cell_vector& cv) const {
+  bool is_boundary_node(const lattice_coordinates& lc) const {
     for (edge_index ei = 0; ei < 14; ei++) {
-      geometry::vector3d p = cell_node_point(neighbor(cv, ei));
+      geometry::vector3d p = position(neighbor(lc, ei));
       if (!second_extended_bbox().contains(p)) {
         return true;
       }
@@ -626,26 +623,26 @@ class lattice : public primitive_lattice {
     return false;
   }
 
-  std::vector<cell_vector> knn_nodes(const cell_vector& cv, int k) const {
-    std::unordered_set<cell_vector, cell_vector_hash> visited;
-    visited.insert(cv);
+  std::vector<lattice_coordinates> knn_nodes(const lattice_coordinates& lc, int k) const {
+    std::unordered_set<lattice_coordinates, lattice_coordinates_hash> visited;
+    visited.insert(lc);
 
-    std::vector<cell_vector> frontier{cv};
-    std::vector<cell_vector> next_frontier;
+    std::vector<lattice_coordinates> frontier{lc};
+    std::vector<lattice_coordinates> next_frontier;
 
     for (int i = 0; i < k; i++) {
-      for (const auto& ncv : frontier) {
+      for (const auto& nlc : frontier) {
         for (edge_index ei = 0; ei < 14; ei++) {
-          auto nncv = neighbor(ncv, ei);
-          if (visited.contains(nncv)) {
+          auto nnlc = neighbor(nlc, ei);
+          if (visited.contains(nnlc)) {
             continue;
           }
-          auto p = cell_node_point(nncv);
+          auto p = position(nnlc);
           if (!second_extended_bbox().contains(p)) {
             continue;
           }
-          visited.insert(nncv);
-          next_frontier.push_back(nncv);
+          visited.insert(nnlc);
+          next_frontier.push_back(nnlc);
         }
       }
 
@@ -688,9 +685,9 @@ class lattice : public primitive_lattice {
   }
 
   // Removes nodes without any intersections.
-  void remove_free_nodes(const std::vector<cell_vector>& node_cvs) {
-    for (const auto& cv : node_cvs) {
-      auto it = node_list_.find(cv);
+  void remove_free_nodes(const std::vector<lattice_coordinates>& node_lcs) {
+    for (const auto& lc : node_lcs) {
+      auto it = node_list_.find(lc);
       if (it->second.is_free()) {
         node_list_.erase(it->first);
       }
@@ -711,7 +708,7 @@ class lattice : public primitive_lattice {
   }
 
   NodeList node_list_;
-  std::vector<cell_vector> nodes_to_evaluate_;
+  std::vector<lattice_coordinates> nodes_to_evaluate_;
   std::vector<vertex_data> vertices_;
   std::unordered_map<index_t, index_t> cluster_map_;
   std::vector<geometry::point3d> clustered_vertices_;
