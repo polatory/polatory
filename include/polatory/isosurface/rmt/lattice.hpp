@@ -596,10 +596,12 @@ class lattice : public primitive_lattice {
 
   geometry::vector3d gradient(const auto& cv) const {
     std::array<cell_vector, 7> cvs{cv,
-                                   // 6NN
-                                   neighbor(cv, edge::k1), neighbor(cv, edge::k3),
-                                   neighbor(cv, edge::k5), neighbor(cv, edge::k8),
-                                   neighbor(cv, edge::kA), neighbor(cv, edge::kC)};
+                                   neighbor(cv, edge::k1),
+                                   neighbor(cv, edge::k3),
+                                   neighbor(cv, edge::k5),
+                                   neighbor(cv, edge::k8),
+                                   neighbor(cv, edge::kA),
+                                   neighbor(cv, edge::kC)};
     matrixd a(7, 4);
     vectord b(7);
     for (index_t i = 0; i < 7; i++) {
@@ -612,10 +614,6 @@ class lattice : public primitive_lattice {
     vectord rhs = a.transpose() * b;
     vectord x = system.ldlt().solve(rhs);
     return x.head<3>();
-  }
-
-  static bool has_intersection(const Node* a, const Node* b) {
-    return a != nullptr && b != nullptr && a->value_sign() != b->value_sign();
   }
 
   bool is_boundary_node(const cell_vector& cv) const {

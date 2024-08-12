@@ -140,13 +140,13 @@ class tetrahedron {
 
   static std::optional<index_t> vertex_on_edge(const Node& node, edge_index edge_idx,
                                                const Node& opp_node) {
-    if (node.has_intersection(edge_idx)) {
-      return node.vertex_on_edge(edge_idx);
+    if (node.has_vertex(edge_idx)) {
+      return node.vertex(edge_idx);
     }
 
     auto opp_edge_idx = kOppositeEdge.at(edge_idx);
-    if (opp_node.has_intersection(opp_edge_idx)) {
-      return opp_node.vertex_on_edge(opp_edge_idx);
+    if (opp_node.has_vertex(opp_edge_idx)) {
+      return opp_node.vertex(opp_edge_idx);
     }
 
     return {};

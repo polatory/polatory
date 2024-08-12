@@ -61,7 +61,7 @@ class node {
       geometry::point3d clustered = geometry::point3d::Zero();
       while (surface != 0) {
         auto edge_idx = bit_pop(&surface);
-        auto vi = vertex_on_edge(edge_idx);
+        auto vi = vertex(edge_idx);
         clustered += vertices.at(vi);
         cluster_map.emplace(vi, new_vi);
       }
@@ -71,13 +71,13 @@ class node {
     }
   }
 
-  bool has_intersection(edge_index edge_idx) const {
+  bool has_vertex(edge_index edge_idx) const {
     edge_bitset edge_bit = 1 << edge_idx;
     return (intersections_ & edge_bit) != 0;
   }
 
   void insert_vertex(index_t vi, edge_index edge_idx) {
-    POLATORY_ASSERT(!has_intersection(edge_idx));
+    POLATORY_ASSERT(!has_vertex(edge_idx));
 
     if (!vis_) {
       vis_ = std::make_unique<std::vector<index_t>>();
@@ -91,7 +91,7 @@ class node {
     auto it = vis_->begin() + bit_count(static_cast<edge_bitset>(intersections_ & edge_count_mask));
     vis_->insert(it, vi);
 
-    POLATORY_ASSERT(vertex_on_edge(edge_idx) == vi);
+    POLATORY_ASSERT(vertex(edge_idx) == vi);
   }
 
   bool is_free() const { return all_intersections_ == 0; }
@@ -99,7 +99,7 @@ class node {
   const geometry::point3d& position() const { return position_; }
 
   void remove_vertex(edge_index edge_idx) {
-    POLATORY_ASSERT(has_intersection(edge_idx));
+    POLATORY_ASSERT(has_vertex(edge_idx));
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;
@@ -125,8 +125,8 @@ class node {
 
   binary_sign value_sign() const { return sign(value()); }
 
-  index_t vertex_on_edge(edge_index edge_idx) const {
-    POLATORY_ASSERT(has_intersection(edge_idx));
+  index_t vertex(edge_index edge_idx) const {
+    POLATORY_ASSERT(has_vertex(edge_idx));
 
     edge_bitset edge_bit = 1 << edge_idx;
     edge_bitset edge_count_mask = edge_bit - 1;
