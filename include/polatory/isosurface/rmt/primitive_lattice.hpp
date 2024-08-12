@@ -49,13 +49,12 @@ class primitive_lattice {
   const geometry::bbox3d& bbox() const { return bbox_; }
 
   geometry::point3d cell_node_point(const cell_vector& cv) const {
-    return (cv_offset_(0) + static_cast<double>(cv(0))) * a0_ +
-           (cv_offset_(1) + static_cast<double>(cv(1))) * a1_ +
-           (cv_offset_(2) + static_cast<double>(cv(2))) * a2_;
+    return (cv_offset_(0) + cv(0)) * a0_ + (cv_offset_(1) + cv(1)) * a1_ +
+           (cv_offset_(2) + cv(2)) * a2_;
   }
 
   std::pair<int, int> first_cell_vector_range(int m1, int m2) const {
-    geometry::point3d point = m1 * a1_ + m2 * a2_;
+    geometry::point3d point = (cv_offset_(1) + m1) * a1_ + (cv_offset_(2) + m2) * a2_;
     geometry::point3d direction = a0_;
     const auto& bbox = second_extended_bbox();
 
@@ -86,7 +85,7 @@ class primitive_lattice {
     std::vector<geometry::vector3d> vertices;
 
     geometry::vector3d normal = a0_.cross(a1_);
-    auto d = -normal.dot(m2 * a2_);
+    auto d = -normal.dot((cv_offset_(2) + m2) * a2_);
     auto bbox_vertices = second_extended_bbox().corners();
     for (auto i = 0; i < 7; i++) {
       for (auto j = i + 1; j < 8; j++) {
@@ -191,7 +190,7 @@ class primitive_lattice {
 
   geometry::vector3d compute_cv_offset() const {
     geometry::point3d center = bbox_.center();
-    return {std::floor(center.dot(b0_)), std::floor(center.dot(b1_)), std::floor(center.dot(b2_))};
+    return {std::round(center.dot(b0_)), std::round(center.dot(b1_)), std::round(center.dot(b2_))};
   }
 
   geometry::bbox3d compute_extended_bbox(int extension) const {
