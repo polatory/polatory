@@ -7,11 +7,11 @@
 
 namespace polatory::isosurface {
 
-mesh_defects_finder::mesh_defects_finder(const Points& vertices, const Faces& faces)
-    : vertices_(vertices), faces_(faces), vf_map_(vertices_.rows()) {
-  auto n_faces = faces.rows();
+mesh_defects_finder::mesh_defects_finder(const Mesh& mesh)
+    : vertices_(mesh.vertices()), faces_(mesh.faces()), vf_map_(vertices_.rows()) {
+  auto n_faces = faces_.rows();
   for (index_t fi = 0; fi < n_faces; fi++) {
-    auto f = faces.row(fi);
+    auto f = faces_.row(fi);
     vf_map_.at(f(0)).push_back(fi);
     vf_map_.at(f(1)).push_back(fi);
     vf_map_.at(f(2)).push_back(fi);

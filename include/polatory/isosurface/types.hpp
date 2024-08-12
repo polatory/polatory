@@ -1,11 +1,10 @@
 #pragma once
 
-#include <array>
 #include <polatory/types.hpp>
 
 namespace polatory::isosurface {
 
-using vertex_index = index_t;
-using face = std::array<vertex_index, 3>;
+using face = Eigen::Matrix<index_t, 1, 3>;
+using faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 }  // namespace polatory::isosurface

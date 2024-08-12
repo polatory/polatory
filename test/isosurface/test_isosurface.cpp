@@ -12,6 +12,7 @@
 
 #include "../utility.hpp"
 
+using polatory::index_t;
 using polatory::vectord;
 using polatory::geometry::bbox3d;
 using polatory::geometry::matrix3d;
@@ -20,9 +21,8 @@ using polatory::geometry::points3d;
 using polatory::geometry::vector3d;
 using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
+using polatory::isosurface::mesh;
 using polatory::isosurface::mesh_defects_finder;
-using polatory::isosurface::surface;
-using polatory::isosurface::vertex_index;
 
 namespace {
 
@@ -64,7 +64,7 @@ class signed_distance_from_plane : public field_function {
   double d_;
 };
 
-using halfedge = std::pair<vertex_index, vertex_index>;
+using halfedge = std::pair<index_t, index_t>;
 
 struct halfedge_hash {
   std::size_t operator()(const halfedge& e) const noexcept {
@@ -75,9 +75,9 @@ struct halfedge_hash {
   }
 };
 
-bool test_boundary_coordinates(const surface& surface, const bbox3d& bbox) {
+bool test_boundary_coordinates(const mesh& mesh, const bbox3d& bbox) {
   std::unordered_set<halfedge, halfedge_hash> boundary_hes;
-  for (auto f : surface.faces().rowwise()) {
+  for (auto f : mesh.faces().rowwise()) {
     for (auto i = 0; i < 3; i++) {
       auto he = std::make_pair(f(i), f((i + 1) % 3));
       auto opp_he = std::make_pair(he.second, he.first);
@@ -90,7 +90,7 @@ bool test_boundary_coordinates(const surface& surface, const bbox3d& bbox) {
     }
   }
 
-  std::unordered_set<vertex_index> boundary_vertices;
+  std::unordered_set<index_t> boundary_vertices;
   for (const auto& he : boundary_hes) {
     boundary_vertices.insert(he.first);
     boundary_vertices.insert(he.second);
@@ -99,7 +99,7 @@ bool test_boundary_coordinates(const surface& surface, const bbox3d& bbox) {
   const auto& min = bbox.min();
   const auto& max = bbox.max();
   for (auto vi : boundary_vertices) {
-    auto p = surface.vertices().row(vi);
+    auto p = mesh.vertices().row(vi);
     if (!(bbox.contains(p) && (p.array() == min.array() || p.array() == max.array()).any())) {
       return false;
     }
@@ -117,10 +117,10 @@ TEST(isosurface, generate) {
   isosurface isosurf(bbox, resolution);
   distance_from_point field_fn;
 
-  auto surface = isosurf.generate(field_fn, 1.0);
+  auto mesh = isosurf.generate(field_fn, 1.0);
 
-  ASSERT_EQ(1082, surface.vertices().rows());
-  ASSERT_EQ(2160, surface.faces().rows());
+  ASSERT_EQ(1082, mesh.vertices().rows());
+  ASSERT_EQ(2160, mesh.faces().rows());
 }
 
 TEST(isosurface, generate_from_seed_points) {
@@ -133,10 +133,10 @@ TEST(isosurface, generate_from_seed_points) {
   points3d seed_points(1, 3);
   seed_points << point3d(1.0, 0.0, 0.0);
 
-  auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
+  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
-  ASSERT_EQ(1082, surface.vertices().rows());
-  ASSERT_EQ(2160, surface.faces().rows());
+  ASSERT_EQ(1082, mesh.vertices().rows());
+  ASSERT_EQ(2160, mesh.faces().rows());
 }
 
 TEST(isosurface, generate_empty) {
@@ -146,10 +146,10 @@ TEST(isosurface, generate_empty) {
   isosurface isosurf(bbox, resolution);
   signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
 
-  auto surface = isosurf.generate(field_fn, -1.01 * std::numbers::sqrt3);
+  auto mesh = isosurf.generate(field_fn, -1.01 * std::numbers::sqrt3);
 
-  ASSERT_TRUE(surface.is_empty());
-  ASSERT_FALSE(surface.is_entire());
+  ASSERT_TRUE(mesh.is_empty());
+  ASSERT_FALSE(mesh.is_entire());
 }
 
 TEST(isosurface, generate_empty_from_seed_points) {
@@ -162,11 +162,10 @@ TEST(isosurface, generate_empty_from_seed_points) {
   points3d seed_points(1, 3);
   seed_points << point3d::Zero();
 
-  auto surface =
-      isosurf.generate_from_seed_points(seed_points, field_fn, -1.01 * std::numbers::sqrt3);
+  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, -1.01 * std::numbers::sqrt3);
 
-  ASSERT_TRUE(surface.is_empty());
-  ASSERT_FALSE(surface.is_entire());
+  ASSERT_TRUE(mesh.is_empty());
+  ASSERT_FALSE(mesh.is_entire());
 }
 
 TEST(isosurface, generate_entire) {
@@ -176,10 +175,10 @@ TEST(isosurface, generate_entire) {
   isosurface isosurf(bbox, resolution);
   signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
 
-  auto surface = isosurf.generate(field_fn, 1.01 * std::numbers::sqrt3);
+  auto mesh = isosurf.generate(field_fn, 1.01 * std::numbers::sqrt3);
 
-  ASSERT_FALSE(surface.is_empty());
-  ASSERT_TRUE(surface.is_entire());
+  ASSERT_FALSE(mesh.is_empty());
+  ASSERT_TRUE(mesh.is_entire());
 }
 
 TEST(isosurface, generate_entire_from_seed_points) {
@@ -192,11 +191,10 @@ TEST(isosurface, generate_entire_from_seed_points) {
   points3d seed_points(1, 3);
   seed_points << point3d::Zero();
 
-  auto surface =
-      isosurf.generate_from_seed_points(seed_points, field_fn, 1.01 * std::numbers::sqrt3);
+  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 1.01 * std::numbers::sqrt3);
 
-  ASSERT_FALSE(surface.is_empty());
-  ASSERT_TRUE(surface.is_entire());
+  ASSERT_FALSE(mesh.is_empty());
+  ASSERT_TRUE(mesh.is_entire());
 }
 
 TEST(isosurface, generate_from_seed_points_gradient_search) {
@@ -227,10 +225,10 @@ TEST(isosurface, generate_plane) {
   isosurface isosurf(bbox, resolution);
   signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
 
-  auto surface = isosurf.generate(field_fn);
+  auto mesh = isosurf.generate(field_fn);
 
-  ASSERT_EQ(821, surface.vertices().rows());
-  ASSERT_EQ(1422, surface.faces().rows());
+  ASSERT_EQ(821, mesh.vertices().rows());
+  ASSERT_EQ(1422, mesh.faces().rows());
 }
 
 TEST(isosurface, manifold) {
@@ -241,14 +239,14 @@ TEST(isosurface, manifold) {
   isosurface isosurf(bbox, resolution, aniso);
   random_field_function field_fn;
 
-  auto surface = isosurf.generate(field_fn, 0.0, 0);
+  auto mesh = isosurf.generate(field_fn, 0.0, 0);
 
-  mesh_defects_finder defects(surface.vertices(), surface.faces());
+  mesh_defects_finder defects(mesh);
 
   const auto& min = bbox.min();
   const auto& max = bbox.max();
   for (auto vi : defects.singular_vertices()) {
-    point3d p = surface.vertices().row(vi);
+    point3d p = mesh.vertices().row(vi);
     ASSERT_TRUE((p.array() == min.array() || p.array() == max.array()).any());
   }
 
@@ -263,9 +261,9 @@ TEST(isosurface, boundary_coordinates) {
   isosurface isosurf(bbox, resolution, aniso);
   random_field_function field_fn;
 
-  auto surface = isosurf.generate(field_fn, 0.0, 0);
+  auto mesh = isosurf.generate(field_fn, 0.0, 0);
 
-  ASSERT_TRUE(test_boundary_coordinates(surface, bbox));
+  ASSERT_TRUE(test_boundary_coordinates(mesh, bbox));
 }
 
 TEST(isosurface, boundary_coordinates_seed_points) {
@@ -279,7 +277,7 @@ TEST(isosurface, boundary_coordinates_seed_points) {
   points3d seed_points(1, 3);
   seed_points << point3d::Zero();
 
-  auto surface = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
+  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
 
-  ASSERT_TRUE(test_boundary_coordinates(surface, bbox));
+  ASSERT_TRUE(test_boundary_coordinates(mesh, bbox));
 }

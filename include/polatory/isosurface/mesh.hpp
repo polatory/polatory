@@ -4,6 +4,7 @@
 #include <format>
 #include <fstream>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/types.hpp>
 #include <polatory/numeric/conv.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -14,18 +15,17 @@ namespace polatory::isosurface {
 
 struct entire_tag {};
 
-class surface {
-  using Face = Eigen::Matrix<index_t, 1, 3>;
-  using Faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
+class mesh {
+  using Face = face;
+  using Faces = faces;
   using Points = geometry::points3d;
 
  public:
-  surface() = default;
+  mesh() = default;
 
-  surface(Points vertices, Faces faces)
-      : vertices_(std::move(vertices)), faces_(std::move(faces)) {}
+  mesh(Points vertices, Faces faces) : vertices_(std::move(vertices)), faces_(std::move(faces)) {}
 
-  explicit surface(entire_tag /*tag*/) : entire_(true) {}
+  explicit mesh(entire_tag /*tag*/) : entire_(true) {}
 
   void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);

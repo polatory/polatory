@@ -25,11 +25,11 @@ using polatory::geometry::matrix3d;
 using polatory::geometry::point3d;
 using polatory::geometry::points3d;
 using polatory::geometry::vector3d;
+using polatory::isosurface::face;
+using polatory::isosurface::faces;
 using polatory::isosurface::field_function;
 using polatory::isosurface::isosurface;
 using polatory::rbf::biharmonic3d;
-using face = Eigen::Matrix<index_t, 1, 3>;
-using faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 class mesh_distance {
   using halfedge = std::pair<index_t, index_t>;

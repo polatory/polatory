@@ -262,10 +262,10 @@ PYBIND11_MODULE(_core, m) {
       .def("generate_from_seed_points", &isosurface::isosurface::generate_from_seed_points,
            "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = 1);
 
-  py::class_<isosurface::surface>(m, "Surface")
-      .def("export_obj", &isosurface::surface::export_obj, "filename"_a)
-      .def_property_readonly("faces", &isosurface::surface::faces)
-      .def_property_readonly("vertices", &isosurface::surface::vertices);
+  py::class_<isosurface::mesh>(m, "Mesh")
+      .def("export_obj", &isosurface::mesh::export_obj, "filename"_a)
+      .def_property_readonly("faces", &isosurface::mesh::faces)
+      .def_property_readonly("vertices", &isosurface::mesh::vertices);
 
   py::class_<kriging::normal_score_transformation>(m, "NormalScoreTransformation")
       .def(py::init<int>(), "order"_a = 30)

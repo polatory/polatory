@@ -2,18 +2,21 @@
 
 #include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/mesh.hpp>
+#include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <vector>
 
 namespace polatory::isosurface {
 
 class mesh_defects_finder {
-  using Face = Eigen::Matrix<index_t, 1, 3>;
-  using Faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
+  using Face = face;
+  using Faces = faces;
+  using Mesh = mesh;
   using Points = geometry::points3d;
 
  public:
-  mesh_defects_finder(const Points& vertices, const Faces& faces);
+  explicit mesh_defects_finder(const Mesh& mesh);
 
   std::vector<index_t> intersecting_faces() const;
 

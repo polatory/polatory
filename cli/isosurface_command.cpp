@@ -19,8 +19,8 @@ using polatory::geometry::bbox3d;
 using polatory::geometry::matrix3d;
 using polatory::geometry::points3d;
 using polatory::isosurface::isosurface;
+using polatory::isosurface::mesh;
 using polatory::isosurface::rbf_field_function;
-using polatory::isosurface::surface;
 using polatory::numeric::to_double;
 
 namespace {
@@ -51,11 +51,11 @@ void run_impl(const options& opts) {
     seed_points = table(Eigen::all, {0, 1, 2});
   }
 
-  auto surface = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(
-                                              seed_points, field_fn, opts.isovalue, opts.refine)
-                                        : isosurf.generate(field_fn, opts.isovalue, opts.refine);
+  auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn,
+                                                                         opts.isovalue, opts.refine)
+                                     : isosurf.generate(field_fn, opts.isovalue, opts.refine);
 
-  surface.export_obj(opts.out_file);
+  mesh.export_obj(opts.out_file);
 }
 
 }  // namespace

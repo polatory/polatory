@@ -6,15 +6,17 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <memory>
+#include <iterator>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
+#include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/rmt/neighbor.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
 #include <polatory/isosurface/rmt/node_list.hpp>
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
+#include <polatory/isosurface/rmt/tetrahedron.hpp>
 #include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
@@ -27,6 +29,9 @@ namespace polatory::isosurface::rmt {
 
 class lattice : public primitive_lattice {
   using Base = primitive_lattice;
+  using Face = face;
+  using Faces = faces;
+  using Mesh = mesh;
   using Node = node;
   using NodeList = node_list;
 
@@ -270,88 +275,37 @@ class lattice : public primitive_lattice {
     }
   }
 
-  void generate_vertices(const std::vector<cell_vector>& node_cvs) {
-#pragma omp parallel for
-    // NOLINTNEXTLINE(modernize-loop-convert)
-    for (std::size_t i = 0; i < node_cvs.size(); i++) {
-      const auto& cv0 = node_cvs.at(i);
-      auto& node0 = node_list_.at(cv0);
-      auto v0 = node0.value();
-      auto sign_v0 = node0.value_sign();
-
-      for (edge_index ei = 0; ei < 14; ei++) {
-        auto cv1 = neighbor(cv0, ei);
-        if (!cell_vector_less()(cv1, cv0)) {
-          continue;
-        }
-
-        auto* node1_ptr = node_list_.node_ptr(cv1);
-        if (node1_ptr == nullptr) {
-          // There is no neighbor node on the opposite end of the edge.
-          continue;
-        }
-
-        auto& node1 = *node1_ptr;
-        auto v1 = node1.value();
-        auto sign_v1 = node1.value_sign();
-
-        if (sign_v0 == sign_v1) {
-          // There is no intersection on the edge.
-          continue;
-        }
-
-        auto t = v0 / (v0 - v1);
-
-#pragma omp critical
-        {
-          auto vi = static_cast<vertex_index>(vertices_.size());
-          auto opp_ei = kOppositeEdge.at(ei);
-
-          if (t < 0.5) {
-            node0.insert_vertex(vi, ei);
-            vertices_.emplace_back(cv0, ei, vi,                                  //
-                                   0.0, v0,                                      //
-                                   t, std::numeric_limits<double>::quiet_NaN(),  //
-                                   1.0, v1);
-          } else {
-            node1.insert_vertex(vi, opp_ei);
-            vertices_.emplace_back(cv1, opp_ei, vi,                                    //
-                                   0.0, v1,                                            //
-                                   1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
-                                   1.0, v0);
-          }
-
-          node0.set_intersection(ei);
-          node1.set_intersection(opp_ei);
-        }
+  Mesh get_mesh() const {
+    std::vector<face> faces_v;
+    auto inserter = std::back_inserter(faces_v);
+    for (const auto& cv_node : node_list_) {
+      const auto& cv = cv_node.first;
+      for (tetrahedron_iterator it(cv, node_list_); it.is_valid(); ++it) {
+        it->get_faces(inserter);
       }
     }
-  }
 
-  geometry::points3d get_vertices() const {
-    geometry::points3d vertices(static_cast<index_t>(vertices_.size() + clustered_vertices_.size()),
-                                3);
-    auto it = vertices.rowwise().begin();
-    for (const auto& v : vertices_) {
-      *it++ = v.position_clamped(node_list_);
-    }
-    for (const auto& v : clustered_vertices_) {
-      *it++ = v;
-    }
+    Faces faces(static_cast<index_t>(faces_v.size()), 3);
+    index_t n_faces = 0;
 
-    // To reduce the risk of generating near-degenerate faces during surface clipping,
-    // snap vertices that are very close to the bbox .
+    auto it = faces.rowwise().begin();
+    for (const auto& face : faces_v) {
+      auto v0 = clustered_vertex_index(face(0));
+      auto v1 = clustered_vertex_index(face(1));
+      auto v2 = clustered_vertex_index(face(2));
 
-    const auto& min = bbox().min();
-    const auto& max = bbox().max();
-    auto tiny = 1e-10 * resolution();
+      if (v0 == v1 || v1 == v2 || v2 == v0) {
+        // Degenerate face (due to vertex clustering).
+        continue;
+      }
 
-    for (auto p : vertices.rowwise()) {
-      p = ((p.array() - min.array()).abs() < tiny).select(min, p);
-      p = ((p.array() - max.array()).abs() < tiny).select(max, p);
+      *it++ << v0, v1, v2;
+      n_faces++;
     }
 
-    return vertices;
+    faces.conservativeResize(n_faces, 3);
+
+    return {get_vertices(), faces};
   }
 
   void refine_vertices(const field_function& field_fn, double isovalue, int num_passes) {
@@ -388,7 +342,7 @@ class lattice : public primitive_lattice {
     }
   }
 
-  index_t uncluster_vertices(const std::unordered_set<vertex_index>& vis) {
+  index_t uncluster_vertices(const std::unordered_set<index_t>& vis) {
     index_t num_unclustered = 0;
 
     auto it = cluster_map_.begin();
@@ -410,8 +364,6 @@ class lattice : public primitive_lattice {
   }
 
  private:
-  friend class surface_generator;
-
   struct seed_node {
     cell_vector cv;
     geometry::vector3d corrector;
@@ -459,7 +411,7 @@ class lattice : public primitive_lattice {
   struct vertex_data {
     cell_vector node_cv;
     edge_index ei{};
-    vertex_index vi{};
+    index_t vi{};
     double t0{};
     double v0{};
     double t1{};
@@ -527,7 +479,7 @@ class lattice : public primitive_lattice {
     return geometry::vectorNd<4>(va, vb, vc, vd) / v;
   }
 
-  vertex_index clustered_vertex_index(vertex_index vi) const {
+  index_t clustered_vertex_index(index_t vi) const {
     return cluster_map_.contains(vi) ? cluster_map_.at(vi) : vi;
   }
 
@@ -556,6 +508,90 @@ class lattice : public primitive_lattice {
     }
 
     nodes_to_evaluate_.clear();
+  }
+
+  void generate_vertices(const std::vector<cell_vector>& node_cvs) {
+#pragma omp parallel for
+    // NOLINTNEXTLINE(modernize-loop-convert)
+    for (std::size_t i = 0; i < node_cvs.size(); i++) {
+      const auto& cv0 = node_cvs.at(i);
+      auto& node0 = node_list_.at(cv0);
+      auto v0 = node0.value();
+      auto sign_v0 = node0.value_sign();
+
+      for (edge_index ei = 0; ei < 14; ei++) {
+        auto cv1 = neighbor(cv0, ei);
+        if (!cell_vector_less()(cv1, cv0)) {
+          continue;
+        }
+
+        auto* node1_ptr = node_list_.node_ptr(cv1);
+        if (node1_ptr == nullptr) {
+          // There is no neighbor node on the opposite end of the edge.
+          continue;
+        }
+
+        auto& node1 = *node1_ptr;
+        auto v1 = node1.value();
+        auto sign_v1 = node1.value_sign();
+
+        if (sign_v0 == sign_v1) {
+          // There is no intersection on the edge.
+          continue;
+        }
+
+        auto t = v0 / (v0 - v1);
+
+#pragma omp critical
+        {
+          auto vi = static_cast<index_t>(vertices_.size());
+          auto opp_ei = kOppositeEdge.at(ei);
+
+          if (t < 0.5) {
+            node0.insert_vertex(vi, ei);
+            vertices_.emplace_back(cv0, ei, vi,                                  //
+                                   0.0, v0,                                      //
+                                   t, std::numeric_limits<double>::quiet_NaN(),  //
+                                   1.0, v1);
+          } else {
+            node1.insert_vertex(vi, opp_ei);
+            vertices_.emplace_back(cv1, opp_ei, vi,                                    //
+                                   0.0, v1,                                            //
+                                   1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
+                                   1.0, v0);
+          }
+
+          node0.set_intersection(ei);
+          node1.set_intersection(opp_ei);
+        }
+      }
+    }
+  }
+
+  geometry::points3d get_vertices() const {
+    geometry::points3d vertices(static_cast<index_t>(vertices_.size() + clustered_vertices_.size()),
+                                3);
+    auto it = vertices.rowwise().begin();
+    for (const auto& v : vertices_) {
+      *it++ = v.position_clamped(node_list_);
+    }
+    for (const auto& v : clustered_vertices_) {
+      *it++ = v;
+    }
+
+    // To reduce the risk of generating near-degenerate faces during surface clipping,
+    // snap vertices that are very close to the bbox .
+
+    const auto& min = bbox().min();
+    const auto& max = bbox().max();
+    auto tiny = 1e-10 * resolution();
+
+    for (auto p : vertices.rowwise()) {
+      p = ((p.array() - min.array()).abs() < tiny).select(min, p);
+      p = ((p.array() - max.array()).abs() < tiny).select(max, p);
+    }
+
+    return vertices;
   }
 
   geometry::vector3d gradient(const auto& cv) const {
@@ -679,7 +715,7 @@ class lattice : public primitive_lattice {
   NodeList node_list_;
   std::vector<cell_vector> nodes_to_evaluate_;
   std::vector<vertex_data> vertices_;
-  std::unordered_map<vertex_index, vertex_index> cluster_map_;
+  std::unordered_map<index_t, index_t> cluster_map_;
   std::vector<geometry::point3d> clustered_vertices_;
   std::optional<interpolated_value> value_at_arbitrary_point_;
 };

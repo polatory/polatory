@@ -42,9 +42,9 @@ class node {
   explicit node(const geometry::point3d& position) : position_(position) {}
 
   void cluster(const std::vector<geometry::point3d>& vertices,
-               std::unordered_map<vertex_index, vertex_index>& cluster_map,
+               std::unordered_map<index_t, index_t>& cluster_map,
                std::vector<geometry::point3d>& clustered_vertices) const {
-    auto vi_offset = static_cast<vertex_index>(vertices.size());
+    auto vi_offset = static_cast<index_t>(vertices.size());
 
     auto surfaces = connected_components(intersections_);
     for (auto surface : surfaces) {
@@ -56,7 +56,7 @@ class node {
       }
 
       auto n = bit_count(surface);
-      auto new_vi = vi_offset + static_cast<vertex_index>(clustered_vertices.size());
+      auto new_vi = vi_offset + static_cast<index_t>(clustered_vertices.size());
 
       geometry::point3d clustered = geometry::point3d::Zero();
       while (surface != 0) {
@@ -76,11 +76,11 @@ class node {
     return (intersections_ & edge_bit) != 0;
   }
 
-  void insert_vertex(vertex_index vi, edge_index edge_idx) {
+  void insert_vertex(index_t vi, edge_index edge_idx) {
     POLATORY_ASSERT(!has_intersection(edge_idx));
 
     if (!vis_) {
-      vis_ = std::make_unique<std::vector<vertex_index>>();
+      vis_ = std::make_unique<std::vector<index_t>>();
     }
 
     edge_bitset edge_bit = 1 << edge_idx;
@@ -125,7 +125,7 @@ class node {
 
   binary_sign value_sign() const { return sign(value()); }
 
-  vertex_index vertex_on_edge(edge_index edge_idx) const {
+  index_t vertex_on_edge(edge_index edge_idx) const {
     POLATORY_ASSERT(has_intersection(edge_idx));
 
     edge_bitset edge_bit = 1 << edge_idx;
@@ -161,7 +161,7 @@ class node {
   // The corresponding bit is set if an edge crosses the isosurface.
   edge_bitset all_intersections_{};
 
-  std::unique_ptr<std::vector<vertex_index>> vis_;
+  std::unique_ptr<std::vector<index_t>> vis_;
 };
 
 }  // namespace polatory::isosurface::rmt

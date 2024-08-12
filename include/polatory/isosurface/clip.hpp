@@ -8,7 +8,7 @@
 #include <iterator>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/surface.hpp>
+#include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <unordered_map>
 #include <utility>
@@ -18,17 +18,18 @@ namespace polatory::isosurface {
 
 class surface_clipper {
   using Bbox = geometry::bbox3d;
-  using Faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
+  using Faces = faces;
   using Matrix = geometry::matrix3d;
+  using Mesh = mesh;
   using Point = geometry::point3d;
   using Point2 = geometry::point2d;
   using Triangle = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
   using Vector = geometry::vector3d;
 
  public:
-  surface_clipper(const surface& s, const Bbox& bbox) {
-    const auto& vertices = s.vertices();
-    const auto& faces = s.faces();
+  surface_clipper(const Mesh& mesh, const Bbox& bbox) {
+    const auto& vertices = mesh.vertices();
+    const auto& faces = mesh.faces();
 
     std::vector<Triangle> triangles;
     for (auto f : faces.rowwise()) {
@@ -88,10 +89,10 @@ class surface_clipper {
       face(2) = vertex_map.at(tri.row(2));
     }
 
-    clipped_surface_ = surface(std::move(clipped_vertices), std::move(clipped_faces));
+    clipped_mesh_ = Mesh(std::move(clipped_vertices), std::move(clipped_faces));
   }
 
-  const surface& clipped_surface() const { return clipped_surface_; }
+  const Mesh& clipped_mesh() const { return clipped_mesh_; }
 
  private:
   struct point_hash {
@@ -247,11 +248,11 @@ class surface_clipper {
     return {u.normalized(), v.normalized()};
   }
 
-  surface clipped_surface_;
+  Mesh clipped_mesh_;
 };
 
-inline surface clip_surface(const surface& s, const geometry::bbox3d& bbox) {
-  return surface_clipper(s, bbox).clipped_surface();
+inline mesh clip(const mesh& mesh, const geometry::bbox3d& bbox) {
+  return surface_clipper(mesh, bbox).clipped_mesh();
 }
 
 }  // namespace polatory::isosurface

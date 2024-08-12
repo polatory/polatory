@@ -1,24 +1,18 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <array>
 #include <boost/iterator/iterator_facade.hpp>
 #include <iterator>
 #include <optional>
 #include <polatory/common/macros.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
-#include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/rmt/neighbor.hpp>
 #include <polatory/isosurface/rmt/node.hpp>
 #include <polatory/isosurface/rmt/node_list.hpp>
 #include <polatory/isosurface/sign.hpp>
-#include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
-#include <vector>
 
 namespace polatory::isosurface::rmt {
-
-namespace detail {
 
 class tetrahedron {
   using Node = node;
@@ -144,8 +138,8 @@ class tetrahedron {
  private:
   friend class tetrahedron_iterator;
 
-  static std::optional<vertex_index> vertex_on_edge(const Node& node, edge_index edge_idx,
-                                                    const Node& opp_node) {
+  static std::optional<index_t> vertex_on_edge(const Node& node, edge_index edge_idx,
+                                               const Node& opp_node) {
     if (node.has_intersection(edge_idx)) {
       return node.vertex_on_edge(edge_idx);
     }
@@ -217,58 +211,6 @@ class tetrahedron_iterator
   const cell_vector& cv_;
   const node_list& node_list_;
   int index_{};
-};
-
-}  // namespace detail
-
-class surface_generator {
-  using Lattice = lattice;
-
- public:
-  explicit surface_generator(const Lattice& lattice) : lattice_(lattice) {}
-
-  Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor> get_faces() const {
-    Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor> faces(
-        static_cast<index_t>(faces_.size()), 3);
-
-    index_t n_faces = 0;
-
-    auto it = faces.rowwise().begin();
-    for (const auto& face : faces_) {
-      auto v0 = lattice_.clustered_vertex_index(face[0]);
-      auto v1 = lattice_.clustered_vertex_index(face[1]);
-      auto v2 = lattice_.clustered_vertex_index(face[2]);
-
-      if (v0 == v1 || v1 == v2 || v2 == v0) {
-        // Degenerate face (due to vertex clustering).
-        continue;
-      }
-
-      *it++ << v0, v1, v2;
-      n_faces++;
-    }
-
-    faces.conservativeResize(n_faces, 3);
-    return faces;
-  }
-
-  void generate_surface() {
-    faces_.clear();
-
-    auto inserter = std::back_inserter(faces_);
-
-    for (const auto& cv_node : lattice_.node_list_) {
-      const auto& cv = cv_node.first;
-
-      for (detail::tetrahedron_iterator it(cv, lattice_.node_list_); it.is_valid(); ++it) {
-        it->get_faces(inserter);
-      }
-    }
-  }
-
- private:
-  const Lattice& lattice_;
-  std::vector<face> faces_;
 };
 
 }  // namespace polatory::isosurface::rmt
