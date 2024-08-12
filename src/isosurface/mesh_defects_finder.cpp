@@ -279,11 +279,11 @@ bool segment3_triangle3_intersect(const geometry::point3d& p, const geometry::po
 bool mesh_defects_finder::edge_face_intersect(index_t vi, index_t vj, index_t fi) const {
   auto f = faces_.row(fi);
 
-  const auto& p = vertices_.row(vi);
-  const auto& q = vertices_.row(vj);
-  const auto& a = vertices_.row(f(0));
-  const auto& b = vertices_.row(f(1));
-  const auto& c = vertices_.row(f(2));
+  geometry::point3d p = vertices_.row(vi);
+  geometry::point3d q = vertices_.row(vj);
+  geometry::point3d a = vertices_.row(f(0));
+  geometry::point3d b = vertices_.row(f(1));
+  geometry::point3d c = vertices_.row(f(2));
 
   return segment3_triangle3_intersect(p, q, a, b, c);
 }

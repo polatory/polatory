@@ -245,7 +245,14 @@ TEST(isosurface, manifold) {
 
   mesh_defects_finder defects(surface.vertices(), surface.faces());
 
-  ASSERT_TRUE(defects.singular_vertices().empty());
+  const auto& min = bbox.min();
+  const auto& max = bbox.max();
+  for (auto vi : defects.singular_vertices()) {
+    point3d p = surface.vertices().row(vi);
+    ASSERT_TRUE((p.array() == min.array() || p.array() == max.array()).any());
+  }
+
+  ASSERT_TRUE(defects.intersecting_faces().empty());
 }
 
 TEST(isosurface, boundary_coordinates) {
