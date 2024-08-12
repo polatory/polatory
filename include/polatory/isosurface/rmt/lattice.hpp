@@ -30,7 +30,7 @@ class lattice : public primitive_lattice {
   using Node = node;
   using NodeList = node_list;
 
-  static constexpr double kVertexPositionMinimumOffset = 1e-6;
+  static constexpr double kVertexPositionMinimumOffset = 1e-4;
 
  public:
   lattice(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
@@ -246,12 +246,19 @@ class lattice : public primitive_lattice {
     node_list_.clear();
     nodes_to_evaluate_.clear();
     vertices_.clear();
-    vertices_to_refine_.clear();
     cluster_map_.clear();
+    clustered_vertices_.clear();
     value_at_arbitrary_point_.reset();
   }
 
   void cluster_vertices() {
+    std::vector<geometry::point3d> vertices(vertices_.size());
+    for (std::size_t i = 0; i < vertices.size(); i++) {
+      // Use the clamped positions to reduce the risk of generating overlapping faces
+      // when there are multiple surfaces around the node.
+      vertices.at(i) = vertices_.at(i).position_clamped(node_list_);
+    }
+
     const auto& min = first_extended_bbox().min();
     const auto& max = first_extended_bbox().max();
 
@@ -263,7 +270,7 @@ class lattice : public primitive_lattice {
         // as this can produce a boundary vertex inside the bbox.
         continue;
       }
-      node.cluster(vertices_, cluster_map_);
+      node.cluster(vertices, cluster_map_, clustered_vertices_);
     }
   }
 
@@ -306,34 +313,48 @@ class lattice : public primitive_lattice {
 
           if (t < 0.5) {
             node0.insert_vertex(vi, ei);
-            vertices_to_refine_.emplace_back(cv0, ei, vi,                                  //
-                                             0.0, v0,                                      //
-                                             t, std::numeric_limits<double>::quiet_NaN(),  //
-                                             1.0, v1);
+            vertices_.emplace_back(cv0, ei, vi,                                  //
+                                   0.0, v0,                                      //
+                                   t, std::numeric_limits<double>::quiet_NaN(),  //
+                                   1.0, v1);
           } else {
             node1.insert_vertex(vi, opp_ei);
-            vertices_to_refine_.emplace_back(cv1, opp_ei, vi,                                    //
-                                             0.0, v1,                                            //
-                                             1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
-                                             1.0, v0);
+            vertices_.emplace_back(cv1, opp_ei, vi,                                    //
+                                   0.0, v1,                                            //
+                                   1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
+                                   1.0, v0);
           }
 
           node0.set_intersection(ei);
           node1.set_intersection(opp_ei);
-
-          const auto& v = vertices_to_refine_.back();
-          vertices_.emplace_back(v.position_clamped(node_list_));
         }
       }
     }
   }
 
   geometry::points3d get_vertices() const {
-    geometry::points3d vertices(static_cast<index_t>(vertices_.size()), 3);
+    geometry::points3d vertices(static_cast<index_t>(vertices_.size() + clustered_vertices_.size()),
+                                3);
     auto it = vertices.rowwise().begin();
     for (const auto& v : vertices_) {
+      *it++ = v.position_clamped(node_list_);
+    }
+    for (const auto& v : clustered_vertices_) {
       *it++ = v;
     }
+
+    // To reduce the risk of generating near-degenerate faces during surface clipping,
+    // snap vertices that are very close to the bbox .
+
+    const auto& min = bbox().min();
+    const auto& max = bbox().max();
+    auto tiny = 1e-10 * resolution();
+
+    for (auto p : vertices.rowwise()) {
+      p = ((p.array() - min.array()).abs() < tiny).select(min, p);
+      p = ((p.array() - max.array()).abs() < tiny).select(max, p);
+    }
+
     return vertices;
   }
 
@@ -342,29 +363,26 @@ class lattice : public primitive_lattice {
       return;
     }
 
-    auto n = static_cast<index_t>(vertices_to_refine_.size());
+    auto n = static_cast<index_t>(vertices_.size());
     geometry::points3d vertices(n, 3);
 
     for (auto pass = 0; pass < num_passes; pass++) {
       for (index_t i = 0; i < n; i++) {
-        const auto& v = vertices_to_refine_.at(i);
+        const auto& v = vertices_.at(i);
         vertices.row(i) = v.position_unclamped(node_list_);
       }
 
       vectord vertex_values = field_fn(vertices).array() - isovalue;
 
       for (index_t i = 0; i < n; i++) {
-        auto& v = vertices_to_refine_.at(i);
+        auto& v = vertices_.at(i);
         v.v1 = vertex_values(i);
       }
 
-      refine_vertices(vertices_to_refine_);
+      refine_vertices(vertices_);
     }
 
-    for (index_t i = 0; i < n; i++) {
-      const auto& v = vertices_to_refine_.at(i);
-      vertices_.at(v.vi) = v.position_clamped(node_list_);
-
+    for (const auto& v : vertices_) {
       if (v.t1 >= 0.5) {
         auto& node0 = node_list_.at(v.node_cv);
         auto& node1 = node_list_.at(neighbor(v.node_cv, v.ei));
@@ -442,7 +460,7 @@ class lattice : public primitive_lattice {
     std::array<bool, 4> populated_{false, false, false, false};
   };
 
-  struct vertex_to_refine {
+  struct vertex_data {
     cell_vector node_cv;
     edge_index ei{};
     vertex_index vi{};
@@ -489,19 +507,9 @@ class lattice : public primitive_lattice {
       return false;
     }
 
-    // To prevent surface clipping from generating tiny faces, which can cause
-    // various numerical issues, snap the point to the bbox if it is very close to it.
-
-    const auto& min = bbox().min();
-    const auto& max = bbox().max();
-    auto tiny = 1e-10 * resolution();
-
-    p = ((p.array() - min.array()).abs() < tiny).select(min, p);
-    p = ((p.array() - max.array()).abs() < tiny).select(max, p);
-
     node_list_.emplace(cv, Node(p));
-
     nodes_to_evaluate_.push_back(cv);
+
     return true;
   }
 
@@ -618,8 +626,8 @@ class lattice : public primitive_lattice {
     return frontier;
   }
 
-  static void refine_vertices(std::vector<vertex_to_refine>& vertices_to_refine) {
-    for (auto& v : vertices_to_refine) {
+  static void refine_vertices(std::vector<vertex_data>& vertices) {
+    for (auto& v : vertices) {
       // Solve y = a x^2 + b x + c for a, b, c with (x, y) = (t0, v0), (t1, v1), (t2, v2).
       Eigen::Matrix3d a;
       a << v.t0 * v.t0, v.t0, 1.0, v.t1 * v.t1, v.t1, 1.0, v.t2 * v.t2, v.t2, 1.0;
@@ -689,9 +697,9 @@ class lattice : public primitive_lattice {
 
   NodeList node_list_;
   std::vector<cell_vector> nodes_to_evaluate_;
-  std::vector<geometry::point3d> vertices_;
-  std::vector<vertex_to_refine> vertices_to_refine_;
+  std::vector<vertex_data> vertices_;
   std::unordered_map<vertex_index, vertex_index> cluster_map_;
+  std::vector<geometry::point3d> clustered_vertices_;
   std::optional<interpolated_value> value_at_arbitrary_point_;
 };
 

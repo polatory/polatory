@@ -41,8 +41,11 @@ class node {
  public:
   explicit node(const geometry::point3d& position) : position_(position) {}
 
-  void cluster(std::vector<geometry::point3d>& vertices,
-               std::unordered_map<vertex_index, vertex_index>& cluster_map) const {
+  void cluster(const std::vector<geometry::point3d>& vertices,
+               std::unordered_map<vertex_index, vertex_index>& cluster_map,
+               std::vector<geometry::point3d>& clustered_vertices) const {
+    auto vi_offset = static_cast<vertex_index>(vertices.size());
+
     auto surfaces = connected_components(intersections_);
     for (auto surface : surfaces) {
       auto holes = connected_components(surface ^ kEdgeSetMask);
@@ -53,7 +56,7 @@ class node {
       }
 
       auto n = bit_count(surface);
-      auto new_vi = static_cast<vertex_index>(vertices.size());
+      auto new_vi = vi_offset + static_cast<vertex_index>(clustered_vertices.size());
 
       geometry::point3d clustered = geometry::point3d::Zero();
       while (surface != 0) {
@@ -64,7 +67,7 @@ class node {
       }
       clustered /= static_cast<double>(n);
 
-      vertices.push_back(clustered);
+      clustered_vertices.push_back(clustered);
     }
   }
 

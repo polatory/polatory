@@ -36,9 +36,9 @@ std::unordered_set<index_t> mesh_defects_finder::intersecting_faces() const {
         auto c = next_vertex(fj, vi);
         auto d = prev_vertex(fj, vi);
 
-        if (b == c || a == d) {
-          // Skip the pair of adjacent faces.
-          // As faces are oriented, we don't need to check other combinations.
+        if (b == c || a == d || a == c || b == d) {
+          // Skip pairs of adjacent faces.
+          // The last two conditions are included for handling faces around non-manifold edges.
           continue;
         }
 

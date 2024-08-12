@@ -202,7 +202,7 @@ class surface_clipper {
   }
 
   static bool degenerate(const Triangle& tri) {
-    return tri.row(0) == tri.row(1) || tri.row(0) == tri.row(2) || tri.row(1) == tri.row(2);
+    return tri.row(0) == tri.row(1) || tri.row(1) == tri.row(2) || tri.row(2) == tri.row(0);
   }
 
   static double incircle_inexact(const Point2& a, const Point2& b, const Point2& c,
