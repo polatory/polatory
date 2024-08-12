@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
-#include <unordered_set>
 #include <vector>
 
 namespace polatory::isosurface {
@@ -16,9 +15,9 @@ class mesh_defects_finder {
  public:
   mesh_defects_finder(const Points& vertices, const Faces& faces);
 
-  std::unordered_set<index_t> intersecting_faces() const;
+  std::vector<index_t> intersecting_faces() const;
 
-  std::unordered_set<index_t> singular_vertices() const;
+  std::vector<index_t> singular_vertices() const;
 
  private:
   bool edge_face_intersect(index_t vi, index_t vj, index_t fi) const;

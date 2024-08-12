@@ -1,5 +1,6 @@
 #include <Eigen/Geometry>
 #include <Eigen/LU>
+#include <algorithm>
 #include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <unordered_map>
@@ -18,80 +19,95 @@ mesh_defects_finder::mesh_defects_finder(const Points& vertices, const Faces& fa
 }
 
 // Currently, only intersections between faces that share a single vertex are checked.
-std::unordered_set<index_t> mesh_defects_finder::intersecting_faces() const {
-  std::unordered_set<index_t> result;
+std::vector<index_t> mesh_defects_finder::intersecting_faces() const {
+  std::vector<index_t> result;
 
   auto n_vertices = vertices_.rows();
-#pragma omp parallel for schedule(guided, 32)
-  for (index_t vi = 0; vi < n_vertices; vi++) {
-    const auto& fis = vf_map_.at(vi);
+#pragma omp parallel
+  {
+    std::vector<index_t> local_result;
 
-    auto n_faces = static_cast<index_t>(fis.size());
-    for (index_t i = 0; i < n_faces - 1; i++) {
-      auto fi = fis.at(i);
-      auto a = next_vertex(fi, vi);
-      auto b = prev_vertex(fi, vi);
-      for (index_t j = i + 1; j < n_faces; j++) {
-        auto fj = fis.at(j);
-        auto c = next_vertex(fj, vi);
-        auto d = prev_vertex(fj, vi);
+#pragma omp for schedule(guided, 32)
+    for (index_t vi = 0; vi < n_vertices; vi++) {
+      const auto& fis = vf_map_.at(vi);
 
-        if (b == c || a == d || a == c || b == d) {
-          // Skip pairs of adjacent faces.
-          // The last two conditions are included for handling faces around non-manifold edges.
-          continue;
-        }
+      auto n_faces = static_cast<index_t>(fis.size());
+      for (index_t i = 0; i < n_faces - 1; i++) {
+        auto fi = fis.at(i);
+        auto a = next_vertex(fi, vi);
+        auto b = prev_vertex(fi, vi);
+        for (index_t j = i + 1; j < n_faces; j++) {
+          auto fj = fis.at(j);
+          auto c = next_vertex(fj, vi);
+          auto d = prev_vertex(fj, vi);
 
-        if (edge_face_intersect(a, b, fj) || edge_face_intersect(c, d, fi)) {
-#pragma omp critical
-          {
-            result.insert(fi);
-            result.insert(fj);
+          if (b == c || a == d || a == c || b == d) {
+            // Skip pairs of adjacent faces.
+            // The last two conditions are included for handling faces around non-manifold edges.
+            continue;
+          }
+
+          if (edge_face_intersect(a, b, fj) || edge_face_intersect(c, d, fi)) {
+            local_result.push_back(fi);
+            local_result.push_back(fj);
           }
         }
       }
     }
+
+#pragma omp critical
+    result.insert(result.end(), local_result.begin(), local_result.end());
   }
+
+  std::sort(result.begin(), result.end());
+  result.erase(std::unique(result.begin(), result.end()), result.end());
 
   return result;
 }
 
-std::unordered_set<index_t> mesh_defects_finder::singular_vertices() const {
-  std::unordered_set<index_t> result;
+std::vector<index_t> mesh_defects_finder::singular_vertices() const {
+  std::vector<index_t> result;
 
   auto n_vertices = vertices_.rows();
-#pragma omp parallel for schedule(guided, 32)
-  for (index_t vi = 0; vi < n_vertices; vi++) {
-    const auto& fis = vf_map_.at(vi);
+#pragma omp parallel
+  {
+    std::vector<index_t> local_result;
 
-    if (fis.empty()) {
-      // An isolated vertex.
-      continue;
+#pragma omp for schedule(guided, 32)
+    for (index_t vi = 0; vi < n_vertices; vi++) {
+      const auto& fis = vf_map_.at(vi);
+
+      if (fis.empty()) {
+        // An isolated vertex.
+        continue;
+      }
+
+      std::unordered_map<index_t, index_t> to_local_vi;
+      for (auto fi : fis) {
+        to_local_vi.emplace(next_vertex(fi, vi), to_local_vi.size());
+        to_local_vi.emplace(prev_vertex(fi, vi), to_local_vi.size());
+      }
+
+      auto order = static_cast<index_t>(to_local_vi.size());
+
+      // The graph that represents the link complex of the vertex.
+      dense_undirected_graph g(order);
+
+      for (auto fi : fis) {
+        auto i = to_local_vi.at(next_vertex(fi, vi));
+        auto j = to_local_vi.at(prev_vertex(fi, vi));
+        g.add_edge(i, j);
+      }
+
+      // Check if the graph is a cycle or a path (in case of a boundary vertex).
+      // NOLINTNEXTLINE(readability-simplify-boolean-expr)
+      if (!(g.is_simple() && g.is_connected() && g.max_degree() <= 2)) {
+        local_result.push_back(vi);
+      }
     }
 
-    std::unordered_map<index_t, index_t> to_local_vi;
-    for (auto fi : fis) {
-      to_local_vi.emplace(next_vertex(fi, vi), to_local_vi.size());
-      to_local_vi.emplace(prev_vertex(fi, vi), to_local_vi.size());
-    }
-
-    auto order = static_cast<index_t>(to_local_vi.size());
-
-    // The graph that represents the link complex of the vertex.
-    dense_undirected_graph g(order);
-
-    for (auto fi : fis) {
-      auto i = to_local_vi.at(next_vertex(fi, vi));
-      auto j = to_local_vi.at(prev_vertex(fi, vi));
-      g.add_edge(i, j);
-    }
-
-    // Check if the graph is a cycle or a path (in case of a boundary vertex).
-    // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-    if (!(g.is_simple() && g.is_connected() && g.max_degree() <= 2)) {
 #pragma omp critical
-      result.insert(vi);
-    }
+    result.insert(result.end(), local_result.begin(), local_result.end());
   }
 
   return result;
