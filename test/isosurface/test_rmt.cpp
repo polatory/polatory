@@ -24,7 +24,6 @@ using polatory::isosurface::bit_pop;
 using polatory::isosurface::rmt::edge_bitset;
 using polatory::isosurface::rmt::edge_index;
 using polatory::isosurface::rmt::inv_sqrt2;
-using polatory::isosurface::rmt::kDualLatticeBasis;
 using polatory::isosurface::rmt::kLatticeBasis;
 using polatory::isosurface::rmt::kNeighborLatticeCoordinatesDeltas;
 using polatory::isosurface::rmt::kNeighborMasks;
@@ -65,30 +64,9 @@ TEST(rmt, construction_of_basis) {
   vector3d a1 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, -1.0, 1.0});
   vector3d a2 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, 1.0, -1.0});
 
-  EXPECT_NEAR(0.0, (kLatticeBasis[0] - a0).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kLatticeBasis[1] - a1).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kLatticeBasis[2] - a2).norm(), 1e-15);
-
-  vector3d b0 = transform_vector<3>(rot, inv_sqrt2 * vector3d{0.0, 1.0, 1.0});
-  vector3d b1 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, 0.0, 1.0});
-  vector3d b2 = transform_vector<3>(rot, inv_sqrt2 * vector3d{1.0, 1.0, 0.0});
-
-  EXPECT_NEAR(0.0, (kDualLatticeBasis[0] - b0).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kDualLatticeBasis[1] - b1).norm(), 1e-15);
-  EXPECT_NEAR(0.0, (kDualLatticeBasis[2] - b2).norm(), 1e-15);
-}
-
-TEST(rmt, duality_of_basis) {
-  for (auto i = 0; i < 3; i++) {
-    for (auto j = 0; j < 3; j++) {
-      auto dot = kLatticeBasis.at(i).dot(kDualLatticeBasis.at(j));
-      if (i == j) {
-        EXPECT_NEAR(1.0, dot, 1e-15);
-      } else {
-        EXPECT_NEAR(0.0, dot, 1e-15);
-      }
-    }
-  }
+  EXPECT_NEAR(0.0, (kLatticeBasis.row(0) - a0).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kLatticeBasis.row(1) - a1).norm(), 1e-15);
+  EXPECT_NEAR(0.0, (kLatticeBasis.row(2) - a2).norm(), 1e-15);
 }
 
 TEST(rmt, neighbor_cell_vectors) {

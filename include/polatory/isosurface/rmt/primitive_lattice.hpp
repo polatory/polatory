@@ -19,15 +19,9 @@ namespace polatory::isosurface::rmt {
 inline constexpr double inv_sqrt2 = 0.5 * std::numbers::sqrt2;
 
 // A basis for the body-centered cubic lattice.
-inline const std::array<geometry::vector3d, 3> kLatticeBasis{
-    geometry::vector3d{inv_sqrt2, 1.0, 0.0}, geometry::vector3d{-inv_sqrt2, 0.0, 1.0},
-    geometry::vector3d{inv_sqrt2, -1.0, 0.0}};
-
-// The dual of the basis above, i.e., kDualLatticeBasis.at(i).dot(kLatticeBasis.at(j)) is
-// 1.0 if i == j, otherwise 0.0.
-inline const std::array<geometry::vector3d, 3> kDualLatticeBasis{
-    geometry::vector3d{inv_sqrt2, 0.5, 0.5}, geometry::vector3d{0.0, 0.0, 1.0},
-    geometry::vector3d{inv_sqrt2, -0.5, 0.5}};
+inline const geometry::matrix3d kLatticeBasis((geometry::matrix3d() << inv_sqrt2, 1.0, 0.0,
+                                               -inv_sqrt2, 0.0, 1.0, inv_sqrt2, -1.0, 0.0)
+                                                  .finished());
 
 class primitive_lattice {
  public:
@@ -35,14 +29,8 @@ class primitive_lattice {
                     const geometry::matrix3d& aniso)
       : bbox_(bbox),
         resolution_(resolution),
-        inv_aniso_(aniso.inverse()),
-        trans_aniso_(aniso.transpose()),
-        a0_(geometry::transform_vector<3>(inv_aniso_, resolution_ * kLatticeBasis[0])),
-        a1_(geometry::transform_vector<3>(inv_aniso_, resolution_ * kLatticeBasis[1])),
-        a2_(geometry::transform_vector<3>(inv_aniso_, resolution_ * kLatticeBasis[2])),
-        b0_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeBasis[0] / resolution_)),
-        b1_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeBasis[1] / resolution_)),
-        b2_(geometry::transform_vector<3>(trans_aniso_, kDualLatticeBasis[2] / resolution_)),
+        basis_(geometry::transform_vectors<3>(aniso.inverse(), resolution_ * kLatticeBasis)),
+        basis_inv_(basis_.inverse()),
         lc_origin_(compute_lattice_coordinates_origin()),
         first_ext_bbox_(compute_extended_bbox(1)),
         second_ext_bbox_(compute_extended_bbox(2)) {}
@@ -50,13 +38,13 @@ class primitive_lattice {
   const geometry::bbox3d& bbox() const { return bbox_; }
 
   geometry::point3d position(const lattice_coordinates& lc) const {
-    return (lc_origin_(0) + lc(0)) * a0_ + (lc_origin_(1) + lc(1)) * a1_ +
-           (lc_origin_(2) + lc(2)) * a2_;
+    return (lc_origin_ + lc.cast<double>()) * basis_;
   }
 
   std::pair<int, int> first_lattice_coordinate_range(int lc1, int lc2) const {
-    geometry::point3d point = (lc_origin_(1) + lc1) * a1_ + (lc_origin_(2) + lc2) * a2_;
-    geometry::point3d direction = a0_;
+    geometry::point3d point =
+        (lc_origin_(1) + lc1) * basis_.row(1) + (lc_origin_(2) + lc2) * basis_.row(2);
+    geometry::vector3d direction = basis_.row(0);
     const auto& bbox = second_extended_bbox();
 
     auto min_t = -std::numeric_limits<double>::infinity();
@@ -85,8 +73,8 @@ class primitive_lattice {
   std::pair<int, int> second_lattice_coordinate_range(int lc2) const {
     std::vector<geometry::vector3d> vertices;
 
-    geometry::vector3d normal = a0_.cross(a1_);
-    auto d = -normal.dot((lc_origin_(2) + lc2) * a2_);
+    geometry::vector3d normal = basis_.row(0).cross(basis_.row(1));
+    auto d = -normal.dot((lc_origin_(2) + lc2) * basis_.row(2));
     auto bbox_vertices = second_extended_bbox().corners();
     for (auto i = 0; i < 7; i++) {
       for (auto j = i + 1; j < 8; j++) {
@@ -186,19 +174,19 @@ class primitive_lattice {
 
  private:
   geometry::vector3d lattice_coordinates_unrounded(const geometry::point3d& p) const {
-    return {p.dot(b0_) - lc_origin_(0), p.dot(b1_) - lc_origin_(1), p.dot(b2_) - lc_origin_(2)};
+    return p * basis_inv_ - lc_origin_;
   }
 
   geometry::vector3d compute_lattice_coordinates_origin() const {
     geometry::point3d center = bbox_.center();
-    return {std::round(center.dot(b0_)), std::round(center.dot(b1_)), std::round(center.dot(b2_))};
+    return (center * basis_inv_).array().round();
   }
 
   geometry::bbox3d compute_extended_bbox(int extension) const {
     geometry::vectors3d neigh(14, 3);
     for (edge_index ei = 0; ei < 14; ei++) {
-      auto lc = kNeighborLatticeCoordinatesDeltas.at(ei);
-      neigh.row(ei) = lc(0) * a0_ + lc(1) * a1_ + lc(2) * a2_;
+      const auto& lc = kNeighborLatticeCoordinatesDeltas.at(ei);
+      neigh.row(ei) = lc.cast<double>() * basis_;
     }
 
     geometry::vector3d min_ext = extension * 1.01 * neigh.colwise().minCoeff();
@@ -209,14 +197,8 @@ class primitive_lattice {
 
   const geometry::bbox3d bbox_;
   const double resolution_;
-  const geometry::matrix3d inv_aniso_;
-  const geometry::matrix3d trans_aniso_;
-  const geometry::vector3d a0_;
-  const geometry::vector3d a1_;
-  const geometry::vector3d a2_;
-  const geometry::vector3d b0_;
-  const geometry::vector3d b1_;
-  const geometry::vector3d b2_;
+  const geometry::matrix3d basis_;
+  const geometry::matrix3d basis_inv_;
   const geometry::vector3d lc_origin_;
   const geometry::bbox3d first_ext_bbox_;
   const geometry::bbox3d second_ext_bbox_;
