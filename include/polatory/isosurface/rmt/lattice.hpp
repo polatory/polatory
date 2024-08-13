@@ -73,8 +73,8 @@ class lattice : public primitive_lattice {
     }
   }
 
-  void add_nodes_from_seed_points(geometry::points3d seed_points, const field_function& field_fm,
-                                  double isovalue) {
+  void add_nodes_from_seed_points(const geometry::points3d& seed_points,
+                                  const field_function& field_fm, double isovalue) {
     const auto& min = bbox().min();
     const auto& max = bbox().max();
 
@@ -105,6 +105,7 @@ class lattice : public primitive_lattice {
     std::vector<lattice_coordinates_pair> pairs;
 
     std::vector<seed> new_seeds;
+    std::vector<lattice_coordinates> nlcs;
     while (!seeds.empty()) {
       for (const auto& seed : seeds) {
         const auto& lc = seed.lc;
@@ -112,7 +113,7 @@ class lattice : public primitive_lattice {
         auto k = seed.k;
         const auto& n = node_list_.at(lc);
 
-        std::vector<lattice_coordinates> nlcs;
+        nlcs.clear();
         auto found_intersection = false;
         for (const auto& nlc : knn_nodes(lc, k)) {
           auto boundary_node = is_boundary_node(nlc);
@@ -598,6 +599,10 @@ class lattice : public primitive_lattice {
   }
 
   geometry::vector3d gradient(const lattice_coordinates& lc) const {
+    using Matrix74 = Eigen::Matrix<double, 7, 4, Eigen::RowMajor>;
+    using Vector4 = Eigen::Vector4d;
+    using Vector7 = Eigen::Matrix<double, 7, 1>;
+
     std::array<lattice_coordinates, 7> lcs{lc,
                                            neighbor(lc, edge::k1),
                                            neighbor(lc, edge::k3),
@@ -605,23 +610,21 @@ class lattice : public primitive_lattice {
                                            neighbor(lc, edge::k8),
                                            neighbor(lc, edge::kA),
                                            neighbor(lc, edge::kC)};
-    matrixd a(7, 4);
-    vectord b(7);
+    Matrix74 a;
+    Vector7 b;
     for (index_t i = 0; i < 7; i++) {
       const auto& n = node_list_.at(lcs.at(i));
-      a.row(i) << n.position().x(), n.position().y(), n.position().z(), 1.0;
+      a.row(i) << n.position(), 1.0;
       b(i) = std::abs(n.value());
     }
+    Vector4 x = (a.transpose() * a).ldlt().solve(a.transpose() * b);
 
-    matrixd system = a.transpose() * a;
-    vectord rhs = a.transpose() * b;
-    vectord x = system.ldlt().solve(rhs);
-    return x.head<3>();
+    return x.head<3>().transpose();
   }
 
   bool is_boundary_node(const lattice_coordinates& lc) const {
     for (edge_index ei = 0; ei < 14; ei++) {
-      geometry::vector3d p = position(neighbor(lc, ei));
+      auto p = position(neighbor(lc, ei));
       if (!second_extended_bbox().contains(p)) {
         return true;
       }
@@ -660,16 +663,19 @@ class lattice : public primitive_lattice {
   }
 
   static void refine_vertices(std::vector<vertex_data>& vertices) {
+    using Matrix = geometry::matrix3d;
+    using Vector = Eigen::Vector3d;
+
     for (auto& v : vertices) {
       // Solve y = a x^2 + b x + c for a, b, c with (x, y) = (t0, v0), (t1, v1), (t2, v2).
-      Eigen::Matrix3d a;
+      Matrix a;
       a << v.t0 * v.t0, v.t0, 1.0, v.t1 * v.t1, v.t1, 1.0, v.t2 * v.t2, v.t2, 1.0;
-      Eigen::Vector3d b(v.v0, v.v1, v.v2);
-      Eigen::ColPivHouseholderQR<Eigen::Matrix3d> qr_a(a);
+      Vector b(v.v0, v.v1, v.v2);
+      Eigen::ColPivHouseholderQR<Matrix> qr_a(a);
       if (!qr_a.isInvertible()) {
         continue;
       }
-      Eigen::Vector3d c = qr_a.solve(b);
+      Vector c = qr_a.solve(b);
 
       // Solve a x^2 + b x + c = 0 for x, where 0 < x < 1.
       auto [s0, s1] = solve_quadratic(c(0), c(1), c(2));
