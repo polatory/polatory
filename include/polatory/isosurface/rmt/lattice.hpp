@@ -81,7 +81,7 @@ class lattice : public primitive_lattice {
     value_at_arbitrary_point_.emplace(seed_points.row(0).array().max(min.array()).min(max.array()),
                                       *this);
 
-    std::vector<seed_node> seed_nodes;
+    std::vector<seed> seeds;
 
     for (auto seed_point : seed_points.rowwise()) {
       geometry::point3d clamped = seed_point.array().max(min.array()).min(max.array());
@@ -91,16 +91,22 @@ class lattice : public primitive_lattice {
       for (const auto& nlc : knn_nodes(lc, 1)) {
         add_node(nlc);
       }
-      seed_nodes.emplace_back(lc, geometry::vector3d::Zero(), 1);
+      seeds.emplace_back(lc, geometry::vector3d::Zero(), 1);
 
       evaluate_field(field_fm, isovalue);
     }
 
+    std::sort(seeds.begin(), seeds.end(),
+              [](const auto& a, const auto& b) { return lattice_coordinates_less()(a.lc, b.lc); });
+    seeds.erase(std::unique(seeds.begin(), seeds.end(),
+                            [](const auto& a, const auto& b) { return a.lc == b.lc; }),
+                seeds.end());
+
     std::vector<lattice_coordinates_pair> pairs;
 
-    std::vector<seed_node> new_seed_nodes;
-    while (!seed_nodes.empty()) {
-      for (const auto& seed : seed_nodes) {
+    std::vector<seed> new_seeds;
+    while (!seeds.empty()) {
+      for (const auto& seed : seeds) {
         const auto& lc = seed.lc;
         const auto& corrector = seed.corrector;
         auto k = seed.k;
@@ -149,7 +155,7 @@ class lattice : public primitive_lattice {
           for (const auto& nnlc : nnlcs) {
             add_node(nnlc);
           }
-          new_seed_nodes.emplace_back(lc, corrector, k + 1);
+          new_seeds.emplace_back(lc, corrector, k + 1);
           continue;
         }
 
@@ -178,12 +184,12 @@ class lattice : public primitive_lattice {
 
           const auto& nn = node_list_.at(nlc);
           geometry::vector3d v = nn.position() - n.position();
-          new_seed_nodes.emplace_back(nlc, corrector + v - v.dot(neg_grad) * neg_grad, 1);
+          new_seeds.emplace_back(nlc, corrector + v - v.dot(neg_grad) * neg_grad, 1);
         }
       }
 
-      std::swap(seed_nodes, new_seed_nodes);
-      new_seed_nodes.clear();
+      std::swap(seeds, new_seeds);
+      new_seeds.clear();
 
       evaluate_field(field_fm, isovalue);
     }
@@ -364,12 +370,6 @@ class lattice : public primitive_lattice {
   }
 
  private:
-  struct seed_node {
-    lattice_coordinates lc;
-    geometry::vector3d corrector;
-    int k;
-  };
-
   class interpolated_value {
    public:
     explicit interpolated_value(const geometry::point3d& p, const Base& lattice)
@@ -403,6 +403,12 @@ class lattice : public primitive_lattice {
     const geometry::vectorNd<4> weights_;
     geometry::vectorNd<4> values_;
     std::array<bool, 4> populated_{false, false, false, false};
+  };
+
+  struct seed {
+    lattice_coordinates lc;
+    geometry::vector3d corrector;
+    int k{};
   };
 
   struct vertex_data {
