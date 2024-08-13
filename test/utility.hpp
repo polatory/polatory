@@ -30,6 +30,8 @@ polatory::geometry::matrixNd<Dim> random_scaling() {
 
   Matrix scale = Matrix::Identity();
   scale.diagonal().array() *= pow(10.0, 0.5 * Vector::Random().array());
+  // Normalize the determinant.
+  scale.diagonal() *= std::pow(scale.diagonal().prod(), -1.0 / Dim);
 
   return scale;
 }
