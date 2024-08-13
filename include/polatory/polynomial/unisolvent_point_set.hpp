@@ -13,16 +13,16 @@
 namespace polatory::polynomial {
 
 template <int Dim>
-class unisolvent_point_set {
+class UnisolventPointSet {
   static constexpr int kDim = Dim;
-  using LagrangeBasis = lagrange_basis<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using PolynomialBasisBase = polynomial_basis_base<kDim>;
+  using LagrangeBasis = LagrangeBasis<kDim>;
+  using Points = geometry::Points<kDim>;
+  using PolynomialBasisBase = PolynomialBasisBase<kDim>;
 
   static constexpr int kNumTrials = 100;
 
  public:
-  unisolvent_point_set(const Points& points, int degree) {
+  UnisolventPointSet(const Points& points, int degree) {
     if (degree < 0) {
       return;
     }
@@ -31,22 +31,21 @@ class unisolvent_point_set {
     auto n_poly_basis = PolynomialBasisBase::basis_size(degree);
 
     std::mt19937 gen;
-    std::uniform_int_distribution<index_t> dist(index_t{0}, n_points - 1);
+    std::uniform_int_distribution<Index> dist(Index{0}, n_points - 1);
 
-    std::set<index_t> best_set;
+    std::set<Index> best_set;
     auto best_rcond = 0.0;
     auto found = false;
 
     for (auto trial = 0; trial < kNumTrials; trial++) {
-      std::set<index_t> set;
+      std::set<Index> set;
 
-      while (static_cast<index_t>(set.size()) < n_poly_basis) {
+      while (static_cast<Index>(set.size()) < n_poly_basis) {
         set.insert(dist(gen));
       }
 
       try {
-        LagrangeBasis basis(degree,
-                            points(std::vector<index_t>(set.begin(), set.end()), Eigen::all));
+        LagrangeBasis basis(degree, points(std::vector<Index>(set.begin(), set.end()), Eigen::all));
 
         if (best_rcond < basis.rcond()) {
           best_rcond = basis.rcond();
@@ -67,10 +66,10 @@ class unisolvent_point_set {
   }
 
   // Returns the *sorted* point indices.
-  const std::vector<index_t>& point_indices() const { return point_idcs_; }
+  const std::vector<Index>& point_indices() const { return point_idcs_; }
 
  private:
-  std::vector<index_t> point_idcs_;
+  std::vector<Index> point_idcs_;
 };
 
 }  // namespace polatory::polynomial

@@ -12,7 +12,7 @@ int main(int argc, const char* argv[]) {
   try {
     namespace po = boost::program_options;
 
-    global_options opts;
+    GlobalOptions opts;
 
     po::options_description opts_desc("Global options", 80, 50);
     opts_desc.add_options()  //
@@ -35,34 +35,34 @@ int main(int argc, const char* argv[]) {
     auto command = args.at(0);
     args.erase(args.begin());
 
-    if (command == create_model_command::kName) {
-      create_model_command::run(args, opts);
-    } else if (command == cross_validate_command::kName) {
-      cross_validate_command::run(args, opts);
-    } else if (command == estimate_normals_command::kName) {
-      estimate_normals_command::run(args, opts);
-    } else if (command == evaluate_command::kName) {
-      evaluate_command::run(args, opts);
-    } else if (command == extract_model_command::kName) {
-      extract_model_command::run(args, opts);
-    } else if (command == fit_command::kName) {
-      fit_command::run(args, opts);
-    } else if (command == fit_model_to_variogram_command::kName) {
-      fit_model_to_variogram_command::run(args, opts);
-    } else if (command == isosurface_command::kName) {
-      isosurface_command::run(args, opts);
-    } else if (command == normals_to_sdf_command::kName) {
-      normals_to_sdf_command::run(args, opts);
-    } else if (command == show_model_command::kName) {
-      show_model_command::run(args, opts);
-    } else if (command == show_variogram_command::kName) {
-      show_variogram_command::run(args, opts);
-    } else if (command == surface_25d_command::kName) {
-      surface_25d_command::run(args, opts);
-    } else if (command == unique_command::kName) {
-      unique_command::run(args, opts);
-    } else if (command == variogram_command::kName) {
-      variogram_command::run(args, opts);
+    if (command == CreateModelCommand::kName) {
+      CreateModelCommand::run(args, opts);
+    } else if (command == CrossValidateCommand::kName) {
+      CrossValidateCommand::run(args, opts);
+    } else if (command == EstimateNormalsCommand::kName) {
+      EstimateNormalsCommand::run(args, opts);
+    } else if (command == EvaluateCommand::kName) {
+      EvaluateCommand::run(args, opts);
+    } else if (command == ExtractModelCommand::kName) {
+      ExtractModelCommand::run(args, opts);
+    } else if (command == FitCommand::kName) {
+      FitCommand::run(args, opts);
+    } else if (command == FitModelToVariogramCommand::kName) {
+      FitModelToVariogramCommand::run(args, opts);
+    } else if (command == IsosurfaceCommand::kName) {
+      IsosurfaceCommand::run(args, opts);
+    } else if (command == NormalsToSdfCommand::kName) {
+      NormalsToSdfCommand::run(args, opts);
+    } else if (command == ShowModelCommand::kName) {
+      ShowModelCommand::run(args, opts);
+    } else if (command == ShowVariogramCommand::kName) {
+      ShowVariogramCommand::run(args, opts);
+    } else if (command == Surface25DCommand::kName) {
+      Surface25DCommand::run(args, opts);
+    } else if (command == UniqueCommand::kName) {
+      UniqueCommand::run(args, opts);
+    } else if (command == VariogramCommand::kName) {
+      VariogramCommand::run(args, opts);
     } else {
       throw std::runtime_error(std::format("unknown command: '{}'", command));
     }

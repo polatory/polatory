@@ -9,20 +9,20 @@
 
 namespace polatory::isosurface {
 
-class rbf_field_function : public field_function {
+class RbfFieldFunction : public FieldFunction {
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
-  using Interpolant = interpolant<3>;
+  using Interpolant = Interpolant<3>;
 
  public:
-  explicit rbf_field_function(Interpolant& interpolant, double accuracy = kInfinity,
-                              double grad_accuracy = kInfinity)
+  explicit RbfFieldFunction(Interpolant& interpolant, double accuracy = kInfinity,
+                            double grad_accuracy = kInfinity)
       : interpolant_(interpolant), accuracy_(accuracy), grad_accuracy_(grad_accuracy) {}
 
-  vectord operator()(const geometry::points3d& points) const override {
+  VecX operator()(const geometry::Points3& points) const override {
     return interpolant_.evaluate_impl(points);
   }
 
-  void set_evaluation_bbox(const geometry::bbox3d& bbox) override {
+  void set_evaluation_bbox(const geometry::Bbox3& bbox) override {
     interpolant_.set_evaluation_bbox_impl(bbox, accuracy_, grad_accuracy_);
   }
 

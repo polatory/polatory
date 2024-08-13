@@ -4,20 +4,20 @@
 
 namespace polatory::geometry {
 
-class sphere3d {
+class Sphere3 {
  public:
-  sphere3d() : center_(point3d::Zero()) {}
+  Sphere3() : center_(Point3::Zero()) {}
 
-  sphere3d(const point3d& center, double radius) : center_(center), radius_(radius) {}
+  Sphere3(const Point3& center, double radius) : center_(center), radius_(radius) {}
 
-  bool operator==(const sphere3d& other) const = default;
+  bool operator==(const Sphere3& other) const = default;
 
-  const point3d& center() const { return center_; }
+  const Point3& center() const { return center_; }
 
   double radius() const { return radius_; }
 
  private:
-  const point3d center_;
+  const Point3 center_;
   const double radius_{1.0};
 };
 

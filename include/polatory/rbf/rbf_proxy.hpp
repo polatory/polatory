@@ -10,25 +10,25 @@
 namespace polatory::rbf {
 
 template <int Dim>
-class rbf_proxy {
+class Rbf {
   static constexpr int kDim = Dim;
-  using Matrix = geometry::matrixNd<Dim>;
-  using RbfBase = internal::rbf_base<Dim>;
-  using Vector = geometry::vectorNd<Dim>;
+  using Mat = Mat<Dim>;
+  using RbfBase = internal::RbfBase<Dim>;
+  using Vector = geometry::Vector<Dim>;
 
  protected:
-  explicit rbf_proxy(std::unique_ptr<RbfBase>&& rbf) : rbf_(std::move(rbf)) {}
+  explicit Rbf(std::unique_ptr<RbfBase>&& rbf) : rbf_(std::move(rbf)) {}
 
  public:
-  ~rbf_proxy() = default;
+  ~Rbf() = default;
 
-  // The check for if other.rbf_ has a value is required for copying a default-constructed
-  // rbf_proxy on deserialization of a std::vector<rbf_proxy>, etc.
-  rbf_proxy(const rbf_proxy& other) : rbf_(other.rbf_ ? other.rbf_->clone() : nullptr) {}
+  // Checking if other.rbf_ has a value is required for copying a default-constructed
+  // Rbf on deserialization of a std::vector<Rbf>, etc.
+  Rbf(const Rbf& other) : rbf_(other.rbf_ ? other.rbf_->clone() : nullptr) {}
 
-  rbf_proxy(rbf_proxy&& other) = default;
+  Rbf(Rbf&& other) = default;
 
-  rbf_proxy& operator=(const rbf_proxy& other) {
+  Rbf& operator=(const Rbf& other) {
     if (this == &other) {
       return *this;
     }
@@ -37,9 +37,9 @@ class rbf_proxy {
     return *this;
   }
 
-  rbf_proxy& operator=(rbf_proxy&& other) = default;
+  Rbf& operator=(Rbf&& other) = default;
 
-  const Matrix& anisotropy() const { return rbf_->anisotropy(); }
+  const Mat& anisotropy() const { return rbf_->anisotropy(); }
 
   int cpd_order() const { return rbf_->cpd_order(); }
 
@@ -47,7 +47,7 @@ class rbf_proxy {
 
   Vector evaluate_gradient(const Vector& diff) const { return rbf_->evaluate_gradient(diff); }
 
-  Matrix evaluate_hessian(const Vector& diff) const { return rbf_->evaluate_hessian(diff); }
+  Mat evaluate_hessian(const Vector& diff) const { return rbf_->evaluate_hessian(diff); }
 
   double evaluate_isotropic(const Vector& diff) const { return rbf_->evaluate_isotropic(diff); }
 
@@ -55,19 +55,19 @@ class rbf_proxy {
     return rbf_->evaluate_gradient_isotropic(diff);
   }
 
-  Matrix evaluate_hessian_isotropic(const Vector& diff) const {
+  Mat evaluate_hessian_isotropic(const Vector& diff) const {
     return rbf_->evaluate_hessian_isotropic(diff);
   }
 
   RbfBase* get_raw_pointer() const { return rbf_.get(); }
 
-  const fmm::interpolator_configuration& interpolator_configuration() const {
+  const fmm::InterpolatorConfiguration& interpolator_configuration() const {
     return rbf_->interpolator_configuration();
   }
 
   bool is_covariance_function() const { return rbf_->is_covariance_function(); }
 
-  index_t num_parameters() const { return rbf_->num_parameters(); }
+  Index num_parameters() const { return rbf_->num_parameters(); }
 
   const std::vector<double>& parameter_lower_bounds() const {
     return rbf_->parameter_lower_bounds();
@@ -81,9 +81,9 @@ class rbf_proxy {
 
   const std::vector<double>& parameters() const { return rbf_->parameters(); }
 
-  void set_anisotropy(const Matrix& aniso) { rbf_->set_anisotropy(aniso); }
+  void set_anisotropy(const Mat& aniso) { rbf_->set_anisotropy(aniso); }
 
-  void set_interpolator_configuration(const fmm::interpolator_configuration& config) {
+  void set_interpolator_configuration(const fmm::InterpolatorConfiguration& config) {
     rbf_->set_interpolator_configuration(config);
   }
 
@@ -93,7 +93,7 @@ class rbf_proxy {
 
   double support_radius_isotropic() const { return rbf_->support_radius_isotropic(); }
 
-  bool operator==(const rbf_proxy& other) const {
+  bool operator==(const Rbf& other) const {
     if (this == &other) {
       return true;
     }
@@ -102,25 +102,28 @@ class rbf_proxy {
            anisotropy() == other.anisotropy();
   }
 
-  bool operator!=(const rbf_proxy& other) const { return !(*this == other); }
+  bool operator!=(const Rbf& other) const { return !(*this == other); }
 
  private:
-  POLATORY_FRIEND_READ_WRITE(rbf_proxy);
+  POLATORY_FRIEND_READ_WRITE;
 
   // For deserialization.
-  rbf_proxy() = default;
+  Rbf() = default;
 
   std::unique_ptr<RbfBase> rbf_;
 };
 
-#define POLATORY_DEFINE_RBF(RBF_NAME)                                          \
-  template <int Dim>                                                           \
-  class RBF_NAME : public rbf_proxy<Dim> {                                     \
-   public:                                                                     \
-    using Rbf = internal::RBF_NAME<Dim>;                                       \
-                                                                               \
-    explicit RBF_NAME(const std::vector<double>& params)                       \
-        : rbf_proxy<Dim>(std::make_unique<internal::RBF_NAME<Dim>>(params)) {} \
+#define POLATORY_DEFINE_RBF(RBF_NAME)                                     \
+  template <int Dim>                                                      \
+  class RBF_NAME : public Rbf<Dim> {                                      \
+   private:                                                               \
+    using RbfInternal = internal::RBF_NAME<Dim>;                          \
+                                                                          \
+   public:                                                                \
+    static inline const std::string kShortName = RbfInternal::kShortName; \
+                                                                          \
+    explicit RBF_NAME(const std::vector<double>& params)                  \
+        : Rbf<Dim>(std::make_unique<RbfInternal>(params)) {}              \
   };
 
 }  // namespace polatory::rbf

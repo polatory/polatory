@@ -9,23 +9,23 @@
 
 namespace polatory::isosurface {
 
-class rbf_field_function_25d : public field_function {
+class RbfFieldFunction25D : public FieldFunction {
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
-  using Interpolant = interpolant<2>;
+  using Interpolant = Interpolant<2>;
 
  public:
-  explicit rbf_field_function_25d(Interpolant& interpolant, double accuracy = kInfinity,
-                                  double grad_accuracy = kInfinity)
+  explicit RbfFieldFunction25D(Interpolant& interpolant, double accuracy = kInfinity,
+                               double grad_accuracy = kInfinity)
       : interpolant_(interpolant), accuracy_(accuracy), grad_accuracy_(grad_accuracy) {}
 
-  vectord operator()(const geometry::points3d& points) const override {
-    geometry::points2d points_2d(points.leftCols(2));
+  VecX operator()(const geometry::Points3& points) const override {
+    geometry::Points2 points_2d(points.leftCols(2));
 
     return points.col(2) - interpolant_.evaluate_impl(points_2d);
   }
 
-  void set_evaluation_bbox(const geometry::bbox3d& bbox) override {
-    geometry::bbox2d bbox_2d{bbox.min().head<2>(), bbox.max().head<2>()};
+  void set_evaluation_bbox(const geometry::Bbox3& bbox) override {
+    geometry::Bbox2 bbox_2d{bbox.min().head<2>(), bbox.max().head<2>()};
 
     interpolant_.set_evaluation_bbox_impl(bbox_2d, accuracy_, grad_accuracy_);
   }

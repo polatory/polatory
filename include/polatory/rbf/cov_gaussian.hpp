@@ -10,14 +10,14 @@ namespace polatory::rbf {
 namespace internal {
 
 template <int Dim>
-class cov_gaussian final : public covariance_function_base<Dim> {
+class CovGaussian final : public CovarianceFunctionBase<Dim> {
  public:
   static constexpr int kDim = Dim;
   static inline const std::string kShortName = "gau";
 
  private:
-  using Base = covariance_function_base<Dim>;
-  using Matrix = Base::Matrix;
+  using Base = CovarianceFunctionBase<Dim>;
+  using Mat = Base::Mat;
   using RbfPtr = Base::RbfPtr;
   using Vector = Base::Vector;
 
@@ -26,9 +26,9 @@ class cov_gaussian final : public covariance_function_base<Dim> {
   using Base::parameters;
   using Base::set_parameters;
 
-  explicit cov_gaussian(const std::vector<double>& params) { set_parameters(params); }
+  explicit CovGaussian(const std::vector<double>& params) { set_parameters(params); }
 
-  RbfPtr clone() const override { return std::make_unique<cov_gaussian>(*this); }
+  RbfPtr clone() const override { return std::make_unique<CovGaussian>(*this); }
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto psill = parameters().at(0);
@@ -49,14 +49,14 @@ class cov_gaussian final : public covariance_function_base<Dim> {
     return coeff * diff;
   }
 
-  Matrix evaluate_hessian_isotropic(const Vector& diff) const override {
+  Mat evaluate_hessian_isotropic(const Vector& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);
     auto r = diff.norm();
     auto rho = r / range;
 
     auto coeff = -6.0 * psill * std::exp(-3.0 * rho * rho) / (range * range);
-    return coeff * (Matrix::Identity() - 6.0 / (range * range) * diff.transpose() * diff);
+    return coeff * (Mat::Identity() - 6.0 / (range * range) * diff.transpose() * diff);
   }
 
   std::string short_name() const override { return kShortName; }
@@ -64,6 +64,6 @@ class cov_gaussian final : public covariance_function_base<Dim> {
 
 }  // namespace internal
 
-POLATORY_DEFINE_RBF(cov_gaussian);
+POLATORY_DEFINE_RBF(CovGaussian);
 
 }  // namespace polatory::rbf

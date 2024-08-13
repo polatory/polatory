@@ -12,14 +12,12 @@
 
 namespace polatory::isosurface {
 
-class isosurface {
-  using Mesh = mesh;
-
+class Isosurface {
  public:
-  isosurface(const geometry::bbox3d& bbox, double resolution)
-      : isosurface(bbox, resolution, geometry::matrix3d::Identity()) {}
+  Isosurface(const geometry::Bbox3& bbox, double resolution)
+      : Isosurface(bbox, resolution, Mat3::Identity()) {}
 
-  isosurface(const geometry::bbox3d& bbox, double resolution, const geometry::matrix3d& aniso)
+  Isosurface(const geometry::Bbox3& bbox, double resolution, const Mat3& aniso)
       : lattice_(bbox, resolution, aniso) {
     if (!(aniso.determinant() > 0.0)) {
       throw std::invalid_argument("aniso must have a positive determinant");
@@ -28,7 +26,7 @@ class isosurface {
 
   void clear() { lattice_.clear(); }
 
-  Mesh generate(field_function& field_fn, double isovalue = 0.0, int refine = 1) {
+  Mesh generate(FieldFunction& field_fn, double isovalue = 0.0, int refine = 1) {
     if (refine < 0) {
       throw std::runtime_error("refine must be non-negative");
     }
@@ -41,7 +39,7 @@ class isosurface {
     return generate_common();
   }
 
-  Mesh generate_from_seed_points(const geometry::points3d& seed_points, field_function& field_fn,
+  Mesh generate_from_seed_points(const geometry::Points3& seed_points, FieldFunction& field_fn,
                                  double isovalue = 0.0, int refine = 1) {
     if (seed_points.rows() == 0) {
       throw std::runtime_error("seed points must not be empty");
@@ -68,12 +66,12 @@ class isosurface {
     // Unclustering non-manifold vertices may require a few iterations.
     while (true) {
       mesh = lattice_.get_mesh();
-      mesh_defects_finder defects(mesh);
+      MeshDefectsFinder defects(mesh);
 
       auto vis = defects.singular_vertices();
       auto fis = defects.intersecting_faces();
 
-      std::unordered_set<index_t> vertices_to_uncluster;
+      std::unordered_set<Index> vertices_to_uncluster;
       for (auto vi : vis) {
         vertices_to_uncluster.insert(vi);
       }
@@ -93,8 +91,8 @@ class isosurface {
     mesh = clip(mesh, lattice_.bbox());
 
     if (mesh.is_empty() &&
-        lattice_.value_sign_at_arbitrary_point_within_bbox() == binary_sign::kNeg) {
-      mesh = Mesh(entire_tag{});
+        lattice_.value_sign_at_arbitrary_point_within_bbox() == BinarySign::kNeg) {
+      mesh = Mesh(EntireTag{});
     }
 
     lattice_.clear();
@@ -102,7 +100,7 @@ class isosurface {
     return mesh;
   }
 
-  rmt::lattice lattice_;
+  rmt::Lattice lattice_;
 };
 
 }  // namespace polatory::isosurface

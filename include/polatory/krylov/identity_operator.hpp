@@ -6,19 +6,19 @@
 
 namespace polatory::krylov {
 
-class identity_operator : public linear_operator {
+class IdentityOperator : public LinearOperator {
  public:
-  explicit identity_operator(index_t n) : n_(n) {}
+  explicit IdentityOperator(Index n) : n_(n) {}
 
-  vectord operator()(const vectord& v) const override {
+  VecX operator()(const VecX& v) const override {
     POLATORY_ASSERT(v.rows() == n_);
     return v;
   }
 
-  index_t size() const override { return n_; }
+  Index size() const override { return n_; }
 
  private:
-  const index_t n_;
+  const Index n_;
 };
 
 }  // namespace polatory::krylov

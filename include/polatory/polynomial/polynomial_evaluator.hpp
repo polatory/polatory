@@ -7,15 +7,15 @@
 namespace polatory::polynomial {
 
 template <class Basis>
-class polynomial_evaluator {
+class PolynomialEvaluator {
   static constexpr int kDim = Basis::kDim;
-  using Points = geometry::pointsNd<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
-  explicit polynomial_evaluator(int degree)
-      : basis_(degree), weights_(vectord::Zero(basis_.basis_size())) {}
+  explicit PolynomialEvaluator(int degree)
+      : basis_(degree), weights_(VecX::Zero(basis_.basis_size())) {}
 
-  vectord evaluate() const {
+  VecX evaluate() const {
     auto p = basis_.evaluate(points_, grad_points_);
 
     return p * weights_;
@@ -26,7 +26,7 @@ class polynomial_evaluator {
     grad_points_ = grad_points;
   }
 
-  void set_weights(const vectord& weights) {
+  void set_weights(const VecX& weights) {
     POLATORY_ASSERT(weights.rows() == basis_.basis_size());
 
     weights_ = weights;
@@ -37,7 +37,7 @@ class polynomial_evaluator {
 
   Points points_;
   Points grad_points_;
-  vectord weights_;
+  VecX weights_;
 };
 
 }  // namespace polatory::polynomial

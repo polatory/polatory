@@ -10,19 +10,19 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
-using polatory::interpolant;
+using polatory::Interpolant;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   int dim{};
   std::string out_file;
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Interpolant = interpolant<Dim>;
+void run_impl(const Options& opts) {
+  using Interpolant = Interpolant<Dim>;
 
   auto inter = Interpolant::load(opts.in_file);
 
@@ -31,11 +31,11 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void extract_model_command::run(const std::vector<std::string>& args,
-                                const global_options& global_opts) {
+void ExtractModelCommand::run(const std::vector<std::string>& args,
+                              const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

@@ -39,12 +39,12 @@ void throw_unexpected_input(const Iterator& it, const Iterator& end) {
 }
 
 template <int Dim>
-polatory::model<Dim> make_model(const model_options& opts) {
-  using Matrix = polatory::geometry::matrixNd<Dim>;
-  using Model = polatory::model<Dim>;
-  using RbfProxy = polatory::rbf::rbf_proxy<Dim>;
+polatory::Model<Dim> make_model(const ModelOptions& opts) {
+  using Mat = polatory::Mat<Dim>;
+  using Model = polatory::Model<Dim>;
+  using Rbf = polatory::rbf::Rbf<Dim>;
 
-  std::vector<RbfProxy> rbfs;
+  std::vector<Rbf> rbfs;
 
   auto it = opts.rbf_args.begin();
   auto end = opts.rbf_args.end();
@@ -71,7 +71,7 @@ polatory::model<Dim> make_model(const model_options& opts) {
           }
         }
 
-        rbf.set_anisotropy(Eigen::Map<Matrix>(aniso.data()));
+        rbf.set_anisotropy(Eigen::Map<Mat>(aniso.data()));
       } else if (*it == "config") {
         ++it;
 

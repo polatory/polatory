@@ -5,28 +5,28 @@
 #include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/types.hpp>
 
-using polatory::index_t;
-using polatory::matrixd;
-using polatory::geometry::cuboid3d;
+using polatory::Index;
+using polatory::MatX;
+using polatory::geometry::Cuboid3;
 using polatory::point_cloud::random_points;
-using polatory::polynomial::lagrange_basis;
+using polatory::polynomial::LagrangeBasis;
 
 namespace {
 
 template <int kDim>
 void test_degree(int degree) {
-  auto n_points = lagrange_basis<kDim>::basis_size(degree);
+  auto n_points = LagrangeBasis<kDim>::basis_size(degree);
 
   // A constant seed is used as this test occasionally fails.
-  auto points = random_points(cuboid3d(), n_points, 0);
+  auto points = random_points(Cuboid3(), n_points, 0);
 
-  lagrange_basis<kDim> basis(degree, points);
+  LagrangeBasis<kDim> basis(degree, points);
   auto p = basis.evaluate(points);
 
   EXPECT_EQ(n_points, p.rows());
   EXPECT_EQ(basis.basis_size(), p.cols());
 
-  matrixd diff = matrixd::Identity(n_points, n_points) - p;
+  MatX diff = MatX::Identity(n_points, n_points) - p;
 
   EXPECT_LT(diff.lpNorm<Eigen::Infinity>(), 1e-12);
 }

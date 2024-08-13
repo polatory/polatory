@@ -9,55 +9,53 @@
 namespace polatory::polynomial {
 
 template <int Dim>
-class monomial_basis : public polynomial_basis_base<Dim> {
+class MonomialBasis : public PolynomialBasisBase<Dim> {
  public:
   static constexpr int kDim = Dim;
 
  private:
-  using Base = polynomial_basis_base<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Base = PolynomialBasisBase<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
   using Base::basis_size;
   using Base::degree;
 
-  explicit monomial_basis(int degree) : Base(degree) {
-    POLATORY_ASSERT(degree >= 0 && degree <= 2);
-  }
+  explicit MonomialBasis(int degree) : Base(degree) { POLATORY_ASSERT(degree >= 0 && degree <= 2); }
 
   template <class DerivedPoints>
-  matrixd evaluate(const Eigen::MatrixBase<DerivedPoints>& points) const {
+  MatX evaluate(const Eigen::MatrixBase<DerivedPoints>& points) const {
     return evaluate(points, Points(0, Dim));
   }
 
   template <class DerivedPoints, class DerivedGradPoints>
-  matrixd evaluate(const Eigen::MatrixBase<DerivedPoints>& points,
-                   const Eigen::MatrixBase<DerivedGradPoints>& grad_points) const {
+  MatX evaluate(const Eigen::MatrixBase<DerivedPoints>& points,
+                const Eigen::MatrixBase<DerivedGradPoints>& grad_points) const {
     auto mu = points.rows();
     auto sigma = grad_points.rows();
 
-    matrixd result(mu + Dim * sigma, basis_size());
+    MatX result(mu + Dim * sigma, basis_size());
 
     switch (kDim) {
       case 1:
         switch (degree()) {
           case 0:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               result(i, 0) = 1.0;  // 1
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto i_x = mu + i;
               result(i_x, 0) = 0.0;  // 1_x
             }
             break;
 
           case 1:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               auto p = points.row(i);
               result(i, 0) = 1.0;   // 1
               result(i, 1) = p(0);  // x
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto i_x = mu + i;
               result(i_x, 0) = 0.0;  // 1_x
               result(i_x, 1) = 1.0;  // x_x
@@ -65,13 +63,13 @@ class monomial_basis : public polynomial_basis_base<Dim> {
             break;
 
           case 2:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               auto p = points.row(i);
               result(i, 0) = 1.0;          // 1
               result(i, 1) = p(0);         // x
               result(i, 2) = p(0) * p(0);  // x^2
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto p = grad_points.row(i);
               auto i_x = mu + i;
               result(i_x, 0) = 0.0;         // 1_x
@@ -89,10 +87,10 @@ class monomial_basis : public polynomial_basis_base<Dim> {
       case 2:
         switch (degree()) {
           case 0:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               result(i, 0) = 1.0;  // 1
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto i_x = mu + 2 * i;
               auto i_y = mu + 2 * i + 1;
               result(i_x, 0) = 0.0;  // 1_x
@@ -101,13 +99,13 @@ class monomial_basis : public polynomial_basis_base<Dim> {
             break;
 
           case 1:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               auto p = points.row(i);
               result(i, 0) = 1.0;   // 1
               result(i, 1) = p(0);  // x
               result(i, 2) = p(1);  // y
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto i_x = mu + 2 * i;
               auto i_y = mu + 2 * i + 1;
               result(i_x, 0) = 0.0;  // 1_x
@@ -120,7 +118,7 @@ class monomial_basis : public polynomial_basis_base<Dim> {
             break;
 
           case 2:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               auto p = points.row(i);
               result(i, 0) = 1.0;          // 1
               result(i, 1) = p(0);         // x
@@ -129,7 +127,7 @@ class monomial_basis : public polynomial_basis_base<Dim> {
               result(i, 4) = p(0) * p(1);  // xy
               result(i, 5) = p(1) * p(1);  // y^2
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto p = grad_points.row(i);
               auto i_x = mu + 2 * i;
               auto i_y = mu + 2 * i + 1;
@@ -157,10 +155,10 @@ class monomial_basis : public polynomial_basis_base<Dim> {
       case 3:
         switch (degree()) {
           case 0:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               result(i, 0) = 1.0;  // 1
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto i_x = mu + 3 * i;
               auto i_y = mu + 3 * i + 1;
               auto i_z = mu + 3 * i + 2;
@@ -171,14 +169,14 @@ class monomial_basis : public polynomial_basis_base<Dim> {
             break;
 
           case 1:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               auto p = points.row(i);
               result(i, 0) = 1.0;   // 1
               result(i, 1) = p(0);  // x
               result(i, 2) = p(1);  // y
               result(i, 3) = p(2);  // z
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto i_x = mu + 3 * i;
               auto i_y = mu + 3 * i + 1;
               auto i_z = mu + 3 * i + 2;
@@ -198,7 +196,7 @@ class monomial_basis : public polynomial_basis_base<Dim> {
             break;
 
           case 2:
-            for (index_t i = 0; i < mu; i++) {
+            for (Index i = 0; i < mu; i++) {
               auto p = points.row(i);
               result(i, 0) = 1.0;          // 1
               result(i, 1) = p(0);         // x
@@ -211,7 +209,7 @@ class monomial_basis : public polynomial_basis_base<Dim> {
               result(i, 8) = p(1) * p(2);  // yz
               result(i, 9) = p(2) * p(2);  // z^2
             }
-            for (index_t i = 0; i < sigma; i++) {
+            for (Index i = 0; i < sigma; i++) {
               auto p = grad_points.row(i);
               auto i_x = mu + 3 * i;
               auto i_y = mu + 3 * i + 1;

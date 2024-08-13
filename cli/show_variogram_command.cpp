@@ -11,8 +11,8 @@
 
 #include "commands.hpp"
 
-using polatory::index_t;
-using polatory::kriging::variogram_set;
+using polatory::Index;
+using polatory::kriging::VariogramSet;
 
 namespace {
 
@@ -24,15 +24,15 @@ int format_precision(double x) {
   return std::max(0, 5 - static_cast<int>(std::floor(std::log10(std::abs(x)))));
 }
 
-struct options {
+struct Options {
   std::string in_file;
   int dim{};
   int id{};
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using VariogramSet = variogram_set<Dim>;
+void run_impl(const Options& opts) {
+  using VariogramSet = VariogramSet<Dim>;
 
   auto variog_set = VariogramSet::load(opts.in_file);
   auto deg = std::numbers::pi / 180.0;
@@ -40,7 +40,7 @@ void run_impl(const options& opts) {
   if (opts.id == -1) {
     std::cout << std::format("  {:>4}  {:>10}  {:>10}  {:>10}\n", "id", "azimuth", "elevation",
                              "num_pairs");
-    for (index_t i = 0; i < variog_set.num_variograms(); ++i) {
+    for (Index i = 0; i < variog_set.num_variograms(); ++i) {
       const auto& v = variog_set.variograms().at(i);
       const auto& dir = v.direction();
 
@@ -65,7 +65,7 @@ void run_impl(const options& opts) {
     auto gamma_prec = format_precision(max_gamma);
 
     std::cout << std::format("  {:>10}  {:>10}  {:>10}\n", "distance", "gamma", "num_pairs");
-    for (index_t i = 0; i < v.num_bins(); ++i) {
+    for (Index i = 0; i < v.num_bins(); ++i) {
       std::cout << std::format("  {:>10.{}f}  {:>10.{}f}  {:>10}\n", v.bin_distance().at(i),
                                distance_prec, v.bin_gamma().at(i), gamma_prec,
                                v.bin_num_pairs().at(i));
@@ -75,11 +75,11 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void show_variogram_command::run(const std::vector<std::string>& args,
-                                 const global_options& global_opts) {
+void ShowVariogramCommand::run(const std::vector<std::string>& args,
+                               const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

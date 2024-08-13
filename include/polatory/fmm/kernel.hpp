@@ -12,9 +12,9 @@
 namespace polatory::fmm {
 
 template <class Rbf>
-struct kernel {
+struct Kernel {
   static constexpr int kDim = Rbf::kDim;
-  using Vector = geometry::vectorNd<kDim>;
+  using Vector = geometry::Vector<kDim>;
 
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::symmetric};
@@ -25,7 +25,7 @@ struct kernel {
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
 
-  explicit kernel(const Rbf& rbf) : rbf_(rbf) {}
+  explicit Kernel(const Rbf& rbf) : rbf_(rbf) {}
 
   std::string name() const { return ""; }
 

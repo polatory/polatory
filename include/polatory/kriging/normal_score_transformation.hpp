@@ -9,23 +9,23 @@
 
 namespace polatory::kriging {
 
-class normal_score_transformation {
+class NormalScoreTransformation {
  public:
-  normal_score_transformation(int order = 30) : order_(order) {
+  NormalScoreTransformation(int order = 30) : order_(order) {
     if (order < 0) {
       throw std::invalid_argument("order must be non-negative");
     }
   }
 
-  vectord transform(const vectord& z) {
+  VecX transform(const VecX& z) {
     auto n = z.size();
-    std::vector<index_t> indices(n);
+    std::vector<Index> indices(n);
     std::iota(indices.begin(), indices.end(), 0);
     std::sort(indices.begin(), indices.end(), [&](auto i, auto j) { return z(i) < z(j); });
 
-    vectord y(n);
+    VecX y(n);
     auto inv_den = 1.0 / (2.0 * static_cast<double>(n));
-    for (index_t i = 0; i < n; ++i) {
+    for (Index i = 0; i < n; ++i) {
       auto p = (2.0 * static_cast<double>(i) + 1.0) * inv_den;
       y(indices[i]) = inv_normal_cdf(p);
     }
@@ -36,23 +36,23 @@ class normal_score_transformation {
     return y;
   }
 
-  vectord back_transform(const vectord& y) const {
+  VecX back_transform(const VecX& y) const {
     throw_if_not_transformed();
 
     auto n = y.size();
 
-    vectord h0y = vectord::Ones(n);
-    vectord h1y = -y;
+    VecX h0y = VecX::Ones(n);
+    VecX h1y = -y;
 
-    vectord z = phi_(0) * h0y;
+    VecX z = phi_(0) * h0y;
 
     for (auto p = 1; p <= order_; ++p) {
       auto pd = static_cast<double>(p);
 
       z += phi_(p) * h1y;
 
-      vectord h2y = -1.0 / std::sqrt(pd + 1.0) * (y.array() * h1y.array()) -
-                    std::sqrt(pd / (pd + 1.0)) * h0y.array();
+      VecX h2y = -1.0 / std::sqrt(pd + 1.0) * (y.array() * h1y.array()) -
+                 std::sqrt(pd / (pd + 1.0)) * h0y.array();
       h0y = h1y;
       h1y = h2y;
     }
@@ -78,15 +78,15 @@ class normal_score_transformation {
 
  private:
   // Precondition: z and y must be sorted.
-  void compute_phi(const vectord& z, const vectord& y) {
+  void compute_phi(const VecX& z, const VecX& y) {
     auto n = z.size();
-    vectord gy = 1.0 / std::sqrt(2.0 * std::numbers::pi) * (-0.5 * y.array().square()).exp();
+    VecX gy = 1.0 / std::sqrt(2.0 * std::numbers::pi) * (-0.5 * y.array().square()).exp();
 
-    phi_ = vectord::Zero(order_ + 1);
+    phi_ = VecX::Zero(order_ + 1);
     phi_(0) = z.mean();
 
-    vectord a = vectord::Zero(n);
-    for (index_t i = 0; i < n; ++i) {
+    VecX a = VecX::Zero(n);
+    for (Index i = 0; i < n; ++i) {
       if (i == 0) {
         a(i) = z(i) - z(i + 1);
       } else if (i == n - 1) {
@@ -96,15 +96,15 @@ class normal_score_transformation {
       }
     }
 
-    vectord h0y = vectord::Ones(n);
-    vectord h1y = -y;
+    VecX h0y = VecX::Ones(n);
+    VecX h1y = -y;
 
     for (auto p = 1; p <= order_; ++p) {
       auto pd = static_cast<double>(p);
       phi_(p) = 1.0 / std::sqrt(pd) * (a.array() * h0y.array() * gy.array()).sum();
 
-      vectord h2y = -1.0 / std::sqrt(pd + 1.0) * (y.array() * h1y.array()) -
-                    std::sqrt(pd / (pd + 1.0)) * h0y.array();
+      VecX h2y = -1.0 / std::sqrt(pd + 1.0) * (y.array() * h1y.array()) -
+                 std::sqrt(pd / (pd + 1.0)) * h0y.array();
       h0y = h1y;
       h1y = h2y;
     }
@@ -122,7 +122,7 @@ class normal_score_transformation {
 
   int order_;
   bool transformed_{};
-  vectord phi_;  // Coefficients for the Hermite polynomials.
+  VecX phi_;  // Coefficients for the Hermite polynomials.
 };
 
 }  // namespace polatory::kriging

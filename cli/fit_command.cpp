@@ -13,22 +13,22 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
-using polatory::interpolant;
-using polatory::matrixd;
-using polatory::model;
+using polatory::Interpolant;
+using polatory::MatX;
+using polatory::Model;
 using polatory::read_table;
-using polatory::vectord;
-using polatory::geometry::pointsNd;
-using polatory::geometry::vectorsNd;
+using polatory::VecX;
+using polatory::geometry::Points;
+using polatory::geometry::Vectors;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   std::string grad_in_file;
   int dim{};
   std::string model_file;
-  model_options model_opts;
+  ModelOptions model_opts;
   std::string initial_interpolant_file;
   double tolerance{};
   double grad_tolerance{};
@@ -41,17 +41,17 @@ struct options {
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Interpolant = interpolant<Dim>;
-  using Model = model<Dim>;
-  using Points = pointsNd<Dim>;
-  using Vectors = vectorsNd<Dim>;
+void run_impl(const Options& opts) {
+  using Interpolant = Interpolant<Dim>;
+  using Model = Model<Dim>;
+  using Points = Points<Dim>;
+  using Vectors = Vectors<Dim>;
 
-  matrixd table = read_table(opts.in_file);
+  MatX table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
-  vectord values = table.col(Dim);
-  std::optional<vectord> values_lb;
-  std::optional<vectord> values_ub;
+  VecX values = table.col(Dim);
+  std::optional<VecX> values_lb;
+  std::optional<VecX> values_ub;
   if (opts.ineq) {
     values_lb = table.col(Dim + 1);
     values_ub = table.col(Dim + 2);
@@ -60,12 +60,12 @@ void run_impl(const options& opts) {
   Points grad_points;
   Vectors grad_values;
   if (!opts.grad_in_file.empty()) {
-    matrixd grad_table = read_table(opts.grad_in_file);
+    MatX grad_table = read_table(opts.grad_in_file);
     grad_points = grad_table(Eigen::all, Eigen::seqN(0, Dim));
     grad_values = grad_table(Eigen::all, Eigen::seqN(Dim, Dim));
   }
 
-  vectord rhs(values.size() + grad_values.size());
+  VecX rhs(values.size() + grad_values.size());
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
   auto model =
@@ -93,10 +93,10 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void fit_command::run(const std::vector<std::string>& args, const global_options& global_opts) {
+void FitCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

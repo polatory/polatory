@@ -10,14 +10,14 @@ namespace polatory::rbf {
 namespace internal {
 
 template <int Dim>
-class cov_spheroidal7 final : public covariance_function_base<Dim> {
+class CovSpheroidal7 final : public CovarianceFunctionBase<Dim> {
  public:
   static constexpr int kDim = Dim;
   static inline const std::string kShortName = "sp7";
 
  private:
-  using Base = covariance_function_base<Dim>;
-  using Matrix = Base::Matrix;
+  using Base = CovarianceFunctionBase<Dim>;
+  using Mat = Base::Mat;
   using RbfPtr = Base::RbfPtr;
   using Vector = Base::Vector;
 
@@ -33,9 +33,9 @@ class cov_spheroidal7 final : public covariance_function_base<Dim> {
   using Base::parameters;
   using Base::set_parameters;
 
-  explicit cov_spheroidal7(const std::vector<double>& params) { set_parameters(params); }
+  explicit CovSpheroidal7(const std::vector<double>& params) { set_parameters(params); }
 
-  RbfPtr clone() const override { return std::make_unique<cov_spheroidal7>(*this); }
+  RbfPtr clone() const override { return std::make_unique<CovSpheroidal7>(*this); }
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto psill = parameters().at(0);
@@ -59,7 +59,7 @@ class cov_spheroidal7 final : public covariance_function_base<Dim> {
     return coeff * diff;
   }
 
-  Matrix evaluate_hessian_isotropic(const Vector& diff) const override {
+  Mat evaluate_hessian_isotropic(const Vector& diff) const override {
     auto psill = parameters().at(0);
     auto range = parameters().at(1);
     auto r = diff.norm();
@@ -68,9 +68,9 @@ class cov_spheroidal7 final : public covariance_function_base<Dim> {
     auto coeff =
         (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + kC * (rho * rho), -4.5)) /
         (range * range);
-    return coeff * (Matrix::Identity() -
-                    (rho < kRho0 ? 1.0 / (r * r) : 9.0 / (r * r + kE * range * range)) *
-                        diff.transpose() * diff);
+    return coeff *
+           (Mat::Identity() - (rho < kRho0 ? 1.0 / (r * r) : 9.0 / (r * r + kE * range * range)) *
+                                  diff.transpose() * diff);
   }
 
   std::string short_name() const override { return kShortName; }
@@ -78,6 +78,6 @@ class cov_spheroidal7 final : public covariance_function_base<Dim> {
 
 }  // namespace internal
 
-POLATORY_DEFINE_RBF(cov_spheroidal7);
+POLATORY_DEFINE_RBF(CovSpheroidal7);
 
 }  // namespace polatory::rbf

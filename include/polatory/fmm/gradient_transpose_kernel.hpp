@@ -5,6 +5,7 @@
 #include <memory>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
+#include <polatory/types.hpp>
 #include <scalfmm/container/point.hpp>
 #include <scalfmm/matrix_kernels/mk_common.hpp>
 #include <string>
@@ -13,10 +14,10 @@
 namespace polatory::fmm {
 
 template <class Rbf>
-struct gradient_transpose_kernel {
+struct GradientTransposeKernel {
   static constexpr int kDim = Rbf::kDim;
-  using Vector = geometry::vectorNd<kDim>;
-  using Matrix = geometry::matrixNd<kDim>;
+  using Mat = Mat<kDim>;
+  using Vector = geometry::Vector<kDim>;
 
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::non_symmetric};
@@ -27,7 +28,7 @@ struct gradient_transpose_kernel {
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
 
-  explicit gradient_transpose_kernel(const Rbf& rbf) : rbf_(rbf) {}
+  explicit GradientTransposeKernel(const Rbf& rbf) : rbf_(rbf) {}
 
   std::string name() const { return ""; }
 

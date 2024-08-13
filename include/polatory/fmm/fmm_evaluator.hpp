@@ -15,21 +15,21 @@
 namespace polatory::fmm {
 
 template <int Dim>
-class fmm_generic_evaluator_base {
+class FmmGenericEvaluatorBase {
   static constexpr int kDim = Dim;
-  using Points = geometry::pointsNd<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
-  fmm_generic_evaluator_base() = default;
+  FmmGenericEvaluatorBase() = default;
 
-  virtual ~fmm_generic_evaluator_base() = default;
+  virtual ~FmmGenericEvaluatorBase() = default;
 
-  fmm_generic_evaluator_base(const fmm_generic_evaluator_base&) = delete;
-  fmm_generic_evaluator_base(fmm_generic_evaluator_base&&) = delete;
-  fmm_generic_evaluator_base& operator=(const fmm_generic_evaluator_base&) = delete;
-  fmm_generic_evaluator_base& operator=(fmm_generic_evaluator_base&&) = delete;
+  FmmGenericEvaluatorBase(const FmmGenericEvaluatorBase&) = delete;
+  FmmGenericEvaluatorBase(FmmGenericEvaluatorBase&&) = delete;
+  FmmGenericEvaluatorBase& operator=(const FmmGenericEvaluatorBase&) = delete;
+  FmmGenericEvaluatorBase& operator=(FmmGenericEvaluatorBase&&) = delete;
 
-  virtual vectord evaluate() const = 0;
+  virtual VecX evaluate() const = 0;
 
   virtual void set_accuracy(double accuracy) = 0;
 
@@ -37,29 +37,29 @@ class fmm_generic_evaluator_base {
 
   virtual void set_target_points(const Points& points) = 0;
 
-  virtual void set_weights(const Eigen::Ref<const vectord>& weights) = 0;
+  virtual void set_weights(const Eigen::Ref<const VecX>& weights) = 0;
 };
 
 template <int Dim>
-using FmmGenericEvaluatorPtr = std::unique_ptr<fmm_generic_evaluator_base<Dim>>;
+using FmmGenericEvaluatorPtr = std::unique_ptr<FmmGenericEvaluatorBase<Dim>>;
 
 template <class Rbf, class Kernel>
-class fmm_generic_evaluator final : public fmm_generic_evaluator_base<Rbf::kDim> {
+class FmmGenericEvaluator final : public FmmGenericEvaluatorBase<Rbf::kDim> {
   static constexpr int kDim = Rbf::kDim;
-  using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
-  fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox);
+  FmmGenericEvaluator(const Rbf& rbf, const Bbox& bbox);
 
-  ~fmm_generic_evaluator() override;
+  ~FmmGenericEvaluator() override;
 
-  fmm_generic_evaluator(const fmm_generic_evaluator&) = delete;
-  fmm_generic_evaluator(fmm_generic_evaluator&&) = delete;
-  fmm_generic_evaluator& operator=(const fmm_generic_evaluator&) = delete;
-  fmm_generic_evaluator& operator=(fmm_generic_evaluator&&) = delete;
+  FmmGenericEvaluator(const FmmGenericEvaluator&) = delete;
+  FmmGenericEvaluator(FmmGenericEvaluator&&) = delete;
+  FmmGenericEvaluator& operator=(const FmmGenericEvaluator&) = delete;
+  FmmGenericEvaluator& operator=(FmmGenericEvaluator&&) = delete;
 
-  vectord evaluate() const override;
+  VecX evaluate() const override;
 
   void set_accuracy(double accuracy) override;
 
@@ -67,40 +67,40 @@ class fmm_generic_evaluator final : public fmm_generic_evaluator_base<Rbf::kDim>
 
   void set_target_points(const Points& points) override;
 
-  void set_weights(const Eigen::Ref<const vectord>& weights) override;
+  void set_weights(const Eigen::Ref<const VecX>& weights) override;
 
  private:
-  class impl;
+  class Impl;
 
-  std::unique_ptr<impl> impl_;
+  std::unique_ptr<Impl> impl_;
 };
 
 template <class Rbf>
-using fmm_evaluator = fmm_generic_evaluator<Rbf, kernel<Rbf>>;
+using FmmEvaluator = FmmGenericEvaluator<Rbf, Kernel<Rbf>>;
 
 template <class Rbf>
-using fmm_gradient_evaluator = fmm_generic_evaluator<Rbf, gradient_kernel<Rbf>>;
+using FmmGradientEvaluator = FmmGenericEvaluator<Rbf, GradientKernel<Rbf>>;
 
 template <class Rbf>
-using fmm_gradient_transpose_evaluator = fmm_generic_evaluator<Rbf, gradient_transpose_kernel<Rbf>>;
+using FmmGradientTransposeEvaluator = FmmGenericEvaluator<Rbf, GradientTransposeKernel<Rbf>>;
 
 template <class Rbf>
-using fmm_hessian_evaluator = fmm_generic_evaluator<Rbf, hessian_kernel<Rbf>>;
+using FmmHessianEvaluator = FmmGenericEvaluator<Rbf, HessianKernel<Rbf>>;
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                               const geometry::bboxNd<Dim>& bbox);
+FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::Rbf<Dim>& rbf,
+                                               const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                                        const geometry::bboxNd<Dim>& bbox);
+FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf::Rbf<Dim>& rbf,
+                                                        const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(
-    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox);
+FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf::Rbf<Dim>& rbf,
+                                                                  const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf::rbf_proxy<Dim>& rbf,
-                                                       const geometry::bboxNd<Dim>& bbox);
+FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf::Rbf<Dim>& rbf,
+                                                       const geometry::Bbox<Dim>& bbox);
 
 }  // namespace polatory::fmm

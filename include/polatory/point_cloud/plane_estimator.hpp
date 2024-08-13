@@ -7,24 +7,24 @@
 namespace polatory::point_cloud {
 
 // Computes the best-fit plane and its "plane factor" for the given points.
-class plane_estimator {
+class PlaneEstimator {
  public:
-  explicit plane_estimator(const geometry::points3d& points);
+  explicit PlaneEstimator(const geometry::Points3& points);
 
   double line_error() const;
 
   double plane_factor() const;
 
-  geometry::vector3d plane_normal() const;
+  geometry::Vector3 plane_normal() const;
 
   double plane_error() const;
 
   double point_error() const;
 
  private:
-  static Eigen::JacobiSVD<matrixd> pca_svd(const geometry::points3d& points);
+  static Eigen::JacobiSVD<MatX> pca_svd(const geometry::Points3& points);
 
-  geometry::matrix3d basis_;
+  Mat3 basis_;
 
   double point_err_;
   double line_err_;

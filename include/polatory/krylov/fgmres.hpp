@@ -8,21 +8,21 @@
 
 namespace polatory::krylov {
 
-class fgmres : public gmres {
+class Fgmres : public Gmres {
  public:
-  fgmres(const linear_operator& op, const vectord& rhs, index_t max_iter);
+  Fgmres(const LinearOperator& op, const VecX& rhs, Index max_iter);
 
-  void set_left_preconditioner(const linear_operator& /*left_preconditioner*/) override {
+  void set_left_preconditioner(const LinearOperator& /*left_preconditioner*/) override {
     throw std::runtime_error("set_left_preconditioner is not supported");
   }
 
-  vectord solution_vector() const override;
+  VecX solution_vector() const override;
 
  private:
-  void add_preconditioned_krylov_basis(const vectord& z) override;
+  void add_preconditioned_krylov_basis(const VecX& z) override;
 
   // zs[i] := right_preconditioned(vs[i - 1]).
-  std::vector<vectord> zs_;
+  std::vector<VecX> zs_;
 };
 
 }  // namespace polatory::krylov

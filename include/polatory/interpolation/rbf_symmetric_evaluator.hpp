@@ -17,28 +17,28 @@
 namespace polatory::interpolation {
 
 template <int Dim>
-class rbf_symmetric_evaluator {
+class SymmetricEvaluator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
-  using Bbox = geometry::bboxNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
   using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim>;
-  using Model = model<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
+  using Model = Model<kDim>;
+  using MonomialBasis = polynomial::MonomialBasis<kDim>;
+  using Points = geometry::Points<kDim>;
+  using PolynomialEvaluator = polynomial::PolynomialEvaluator<MonomialBasis>;
 
  public:
-  rbf_symmetric_evaluator(const Model& model, const Points& points, const Points& grad_points,
-                          double accuracy = kInfinity, double grad_accuracy = kInfinity)
-      : rbf_symmetric_evaluator(
-            model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)), accuracy,
-            grad_accuracy) {
+  SymmetricEvaluator(const Model& model, const Points& points, const Points& grad_points,
+                     double accuracy = kInfinity, double grad_accuracy = kInfinity)
+      : SymmetricEvaluator(model,
+                           Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
+                           accuracy, grad_accuracy) {
     set_points(points, grad_points);
   }
 
-  rbf_symmetric_evaluator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
-                          double grad_accuracy = kInfinity)
+  SymmetricEvaluator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
+                     double grad_accuracy = kInfinity)
       : l_(model.poly_basis_size()), accuracy_(accuracy), grad_accuracy_(grad_accuracy) {
     for (const auto& rbf : model.rbfs()) {
       a_.push_back(fmm::make_fmm_symmetric_evaluator(rbf, bbox));
@@ -52,8 +52,8 @@ class rbf_symmetric_evaluator {
     }
   }
 
-  vectord evaluate() const {
-    vectord y = vectord::Zero(mu_ + kDim * sigma_);
+  VecX evaluate() const {
+    VecX y = VecX::Zero(mu_ + kDim * sigma_);
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
       y.head(mu_) += a_.at(i)->evaluate();
@@ -114,11 +114,11 @@ class rbf_symmetric_evaluator {
   }
 
  private:
-  const index_t l_;
+  const Index l_;
   const double accuracy_;
   const double grad_accuracy_;
-  index_t mu_{};
-  index_t sigma_{};
+  Index mu_{};
+  Index sigma_{};
 
   std::vector<FmmGenericSymmetricEvaluatorPtr> a_;
   std::vector<FmmGenericEvaluatorPtr> f_;

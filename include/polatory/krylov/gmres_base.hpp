@@ -6,14 +6,14 @@
 
 namespace polatory::krylov {
 
-class gmres_base {
+class GmresBase {
  public:
-  virtual ~gmres_base() = default;
+  virtual ~GmresBase() = default;
 
-  gmres_base(const gmres_base&) = delete;
-  gmres_base(gmres_base&&) = delete;
-  gmres_base& operator=(const gmres_base&) = delete;
-  gmres_base& operator=(gmres_base&&) = delete;
+  GmresBase(const GmresBase&) = delete;
+  GmresBase(GmresBase&&) = delete;
+  GmresBase& operator=(const GmresBase&) = delete;
+  GmresBase& operator=(GmresBase&&) = delete;
 
   double absolute_residual() const;
 
@@ -21,71 +21,71 @@ class gmres_base {
 
   virtual void iterate_process() = 0;
 
-  index_t iteration_count() const;
+  Index iteration_count() const;
 
-  index_t max_iterations() const;
+  Index max_iterations() const;
 
   double relative_residual() const;
 
-  virtual void set_left_preconditioner(const linear_operator& left_preconditioner);
+  virtual void set_left_preconditioner(const LinearOperator& left_preconditioner);
 
-  void set_initial_solution(const vectord& x0);
+  void set_initial_solution(const VecX& x0);
 
-  virtual void set_right_preconditioner(const linear_operator& right_preconditioner);
+  virtual void set_right_preconditioner(const LinearOperator& right_preconditioner);
 
   virtual void setup();
 
-  virtual vectord solution_vector() const;
+  virtual VecX solution_vector() const;
 
  protected:
-  gmres_base(const linear_operator& op, const vectord& rhs, index_t max_iter);
+  GmresBase(const LinearOperator& op, const VecX& rhs, Index max_iter);
 
-  virtual void add_preconditioned_krylov_basis(const vectord& /*z*/) {}
+  virtual void add_preconditioned_krylov_basis(const VecX& /*z*/) {}
 
-  vectord left_preconditioned(const vectord& x) const;
+  VecX left_preconditioned(const VecX& x) const;
 
-  vectord right_preconditioned(const vectord& x) const;
+  VecX right_preconditioned(const VecX& x) const;
 
-  const linear_operator& op_;
+  const LinearOperator& op_;
 
   // Dimension.
-  const index_t m_;
+  const Index m_;
 
   // Maximum # of iteration.
-  const index_t max_iter_;
+  const Index max_iter_;
 
   // Initial solution.
-  vectord x0_;
+  VecX x0_;
 
   // Left preconditioner.
-  const linear_operator* left_pc_{};
+  const LinearOperator* left_pc_{};
 
   // Right preconditioner.
-  const linear_operator* right_pc_{};
+  const LinearOperator* right_pc_{};
 
   // Current # of iteration.
-  index_t iter_{};
+  Index iter_{};
 
   // Constant (right-hand side) vector.
-  const vectord rhs_;
+  const VecX rhs_;
 
   // L2 norm of rhs.
   double rhs_norm_;
 
   // Orthonormal basis vectors for the Krylov subspace.
-  std::vector<vectord> vs_;
+  std::vector<VecX> vs_;
 
   // Upper triangular matrix of QR decomposition.
-  matrixd r_;
+  MatX r_;
 
   // Cosines for the Givens rotations.
-  vectord c_;
+  VecX c_;
 
   // Sines for the Givens rotations.
-  vectord s_;
+  VecX s_;
 
   // Sequence of residuals.
-  vectord g_;
+  VecX g_;
 
   bool converged_{};
 };

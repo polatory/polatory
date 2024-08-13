@@ -6,29 +6,29 @@
 namespace polatory::polynomial {
 
 template <int Dim>
-class polynomial_basis_base {
+class PolynomialBasisBase {
  public:
   static constexpr int kDim = Dim;
 
-  explicit polynomial_basis_base(int degree) : degree_(degree) { POLATORY_ASSERT(degree >= 0); }
+  explicit PolynomialBasisBase(int degree) : degree_(degree) { POLATORY_ASSERT(degree >= 0); }
 
-  virtual ~polynomial_basis_base() = default;
+  virtual ~PolynomialBasisBase() = default;
 
-  polynomial_basis_base(const polynomial_basis_base&) = delete;
-  polynomial_basis_base(polynomial_basis_base&&) = delete;
-  polynomial_basis_base& operator=(const polynomial_basis_base&) = delete;
-  polynomial_basis_base& operator=(polynomial_basis_base&&) = delete;
+  PolynomialBasisBase(const PolynomialBasisBase&) = delete;
+  PolynomialBasisBase(PolynomialBasisBase&&) = delete;
+  PolynomialBasisBase& operator=(const PolynomialBasisBase&) = delete;
+  PolynomialBasisBase& operator=(PolynomialBasisBase&&) = delete;
 
-  index_t basis_size() const { return basis_size(degree_); }
+  Index basis_size() const { return basis_size(degree_); }
 
   int degree() const { return degree_; }
 
-  static index_t basis_size(int degree) {
+  static Index basis_size(int degree) {
     if (degree < 0) {
       return 0;
     }
 
-    auto k = index_t{degree} + 1;
+    auto k = Index{degree} + 1;
     switch (kDim) {
       case 1:
         return k;

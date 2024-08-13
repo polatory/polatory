@@ -5,8 +5,8 @@
 
 namespace polatory::fmm {
 
-IMPLEMENT_FMM_EVALUATORS(rbf::internal::cov_spheroidal5);
+IMPLEMENT_FMM_EVALUATORS(rbf::internal::CovSpheroidal5);
 
-IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::cov_spheroidal5);
+IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::CovSpheroidal5);
 
 }  // namespace polatory::fmm

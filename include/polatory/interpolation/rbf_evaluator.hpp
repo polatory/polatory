@@ -16,39 +16,39 @@
 namespace polatory::interpolation {
 
 template <int Dim>
-class rbf_evaluator {
+class Evaluator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
-  using Bbox = geometry::bboxNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
-  using Model = model<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using PolynomialEvaluator = polynomial::polynomial_evaluator<MonomialBasis>;
+  using Model = Model<kDim>;
+  using MonomialBasis = polynomial::MonomialBasis<kDim>;
+  using Points = geometry::Points<kDim>;
+  using PolynomialEvaluator = polynomial::PolynomialEvaluator<MonomialBasis>;
 
  public:
-  rbf_evaluator(const Model& model, const Points& source_points, double accuracy = kInfinity)
-      : rbf_evaluator(model, source_points, Points(0, kDim), accuracy, kInfinity) {}
+  Evaluator(const Model& model, const Points& source_points, double accuracy = kInfinity)
+      : Evaluator(model, source_points, Points(0, kDim), accuracy, kInfinity) {}
 
-  rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
-                double accuracy = kInfinity, double grad_accuracy = kInfinity)
-      : rbf_evaluator(
+  Evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
+            double accuracy = kInfinity, double grad_accuracy = kInfinity)
+      : Evaluator(
             model, source_points, source_grad_points,
             Bbox::from_points(source_points).convex_hull(Bbox::from_points(source_grad_points)),
             accuracy, grad_accuracy) {}
 
-  rbf_evaluator(const Model& model, const Points& source_points, const Bbox& bbox,
-                double accuracy = kInfinity)
-      : rbf_evaluator(model, source_points, Points(0, kDim), bbox, accuracy, kInfinity) {}
+  Evaluator(const Model& model, const Points& source_points, const Bbox& bbox,
+            double accuracy = kInfinity)
+      : Evaluator(model, source_points, Points(0, kDim), bbox, accuracy, kInfinity) {}
 
-  rbf_evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
-                const Bbox& bbox, double accuracy = kInfinity, double grad_accuracy = kInfinity)
-      : rbf_evaluator(model, bbox, accuracy, grad_accuracy) {
+  Evaluator(const Model& model, const Points& source_points, const Points& source_grad_points,
+            const Bbox& bbox, double accuracy = kInfinity, double grad_accuracy = kInfinity)
+      : Evaluator(model, bbox, accuracy, grad_accuracy) {
     set_source_points(source_points, source_grad_points);
   }
 
-  rbf_evaluator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
-                double grad_accuracy = kInfinity)
+  Evaluator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
+            double grad_accuracy = kInfinity)
       : l_(model.poly_basis_size()), accuracy_(accuracy), grad_accuracy_(grad_accuracy) {
     for (const auto& rbf : model.rbfs()) {
       a_.push_back(fmm::make_fmm_evaluator(rbf, bbox));
@@ -62,8 +62,8 @@ class rbf_evaluator {
     }
   }
 
-  vectord evaluate() const {
-    vectord y = vectord::Zero(trg_mu_ + kDim * trg_sigma_);
+  VecX evaluate() const {
+    VecX y = VecX::Zero(trg_mu_ + kDim * trg_sigma_);
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
       y.head(trg_mu_) += a_.at(i)->evaluate();
@@ -80,9 +80,9 @@ class rbf_evaluator {
     return y;
   }
 
-  vectord evaluate(const Points& target_points) { return evaluate(target_points, Points(0, kDim)); }
+  VecX evaluate(const Points& target_points) { return evaluate(target_points, Points(0, kDim)); }
 
-  vectord evaluate(const Points& target_points, const Points& target_grad_points) {
+  VecX evaluate(const Points& target_points, const Points& target_grad_points) {
     set_target_points(target_points, target_grad_points);
 
     return evaluate();
@@ -144,13 +144,13 @@ class rbf_evaluator {
   }
 
  private:
-  const index_t l_;
+  const Index l_;
   const double accuracy_;
   const double grad_accuracy_;
-  index_t mu_{};
-  index_t sigma_{};
-  index_t trg_mu_{};
-  index_t trg_sigma_{};
+  Index mu_{};
+  Index sigma_{};
+  Index trg_mu_{};
+  Index trg_sigma_{};
 
   std::vector<FmmGenericEvaluatorPtr> a_;
   std::vector<FmmGenericEvaluatorPtr> f_;

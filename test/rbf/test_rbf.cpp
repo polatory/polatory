@@ -23,59 +23,59 @@
 
 #include "../utility.hpp"
 
-using polatory::geometry::matrix3d;
+using polatory::Mat3;
 using polatory::geometry::transform_vector;
-using polatory::geometry::vector3d;
-using polatory::rbf::internal::biharmonic2d;
-using polatory::rbf::internal::biharmonic3d;
-using polatory::rbf::internal::cov_cubic;
-using polatory::rbf::internal::cov_exponential;
-using polatory::rbf::internal::cov_gaussian;
-using polatory::rbf::internal::cov_generalized_cauchy3;
-using polatory::rbf::internal::cov_generalized_cauchy5;
-using polatory::rbf::internal::cov_generalized_cauchy7;
-using polatory::rbf::internal::cov_generalized_cauchy9;
-using polatory::rbf::internal::cov_spherical;
-using polatory::rbf::internal::cov_spheroidal3;
-using polatory::rbf::internal::cov_spheroidal5;
-using polatory::rbf::internal::cov_spheroidal7;
-using polatory::rbf::internal::cov_spheroidal9;
-using polatory::rbf::internal::inverse_multiquadric1;
-using polatory::rbf::internal::multiquadric1;
-using polatory::rbf::internal::multiquadric3;
-using polatory::rbf::internal::rbf_base;
-using polatory::rbf::internal::triharmonic2d;
-using polatory::rbf::internal::triharmonic3d;
+using polatory::geometry::Vector3;
+using polatory::rbf::internal::Biharmonic2D;
+using polatory::rbf::internal::Biharmonic3D;
+using polatory::rbf::internal::CovCubic;
+using polatory::rbf::internal::CovExponential;
+using polatory::rbf::internal::CovGaussian;
+using polatory::rbf::internal::CovGeneralizedCauchy3;
+using polatory::rbf::internal::CovGeneralizedCauchy5;
+using polatory::rbf::internal::CovGeneralizedCauchy7;
+using polatory::rbf::internal::CovGeneralizedCauchy9;
+using polatory::rbf::internal::CovSpherical;
+using polatory::rbf::internal::CovSpheroidal3;
+using polatory::rbf::internal::CovSpheroidal5;
+using polatory::rbf::internal::CovSpheroidal7;
+using polatory::rbf::internal::CovSpheroidal9;
+using polatory::rbf::internal::InverseMultiquadric1;
+using polatory::rbf::internal::Multiquadric1;
+using polatory::rbf::internal::Multiquadric3;
+using polatory::rbf::internal::RbfBase;
+using polatory::rbf::internal::Triharmonic2D;
+using polatory::rbf::internal::Triharmonic3D;
 
 namespace {
 
-vector3d gradient_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
+Vector3 gradient_approx(const RbfBase<3>& rbf, const Vector3& v, double h) {
   // First-order central difference.
 
-  auto xm = vector3d{v(0) - h, v(1), v(2)};
-  auto ym = vector3d{v(0), v(1) - h, v(2)};
-  auto zm = vector3d{v(0), v(1), v(2) - h};
+  auto xm = Vector3{v(0) - h, v(1), v(2)};
+  auto ym = Vector3{v(0), v(1) - h, v(2)};
+  auto zm = Vector3{v(0), v(1), v(2) - h};
 
-  auto xp = vector3d{v(0) + h, v(1), v(2)};
-  auto yp = vector3d{v(0), v(1) + h, v(2)};
-  auto zp = vector3d{v(0), v(1), v(2) + h};
+  auto xp = Vector3{v(0) + h, v(1), v(2)};
+  auto yp = Vector3{v(0), v(1) + h, v(2)};
+  auto zp = Vector3{v(0), v(1), v(2) + h};
 
-  return vector3d{rbf.evaluate_isotropic(xp) - rbf.evaluate_isotropic(xm),
-                  rbf.evaluate_isotropic(yp) - rbf.evaluate_isotropic(ym),
-                  rbf.evaluate_isotropic(zp) - rbf.evaluate_isotropic(zm)} /
+  return Vector3{rbf.evaluate_isotropic(xp) - rbf.evaluate_isotropic(xm),
+                 rbf.evaluate_isotropic(yp) - rbf.evaluate_isotropic(ym),
+                 rbf.evaluate_isotropic(zp) - rbf.evaluate_isotropic(zm)} /
          (2.0 * h);
 }
 
-matrix3d hessian_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
-  auto xm = vector3d{v(0) - h, v(1), v(2)};
-  auto ym = vector3d{v(0), v(1) - h, v(2)};
-  auto zm = vector3d{v(0), v(1), v(2) - h};
+Mat3 hessian_approx(const RbfBase<3>& rbf, const Vector3& v, double h) {
+  auto xm = Vector3{v(0) - h, v(1), v(2)};
+  auto ym = Vector3{v(0), v(1) - h, v(2)};
+  auto zm = Vector3{v(0), v(1), v(2) - h};
 
-  auto xp = vector3d{v(0) + h, v(1), v(2)};
-  auto yp = vector3d{v(0), v(1) + h, v(2)};
-  auto zp = vector3d{v(0), v(1), v(2) + h};
+  auto xp = Vector3{v(0) + h, v(1), v(2)};
+  auto yp = Vector3{v(0), v(1) + h, v(2)};
+  auto zp = Vector3{v(0), v(1), v(2) + h};
 
-  matrix3d m;
+  Mat3 m;
   m << rbf.evaluate_gradient_isotropic(xp) - rbf.evaluate_gradient_isotropic(xm),
       rbf.evaluate_gradient_isotropic(yp) - rbf.evaluate_gradient_isotropic(ym),
       rbf.evaluate_gradient_isotropic(zp) - rbf.evaluate_gradient_isotropic(zm);
@@ -84,7 +84,7 @@ matrix3d hessian_approx(const rbf_base<3>& rbf, const vector3d& v, double h) {
   return m;
 }
 
-void test_gradient(const rbf_base<3>& rbf) {
+void test_gradient(const RbfBase<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-4;
 
@@ -96,7 +96,7 @@ void test_gradient(const rbf_base<3>& rbf) {
     auto x = dist(gen);
     auto y = dist(gen);
     auto z = dist(gen);
-    vector3d xx{x, y, z};
+    Vector3 xx{x, y, z};
 
     auto grad = rbf.evaluate_gradient_isotropic(xx);
     auto grad_approx = gradient_approx(rbf, xx, h);
@@ -105,7 +105,7 @@ void test_gradient(const rbf_base<3>& rbf) {
   }
 }
 
-void test_hessian(const rbf_base<3>& rbf) {
+void test_hessian(const RbfBase<3>& rbf) {
   const auto h = 1e-8;
   const auto tolerance = 1e-4;
 
@@ -117,7 +117,7 @@ void test_hessian(const rbf_base<3>& rbf) {
     auto x = dist(gen);
     auto y = dist(gen);
     auto z = dist(gen);
-    vector3d xx{x, y, z};
+    Vector3 xx{x, y, z};
 
     auto hess = rbf.evaluate_hessian_isotropic(xx);
     auto hess_approx = hessian_approx(rbf, xx, h);
@@ -130,56 +130,56 @@ void test_hessian(const rbf_base<3>& rbf) {
 
 TEST(rbf, anisotropy) {
   auto a = random_anisotropy<3>();
-  vector3d v({1.0, 1.0, 1.0});
+  Vector3 v({1.0, 1.0, 1.0});
 
-  biharmonic3d<3> rbf_iso({1.0});
+  Biharmonic3D<3> rbf_iso({1.0});
 
-  biharmonic3d<3> rbf_aniso({1.0});
+  Biharmonic3D<3> rbf_aniso({1.0});
   rbf_aniso.set_anisotropy(a);
 
   ASSERT_EQ(rbf_iso.evaluate(transform_vector<3>(a, v)), rbf_aniso.evaluate(v));
 }
 
 TEST(rbf, gradient) {
-  test_gradient(biharmonic2d<3>({1.1}));
-  test_gradient(biharmonic3d<3>({1.1}));
-  test_gradient(cov_cubic<3>({1.1, 0.9}));
-  test_gradient(cov_exponential<3>({1.1, 0.9}));
-  test_gradient(cov_gaussian<3>({1.1, 0.9}));
-  test_gradient(cov_generalized_cauchy3<3>({1.1, 0.9}));
-  test_gradient(cov_generalized_cauchy5<3>({1.1, 0.9}));
-  test_gradient(cov_generalized_cauchy7<3>({1.1, 0.9}));
-  test_gradient(cov_generalized_cauchy9<3>({1.1, 0.9}));
-  test_gradient(cov_spherical<3>({1.1, 0.9}));
-  test_gradient(cov_spheroidal3<3>({1.1, 0.9}));
-  test_gradient(cov_spheroidal5<3>({1.1, 0.9}));
-  test_gradient(cov_spheroidal7<3>({1.1, 0.9}));
-  test_gradient(cov_spheroidal9<3>({1.1, 0.9}));
-  test_gradient(inverse_multiquadric1<3>({1.1, 0.1}));
-  test_gradient(multiquadric1<3>({1.1, 0.1}));
-  test_gradient(multiquadric3<3>({1.1, 0.1}));
-  test_gradient(triharmonic2d<3>({1.1}));
-  test_gradient(triharmonic3d<3>({1.1}));
+  test_gradient(Biharmonic2D<3>({1.1}));
+  test_gradient(Biharmonic3D<3>({1.1}));
+  test_gradient(CovCubic<3>({1.1, 0.9}));
+  test_gradient(CovExponential<3>({1.1, 0.9}));
+  test_gradient(CovGaussian<3>({1.1, 0.9}));
+  test_gradient(CovGeneralizedCauchy3<3>({1.1, 0.9}));
+  test_gradient(CovGeneralizedCauchy5<3>({1.1, 0.9}));
+  test_gradient(CovGeneralizedCauchy7<3>({1.1, 0.9}));
+  test_gradient(CovGeneralizedCauchy9<3>({1.1, 0.9}));
+  test_gradient(CovSpherical<3>({1.1, 0.9}));
+  test_gradient(CovSpheroidal3<3>({1.1, 0.9}));
+  test_gradient(CovSpheroidal5<3>({1.1, 0.9}));
+  test_gradient(CovSpheroidal7<3>({1.1, 0.9}));
+  test_gradient(CovSpheroidal9<3>({1.1, 0.9}));
+  test_gradient(InverseMultiquadric1<3>({1.1, 0.1}));
+  test_gradient(Multiquadric1<3>({1.1, 0.1}));
+  test_gradient(Multiquadric3<3>({1.1, 0.1}));
+  test_gradient(Triharmonic2D<3>({1.1}));
+  test_gradient(Triharmonic3D<3>({1.1}));
 }
 
 TEST(rbf, hessian) {
-  test_hessian(biharmonic2d<3>({1.1}));
-  test_hessian(biharmonic3d<3>({1.1}));
-  // test_hessian(cov_cubic<3>({1.1, 0.9}));
-  test_hessian(cov_exponential<3>({1.1, 0.9}));
-  test_hessian(cov_gaussian<3>({1.1, 0.9}));
-  test_hessian(cov_generalized_cauchy3<3>({1.1, 0.9}));
-  test_hessian(cov_generalized_cauchy5<3>({1.1, 0.9}));
-  test_hessian(cov_generalized_cauchy7<3>({1.1, 0.9}));
-  test_hessian(cov_generalized_cauchy9<3>({1.1, 0.9}));
-  // test_hessian(cov_spherical<3>({1.1, 0.9}));
-  test_hessian(cov_spheroidal3<3>({1.1, 0.9}));
-  test_hessian(cov_spheroidal5<3>({1.1, 0.9}));
-  test_hessian(cov_spheroidal7<3>({1.1, 0.9}));
-  test_hessian(cov_spheroidal9<3>({1.1, 0.9}));
-  test_hessian(inverse_multiquadric1<3>({1.1, 0.1}));
-  test_hessian(multiquadric1<3>({1.1, 0.1}));
-  test_hessian(multiquadric3<3>({1.1, 0.1}));
-  test_hessian(triharmonic2d<3>({1.1}));
-  test_hessian(triharmonic3d<3>({1.1}));
+  test_hessian(Biharmonic2D<3>({1.1}));
+  test_hessian(Biharmonic3D<3>({1.1}));
+  // test_hessian(CovCubic<3>({1.1, 0.9}));
+  test_hessian(CovExponential<3>({1.1, 0.9}));
+  test_hessian(CovGaussian<3>({1.1, 0.9}));
+  test_hessian(CovGeneralizedCauchy3<3>({1.1, 0.9}));
+  test_hessian(CovGeneralizedCauchy5<3>({1.1, 0.9}));
+  test_hessian(CovGeneralizedCauchy7<3>({1.1, 0.9}));
+  test_hessian(CovGeneralizedCauchy9<3>({1.1, 0.9}));
+  // test_hessian(CovSpherical<3>({1.1, 0.9}));
+  test_hessian(CovSpheroidal3<3>({1.1, 0.9}));
+  test_hessian(CovSpheroidal5<3>({1.1, 0.9}));
+  test_hessian(CovSpheroidal7<3>({1.1, 0.9}));
+  test_hessian(CovSpheroidal9<3>({1.1, 0.9}));
+  test_hessian(InverseMultiquadric1<3>({1.1, 0.1}));
+  test_hessian(Multiquadric1<3>({1.1, 0.1}));
+  test_hessian(Multiquadric3<3>({1.1, 0.1}));
+  test_hessian(Triharmonic2D<3>({1.1}));
+  test_hessian(Triharmonic3D<3>({1.1}));
 }

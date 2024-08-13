@@ -9,69 +9,69 @@
 
 namespace polatory::point_cloud {
 
-class normal_estimator {
+class NormalEstimator {
  public:
-  explicit normal_estimator(const geometry::points3d& points);
+  explicit NormalEstimator(const geometry::Points3& points);
 
-  normal_estimator& estimate_with_knn(index_t k) &;
+  NormalEstimator& estimate_with_knn(Index k) &;
 
-  normal_estimator&& estimate_with_knn(index_t k) && { return std::move(estimate_with_knn(k)); }
+  NormalEstimator&& estimate_with_knn(Index k) && { return std::move(estimate_with_knn(k)); }
 
-  normal_estimator& estimate_with_knn(const std::vector<index_t>& ks) &;
+  NormalEstimator& estimate_with_knn(const std::vector<Index>& ks) &;
 
-  normal_estimator&& estimate_with_knn(const std::vector<index_t>& ks) && {
+  NormalEstimator&& estimate_with_knn(const std::vector<Index>& ks) && {
     return std::move(estimate_with_knn(ks));
   }
 
-  normal_estimator& estimate_with_radius(double radius) &;
+  NormalEstimator& estimate_with_radius(double radius) &;
 
-  normal_estimator&& estimate_with_radius(double radius) && {
+  NormalEstimator&& estimate_with_radius(double radius) && {
     return std::move(estimate_with_radius(radius));
   }
 
-  normal_estimator& estimate_with_radius(const std::vector<double>& radii) &;
+  NormalEstimator& estimate_with_radius(const std::vector<double>& radii) &;
 
-  normal_estimator&& estimate_with_radius(const std::vector<double>& radii) && {
+  NormalEstimator&& estimate_with_radius(const std::vector<double>& radii) && {
     return std::move(estimate_with_radius(radii));
   }
 
-  normal_estimator& filter_by_plane_factor(double threshold = 1.8) &;
+  NormalEstimator& filter_by_plane_factor(double threshold = 1.8) &;
 
-  normal_estimator&& filter_by_plane_factor(double threshold = 1.8) && {
+  NormalEstimator&& filter_by_plane_factor(double threshold = 1.8) && {
     return std::move(filter_by_plane_factor(threshold));
   }
 
-  geometry::vectors3d&& into_normals() && {
+  geometry::Vectors3&& into_normals() && {
     throw_if_not_estimated();
 
     return std::move(normals_);
   }
 
-  const geometry::vectors3d& normals() const& {
+  const geometry::Vectors3& normals() const& {
     throw_if_not_estimated();
 
     return normals_;
   }
 
-  normal_estimator& orient_toward_direction(const geometry::vector3d& direction) &;
+  NormalEstimator& orient_toward_direction(const geometry::Vector3& direction) &;
 
-  normal_estimator&& orient_toward_direction(const geometry::vector3d& direction) && {
+  NormalEstimator&& orient_toward_direction(const geometry::Vector3& direction) && {
     return std::move(orient_toward_direction(direction));
   }
 
-  normal_estimator& orient_toward_point(const geometry::point3d& point) &;
+  NormalEstimator& orient_toward_point(const geometry::Point3& point) &;
 
-  normal_estimator&& orient_toward_point(const geometry::point3d& point) && {
+  NormalEstimator&& orient_toward_point(const geometry::Point3& point) && {
     return std::move(orient_toward_point(point));
   }
 
-  normal_estimator& orient_closed_surface(index_t k = 100) &;
+  NormalEstimator& orient_closed_surface(Index k = 100) &;
 
-  normal_estimator&& orient_closed_surface(index_t k = 100) && {
+  NormalEstimator&& orient_closed_surface(Index k = 100) && {
     return std::move(orient_closed_surface(k));
   }
 
-  const vectord& plane_factors() const& {
+  const VecX& plane_factors() const& {
     throw_if_not_estimated();
 
     return plane_factors_;
@@ -84,13 +84,13 @@ class normal_estimator {
     }
   }
 
-  const index_t n_points_;
-  const geometry::points3d points_;  // Do not hold a reference to a temporary object.
-  kdtree<3> tree_;
+  const Index n_points_;
+  const geometry::Points3 points_;  // Do not hold a reference to a temporary object.
+  KdTree<3> tree_;
 
   bool estimated_{};
-  geometry::vectors3d normals_;
-  vectord plane_factors_;
+  geometry::Vectors3 normals_;
+  VecX plane_factors_;
 };
 
 }  // namespace polatory::point_cloud

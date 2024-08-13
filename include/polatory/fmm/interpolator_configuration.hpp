@@ -4,7 +4,7 @@
 
 namespace polatory::fmm {
 
-struct interpolator_configuration {
+struct InterpolatorConfiguration {
   static constexpr int kClassic = -1;
 
   // The order of the uniform interpolator.
@@ -16,13 +16,11 @@ struct interpolator_configuration {
   int d{};
 };
 
-inline bool operator==(const interpolator_configuration& lhs,
-                       const interpolator_configuration& rhs) {
+inline bool operator==(const InterpolatorConfiguration& lhs, const InterpolatorConfiguration& rhs) {
   return lhs.order == rhs.order && lhs.d == rhs.d;
 }
 
-inline bool operator!=(const interpolator_configuration& lhs,
-                       const interpolator_configuration& rhs) {
+inline bool operator!=(const InterpolatorConfiguration& lhs, const InterpolatorConfiguration& rhs) {
   return !(lhs == rhs);
 }
 
@@ -31,8 +29,8 @@ inline bool operator!=(const interpolator_configuration& lhs,
 namespace polatory::common {
 
 template <>
-struct Read<fmm::interpolator_configuration> {
-  void operator()(std::istream& is, fmm::interpolator_configuration& t) const {
+struct Read<fmm::InterpolatorConfiguration> {
+  void operator()(std::istream& is, fmm::InterpolatorConfiguration& t) const {
     int order{};
     int d{};
     read(is, order);
@@ -42,8 +40,8 @@ struct Read<fmm::interpolator_configuration> {
 };
 
 template <>
-struct Write<fmm::interpolator_configuration> {
-  void operator()(std::ostream& os, const fmm::interpolator_configuration& t) const {
+struct Write<fmm::InterpolatorConfiguration> {
+  void operator()(std::ostream& os, const fmm::InterpolatorConfiguration& t) const {
     write(os, t.order);
     write(os, t.d);
   }

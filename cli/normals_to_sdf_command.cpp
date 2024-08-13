@@ -12,44 +12,44 @@
 
 #include "commands.hpp"
 
-using polatory::index_t;
-using polatory::matrixd;
+using polatory::Index;
+using polatory::Mat3;
+using polatory::MatX;
 using polatory::read_table;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
-using polatory::geometry::matrix3d;
-using polatory::geometry::points3d;
-using polatory::geometry::vectors3d;
+using polatory::geometry::Points3;
+using polatory::geometry::Vectors3;
 using polatory::numeric::to_double;
-using polatory::point_cloud::sdf_data_generator;
+using polatory::point_cloud::SdfDataGenerator;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   double min_offset{};
   double max_offset{};
   double ratio{};
-  matrix3d aniso;
+  Mat3 aniso;
   std::string out_file;
 };
 
-void run_impl(const options& opts) {
-  matrixd table = read_table(opts.in_file);
+void run_impl(const Options& opts) {
+  MatX table = read_table(opts.in_file);
 
-  points3d points = table(Eigen::all, {0, 1, 2});
-  vectors3d normals = table(Eigen::all, {3, 4, 5});
+  Points3 points = table(Eigen::all, {0, 1, 2});
+  Vectors3 normals = table(Eigen::all, {3, 4, 5});
 
   auto n_normals = normals.rows();
-  auto n_normals_to_keep = static_cast<index_t>(std::round(opts.ratio * n_normals));
-  std::vector<index_t> indices(n_normals);
+  auto n_normals_to_keep = static_cast<Index>(std::round(opts.ratio * n_normals));
+  std::vector<Index> indices(n_normals);
   std::iota(indices.begin(), indices.end(), 0);
   // Prevent clustering of off-surface points.
   std::shuffle(indices.begin(), indices.end(), std::mt19937{});
   indices.resize(n_normals - n_normals_to_keep);
   normals(indices, Eigen::all) *= 0.0;
 
-  sdf_data_generator sdf_data(points, normals, opts.min_offset, opts.max_offset, opts.aniso);
+  SdfDataGenerator sdf_data(points, normals, opts.min_offset, opts.max_offset, opts.aniso);
 
   const auto& sdf_points = sdf_data.sdf_points();
   const auto& sdf_values = sdf_data.sdf_values();
@@ -59,11 +59,11 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void normals_to_sdf_command::run(const std::vector<std::string>& args,
-                                 const global_options& global_opts) {
+void NormalsToSdfCommand::run(const std::vector<std::string>& args,
+                              const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //
@@ -76,7 +76,7 @@ void normals_to_sdf_command::run(const std::vector<std::string>& args,
       ("aniso",
        po::value(&opts.aniso)
            ->multitoken()
-           ->default_value(matrix3d::Identity(), "1 0 0 0 1 0 0 0 1")
+           ->default_value(Mat3::Identity(), "1 0 0 0 1 0 0 0 1")
            ->value_name("A_11 A_12 ... A_33"),
        "Elements of the anisotropy matrix")  //
       ("ratio", po::value(&opts.ratio)->default_value(0.5, "0.5")->value_name("0.0 to 1.0"),
@@ -112,14 +112,14 @@ void normals_to_sdf_command::run(const std::vector<std::string>& args,
 
 namespace Eigen {
 
-inline void validate(boost::any& v, const std::vector<std::string>& values, matrix3d*, int) {
+inline void validate(boost::any& v, const std::vector<std::string>& values, polatory::Mat3*, int) {
   namespace po = boost::program_options;
 
   if (values.size() != 9) {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  matrix3d aniso;
+  polatory::Mat3 aniso;
   aniso << to_double(values.at(0)), to_double(values.at(1)), to_double(values.at(2)),
       to_double(values.at(3)), to_double(values.at(4)), to_double(values.at(5)),
       to_double(values.at(6)), to_double(values.at(7)), to_double(values.at(8));

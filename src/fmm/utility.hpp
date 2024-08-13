@@ -10,13 +10,13 @@
 namespace polatory::fmm {
 
 template <int Dim>
-int fmm_tree_height(index_t n_points) {
+int fmm_tree_height(Index n_points) {
   return std::max(2,
                   static_cast<int>(std::round(std::log(n_points) / std::log(std::pow(2.0, Dim)))));
 }
 
 template <class Rbf, class Box>
-Box make_box(const Rbf& rbf, const geometry::bboxNd<Rbf::kDim>& bbox) {
+Box make_box(const Rbf& rbf, const geometry::Bbox<Rbf::kDim>& bbox) {
   auto a_bbox = bbox.transform(rbf.anisotropy());
 
   auto width = 1.01 * a_bbox.width().maxCoeff();

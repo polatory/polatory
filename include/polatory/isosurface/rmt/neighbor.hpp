@@ -6,24 +6,24 @@
 
 namespace polatory::isosurface::rmt {
 
-inline const std::array<lattice_coordinates, 14> kNeighborLatticeCoordinatesDeltas{{
-    lattice_coordinates(1, 0, 0),     // 0
-    lattice_coordinates(1, 0, 1),     // 1
-    lattice_coordinates(0, 0, 1),     // 2
-    lattice_coordinates(1, 1, 0),     // 3
-    lattice_coordinates(1, 1, 1),     // 4
-    lattice_coordinates(0, 1, 1),     // 5
-    lattice_coordinates(0, 1, 0),     // 6
-    lattice_coordinates(-1, 0, 0),    // 7
-    lattice_coordinates(-1, 0, -1),   // 8
-    lattice_coordinates(0, 0, -1),    // 9
-    lattice_coordinates(-1, -1, 0),   // A
-    lattice_coordinates(-1, -1, -1),  // B
-    lattice_coordinates(0, -1, -1),   // C
-    lattice_coordinates(0, -1, 0),    // D
+inline const std::array<LatticeCoordinates, 14> kNeighborLatticeCoordinatesDeltas{{
+    LatticeCoordinates(1, 0, 0),     // 0
+    LatticeCoordinates(1, 0, 1),     // 1
+    LatticeCoordinates(0, 0, 1),     // 2
+    LatticeCoordinates(1, 1, 0),     // 3
+    LatticeCoordinates(1, 1, 1),     // 4
+    LatticeCoordinates(0, 1, 1),     // 5
+    LatticeCoordinates(0, 1, 0),     // 6
+    LatticeCoordinates(-1, 0, 0),    // 7
+    LatticeCoordinates(-1, 0, -1),   // 8
+    LatticeCoordinates(0, 0, -1),    // 9
+    LatticeCoordinates(-1, -1, 0),   // A
+    LatticeCoordinates(-1, -1, -1),  // B
+    LatticeCoordinates(0, -1, -1),   // C
+    LatticeCoordinates(0, -1, 0),    // D
 }};
 
-inline lattice_coordinates neighbor(const lattice_coordinates& lc, edge_index ei) {
+inline LatticeCoordinates neighbor(const LatticeCoordinates& lc, EdgeIndex ei) {
   return lc + kNeighborLatticeCoordinatesDeltas.at(ei);
 }
 

@@ -5,7 +5,6 @@
 #include <Eigen/Geometry>
 #include <cmath>
 #include <numbers>
-#include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
 #include <polatory/kriging/variogram_set.hpp>
@@ -19,24 +18,23 @@
 namespace polatory::kriging {
 
 template <>
-class variogram_fitting<2> {
-  using Matrix = geometry::matrix2d;
-  using Model = model<2>;
-  using Variogram = variogram<2>;
-  using VariogramSet = variogram_set<2>;
+class VariogramFitting<2> {
+  using Mat = Mat2;
+  using Model = Model<2>;
+  using Variogram = Variogram<2>;
+  using VariogramSet = VariogramSet<2>;
 
  public:
-  variogram_fitting(
-      const VariogramSet& variog_set, const Model& model,
-      const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared,
-      bool fit_anisotropy = true)
+  VariogramFitting(const VariogramSet& variog_set, const Model& model,
+                   const WeightFunction& weight_fn = WeightFunction::kNumPairsOverDistanceSquared,
+                   bool fit_anisotropy = true)
       : model_template_(model),
         fit_anisotropy_(fit_anisotropy && variog_set.num_variograms() >= 2),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),
         params_(model.parameters()) {
     for (auto& rbf : model_template_.rbfs()) {
-      rbf.set_anisotropy(Matrix::Identity());
+      rbf.set_anisotropy(Mat::Identity());
     }
 
     ceres::Problem problem;
@@ -44,7 +42,7 @@ class variogram_fitting<2> {
     problem.AddParameterBlock(params_.data(), num_params_);
     auto lbs = model.parameter_lower_bounds();
     auto ubs = model.parameter_upper_bounds();
-    for (index_t i = 0; i < num_params_; i++) {
+    for (Index i = 0; i < num_params_; i++) {
       problem.SetParameterLowerBound(params_.data(), i, lbs.at(i));
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
@@ -55,7 +53,7 @@ class variogram_fitting<2> {
       inv_minor_.resize(num_rbfs_, 1.0);
       problem.AddParameterBlock(inv_minor_.data(), num_rbfs_);
 
-      for (index_t i = 0; i < num_rbfs_; i++) {
+      for (Index i = 0; i < num_rbfs_; i++) {
         problem.SetParameterLowerBound(inv_minor_.data(), i, 1.0);
         problem.SetParameterUpperBound(inv_minor_.data(), i, 1e2);
       }
@@ -63,7 +61,7 @@ class variogram_fitting<2> {
 
     for (const auto& variog : variog_set.variograms()) {
       auto* cost_fn = new ceres::DynamicNumericDiffCostFunction(
-          new residual(model_template_, variog, weight_fn, fit_anisotropy_));
+          new Residual(model_template_, variog, weight_fn, fit_anisotropy_));
       cost_fn->AddParameterBlock(num_params_);
       if (fit_anisotropy_) {
         cost_fn->AddParameterBlock(1);
@@ -96,13 +94,13 @@ class variogram_fitting<2> {
     model.set_parameters(params_);
 
     if (fit_anisotropy_) {
-      Matrix inv_rot = r_.toRotationMatrix();
-      for (index_t i = 0; i < num_rbfs_; i++) {
+      Mat inv_rot = r_.toRotationMatrix();
+      for (Index i = 0; i < num_rbfs_; i++) {
         auto& rbf = model.rbfs().at(i);
 
-        Matrix inv_scale = Matrix::Identity();
+        Mat inv_scale = Mat::Identity();
         inv_scale(1, 1) = inv_minor_.at(i);
-        Matrix aniso = inv_scale * inv_rot;
+        Mat aniso = inv_scale * inv_rot;
 
         rbf.set_anisotropy(aniso);
       }
@@ -112,8 +110,8 @@ class variogram_fitting<2> {
   }
 
  private:
-  struct residual {
-    residual(const Model& model_template, const Variogram& variog, const weight_function& weight_fn,
+  struct Residual {
+    Residual(const Model& model_template, const Variogram& variog, const WeightFunction& weight_fn,
              bool fit_anisotropy)
         : model_template_(model_template),
           variog_(variog),
@@ -134,14 +132,14 @@ class variogram_fitting<2> {
         const auto* min_scale = param_blocks[2];
 
         Eigen::Rotation2Dd r(*angle);
-        Matrix inv_rot = r.toRotationMatrix();
+        Mat inv_rot = r.toRotationMatrix();
         auto num_rbfs = model.num_rbfs();
-        for (index_t i = 0; i < num_rbfs; i++) {
+        for (Index i = 0; i < num_rbfs; i++) {
           auto& rbf = model.rbfs().at(i);
 
-          Matrix inv_scale = Matrix::Identity();
+          Mat inv_scale = Mat::Identity();
           inv_scale(1, 1) = min_scale[i];
-          Matrix aniso = inv_scale * inv_rot;
+          Mat aniso = inv_scale * inv_rot;
 
           rbf.set_anisotropy(aniso);
         }
@@ -153,16 +151,16 @@ class variogram_fitting<2> {
    private:
     const Model& model_template_;
     const Variogram& variog_;
-    const weight_function& weight_fn_;
+    const WeightFunction& weight_fn_;
     bool fit_anisotropy_;
   };
 
   Model model_template_;
   bool fit_anisotropy_;
-  index_t num_params_;
-  index_t num_rbfs_;
+  Index num_params_;
+  Index num_rbfs_;
   std::vector<double> params_;
-  Eigen::Rotation2Dd r_{std::numbers::pi * Eigen::Matrix<double, 1, 1>::Random()(0)};
+  Eigen::Rotation2Dd r_{std::numbers::pi * Mat1::Random()(0)};
   std::vector<double> inv_minor_;
   ceres::Solver::Summary summary_;
 };

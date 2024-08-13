@@ -14,28 +14,28 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
-using polatory::model;
-using polatory::kriging::variogram_fitting;
-using polatory::kriging::variogram_set;
+using polatory::Model;
+using polatory::kriging::VariogramFitting;
+using polatory::kriging::VariogramSet;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   int dim{};
   std::string model_file;
-  model_options model_opts;
-  polatory::kriging::weight_function weight_fn{
-      polatory::kriging::weight_function::kNumPairsOverDistanceSquared};
+  ModelOptions model_opts;
+  polatory::kriging::WeightFunction weight_fn{
+      polatory::kriging::WeightFunction::kNumPairsOverDistanceSquared};
   int num_trials{};
   std::string out_file;
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Model = model<Dim>;
-  using VariogramFitting = variogram_fitting<Dim>;
-  using VariogramSet = variogram_set<Dim>;
+void run_impl(const Options& opts) {
+  using Model = Model<Dim>;
+  using VariogramFitting = VariogramFitting<Dim>;
+  using VariogramSet = VariogramSet<Dim>;
 
   auto variog_set = VariogramSet::load(opts.in_file);
 
@@ -61,11 +61,11 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void fit_model_to_variogram_command::run(const std::vector<std::string>& args,
-                                         const global_options& global_opts) {
+void FitModelToVariogramCommand::run(const std::vector<std::string>& args,
+                                     const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
   int weights{};
 
   po::options_description opts_desc("Options", 80, 50);
@@ -119,22 +119,22 @@ where
 
   switch (weights) {
     case 0:
-      opts.weight_fn = polatory::kriging::weight_function::kNumPairs;
+      opts.weight_fn = polatory::kriging::WeightFunction::kNumPairs;
       break;
     case 1:
-      opts.weight_fn = polatory::kriging::weight_function::kNumPairsOverDistanceSquared;
+      opts.weight_fn = polatory::kriging::WeightFunction::kNumPairsOverDistanceSquared;
       break;
     case 2:
-      opts.weight_fn = polatory::kriging::weight_function::kNumPairsOverModelGammaSquared;
+      opts.weight_fn = polatory::kriging::WeightFunction::kNumPairsOverModelGammaSquared;
       break;
     case 3:
-      opts.weight_fn = polatory::kriging::weight_function::kOne;
+      opts.weight_fn = polatory::kriging::WeightFunction::kOne;
       break;
     case 4:
-      opts.weight_fn = polatory::kriging::weight_function::kOneOverDistanceSquared;
+      opts.weight_fn = polatory::kriging::WeightFunction::kOneOverDistanceSquared;
       break;
     case 5:
-      opts.weight_fn = polatory::kriging::weight_function::kOneOverModelGammaSquared;
+      opts.weight_fn = polatory::kriging::WeightFunction::kOneOverModelGammaSquared;
       break;
     default:
       throw std::runtime_error("--weight must be 0 to 5");

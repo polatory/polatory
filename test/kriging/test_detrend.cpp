@@ -4,18 +4,18 @@
 #include <polatory/kriging/detrend.hpp>
 #include <polatory/types.hpp>
 
-using polatory::index_t;
-using polatory::vectord;
-using polatory::geometry::points2d;
+using polatory::Index;
+using polatory::VecX;
+using polatory::geometry::Points2;
 using polatory::kriging::detrend;
 
 TEST(detrend, trivial) {
-  const index_t n_points{10000};
+  const Index n_points{10000};
 
-  points2d points = points2d::Random(n_points, 2);
-  vectord values = vectord::Zero(n_points);
+  Points2 points = Points2::Random(n_points, 2);
+  VecX values = VecX::Zero(n_points);
 
-  for (index_t i = 0; i < n_points; ++i) {
+  for (Index i = 0; i < n_points; ++i) {
     auto x = points(i, 0);
     auto y = points(i, 1);
     values(i) = 1.0 + x + y + x * x + x * y + y * y;
@@ -38,9 +38,9 @@ TEST(detrend, trivial) {
   //   m_ij = --- |   x^i y^j (P(x, y) - Q(x, y)) dx dy.
   //          |A| / A
 
-  vectord moments = vectord::Zero(6);
-  vectord m = vectord(6);
-  for (index_t i = 0; i < n_points; ++i) {
+  VecX moments = VecX::Zero(6);
+  VecX m = VecX(6);
+  for (Index i = 0; i < n_points; ++i) {
     auto x = points(i, 0);
     auto y = points(i, 1);
     m << 1.0, x, y, x * x, x * y, y * y;

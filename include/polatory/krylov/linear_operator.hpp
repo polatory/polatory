@@ -4,21 +4,21 @@
 
 namespace polatory::krylov {
 
-class linear_operator {
+class LinearOperator {
  public:
-  virtual ~linear_operator() = default;
+  virtual ~LinearOperator() = default;
 
-  linear_operator(const linear_operator&) = delete;
-  linear_operator(linear_operator&&) = delete;
-  linear_operator& operator=(const linear_operator&) = delete;
-  linear_operator& operator=(linear_operator&&) = delete;
+  LinearOperator(const LinearOperator&) = delete;
+  LinearOperator(LinearOperator&&) = delete;
+  LinearOperator& operator=(const LinearOperator&) = delete;
+  LinearOperator& operator=(LinearOperator&&) = delete;
 
-  virtual vectord operator()(const vectord& v) const = 0;
+  virtual VecX operator()(const VecX& v) const = 0;
 
-  virtual index_t size() const = 0;
+  virtual Index size() const = 0;
 
  protected:
-  linear_operator() = default;
+  LinearOperator() = default;
 };
 
 }  // namespace polatory::krylov

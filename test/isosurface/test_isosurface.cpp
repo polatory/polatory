@@ -12,62 +12,62 @@
 
 #include "../utility.hpp"
 
-using polatory::index_t;
-using polatory::vectord;
-using polatory::geometry::bbox3d;
-using polatory::geometry::matrix3d;
-using polatory::geometry::point3d;
-using polatory::geometry::points3d;
-using polatory::geometry::vector3d;
-using polatory::isosurface::field_function;
-using polatory::isosurface::isosurface;
-using polatory::isosurface::mesh;
-using polatory::isosurface::mesh_defects_finder;
+using polatory::Index;
+using polatory::Mat3;
+using polatory::VecX;
+using polatory::geometry::Bbox3;
+using polatory::geometry::Point3;
+using polatory::geometry::Points3;
+using polatory::geometry::Vector3;
+using polatory::isosurface::FieldFunction;
+using polatory::isosurface::Isosurface;
+using polatory::isosurface::Mesh;
+using polatory::isosurface::MeshDefectsFinder;
 
 namespace {
 
-class distance_from_point : public field_function {
+class DistanceFromPoint : public FieldFunction {
  public:
-  distance_from_point() : point_(point3d::Zero()) {}
+  DistanceFromPoint() : point_(Point3::Zero()) {}
 
-  explicit distance_from_point(const point3d& point) : point_(point) {}
+  explicit DistanceFromPoint(const Point3& point) : point_(point) {}
 
-  vectord operator()(const points3d& points) const override {
+  VecX operator()(const Points3& points) const override {
     return (points.rowwise() - point_).rowwise().norm();
   }
 
  private:
-  point3d point_;
+  Point3 point_;
 };
 
-class random_field_function : public field_function {
+class RandomFieldFunction : public FieldFunction {
  public:
-  vectord operator()(const points3d& points) const override {
-    vectord values = vectord::Random(points.rows());
+  VecX operator()(const Points3& points) const override {
+    VecX values = VecX::Random(points.rows());
     // Randomly replace some values with 0.0.
-    values = (vectord::Random(points.rows()).array().abs() < 0.1).select(0.0, values);
+    values = (VecX::Random(points.rows()).array().abs() < 0.1).select(0.0, values);
     return values;
   }
 };
 
-class signed_distance_from_plane : public field_function {
+class SignedDistanceFromPlane : public FieldFunction {
  public:
-  explicit signed_distance_from_plane(const point3d& point, const vector3d& direction)
+  explicit SignedDistanceFromPlane(const Point3& point, const Vector3& direction)
       : normal_(direction.normalized()), d_(-normal_.dot(point)) {}
 
-  vectord operator()(const points3d& points) const override {
+  VecX operator()(const Points3& points) const override {
     return (points * normal_.transpose()).array() + d_;
   }
 
  private:
-  vector3d normal_;
+  Vector3 normal_;
   double d_;
 };
 
-using halfedge = std::pair<index_t, index_t>;
+using Halfedge = std::pair<Index, Index>;
 
-struct halfedge_hash {
-  std::size_t operator()(const halfedge& e) const noexcept {
+struct HalfedgeHash {
+  std::size_t operator()(const Halfedge& e) const noexcept {
     std::size_t seed{};
     boost::hash_combine(seed, e.first);
     boost::hash_combine(seed, e.second);
@@ -75,8 +75,8 @@ struct halfedge_hash {
   }
 };
 
-bool test_boundary_coordinates(const mesh& mesh, const bbox3d& bbox) {
-  std::unordered_set<halfedge, halfedge_hash> boundary_hes;
+bool test_boundary_coordinates(const Mesh& mesh, const Bbox3& bbox) {
+  std::unordered_set<Halfedge, HalfedgeHash> boundary_hes;
   for (auto f : mesh.faces().rowwise()) {
     for (auto i = 0; i < 3; i++) {
       auto he = std::make_pair(f(i), f((i + 1) % 3));
@@ -90,7 +90,7 @@ bool test_boundary_coordinates(const mesh& mesh, const bbox3d& bbox) {
     }
   }
 
-  std::unordered_set<index_t> boundary_vertices;
+  std::unordered_set<Index> boundary_vertices;
   for (const auto& he : boundary_hes) {
     boundary_vertices.insert(he.first);
     boundary_vertices.insert(he.second);
@@ -111,11 +111,11 @@ bool test_boundary_coordinates(const mesh& mesh, const bbox3d& bbox) {
 }  // namespace
 
 TEST(isosurface, generate) {
-  const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
+  const Bbox3 bbox(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
 
-  isosurface isosurf(bbox, resolution);
-  distance_from_point field_fn;
+  Isosurface isosurf(bbox, resolution);
+  DistanceFromPoint field_fn;
 
   auto mesh = isosurf.generate(field_fn, 1.0);
 
@@ -124,14 +124,14 @@ TEST(isosurface, generate) {
 }
 
 TEST(isosurface, generate_from_seed_points) {
-  const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
+  const Bbox3 bbox(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
 
-  isosurface isosurf(bbox, resolution);
-  distance_from_point field_fn;
+  Isosurface isosurf(bbox, resolution);
+  DistanceFromPoint field_fn;
 
-  points3d seed_points(1, 3);
-  seed_points << point3d(1.0, 0.0, 0.0);
+  Points3 seed_points(1, 3);
+  seed_points << Point3(1.0, 0.0, 0.0);
 
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
@@ -140,11 +140,11 @@ TEST(isosurface, generate_from_seed_points) {
 }
 
 TEST(isosurface, generate_empty) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
 
-  isosurface isosurf(bbox, resolution);
-  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+  Isosurface isosurf(bbox, resolution);
+  SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::Ones().normalized());
 
   auto mesh = isosurf.generate(field_fn, -1.01 * std::numbers::sqrt3);
 
@@ -153,14 +153,14 @@ TEST(isosurface, generate_empty) {
 }
 
 TEST(isosurface, generate_empty_from_seed_points) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
 
-  isosurface isosurf(bbox, resolution);
-  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+  Isosurface isosurf(bbox, resolution);
+  SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::Ones().normalized());
 
-  points3d seed_points(1, 3);
-  seed_points << point3d::Zero();
+  Points3 seed_points(1, 3);
+  seed_points << Point3::Zero();
 
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, -1.01 * std::numbers::sqrt3);
 
@@ -169,11 +169,11 @@ TEST(isosurface, generate_empty_from_seed_points) {
 }
 
 TEST(isosurface, generate_entire) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
 
-  isosurface isosurf(bbox, resolution);
-  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+  Isosurface isosurf(bbox, resolution);
+  SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::Ones().normalized());
 
   auto mesh = isosurf.generate(field_fn, 1.01 * std::numbers::sqrt3);
 
@@ -182,14 +182,14 @@ TEST(isosurface, generate_entire) {
 }
 
 TEST(isosurface, generate_entire_from_seed_points) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
 
-  isosurface isosurf(bbox, resolution);
-  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+  Isosurface isosurf(bbox, resolution);
+  SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::Ones().normalized());
 
-  points3d seed_points(1, 3);
-  seed_points << point3d::Zero();
+  Points3 seed_points(1, 3);
+  seed_points << Point3::Zero();
 
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 1.01 * std::numbers::sqrt3);
 
@@ -198,17 +198,17 @@ TEST(isosurface, generate_entire_from_seed_points) {
 }
 
 TEST(isosurface, generate_from_seed_points_gradient_search) {
-  const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
+  const Bbox3 bbox(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
 
   for (auto i = 0; i < 100; i++) {
     const auto aniso = random_anisotropy<3>();
 
-    isosurface isosurf(bbox, resolution, aniso);
-    signed_distance_from_plane field_fn(bbox.center(), vector3d::Random().normalized());
+    Isosurface isosurf(bbox, resolution, aniso);
+    SignedDistanceFromPlane field_fn(bbox.center(), Vector3::Random().normalized());
 
-    points3d seed_points(1, 3);
-    seed_points << point3d::Zero();
+    Points3 seed_points(1, 3);
+    seed_points << Point3::Zero();
 
     auto expected = isosurf.generate(field_fn, 1.0);
     isosurf.clear();
@@ -219,11 +219,11 @@ TEST(isosurface, generate_from_seed_points_gradient_search) {
 }
 
 TEST(isosurface, generate_plane) {
-  const bbox3d bbox(point3d(-1.2, -1.2, -1.2), point3d(1.2, 1.2, 1.2));
+  const Bbox3 bbox(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
 
-  isosurface isosurf(bbox, resolution);
-  signed_distance_from_plane field_fn(point3d::Zero(), vector3d::Ones().normalized());
+  Isosurface isosurf(bbox, resolution);
+  SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::Ones().normalized());
 
   auto mesh = isosurf.generate(field_fn);
 
@@ -232,21 +232,21 @@ TEST(isosurface, generate_plane) {
 }
 
 TEST(isosurface, manifold) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();
 
-  isosurface isosurf(bbox, resolution, aniso);
-  random_field_function field_fn;
+  Isosurface isosurf(bbox, resolution, aniso);
+  RandomFieldFunction field_fn;
 
   auto mesh = isosurf.generate(field_fn, 0.0, 0);
 
-  mesh_defects_finder defects(mesh);
+  MeshDefectsFinder defects(mesh);
 
   const auto& min = bbox.min();
   const auto& max = bbox.max();
   for (auto vi : defects.singular_vertices()) {
-    point3d p = mesh.vertices().row(vi);
+    Point3 p = mesh.vertices().row(vi);
     ASSERT_TRUE((p.array() == min.array() || p.array() == max.array()).any());
   }
 
@@ -254,12 +254,12 @@ TEST(isosurface, manifold) {
 }
 
 TEST(isosurface, boundary_coordinates) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();
 
-  isosurface isosurf(bbox, resolution, aniso);
-  random_field_function field_fn;
+  Isosurface isosurf(bbox, resolution, aniso);
+  RandomFieldFunction field_fn;
 
   auto mesh = isosurf.generate(field_fn, 0.0, 0);
 
@@ -267,15 +267,15 @@ TEST(isosurface, boundary_coordinates) {
 }
 
 TEST(isosurface, boundary_coordinates_seed_points) {
-  const bbox3d bbox(point3d(-1.0, -1.0, -1.0), point3d(1.0, 1.0, 1.0));
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();
 
-  isosurface isosurf(bbox, resolution, aniso);
-  random_field_function field_fn;
+  Isosurface isosurf(bbox, resolution, aniso);
+  RandomFieldFunction field_fn;
 
-  points3d seed_points(1, 3);
-  seed_points << point3d::Zero();
+  Points3 seed_points(1, 3);
+  seed_points << Point3::Zero();
 
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
 

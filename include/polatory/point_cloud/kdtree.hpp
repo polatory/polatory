@@ -8,30 +8,30 @@
 namespace polatory::point_cloud {
 
 template <int Dim>
-class kdtree {
-  using Point = geometry::pointNd<Dim>;
-  using Points = geometry::pointsNd<Dim>;
+class KdTree {
+  using Point = geometry::Point<Dim>;
+  using Points = geometry::Points<Dim>;
 
  public:
-  explicit kdtree(const Points& points);
+  explicit KdTree(const Points& points);
 
-  ~kdtree();
+  ~KdTree();
 
-  kdtree(const kdtree&) = delete;
-  kdtree(kdtree&&) = delete;
-  kdtree& operator=(const kdtree&) = delete;
-  kdtree& operator=(kdtree&&) = delete;
+  KdTree(const KdTree&) = delete;
+  KdTree(KdTree&&) = delete;
+  KdTree& operator=(const KdTree&) = delete;
+  KdTree& operator=(KdTree&&) = delete;
 
-  void knn_search(const Point& point, index_t k, std::vector<index_t>& indices,
+  void knn_search(const Point& point, Index k, std::vector<Index>& indices,
                   std::vector<double>& distances) const;
 
-  void radius_search(const Point& point, double radius, std::vector<index_t>& indices,
+  void radius_search(const Point& point, double radius, std::vector<Index>& indices,
                      std::vector<double>& distances) const;
 
  private:
-  class impl;
+  class Impl;
 
-  std::unique_ptr<impl> pimpl_;
+  std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace polatory::point_cloud

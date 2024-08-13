@@ -17,23 +17,23 @@
 namespace polatory::preconditioner {
 
 template <int Dim>
-class domain_divider {
+class DomainDivider {
   static constexpr int kDim = Dim;
-  using Bbox = geometry::bboxNd<kDim>;
-  using Domain = domain<kDim>;
-  using Point = geometry::pointNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using Domain = Domain<kDim>;
+  using Point = geometry::Point<kDim>;
+  using Points = geometry::Points<kDim>;
 
   static constexpr double kOverlapQuota = 0.5;
-  static constexpr index_t kMaxLeafSize = 1024;
+  static constexpr Index kMaxLeafSize = 1024;
 
  public:
   template <class DerivedPoints, class DerivedGradPoints>
-  domain_divider(const Eigen::MatrixBase<DerivedPoints>& points,
-                 const Eigen::MatrixBase<DerivedGradPoints>& grad_points,
-                 const std::vector<index_t>& point_indices,
-                 const std::vector<index_t>& grad_point_indices,
-                 const std::vector<index_t>& poly_point_indices)
+  DomainDivider(const Eigen::MatrixBase<DerivedPoints>& points,
+                const Eigen::MatrixBase<DerivedGradPoints>& grad_points,
+                const std::vector<Index>& point_indices,
+                const std::vector<Index>& grad_point_indices,
+                const std::vector<Index>& poly_point_indices)
       : points_(points), grad_points_(grad_points), poly_point_idcs_(poly_point_indices) {
     Domain root;
 
@@ -48,34 +48,34 @@ class domain_divider {
     divide_domains();
   }
 
-  std::pair<std::vector<index_t>, std::vector<index_t>> choose_coarse_points(double ratio) const {
-    std::vector<index_t> idcs(poly_point_idcs_);
-    std::vector<index_t> grad_idcs;
+  std::pair<std::vector<Index>, std::vector<Index>> choose_coarse_points(double ratio) const {
+    std::vector<Index> idcs(poly_point_idcs_);
+    std::vector<Index> grad_idcs;
 
     std::mt19937 gen;
 
-    auto n_poly_points = static_cast<index_t>(poly_point_idcs_.size());
+    auto n_poly_points = static_cast<Index>(poly_point_idcs_.size());
     for (const auto& d : domains_) {
       auto mu = d.num_points();
       auto sigma = d.num_grad_points();
 
-      std::vector<mixed_point> mixed_points;
-      for (index_t i = n_poly_points; i < mu; i++) {
+      std::vector<MixedPoint> mixed_points;
+      for (Index i = n_poly_points; i < mu; i++) {
         if (d.inner_point.at(i)) {
           mixed_points.emplace_back(d.point_indices.at(i), true, false);
         }
       }
-      for (index_t i = 0; i < sigma; i++) {
+      for (Index i = 0; i < sigma; i++) {
         if (d.inner_grad_point.at(i)) {
           mixed_points.emplace_back(d.grad_point_indices.at(i), true, true);
         }
       }
       std::shuffle(mixed_points.begin(), mixed_points.end(), gen);
 
-      auto n_coarse_points = static_cast<index_t>(
-          round_half_to_even(ratio * static_cast<double>(mixed_points.size())));
+      auto n_coarse_points =
+          static_cast<Index>(round_half_to_even(ratio * static_cast<double>(mixed_points.size())));
 
-      index_t count{};
+      Index count{};
       for (const auto& p : mixed_points) {
         if (count == n_coarse_points) {
           break;
@@ -94,8 +94,8 @@ class domain_divider {
   std::list<Domain>&& into_domains() { return std::move(domains_); }
 
  private:
-  struct mixed_point {
-    index_t index{};
+  struct MixedPoint {
+    Index index{};
     bool inner{};
     bool grad{};
 
@@ -111,11 +111,11 @@ class domain_divider {
     auto mu = d.num_points();
     auto sigma = d.num_grad_points();
 
-    std::vector<mixed_point> mixed_points;
-    for (index_t i = 0; i < mu; i++) {
+    std::vector<MixedPoint> mixed_points;
+    for (Index i = 0; i < mu; i++) {
       mixed_points.emplace_back(d.point_indices.at(i), d.inner_point.at(i), false);
     }
-    for (index_t i = 0; i < sigma; i++) {
+    for (Index i = 0; i < sigma; i++) {
       mixed_points.emplace_back(d.grad_point_indices.at(i), d.inner_grad_point.at(i), true);
     }
 
@@ -137,36 +137,36 @@ class domain_divider {
                 return false;
               });
 
-    std::vector<index_t> prefix_sum_mult{0};
+    std::vector<Index> prefix_sum_mult{0};
     for (const auto& p : mixed_points) {
       prefix_sum_mult.push_back(prefix_sum_mult.back() + p.multiplicity());
     }
 
     auto n_points_mult = mu + kDim * sigma;
     auto q = kOverlapQuota * static_cast<double>(kMaxLeafSize) / static_cast<double>(n_points_mult);
-    auto n_subdomain_points_mult = static_cast<index_t>(
+    auto n_subdomain_points_mult = static_cast<Index>(
         round_half_to_even((1.0 + q) / 2.0 * static_cast<double>(n_points_mult)));
     auto left_partition_mult = n_points_mult - n_subdomain_points_mult;
     auto right_partition_mult = n_subdomain_points_mult;
-    auto mid_mult = static_cast<index_t>(
+    auto mid_mult = static_cast<Index>(
         round_half_to_even(static_cast<double>(left_partition_mult + right_partition_mult) / 2.0));
 
     auto n_points = mu + sigma;
-    auto left_partition = static_cast<index_t>(std::distance(
+    auto left_partition = static_cast<Index>(std::distance(
         prefix_sum_mult.begin(),
         std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), left_partition_mult) - 1));
-    auto right_partition = static_cast<index_t>(std::distance(
+    auto right_partition = static_cast<Index>(std::distance(
         prefix_sum_mult.begin(),
         std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), right_partition_mult) -
             1));
-    auto mid = static_cast<index_t>(std::distance(
+    auto mid = static_cast<Index>(std::distance(
         prefix_sum_mult.begin(),
         std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), mid_mult) - 1));
 
     Domain left;
     Domain right;
 
-    for (index_t i = 0; i < right_partition; i++) {
+    for (Index i = 0; i < right_partition; i++) {
       const auto& p = mixed_points.at(i);
       auto inner = p.inner && i < mid;
 
@@ -179,7 +179,7 @@ class domain_divider {
       }
     }
 
-    for (index_t i = left_partition; i < n_points; i++) {
+    for (Index i = left_partition; i < n_points; i++) {
       const auto& p = mixed_points.at(i);
       auto inner = p.inner && i >= mid;
 
@@ -229,7 +229,7 @@ class domain_divider {
 
   const Points points_;
   const Points grad_points_;
-  const std::vector<index_t> poly_point_idcs_;
+  const std::vector<Index> poly_point_idcs_;
   std::list<Domain> domains_;
 };
 

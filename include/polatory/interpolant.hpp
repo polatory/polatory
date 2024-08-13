@@ -24,20 +24,20 @@
 namespace polatory {
 
 template <int Dim>
-class interpolant {
+class Interpolant {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
-  using Bbox = geometry::bboxNd<kDim>;
-  using Evaluator = interpolation::rbf_evaluator<kDim>;
-  using Fitter = interpolation::rbf_fitter<kDim>;
-  using IncrementalFitter = interpolation::rbf_incremental_fitter<kDim>;
-  using InequalityFitter = interpolation::rbf_inequality_fitter<kDim>;
-  using Model = model<kDim>;
-  using Point = geometry::pointNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using Evaluator = interpolation::Evaluator<kDim>;
+  using Fitter = interpolation::Fitter<kDim>;
+  using IncrementalFitter = interpolation::IncrementalFitter<kDim>;
+  using InequalityFitter = interpolation::InequalityFitter<kDim>;
+  using Model = Model<kDim>;
+  using Point = geometry::Point<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
-  explicit interpolant(const Model& model) : model_(model) {}
+  explicit Interpolant(const Model& model) : model_(model) {}
 
   const Bbox& bbox() const {
     throw_if_not_fitted();
@@ -51,12 +51,12 @@ class interpolant {
     return centers_;
   }
 
-  vectord evaluate(const Points& points, double accuracy = kInfinity) {
+  VecX evaluate(const Points& points, double accuracy = kInfinity) {
     return evaluate(points, Points(0, kDim), accuracy, kInfinity);
   }
 
-  vectord evaluate(const Points& points, const Points& grad_points, double accuracy = kInfinity,
-                   double grad_accuracy = kInfinity) {
+  VecX evaluate(const Points& points, const Points& grad_points, double accuracy = kInfinity,
+                double grad_accuracy = kInfinity) {
     throw_if_not_fitted();
 
     check_accuracy(accuracy, grad_accuracy);
@@ -66,25 +66,23 @@ class interpolant {
     return evaluate_impl(points, grad_points);
   }
 
-  vectord evaluate_impl(const Points& points) const {
-    return evaluate_impl(points, Points(0, kDim));
-  }
+  VecX evaluate_impl(const Points& points) const { return evaluate_impl(points, Points(0, kDim)); }
 
-  vectord evaluate_impl(const Points& points, const Points& grad_points) const {
+  VecX evaluate_impl(const Points& points, const Points& grad_points) const {
     throw_if_not_fitted();
 
     return evaluator_->evaluate(points, grad_points);
   }
 
-  void fit(const Points& points, const vectord& values, double tolerance, int max_iter = 100,
-           double accuracy = kInfinity, const interpolant* initial = nullptr) {
+  void fit(const Points& points, const VecX& values, double tolerance, int max_iter = 100,
+           double accuracy = kInfinity, const Interpolant* initial = nullptr) {
     fit(points, Points(0, kDim), values, tolerance, kInfinity, max_iter, accuracy, kInfinity,
         initial);
   }
 
-  void fit(const Points& points, const Points& grad_points, const vectord& values, double tolerance,
+  void fit(const Points& points, const Points& grad_points, const VecX& values, double tolerance,
            double grad_tolerance, int max_iter = 100, double accuracy = kInfinity,
-           double grad_accuracy = kInfinity, const interpolant* initial = nullptr) {
+           double grad_accuracy = kInfinity, const Interpolant* initial = nullptr) {
     check_num_points(points, grad_points);
 
     auto n_rhs = points.rows() + kDim * grad_points.rows();
@@ -96,7 +94,7 @@ class interpolant {
     check_max_iter(max_iter);
     check_accuracy(accuracy, grad_accuracy);
 
-    vectord initial_weights;
+    VecX initial_weights;
     if (initial != nullptr) {
       initial_weights = build_initial_weights(points, grad_points, *initial);
     }
@@ -114,13 +112,13 @@ class interpolant {
     bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
-  void fit_incrementally(const Points& points, const vectord& values, double tolerance,
+  void fit_incrementally(const Points& points, const VecX& values, double tolerance,
                          int max_iter = 100, double accuracy = kInfinity) {
     fit_incrementally(points, Points(0, kDim), values, tolerance, kInfinity, max_iter, accuracy,
                       kInfinity);
   }
 
-  void fit_incrementally(const Points& points, const Points& grad_points, const vectord& values,
+  void fit_incrementally(const Points& points, const Points& grad_points, const VecX& values,
                          double tolerance, double grad_tolerance, int max_iter = 100,
                          double accuracy = kInfinity, double grad_accuracy = kInfinity) {
     check_num_points(points, grad_points);
@@ -137,8 +135,8 @@ class interpolant {
     clear();
 
     IncrementalFitter fitter(model_, points, grad_points);
-    std::vector<index_t> center_indices;
-    std::vector<index_t> grad_center_indices;
+    std::vector<Index> center_indices;
+    std::vector<Index> grad_center_indices;
     std::tie(center_indices, grad_center_indices, weights_) =
         fitter.fit(values, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy);
 
@@ -148,9 +146,9 @@ class interpolant {
     bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
-  void fit_inequality(const Points& points, const vectord& values, const vectord& values_lb,
-                      const vectord& values_ub, double tolerance, int max_iter = 100,
-                      double accuracy = kInfinity, const interpolant* initial = nullptr) {
+  void fit_inequality(const Points& points, const VecX& values, const VecX& values_lb,
+                      const VecX& values_ub, double tolerance, int max_iter = 100,
+                      double accuracy = kInfinity, const Interpolant* initial = nullptr) {
     if (model_.nugget() != 0.0) {
       throw std::runtime_error("Non-zero nugget is not supported");
     }
@@ -173,7 +171,7 @@ class interpolant {
     check_max_iter(max_iter);
     check_accuracy(accuracy, kInfinity);
 
-    vectord initial_weights;
+    VecX initial_weights;
     if (initial != nullptr) {
       initial_weights = build_initial_weights(points, Points(0, kDim), *initial);
     }
@@ -182,7 +180,7 @@ class interpolant {
     clear();
 
     InequalityFitter fitter(model_, points);
-    std::vector<index_t> center_indices;
+    std::vector<Index> center_indices;
     std::tie(center_indices, weights_) =
         fitter.fit(values, values_lb, values_ub, tolerance, max_iter, accuracy,
                    initial != nullptr ? &initial_weights : nullptr);
@@ -211,32 +209,32 @@ class interpolant {
     evaluator_->set_weights(weights_);
   }
 
-  const vectord& weights() const {
+  const VecX& weights() const {
     throw_if_not_fitted();
 
     return weights_;
   }
 
-  POLATORY_IMPLEMENT_LOAD_SAVE(interpolant);
+  POLATORY_IMPLEMENT_LOAD_SAVE(Interpolant);
 
  private:
-  POLATORY_FRIEND_READ_WRITE(model);
+  POLATORY_FRIEND_READ_WRITE;
 
-  struct point_hash {
+  struct PointHash {
     std::size_t operator()(const Point& p) const noexcept {
       return boost::hash_range(p.data(), p.data() + p.size());
     }
   };
 
   // For deserialization.
-  interpolant() = default;
+  Interpolant() = default;
 
-  vectord build_initial_weights(const Points& points, const Points& grad_points,
-                                const interpolant& initial) const {
+  VecX build_initial_weights(const Points& points, const Points& grad_points,
+                             const Interpolant& initial) const {
     auto l = model().poly_basis_size();
     auto mu = points.rows();
     auto sigma = grad_points.rows();
-    vectord weights = vectord::Zero(mu + kDim * sigma + l);
+    VecX weights = VecX::Zero(mu + kDim * sigma + l);
 
     if (model() != initial.model()) {
       std::cerr << "warning: ignoring the initial interpolant because the model is different"
@@ -244,25 +242,25 @@ class interpolant {
       return weights;
     }
 
-    std::unordered_map<Point, index_t, point_hash> ini_points;
-    std::unordered_map<Point, index_t, point_hash> ini_grad_points;
+    std::unordered_map<Point, Index, PointHash> ini_points;
+    std::unordered_map<Point, Index, PointHash> ini_grad_points;
 
     auto ini_mu = initial.centers_.rows();
     auto ini_sigma = initial.grad_centers_.rows();
-    for (index_t i = 0; i < ini_mu; ++i) {
+    for (Index i = 0; i < ini_mu; ++i) {
       ini_points.emplace(initial.centers_.row(i), i);
     }
-    for (index_t i = 0; i < ini_sigma; ++i) {
+    for (Index i = 0; i < ini_sigma; ++i) {
       ini_grad_points.emplace(initial.grad_centers_.row(i), i);
     }
 
-    for (index_t i = 0; i < mu; ++i) {
+    for (Index i = 0; i < mu; ++i) {
       auto it = ini_points.find(points.row(i));
       if (it != ini_points.end()) {
         weights(i) = initial.weights()(it->second);
       }
     }
-    for (index_t i = 0; i < sigma; ++i) {
+    for (Index i = 0; i < sigma; ++i) {
       auto it = ini_grad_points.find(grad_points.row(i));
       if (it != ini_grad_points.end()) {
         weights.segment<kDim>(mu + kDim * i) =
@@ -321,7 +319,7 @@ class interpolant {
     centers_ = Points();
     grad_centers_ = Points();
     bbox_ = Bbox();
-    weights_ = vectord();
+    weights_ = VecX();
   }
 
   void throw_if_not_fitted() const {
@@ -335,7 +333,7 @@ class interpolant {
   Points centers_;
   Points grad_centers_;
   Bbox bbox_;
-  vectord weights_;
+  VecX weights_;
 
   std::unique_ptr<Evaluator> evaluator_;
 };
@@ -345,8 +343,8 @@ class interpolant {
 namespace polatory::common {
 
 template <int Dim>
-struct Read<interpolant<Dim>> {
-  void operator()(std::istream& is, interpolant<Dim>& t) {
+struct Read<Interpolant<Dim>> {
+  void operator()(std::istream& is, Interpolant<Dim>& t) {
     read(is, t.model_);
     read(is, t.fitted_);
     read(is, t.centers_);
@@ -357,8 +355,8 @@ struct Read<interpolant<Dim>> {
 };
 
 template <int Dim>
-struct Write<interpolant<Dim>> {
-  void operator()(std::ostream& os, const interpolant<Dim>& t) {
+struct Write<Interpolant<Dim>> {
+  void operator()(std::ostream& os, const Interpolant<Dim>& t) {
     write(os, t.model_);
     write(os, t.fitted_);
     write(os, t.centers_);

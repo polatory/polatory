@@ -10,18 +10,18 @@
 namespace polatory::kriging {
 
 template <int Dim>
-class variogram {
-  using Vector = geometry::vectorNd<Dim>;
+class Variogram {
+  using Vector = geometry::Vector<Dim>;
 
  public:
-  variogram(std::vector<double>&& bin_distance, std::vector<double>&& bin_gamma,
-            std::vector<index_t>&& bin_num_pairs, const Vector& direction)
+  Variogram(std::vector<double>&& bin_distance, std::vector<double>&& bin_gamma,
+            std::vector<Index>&& bin_num_pairs, const Vector& direction)
       : bin_distance_{std::move(bin_distance)},
         bin_gamma_{std::move(bin_gamma)},
         bin_num_pairs_{std::move(bin_num_pairs)},
         direction_{direction} {}
 
-  void back_transform(const normal_score_transformation& t) {
+  void back_transform(const NormalScoreTransformation& t) {
     for (auto& gamma : bin_gamma_) {
       gamma = t.back_transform_gamma(gamma);
     }
@@ -31,23 +31,23 @@ class variogram {
 
   const std::vector<double>& bin_gamma() const { return bin_gamma_; }
 
-  const std::vector<index_t>& bin_num_pairs() const { return bin_num_pairs_; }
+  const std::vector<Index>& bin_num_pairs() const { return bin_num_pairs_; }
 
   const Vector& direction() const { return direction_; }
 
-  index_t num_bins() const { return static_cast<index_t>(bin_distance_.size()); }
+  Index num_bins() const { return static_cast<Index>(bin_distance_.size()); }
 
-  index_t num_pairs() const { return std::reduce(bin_num_pairs_.begin(), bin_num_pairs_.end()); }
+  Index num_pairs() const { return std::reduce(bin_num_pairs_.begin(), bin_num_pairs_.end()); }
 
  private:
-  POLATORY_FRIEND_READ_WRITE(variogram);
+  POLATORY_FRIEND_READ_WRITE;
 
   // For deserialization.
-  variogram() = default;
+  Variogram() = default;
 
   std::vector<double> bin_distance_;
   std::vector<double> bin_gamma_;
-  std::vector<index_t> bin_num_pairs_;
+  std::vector<Index> bin_num_pairs_;
   Vector direction_;
 };
 
@@ -56,8 +56,8 @@ class variogram {
 namespace polatory::common {
 
 template <int Dim>
-struct Read<kriging::variogram<Dim>> {
-  void operator()(std::istream& is, kriging::variogram<Dim>& t) const {
+struct Read<kriging::Variogram<Dim>> {
+  void operator()(std::istream& is, kriging::Variogram<Dim>& t) const {
     read(is, t.bin_distance_);
     read(is, t.bin_gamma_);
     read(is, t.bin_num_pairs_);
@@ -66,8 +66,8 @@ struct Read<kriging::variogram<Dim>> {
 };
 
 template <int Dim>
-struct Write<kriging::variogram<Dim>> {
-  void operator()(std::ostream& os, const kriging::variogram<Dim>& t) const {
+struct Write<kriging::Variogram<Dim>> {
+  void operator()(std::ostream& os, const kriging::Variogram<Dim>& t) const {
     write(os, t.bin_distance_);
     write(os, t.bin_gamma_);
     write(os, t.bin_num_pairs_);

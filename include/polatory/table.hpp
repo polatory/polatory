@@ -13,7 +13,7 @@
 
 namespace polatory {
 
-inline matrixd read_table(const std::string& filename, const char* delimiters = " \t,") {
+inline MatX read_table(const std::string& filename, const char* delimiters = " \t,") {
   std::ifstream ifs(filename);
   if (!ifs) {
     throw std::runtime_error(std::format("cannot open file '{}'", filename));
@@ -22,7 +22,7 @@ inline matrixd read_table(const std::string& filename, const char* delimiters = 
   std::vector<double> buffer;
 
   std::string line;
-  auto n_cols = index_t{0};
+  auto n_cols = Index{0};
   auto line_no = 0;
   while (std::getline(ifs, line)) {
     line_no++;
@@ -34,7 +34,7 @@ inline matrixd read_table(const std::string& filename, const char* delimiters = 
     std::vector<std::string> row;
     boost::split(row, line, boost::is_any_of(delimiters));
 
-    auto row_size = static_cast<index_t>(row.size());
+    auto row_size = static_cast<Index>(row.size());
     if (n_cols == 0) {
       n_cols = row_size;
     } else if (row_size != n_cols) {
@@ -55,8 +55,8 @@ inline matrixd read_table(const std::string& filename, const char* delimiters = 
     throw std::runtime_error(std::format("file '{}' is empty", filename));
   }
 
-  auto n_rows = static_cast<index_t>(buffer.size() / n_cols);
-  return matrixd::Map(buffer.data(), n_rows, n_cols);
+  auto n_rows = static_cast<Index>(buffer.size() / n_cols);
+  return MatX::Map(buffer.data(), n_rows, n_cols);
 }
 
 template <class Derived>
@@ -69,7 +69,7 @@ void write_table(const std::string& filename, const Eigen::MatrixBase<Derived>& 
 
   auto n_cols = table.cols();
   for (auto row : table.rowwise()) {
-    for (index_t i = 0; i < n_cols; i++) {
+    for (Index i = 0; i < n_cols; i++) {
       ofs << numeric::to_string(row(i));
       if (i != n_cols - 1) {
         ofs << delimiter;

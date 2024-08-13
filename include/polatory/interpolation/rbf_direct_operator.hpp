@@ -13,57 +13,57 @@
 namespace polatory::interpolation {
 
 template <int Dim>
-class rbf_direct_operator : public krylov::linear_operator {
+class DirectOperator : public krylov::LinearOperator {
   static constexpr int kDim = Dim;
-  using Model = model<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using Vector = geometry::vectorNd<kDim>;
+  using Model = Model<kDim>;
+  using MonomialBasis = polynomial::MonomialBasis<kDim>;
+  using Points = geometry::Points<kDim>;
+  using Vector = geometry::Vector<kDim>;
 
  public:
-  rbf_direct_operator(const Model& model, const Points& points, const Points& grad_points)
-      : rbf_direct_operator(model) {
+  DirectOperator(const Model& model, const Points& points, const Points& grad_points)
+      : DirectOperator(model) {
     set_points(points, grad_points);
   }
 
-  explicit rbf_direct_operator(const Model& model) : model_(model), l_(model.poly_basis_size()) {}
+  explicit DirectOperator(const Model& model) : model_(model), l_(model.poly_basis_size()) {}
 
-  vectord operator()(const vectord& weights) const override {
+  VecX operator()(const VecX& weights) const override {
     POLATORY_ASSERT(weights.rows() == size());
 
     auto w = weights.head(mu_);
     auto grad_w = weights.segment(mu_, kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim);
 
-    vectord y = vectord::Zero(size());
+    VecX y = VecX::Zero(size());
 
     y.head(mu_) = weights.head(mu_) * model_.nugget();
 
     for (const auto& rbf : model_.rbfs()) {
 #pragma omp parallel
       {
-        vectord y_local = vectord::Zero(size());
+        VecX y_local = VecX::Zero(size());
 
 #pragma omp for
-        for (index_t i = 0; i < mu_; i++) {
-          for (index_t j = 0; j < mu_; j++) {
+        for (Index i = 0; i < mu_; i++) {
+          for (Index j = 0; j < mu_; j++) {
             Vector diff = points_.row(i) - points_.row(j);
             y_local(i) += w(j) * rbf.evaluate(diff);
           }
 
-          for (index_t j = 0; j < sigma_; j++) {
+          for (Index j = 0; j < sigma_; j++) {
             Vector diff = points_.row(i) - grad_points_.row(j);
             y_local(i) += grad_w.row(j).dot(-rbf.evaluate_gradient(diff));
           }
         }
 
 #pragma omp for
-        for (index_t i = 0; i < sigma_; i++) {
-          for (index_t j = 0; j < mu_; j++) {
+        for (Index i = 0; i < sigma_; i++) {
+          for (Index j = 0; j < mu_; j++) {
             Vector diff = grad_points_.row(i) - points_.row(j);
             y_local.segment<kDim>(mu_ + kDim * i) += w(j) * rbf.evaluate_gradient(diff).transpose();
           }
 
-          for (index_t j = 0; j < sigma_; j++) {
+          for (Index j = 0; j < sigma_; j++) {
             Vector diff = grad_points_.row(i) - grad_points_.row(j);
             y_local.segment<kDim>(mu_ + kDim * i) +=
                 (grad_w.row(j) * -rbf.evaluate_hessian(diff)).transpose();
@@ -96,17 +96,17 @@ class rbf_direct_operator : public krylov::linear_operator {
     }
   }
 
-  index_t size() const override { return mu_ + kDim * sigma_ + l_; }
+  Index size() const override { return mu_ + kDim * sigma_ + l_; }
 
  private:
   const Model& model_;
-  const index_t l_;
-  index_t mu_;
-  index_t sigma_;
+  const Index l_;
+  Index mu_;
+  Index sigma_;
   Points points_;
   Points grad_points_;
 
-  matrixd p_;
+  MatX p_;
 };
 
 }  // namespace polatory::interpolation

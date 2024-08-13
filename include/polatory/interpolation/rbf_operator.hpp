@@ -17,26 +17,26 @@
 namespace polatory::interpolation {
 
 template <int Dim>
-class rbf_operator : public krylov::linear_operator {
+class Operator : public krylov::LinearOperator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
-  using Bbox = geometry::bboxNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
   using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim>;
-  using Model = model<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Model = Model<kDim>;
+  using MonomialBasis = polynomial::MonomialBasis<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
-  rbf_operator(const Model& model, const Points& points, const Points& grad_points,
-               double accuracy = kInfinity, double grad_accuracy = kInfinity)
-      : rbf_operator(model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
-                     accuracy, grad_accuracy) {
+  Operator(const Model& model, const Points& points, const Points& grad_points,
+           double accuracy = kInfinity, double grad_accuracy = kInfinity)
+      : Operator(model, Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
+                 accuracy, grad_accuracy) {
     set_points(points, grad_points);
   }
 
-  rbf_operator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
-               double grad_accuracy = kInfinity)
+  Operator(const Model& model, const Bbox& bbox, double accuracy = kInfinity,
+           double grad_accuracy = kInfinity)
       : model_(model),
         l_(model.poly_basis_size()),
         accuracy_(accuracy),
@@ -53,10 +53,10 @@ class rbf_operator : public krylov::linear_operator {
     }
   }
 
-  vectord operator()(const vectord& weights) const override {
+  VecX operator()(const VecX& weights) const override {
     POLATORY_ASSERT(weights.rows() == size());
 
-    vectord y = vectord::Zero(size());
+    VecX y = VecX::Zero(size());
 
     y.head(mu_) = weights.head(mu_) * model_.nugget();
 
@@ -108,22 +108,22 @@ class rbf_operator : public krylov::linear_operator {
     }
   }
 
-  index_t size() const override { return mu_ + kDim * sigma_ + l_; }
+  Index size() const override { return mu_ + kDim * sigma_ + l_; }
 
  private:
   const Model& model_;
-  const index_t l_;
+  const Index l_;
   const double accuracy_;
   const double grad_accuracy_;
-  index_t mu_{};
-  index_t sigma_{};
+  Index mu_{};
+  Index sigma_{};
 
   std::vector<FmmGenericSymmetricEvaluatorPtr> a_;
   std::vector<FmmGenericEvaluatorPtr> f_;
   std::vector<FmmGenericEvaluatorPtr> ft_;
   std::vector<FmmGenericSymmetricEvaluatorPtr> h_;
   std::unique_ptr<MonomialBasis> poly_basis_;
-  matrixd p_;
+  MatX p_;
 };
 
 }  // namespace polatory::interpolation

@@ -10,28 +10,28 @@
 
 namespace polatory::isosurface {
 
-class dense_undirected_graph {
+class DenseUndirectedGraph {
   using Matrix = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
  public:
-  explicit dense_undirected_graph(index_t order) : m_(Matrix::Zero(order, order)) {
+  explicit DenseUndirectedGraph(Index order) : m_(Matrix::Zero(order, order)) {
     if (order <= 0) {
       throw std::invalid_argument("order must be positive");
     }
   }
 
-  void add_edge(index_t i, index_t j) {
+  void add_edge(Index i, Index j) {
     if (i > j) {
       std::swap(i, j);
     }
     m_(i, j)++;
   }
 
-  index_t degree(index_t i) const {
-    return m_.col(i).cast<index_t>().sum() + m_.row(i).cast<index_t>().sum() - m_(i, i);
+  Index degree(Index i) const {
+    return m_.col(i).cast<Index>().sum() + m_.row(i).cast<Index>().sum() - m_(i, i);
   }
 
-  bool has_edge(index_t i, index_t j) const {
+  bool has_edge(Index i, Index j) const {
     if (i > j) {
       std::swap(i, j);
     }
@@ -40,7 +40,7 @@ class dense_undirected_graph {
 
   bool is_connected() const {
     std::vector<bool> visited(order());
-    std::stack<index_t> to_visit;
+    std::stack<Index> to_visit;
 
     // DFS
     to_visit.push(0);
@@ -50,7 +50,7 @@ class dense_undirected_graph {
 
       visited.at(i) = true;
 
-      for (index_t j = 0; j < order(); j++) {
+      for (Index j = 0; j < order(); j++) {
         if (has_edge(i, j) && !visited.at(j)) {
           to_visit.push(j);
         }
@@ -61,12 +61,12 @@ class dense_undirected_graph {
   }
 
   bool is_simple() const {
-    for (index_t i = 0; i < order(); i++) {
+    for (Index i = 0; i < order(); i++) {
       if (m_(i, i) != 0) {
         return false;
       }
 
-      for (index_t j = i + 1; j < order(); j++) {
+      for (Index j = i + 1; j < order(); j++) {
         if (m_(i, j) > 1) {
           return false;
         }
@@ -76,15 +76,15 @@ class dense_undirected_graph {
     return true;
   }
 
-  index_t max_degree() const {
-    index_t max_degree{};
-    for (index_t i = 0; i < order(); i++) {
+  Index max_degree() const {
+    Index max_degree{};
+    for (Index i = 0; i < order(); i++) {
       max_degree = std::max(max_degree, degree(i));
     }
     return max_degree;
   }
 
-  index_t order() const { return m_.rows(); }
+  Index order() const { return m_.rows(); }
 
  private:
   Matrix m_;

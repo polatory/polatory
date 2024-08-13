@@ -14,28 +14,28 @@
 
 #include "parse_options.hpp"
 
-using polatory::index_t;
-using polatory::interpolant;
-using polatory::matrixd;
-using polatory::model;
+using polatory::Index;
+using polatory::Interpolant;
+using polatory::Mat3;
+using polatory::MatX;
+using polatory::Model;
 using polatory::read_table;
-using polatory::vectord;
-using polatory::geometry::bbox3d;
-using polatory::geometry::matrix3d;
-using polatory::geometry::point3d;
-using polatory::geometry::points3d;
-using polatory::geometry::vector3d;
-using polatory::isosurface::face;
-using polatory::isosurface::faces;
-using polatory::isosurface::field_function;
-using polatory::isosurface::isosurface;
-using polatory::rbf::biharmonic3d;
+using polatory::VecX;
+using polatory::geometry::Bbox3;
+using polatory::geometry::Point3;
+using polatory::geometry::Points3;
+using polatory::geometry::Vector3;
+using polatory::isosurface::Face;
+using polatory::isosurface::Faces;
+using polatory::isosurface::FieldFunction;
+using polatory::isosurface::Isosurface;
+using polatory::rbf::Biharmonic3D;
 
-class mesh_distance {
-  using halfedge = std::pair<index_t, index_t>;
+class MeshDistance {
+  using Halfedge = std::pair<Index, Index>;
 
-  struct halfedge_hash {
-    std::size_t operator()(const halfedge& edge) const noexcept {
+  struct HalfedgeHash {
+    std::size_t operator()(const Halfedge& edge) const noexcept {
       std::size_t seed{};
       boost::hash_combine(seed, edge.first);
       boost::hash_combine(seed, edge.second);
@@ -44,15 +44,15 @@ class mesh_distance {
   };
 
  public:
-  mesh_distance(points3d&& vertices, faces&& faces)
+  MeshDistance(Points3&& vertices, Faces&& faces)
       : vertices_(std::move(vertices)), faces_(std::move(faces)) {
     tree_.init(vertices_, faces_);
 
     for (auto f : faces_.rowwise()) {
       for (auto i = 0; i < 3; i++) {
         auto j = (i + 1) % 3;
-        halfedge he{f(i), f(j)};
-        halfedge he_opp{f(j), f(i)};
+        Halfedge he{f(i), f(j)};
+        Halfedge he_opp{f(j), f(i)};
         auto it = boundary_.find(he_opp);
         if (it != boundary_.end()) {
           boundary_.erase(it);
@@ -68,30 +68,30 @@ class mesh_distance {
     }
   }
 
-  std::pair<points3d, vectord> operator()(const points3d& points) const {
-    vectord values(points.rows());
-    points3d closest_points(points.rows(), 3);
+  std::pair<Points3, VecX> operator()(const Points3& points) const {
+    VecX values(points.rows());
+    Points3 closest_points(points.rows(), 3);
 
-    for (index_t i = 0; i < points.rows(); i++) {
-      point3d p = points.row(i);
+    for (Index i = 0; i < points.rows(); i++) {
+      Point3 p = points.row(i);
 
       int fi{};
-      point3d closest_point;
+      Point3 closest_point;
       auto sqrd = tree_.squared_distance(vertices_, faces_, p, fi, closest_point);
 
-      face f = faces_.row(fi);
-      point3d a = vertices_.row(f(0));
-      point3d b = vertices_.row(f(1));
-      point3d c = vertices_.row(f(2));
+      Face f = faces_.row(fi);
+      Point3 a = vertices_.row(f(0));
+      Point3 b = vertices_.row(f(1));
+      Point3 c = vertices_.row(f(2));
 
-      vector3d l;
+      Vector3 l;
       igl::barycentric_coordinates(closest_point, a, b, c, l);
 
       auto boundary = false;
       for (auto i = 0; i < 3; i++) {
         auto j = (i + 1) % 3;
         auto k = (i + 2) % 3;
-        halfedge he{f(i), f(j)};
+        Halfedge he{f(i), f(j)};
         if (boundary_.contains(he) && std::abs(l(k)) < 1e-10) {
           boundary = true;
           break;
@@ -104,7 +104,7 @@ class mesh_distance {
       }
 
       if (boundary) {
-        vector3d n = (b - a).cross(c - a).normalized();
+        Vector3 n = (b - a).cross(c - a).normalized();
         values(i) = n.dot(p - a);
       } else {
         auto sign = -orient3d_inexact(a, b, c, p);
@@ -118,43 +118,42 @@ class mesh_distance {
   }
 
  private:
-  static double orient3d_inexact(const point3d& a, const point3d& b, const point3d& c,
-                                 const point3d& d) {
-    matrix3d m;
+  static double orient3d_inexact(const Point3& a, const Point3& b, const Point3& c,
+                                 const Point3& d) {
+    Mat3 m;
     m << a(0) - d(0), a(1) - d(1), a(2) - d(2), b(0) - d(0), b(1) - d(1), b(2) - d(2), c(0) - d(0),
         c(1) - d(1), c(2) - d(2);
     auto det = m.determinant();
     return det < 0.0 ? -1.0 : det > 0.0 ? 1.0 : 0.0;
   }
 
-  points3d vertices_;
-  faces faces_;
-  igl::AABB<points3d, 3> tree_;
-  std::unordered_multiset<halfedge, halfedge_hash> boundary_;
-  std::unordered_set<index_t> boundary_vertices_;
+  Points3 vertices_;
+  Faces faces_;
+  igl::AABB<Points3, 3> tree_;
+  std::unordered_multiset<Halfedge, HalfedgeHash> boundary_;
+  std::unordered_set<Index> boundary_vertices_;
 };
 
-class offset_field_function : public field_function {
-  using Interpolant = interpolant<3>;
+class OffsetFieldFunction : public FieldFunction {
+  using Interpolant = Interpolant<3>;
 
  public:
-  explicit offset_field_function(Interpolant& interpolant, const mesh_distance& dist,
-                                 double accuracy)
+  explicit OffsetFieldFunction(Interpolant& interpolant, const MeshDistance& dist, double accuracy)
       : interpolant_(interpolant), dist_(dist), accuracy_(accuracy) {}
 
-  vectord operator()(const points3d& points) const override {
+  VecX operator()(const Points3& points) const override {
     auto [C, S] = dist_(points);
 
     return S - interpolant_.evaluate_impl(C);
   }
 
-  void set_evaluation_bbox(const bbox3d& bbox) override {
+  void set_evaluation_bbox(const Bbox3& bbox) override {
     interpolant_.set_evaluation_bbox_impl(bbox, accuracy_);
   }
 
  private:
   Interpolant& interpolant_;
-  const mesh_distance& dist_;
+  const MeshDistance& dist_;
   double accuracy_;
 };
 
@@ -163,25 +162,25 @@ int main(int argc, const char* argv[]) {
     auto opts = parse_options(argc, argv);
 
     // Load the points.
-    matrixd table = read_table(opts.in);
-    points3d P = table(Eigen::all, {0, 1, 2});
+    MatX table = read_table(opts.in);
+    Points3 P = table(Eigen::all, {0, 1, 2});
 
     // Load the mesh.
-    points3d V;
-    faces F;
+    Points3 V;
+    Faces F;
     if (!igl::read_triangle_mesh(opts.mesh_in, V, F)) {
       throw std::runtime_error("failed to read the mesh file");
     }
 
-    mesh_distance mesh_dist(std::move(V), std::move(F));
+    MeshDistance mesh_dist(std::move(V), std::move(F));
     auto [C, S] = mesh_dist(P);
 
     // Define the model.
-    biharmonic3d<3> rbf({1.0});
-    model<3> model(std::move(rbf));
+    Biharmonic3D<3> rbf({1.0});
+    Model<3> model(std::move(rbf));
 
     // Fit.
-    interpolant<3> interpolant(model);
+    Interpolant<3> interpolant(model);
     if (opts.reduce) {
       interpolant.fit_incrementally(C, S, opts.tolerance, opts.max_iter, opts.accuracy);
     } else {
@@ -189,8 +188,8 @@ int main(int argc, const char* argv[]) {
     }
 
     // Generate the isosurface.
-    isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
-    offset_field_function field_fn(interpolant, mesh_dist, opts.accuracy);
+    Isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
+    OffsetFieldFunction field_fn(interpolant, mesh_dist, opts.accuracy);
 
     isosurf.generate_from_seed_points(P, field_fn).export_obj(opts.mesh_out);
 

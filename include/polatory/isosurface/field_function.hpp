@@ -6,21 +6,21 @@
 
 namespace polatory::isosurface {
 
-class field_function {
+class FieldFunction {
  public:
-  virtual ~field_function() = default;
+  virtual ~FieldFunction() = default;
 
-  field_function(const field_function&) = delete;
-  field_function(field_function&&) = delete;
-  field_function& operator=(const field_function&) = delete;
-  field_function& operator=(field_function&&) = delete;
+  FieldFunction(const FieldFunction&) = delete;
+  FieldFunction(FieldFunction&&) = delete;
+  FieldFunction& operator=(const FieldFunction&) = delete;
+  FieldFunction& operator=(FieldFunction&&) = delete;
 
-  virtual vectord operator()(const geometry::points3d& points) const = 0;
+  virtual VecX operator()(const geometry::Points3& points) const = 0;
 
-  virtual void set_evaluation_bbox(const geometry::bbox3d& /*bbox*/) {}
+  virtual void set_evaluation_bbox(const geometry::Bbox3& /*bbox*/) {}
 
  protected:
-  field_function() = default;
+  FieldFunction() = default;
 };
 
 }  // namespace polatory::isosurface

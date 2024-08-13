@@ -4,21 +4,21 @@
 
 namespace polatory::geometry {
 
-class cuboid3d {
+class Cuboid3 {
  public:
-  cuboid3d() : min_(point3d::Zero()), max_(point3d::Ones()) {}
+  Cuboid3() : min_(Point3::Zero()), max_(Point3::Ones()) {}
 
-  cuboid3d(const point3d& min, const point3d& max) : min_(min), max_(max) {}
+  Cuboid3(const Point3& min, const Point3& max) : min_(min), max_(max) {}
 
-  bool operator==(const cuboid3d& other) const = default;
+  bool operator==(const Cuboid3& other) const = default;
 
-  const point3d& max() const { return max_; }
+  const Point3& max() const { return max_; }
 
-  const point3d& min() const { return min_; }
+  const Point3& min() const { return min_; }
 
  private:
-  const point3d min_;
-  const point3d max_;
+  const Point3 min_;
+  const Point3 max_;
 };
 
 }  // namespace polatory::geometry

@@ -11,43 +11,43 @@
 #include "../examples/common/bbox.hpp"
 #include "commands.hpp"
 
-using polatory::index_t;
-using polatory::interpolant;
-using polatory::matrixd;
+using polatory::Index;
+using polatory::Interpolant;
+using polatory::Mat3;
+using polatory::MatX;
 using polatory::read_table;
-using polatory::geometry::bbox3d;
-using polatory::geometry::matrix3d;
-using polatory::geometry::points3d;
-using polatory::isosurface::isosurface;
-using polatory::isosurface::mesh;
-using polatory::isosurface::rbf_field_function;
+using polatory::geometry::Bbox3;
+using polatory::geometry::Points3;
+using polatory::isosurface::Isosurface;
+using polatory::isosurface::Mesh;
+using polatory::isosurface::RbfFieldFunction;
 using polatory::numeric::to_double;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   std::string seed_points_file;
   double accuracy{};
   double grad_accuracy{};
   double isovalue{};
-  bbox3d bbox;
+  Bbox3 bbox;
   double resolution{};
-  matrix3d aniso;
+  Mat3 aniso;
   int refine{};
   std::string out_file;
 };
 
-void run_impl(const options& opts) {
-  auto inter = interpolant<3>::load(opts.in_file);
+void run_impl(const Options& opts) {
+  auto inter = Interpolant<3>::load(opts.in_file);
   auto bbox = opts.bbox.is_empty() ? inter.bbox() : opts.bbox;
 
-  isosurface isosurf(bbox, opts.resolution, opts.aniso);
-  rbf_field_function field_fn(inter, opts.accuracy, opts.grad_accuracy);
+  Isosurface isosurf(bbox, opts.resolution, opts.aniso);
+  RbfFieldFunction field_fn(inter, opts.accuracy, opts.grad_accuracy);
 
-  points3d seed_points;
+  Points3 seed_points;
   if (!opts.seed_points_file.empty()) {
-    matrixd table = read_table(opts.seed_points_file);
+    MatX table = read_table(opts.seed_points_file);
     seed_points = table(Eigen::all, {0, 1, 2});
   }
 
@@ -60,11 +60,11 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void isosurface_command::run(const std::vector<std::string>& args,
-                             const global_options& global_opts) {
+void IsosurfaceCommand::run(const std::vector<std::string>& args,
+                            const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //
@@ -93,7 +93,7 @@ void isosurface_command::run(const std::vector<std::string>& args,
       ("aniso",
        po::value(&opts.aniso)
            ->multitoken()
-           ->default_value(matrix3d::Identity(), "1 0 0 0 1 0 0 0 1")
+           ->default_value(Mat3::Identity(), "1 0 0 0 1 0 0 0 1")
            ->value_name("A_11 A_12 ... A_33"),
        "Elements of the anisotropy matrix")  //
       ("isoval", po::value(&opts.isovalue)->default_value(0.0, "0.0")->value_name("VAL"),
@@ -127,14 +127,14 @@ void isosurface_command::run(const std::vector<std::string>& args,
 
 namespace Eigen {
 
-inline void validate(boost::any& v, const std::vector<std::string>& values, matrix3d*, int) {
+inline void validate(boost::any& v, const std::vector<std::string>& values, polatory::Mat3*, int) {
   namespace po = boost::program_options;
 
   if (values.size() != 9) {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  matrix3d aniso;
+  polatory::Mat3 aniso;
   aniso << to_double(values.at(0)), to_double(values.at(1)), to_double(values.at(2)),
       to_double(values.at(3)), to_double(values.at(4)), to_double(values.at(5)),
       to_double(values.at(6)), to_double(values.at(7)), to_double(values.at(8));

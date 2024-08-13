@@ -18,21 +18,21 @@
 namespace polatory {
 
 template <int Dim>
-class interpolant;
+class Interpolant;
 
 template <int Dim>
-class model {
+class Model {
   static constexpr int kDim = Dim;
-  using RbfProxy = rbf::rbf_proxy<kDim>;
+  using Rbf = rbf::Rbf<kDim>;
 
  public:
   // Non-constexpr for the sake of Python bindings.
   static inline const int kMinRequiredPolyDegree = -2;
 
-  explicit model(RbfProxy&& rbf, int poly_degree = kMinRequiredPolyDegree)
-      : model(std::vector<RbfProxy>{std::move(rbf)}, poly_degree) {}
+  explicit Model(Rbf&& rbf, int poly_degree = kMinRequiredPolyDegree)
+      : Model(std::vector<Rbf>{std::move(rbf)}, poly_degree) {}
 
-  explicit model(std::vector<RbfProxy>&& rbfs, int poly_degree = kMinRequiredPolyDegree)
+  explicit Model(std::vector<Rbf>&& rbfs, int poly_degree = kMinRequiredPolyDegree)
       : rbfs_(std::move(rbfs)) {
     if (rbfs_.empty()) {
       throw std::invalid_argument("rbfs must not be empty");
@@ -50,12 +50,12 @@ class model {
     }
   }
 
-  ~model() = default;
+  ~Model() = default;
 
-  model(const model& model) = default;
-  model(model&& model) = default;
-  model& operator=(const model&) = default;
-  model& operator=(model&&) = default;
+  Model(const Model& model) = default;
+  Model(Model&& model) = default;
+  Model& operator=(const Model&) = default;
+  Model& operator=(Model&&) = default;
 
   int cpd_order() const {
     auto order = 0;
@@ -78,15 +78,15 @@ class model {
 
   double nugget() const { return nugget_; }
 
-  index_t num_parameters() const {
-    index_t np = 1;
+  Index num_parameters() const {
+    Index np = 1;
     for (const auto& rbf : rbfs_) {
       np += rbf.num_parameters();
     }
     return np;
   }
 
-  index_t num_rbfs() const { return static_cast<index_t>(rbfs_.size()); }
+  Index num_rbfs() const { return static_cast<Index>(rbfs_.size()); }
 
   std::vector<double> parameter_lower_bounds() const {
     std::vector<double> lbs{0.0};
@@ -122,15 +122,15 @@ class model {
     return params;
   }
 
-  index_t poly_basis_size() const {
-    return polynomial::polynomial_basis_base<kDim>::basis_size(poly_degree_);
+  Index poly_basis_size() const {
+    return polynomial::PolynomialBasisBase<kDim>::basis_size(poly_degree_);
   }
 
   int poly_degree() const { return poly_degree_; }
 
-  std::vector<RbfProxy>& rbfs() { return rbfs_; }
+  std::vector<Rbf>& rbfs() { return rbfs_; }
 
-  const std::vector<RbfProxy>& rbfs() const { return rbfs_; }
+  const std::vector<Rbf>& rbfs() const { return rbfs_; }
 
   void set_nugget(double nugget) {
     if (!(nugget >= 0.0)) {
@@ -141,13 +141,13 @@ class model {
   }
 
   void set_parameters(const std::vector<double>& params) {
-    if (static_cast<index_t>(params.size()) != num_parameters()) {
+    if (static_cast<Index>(params.size()) != num_parameters()) {
       throw std::invalid_argument(std::format("params.size() must be {}", num_parameters()));
     }
 
     set_nugget(params.at(0));
 
-    index_t i = 1;
+    Index i = 1;
     for (auto& rbf : rbfs_) {
       rbf.set_parameters(
           std::vector<double>(params.begin() + i, params.begin() + i + rbf.num_parameters()));
@@ -155,7 +155,7 @@ class model {
     }
   }
 
-  bool operator==(const model& other) const {
+  bool operator==(const Model& other) const {
     if (this == &other) {
       return true;
     }
@@ -164,26 +164,26 @@ class model {
            nugget() == other.nugget();
   }
 
-  bool operator!=(const model& other) const { return !(*this == other); }
+  bool operator!=(const Model& other) const { return !(*this == other); }
 
-  POLATORY_IMPLEMENT_LOAD_SAVE(model);
+  POLATORY_IMPLEMENT_LOAD_SAVE(Model);
 
  private:
-  POLATORY_FRIEND_READ_WRITE(model);
+  POLATORY_FRIEND_READ_WRITE;
 
-  // For deserialization of an interpolant<Dim>.
-  friend class interpolant<Dim>;
+  // For deserialization of an Interpolant<Dim>.
+  friend class Interpolant<Dim>;
 
   // For deserialization.
-  model() = default;
+  Model() = default;
 
-  std::vector<RbfProxy> rbfs_;
+  std::vector<Rbf> rbfs_;
   int poly_degree_{};
   double nugget_{};
 };
 
 template <>
-inline std::string model<1>::description() const {
+inline std::string Model<1>::description() const {
   if (!is_covariance_model()) {
     throw std::runtime_error("description is only available for covariance models");
   }
@@ -206,7 +206,7 @@ inline std::string model<1>::description() const {
 }
 
 template <>
-inline std::string model<2>::description() const {
+inline std::string Model<2>::description() const {
   if (!is_covariance_model()) {
     throw std::runtime_error("description is only available for covariance models");
   }
@@ -239,7 +239,7 @@ inline std::string model<2>::description() const {
 }
 
 template <>
-inline std::string model<3>::description() const {
+inline std::string Model<3>::description() const {
   if (!is_covariance_model()) {
     throw std::runtime_error("description is only available for covariance models");
   }
@@ -296,8 +296,8 @@ inline std::string model<3>::description() const {
 namespace polatory::common {
 
 template <int Dim>
-struct Read<model<Dim>> {
-  void operator()(std::istream& is, model<Dim>& t) const {
+struct Read<Model<Dim>> {
+  void operator()(std::istream& is, Model<Dim>& t) const {
     read(is, t.rbfs_);
     read(is, t.poly_degree_);
     read(is, t.nugget_);
@@ -305,8 +305,8 @@ struct Read<model<Dim>> {
 };
 
 template <int Dim>
-struct Write<model<Dim>> {
-  void operator()(std::ostream& os, const model<Dim>& t) const {
+struct Write<Model<Dim>> {
+  void operator()(std::ostream& os, const Model<Dim>& t) const {
     write(os, t.rbfs_);
     write(os, t.poly_degree_);
     write(os, t.nugget_);

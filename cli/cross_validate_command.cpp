@@ -12,22 +12,22 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
-using polatory::matrixd;
-using polatory::model;
+using polatory::MatX;
+using polatory::Model;
 using polatory::read_table;
-using polatory::vectord;
+using polatory::VecX;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
-using polatory::geometry::pointsNd;
+using polatory::geometry::Points;
 using polatory::kriging::cross_validate;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   int dim{};
   std::string model_file;
-  model_options model_opts;
+  ModelOptions model_opts;
   double tolerance{};
   int max_iter{};
   double accuracy{};
@@ -35,13 +35,13 @@ struct options {
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Model = model<Dim>;
-  using Points = pointsNd<Dim>;
+void run_impl(const Options& opts) {
+  using Model = Model<Dim>;
+  using Points = Points<Dim>;
 
-  matrixd table = read_table(opts.in_file);
+  MatX table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
-  vectord values = table.col(Dim);
+  VecX values = table.col(Dim);
   Eigen::VectorXi set_ids = table.col(Dim + 1).cast<int>();
 
   auto model =
@@ -55,11 +55,11 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void cross_validate_command::run(const std::vector<std::string>& args,
-                                 const global_options& global_opts) {
+void CrossValidateCommand::run(const std::vector<std::string>& args,
+                               const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

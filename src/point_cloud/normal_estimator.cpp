@@ -11,14 +11,14 @@
 
 namespace polatory::point_cloud {
 
-normal_estimator::normal_estimator(const geometry::points3d& points)
+NormalEstimator::NormalEstimator(const geometry::Points3& points)
     : n_points_(points.rows()), points_(points), tree_(points) {}
 
-normal_estimator& normal_estimator::estimate_with_knn(index_t k) & {
-  return estimate_with_knn(std::vector<index_t>{k});
+NormalEstimator& NormalEstimator::estimate_with_knn(Index k) & {
+  return estimate_with_knn(std::vector<Index>{k});
 }
 
-normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>& ks) & {
+NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks) & {
   if (ks.empty()) {
     throw std::runtime_error("ks must not be empty");
   }
@@ -27,34 +27,34 @@ normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>
     throw std::runtime_error("k must be greater than or equal to 3");
   }
 
-  normals_ = geometry::points3d::Zero(n_points_, 3);
-  plane_factors_ = vectord::Zero(n_points_);
+  normals_ = geometry::Points3::Zero(n_points_, 3);
+  plane_factors_ = VecX::Zero(n_points_);
 
   if (n_points_ < 3) {
     estimated_ = true;
     return *this;
   }
 
-  std::vector<index_t> nn_indices;
+  std::vector<Index> nn_indices;
   std::vector<double> nn_distances;
 
-  std::vector<index_t> ks_sorted(ks);
+  std::vector<Index> ks_sorted(ks);
   std::sort(ks_sorted.rbegin(), ks_sorted.rend());
   auto k_max = ks_sorted.front();
 
   std::vector<double> plane_factors;
-  std::vector<geometry::vector3d> plane_normals;
+  std::vector<geometry::Vector3> plane_normals;
 
 #pragma omp parallel for private(nn_indices, nn_distances, plane_factors, plane_normals)
-  for (index_t i = 0; i < n_points_; i++) {
-    geometry::point3d p = points_.row(i);
+  for (Index i = 0; i < n_points_; i++) {
+    geometry::Point3 p = points_.row(i);
     tree_.knn_search(p, k_max, nn_indices, nn_distances);
 
     plane_factors.clear();
     plane_normals.clear();
     for (auto k : ks_sorted) {
       nn_indices.resize(k);
-      plane_estimator est(points_(nn_indices, Eigen::all));
+      PlaneEstimator est(points_(nn_indices, Eigen::all));
       plane_factors.push_back(est.plane_factor());
       plane_normals.push_back(est.plane_normal());
     }
@@ -70,11 +70,11 @@ normal_estimator& normal_estimator::estimate_with_knn(const std::vector<index_t>
   return *this;
 }
 
-normal_estimator& normal_estimator::estimate_with_radius(double radius) & {
+NormalEstimator& NormalEstimator::estimate_with_radius(double radius) & {
   return estimate_with_radius(std::vector<double>{radius});
 }
 
-normal_estimator& normal_estimator::estimate_with_radius(const std::vector<double>& radii) & {
+NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>& radii) & {
   if (radii.empty()) {
     throw std::runtime_error("radii must not be empty");
   }
@@ -83,10 +83,10 @@ normal_estimator& normal_estimator::estimate_with_radius(const std::vector<doubl
     throw std::runtime_error("radius must be positive");
   }
 
-  normals_ = geometry::points3d::Zero(n_points_, 3);
-  plane_factors_ = vectord::Zero(n_points_);
+  normals_ = geometry::Points3::Zero(n_points_, 3);
+  plane_factors_ = VecX::Zero(n_points_);
 
-  std::vector<index_t> nn_indices;
+  std::vector<Index> nn_indices;
   std::vector<double> nn_distances;
 
   std::vector<double> radii_sorted(radii);
@@ -94,11 +94,11 @@ normal_estimator& normal_estimator::estimate_with_radius(const std::vector<doubl
   auto radius_max = radii_sorted.front();
 
   std::vector<double> plane_factors;
-  std::vector<geometry::vector3d> plane_normals;
+  std::vector<geometry::Vector3> plane_normals;
 
 #pragma omp parallel for private(nn_indices, nn_distances, plane_factors, plane_normals)
-  for (index_t i = 0; i < n_points_; i++) {
-    geometry::point3d p = points_.row(i);
+  for (Index i = 0; i < n_points_; i++) {
+    geometry::Point3 p = points_.row(i);
     tree_.radius_search(p, radius_max, nn_indices, nn_distances);
 
     if (nn_indices.size() < 3) {
@@ -112,7 +112,7 @@ normal_estimator& normal_estimator::estimate_with_radius(const std::vector<doubl
       auto k = std::distance(nn_distances.begin(), it);
       nn_indices.resize(k);
       nn_distances.resize(k);
-      plane_estimator est(points_(nn_indices, Eigen::all));
+      PlaneEstimator est(points_(nn_indices, Eigen::all));
       plane_factors.push_back(est.plane_factor());
       plane_normals.push_back(est.plane_normal());
     }
@@ -128,10 +128,10 @@ normal_estimator& normal_estimator::estimate_with_radius(const std::vector<doubl
   return *this;
 }
 
-normal_estimator& normal_estimator::filter_by_plane_factor(double threshold) & {
+NormalEstimator& NormalEstimator::filter_by_plane_factor(double threshold) & {
   throw_if_not_estimated();
 
-  for (index_t i = 0; i < n_points_; i++) {
+  for (Index i = 0; i < n_points_; i++) {
     if (plane_factors_(i) < threshold) {
       normals_.row(i).setZero();
     }
@@ -140,11 +140,11 @@ normal_estimator& normal_estimator::filter_by_plane_factor(double threshold) & {
   return *this;
 }
 
-normal_estimator& normal_estimator::orient_toward_direction(const geometry::vector3d& direction) & {
+NormalEstimator& NormalEstimator::orient_toward_direction(const geometry::Vector3& direction) & {
   throw_if_not_estimated();
 
 #pragma omp parallel for
-  for (index_t i = 0; i < n_points_; i++) {
+  for (Index i = 0; i < n_points_; i++) {
     auto n = normals_.row(i);
     if (n.dot(direction) < 0.0) {
       n = -n;
@@ -154,11 +154,11 @@ normal_estimator& normal_estimator::orient_toward_direction(const geometry::vect
   return *this;
 }
 
-normal_estimator& normal_estimator::orient_toward_point(const geometry::point3d& point) & {
+NormalEstimator& NormalEstimator::orient_toward_point(const geometry::Point3& point) & {
   throw_if_not_estimated();
 
 #pragma omp parallel for
-  for (index_t i = 0; i < n_points_; i++) {
+  for (Index i = 0; i < n_points_; i++) {
     auto n = normals_.row(i);
     auto p = points_.row(i);
     if (n.dot(point - p) < 0.0) {
@@ -169,31 +169,31 @@ normal_estimator& normal_estimator::orient_toward_point(const geometry::point3d&
   return *this;
 }
 
-struct weighted_pair {
-  bool operator<(const weighted_pair& rhs) const { return weight < rhs.weight; }
+struct WeightedPair {
+  bool operator<(const WeightedPair& rhs) const { return weight < rhs.weight; }
 
-  index_t first{};
-  index_t second{};
+  Index first{};
+  Index second{};
   double weight{};
 };
 
-normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
+NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
   throw_if_not_estimated();
 
-  geometry::vector3d seed_point_direction{-geometry::vector3d::UnitY()};
-  index_t n_connected_components{};
+  geometry::Vector3 seed_point_direction{-geometry::Vector3::UnitY()};
+  Index n_connected_components{};
 
   std::vector<bool> oriented(n_points_, false);
-  for (index_t i = 0; i < n_points_; i++) {
+  for (Index i = 0; i < n_points_; i++) {
     if (normals_.row(i).isZero()) {
       oriented.at(i) = true;
     }
   }
 
   auto it = oriented.begin();
-  std::vector<index_t> connected_component;
-  std::priority_queue<weighted_pair> queue;
-  std::vector<index_t> nn_indices;
+  std::vector<Index> connected_component;
+  std::priority_queue<WeightedPair> queue;
+  std::vector<Index> nn_indices;
   std::vector<double> nn_distances;
   while (true) {
     it = std::find(it, oriented.end(), false);
@@ -204,7 +204,7 @@ normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
     connected_component.clear();
 
     {
-      auto cur = static_cast<index_t>(std::distance(oriented.begin(), it));
+      auto cur = static_cast<Index>(std::distance(oriented.begin(), it));
       oriented.at(cur) = true;
       connected_component.push_back(cur);
 

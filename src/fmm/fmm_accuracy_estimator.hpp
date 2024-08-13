@@ -27,12 +27,12 @@
 namespace polatory::fmm {
 
 template <class Rbf, class Kernel>
-class fmm_accuracy_estimator {
+class FmmAccuracyEstimator {
   static constexpr int kDim{Rbf::kDim};
-  using Bbox = geometry::bboxNd<kDim>;
-  using Point = geometry::pointNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using Vector = geometry::vectorNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using Point = geometry::Point<kDim>;
+  using Points = geometry::Points<kDim>;
+  using Vector = geometry::Vector<kDim>;
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
@@ -41,13 +41,13 @@ class fmm_accuracy_estimator {
       /* position */ double, kDim,
       /* inputs */ double, km,
       /* outputs */ double, kn,  // should be 0
-      /* variables */ index_t>;
+      /* variables */ Index>;
 
   using TargetParticle = scalfmm::container::particle<
       /* position */ double, kDim,
       /* inputs */ double, km,  // should be 0
       /* outputs */ double, kn,
-      /* variables */ index_t>;
+      /* variables */ Index>;
 
   using SourceContainer = scalfmm::container::particle_container<SourceParticle>;
   using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
@@ -65,14 +65,14 @@ class fmm_accuracy_estimator {
   using SourceTree = scalfmm::component::group_tree_view<Cell, SourceLeaf, Box>;
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
-  static constexpr int kClassic = interpolator_configuration::kClassic;
+  static constexpr int kClassic = InterpolatorConfiguration::kClassic;
   static constexpr int kMaxOrder = 20;
-  static constexpr index_t kMaxTargetSize = 10000;
+  static constexpr Index kMaxTargetSize = 10000;
 
  public:
-  static interpolator_configuration find_best_configuration(const Rbf& rbf, double accuracy,
-                                                            const SourceContainer& src_particles,
-                                                            const Box& box, int tree_height) {
+  static InterpolatorConfiguration find_best_configuration(const Rbf& rbf, double accuracy,
+                                                           const SourceContainer& src_particles,
+                                                           const Box& box, int tree_height) {
     const auto& config = rbf.interpolator_configuration();
 
     if (accuracy == std::numeric_limits<double>::infinity()) {
@@ -81,16 +81,16 @@ class fmm_accuracy_estimator {
 
     // Errors at the data points are larger than those at randomly distributed points.
 
-    auto src_size = static_cast<index_t>(src_particles.size());
+    auto src_size = static_cast<Index>(src_particles.size());
     auto trg_size = std::min(src_size, kMaxTargetSize);
     TargetContainer trg_particles(trg_size);
 
     std::mt19937 gen;
-    std::vector<index_t> src_indices(src_size);
+    std::vector<Index> src_indices(src_size);
     std::iota(std::begin(src_indices), std::end(src_indices), 0);
     std::shuffle(std::begin(src_indices), std::end(src_indices), gen);
 
-    for (index_t idx = 0; idx < trg_size; idx++) {
+    for (Index idx = 0; idx < trg_size; idx++) {
       auto p = trg_particles.at(idx);
       auto src_idx = src_indices.at(idx);
       const auto src_p = src_particles.at(src_idx);
@@ -139,14 +139,14 @@ class fmm_accuracy_estimator {
     throw std::runtime_error("failed to construct an evaluator that meets the given accuracy");
   }
 
-  static vectord evaluate(const Rbf& rbf, const SourceContainer& src_particles,
-                          TargetContainer& trg_particles, const Box& box, int tree_height = 0,
-                          int order = 0, int d = kClassic) {
+  static VecX evaluate(const Rbf& rbf, const SourceContainer& src_particles,
+                       TargetContainer& trg_particles, const Box& box, int tree_height = 0,
+                       int order = 0, int d = kClassic) {
     using namespace scalfmm::algorithms;
 
-    auto trg_size = static_cast<index_t>(trg_particles.size());
+    auto trg_size = static_cast<Index>(trg_particles.size());
 
-    vectord potentials = vectord::Zero(kn * trg_size);
+    VecX potentials = VecX::Zero(kn * trg_size);
     trg_particles.reset_outputs();
 
     Kernel kernel(rbf);
@@ -176,7 +176,7 @@ class fmm_accuracy_estimator {
     } else {
       full_direct(src_particles, trg_particles, kernel);
 
-      for (index_t idx = 0; idx < trg_size; idx++) {
+      for (Index idx = 0; idx < trg_size; idx++) {
         const auto p = trg_particles.at(idx);
         auto orig_idx = std::get<0>(p.variables());
         for (auto i = 0; i < kn; i++) {

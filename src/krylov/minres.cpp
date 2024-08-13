@@ -3,10 +3,10 @@
 
 namespace polatory::krylov {
 
-minres::minres(const linear_operator& op, const vectord& rhs, index_t max_iter)
-    : gmres_base(op, rhs, max_iter) {}
+Minres::Minres(const LinearOperator& op, const VecX& rhs, Index max_iter)
+    : GmresBase(op, rhs, max_iter) {}
 
-void minres::iterate_process() {
+void Minres::iterate_process() {
   if (iter_ == max_iter_) {
     return;
   }
@@ -27,7 +27,7 @@ void minres::iterate_process() {
   vs_.at(j + 1) /= r_(j + 1, j);
 
   // Update matrix R by Givens rotation
-  for (index_t i = std::max(index_t{0}, j - 2); i < j; i++) {
+  for (Index i = std::max(Index{0}, j - 2); i < j; i++) {
     auto x = r_(i, j);
     auto y = r_(i + 1, j);
     auto tmp1 = c_(i) * x + s_(i) * y;

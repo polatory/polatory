@@ -3,28 +3,24 @@
 namespace polatory::kriging {
 
 template <>
-const geometry::vectors1d variogram_calculator<1>::kIsotropicDirections{
-    geometry::vector1d::UnitX()};
+const geometry::Vectors1 VariogramCalculator<1>::kIsotropicDirections{geometry::Vector1::UnitX()};
 
 template <>
-const geometry::vectors1d variogram_calculator<1>::kAnisotropicDirections{
-    geometry::vector1d::UnitX()};
+const geometry::Vectors1 VariogramCalculator<1>::kAnisotropicDirections{geometry::Vector1::UnitX()};
 
 template <>
-const geometry::vectors2d variogram_calculator<2>::kIsotropicDirections{
-    geometry::vector2d::UnitX()};
+const geometry::Vectors2 VariogramCalculator<2>::kIsotropicDirections{geometry::Vector2::UnitX()};
 
 template <>
-const geometry::vectors2d variogram_calculator<2>::kAnisotropicDirections{
+const geometry::Vectors2 VariogramCalculator<2>::kAnisotropicDirections{
     {1.0, 0.0}, {0.92387953, 0.38268343},  {0.70710678, 0.70710678},  {0.38268343, 0.92387953},
     {0.0, 1.0}, {-0.38268343, 0.92387953}, {-0.70710678, 0.70710678}, {-0.92387953, 0.38268343}};
 
 template <>
-const geometry::vectors3d variogram_calculator<3>::kIsotropicDirections{
-    geometry::vector3d::UnitX()};
+const geometry::Vectors3 VariogramCalculator<3>::kIsotropicDirections{geometry::Vector3::UnitX()};
 
 template <>
-const geometry::vectors3d variogram_calculator<3>::kAnisotropicDirections{
+const geometry::Vectors3 VariogramCalculator<3>::kAnisotropicDirections{
     {0.0, 0.0, 1.0},
     {0.10607892, 0.32647735, 0.9392336},
     {-0.27771825, 0.20177411, 0.9392336},

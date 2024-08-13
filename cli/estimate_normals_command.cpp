@@ -8,47 +8,47 @@
 
 #include "commands.hpp"
 
-using polatory::index_t;
-using polatory::matrixd;
+using polatory::Index;
+using polatory::MatX;
 using polatory::read_table;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
-using polatory::geometry::point3d;
-using polatory::geometry::points3d;
-using polatory::geometry::vector3d;
+using polatory::geometry::Point3;
+using polatory::geometry::Points3;
+using polatory::geometry::Vector3;
 using polatory::numeric::to_double;
-using polatory::point_cloud::normal_estimator;
+using polatory::point_cloud::NormalEstimator;
 
 namespace {
 
-enum class normal_estimation_method { kKNN, kRadius };
+enum class NormalEstimationMethod { kKNN, kRadius };
 
-enum class orientation_estimation_method { kPoint, kDirection, kClosed };
+enum class OrientationEstimationMethod { kPoint, kDirection, kClosed };
 
-struct options {
+struct Options {
   std::string in_file;
-  normal_estimation_method normal_method{};
-  std::vector<index_t> ks;
+  NormalEstimationMethod normal_method{};
+  std::vector<Index> ks;
   std::vector<double> radii;
   double threshold{};
-  orientation_estimation_method orientation_method{};
-  point3d point;
-  vector3d direction;
-  index_t k_closed{};
+  OrientationEstimationMethod orientation_method{};
+  Point3 point;
+  Vector3 direction;
+  Index k_closed{};
   std::string out_file;
 };
 
-void run_impl(const options& opts) {
-  matrixd table = read_table(opts.in_file);
-  points3d points = table(Eigen::all, {0, 1, 2});
+void run_impl(const Options& opts) {
+  MatX table = read_table(opts.in_file);
+  Points3 points = table(Eigen::all, {0, 1, 2});
 
-  normal_estimator estimator(points);
+  NormalEstimator estimator(points);
 
   switch (opts.normal_method) {
-    case normal_estimation_method::kKNN:
+    case NormalEstimationMethod::kKNN:
       estimator.estimate_with_knn(opts.ks);
       break;
-    case normal_estimation_method::kRadius:
+    case NormalEstimationMethod::kRadius:
       estimator.estimate_with_radius(opts.radii);
       break;
   }
@@ -56,13 +56,13 @@ void run_impl(const options& opts) {
   estimator.filter_by_plane_factor(opts.threshold);
 
   switch (opts.orientation_method) {
-    case orientation_estimation_method::kPoint:
+    case OrientationEstimationMethod::kPoint:
       estimator.orient_toward_point(opts.point);
       break;
-    case orientation_estimation_method::kDirection:
+    case OrientationEstimationMethod::kDirection:
       estimator.orient_toward_direction(opts.direction);
       break;
-    case orientation_estimation_method::kClosed:
+    case OrientationEstimationMethod::kClosed:
       estimator.orient_closed_surface(opts.k_closed);
       break;
   }
@@ -74,11 +74,11 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void estimate_normals_command::run(const std::vector<std::string>& args,
-                                   const global_options& global_opts) {
+void EstimateNormalsCommand::run(const std::vector<std::string>& args,
+                                 const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //
@@ -127,11 +127,11 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
     throw std::runtime_error("only either --k or --radius can be specified");
   }
   if (vm.count("k") == 1) {
-    opts.normal_method = normal_estimation_method::kKNN;
+    opts.normal_method = NormalEstimationMethod::kKNN;
   } else if (vm.count("radius") == 1) {
-    opts.normal_method = normal_estimation_method::kRadius;
+    opts.normal_method = NormalEstimationMethod::kRadius;
   } else {
-    opts.normal_method = normal_estimation_method::kKNN;
+    opts.normal_method = NormalEstimationMethod::kKNN;
     opts.ks = {10, 30, 100, 300};
   }
 
@@ -140,13 +140,13 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
     throw std::runtime_error("only one of --point, --direction, or --closed can be specified");
   }
   if (vm.count("point") == 1) {
-    opts.orientation_method = orientation_estimation_method::kPoint;
+    opts.orientation_method = OrientationEstimationMethod::kPoint;
   } else if (vm.count("direction") == 1) {
-    opts.orientation_method = orientation_estimation_method::kDirection;
+    opts.orientation_method = OrientationEstimationMethod::kDirection;
   } else if (vm.count("closed") == 1) {
-    opts.orientation_method = orientation_estimation_method::kClosed;
+    opts.orientation_method = OrientationEstimationMethod::kClosed;
   } else {
-    opts.orientation_method = orientation_estimation_method::kClosed;
+    opts.orientation_method = OrientationEstimationMethod::kClosed;
     opts.k_closed = 100;
   }
 
@@ -155,14 +155,16 @@ void estimate_normals_command::run(const std::vector<std::string>& args,
 
 namespace Eigen {
 
-inline void validate(boost::any& v, const std::vector<std::string>& values, vector3d*, int) {
+inline void validate(boost::any& v, const std::vector<std::string>& values,
+                     polatory::geometry::Vector3*, int) {
   namespace po = boost::program_options;
 
   if (values.size() != 3) {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  v = vector3d{to_double(values.at(0)), to_double(values.at(1)), to_double(values.at(2))};
+  v = polatory::geometry::Vector3{to_double(values.at(0)), to_double(values.at(1)),
+                                  to_double(values.at(2))};
 }
 
 }  // namespace Eigen

@@ -8,20 +8,20 @@
 namespace polatory::geometry {
 
 template <int Dim>
-class bboxNd {
-  using Point = pointNd<Dim>;
-  using Points = pointsNd<Dim>;
-  using Vector = vectorNd<Dim>;
-  using Matrix = matrixNd<Dim>;
+class Bbox {
+  using Mat = Mat<Dim>;
+  using Point = Point<Dim>;
+  using Points = Points<Dim>;
+  using Vector = Vector<Dim>;
 
  public:
-  bboxNd()
+  Bbox()
       : min_(Point::Constant(std::numeric_limits<double>::infinity())),
         max_(Point::Constant(-std::numeric_limits<double>::infinity())) {}
 
-  bboxNd(const Point& min, const Point& max) : min_(min), max_(max) {};
+  Bbox(const Point& min, const Point& max) : min_(min), max_(max) {};
 
-  bool operator==(const bboxNd& other) const = default;
+  bool operator==(const Bbox& other) const = default;
 
   Point center() const { return min_ + width() / 2.0; }
 
@@ -29,7 +29,7 @@ class bboxNd {
     return (p.array() >= min_.array()).all() && (p.array() <= max_.array()).all();
   }
 
-  bboxNd convex_hull(const bboxNd& other) const {
+  Bbox convex_hull(const Bbox& other) const {
     return {min_.cwiseMin(other.min_), max_.cwiseMax(other.max_)};
   }
 
@@ -52,7 +52,7 @@ class bboxNd {
   const Point& min() const { return min_; }
 
   template <class Derived>
-  static bboxNd from_points(const Eigen::MatrixBase<Derived>& points) {
+  static Bbox from_points(const Eigen::MatrixBase<Derived>& points) {
     if (points.rows() == 0) {
       return {};
     }
@@ -60,38 +60,36 @@ class bboxNd {
     return {points.colwise().minCoeff(), points.colwise().maxCoeff()};
   }
 
-  bboxNd transform(const Matrix& t) const {
-    return from_points(transform_points<Dim>(t, corners()));
-  }
+  Bbox transform(const Mat& t) const { return from_points(transform_points<Dim>(t, corners())); }
 
   Vector width() const { return max_ - min_; }
 
  private:
-  POLATORY_FRIEND_READ_WRITE(bboxNd);
+  POLATORY_FRIEND_READ_WRITE;
 
   Point min_;
   Point max_;
 };
 
-using bbox1d = bboxNd<1>;
-using bbox2d = bboxNd<2>;
-using bbox3d = bboxNd<3>;
+using Bbox1 = Bbox<1>;
+using Bbox2 = Bbox<2>;
+using Bbox3 = Bbox<3>;
 
 }  // namespace polatory::geometry
 
 namespace polatory::common {
 
 template <int Dim>
-struct Read<geometry::bboxNd<Dim>> {
-  void operator()(std::istream& is, geometry::bboxNd<Dim>& t) const {
+struct Read<geometry::Bbox<Dim>> {
+  void operator()(std::istream& is, geometry::Bbox<Dim>& t) const {
     read(is, t.min_);
     read(is, t.max_);
   }
 };
 
 template <int Dim>
-struct Write<geometry::bboxNd<Dim>> {
-  void operator()(std::ostream& os, const geometry::bboxNd<Dim>& t) const {
+struct Write<geometry::Bbox<Dim>> {
+  void operator()(std::ostream& os, const geometry::Bbox<Dim>& t) const {
     write(os, t.min_);
     write(os, t.max_);
   }

@@ -9,7 +9,7 @@
 
 #include "../common/bbox.hpp"
 
-struct options {
+struct Options {
   std::string in;
   std::string mesh_in;
   double min_distance{};
@@ -17,15 +17,15 @@ struct options {
   int max_iter{};
   double accuracy{};
   bool reduce{};
-  polatory::geometry::bbox3d mesh_bbox;
+  polatory::geometry::Bbox3 mesh_bbox;
   double mesh_resolution{};
   std::string mesh_out;
 };
 
-inline options parse_options(int argc, const char* argv[]) {
+inline Options parse_options(int argc, const char* argv[]) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

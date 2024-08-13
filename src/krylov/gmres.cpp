@@ -3,10 +3,10 @@
 
 namespace polatory::krylov {
 
-gmres::gmres(const linear_operator& op, const vectord& rhs, index_t max_iter)
-    : gmres_base(op, rhs, max_iter) {}
+Gmres::Gmres(const LinearOperator& op, const VecX& rhs, Index max_iter)
+    : GmresBase(op, rhs, max_iter) {}
 
-void gmres::iterate_process() {
+void Gmres::iterate_process() {
   if (iter_ == max_iter_) {
     return;
   }
@@ -18,17 +18,17 @@ void gmres::iterate_process() {
   add_preconditioned_krylov_basis(z);
   vs_.push_back(left_preconditioned(op_(z)));
 #pragma omp parallel for
-  for (index_t i = 0; i <= j; i++) {
+  for (Index i = 0; i <= j; i++) {
     r_(i, j) = vs_.at(i).dot(vs_.at(j + 1));
   }
-  for (index_t i = 0; i <= j; i++) {
+  for (Index i = 0; i <= j; i++) {
     vs_.at(j + 1) -= r_(i, j) * vs_.at(i);
   }
   r_(j + 1, j) = vs_.at(j + 1).norm();
   vs_.at(j + 1) /= r_(j + 1, j);
 
   // Update matrix R by Givens rotation
-  for (index_t i = 0; i < j; i++) {
+  for (Index i = 0; i < j; i++) {
     auto x = r_(i, j);
     auto y = r_(i + 1, j);
     auto tmp1 = c_(i) * x + s_(i) * y;

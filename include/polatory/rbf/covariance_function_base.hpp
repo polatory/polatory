@@ -8,8 +8,8 @@
 namespace polatory::rbf::internal {
 
 template <int Dim>
-class covariance_function_base : public rbf_base<Dim> {
-  using Base = rbf_base<Dim>;
+class CovarianceFunctionBase : public RbfBase<Dim> {
+  using Base = RbfBase<Dim>;
 
  public:
   using Base::Base;
@@ -18,7 +18,7 @@ class covariance_function_base : public rbf_base<Dim> {
 
   bool is_covariance_function() const override { return true; }
 
-  index_t num_parameters() const override { return 2; }
+  Index num_parameters() const override { return 2; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0, 0.0};

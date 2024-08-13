@@ -15,9 +15,9 @@
 
 namespace polatory::preconditioner {
 
-class binary_cache {
+class BinaryCache {
  public:
-  binary_cache() {
+  BinaryCache() {
     auto filename = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
 
 #ifdef _WIN32
@@ -40,7 +40,7 @@ class binary_cache {
     records_.push_back({0, 0});
   }
 
-  ~binary_cache() {
+  ~BinaryCache() {
 #ifdef _WIN32
     ::CloseHandle(file_);
 #else
@@ -48,10 +48,10 @@ class binary_cache {
 #endif
   }
 
-  binary_cache(const binary_cache&) = delete;
-  binary_cache(binary_cache&&) = delete;
-  binary_cache& operator=(const binary_cache&) = delete;
-  binary_cache& operator=(binary_cache&&) = delete;
+  BinaryCache(const BinaryCache&) = delete;
+  BinaryCache(BinaryCache&&) = delete;
+  BinaryCache& operator=(const BinaryCache&) = delete;
+  BinaryCache& operator=(BinaryCache&&) = delete;
 
   void get(std::size_t id, void* data) const {
     std::lock_guard lock(mutex_);
@@ -89,7 +89,7 @@ class binary_cache {
   }
 
  private:
-  struct record {
+  struct Record {
     std::size_t offset{};
     std::size_t size{};
   };
@@ -100,7 +100,7 @@ class binary_cache {
   int file_{};
 #endif
 
-  std::vector<record> records_;
+  std::vector<Record> records_;
   mutable std::mutex mutex_;
 };
 

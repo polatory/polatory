@@ -6,16 +6,16 @@
 
 #include "commands.hpp"
 
-using polatory::interpolant;
-using polatory::matrixd;
+using polatory::Interpolant;
+using polatory::MatX;
 using polatory::read_table;
 using polatory::write_table;
 using polatory::common::concatenate_cols;
-using polatory::geometry::pointsNd;
+using polatory::geometry::Points;
 
 namespace {
 
-struct options {
+struct Options {
   std::string interpolant_file;
   std::string points_file;
   int dim{};
@@ -26,13 +26,13 @@ struct options {
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Interpolant = interpolant<Dim>;
-  using Points = pointsNd<Dim>;
+void run_impl(const Options& opts) {
+  using Interpolant = Interpolant<Dim>;
+  using Points = Points<Dim>;
 
   auto inter = Interpolant::load(opts.interpolant_file);
 
-  matrixd table = read_table(opts.points_file);
+  MatX table = read_table(opts.points_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
 
   auto n = points.rows();
@@ -49,11 +49,10 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void evaluate_command::run(const std::vector<std::string>& args,
-                           const global_options& global_opts) {
+void EvaluateCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

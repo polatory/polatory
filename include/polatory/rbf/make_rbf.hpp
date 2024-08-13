@@ -23,31 +23,31 @@
 namespace polatory::rbf {
 
 template <int Dim>
-rbf_proxy<Dim> make_rbf(const std::string& name, const std::vector<double>& params) {
-#define POLATORY_CASE(RBF_NAME)                 \
-  if (name == RBF_NAME<Dim>::Rbf::kShortName) { \
-    return RBF_NAME<Dim>(params);               \
+Rbf<Dim> make_rbf(const std::string& name, const std::vector<double>& params) {
+#define POLATORY_CASE(RBF_NAME)            \
+  if (name == RBF_NAME<Dim>::kShortName) { \
+    return RBF_NAME<Dim>(params);          \
   }
 
-  POLATORY_CASE(biharmonic2d);
-  POLATORY_CASE(biharmonic3d);
-  POLATORY_CASE(cov_cubic);
-  POLATORY_CASE(cov_exponential);
-  POLATORY_CASE(cov_gaussian);
-  POLATORY_CASE(cov_generalized_cauchy3);
-  POLATORY_CASE(cov_generalized_cauchy5);
-  POLATORY_CASE(cov_generalized_cauchy7);
-  POLATORY_CASE(cov_generalized_cauchy9);
-  POLATORY_CASE(inverse_multiquadric1);
-  POLATORY_CASE(multiquadric1);
-  POLATORY_CASE(multiquadric3);
-  POLATORY_CASE(cov_spherical);
-  POLATORY_CASE(cov_spheroidal3);
-  POLATORY_CASE(cov_spheroidal5);
-  POLATORY_CASE(cov_spheroidal7);
-  POLATORY_CASE(cov_spheroidal9);
-  POLATORY_CASE(triharmonic2d);
-  POLATORY_CASE(triharmonic3d);
+  POLATORY_CASE(Biharmonic2D);
+  POLATORY_CASE(Biharmonic3D);
+  POLATORY_CASE(CovCubic);
+  POLATORY_CASE(CovExponential);
+  POLATORY_CASE(CovGaussian);
+  POLATORY_CASE(CovGeneralizedCauchy3);
+  POLATORY_CASE(CovGeneralizedCauchy5);
+  POLATORY_CASE(CovGeneralizedCauchy7);
+  POLATORY_CASE(CovGeneralizedCauchy9);
+  POLATORY_CASE(InverseMultiquadric1);
+  POLATORY_CASE(Multiquadric1);
+  POLATORY_CASE(Multiquadric3);
+  POLATORY_CASE(CovSpherical);
+  POLATORY_CASE(CovSpheroidal3);
+  POLATORY_CASE(CovSpheroidal5);
+  POLATORY_CASE(CovSpheroidal7);
+  POLATORY_CASE(CovSpheroidal9);
+  POLATORY_CASE(Triharmonic2D);
+  POLATORY_CASE(Triharmonic3D);
 
 #undef POLATORY_CASE
 

@@ -5,19 +5,19 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/types.hpp>
 
-using polatory::index_t;
-using polatory::geometry::sphere3d;
-using polatory::geometry::vector3d;
-using polatory::point_cloud::normal_estimator;
+using polatory::Index;
+using polatory::geometry::Sphere3;
+using polatory::geometry::Vector3;
+using polatory::point_cloud::NormalEstimator;
 using polatory::point_cloud::random_points;
 
 TEST(normal_estimator, knn) {
-  const auto n_points = index_t{4096};
-  const auto k = index_t{10};
-  auto points = random_points(sphere3d(), n_points);
-  vector3d direction(0.0, 0.0, 1.0);
+  const auto n_points = Index{4096};
+  const auto k = Index{10};
+  auto points = random_points(Sphere3(), n_points);
+  Vector3 direction(0.0, 0.0, 1.0);
 
-  auto normals = normal_estimator(points)
+  auto normals = NormalEstimator(points)
                      .estimate_with_knn(k)
                      .orient_toward_direction(direction)
                      .into_normals();
@@ -31,12 +31,12 @@ TEST(normal_estimator, knn) {
 }
 
 TEST(normal_estimator, radius) {
-  const auto n_points = index_t{4096};
+  const auto n_points = Index{4096};
   const auto search_radius = 0.1;
-  auto points = random_points(sphere3d(), n_points);
-  vector3d direction(0.0, 0.0, 1.0);
+  auto points = random_points(Sphere3(), n_points);
+  Vector3 direction(0.0, 0.0, 1.0);
 
-  auto normals = normal_estimator(points)
+  auto normals = NormalEstimator(points)
                      .estimate_with_radius(search_radius)
                      .orient_toward_direction(direction)
                      .into_normals();

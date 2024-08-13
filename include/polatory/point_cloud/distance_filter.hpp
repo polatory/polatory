@@ -14,25 +14,25 @@
 namespace polatory::point_cloud {
 
 template <int Dim>
-class distance_filter {
-  using Point = geometry::pointNd<Dim>;
-  using Points = geometry::pointsNd<Dim>;
+class DistanceFilter {
+  using Point = geometry::Point<Dim>;
+  using Points = geometry::Points<Dim>;
 
  public:
-  explicit distance_filter(const Points& points) : points_(points), tree_(points) {}
+  explicit DistanceFilter(const Points& points) : points_(points), tree_(points) {}
 
-  distance_filter& filter(double distance) {
+  DistanceFilter& filter(double distance) {
     return filter(distance, trivial_indices(points_.rows()));
   }
 
-  distance_filter& filter(double distance, const std::vector<index_t>& indices) {
+  DistanceFilter& filter(double distance, const std::vector<Index>& indices) {
     if (!(distance >= 0.0)) {
       throw std::invalid_argument("distance must be non-negative");
     }
 
-    std::unordered_set<index_t> indices_to_remove;
+    std::unordered_set<Index> indices_to_remove;
 
-    std::vector<index_t> nn_indices;
+    std::vector<Index> nn_indices;
     std::vector<double> nn_distances;
     for (auto i : indices) {
       if (indices_to_remove.contains(i)) {
@@ -78,7 +78,7 @@ class distance_filter {
     return std::make_tuple(operator()(m), operator()(std::forward<Args>(args))...);
   }
 
-  const std::vector<index_t>& filtered_indices() const {
+  const std::vector<Index>& filtered_indices() const {
     throw_if_not_filtered();
 
     return filtered_indices_;
@@ -91,16 +91,16 @@ class distance_filter {
     }
   }
 
-  static std::vector<index_t> trivial_indices(index_t n_points) {
-    std::vector<index_t> indices(n_points);
-    std::iota(indices.begin(), indices.end(), index_t{0});
+  static std::vector<Index> trivial_indices(Index n_points) {
+    std::vector<Index> indices(n_points);
+    std::iota(indices.begin(), indices.end(), Index{0});
     return indices;
   }
 
   const Points& points_;
-  const kdtree<Dim> tree_;
+  const KdTree<Dim> tree_;
   bool filtered_{};
-  std::vector<index_t> filtered_indices_;
+  std::vector<Index> filtered_indices_;
 };
 
 }  // namespace polatory::point_cloud

@@ -13,19 +13,17 @@
 
 namespace polatory::isosurface {
 
-struct entire_tag {};
+struct EntireTag {};
 
-class mesh {
-  using Face = face;
-  using Faces = faces;
-  using Points = geometry::points3d;
+class Mesh {
+  using Points = geometry::Points3;
 
  public:
-  mesh() = default;
+  Mesh() = default;
 
-  mesh(Points vertices, Faces faces) : vertices_(std::move(vertices)), faces_(std::move(faces)) {}
+  Mesh(Points vertices, Faces faces) : vertices_(std::move(vertices)), faces_(std::move(faces)) {}
 
-  explicit mesh(entire_tag /*tag*/) : entire_(true) {}
+  explicit Mesh(EntireTag /*tag*/) : entire_(true) {}
 
   void export_obj(const std::string& filename) const {
     std::ofstream ofs(filename);

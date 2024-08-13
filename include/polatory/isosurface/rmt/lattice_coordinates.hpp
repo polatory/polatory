@@ -5,10 +5,10 @@
 
 namespace polatory::isosurface::rmt {
 
-using lattice_coordinates = Eigen::RowVector3i;
+using LatticeCoordinates = Eigen::RowVector3i;
 
-struct lattice_coordinates_hash {
-  std::size_t operator()(const lattice_coordinates& m) const noexcept {
+struct LatticeCoordinatesHash {
+  std::size_t operator()(const LatticeCoordinates& m) const noexcept {
     std::size_t seed{};
     boost::hash_combine(seed, m(0));
     boost::hash_combine(seed, m(1));
@@ -17,26 +17,26 @@ struct lattice_coordinates_hash {
   }
 };
 
-struct lattice_coordinates_less {
-  bool operator()(const lattice_coordinates& lhs, const lattice_coordinates& rhs) const noexcept {
+struct LatticeCoordinatesLess {
+  bool operator()(const LatticeCoordinates& lhs, const LatticeCoordinates& rhs) const noexcept {
     return std::make_tuple(lhs(0), lhs(1), lhs(2)) < std::make_tuple(rhs(0), rhs(1), rhs(2));
   }
 };
 
-using lattice_coordinates_pair = std::pair<lattice_coordinates, lattice_coordinates>;
+using LatticeCoordinatesPair = std::pair<LatticeCoordinates, LatticeCoordinates>;
 
-struct lattice_coordinates_pair_hash {
-  std::size_t operator()(const lattice_coordinates_pair& pair) const noexcept {
+struct LatticeCoordinatesPairHash {
+  std::size_t operator()(const LatticeCoordinatesPair& pair) const noexcept {
     std::size_t seed{};
-    boost::hash_combine(seed, lattice_coordinates_hash()(pair.first));
-    boost::hash_combine(seed, lattice_coordinates_hash()(pair.second));
+    boost::hash_combine(seed, LatticeCoordinatesHash()(pair.first));
+    boost::hash_combine(seed, LatticeCoordinatesHash()(pair.second));
     return seed;
   }
 };
 
-inline lattice_coordinates_pair make_lattice_coordinates_pair(const lattice_coordinates& lc1,
-                                                              const lattice_coordinates& lc2) {
-  return lattice_coordinates_less()(lc1, lc2) ? std::make_pair(lc1, lc2) : std::make_pair(lc2, lc1);
+inline LatticeCoordinatesPair make_lattice_coordinates_pair(const LatticeCoordinates& lc1,
+                                                            const LatticeCoordinates& lc2) {
+  return LatticeCoordinatesLess()(lc1, lc2) ? std::make_pair(lc1, lc2) : std::make_pair(lc2, lc1);
 }
 
 }  // namespace polatory::isosurface::rmt

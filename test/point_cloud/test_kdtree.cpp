@@ -7,28 +7,28 @@
 #include <polatory/point_cloud/random_points.hpp>
 #include <polatory/types.hpp>
 
-using polatory::index_t;
-using polatory::geometry::point3d;
-using polatory::geometry::points3d;
-using polatory::geometry::sphere3d;
-using polatory::geometry::vector3d;
-using polatory::point_cloud::kdtree;
+using polatory::Index;
+using polatory::geometry::Point3;
+using polatory::geometry::Points3;
+using polatory::geometry::Sphere3;
+using polatory::geometry::Vector3;
+using polatory::point_cloud::KdTree;
 using polatory::point_cloud::random_points;
 
 TEST(kdtree, trivial) {
-  const auto n_points = index_t{1024};
+  const auto n_points = Index{1024};
   const auto radius = 1.0;
-  const point3d center(0.0, 0.0, 0.0);
+  const Point3 center(0.0, 0.0, 0.0);
 
-  const point3d query_point = center + vector3d(radius, 0.0, 0.0);
-  const auto k = index_t{10};
+  const Point3 query_point = center + Vector3(radius, 0.0, 0.0);
+  const auto k = Index{10};
   const auto search_radius = 0.1;
 
-  auto points = random_points(sphere3d(center, radius), n_points);
+  auto points = random_points(Sphere3(center, radius), n_points);
 
-  kdtree tree(points);
+  KdTree tree(points);
 
-  std::vector<index_t> indices;
+  std::vector<Index> indices;
   std::vector<double> distances;
 
   {
@@ -55,15 +55,15 @@ TEST(kdtree, trivial) {
 }
 
 TEST(kdtree, zero_points) {
-  const point3d query_point = point3d::Zero();
-  const auto k = index_t{10};
+  const Point3 query_point = Point3::Zero();
+  const auto k = Index{10};
   const auto search_radius = 0.1;
 
-  points3d points;
+  Points3 points;
 
-  kdtree tree(points);
+  KdTree tree(points);
 
-  std::vector<index_t> indices;
+  std::vector<Index> indices;
   std::vector<double> distances;
 
   {

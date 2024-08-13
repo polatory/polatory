@@ -8,17 +8,17 @@
 namespace polatory::common {
 
 template <int Dim>
-struct Read<rbf::rbf_proxy<Dim>> {
-  void operator()(std::istream& is, rbf::rbf_proxy<Dim>& t) const {
-    using Matrix = geometry::matrixNd<Dim>;
+struct Read<rbf::Rbf<Dim>> {
+  void operator()(std::istream& is, rbf::Rbf<Dim>& t) const {
+    using Mat = Mat<Dim>;
 
     std::string short_name;
     read(is, short_name);
     std::vector<double> parameters;
     read(is, parameters);
-    Matrix anisotropy;
+    Mat anisotropy;
     read(is, anisotropy);
-    fmm::interpolator_configuration config;
+    fmm::InterpolatorConfiguration config;
     read(is, config);
 
     auto rbf = rbf::make_rbf<Dim>(short_name, parameters);
@@ -30,8 +30,8 @@ struct Read<rbf::rbf_proxy<Dim>> {
 };
 
 template <int Dim>
-struct Write<rbf::rbf_proxy<Dim>> {
-  void operator()(std::ostream& os, const rbf::rbf_proxy<Dim>& t) const {
+struct Write<rbf::Rbf<Dim>> {
+  void operator()(std::ostream& os, const rbf::Rbf<Dim>& t) const {
     write(os, t.short_name());
     write(os, t.parameters());
     write(os, t.anisotropy());

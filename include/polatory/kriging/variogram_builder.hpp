@@ -12,15 +12,15 @@
 namespace polatory::kriging {
 
 template <int Dim>
-class variogram_builder {
+class VariogramBuilder {
   static constexpr int kDim = Dim;
-  using Point = geometry::pointNd<kDim>;
-  using Variogram = variogram<kDim>;
-  using Vector = geometry::vectorNd<Dim>;
+  using Point = geometry::Point<kDim>;
+  using Variogram = Variogram<kDim>;
+  using Vector = geometry::Vector<Dim>;
 
  public:
-  variogram_builder(double lag_distance, double lag_tolerance, index_t num_lags,
-                    const Vector& direction)
+  VariogramBuilder(double lag_distance, double lag_tolerance, Index num_lags,
+                   const Vector& direction)
       : lag_distance_(lag_distance),
         inv_lag_distance_(1.0 / lag_distance),
         lag_tolerance_(lag_tolerance),
@@ -37,12 +37,12 @@ class variogram_builder {
     auto incr = value_j - value_i;
     auto gamma = 0.5 * (incr * incr);
 
-    auto first = static_cast<index_t>(std::ceil(inv_lag_distance_ * (dist - lag_tolerance_)));
-    auto last = static_cast<index_t>(std::floor(inv_lag_distance_ * (dist + lag_tolerance_)));
-    first = std::max(first, index_t{0});
+    auto first = static_cast<Index>(std::ceil(inv_lag_distance_ * (dist - lag_tolerance_)));
+    auto last = static_cast<Index>(std::floor(inv_lag_distance_ * (dist + lag_tolerance_)));
+    first = std::max(first, Index{0});
     last = std::min(last, num_lags_ - 1);
 
-    for (index_t bin = first; bin <= last; bin++) {
+    for (Index bin = first; bin <= last; bin++) {
       bin_distance_.at(bin) += dist;
       bin_gamma_.at(bin) += gamma;
       bin_num_pairs_.at(bin)++;
@@ -74,13 +74,13 @@ class variogram_builder {
                      direction_);
   }
 
-  void merge(const variogram_builder& other) {
+  void merge(const VariogramBuilder& other) {
     POLATORY_ASSERT(other.lag_distance_ == lag_distance_);
     POLATORY_ASSERT(other.lag_tolerance_ == lag_tolerance_);
     POLATORY_ASSERT(other.num_lags_ == num_lags_);
     POLATORY_ASSERT(other.direction_ == direction_);
 
-    for (index_t i = 0; i < num_lags_; i++) {
+    for (Index i = 0; i < num_lags_; i++) {
       bin_distance_.at(i) += other.bin_distance_.at(i);
       bin_gamma_.at(i) += other.bin_gamma_.at(i);
       bin_num_pairs_.at(i) += other.bin_num_pairs_.at(i);
@@ -91,11 +91,11 @@ class variogram_builder {
   const double lag_distance_;
   const double inv_lag_distance_;
   const double lag_tolerance_;
-  const index_t num_lags_;
+  const Index num_lags_;
   const Vector direction_;
   std::vector<double> bin_distance_;
   std::vector<double> bin_gamma_;
-  std::vector<index_t> bin_num_pairs_;
+  std::vector<Index> bin_num_pairs_;
 };
 
 }  // namespace polatory::kriging

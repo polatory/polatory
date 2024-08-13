@@ -4,6 +4,7 @@
 #include <array>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf_base.hpp>
+#include <polatory/types.hpp>
 #include <scalfmm/container/point.hpp>
 #include <scalfmm/matrix_kernels/mk_common.hpp>
 #include <string>
@@ -12,10 +13,10 @@
 namespace polatory::fmm {
 
 template <class Rbf>
-struct hessian_kernel {
+struct HessianKernel {
   static constexpr int kDim = Rbf::kDim;
-  using Vector = geometry::vectorNd<kDim>;
-  using Matrix = geometry::matrixNd<kDim>;
+  using Mat = Mat<kDim>;
+  using Vector = geometry::Vector<kDim>;
 
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};
   static constexpr auto symmetry_tag{scalfmm::matrix_kernels::symmetry::symmetric};
@@ -26,7 +27,7 @@ struct hessian_kernel {
   template <typename ValueType>
   using vector_type = std::array<ValueType, kn>;
 
-  explicit hessian_kernel(const Rbf& rbf) : rbf_(rbf) {}
+  explicit HessianKernel(const Rbf& rbf) : rbf_(rbf) {}
 
   std::string name() const { return ""; }
 
@@ -46,7 +47,7 @@ struct hessian_kernel {
     }
 
     auto a = rbf_.anisotropy();
-    Matrix h = a.transpose() * rbf_.evaluate_hessian_isotropic(diff) * a;
+    Mat h = a.transpose() * rbf_.evaluate_hessian_isotropic(diff) * a;
 
     matrix_type<double> result;
     for (auto i = 0; i < kDim; i++) {
@@ -72,7 +73,7 @@ struct hessian_kernel {
         diff(j) = x.at(j).get(i) - y.at(j).get(i);
       }
 
-      Matrix h = a.transpose() * rbf_.evaluate_hessian_isotropic(diff) * a;
+      Mat h = a.transpose() * rbf_.evaluate_hessian_isotropic(diff) * a;
 
       for (auto j = 0; j < kDim; j++) {
         for (auto k = 0; k < kDim; k++) {

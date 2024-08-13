@@ -14,24 +14,24 @@
 namespace polatory::rbf::internal {
 
 template <int Dim>
-class rbf_base {
+class RbfBase {
  public:
   static constexpr int kDim = Dim;
 
  protected:
-  using Matrix = geometry::matrixNd<Dim>;
-  using RbfPtr = std::unique_ptr<rbf_base<Dim>>;
-  using Vector = geometry::vectorNd<Dim>;
+  using Mat = Mat<Dim>;
+  using RbfPtr = std::unique_ptr<RbfBase<Dim>>;
+  using Vector = geometry::Vector<Dim>;
 
  public:
-  virtual ~rbf_base() = default;
+  virtual ~RbfBase() = default;
 
-  rbf_base(const rbf_base&) = default;
-  rbf_base(rbf_base&&) = default;
-  rbf_base& operator=(const rbf_base&) = default;
-  rbf_base& operator=(rbf_base&&) = default;
+  RbfBase(const RbfBase&) = default;
+  RbfBase(RbfBase&&) = default;
+  RbfBase& operator=(const RbfBase&) = default;
+  RbfBase& operator=(RbfBase&&) = default;
 
-  const Matrix& anisotropy() const { return aniso_; }
+  const Mat& anisotropy() const { return aniso_; }
 
   virtual RbfPtr clone() const = 0;
 
@@ -48,7 +48,7 @@ class rbf_base {
     return evaluate_gradient_isotropic(a_diff) * aniso_;
   }
 
-  Matrix evaluate_hessian(const Vector& diff) const {
+  Mat evaluate_hessian(const Vector& diff) const {
     auto a_diff = geometry::transform_vector<Dim>(aniso_, diff);
     return aniso_.transpose() * evaluate_hessian_isotropic(a_diff) * aniso_;
   }
@@ -57,13 +57,13 @@ class rbf_base {
 
   virtual Vector evaluate_gradient_isotropic(const Vector& diff) const = 0;
 
-  virtual Matrix evaluate_hessian_isotropic(const Vector& diff) const = 0;
+  virtual Mat evaluate_hessian_isotropic(const Vector& diff) const = 0;
 
-  const fmm::interpolator_configuration& interpolator_configuration() const { return config_; }
+  const fmm::InterpolatorConfiguration& interpolator_configuration() const { return config_; }
 
   virtual bool is_covariance_function() const { return false; }
 
-  virtual index_t num_parameters() const = 0;
+  virtual Index num_parameters() const = 0;
 
   virtual const std::vector<double>& parameter_lower_bounds() const = 0;
 
@@ -73,7 +73,7 @@ class rbf_base {
 
   const std::vector<double>& parameters() const { return params_; }
 
-  void set_anisotropy(const Matrix& aniso) {
+  void set_anisotropy(const Mat& aniso) {
     if (!(aniso.determinant() > 0.0)) {
       throw std::invalid_argument("aniso must have a positive determinant");
     }
@@ -81,12 +81,12 @@ class rbf_base {
     aniso_ = aniso;
   }
 
-  void set_interpolator_configuration(const fmm::interpolator_configuration& config) {
+  void set_interpolator_configuration(const fmm::InterpolatorConfiguration& config) {
     config_ = config;
   }
 
   void set_parameters(const std::vector<double>& params) {
-    if (static_cast<index_t>(params.size()) != num_parameters()) {
+    if (static_cast<Index>(params.size()) != num_parameters()) {
       throw std::invalid_argument(std::format("params.size() must be {}", num_parameters()));
     }
 
@@ -100,12 +100,12 @@ class rbf_base {
   }
 
  protected:
-  rbf_base() = default;
+  RbfBase() = default;
 
  private:
   std::vector<double> params_;
-  Matrix aniso_{Matrix::Identity()};
-  fmm::interpolator_configuration config_{8, fmm::interpolator_configuration::kClassic};
+  Mat aniso_{Mat::Identity()};
+  fmm::InterpolatorConfiguration config_{8, fmm::InterpolatorConfiguration::kClassic};
 };
 
 }  // namespace polatory::rbf::internal

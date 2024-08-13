@@ -6,39 +6,39 @@
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <polatory/types.hpp>
 
-using polatory::index_t;
-using polatory::vectord;
-using polatory::geometry::point3d;
-using polatory::geometry::points3d;
-using polatory::geometry::sphere3d;
-using polatory::geometry::vectors3d;
-using polatory::point_cloud::kdtree;
+using polatory::Index;
+using polatory::VecX;
+using polatory::geometry::Point3;
+using polatory::geometry::Points3;
+using polatory::geometry::Sphere3;
+using polatory::geometry::Vectors3;
+using polatory::point_cloud::KdTree;
 using polatory::point_cloud::random_points;
-using polatory::point_cloud::sdf_data_generator;
+using polatory::point_cloud::SdfDataGenerator;
 
 TEST(sdf_data_generator, trivial) {
-  const auto n_points = index_t{512};
+  const auto n_points = Index{512};
   const auto min_distance = 1e-2;
   const auto max_distance = 5e-1;
 
-  points3d points = random_points(sphere3d(), n_points);
-  vectors3d normals =
-      (points + random_points(sphere3d(point3d::Zero(), 0.1), n_points)).rowwise().normalized();
+  Points3 points = random_points(Sphere3(), n_points);
+  Vectors3 normals =
+      (points + random_points(Sphere3(Point3::Zero(), 0.1), n_points)).rowwise().normalized();
 
-  sdf_data_generator sdf_data(points, normals, min_distance, max_distance);
-  points3d sdf_points = sdf_data.sdf_points();
-  vectord sdf_values = sdf_data.sdf_values();
+  SdfDataGenerator sdf_data(points, normals, min_distance, max_distance);
+  Points3 sdf_points = sdf_data.sdf_points();
+  VecX sdf_values = sdf_data.sdf_values();
 
   EXPECT_EQ(sdf_points.rows(), sdf_values.rows());
 
-  kdtree tree(points);
+  KdTree tree(points);
 
-  std::vector<index_t> indices;
+  std::vector<Index> indices;
   std::vector<double> distances;
 
   auto n_sdf_points = sdf_points.rows();
-  for (index_t i = 0; i < n_sdf_points; i++) {
-    point3d sdf_point = sdf_points.row(i);
+  for (Index i = 0; i < n_sdf_points; i++) {
+    Point3 sdf_point = sdf_points.row(i);
     auto sdf_value = sdf_values(i);
 
     tree.knn_search(sdf_point, 1, indices, distances);

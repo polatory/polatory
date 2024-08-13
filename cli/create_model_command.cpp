@@ -12,25 +12,25 @@
 
 namespace {
 
-struct options {
+struct Options {
   int dim{};
-  model_options model_opts;
+  ModelOptions model_opts;
   std::string out_file;
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
+void run_impl(const Options& opts) {
   auto model = make_model<Dim>(opts.model_opts);
   model.save(opts.out_file);
 }
 
 }  // namespace
 
-void create_model_command::run(const std::vector<std::string>& args,
-                               const global_options& global_opts) {
+void CreateModelCommand::run(const std::vector<std::string>& args,
+                             const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

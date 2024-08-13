@@ -5,7 +5,7 @@
 
 namespace polatory::point_cloud {
 
-plane_estimator::plane_estimator(const geometry::points3d& points) {
+PlaneEstimator::PlaneEstimator(const geometry::Points3& points) {
   POLATORY_ASSERT(points.rows() >= 3);
 
   auto svd = pca_svd(points);
@@ -32,19 +32,19 @@ plane_estimator::plane_estimator(const geometry::points3d& points) {
   basis_ = svd.matrixV();
 }
 
-double plane_estimator::line_error() const { return line_err_; }
+double PlaneEstimator::line_error() const { return line_err_; }
 
-double plane_estimator::plane_factor() const { return plane_factor_; }
+double PlaneEstimator::plane_factor() const { return plane_factor_; }
 
-geometry::vector3d plane_estimator::plane_normal() const { return basis_.col(2); }
+geometry::Vector3 PlaneEstimator::plane_normal() const { return basis_.col(2); }
 
-double plane_estimator::plane_error() const { return plane_err_; }
+double PlaneEstimator::plane_error() const { return plane_err_; }
 
-double plane_estimator::point_error() const { return point_err_; }
+double PlaneEstimator::point_error() const { return point_err_; }
 
-Eigen::JacobiSVD<matrixd> plane_estimator::pca_svd(const geometry::points3d& points) {
-  geometry::point3d barycenter = points.colwise().mean();
-  return Eigen::JacobiSVD<matrixd>(points.rowwise() - barycenter, Eigen::ComputeThinV);
+Eigen::JacobiSVD<MatX> PlaneEstimator::pca_svd(const geometry::Points3& points) {
+  geometry::Point3 barycenter = points.colwise().mean();
+  return Eigen::JacobiSVD<MatX>(points.rowwise() - barycenter, Eigen::ComputeThinV);
 }
 
 }  // namespace polatory::point_cloud

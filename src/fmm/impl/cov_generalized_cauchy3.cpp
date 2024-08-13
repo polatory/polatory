@@ -5,8 +5,8 @@
 
 namespace polatory::fmm {
 
-IMPLEMENT_FMM_EVALUATORS(rbf::internal::cov_generalized_cauchy3);
+IMPLEMENT_FMM_EVALUATORS(rbf::internal::CovGeneralizedCauchy3);
 
-IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::cov_generalized_cauchy3);
+IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::CovGeneralizedCauchy3);
 
 }  // namespace polatory::fmm

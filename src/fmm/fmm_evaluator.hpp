@@ -29,10 +29,10 @@
 namespace polatory::fmm {
 
 template <class Rbf, class Kernel>
-class fmm_generic_evaluator<Rbf, Kernel>::impl {
+class FmmGenericEvaluator<Rbf, Kernel>::Impl {
   static constexpr int kDim{Rbf::kDim};
-  using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using Points = geometry::Points<kDim>;
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
@@ -41,13 +41,13 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
       /* position */ double, kDim,
       /* inputs */ double, km,
       /* outputs */ double, kn,  // should be 0
-      /* variables */ index_t>;
+      /* variables */ Index>;
 
   using TargetParticle = scalfmm::container::particle<
       /* position */ double, kDim,
       /* inputs */ double, km,  // should be 0
       /* outputs */ double, kn,
-      /* variables */ index_t>;
+      /* variables */ Index>;
 
   using SourceContainer = scalfmm::container::particle_container<SourceParticle>;
   using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
@@ -66,14 +66,14 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
  public:
-  impl(const Rbf& rbf, const Bbox& bbox)
+  Impl(const Rbf& rbf, const Bbox& bbox)
       : rbf_(rbf),
         bbox_(bbox),
         box_(make_box<Rbf, Box>(rbf, bbox)),
         kernel_(rbf),
         near_field_(kernel_, false) {}
 
-  vectord evaluate() const {
+  VecX evaluate() const {
     using namespace scalfmm::algorithms;
 
     prepare();
@@ -122,7 +122,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     src_particles_.resize(n_src_points_);
 
     auto a = rbf_.anisotropy();
-    for (index_t idx = 0; idx < n_src_points_; idx++) {
+    for (Index idx = 0; idx < n_src_points_; idx++) {
       auto p = src_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
       for (auto i = 0; i < kDim; i++) {
@@ -142,7 +142,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     trg_particles_.resize(n_trg_points_);
 
     auto a = rbf_.anisotropy();
-    for (index_t idx = 0; idx < n_trg_points_; idx++) {
+    for (Index idx = 0; idx < n_trg_points_; idx++) {
       auto p = trg_particles_.at(idx);
       auto ap = geometry::transform_point<kDim>(a, points.row(idx));
       for (auto i = 0; i < kDim; i++) {
@@ -155,11 +155,11 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
     trg_tree_.reset(nullptr);
   }
 
-  void set_weights(const Eigen::Ref<const vectord>& weights) {
+  void set_weights(const Eigen::Ref<const VecX>& weights) {
     POLATORY_ASSERT(weights.rows() == km * n_src_points_);
 
     if (!src_tree_) {
-      for (index_t idx = 0; idx < n_src_points_; idx++) {
+      for (Index idx = 0; idx < n_src_points_; idx++) {
         auto p = src_particles_.at(idx);
         auto orig_idx = std::get<0>(p.variables());
         for (auto i = 0; i < km; i++) {
@@ -184,18 +184,18 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   }
 
  private:
-  interpolator_configuration find_best_configuration(int tree_height) const {
+  InterpolatorConfiguration find_best_configuration(int tree_height) const {
     if (best_config_.contains(tree_height)) {
       return best_config_.at(tree_height);
     }
 
-    auto config = fmm_accuracy_estimator<Rbf, Kernel>::find_best_configuration(
+    auto config = FmmAccuracyEstimator<Rbf, Kernel>::find_best_configuration(
         rbf_, accuracy_, src_particles_, box_, tree_height);
     return best_config_[tree_height] = config;
   }
 
-  vectord potentials() const {
-    vectord potentials = vectord::Zero(kn * n_trg_points_);
+  VecX potentials() const {
+    VecX potentials = VecX::Zero(kn * n_trg_points_);
 
     if (tree_height_ > 0) {
       scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
@@ -209,7 +209,7 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
                                           }
                                         });
     } else {
-      for (index_t idx = 0; idx < n_trg_points_; idx++) {
+      for (Index idx = 0; idx < n_trg_points_; idx++) {
         const auto p = trg_particles_.at(idx);
         auto orig_idx = std::get<0>(p.variables());
         for (auto i = 0; i < kn; i++) {
@@ -275,60 +275,60 @@ class fmm_generic_evaluator<Rbf, Kernel>::impl {
   const NearField near_field_;
 
   double accuracy_{std::numeric_limits<double>::infinity()};
-  index_t n_src_points_{};
-  index_t n_trg_points_{};
+  Index n_src_points_{};
+  Index n_trg_points_{};
   mutable SourceContainer src_particles_;
   mutable TargetContainer trg_particles_;
   mutable int src_sorted_level_{};
   mutable int trg_sorted_level_{};
   mutable bool multipole_dirty_{};
   mutable int tree_height_{};
-  mutable interpolator_configuration config_{};
+  mutable InterpolatorConfiguration config_{};
   mutable std::unique_ptr<Interpolator> interpolator_;
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<SourceTree> src_tree_;
   mutable std::unique_ptr<TargetTree> trg_tree_;
-  mutable std::unordered_map<int, interpolator_configuration> best_config_;
+  mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
 };
 
 template <class Rbf, class Kernel>
-fmm_generic_evaluator<Rbf, Kernel>::fmm_generic_evaluator(const Rbf& rbf, const Bbox& bbox)
-    : impl_(std::make_unique<impl>(rbf, bbox)) {}
+FmmGenericEvaluator<Rbf, Kernel>::FmmGenericEvaluator(const Rbf& rbf, const Bbox& bbox)
+    : impl_(std::make_unique<Impl>(rbf, bbox)) {}
 
 template <class Rbf, class Kernel>
-fmm_generic_evaluator<Rbf, Kernel>::~fmm_generic_evaluator() = default;
+FmmGenericEvaluator<Rbf, Kernel>::~FmmGenericEvaluator() = default;
 
 template <class Rbf, class Kernel>
-vectord fmm_generic_evaluator<Rbf, Kernel>::evaluate() const {
+VecX FmmGenericEvaluator<Rbf, Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
 template <class Rbf, class Kernel>
-void fmm_generic_evaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+void FmmGenericEvaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
   impl_->set_accuracy(accuracy);
 }
 
 template <class Rbf, class Kernel>
-void fmm_generic_evaluator<Rbf, Kernel>::set_source_points(const Points& points) {
+void FmmGenericEvaluator<Rbf, Kernel>::set_source_points(const Points& points) {
   impl_->set_source_points(points);
 }
 
 template <class Rbf, class Kernel>
-void fmm_generic_evaluator<Rbf, Kernel>::set_target_points(const Points& points) {
+void FmmGenericEvaluator<Rbf, Kernel>::set_target_points(const Points& points) {
   impl_->set_target_points(points);
 }
 
 template <class Rbf, class Kernel>
-void fmm_generic_evaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<const vectord>& weights) {
+void FmmGenericEvaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_FMM_EVALUATORS_(RBF)                                       \
-  template class fmm_generic_evaluator<RBF, kernel<RBF>>;                    \
-  template class fmm_generic_evaluator<RBF, gradient_kernel<RBF>>;           \
-  template class fmm_generic_evaluator<RBF, gradient_transpose_kernel<RBF>>; \
-  template class fmm_generic_evaluator<RBF, hessian_kernel<RBF>>;
+#define IMPLEMENT_FMM_EVALUATORS_(RBF)                                   \
+  template class FmmGenericEvaluator<RBF, Kernel<RBF>>;                  \
+  template class FmmGenericEvaluator<RBF, GradientKernel<RBF>>;          \
+  template class FmmGenericEvaluator<RBF, GradientTransposeKernel<RBF>>; \
+  template class FmmGenericEvaluator<RBF, HessianKernel<RBF>>;
 
 #define IMPLEMENT_FMM_EVALUATORS(RBF_NAME) \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<1>);  \

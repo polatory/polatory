@@ -114,8 +114,8 @@ struct Read<Eigen::Matrix<T, Rows, Cols, Options, MaxRows, MaxCols>,
             std::enable_if_t<std::is_trivially_copyable_v<T>>> {
   void operator()(std::istream& is,
                   Eigen::Matrix<T, Rows, Cols, Options, MaxRows, MaxCols>& t) const {
-    index_t rows{Rows};
-    index_t cols{Cols};
+    Index rows{Rows};
+    Index cols{Cols};
     if (Rows == Eigen::Dynamic) {
       read(is, rows);
     }
@@ -168,7 +168,7 @@ void save(const std::string& filename, const T& t) {
 
 // NOTE: T must have either a public or non-public default constructor
 // for deserializing std::vector<T>, etc.
-#define POLATORY_FRIEND_READ_WRITE(T)     \
+#define POLATORY_FRIEND_READ_WRITE        \
   template <class, class>                 \
   friend struct ::polatory::common::Read; \
                                           \

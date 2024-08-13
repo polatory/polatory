@@ -7,10 +7,10 @@
 
 namespace polatory::isosurface {
 
-mesh_defects_finder::mesh_defects_finder(const Mesh& mesh)
+MeshDefectsFinder::MeshDefectsFinder(const Mesh& mesh)
     : vertices_(mesh.vertices()), faces_(mesh.faces()), vf_map_(vertices_.rows()) {
   auto n_faces = faces_.rows();
-  for (index_t fi = 0; fi < n_faces; fi++) {
+  for (Index fi = 0; fi < n_faces; fi++) {
     auto f = faces_.row(fi);
     vf_map_.at(f(0)).push_back(fi);
     vf_map_.at(f(1)).push_back(fi);
@@ -19,24 +19,24 @@ mesh_defects_finder::mesh_defects_finder(const Mesh& mesh)
 }
 
 // Currently, only intersections between faces that share a single vertex are checked.
-std::vector<index_t> mesh_defects_finder::intersecting_faces() const {
-  std::vector<index_t> result;
+std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
+  std::vector<Index> result;
 
   auto n_vertices = vertices_.rows();
 #pragma omp parallel
   {
-    std::vector<index_t> local_result;
+    std::vector<Index> local_result;
 
 #pragma omp for schedule(guided, 32)
-    for (index_t vi = 0; vi < n_vertices; vi++) {
+    for (Index vi = 0; vi < n_vertices; vi++) {
       const auto& fis = vf_map_.at(vi);
 
-      auto n_faces = static_cast<index_t>(fis.size());
-      for (index_t i = 0; i < n_faces - 1; i++) {
+      auto n_faces = static_cast<Index>(fis.size());
+      for (Index i = 0; i < n_faces - 1; i++) {
         auto fi = fis.at(i);
         auto a = next_vertex(fi, vi);
         auto b = prev_vertex(fi, vi);
-        for (index_t j = i + 1; j < n_faces; j++) {
+        for (Index j = i + 1; j < n_faces; j++) {
           auto fj = fis.at(j);
           auto c = next_vertex(fj, vi);
           auto d = prev_vertex(fj, vi);
@@ -65,16 +65,16 @@ std::vector<index_t> mesh_defects_finder::intersecting_faces() const {
   return result;
 }
 
-std::vector<index_t> mesh_defects_finder::singular_vertices() const {
-  std::vector<index_t> result;
+std::vector<Index> MeshDefectsFinder::singular_vertices() const {
+  std::vector<Index> result;
 
   auto n_vertices = vertices_.rows();
 #pragma omp parallel
   {
-    std::vector<index_t> local_result;
+    std::vector<Index> local_result;
 
 #pragma omp for schedule(guided, 32)
-    for (index_t vi = 0; vi < n_vertices; vi++) {
+    for (Index vi = 0; vi < n_vertices; vi++) {
       const auto& fis = vf_map_.at(vi);
 
       if (fis.empty()) {
@@ -82,16 +82,16 @@ std::vector<index_t> mesh_defects_finder::singular_vertices() const {
         continue;
       }
 
-      std::unordered_map<index_t, index_t> to_local_vi;
+      std::unordered_map<Index, Index> to_local_vi;
       for (auto fi : fis) {
         to_local_vi.emplace(next_vertex(fi, vi), to_local_vi.size());
         to_local_vi.emplace(prev_vertex(fi, vi), to_local_vi.size());
       }
 
-      auto order = static_cast<index_t>(to_local_vi.size());
+      auto order = static_cast<Index>(to_local_vi.size());
 
       // The graph that represents the link complex of the vertex.
-      dense_undirected_graph g(order);
+      DenseUndirectedGraph g(order);
 
       for (auto fi : fis) {
         auto i = to_local_vi.at(next_vertex(fi, vi));
@@ -113,7 +113,7 @@ std::vector<index_t> mesh_defects_finder::singular_vertices() const {
   return result;
 }
 
-index_t mesh_defects_finder::next_vertex(index_t fi, index_t vi) const {
+Index MeshDefectsFinder::next_vertex(Index fi, Index vi) const {
   auto f = faces_.row(fi);
   if (f(0) == vi) {
     return f(1);
@@ -124,7 +124,7 @@ index_t mesh_defects_finder::next_vertex(index_t fi, index_t vi) const {
   return f(0);
 }
 
-index_t mesh_defects_finder::prev_vertex(index_t fi, index_t vi) const {
+Index MeshDefectsFinder::prev_vertex(Index fi, Index vi) const {
   auto f = faces_.row(fi);
   if (f(0) == vi) {
     return f(2);
@@ -135,25 +135,25 @@ index_t mesh_defects_finder::prev_vertex(index_t fi, index_t vi) const {
   return f(1);
 }
 
-double orient2d_inexact(const geometry::point2d& a, const geometry::point2d& b,
-                        const geometry::point2d& c) {
-  geometry::matrix2d m;
+double orient2d_inexact(const geometry::Point2& a, const geometry::Point2& b,
+                        const geometry::Point2& c) {
+  Mat2 m;
   m << a(0) - c(0), a(1) - c(1), b(0) - c(0), b(1) - c(1);
   return m.determinant();
 }
 
-double orient3d_inexact(const geometry::point3d& a, const geometry::point3d& b,
-                        const geometry::point3d& c, const geometry::point3d& d) {
-  geometry::matrix3d m;
+double orient3d_inexact(const geometry::Point3& a, const geometry::Point3& b,
+                        const geometry::Point3& c, const geometry::Point3& d) {
+  Mat3 m;
   m << a(0) - d(0), a(1) - d(1), a(2) - d(2), b(0) - d(0), b(1) - d(1), b(2) - d(2), c(0) - d(0),
       c(1) - d(1), c(2) - d(2);
   return m.determinant();
 }
 
-bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geometry::point3d& q,
-                                           const geometry::point3d& a, const geometry::point3d& b,
-                                           const geometry::point3d& c) {
-  geometry::vector3d n = (b - a).cross(c - a);
+bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geometry::Point3& q,
+                                           const geometry::Point3& a, const geometry::Point3& b,
+                                           const geometry::Point3& c) {
+  geometry::Vector3 n = (b - a).cross(c - a);
   auto abs_nx = std::abs(n(0));
   auto abs_ny = std::abs(n(1));
   auto abs_nz = std::abs(n(2));
@@ -168,11 +168,11 @@ bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geo
     std::tie(i, j) = n(2) > 0 ? std::make_tuple(0, 1) : std::make_tuple(1, 0);
   }
 
-  geometry::point2d p2(p(i), p(j));
-  geometry::point2d q2(q(i), q(j));
-  geometry::point2d a2(a(i), a(j));
-  geometry::point2d b2(b(i), b(j));
-  geometry::point2d c2(c(i), c(j));
+  geometry::Point2 p2(p(i), p(j));
+  geometry::Point2 q2(q(i), q(j));
+  geometry::Point2 a2(a(i), a(j));
+  geometry::Point2 b2(b(i), b(j));
+  geometry::Point2 c2(c(i), c(j));
 
   auto pqa = orient2d_inexact(p2, q2, a2);
   auto pqb = orient2d_inexact(p2, q2, b2);
@@ -257,9 +257,9 @@ bool segment3_triangle3_intersect_coplanar(const geometry::point3d& p, const geo
   }
 }
 
-bool segment3_triangle3_intersect(const geometry::point3d& p, const geometry::point3d& q,
-                                  const geometry::point3d& a, const geometry::point3d& b,
-                                  const geometry::point3d& c) {
+bool segment3_triangle3_intersect(const geometry::Point3& p, const geometry::Point3& q,
+                                  const geometry::Point3& a, const geometry::Point3& b,
+                                  const geometry::Point3& c) {
   auto abcp = orient3d_inexact(a, b, c, p);
   auto abcq = orient3d_inexact(a, b, c, q);
 
@@ -283,14 +283,14 @@ bool segment3_triangle3_intersect(const geometry::point3d& p, const geometry::po
   return (pqab >= 0.0 && pqbc >= 0.0 && pqca >= 0.0) || (pqab <= 0.0 && pqbc <= 0.0 && pqca <= 0.0);
 }
 
-bool mesh_defects_finder::edge_face_intersect(index_t vi, index_t vj, index_t fi) const {
+bool MeshDefectsFinder::edge_face_intersect(Index vi, Index vj, Index fi) const {
   auto f = faces_.row(fi);
 
-  geometry::point3d p = vertices_.row(vi);
-  geometry::point3d q = vertices_.row(vj);
-  geometry::point3d a = vertices_.row(f(0));
-  geometry::point3d b = vertices_.row(f(1));
-  geometry::point3d c = vertices_.row(f(2));
+  geometry::Point3 p = vertices_.row(vi);
+  geometry::Point3 q = vertices_.row(vj);
+  geometry::Point3 a = vertices_.row(f(0));
+  geometry::Point3 b = vertices_.row(f(1));
+  geometry::Point3 c = vertices_.row(f(2));
 
   return segment3_triangle3_intersect(p, q, a, b, c);
 }

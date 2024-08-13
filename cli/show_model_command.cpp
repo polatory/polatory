@@ -8,18 +8,18 @@
 
 #include "commands.hpp"
 
-using polatory::model;
+using polatory::Model;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   int dim{};
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Model = model<Dim>;
+void run_impl(const Options& opts) {
+  using Model = Model<Dim>;
 
   auto model = Model::load(opts.in_file);
   std::cout << model.description();
@@ -27,11 +27,10 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void show_model_command::run(const std::vector<std::string>& args,
-                             const global_options& global_opts) {
+void ShowModelCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

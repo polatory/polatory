@@ -15,7 +15,7 @@
 
 namespace polatory::interpolation {
 
-struct convergence {
+struct Convergence {
   bool converged{};
   double residual{};
   double grad_residual{};
@@ -24,19 +24,19 @@ struct convergence {
 };
 
 template <int Dim>
-class rbf_residual_evaluator {
+class ResidualEvaluator {
   static constexpr int kDim = Dim;
-  using Bbox = geometry::bboxNd<kDim>;
-  using DirectEvaluator = rbf_direct_evaluator<kDim>;
-  using Evaluator = rbf_symmetric_evaluator<kDim>;
-  using Model = model<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using DirectEvaluator = DirectEvaluator<kDim>;
+  using Evaluator = SymmetricEvaluator<kDim>;
+  using Model = Model<kDim>;
+  using Points = geometry::Points<kDim>;
 
-  static constexpr index_t kDirectEvaluatorTargetSize = 1024;
+  static constexpr Index kDirectEvaluatorTargetSize = 1024;
 
  public:
-  rbf_residual_evaluator(const Model& model, const Points& points, const Points& grad_points,
-                         double accuracy, double grad_accuracy)
+  ResidualEvaluator(const Model& model, const Points& points, const Points& grad_points,
+                    double accuracy, double grad_accuracy)
       : model_(model),
         l_(model.poly_basis_size()),
         mu_(points.rows()),
@@ -46,15 +46,14 @@ class rbf_residual_evaluator {
         direct_evaluator_(model, points, grad_points),
         evaluator_(model, points, grad_points, accuracy, grad_accuracy) {}
 
-  rbf_residual_evaluator(const Model& model, const Bbox& bbox, double accuracy,
-                         double grad_accuracy)
+  ResidualEvaluator(const Model& model, const Bbox& bbox, double accuracy, double grad_accuracy)
       : model_(model),
         l_(model.poly_basis_size()),
         direct_evaluator_(model),
         evaluator_(model, bbox, accuracy, grad_accuracy) {}
 
   template <class Derived>
-  convergence converged(const Eigen::MatrixBase<Derived>& weights, double tolerance,
+  Convergence converged(const Eigen::MatrixBase<Derived>& weights, double tolerance,
                         double grad_tolerance) const {
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
@@ -93,7 +92,7 @@ class rbf_residual_evaluator {
     {
       evaluator_.set_weights(weights);
 
-      vectord fit = evaluator_.evaluate();
+      VecX fit = evaluator_.evaluate();
       fit.head(mu_) += weights.head(mu_) * nugget;
 
       auto residual = numeric::absolute_error<Eigen::Infinity>(fit.head(mu_), values_.head(mu_));
@@ -144,7 +143,7 @@ class rbf_residual_evaluator {
 
     direct_points_ = points_(direct_indices_, Eigen::all);
     direct_grad_points_ = grad_points_(direct_grad_indices_, Eigen::all);
-    direct_values_ = vectord::Zero(direct_mu_ + kDim * direct_sigma_);
+    direct_values_ = VecX::Zero(direct_mu_ + kDim * direct_sigma_);
     direct_values_ << values_.head(mu_)(direct_indices_),
         values_.tail(kDim * sigma_)
             .reshaped<Eigen::RowMajor>(sigma_, kDim)(direct_grad_indices_, Eigen::all)
@@ -153,20 +152,20 @@ class rbf_residual_evaluator {
 
  private:
   const Model& model_;
-  const index_t l_;
+  const Index l_;
 
-  index_t mu_{};
-  index_t sigma_{};
+  Index mu_{};
+  Index sigma_{};
   Points points_;
   Points grad_points_;
-  vectord values_;
-  std::vector<index_t> direct_indices_;
-  std::vector<index_t> direct_grad_indices_;
-  index_t direct_mu_{};
-  index_t direct_sigma_{};
+  VecX values_;
+  std::vector<Index> direct_indices_;
+  std::vector<Index> direct_grad_indices_;
+  Index direct_mu_{};
+  Index direct_sigma_{};
   Points direct_points_;
   Points direct_grad_points_;
-  vectord direct_values_;
+  VecX direct_values_;
   mutable DirectEvaluator direct_evaluator_;
   mutable Evaluator evaluator_;
 };

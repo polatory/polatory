@@ -6,15 +6,14 @@
 
 namespace polatory::point_cloud {
 
-sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
-                                       const geometry::vectors3d& normals, double min_distance,
-                                       double max_distance)
-    : sdf_data_generator(points, normals, min_distance, max_distance,
-                         geometry::matrix3d::Identity()) {}
+SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
+                                   const geometry::Vectors3& normals, double min_distance,
+                                   double max_distance)
+    : SdfDataGenerator(points, normals, min_distance, max_distance, Mat3::Identity()) {}
 
-sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
-                                       const geometry::vectors3d& normals, double min_distance,
-                                       double max_distance, const geometry::matrix3d& aniso) {
+SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
+                                   const geometry::Vectors3& normals, double min_distance,
+                                   double max_distance, const Mat3& aniso) {
   if (normals.rows() != points.rows()) {
     throw std::invalid_argument("normals.rows() must be equal to points.rows()");
   }
@@ -45,24 +44,24 @@ sdf_data_generator::sdf_data_generator(const geometry::points3d& points,
   }
 }
 
-std::pair<geometry::points3d, vectord> sdf_data_generator::estimate_impl(
-    const geometry::points3d& points, const geometry::vectors3d& normals, double min_distance,
+std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
+    const geometry::Points3& points, const geometry::Vectors3& normals, double min_distance,
     double max_distance) {
-  kdtree tree(points);
+  KdTree tree(points);
 
   auto n_points = points.rows();
   auto n_max_sdf_points = 3 * n_points;
   auto n_sdf_points = n_points;
 
-  geometry::points3d sdf_points(n_max_sdf_points, 3);
+  geometry::Points3 sdf_points(n_max_sdf_points, 3);
   sdf_points.topRows(n_points) = points;
-  vectord sdf_values = vectord::Zero(n_max_sdf_points);
+  VecX sdf_values = VecX::Zero(n_max_sdf_points);
 
-  std::vector<index_t> nn_indices;
+  std::vector<Index> nn_indices;
   std::vector<double> nn_distances;
 
   for (auto sign : {-1.0, 1.0}) {
-    for (index_t i = 0; i < n_points; i++) {
+    for (Index i = 0; i < n_points; i++) {
       auto p = points.row(i);
       auto n = normals.row(i);
 
@@ -71,7 +70,7 @@ std::pair<geometry::points3d, vectord> sdf_data_generator::estimate_impl(
       }
 
       auto d = max_distance;
-      geometry::point3d q = p + sign * d * n;
+      geometry::Point3 q = p + sign * d * n;
 
       tree.knn_search(q, 1, nn_indices, nn_distances);
       auto i_nearest = nn_indices.at(0);
@@ -108,8 +107,8 @@ std::pair<geometry::points3d, vectord> sdf_data_generator::estimate_impl(
   return {sdf_points, sdf_values};
 }
 
-const geometry::points3d& sdf_data_generator::sdf_points() const { return sdf_points_; }
+const geometry::Points3& SdfDataGenerator::sdf_points() const { return sdf_points_; }
 
-const vectord& sdf_data_generator::sdf_values() const { return sdf_values_; }
+const VecX& SdfDataGenerator::sdf_values() const { return sdf_values_; }
 
 }  // namespace polatory::point_cloud

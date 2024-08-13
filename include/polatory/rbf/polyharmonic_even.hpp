@@ -12,9 +12,9 @@ namespace polatory::rbf {
 namespace internal {
 
 template <int Dim, int k>
-class polyharmonic_even : public rbf_base<Dim> {
-  using Base = rbf_base<Dim>;
-  using Matrix = Base::Matrix;
+class PolyharmonicEven : public RbfBase<Dim> {
+  using Base = RbfBase<Dim>;
+  using Mat = Base::Mat;
   using Vector = Base::Vector;
 
   static_assert(k > 0 && k % 2 == 0, "k must be a positive even integer");
@@ -26,7 +26,7 @@ class polyharmonic_even : public rbf_base<Dim> {
   using Base::parameters;
   using Base::set_parameters;
 
-  explicit polyharmonic_even(const std::vector<double>& params) { set_parameters(params); }
+  explicit PolyharmonicEven(const std::vector<double>& params) { set_parameters(params); }
 
   int cpd_order() const override { return k / 2 + 1; }
 
@@ -53,20 +53,20 @@ class polyharmonic_even : public rbf_base<Dim> {
     return coeff * diff;
   }
 
-  Matrix evaluate_hessian_isotropic(const Vector& diff) const override {
+  Mat evaluate_hessian_isotropic(const Vector& diff) const override {
     auto slope = parameters().at(0);
     auto r = diff.norm();
 
     if (r == 0.0) {
-      return Matrix::Zero();
+      return Mat::Zero();
     }
 
     auto coeff = kSign * slope * std::pow(r, k - 2) * (1.0 + k * std::log(r));
-    return coeff * (Matrix::Identity() +
+    return coeff * (Mat::Identity() +
                     (k - 2.0 + k / (1.0 + k * std::log(r))) / (r * r) * diff.transpose() * diff);
   }
 
-  index_t num_parameters() const override { return 1; }
+  Index num_parameters() const override { return 1; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
     static const std::vector<double> lower_bounds{0.0};
@@ -85,44 +85,44 @@ class polyharmonic_even : public rbf_base<Dim> {
 };
 
 template <int Dim>
-class biharmonic2d final : public polyharmonic_even<Dim, 2> {
+class Biharmonic2D final : public PolyharmonicEven<Dim, 2> {
  public:
   static constexpr int kDim = Dim;
   static inline const std::string kShortName = "bh2";
 
  private:
-  using Base = polyharmonic_even<Dim, 2>;
+  using Base = PolyharmonicEven<Dim, 2>;
   using RbfPtr = Base::RbfPtr;
 
  public:
   using Base::Base;
 
-  RbfPtr clone() const override { return std::make_unique<biharmonic2d>(*this); }
+  RbfPtr clone() const override { return std::make_unique<Biharmonic2D>(*this); }
 
   std::string short_name() const override { return kShortName; }
 };
 
 template <int Dim>
-class triharmonic2d final : public polyharmonic_even<Dim, 4> {
+class Triharmonic2D final : public PolyharmonicEven<Dim, 4> {
  public:
   static constexpr int kDim = Dim;
   static inline const std::string kShortName = "th2";
 
  private:
-  using Base = polyharmonic_even<Dim, 4>;
+  using Base = PolyharmonicEven<Dim, 4>;
   using RbfPtr = Base::RbfPtr;
 
  public:
   using Base::Base;
 
-  RbfPtr clone() const override { return std::make_unique<triharmonic2d>(*this); }
+  RbfPtr clone() const override { return std::make_unique<Triharmonic2D>(*this); }
 
   std::string short_name() const override { return kShortName; }
 };
 
 }  // namespace internal
 
-POLATORY_DEFINE_RBF(biharmonic2d);
-POLATORY_DEFINE_RBF(triharmonic2d);
+POLATORY_DEFINE_RBF(Biharmonic2D);
+POLATORY_DEFINE_RBF(Triharmonic2D);
 
 }  // namespace polatory::rbf

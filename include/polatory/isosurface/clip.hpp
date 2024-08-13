@@ -10,24 +10,23 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/types.hpp>
+#include <polatory/types.hpp>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace polatory::isosurface {
 
-class surface_clipper {
-  using Bbox = geometry::bbox3d;
-  using Faces = faces;
-  using Matrix = geometry::matrix3d;
-  using Mesh = mesh;
-  using Point = geometry::point3d;
-  using Point2 = geometry::point2d;
-  using Triangle = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
-  using Vector = geometry::vector3d;
+class MeshClipper {
+  using Bbox = geometry::Bbox3;
+  using Mat = Mat3;
+  using Point = geometry::Point3;
+  using Point2 = geometry::Point2;
+  using Triangle = Mat3;
+  using Vector = geometry::Vector3;
 
  public:
-  surface_clipper(const Mesh& mesh, const Bbox& bbox) {
+  MeshClipper(const Mesh& mesh, const Bbox& bbox) {
     const auto& vertices = mesh.vertices();
     const auto& faces = mesh.faces();
 
@@ -39,13 +38,13 @@ class surface_clipper {
       triangles.push_back((Triangle() << p, q, r).finished());
     }
 
-    std::array<Matrix, 6> permutations{
-        (Matrix() << 1, 0, 0, 0, 1, 0, 0, 0, 1).finished(),   // x, y, z
-        (Matrix() << -1, 0, 0, 0, 0, 1, 0, 1, 0).finished(),  // -x, z, y
-        (Matrix() << 0, 1, 0, 0, 0, 1, 1, 0, 0).finished(),   // y, z, x
-        (Matrix() << 0, -1, 0, 1, 0, 0, 0, 0, 1).finished(),  // -y, x, z
-        (Matrix() << 0, 0, 1, 1, 0, 0, 0, 1, 0).finished(),   // z, x, y
-        (Matrix() << 0, 0, -1, 0, 1, 0, 1, 0, 0).finished()   // -z, y, x
+    std::array<Mat, 6> permutations{
+        (Mat() << 1, 0, 0, 0, 1, 0, 0, 0, 1).finished(),   // x, y, z
+        (Mat() << -1, 0, 0, 0, 0, 1, 0, 1, 0).finished(),  // -x, z, y
+        (Mat() << 0, 1, 0, 0, 0, 1, 1, 0, 0).finished(),   // y, z, x
+        (Mat() << 0, -1, 0, 1, 0, 0, 0, 0, 1).finished(),  // -y, x, z
+        (Mat() << 0, 0, 1, 1, 0, 0, 0, 1, 0).finished(),   // z, x, y
+        (Mat() << 0, 0, -1, 0, 1, 0, 1, 0, 0).finished()   // -z, y, x
     };
     std::array<double, 6> thresholds{bbox.max()(0),  -bbox.min()(0), bbox.max()(1),
                                      -bbox.min()(1), bbox.max()(2),  -bbox.min()(2)};
@@ -65,17 +64,17 @@ class surface_clipper {
       clipped.clear();
     }
 
-    std::unordered_map<Point, index_t, point_hash> vertex_map;
+    std::unordered_map<Point, Index, PointHash> vertex_map;
     for (const auto& tri : triangles) {
       for (auto v : tri.rowwise()) {
         if (!vertex_map.contains(v)) {
-          vertex_map.emplace(v, static_cast<index_t>(vertex_map.size()));
+          vertex_map.emplace(v, static_cast<Index>(vertex_map.size()));
         }
       }
     }
 
-    geometry::points3d clipped_vertices(static_cast<index_t>(vertex_map.size()), 3);
-    Faces clipped_faces(static_cast<index_t>(triangles.size()), 3);
+    geometry::Points3 clipped_vertices(static_cast<Index>(vertex_map.size()), 3);
+    Faces clipped_faces(static_cast<Index>(triangles.size()), 3);
 
     for (const auto& pair : vertex_map) {
       clipped_vertices.row(pair.second) = pair.first;
@@ -83,7 +82,7 @@ class surface_clipper {
 
     for (std::size_t i = 0; i < triangles.size(); i++) {
       const auto& tri = triangles.at(i);
-      auto face = clipped_faces.row(static_cast<index_t>(i));
+      auto face = clipped_faces.row(static_cast<Index>(i));
       face(0) = vertex_map.at(tri.row(0));
       face(1) = vertex_map.at(tri.row(1));
       face(2) = vertex_map.at(tri.row(2));
@@ -95,7 +94,7 @@ class surface_clipper {
   const Mesh& clipped_mesh() const { return clipped_mesh_; }
 
  private:
-  struct point_hash {
+  struct PointHash {
     std::size_t operator()(const Point& p) const noexcept {
       return boost::hash_range(p.begin(), p.end());
     }
@@ -217,7 +216,7 @@ class surface_clipper {
     auto m20 = c(0) - d(0);
     auto m21 = c(1) - d(1);
     auto m22 = m20 * m20 + m21 * m21;
-    Matrix m;
+    Mat m;
     m << m00, m01, m02, m10, m11, m12, m20, m21, m22;
     return m.determinant();
   }
@@ -251,8 +250,8 @@ class surface_clipper {
   Mesh clipped_mesh_;
 };
 
-inline mesh clip(const mesh& mesh, const geometry::bbox3d& bbox) {
-  return surface_clipper(mesh, bbox).clipped_mesh();
+inline Mesh clip(const Mesh& mesh, const geometry::Bbox3& bbox) {
+  return MeshClipper(mesh, bbox).clipped_mesh();
 }
 
 }  // namespace polatory::isosurface

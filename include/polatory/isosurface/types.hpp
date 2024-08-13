@@ -4,7 +4,7 @@
 
 namespace polatory::isosurface {
 
-using face = Eigen::Matrix<index_t, 1, 3>;
-using faces = Eigen::Matrix<index_t, Eigen::Dynamic, 3, Eigen::RowMajor>;
+using Face = Eigen::Matrix<Index, 1, 3>;
+using Faces = Eigen::Matrix<Index, Eigen::Dynamic, 3, Eigen::RowMajor>;
 
 }  // namespace polatory::isosurface

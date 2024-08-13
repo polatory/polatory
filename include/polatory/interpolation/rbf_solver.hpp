@@ -20,19 +20,19 @@
 namespace polatory::interpolation {
 
 template <int Dim>
-class rbf_solver {
+class Solver {
   static constexpr int kDim = Dim;
-  using Bbox = geometry::bboxNd<kDim>;
-  using Model = model<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
-  using Operator = rbf_operator<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using Preconditioner = preconditioner::ras_preconditioner<kDim>;
-  using ResidualEvaluator = rbf_residual_evaluator<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using Model = Model<kDim>;
+  using MonomialBasis = polynomial::MonomialBasis<kDim>;
+  using Operator = Operator<kDim>;
+  using Points = geometry::Points<kDim>;
+  using Preconditioner = preconditioner::RasPreconditioner<kDim>;
+  using ResidualEvaluator = ResidualEvaluator<kDim>;
 
  public:
-  rbf_solver(const Model& model, const Points& points, const Points& grad_points, double accuracy,
-             double grad_accuracy)
+  Solver(const Model& model, const Points& points, const Points& grad_points, double accuracy,
+         double grad_accuracy)
       : model_(model),
         l_(model.poly_basis_size()),
         mu_(points.rows()),
@@ -42,7 +42,7 @@ class rbf_solver {
     set_points(points, grad_points);
   }
 
-  rbf_solver(const Model& model, const Bbox& bbox, double accuracy, double grad_accuracy)
+  Solver(const Model& model, const Bbox& bbox, double accuracy, double grad_accuracy)
       : model_(model),
         l_(model.poly_basis_size()),
         op_(model, bbox),
@@ -66,37 +66,37 @@ class rbf_solver {
     }
   }
 
-  template <class DerivedValues, class DerivedInitialWeights = vectord>
-  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double tolerance, int max_iter,
-                const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
+  template <class DerivedValues, class DerivedInitialWeights = VecX>
+  VecX solve(const Eigen::MatrixBase<DerivedValues>& values, double tolerance, int max_iter,
+             const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
     return solve(values, tolerance, tolerance, max_iter, initial_weights);
   }
 
-  template <class DerivedValues, class DerivedInitialWeights = vectord>
-  vectord solve(const Eigen::MatrixBase<DerivedValues>& values, double tolerance,
-                double grad_tolerance, int max_iter,
-                const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
+  template <class DerivedValues, class DerivedInitialWeights = VecX>
+  VecX solve(const Eigen::MatrixBase<DerivedValues>& values, double tolerance,
+             double grad_tolerance, int max_iter,
+             const Eigen::MatrixBase<DerivedInitialWeights>* initial_weights = nullptr) const {
     POLATORY_ASSERT(values.rows() == mu_ + kDim * sigma_);
     POLATORY_ASSERT(initial_weights == nullptr ||
                     initial_weights->rows() == mu_ + kDim * sigma_ + l_);
 
-    vectord weights = vectord::Zero(mu_ + kDim * sigma_ + l_);
+    VecX weights = VecX::Zero(mu_ + kDim * sigma_ + l_);
 
     if (initial_weights != nullptr) {
       weights = *initial_weights;
 
       if (l_ > 0) {
         // Orthogonalize weights against P.
-        vectord dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
+        VecX dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
         weights.head(mu_ + kDim * sigma_) -= p_ * dot;
       }
     }
 
-    vectord rhs(mu_ + kDim * sigma_ + l_);
+    VecX rhs(mu_ + kDim * sigma_ + l_);
     rhs.head(mu_ + kDim * sigma_) = values;
-    rhs.tail(l_) = vectord::Zero(l_);
+    rhs.tail(l_) = VecX::Zero(l_);
 
-    krylov::fgmres solver(op_, rhs, max_iter);
+    krylov::Fgmres solver(op_, rhs, max_iter);
     solver.set_initial_solution(weights);
     solver.set_right_preconditioner(*pc_);
     solver.setup();
@@ -143,14 +143,14 @@ class rbf_solver {
 
  private:
   const Model& model_;
-  const index_t l_;
+  const Index l_;
 
-  index_t mu_{};
-  index_t sigma_{};
+  Index mu_{};
+  Index sigma_{};
   Operator op_;
   mutable ResidualEvaluator res_eval_;
   std::unique_ptr<Preconditioner> pc_;
-  matrixd p_;
+  MatX p_;
 };
 
 }  // namespace polatory::interpolation

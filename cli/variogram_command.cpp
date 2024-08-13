@@ -10,17 +10,17 @@
 
 #include "commands.hpp"
 
-using polatory::matrixd;
+using polatory::MatX;
 using polatory::read_table;
-using polatory::vectord;
-using polatory::geometry::pointsNd;
+using polatory::VecX;
+using polatory::geometry::Points;
 using polatory::kriging::detrend;
-using polatory::kriging::normal_score_transformation;
-using polatory::kriging::variogram_calculator;
+using polatory::kriging::NormalScoreTransformation;
+using polatory::kriging::VariogramCalculator;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   int dim{};
   int detrend{};
@@ -34,19 +34,19 @@ struct options {
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Points = pointsNd<Dim>;
-  using VariogramCalculator = variogram_calculator<Dim>;
+void run_impl(const Options& opts) {
+  using Points = Points<Dim>;
+  using VariogramCalculator = VariogramCalculator<Dim>;
 
-  matrixd table = read_table(opts.in_file);
+  MatX table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
-  vectord values = table.col(Dim);
+  VecX values = table.col(Dim);
 
   if (opts.detrend >= 0) {
     values = detrend(points, values, opts.detrend);
   }
 
-  normal_score_transformation nst;
+  NormalScoreTransformation nst;
   if (opts.normal_score) {
     values = nst.transform(values);
   }
@@ -68,11 +68,10 @@ void run_impl(const options& opts) {
 
 }  // namespace
 
-void variogram_command::run(const std::vector<std::string>& args,
-                            const global_options& global_opts) {
+void VariogramCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //
@@ -90,12 +89,12 @@ void variogram_command::run(const std::vector<std::string>& args,
        "Number of lags")  //
       ("lag-tol",
        po::value(&opts.lag_tolerance)
-           ->default_value(variogram_calculator<1>::kAutomaticLagTolerance, "AUTO")
+           ->default_value(VariogramCalculator<1>::kAutomaticLagTolerance, "AUTO")
            ->value_name("TOL"),
        "Lag tolerance")  //
       ("angle-tol",
        po::value(&opts.angle_tolerance)
-           ->default_value(variogram_calculator<1>::kAutomaticAngleTolerance, "AUTO")
+           ->default_value(VariogramCalculator<1>::kAutomaticAngleTolerance, "AUTO")
            ->value_name("TOL"),
        "Angle tolerance in degrees")  //
       ("aniso", po::bool_switch(&opts.aniso),
@@ -122,7 +121,7 @@ void variogram_command::run(const std::vector<std::string>& args,
     throw;
   }
 
-  if (opts.angle_tolerance != variogram_calculator<1>::kAutomaticAngleTolerance) {
+  if (opts.angle_tolerance != VariogramCalculator<1>::kAutomaticAngleTolerance) {
     auto deg = std::numbers::pi / 180.0;
     opts.angle_tolerance *= deg;
   }

@@ -33,27 +33,27 @@
 namespace polatory::preconditioner {
 
 template <int Dim>
-class ras_preconditioner : public krylov::linear_operator {
+class RasPreconditioner : public krylov::LinearOperator {
   static constexpr int kDim = Dim;
-  using Bbox = geometry::bboxNd<kDim>;
-  using CoarseGrid = coarse_grid<kDim>;
-  using Domain = domain<kDim>;
-  using DomainDivider = domain_divider<kDim>;
-  using Evaluator = interpolation::rbf_evaluator<kDim>;
-  using FineGrid = fine_grid<kDim>;
-  using LagrangeBasis = polynomial::lagrange_basis<kDim>;
-  using Model = model<kDim>;
-  using MonomialBasis = polynomial::monomial_basis<kDim>;
-  using Points = geometry::pointsNd<kDim>;
-  using SymmetricEvaluator = interpolation::rbf_symmetric_evaluator<kDim>;
-  using UnisolventPointSet = polynomial::unisolvent_point_set<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using CoarseGrid = CoarseGrid<kDim>;
+  using Domain = Domain<kDim>;
+  using DomainDivider = DomainDivider<kDim>;
+  using Evaluator = interpolation::Evaluator<kDim>;
+  using FineGrid = FineGrid<kDim>;
+  using LagrangeBasis = polynomial::LagrangeBasis<kDim>;
+  using Model = Model<kDim>;
+  using MonomialBasis = polynomial::MonomialBasis<kDim>;
+  using Points = geometry::Points<kDim>;
+  using SymmetricEvaluator = interpolation::SymmetricEvaluator<kDim>;
+  using UnisolventPointSet = polynomial::UnisolventPointSet<kDim>;
 
   static constexpr bool kReportResidual = false;
   static constexpr double kCoarseRatio = 0.01;
-  static constexpr index_t kNCoarsestPoints = 1024;
+  static constexpr Index kNCoarsestPoints = 1024;
 
  public:
-  ras_preconditioner(const Model& model, const Points& points, const Points& grad_points)
+  RasPreconditioner(const Model& model, const Points& points, const Points& grad_points)
       : model_(model),
         l_(model.poly_basis_size()),
         mu_(points.rows()),
@@ -73,7 +73,7 @@ class ras_preconditioner : public krylov::linear_operator {
     point_idcs_.resize(n_levels_);
     grad_point_idcs_.resize(n_levels_);
 
-    std::vector<index_t> poly_point_idcs;
+    std::vector<Index> poly_point_idcs;
     {
       auto level = n_levels_ - 1;
 
@@ -93,7 +93,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
         point_idcs_.at(level) = poly_point_idcs;
         point_idcs_.at(level).reserve(mu_);
-        for (index_t i = 0; i < mu_; i++) {
+        for (Index i = 0; i < mu_; i++) {
           if (!std::binary_search(poly_point_idcs.begin(), poly_point_idcs.end(), i)) {
             point_idcs_.at(level).push_back(i);
           }
@@ -125,8 +125,8 @@ class ras_preconditioner : public krylov::linear_operator {
               << std::endl;
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
-      auto mu = static_cast<index_t>(point_idcs_.at(level).size());
-      auto sigma = static_cast<index_t>(grad_point_idcs_.at(level).size());
+      auto mu = static_cast<Index>(point_idcs_.at(level).size());
+      auto sigma = static_cast<Index>(grad_point_idcs_.at(level).size());
 
       DomainDivider divider(a_points, a_grad_points, point_idcs_.at(level),
                             grad_point_idcs_.at(level), poly_point_idcs);
@@ -141,9 +141,9 @@ class ras_preconditioner : public krylov::linear_operator {
         fine_grids_.at(level).emplace_back(model, std::move(d), cache_);
       }
 
-      auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
+      auto n_grids = static_cast<Index>(fine_grids_.at(level).size());
 #pragma omp parallel for
-      for (index_t i = 0; i < n_grids; i++) {
+      for (Index i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
         fine.setup(points_, grad_points_, lagrange_p_);
       }
@@ -152,8 +152,8 @@ class ras_preconditioner : public krylov::linear_operator {
     }
 
     {
-      auto mu = static_cast<index_t>(point_idcs_.at(0).size());
-      auto sigma = static_cast<index_t>(grad_point_idcs_.at(0).size());
+      auto mu = static_cast<Index>(point_idcs_.at(0).size());
+      auto sigma = static_cast<Index>(grad_point_idcs_.at(0).size());
 
       Domain coarse_domain;
       coarse_domain.point_indices = point_idcs_.at(0);
@@ -174,12 +174,12 @@ class ras_preconditioner : public krylov::linear_operator {
       p_ = poly.evaluate(points_, grad_points_);
       common::orthonormalize_cols(p_);
 
-      ap_ = matrixd(p_.rows(), p_.cols());
+      ap_ = MatX(p_.rows(), p_.cols());
 
       auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_);
-      vectord weights = vectord::Zero(mu_ + kDim * sigma_ + l_);
+      VecX weights = VecX::Zero(mu_ + kDim * sigma_ + l_);
       auto n_cols = p_.cols();
-      for (index_t i = 0; i < n_cols; i++) {
+      for (Index i = 0; i < n_cols; i++) {
         weights.head(mu_ + kDim * sigma_) = p_.col(i);
         finest_evaluator.set_weights(weights);
         ap_.col(i) = finest_evaluator.evaluate();
@@ -187,23 +187,23 @@ class ras_preconditioner : public krylov::linear_operator {
     }
   }
 
-  vectord operator()(const vectord& v) const override {
+  VecX operator()(const VecX& v) const override {
     POLATORY_ASSERT(v.rows() == size());
 
     // v.tail(l_) must be (almost) zero. If that is not the case, the RBF part of the weights
     // was not orthogonalized against the polynomial space in previous iterations.
 
-    vectord residuals = v.head(mu_ + kDim * sigma_);
+    VecX residuals = v.head(mu_ + kDim * sigma_);
 
     if (n_levels_ == 1) {
       return solve(0, residuals);
     }
 
-    vectord weights_total = vectord::Zero(size());
+    VecX weights_total = VecX::Zero(size());
     report_initial_residual(residuals);
 
     {
-      vectord weights = solve(0, residuals);
+      VecX weights = solve(0, residuals);
       update_residuals(0, n_levels_ - 1, weights, residuals);
       weights_total += weights;
       report_residual(0, v, weights_total);
@@ -211,7 +211,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
     for (auto level = 1; level < n_levels_ - 1; level++) {
       {
-        vectord weights = solve(level, residuals);
+        VecX weights = solve(level, residuals);
         update_residuals(level, n_levels_ - 1, weights, residuals);
         weights_total += weights;
         orthogonalize(weights_total, residuals);
@@ -219,7 +219,7 @@ class ras_preconditioner : public krylov::linear_operator {
       }
 
       {
-        vectord weights = solve(0, residuals);
+        VecX weights = solve(0, residuals);
         update_residuals(0, n_levels_ - 1, weights, residuals);
         weights_total += weights;
         report_residual(0, v, weights_total);
@@ -228,7 +228,7 @@ class ras_preconditioner : public krylov::linear_operator {
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       {
-        vectord weights = solve(level, residuals);
+        VecX weights = solve(level, residuals);
         update_residuals(level, level - 1, weights, residuals);
         weights_total += weights;
         orthogonalize(weights_total, residuals);
@@ -236,7 +236,7 @@ class ras_preconditioner : public krylov::linear_operator {
       }
 
       {
-        vectord weights = solve(0, residuals);
+        VecX weights = solve(0, residuals);
         if (level > 1) {
           update_residuals(0, level - 1, weights, residuals);
         }
@@ -248,7 +248,7 @@ class ras_preconditioner : public krylov::linear_operator {
     return weights_total;
   }
 
-  index_t size() const override { return mu_ + kDim * sigma_ + l_; }
+  Index size() const override { return mu_ + kDim * sigma_ + l_; }
 
  private:
   Evaluator& evaluator(int src_level, int trg_level) const {
@@ -267,25 +267,25 @@ class ras_preconditioner : public krylov::linear_operator {
     return evaluator_.at(key);
   }
 
-  void orthogonalize(vectord& weights, vectord& residuals) const {
+  void orthogonalize(VecX& weights, VecX& residuals) const {
     if (l_ > 0) {
       // Orthogonalize weights against P.
-      vectord dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
+      VecX dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
       weights.head(mu_ + kDim * sigma_) -= p_ * dot;
       residuals += ap_ * dot;
     }
   }
 
-  vectord solve(int level, const vectord& residuals) const {
-    vectord weights = vectord::Zero(size());
+  VecX solve(int level, const VecX& residuals) const {
+    VecX weights = VecX::Zero(size());
 
     if (level == 0) {
       coarse_->solve(residuals);
       coarse_->set_solution_to(weights);
     } else {
-      auto n_grids = static_cast<index_t>(fine_grids_.at(level).size());
+      auto n_grids = static_cast<Index>(fine_grids_.at(level).size());
 #pragma omp parallel for schedule(guided)
-      for (index_t i = 0; i < n_grids; i++) {
+      for (Index i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
         fine.solve(residuals);
         fine.set_solution_to(weights);
@@ -295,17 +295,16 @@ class ras_preconditioner : public krylov::linear_operator {
     return weights;
   }
 
-  void update_residuals(int src_level, int trg_level, const vectord& weights,
-                        vectord& residuals) const {
+  void update_residuals(int src_level, int trg_level, const VecX& weights, VecX& residuals) const {
     const auto& src_indices = point_idcs_.at(src_level);
     const auto& src_grad_indices = grad_point_idcs_.at(src_level);
-    auto src_mu = static_cast<index_t>(src_indices.size());
-    auto src_sigma = static_cast<index_t>(src_grad_indices.size());
-    vectord src_weights(src_mu + kDim * src_sigma + l_);
-    for (index_t i = 0; i < src_mu; i++) {
+    auto src_mu = static_cast<Index>(src_indices.size());
+    auto src_sigma = static_cast<Index>(src_grad_indices.size());
+    VecX src_weights(src_mu + kDim * src_sigma + l_);
+    for (Index i = 0; i < src_mu; i++) {
       src_weights(i) = weights(src_indices.at(i));
     }
-    for (index_t i = 0; i < src_sigma; i++) {
+    for (Index i = 0; i < src_sigma; i++) {
       src_weights.segment<kDim>(src_mu + kDim * i) =
           weights.segment<kDim>(mu_ + kDim * src_grad_indices.at(i));
     }
@@ -316,51 +315,51 @@ class ras_preconditioner : public krylov::linear_operator {
 
     const auto& trg_indices = point_idcs_.at(trg_level);
     const auto& trg_grad_indices = grad_point_idcs_.at(trg_level);
-    auto trg_mu = static_cast<index_t>(trg_indices.size());
-    auto trg_sigma = static_cast<index_t>(trg_grad_indices.size());
-    for (index_t i = 0; i < trg_mu; i++) {
+    auto trg_mu = static_cast<Index>(trg_indices.size());
+    auto trg_sigma = static_cast<Index>(trg_grad_indices.size());
+    for (Index i = 0; i < trg_mu; i++) {
       residuals(trg_indices.at(i)) -= fit(i);
     }
-    for (index_t i = 0; i < trg_sigma; i++) {
+    for (Index i = 0; i < trg_sigma; i++) {
       residuals.segment<kDim>(mu_ + kDim * trg_grad_indices.at(i)) -=
           fit.template segment<kDim>(trg_mu + kDim * i);
     }
   }
 
-  void report_initial_residual(const vectord& residuals) const {
+  void report_initial_residual(const VecX& residuals) const {
     if (kReportResidual) {
       std::cout << std::format("Initial residual: {:f}", residuals.norm()) << std::endl;
     }
   }
 
-  void report_residual(int level, const vectord& v, const vectord& weights_total) const {
+  void report_residual(int level, const VecX& v, const VecX& weights_total) const {
     if (kReportResidual) {
       finest_evaluator_->set_weights(weights_total);
-      vectord residuals = v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
+      VecX residuals = v.head(mu_ + kDim * sigma_) - finest_evaluator_->evaluate();
       std::cout << std::format("Residual after level {}: {:f}", level, residuals.norm())
                 << std::endl;
     }
   }
 
   const Model& model_;
-  const index_t l_;
-  const index_t mu_;
-  const index_t sigma_;
+  const Index l_;
+  const Index mu_;
+  const Index sigma_;
   const Points points_;
   const Points grad_points_;
   const Bbox bbox_;
   const std::unique_ptr<SymmetricEvaluator> finest_evaluator_;
 
-  matrixd lagrange_p_;
+  MatX lagrange_p_;
   int n_levels_;
-  std::vector<std::vector<index_t>> point_idcs_;
-  std::vector<std::vector<index_t>> grad_point_idcs_;
+  std::vector<std::vector<Index>> point_idcs_;
+  std::vector<std::vector<Index>> grad_point_idcs_;
   mutable std::vector<std::vector<FineGrid>> fine_grids_;
   std::unique_ptr<CoarseGrid> coarse_;
   mutable std::map<std::pair<int, int>, Evaluator> evaluator_;
-  matrixd p_;
-  matrixd ap_;
-  binary_cache cache_;
+  MatX p_;
+  MatX ap_;
+  BinaryCache cache_;
 };
 
 }  // namespace polatory::preconditioner

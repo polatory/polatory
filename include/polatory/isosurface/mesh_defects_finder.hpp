@@ -9,29 +9,26 @@
 
 namespace polatory::isosurface {
 
-class mesh_defects_finder {
-  using Face = face;
-  using Faces = faces;
-  using Mesh = mesh;
-  using Points = geometry::points3d;
+class MeshDefectsFinder {
+  using Points = geometry::Points3;
 
  public:
-  explicit mesh_defects_finder(const Mesh& mesh);
+  explicit MeshDefectsFinder(const Mesh& mesh);
 
-  std::vector<index_t> intersecting_faces() const;
+  std::vector<Index> intersecting_faces() const;
 
-  std::vector<index_t> singular_vertices() const;
+  std::vector<Index> singular_vertices() const;
 
  private:
-  bool edge_face_intersect(index_t vi, index_t vj, index_t fi) const;
+  bool edge_face_intersect(Index vi, Index vj, Index fi) const;
 
-  index_t next_vertex(index_t fi, index_t vi) const;
+  Index next_vertex(Index fi, Index vi) const;
 
-  index_t prev_vertex(index_t fi, index_t vi) const;
+  Index prev_vertex(Index fi, Index vi) const;
 
   const Points& vertices_;
   const Faces& faces_;
-  std::vector<std::vector<index_t>> vf_map_;
+  std::vector<std::vector<Index>> vf_map_;
 };
 
 }  // namespace polatory::isosurface

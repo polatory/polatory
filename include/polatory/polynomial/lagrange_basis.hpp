@@ -12,33 +12,33 @@
 namespace polatory::polynomial {
 
 template <int Dim>
-class lagrange_basis : public polynomial_basis_base<Dim> {
+class LagrangeBasis : public PolynomialBasisBase<Dim> {
  public:
   static constexpr int kDim = Dim;
 
  private:
-  using Base = polynomial_basis_base<kDim>;
-  using MonomialBasis = monomial_basis<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Base = PolynomialBasisBase<kDim>;
+  using MonomialBasis = MonomialBasis<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
   using Base::basis_size;
   using Base::degree;
 
   template <class Derived>
-  lagrange_basis(int degree, const Eigen::MatrixBase<Derived>& points)
-      : lagrange_basis(degree, points, Points(0, kDim)) {}
+  LagrangeBasis(int degree, const Eigen::MatrixBase<Derived>& points)
+      : LagrangeBasis(degree, points, Points(0, kDim)) {}
 
   template <class DerivedPoints, class DerivedGradPoints>
-  lagrange_basis(int degree, const Eigen::MatrixBase<DerivedPoints>& points,
-                 const Eigen::MatrixBase<DerivedGradPoints>& grad_points)
+  LagrangeBasis(int degree, const Eigen::MatrixBase<DerivedPoints>& points,
+                const Eigen::MatrixBase<DerivedGradPoints>& grad_points)
       : Base(degree), mono_basis_(degree) {
     POLATORY_ASSERT(points.rows() == basis_size() ||
                     degree == 1 && points.rows() == 1 && grad_points.rows() == 1);
 
     auto p = mono_basis_.evaluate(points, grad_points);
 
-    Eigen::FullPivLU<matrixd> lu(p);
+    Eigen::FullPivLU<MatX> lu(p);
 
     if (!lu.isInvertible()) {
       throw std::invalid_argument("the set of points is not unisolvent");
@@ -49,13 +49,13 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
   }
 
   template <class Derived>
-  matrixd evaluate(const Eigen::MatrixBase<Derived>& points) const {
+  MatX evaluate(const Eigen::MatrixBase<Derived>& points) const {
     return evaluate(points, Points(0, kDim));
   }
 
   template <class DerivedPoints, class DerivedGradPoints>
-  matrixd evaluate(const Eigen::MatrixBase<DerivedPoints>& points,
-                   const Eigen::MatrixBase<DerivedGradPoints>& grad_points) const {
+  MatX evaluate(const Eigen::MatrixBase<DerivedPoints>& points,
+                const Eigen::MatrixBase<DerivedGradPoints>& grad_points) const {
     auto p = mono_basis_.evaluate(points, grad_points);
 
     return p * coeffs_;
@@ -66,7 +66,7 @@ class lagrange_basis : public polynomial_basis_base<Dim> {
  private:
   const MonomialBasis mono_basis_;
 
-  matrixd coeffs_;
+  MatX coeffs_;
   double rcond_{};
 };
 

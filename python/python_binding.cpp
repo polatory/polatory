@@ -20,28 +20,28 @@ using namespace py::literals;
 static constexpr double kInfinity = std::numeric_limits<double>::infinity();
 
 template <int Dim>
-geometry::bboxNd<Dim> bbox_from_points(const geometry::pointsNd<Dim>& points) {
-  return geometry::bboxNd<Dim>::from_points(points);
+geometry::Bbox<Dim> bbox_from_points(const geometry::Points<Dim>& points) {
+  return geometry::Bbox<Dim>::from_points(points);
 }
 
 template <int Dim, class Rbf>
 void define_rbf(py::module& m, const std::string& name) {
-  py::class_<Rbf, rbf::rbf_proxy<Dim>>(m, name.c_str())
+  py::class_<Rbf, rbf::Rbf<Dim>>(m, name.c_str())
       .def(py::init<const std::vector<double>&>(), "params"_a);
 }
 
 template <int Dim>
 void define_module(py::module& m) {
-  using Bbox = geometry::bboxNd<Dim>;
-  using DistanceFilter = point_cloud::distance_filter<Dim>;
-  using Interpolant = interpolant<Dim>;
-  using Model = model<Dim>;
-  using Points = geometry::pointsNd<Dim>;
-  using RbfProxy = rbf::rbf_proxy<Dim>;
-  using Variogram = kriging::variogram<Dim>;
-  using VariogramCalculator = kriging::variogram_calculator<Dim>;
-  using VariogramFitting = kriging::variogram_fitting<Dim>;
-  using VariogramSet = kriging::variogram_set<Dim>;
+  using Bbox = geometry::Bbox<Dim>;
+  using DistanceFilter = point_cloud::DistanceFilter<Dim>;
+  using Interpolant = Interpolant<Dim>;
+  using Model = Model<Dim>;
+  using Points = geometry::Points<Dim>;
+  using Rbf = rbf::Rbf<Dim>;
+  using Variogram = kriging::Variogram<Dim>;
+  using VariogramCalculator = kriging::VariogramCalculator<Dim>;
+  using VariogramFitting = kriging::VariogramFitting<Dim>;
+  using VariogramSet = kriging::VariogramSet<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
@@ -51,40 +51,40 @@ void define_module(py::module& m) {
       .def_property_readonly("min", &Bbox::min)
       .def_property_readonly("max", &Bbox::max);
 
-  py::class_<RbfProxy>(m, "Rbf")
-      .def_property("anisotropy", &RbfProxy::anisotropy, &RbfProxy::set_anisotropy)
-      .def_property_readonly("cpd_order", &RbfProxy::cpd_order)
-      .def_property_readonly("is_covariance_function", &RbfProxy::is_covariance_function)
-      .def_property_readonly("num_parameters", &RbfProxy::num_parameters)
-      .def_property("parameters", &RbfProxy::parameters, &RbfProxy::set_parameters)
-      .def_property_readonly("short_name", &RbfProxy::short_name)
-      .def("evaluate", &RbfProxy::evaluate, "diff"_a)
-      .def("evaluate_gradient", &RbfProxy::evaluate_gradient, "diff"_a)
-      .def("evaluate_hessian", &RbfProxy::evaluate_hessian, "diff"_a);
+  py::class_<Rbf>(m, "Rbf")
+      .def_property("anisotropy", &Rbf::anisotropy, &Rbf::set_anisotropy)
+      .def_property_readonly("cpd_order", &Rbf::cpd_order)
+      .def_property_readonly("is_covariance_function", &Rbf::is_covariance_function)
+      .def_property_readonly("num_parameters", &Rbf::num_parameters)
+      .def_property("parameters", &Rbf::parameters, &Rbf::set_parameters)
+      .def_property_readonly("short_name", &Rbf::short_name)
+      .def("evaluate", &Rbf::evaluate, "diff"_a)
+      .def("evaluate_gradient", &Rbf::evaluate_gradient, "diff"_a)
+      .def("evaluate_hessian", &Rbf::evaluate_hessian, "diff"_a);
 
-  define_rbf<Dim, rbf::biharmonic2d<Dim>>(m, "Biharmonic2D");
-  define_rbf<Dim, rbf::biharmonic3d<Dim>>(m, "Biharmonic3D");
-  define_rbf<Dim, rbf::cov_cubic<Dim>>(m, "CovCubic");
-  define_rbf<Dim, rbf::cov_exponential<Dim>>(m, "CovExponential");
-  define_rbf<Dim, rbf::cov_gaussian<Dim>>(m, "CovGaussian");
-  define_rbf<Dim, rbf::cov_generalized_cauchy3<Dim>>(m, "CovGeneralizedCauchy3");
-  define_rbf<Dim, rbf::cov_generalized_cauchy5<Dim>>(m, "CovGeneralizedCauchy5");
-  define_rbf<Dim, rbf::cov_generalized_cauchy7<Dim>>(m, "CovGeneralizedCauchy7");
-  define_rbf<Dim, rbf::cov_generalized_cauchy9<Dim>>(m, "CovGeneralizedCauchy9");
-  define_rbf<Dim, rbf::cov_spherical<Dim>>(m, "CovSpherical");
-  define_rbf<Dim, rbf::cov_spheroidal3<Dim>>(m, "CovSpheroidal3");
-  define_rbf<Dim, rbf::cov_spheroidal5<Dim>>(m, "CovSpheroidal5");
-  define_rbf<Dim, rbf::cov_spheroidal7<Dim>>(m, "CovSpheroidal7");
-  define_rbf<Dim, rbf::cov_spheroidal9<Dim>>(m, "CovSpheroidal9");
-  define_rbf<Dim, rbf::inverse_multiquadric1<Dim>>(m, "InverseMultiquadric1");
-  define_rbf<Dim, rbf::multiquadric1<Dim>>(m, "Multiquadric1");
-  define_rbf<Dim, rbf::multiquadric3<Dim>>(m, "Multiquadric3");
-  define_rbf<Dim, rbf::triharmonic2d<Dim>>(m, "Triharmonic2D");
-  define_rbf<Dim, rbf::triharmonic3d<Dim>>(m, "Triharmonic3D");
+  define_rbf<Dim, rbf::Biharmonic2D<Dim>>(m, "Biharmonic2D");
+  define_rbf<Dim, rbf::Biharmonic3D<Dim>>(m, "Biharmonic3D");
+  define_rbf<Dim, rbf::CovCubic<Dim>>(m, "CovCubic");
+  define_rbf<Dim, rbf::CovExponential<Dim>>(m, "CovExponential");
+  define_rbf<Dim, rbf::CovGaussian<Dim>>(m, "CovGaussian");
+  define_rbf<Dim, rbf::CovGeneralizedCauchy3<Dim>>(m, "CovGeneralizedCauchy3");
+  define_rbf<Dim, rbf::CovGeneralizedCauchy5<Dim>>(m, "CovGeneralizedCauchy5");
+  define_rbf<Dim, rbf::CovGeneralizedCauchy7<Dim>>(m, "CovGeneralizedCauchy7");
+  define_rbf<Dim, rbf::CovGeneralizedCauchy9<Dim>>(m, "CovGeneralizedCauchy9");
+  define_rbf<Dim, rbf::CovSpherical<Dim>>(m, "CovSpherical");
+  define_rbf<Dim, rbf::CovSpheroidal3<Dim>>(m, "CovSpheroidal3");
+  define_rbf<Dim, rbf::CovSpheroidal5<Dim>>(m, "CovSpheroidal5");
+  define_rbf<Dim, rbf::CovSpheroidal7<Dim>>(m, "CovSpheroidal7");
+  define_rbf<Dim, rbf::CovSpheroidal9<Dim>>(m, "CovSpheroidal9");
+  define_rbf<Dim, rbf::InverseMultiquadric1<Dim>>(m, "InverseMultiquadric1");
+  define_rbf<Dim, rbf::Multiquadric1<Dim>>(m, "Multiquadric1");
+  define_rbf<Dim, rbf::Multiquadric3<Dim>>(m, "Multiquadric3");
+  define_rbf<Dim, rbf::Triharmonic2D<Dim>>(m, "Triharmonic2D");
+  define_rbf<Dim, rbf::Triharmonic3D<Dim>>(m, "Triharmonic3D");
 
   py::class_<Model>(m, "Model")
-      .def(py::init<RbfProxy, int>(), "rbf"_a, "poly_degree"_a = Model::kMinRequiredPolyDegree)
-      .def(py::init<std::vector<RbfProxy>, int>(), "rbfs"_a,
+      .def(py::init<Rbf, int>(), "rbf"_a, "poly_degree"_a = Model::kMinRequiredPolyDegree)
+      .def(py::init<std::vector<Rbf>, int>(), "rbfs"_a,
            "poly_degree"_a = Model::kMinRequiredPolyDegree)
       .def_readonly_static("MIN_REQUIRED_POLY_DEGREE", &Model::kMinRequiredPolyDegree)
       .def_property_readonly("cpd_order", &Model::cpd_order)
@@ -94,8 +94,8 @@ void define_module(py::module& m) {
       .def_property("parameters", &Model::parameters, &Model::set_parameters)
       .def_property_readonly("poly_basis_size", &Model::poly_basis_size)
       .def_property_readonly("poly_degree", &Model::poly_degree)
-      .def_property_readonly(
-          "rbfs", static_cast<const std::vector<RbfProxy>& (Model::*)() const>(&Model::rbfs))
+      .def_property_readonly("rbfs",
+                             static_cast<const std::vector<Rbf>& (Model::*)() const>(&Model::rbfs))
       .def_static("load", &Model::load, "filename"_a)
       .def("save", &Model::save, "filename"_a);
 
@@ -111,30 +111,29 @@ void define_module(py::module& m) {
       .def("evaluate",
            py::overload_cast<const Points&, const Points&, double, double>(&Interpolant::evaluate),
            "points"_a, "grad_points"_a, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity)
-      .def(
-          "fit",
-          py::overload_cast<const Points&, const vectord&, double, int, double, const Interpolant*>(
-              &Interpolant::fit),
-          "points"_a, "values"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
-          "initial"_a = nullptr)
       .def("fit",
-           py::overload_cast<const Points&, const Points&, const vectord&, double, double, int,
-                             double, double, const Interpolant*>(&Interpolant::fit),
+           py::overload_cast<const Points&, const VecX&, double, int, double, const Interpolant*>(
+               &Interpolant::fit),
+           "points"_a, "values"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
+           "initial"_a = nullptr)
+      .def("fit",
+           py::overload_cast<const Points&, const Points&, const VecX&, double, double, int, double,
+                             double, const Interpolant*>(&Interpolant::fit),
            "points"_a, "grad_points"_a, "values"_a, "tolerance"_a, "grad_tolerance"_a,
            "max_iter"_a = 100, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity,
            "initial"_a = nullptr)
       .def("fit_incrementally",
-           py::overload_cast<const Points&, const vectord&, double, int, double>(
+           py::overload_cast<const Points&, const VecX&, double, int, double>(
                &Interpolant::fit_incrementally),
            "points"_a, "values"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity)
       .def("fit_incrementally",
-           py::overload_cast<const Points&, const Points&, const vectord&, double, double, int,
-                             double, double>(&Interpolant::fit_incrementally),
+           py::overload_cast<const Points&, const Points&, const VecX&, double, double, int, double,
+                             double>(&Interpolant::fit_incrementally),
            "points"_a, "grad_points"_a, "values"_a, "tolerance"_a, "grad_tolerance"_a,
            "max_iter"_a = 100, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity)
       .def("fit_inequality",
-           py::overload_cast<const Points&, const vectord&, const vectord&, const vectord&, double,
-                             int, double, const Interpolant*>(&Interpolant::fit_inequality),
+           py::overload_cast<const Points&, const VecX&, const VecX&, const VecX&, double, int,
+                             double, const Interpolant*>(&Interpolant::fit_inequality),
            "points"_a, "values"_a, "values_lb"_a, "values_ub"_a, "tolerance"_a, "max_iter"_a = 100,
            "accuracy"_a = kInfinity, "initial"_a = nullptr)
       .def_static("load", &Interpolant::load, "filename"_a)
@@ -155,7 +154,7 @@ void define_module(py::module& m) {
       .def("back_transform", &Variogram::back_transform, "t"_a);
 
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
-      .def(py::init<double, index_t>(), "lag_distance"_a, "num_lags"_a)
+      .def(py::init<double, Index>(), "lag_distance"_a, "num_lags"_a)
       .def_readonly_static("AUTOMATIC_ANGLE_TOLERANCE",
                            &VariogramCalculator::kAutomaticAngleTolerance)
       .def_readonly_static("AUTOMATIC_LAG_TOLERANCE", &VariogramCalculator::kAutomaticLagTolerance)
@@ -170,9 +169,9 @@ void define_module(py::module& m) {
       .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
 
   py::class_<VariogramFitting>(m, "VariogramFitting")
-      .def(py::init<const VariogramSet&, const Model&, const kriging::weight_function&, bool>(),
+      .def(py::init<const VariogramSet&, const Model&, const kriging::WeightFunction&, bool>(),
            "variog_set"_a, "model"_a,
-           "weight_fn"_a = kriging::weight_function::kNumPairsOverDistanceSquared,
+           "weight_fn"_a = kriging::WeightFunction::kNumPairsOverDistanceSquared,
            "fit_anisotropy"_a = true)
       .def_property_readonly("brief_report", &VariogramFitting::brief_report)
       .def_property_readonly("full_report", &VariogramFitting::full_report)
@@ -194,20 +193,20 @@ void define_module(py::module& m) {
 }
 
 PYBIND11_MODULE(_core, m) {
-  using Bbox = geometry::bbox3d;
-  using Matrix = geometry::matrix3d;
-  using NormalEstimator = point_cloud::normal_estimator;
+  using Bbox = geometry::Bbox3;
+  using Mat = Mat3;
+  using NormalEstimator = point_cloud::NormalEstimator;
 
   py::class_<NormalEstimator>(m, "NormalEstimator")
-      .def(py::init<const geometry::points3d&>(), "points"_a)
+      .def(py::init<const geometry::Points3&>(), "points"_a)
       .def_property_readonly("normals", &NormalEstimator::normals)
       .def_property_readonly("plane_factors", &NormalEstimator::plane_factors)
       .def("estimate_with_knn",
-           static_cast<NormalEstimator& (NormalEstimator::*)(index_t)&>(
+           static_cast<NormalEstimator& (NormalEstimator::*)(Index)&>(
                &NormalEstimator::estimate_with_knn),
            "k"_a)
       .def("estimate_with_knn",
-           static_cast<NormalEstimator& (NormalEstimator::*)(const std::vector<index_t>&)&>(
+           static_cast<NormalEstimator& (NormalEstimator::*)(const std::vector<Index>&)&>(
                &NormalEstimator::estimate_with_knn),
            "ks"_a)
       .def("estimate_with_radius",
@@ -223,68 +222,66 @@ PYBIND11_MODULE(_core, m) {
                &NormalEstimator::filter_by_plane_factor),
            "threshold"_a = 1.8)
       .def("orient_toward_direction",
-           static_cast<NormalEstimator& (NormalEstimator::*)(const geometry::vector3d&)&>(
+           static_cast<NormalEstimator& (NormalEstimator::*)(const geometry::Vector3&)&>(
                &NormalEstimator::orient_toward_direction),
            "direction"_a)
       .def("orient_toward_point",
-           static_cast<NormalEstimator& (NormalEstimator::*)(const geometry::point3d&)&>(
+           static_cast<NormalEstimator& (NormalEstimator::*)(const geometry::Point3&)&>(
                &NormalEstimator::orient_toward_point),
            "point"_a)
       .def("orient_closed_surface",
-           static_cast<NormalEstimator& (NormalEstimator::*)(index_t)&>(
+           static_cast<NormalEstimator& (NormalEstimator::*)(Index)&>(
                &NormalEstimator::orient_closed_surface),
            "k"_a = 100);
 
-  py::class_<point_cloud::sdf_data_generator>(m, "SdfDataGenerator")
-      .def(py::init<const geometry::points3d&, const geometry::vectors3d&, double, double,
-                    const Matrix&>(),
-           "points"_a, "normals"_a, "min_distance"_a, "max_distance"_a,
-           "aniso"_a = Matrix::Identity())
-      .def_property_readonly("sdf_points", &point_cloud::sdf_data_generator::sdf_points)
-      .def_property_readonly("sdf_values", &point_cloud::sdf_data_generator::sdf_values);
+  py::class_<point_cloud::SdfDataGenerator>(m, "SdfDataGenerator")
+      .def(py::init<const geometry::Points3&, const geometry::Vectors3&, double, double,
+                    const Mat&>(),
+           "points"_a, "normals"_a, "min_distance"_a, "max_distance"_a, "aniso"_a = Mat::Identity())
+      .def_property_readonly("sdf_points", &point_cloud::SdfDataGenerator::sdf_points)
+      .def_property_readonly("sdf_values", &point_cloud::SdfDataGenerator::sdf_values);
 
-  py::class_<isosurface::field_function>(m, "_FieldFunction");
+  py::class_<isosurface::FieldFunction>(m, "_FieldFunction");
 
-  py::class_<isosurface::rbf_field_function, isosurface::field_function>(m, "RbfFieldFunction")
-      .def(py::init<interpolant<3>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
+  py::class_<isosurface::RbfFieldFunction, isosurface::FieldFunction>(m, "RbfFieldFunction")
+      .def(py::init<Interpolant<3>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
            "grad_accuracy"_a = kInfinity);
 
-  py::class_<isosurface::rbf_field_function_25d, isosurface::field_function>(m,
-                                                                             "RbfFieldFunction25d")
-      .def(py::init<interpolant<2>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
+  py::class_<isosurface::RbfFieldFunction25D, isosurface::FieldFunction>(m, "RbfFieldFunction25D")
+      .def(py::init<Interpolant<2>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
            "grad_accuracy"_a = kInfinity);
 
-  py::class_<isosurface::isosurface>(m, "Isosurface")
-      .def(py::init<const Bbox&, double, const Matrix&>(), "bbox"_a, "resolution"_a,
-           "aniso"_a = Matrix::Identity())
-      .def("generate", &isosurface::isosurface::generate, "field_fn"_a, "isovalue"_a = 0.0,
+  py::class_<isosurface::Isosurface>(m, "Isosurface")
+      .def(py::init<const Bbox&, double, const Mat&>(), "bbox"_a, "resolution"_a,
+           "aniso"_a = Mat::Identity())
+      .def("generate", &isosurface::Isosurface::generate, "field_fn"_a, "isovalue"_a = 0.0,
            "refine"_a = 1)
-      .def("generate_from_seed_points", &isosurface::isosurface::generate_from_seed_points,
+      .def("generate_from_seed_points", &isosurface::Isosurface::generate_from_seed_points,
            "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = 1);
 
-  py::class_<isosurface::mesh>(m, "Mesh")
-      .def("export_obj", &isosurface::mesh::export_obj, "filename"_a)
-      .def_property_readonly("faces", &isosurface::mesh::faces)
-      .def_property_readonly("vertices", &isosurface::mesh::vertices);
+  py::class_<isosurface::Mesh>(m, "Mesh")
+      .def("export_obj", &isosurface::Mesh::export_obj, "filename"_a)
+      .def_property_readonly("faces", &isosurface::Mesh::faces)
+      .def_property_readonly("vertices", &isosurface::Mesh::vertices);
 
-  py::class_<kriging::normal_score_transformation>(m, "NormalScoreTransformation")
+  py::class_<kriging::NormalScoreTransformation>(m, "NormalScoreTransformation")
       .def(py::init<int>(), "order"_a = 30)
-      .def("transform", &kriging::normal_score_transformation::transform, "z"_a)
-      .def("back_transform", &kriging::normal_score_transformation::back_transform, "y"_a);
+      .def("transform", &kriging::NormalScoreTransformation::transform, "z"_a)
+      .def("back_transform", &kriging::NormalScoreTransformation::back_transform, "y"_a);
 
-  py::class_<kriging::weight_function>(m, "WeightFunction")
+  py::class_<kriging::WeightFunction>(m, "WeightFunction")
       .def(py::init<double, double, double>(), "exp_distance"_a = 0.0, "exp_model_gamma"_a = 0.0,
            "exp_num_pairs"_a = 0.0)
-      .def_readonly_static("NUM_PAIRS", &kriging::weight_function::kNumPairs)
+      .def_readonly_static("NUM_PAIRS", &kriging::WeightFunction::kNumPairs)
       .def_readonly_static("NUM_PAIRS_OVER_DISTANCE_SQUARED",
-                           &kriging::weight_function::kNumPairsOverDistanceSquared)
+                           &kriging::WeightFunction::kNumPairsOverDistanceSquared)
       .def_readonly_static("NUM_PAIRS_OVER_MODEL_GAMMA_SQUARED",
-                           &kriging::weight_function::kNumPairsOverModelGammaSquared)
-      .def_readonly_static("ONE", &kriging::weight_function::kOne)
+                           &kriging::WeightFunction::kNumPairsOverModelGammaSquared)
+      .def_readonly_static("ONE", &kriging::WeightFunction::kOne)
       .def_readonly_static("ONE_OVER_DISTANCE_SQUARED",
-                           &kriging::weight_function::kOneOverDistanceSquared)
+                           &kriging::WeightFunction::kOneOverDistanceSquared)
       .def_readonly_static("ONE_OVER_MODEL_GAMMA_SQUARED",
-                           &kriging::weight_function::kOneOverModelGammaSquared);
+                           &kriging::WeightFunction::kOneOverModelGammaSquared);
 
   m.attr("__version__") = xstr(POLATORY_VERSION);
 

@@ -13,76 +13,74 @@
 namespace polatory::fmm {
 
 template <int Dim>
-class fmm_generic_symmetric_evaluator_base {
+class FmmGenericSymmetricEvaluatorBase {
   static constexpr int kDim = Dim;
-  using Points = geometry::pointsNd<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
-  fmm_generic_symmetric_evaluator_base() = default;
+  FmmGenericSymmetricEvaluatorBase() = default;
 
-  virtual ~fmm_generic_symmetric_evaluator_base() = default;
+  virtual ~FmmGenericSymmetricEvaluatorBase() = default;
 
-  fmm_generic_symmetric_evaluator_base(const fmm_generic_symmetric_evaluator_base&) = delete;
-  fmm_generic_symmetric_evaluator_base(fmm_generic_symmetric_evaluator_base&&) = delete;
-  fmm_generic_symmetric_evaluator_base& operator=(const fmm_generic_symmetric_evaluator_base&) =
-      delete;
-  fmm_generic_symmetric_evaluator_base& operator=(fmm_generic_symmetric_evaluator_base&&) = delete;
+  FmmGenericSymmetricEvaluatorBase(const FmmGenericSymmetricEvaluatorBase&) = delete;
+  FmmGenericSymmetricEvaluatorBase(FmmGenericSymmetricEvaluatorBase&&) = delete;
+  FmmGenericSymmetricEvaluatorBase& operator=(const FmmGenericSymmetricEvaluatorBase&) = delete;
+  FmmGenericSymmetricEvaluatorBase& operator=(FmmGenericSymmetricEvaluatorBase&&) = delete;
 
-  virtual vectord evaluate() const = 0;
+  virtual VecX evaluate() const = 0;
 
   virtual void set_accuracy(double accuracy) = 0;
 
   virtual void set_points(const Points& points) = 0;
 
-  virtual void set_weights(const Eigen::Ref<const vectord>& weights) = 0;
+  virtual void set_weights(const Eigen::Ref<const VecX>& weights) = 0;
 };
 
 template <int Dim>
-using FmmGenericSymmetricEvaluatorPtr = std::unique_ptr<fmm_generic_symmetric_evaluator_base<Dim>>;
+using FmmGenericSymmetricEvaluatorPtr = std::unique_ptr<FmmGenericSymmetricEvaluatorBase<Dim>>;
 
 template <class Rbf, class Kernel>
-class fmm_generic_symmetric_evaluator final
-    : public fmm_generic_symmetric_evaluator_base<Rbf::kDim> {
+class FmmGenericSymmetricEvaluator final : public FmmGenericSymmetricEvaluatorBase<Rbf::kDim> {
   static constexpr int kDim = Rbf::kDim;
-  using Bbox = geometry::bboxNd<kDim>;
-  using Points = geometry::pointsNd<kDim>;
+  using Bbox = geometry::Bbox<kDim>;
+  using Points = geometry::Points<kDim>;
 
  public:
-  fmm_generic_symmetric_evaluator(const Rbf& rbf, const Bbox& bbox);
+  FmmGenericSymmetricEvaluator(const Rbf& rbf, const Bbox& bbox);
 
-  ~fmm_generic_symmetric_evaluator() override;
+  ~FmmGenericSymmetricEvaluator() override;
 
-  fmm_generic_symmetric_evaluator(const fmm_generic_symmetric_evaluator&) = delete;
-  fmm_generic_symmetric_evaluator(fmm_generic_symmetric_evaluator&&) = delete;
-  fmm_generic_symmetric_evaluator& operator=(const fmm_generic_symmetric_evaluator&) = delete;
-  fmm_generic_symmetric_evaluator& operator=(fmm_generic_symmetric_evaluator&&) = delete;
+  FmmGenericSymmetricEvaluator(const FmmGenericSymmetricEvaluator&) = delete;
+  FmmGenericSymmetricEvaluator(FmmGenericSymmetricEvaluator&&) = delete;
+  FmmGenericSymmetricEvaluator& operator=(const FmmGenericSymmetricEvaluator&) = delete;
+  FmmGenericSymmetricEvaluator& operator=(FmmGenericSymmetricEvaluator&&) = delete;
 
-  vectord evaluate() const override;
+  VecX evaluate() const override;
 
   void set_accuracy(double accuracy) override;
 
   void set_points(const Points& points) override;
 
-  void set_weights(const Eigen::Ref<const vectord>& weights) override;
+  void set_weights(const Eigen::Ref<const VecX>& weights) override;
 
  private:
-  class impl;
+  class Impl;
 
-  std::unique_ptr<impl> impl_;
+  std::unique_ptr<Impl> impl_;
 };
 
 template <class Rbf>
-using fmm_symmetric_evaluator = fmm_generic_symmetric_evaluator<Rbf, kernel<Rbf>>;
+using FmmSymmetricEvaluator = FmmGenericSymmetricEvaluator<Rbf, Kernel<Rbf>>;
 
 template <class Rbf>
-using fmm_hessian_symmetric_evaluator = fmm_generic_symmetric_evaluator<Rbf, hessian_kernel<Rbf>>;
+using FmmHessianSymmetricEvaluator = FmmGenericSymmetricEvaluator<Rbf, HessianKernel<Rbf>>;
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(
-    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox);
+FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf::Rbf<Dim>& rbf,
+                                                                  const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
 FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(
-    const rbf::rbf_proxy<Dim>& rbf, const geometry::bboxNd<Dim>& bbox);
+    const rbf::Rbf<Dim>& rbf, const geometry::Bbox<Dim>& bbox);
 
 }  // namespace polatory::fmm

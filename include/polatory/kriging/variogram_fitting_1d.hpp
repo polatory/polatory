@@ -16,23 +16,22 @@
 namespace polatory::kriging {
 
 template <>
-class variogram_fitting<1> {
-  using Matrix = geometry::matrix1d;
-  using Model = model<1>;
-  using Variogram = variogram<1>;
-  using VariogramSet = variogram_set<1>;
+class VariogramFitting<1> {
+  using Mat = Mat1;
+  using Model = Model<1>;
+  using Variogram = Variogram<1>;
+  using VariogramSet = VariogramSet<1>;
 
  public:
-  variogram_fitting(
-      const VariogramSet& variog_set, const Model& model,
-      const weight_function& weight_fn = weight_function::kNumPairsOverDistanceSquared,
-      bool /*fit_anisotropy*/ = true)
+  VariogramFitting(const VariogramSet& variog_set, const Model& model,
+                   const WeightFunction& weight_fn = WeightFunction::kNumPairsOverDistanceSquared,
+                   bool /*fit_anisotropy*/ = true)
       : model_template_(model),
         num_params_(model.num_parameters()),
         num_rbfs_(model.num_rbfs()),
         params_(model.parameters()) {
     for (auto& rbf : model_template_.rbfs()) {
-      rbf.set_anisotropy(Matrix::Identity());
+      rbf.set_anisotropy(Mat::Identity());
     }
 
     ceres::Problem problem;
@@ -40,14 +39,14 @@ class variogram_fitting<1> {
     problem.AddParameterBlock(params_.data(), num_params_);
     auto lbs = model.parameter_lower_bounds();
     auto ubs = model.parameter_upper_bounds();
-    for (index_t i = 0; i < num_params_; i++) {
+    for (Index i = 0; i < num_params_; i++) {
       problem.SetParameterLowerBound(params_.data(), i, lbs.at(i));
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
 
     for (const auto& variog : variog_set.variograms()) {
       auto* cost_fn = new ceres::DynamicNumericDiffCostFunction(
-          new residual(model_template_, variog, weight_fn));
+          new Residual(model_template_, variog, weight_fn));
       cost_fn->AddParameterBlock(num_params_);
       cost_fn->SetNumResiduals(variog.num_bins());
       problem.AddResidualBlock(cost_fn, nullptr, params_.data());
@@ -75,8 +74,8 @@ class variogram_fitting<1> {
   }
 
  private:
-  struct residual {
-    residual(const Model& model_template, const Variogram& variog, const weight_function& weight_fn)
+  struct Residual {
+    Residual(const Model& model_template, const Variogram& variog, const WeightFunction& weight_fn)
         : model_template_(model_template), variog_(variog), weight_fn_(weight_fn) {}
 
     bool operator()(const double* const* param_blocks, double* residuals) const {
@@ -94,12 +93,12 @@ class variogram_fitting<1> {
    private:
     const Model& model_template_;
     const Variogram& variog_;
-    const weight_function& weight_fn_;
+    const WeightFunction& weight_fn_;
   };
 
   Model model_template_;
-  index_t num_params_;
-  index_t num_rbfs_;
+  Index num_params_;
+  Index num_rbfs_;
   std::vector<double> params_;
   ceres::Solver::Summary summary_;
 };

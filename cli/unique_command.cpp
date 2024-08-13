@@ -7,15 +7,15 @@
 
 #include "commands.hpp"
 
-using polatory::matrixd;
+using polatory::MatX;
 using polatory::read_table;
 using polatory::write_table;
-using polatory::geometry::pointsNd;
-using polatory::point_cloud::distance_filter;
+using polatory::geometry::Points;
+using polatory::point_cloud::DistanceFilter;
 
 namespace {
 
-struct options {
+struct Options {
   std::string in_file;
   int dim{};
   double dist{};
@@ -23,23 +23,23 @@ struct options {
 };
 
 template <int Dim>
-void run_impl(const options& opts) {
-  using Points = pointsNd<Dim>;
+void run_impl(const Options& opts) {
+  using Points = Points<Dim>;
 
-  matrixd table = read_table(opts.in_file);
+  MatX table = read_table(opts.in_file);
   Points points = table(Eigen::all, Eigen::seqN(0, Dim));
 
-  table = distance_filter(points).filter(opts.dist)(table);
+  table = DistanceFilter(points).filter(opts.dist)(table);
 
   write_table(opts.out_file, table);
 }
 
 }  // namespace
 
-void unique_command::run(const std::vector<std::string>& args, const global_options& global_opts) {
+void UniqueCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
   namespace po = boost::program_options;
 
-  options opts;
+  Options opts;
 
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //

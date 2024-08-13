@@ -6,9 +6,9 @@
 
 namespace polatory::isosurface::rmt {
 
-class node_list : public std::unordered_map<lattice_coordinates, node, lattice_coordinates_hash> {
+class NodeList : public std::unordered_map<LatticeCoordinates, Node, LatticeCoordinatesHash> {
  public:
-  node* node_ptr(const lattice_coordinates& lc) {
+  Node* node_ptr(const LatticeCoordinates& lc) {
     auto it = find(lc);
     return it != end() ? &it->second : nullptr;
   }

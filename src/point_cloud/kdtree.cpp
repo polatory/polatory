@@ -10,13 +10,13 @@ using pop_t = unsigned long long;
 namespace polatory::point_cloud {
 
 template <int Dim>
-class kdtree<Dim>::impl {
-  using Point = geometry::pointNd<Dim>;
-  using Points = geometry::pointsNd<Dim>;
+class KdTree<Dim>::Impl {
   using FlannIndex = flann::Index<flann::L2<double>>;
+  using Point = geometry::Point<Dim>;
+  using Points = geometry::Points<Dim>;
 
  public:
-  explicit impl(const Points& points) {
+  explicit Impl(const Points& points) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(), Dim);
 
@@ -27,7 +27,7 @@ class kdtree<Dim>::impl {
     params_radius_.checks = flann::FLANN_CHECKS_UNLIMITED;
   }
 
-  void knn_search(const Point& point, index_t k, std::vector<index_t>& indices,
+  void knn_search(const Point& point, Index k, std::vector<Index>& indices,
                   std::vector<double>& distances) const {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, Dim);
@@ -38,13 +38,13 @@ class kdtree<Dim>::impl {
     distances.resize(distances_v_[0].size());
 
     std::transform(indices_v_[0].begin(), indices_v_[0].end(), indices.begin(),
-                   [](auto i) { return static_cast<index_t>(i); });
+                   [](auto i) { return static_cast<Index>(i); });
 
     std::transform(distances_v_[0].begin(), distances_v_[0].end(), distances.begin(),
                    [](auto d) { return std::sqrt(d); });
   }
 
-  void radius_search(const Point& point, double radius, std::vector<index_t>& indices,
+  void radius_search(const Point& point, double radius, std::vector<Index>& indices,
                      std::vector<double>& distances) const {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, Dim);
@@ -57,7 +57,7 @@ class kdtree<Dim>::impl {
     distances.resize(distances_v_[0].size());
 
     std::transform(indices_v_[0].begin(), indices_v_[0].end(), indices.begin(),
-                   [](auto i) { return static_cast<index_t>(i); });
+                   [](auto i) { return static_cast<Index>(i); });
 
     std::transform(distances_v_[0].begin(), distances_v_[0].end(), distances.begin(),
                    [](auto d) { return std::sqrt(d); });
@@ -72,42 +72,42 @@ class kdtree<Dim>::impl {
 };
 
 template <int Dim>
-kdtree<Dim>::kdtree(const Points& points)
-    : pimpl_(points.rows() == 0 ? nullptr : std::make_unique<impl>(points)) {}
+KdTree<Dim>::KdTree(const Points& points)
+    : impl_(points.rows() == 0 ? nullptr : std::make_unique<Impl>(points)) {}
 
 template <int Dim>
-kdtree<Dim>::~kdtree() = default;
+KdTree<Dim>::~KdTree() = default;
 
 template <int Dim>
-void kdtree<Dim>::knn_search(const Point& point, index_t k, std::vector<index_t>& indices,
+void KdTree<Dim>::knn_search(const Point& point, Index k, std::vector<Index>& indices,
                              std::vector<double>& distances) const {
   if (k <= 0) {
     throw std::invalid_argument("k must be positive");
   }
 
-  if (!pimpl_) {
+  if (!impl_) {
     return;
   }
 
-  pimpl_->knn_search(point, k, indices, distances);
+  impl_->knn_search(point, k, indices, distances);
 }
 
 template <int Dim>
-void kdtree<Dim>::radius_search(const Point& point, double radius, std::vector<index_t>& indices,
+void KdTree<Dim>::radius_search(const Point& point, double radius, std::vector<Index>& indices,
                                 std::vector<double>& distances) const {
   if (!(radius >= 0.0)) {
     throw std::invalid_argument("radius must be non-negative");
   }
 
-  if (!pimpl_) {
+  if (!impl_) {
     return;
   }
 
-  pimpl_->radius_search(point, radius, indices, distances);
+  impl_->radius_search(point, radius, indices, distances);
 }
 
-template class kdtree<1>;
-template class kdtree<2>;
-template class kdtree<3>;
+template class KdTree<1>;
+template class KdTree<2>;
+template class KdTree<3>;
 
 }  // namespace polatory::point_cloud

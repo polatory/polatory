@@ -7,26 +7,25 @@
 namespace polatory::point_cloud {
 
 // Generates signed distance function data from given points and normals.
-class sdf_data_generator {
+class SdfDataGenerator {
  public:
-  sdf_data_generator(const geometry::points3d& points, const geometry::vectors3d& normals,
-                     double min_distance, double max_distance);
+  SdfDataGenerator(const geometry::Points3& points, const geometry::Vectors3& normals,
+                   double min_distance, double max_distance);
 
-  sdf_data_generator(const geometry::points3d& points, const geometry::vectors3d& normals,
-                     double min_distance, double max_distance, const geometry::matrix3d& aniso);
+  SdfDataGenerator(const geometry::Points3& points, const geometry::Vectors3& normals,
+                   double min_distance, double max_distance, const Mat3& aniso);
 
-  const geometry::points3d& sdf_points() const;
+  const geometry::Points3& sdf_points() const;
 
-  const vectord& sdf_values() const;
+  const VecX& sdf_values() const;
 
  private:
-  static std::pair<geometry::points3d, vectord> estimate_impl(const geometry::points3d& points,
-                                                              const geometry::vectors3d& normals,
-                                                              double min_distance,
-                                                              double max_distance);
+  static std::pair<geometry::Points3, VecX> estimate_impl(const geometry::Points3& points,
+                                                          const geometry::Vectors3& normals,
+                                                          double min_distance, double max_distance);
 
-  geometry::points3d sdf_points_;
-  vectord sdf_values_;
+  geometry::Points3 sdf_points_;
+  VecX sdf_values_;
 };
 
 }  // namespace polatory::point_cloud
