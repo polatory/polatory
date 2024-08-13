@@ -169,31 +169,19 @@ normal_estimator& normal_estimator::orient_toward_point(const geometry::point3d&
   return *this;
 }
 
-class weighted_pair {
- public:
-  weighted_pair(index_t first, index_t second, double weight)
-      : first_(first), second_(second), weight_(weight) {}
+struct weighted_pair {
+  bool operator<(const weighted_pair& rhs) const { return weight < rhs.weight; }
 
-  bool operator<(const weighted_pair& rhs) const { return weight_ < rhs.weight_; }
-
-  index_t first() const { return first_; }
-
-  index_t second() const { return second_; }
-
-  double weight() const { return weight_; }
-
- private:
-  index_t first_;
-  index_t second_;
-  double weight_;
+  index_t first{};
+  index_t second{};
+  double weight{};
 };
 
 normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
   throw_if_not_estimated();
 
-  auto bbox = geometry::bbox3d::from_points(points_);
-  auto center = bbox.center();
-  geometry::point3d p_outer{center(0), bbox.min()(1) - 1.0, center(2)};
+  geometry::vector3d seed_point_direction{-geometry::vector3d::UnitY()};
+  index_t n_connected_components{};
 
   std::vector<bool> oriented(n_points_, false);
   for (index_t i = 0; i < n_points_; i++) {
@@ -202,73 +190,79 @@ normal_estimator& normal_estimator::orient_closed_surface(index_t k) & {
     }
   }
 
-  std::vector<index_t> indices(n_points_);
-  std::iota(indices.begin(), indices.end(), 0);
-  {
-    std::vector<double> distances(n_points_);
-    for (index_t i = 0; i < n_points_; i++) {
-      geometry::point3d p = points_.row(i);
-      distances.at(i) = (p_outer - p).norm();
-    }
-    std::sort(indices.begin(), indices.end(),
-              [&](auto i, auto j) { return distances.at(i) < distances.at(j); });
-  }
-  auto indices_it = indices.begin();
-
+  auto it = oriented.begin();
+  std::vector<index_t> connected_component;
   std::priority_queue<weighted_pair> queue;
   std::vector<index_t> nn_indices;
   std::vector<double> nn_distances;
-
-  index_t n_connected_components{};
-  while (std::find(oriented.begin(), oriented.end(), false) != oriented.end()) {
-    while (oriented.at(*indices_it)) {
-      indices_it++;
+  while (true) {
+    it = std::find(it, oriented.end(), false);
+    if (it == oriented.end()) {
+      break;
     }
 
-    auto i_closest = *indices_it;
-    geometry::point3d p_closest = points_.row(i_closest);
-    if (normals_.row(i_closest).dot(p_outer - p_closest) < 0.0) {
-      normals_.row(i_closest) *= -1.0;
-    }
-    oriented.at(i_closest) = true;
+    connected_component.clear();
 
-    tree_.knn_search(p_closest, k, nn_indices, nn_distances);
-    for (auto j : nn_indices) {
-      if (oriented.at(j)) {
-        continue;
-      }
+    {
+      auto cur = static_cast<index_t>(std::distance(oriented.begin(), it));
+      oriented.at(cur) = true;
+      connected_component.push_back(cur);
 
-      auto weight = std::abs(normals_.row(i_closest).dot(normals_.row(j))) /
-                    (p_closest - points_.row(j)).norm();
-      queue.emplace(i_closest, j, weight);
-    }
+      auto p_cur = points_.row(cur);
+      auto n_cur = normals_.row(cur);
 
-    while (!queue.empty()) {
-      auto pair = queue.top();
-      queue.pop();
-
-      auto i = pair.first();
-      auto j = pair.second();
-      if (oriented.at(j)) {
-        continue;
-      }
-
-      if (normals_.row(i).dot(normals_.row(j)) < 0.0) {
-        normals_.row(j) *= -1.0;
-      }
-      oriented.at(j) = true;
-
-      geometry::point3d p = points_.row(j);
-      tree_.knn_search(p, k, nn_indices, nn_distances);
-      for (auto kk : nn_indices) {
-        if (oriented.at(kk)) {
+      tree_.knn_search(p_cur, k, nn_indices, nn_distances);
+      for (auto next : nn_indices) {
+        if (oriented.at(next)) {
           continue;
         }
 
-        auto weight =
-            std::abs(normals_.row(j).dot(normals_.row(kk))) / (p - points_.row(kk)).norm();
-        queue.emplace(j, kk, weight);
+        auto p_next = points_.row(next);
+        auto n_next = normals_.row(next);
+
+        auto w_next = std::abs(n_next.dot(n_cur)) / (p_next - p_cur).norm();
+        queue.emplace(cur, next, w_next);
       }
+    }
+
+    while (!queue.empty()) {
+      auto [prev, cur, w_cur] = queue.top();
+      queue.pop();
+      if (oriented.at(cur)) {
+        continue;
+      }
+
+      auto n_prev = normals_.row(prev);
+      auto p_cur = points_.row(cur);
+      auto n_cur = normals_.row(cur);
+
+      if (n_cur.dot(n_prev) < 0.0) {
+        n_cur *= -1.0;
+      }
+      oriented.at(cur) = true;
+      connected_component.push_back(cur);
+
+      tree_.knn_search(p_cur, k, nn_indices, nn_distances);
+      for (auto next : nn_indices) {
+        if (oriented.at(next)) {
+          continue;
+        }
+
+        auto p_next = points_.row(next);
+        auto n_next = normals_.row(next);
+
+        auto w_next = std::abs(n_next.dot(n_cur)) / (p_next - p_cur).norm();
+        queue.emplace(cur, next, w_next);
+      }
+    }
+
+    auto seed_it = std::max_element(connected_component.begin(), connected_component.end(),
+                                    [&](auto i, auto j) {
+                                      return points_.row(i).dot(seed_point_direction) <
+                                             points_.row(j).dot(seed_point_direction);
+                                    });
+    if (normals_.row(*seed_it).dot(seed_point_direction) < 0.0) {
+      normals_(connected_component, Eigen::all) *= -1.0;
     }
 
     n_connected_components++;
