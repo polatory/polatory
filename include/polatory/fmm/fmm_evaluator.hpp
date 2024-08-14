@@ -8,8 +8,8 @@
 #include <polatory/fmm/kernel.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_base.hpp>
-#include <polatory/rbf/rbf_proxy.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::fmm {

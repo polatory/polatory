@@ -8,7 +8,7 @@
 #include <polatory/common/io.hpp>
 #include <polatory/geometry/anisotropy.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
-#include <polatory/rbf/rbf_proxy.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/types.hpp>
 #include <sstream>
 #include <stdexcept>

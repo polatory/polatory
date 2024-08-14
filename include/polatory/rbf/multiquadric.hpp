@@ -2,8 +2,8 @@
 
 #include <cmath>
 #include <limits>
+#include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_base.hpp>
-#include <polatory/rbf/rbf_proxy.hpp>
 #include <string>
 #include <vector>
 

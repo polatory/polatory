@@ -17,7 +17,7 @@
 #include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/rbf/rbf_proxy.hpp>
+#include <polatory/rbf/rbf.hpp>
 #include <stdexcept>
 
 namespace polatory::rbf {

@@ -3,7 +3,7 @@
 #include <polatory/common/io.hpp>
 #include <polatory/fmm/interpolator_configuration.hpp>
 #include <polatory/rbf/make_rbf.hpp>
-#include <polatory/rbf/rbf_proxy.hpp>
+#include <polatory/rbf/rbf.hpp>
 
 namespace polatory::common {
 
