@@ -129,7 +129,7 @@ class InequalityFitter {
         auto ub_res = std::isnan(ub) ? 0.0 : std::max(values_fit(i) - ub, 0.0);
         residuals(i) = std::max(lb_res, ub_res);
       }
-      common::zip_sort(indices.begin(), indices.end(), residuals.begin(), residuals.end(),
+      common::zip_sort(indices.begin(), indices.end(), residuals.begin(),
                        [](const auto& a, const auto& b) { return a.second > b.second; });
       filter.filter(filtering_distance, indices);
       std::unordered_set<Index> filtered_indices(filter.filtered_indices().begin(),

@@ -110,11 +110,10 @@ class IncrementalFitter {
 
       // Sort remaining points by their residuals.
 
-      common::zip_sort(c_centers.begin(), c_centers.end(), c_residuals.begin(), c_residuals.end(),
+      common::zip_sort(c_centers.begin(), c_centers.end(), c_residuals.begin(),
                        [](const auto& a, const auto& b) { return a.second < b.second; });
 
       common::zip_sort(c_grad_centers.begin(), c_grad_centers.end(), c_grad_residuals.begin(),
-                       c_grad_residuals.end(),
                        [](const auto& a, const auto& b) { return a.second < b.second; });
 
       // Count points with residuals larger than tolerance.

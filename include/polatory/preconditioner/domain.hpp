@@ -29,7 +29,6 @@ class Domain {
 
   void merge_poly_points(const std::vector<Index>& poly_point_idcs) {
     common::zip_sort(point_indices.begin(), point_indices.end(), inner_point.begin(),
-                     inner_point.end(),
                      [](const auto& a, const auto& b) { return a.first < b.first; });
 
     auto n_poly_points = static_cast<Index>(poly_point_idcs.size());
