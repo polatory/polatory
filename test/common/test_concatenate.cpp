@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/concatenate.hpp>
 #include <polatory/types.hpp>
 
 using polatory::MatX;
@@ -12,7 +12,7 @@ TEST(concatenate_cols, trivial) {
   MatX b = MatX::Random(3, 2);
   MatX c = MatX::Random(3, 3);
 
-  auto d = concatenate_cols(a, b, c);
+  auto d = concatenate_cols<MatX>(a, b, c);
 
   MatX d_expected(3, 6);
   d_expected << a, b, c;
@@ -25,7 +25,7 @@ TEST(concatenate_rows, trivial) {
   MatX b = MatX::Random(2, 3);
   MatX c = MatX::Random(3, 3);
 
-  auto d = concatenate_rows(a, b, c);
+  auto d = concatenate_rows<MatX>(a, b, c);
 
   MatX d_expected(6, 3);
   d_expected << a, b, c;

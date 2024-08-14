@@ -1,6 +1,6 @@
 #pragma once
 
-#include <polatory/common/eigen_utility.hpp>
+#include <polatory/common/concatenate.hpp>
 #include <polatory/common/io.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>

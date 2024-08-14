@@ -38,12 +38,13 @@ void run_impl(const Options& opts) {
   auto n = points.rows();
   if (opts.grads) {
     auto values = inter.evaluate(points, points, opts.accuracy, opts.grad_accuracy);
-    write_table(opts.out_file,
-                concatenate_cols(points, values.head(n),
-                                 values.tail(Dim * n).template reshaped<Eigen::RowMajor>(n, Dim)));
+    write_table(
+        opts.out_file,
+        concatenate_cols<MatX>(points, values.head(n),
+                               values.tail(Dim * n).template reshaped<Eigen::RowMajor>(n, Dim)));
   } else {
     auto values = inter.evaluate(points, opts.accuracy);
-    write_table(opts.out_file, concatenate_cols(points, values));
+    write_table(opts.out_file, concatenate_cols<MatX>(points, values));
   }
 }
 

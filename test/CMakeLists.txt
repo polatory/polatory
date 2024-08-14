@@ -1,7 +1,7 @@
 set(TARGET Unittest)
 
 add_executable(${TARGET}
-    common/test_eigen_utility.cpp
+    common/test_concatenate.cpp
     common/test_orthonormalize.cpp
     common/test_zip_sort.cpp
     geometry/test_bbox3d.cpp

@@ -69,7 +69,7 @@ void run_impl(const Options& opts) {
 
   const auto& normals = estimator.normals();
 
-  write_table(opts.out_file, concatenate_cols(points, normals));
+  write_table(opts.out_file, concatenate_cols<MatX>(points, normals));
 }
 
 }  // namespace

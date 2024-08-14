@@ -50,7 +50,7 @@ void run_impl(const Options& opts) {
   auto predictions = cross_validate<Dim>(model, points, values, set_ids, opts.tolerance,
                                          opts.max_iter, opts.accuracy);
 
-  write_table(opts.out_file, concatenate_cols(table, predictions));
+  write_table(opts.out_file, concatenate_cols<MatX>(table, predictions));
 }
 
 }  // namespace

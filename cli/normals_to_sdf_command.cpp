@@ -54,7 +54,7 @@ void run_impl(const Options& opts) {
   const auto& sdf_points = sdf_data.sdf_points();
   const auto& sdf_values = sdf_data.sdf_values();
 
-  write_table(opts.out_file, concatenate_cols(sdf_points, sdf_values));
+  write_table(opts.out_file, concatenate_cols<MatX>(sdf_points, sdf_values));
 }
 
 }  // namespace
