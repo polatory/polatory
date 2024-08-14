@@ -5,12 +5,12 @@ add_executable(${TARGET}
     common/test_orthonormalize.cpp
     common/test_zip_sort.cpp
     geometry/test_bbox3d.cpp
-    interpolation/test_rbf_evaluator.cpp
-    interpolation/test_rbf_fitter.cpp
-    interpolation/test_rbf_incremental_fitter.cpp
-    interpolation/test_rbf_inequality_fitter.cpp
-    interpolation/test_rbf_operator.cpp
-    interpolation/test_rbf_symmetric_evaluator.cpp
+    interpolation/test_evaluator.cpp
+    interpolation/test_fitter.cpp
+    interpolation/test_incremental_fitter.cpp
+    interpolation/test_inequality_fitter.cpp
+    interpolation/test_operator.cpp
+    interpolation/test_symmetric_evaluator.cpp
     isosurface/test_bit.cpp
     isosurface/test_isosurface.cpp
     isosurface/test_rmt.cpp

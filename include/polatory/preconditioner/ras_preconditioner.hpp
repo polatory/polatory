@@ -13,8 +13,8 @@
 #include <polatory/common/orthonormalize.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
+#include <polatory/interpolation/evaluator.hpp>
+#include <polatory/interpolation/symmetric_evaluator.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>

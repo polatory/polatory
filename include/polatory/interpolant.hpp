@@ -8,10 +8,10 @@
 #include <polatory/common/io.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/interpolation/rbf_fitter.hpp>
-#include <polatory/interpolation/rbf_incremental_fitter.hpp>
-#include <polatory/interpolation/rbf_inequality_fitter.hpp>
+#include <polatory/interpolation/evaluator.hpp>
+#include <polatory/interpolation/fitter.hpp>
+#include <polatory/interpolation/incremental_fitter.hpp>
+#include <polatory/interpolation/inequality_fitter.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>

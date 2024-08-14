@@ -3,8 +3,8 @@
 #include <Eigen/Core>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_direct_evaluator.hpp>
-#include <polatory/interpolation/rbf_evaluator.hpp>
+#include <polatory/interpolation/direct_evaluator.hpp>
+#include <polatory/interpolation/evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>

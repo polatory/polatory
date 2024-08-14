@@ -1,7 +1,7 @@
 #pragma once
 
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_solver.hpp>
+#include <polatory/interpolation/solver.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 

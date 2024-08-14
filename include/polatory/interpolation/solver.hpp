@@ -8,8 +8,8 @@
 #include <polatory/common/orthonormalize.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_operator.hpp>
-#include <polatory/interpolation/rbf_residual_evaluator.hpp>
+#include <polatory/interpolation/operator.hpp>
+#include <polatory/interpolation/residual_evaluator.hpp>
 #include <polatory/krylov/fgmres.hpp>
 #include <polatory/model.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>

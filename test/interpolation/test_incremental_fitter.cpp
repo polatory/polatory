@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/interpolation/rbf_incremental_fitter.hpp>
+#include <polatory/interpolation/evaluator.hpp>
+#include <polatory/interpolation/incremental_fitter.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>

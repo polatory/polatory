@@ -10,8 +10,8 @@
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/interpolation/rbf_solver.hpp>
+#include <polatory/interpolation/evaluator.hpp>
+#include <polatory/interpolation/solver.hpp>
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/types.hpp>

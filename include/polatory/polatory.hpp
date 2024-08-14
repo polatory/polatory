@@ -5,7 +5,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
-#include <polatory/interpolation/rbf_direct_evaluator.hpp>
+#include <polatory/interpolation/direct_evaluator.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>

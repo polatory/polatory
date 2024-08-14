@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/interpolation/rbf_fitter.hpp>
-#include <polatory/interpolation/rbf_symmetric_evaluator.hpp>
+#include <polatory/interpolation/fitter.hpp>
+#include <polatory/interpolation/symmetric_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>

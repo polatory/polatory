@@ -3,8 +3,8 @@
 #include <cmath>
 #include <limits>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/rbf_evaluator.hpp>
-#include <polatory/interpolation/rbf_inequality_fitter.hpp>
+#include <polatory/interpolation/evaluator.hpp>
+#include <polatory/interpolation/inequality_fitter.hpp>
 #include <polatory/model.hpp>
 #include <polatory/rbf/cov_exponential.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>

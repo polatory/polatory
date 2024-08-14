@@ -3,7 +3,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <numeric>
-#include <polatory/interpolation/rbf_direct_evaluator.hpp>
+#include <polatory/interpolation/direct_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
 #include <polatory/polynomial/lagrange_basis.hpp>
