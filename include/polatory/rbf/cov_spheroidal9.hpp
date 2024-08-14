@@ -17,9 +17,9 @@ class CovSpheroidal9 final : public CovarianceFunctionBase<Dim> {
 
  private:
   using Base = CovarianceFunctionBase<Dim>;
-  using Mat = Base::Mat;
-  using RbfPtr = Base::RbfPtr;
-  using Vector = Base::Vector;
+  using Mat = typename Base::Mat;
+  using RbfPtr = typename Base::RbfPtr;
+  using Vector = typename Base::Vector;
 
   static constexpr double kRho0 = 0.31622776601683794;
   static constexpr double kA = 1.4230249470757708;

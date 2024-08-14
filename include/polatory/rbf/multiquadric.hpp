@@ -14,8 +14,8 @@ namespace internal {
 template <int Dim, int k>
 class Multiquadric : public RbfBase<Dim> {
   using Base = RbfBase<Dim>;
-  using Mat = Base::Mat;
-  using Vector = Base::Vector;
+  using Mat = typename Base::Mat;
+  using Vector = typename Base::Vector;
 
   static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer");
 
@@ -83,7 +83,7 @@ class Multiquadric1 final : public Multiquadric<Dim, 1> {
 
  private:
   using Base = Multiquadric<Dim, 1>;
-  using RbfPtr = Base::RbfPtr;
+  using RbfPtr = typename Base::RbfPtr;
 
  public:
   using Base::Base;
@@ -101,7 +101,7 @@ class Multiquadric3 final : public Multiquadric<Dim, 3> {
 
  private:
   using Base = Multiquadric<Dim, 3>;
-  using RbfPtr = Base::RbfPtr;
+  using RbfPtr = typename Base::RbfPtr;
 
  public:
   using Base::Base;

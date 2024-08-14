@@ -14,8 +14,8 @@ namespace internal {
 template <int Dim, int k>
 class InverseMultiquadric : public RbfBase<Dim> {
   using Base = RbfBase<Dim>;
-  using Mat = Base::Mat;
-  using Vector = Base::Vector;
+  using Mat = typename Base::Mat;
+  using Vector = typename Base::Vector;
 
   static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer");
 
@@ -81,7 +81,7 @@ class InverseMultiquadric1 final : public InverseMultiquadric<Dim, 1> {
 
  private:
   using Base = InverseMultiquadric<Dim, 1>;
-  using RbfPtr = Base::RbfPtr;
+  using RbfPtr = typename Base::RbfPtr;
 
  public:
   using Base::Base;

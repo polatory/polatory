@@ -17,9 +17,9 @@ class CovGeneralizedCauchy7 final : public CovarianceFunctionBase<Dim> {
 
  private:
   using Base = CovarianceFunctionBase<Dim>;
-  using Mat = Base::Mat;
-  using RbfPtr = Base::RbfPtr;
-  using Vector = Base::Vector;
+  using Mat = typename Base::Mat;
+  using RbfPtr = typename Base::RbfPtr;
+  using Vector = typename Base::Vector;
 
   static constexpr double kA = 1.438027308408951;
 

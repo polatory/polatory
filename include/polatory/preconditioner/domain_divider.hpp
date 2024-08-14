@@ -106,7 +106,7 @@ class DomainDivider {
     }
   };
 
-  void divide_domain(std::list<Domain>::iterator it) {
+  void divide_domain(typename std::list<Domain>::iterator it) {
     auto& d = *it;
     auto mu = d.num_points();
     auto sigma = d.num_grad_points();
