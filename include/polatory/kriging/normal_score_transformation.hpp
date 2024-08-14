@@ -11,7 +11,7 @@ namespace polatory::kriging {
 
 class NormalScoreTransformation {
  public:
-  NormalScoreTransformation(int order = 30) : order_(order) {
+  explicit NormalScoreTransformation(int order = 30) : order_(order) {
     if (order < 0) {
       throw std::invalid_argument("order must be non-negative");
     }

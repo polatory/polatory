@@ -33,8 +33,8 @@ void full_direct(const SourceContainer& src_particles, TargetContainer& trg_part
                  const Kernel& kernel) {
   static constexpr int km = static_cast<int>(Kernel::km);
   static constexpr int kn = static_cast<int>(Kernel::kn);
-  Index n_src_points = static_cast<Index>(src_particles.size());
-  Index n_trg_points = static_cast<Index>(trg_particles.size());
+  auto n_src_points = static_cast<Index>(src_particles.size());
+  auto n_trg_points = static_cast<Index>(trg_particles.size());
 
 #pragma omp parallel for
   for (Index trg_idx = 0; trg_idx < n_trg_points; trg_idx++) {

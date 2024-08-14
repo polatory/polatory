@@ -23,7 +23,9 @@ TEST(normal_estimator, knn) {
                      .into_normals();
 
   for (auto n : normals.rowwise()) {
-    if (n.norm() == 0.0) continue;
+    if (n.norm() == 0.0) {
+      continue;
+    }
 
     ASSERT_NEAR(1.0, n.norm(), 1e-14);
     ASSERT_GT(n.dot(direction), 0.0);
@@ -42,7 +44,9 @@ TEST(normal_estimator, radius) {
                      .into_normals();
 
   for (auto n : normals.rowwise()) {
-    if (n.norm() == 0.0) continue;
+    if (n.norm() == 0.0) {
+      continue;
+    }
 
     ASSERT_NEAR(1.0, n.norm(), 1e-14);
     ASSERT_GT(n.dot(direction), 0.0);

@@ -135,8 +135,8 @@ class DirectEvaluator {
   const Index l_;
   std::unique_ptr<PolynomialEvaluator> p_;
 
-  Index mu_;
-  Index sigma_;
+  Index mu_{};
+  Index sigma_{};
   Index trg_mu_{};
   Index trg_sigma_{};
   Points src_points_;

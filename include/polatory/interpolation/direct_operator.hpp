@@ -101,8 +101,8 @@ class DirectOperator : public krylov::LinearOperator {
  private:
   const Model& model_;
   const Index l_;
-  Index mu_;
-  Index sigma_;
+  Index mu_{};
+  Index sigma_{};
   Points points_;
   Points grad_points_;
 

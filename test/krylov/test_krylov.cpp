@@ -113,8 +113,6 @@ class KrylovTest : public ::testing::Test {
   }
 };
 
-constexpr Index KrylovTest::n;
-
 }  // namespace
 
 TEST_F(KrylovTest, fgmres) {

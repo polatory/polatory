@@ -18,7 +18,6 @@ using polatory::read_table;
 using polatory::geometry::Bbox3;
 using polatory::geometry::Points3;
 using polatory::isosurface::Isosurface;
-using polatory::isosurface::Mesh;
 using polatory::isosurface::RbfFieldFunction25D;
 
 namespace {
