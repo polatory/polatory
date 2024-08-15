@@ -192,6 +192,9 @@ class Lattice : public PrimitiveLattice {
 
     std::unordered_set<LatticeCoordinatesPair, LatticeCoordinatesPairHash> visited_pairs;
     std::vector<LatticeCoordinatesPair> new_pairs;
+    std::vector<LatticeCoordinates> neighbors0;
+    std::vector<LatticeCoordinates> neighbors1;
+    std::vector<LatticeCoordinates> common_neighbors;
     while (!pairs.empty()) {
       for (const auto& pair : pairs) {
         if (visited_pairs.contains(pair)) {
@@ -206,19 +209,19 @@ class Lattice : public PrimitiveLattice {
           continue;
         }
 
-        std::vector<LatticeCoordinates> lc0_neighbors;
-        std::vector<LatticeCoordinates> lc1_neighbors;
+        neighbors0.clear();
+        neighbors1.clear();
+        common_neighbors.clear();
         for (const auto& nlc : knn_nodes(lc0, 1)) {
-          lc0_neighbors.push_back(nlc);
+          neighbors0.push_back(nlc);
         }
         for (const auto& nlc : knn_nodes(lc1, 1)) {
-          lc1_neighbors.push_back(nlc);
+          neighbors1.push_back(nlc);
         }
-        std::sort(lc0_neighbors.begin(), lc0_neighbors.end(), LatticeCoordinatesLess());
-        std::sort(lc1_neighbors.begin(), lc1_neighbors.end(), LatticeCoordinatesLess());
-        std::vector<LatticeCoordinates> common_neighbors;
-        std::set_intersection(lc0_neighbors.begin(), lc0_neighbors.end(), lc1_neighbors.begin(),
-                              lc1_neighbors.end(), std::back_inserter(common_neighbors),
+        std::sort(neighbors0.begin(), neighbors0.end(), LatticeCoordinatesLess());
+        std::sort(neighbors1.begin(), neighbors1.end(), LatticeCoordinatesLess());
+        std::set_intersection(neighbors0.begin(), neighbors0.end(), neighbors1.begin(),
+                              neighbors1.end(), std::back_inserter(common_neighbors),
                               LatticeCoordinatesLess());
 
         for (const auto& nlc : common_neighbors) {
@@ -630,7 +633,7 @@ class Lattice : public PrimitiveLattice {
     std::vector<LatticeCoordinates> frontier{lc};
     std::vector<LatticeCoordinates> next_frontier;
 
-    for (int i = 0; i < k; i++) {
+    for (auto i = 0; i < k; i++) {
       for (const auto& nlc : frontier) {
         for (EdgeIndex ei = 0; ei < 14; ei++) {
           auto nnlc = neighbor(nlc, ei);
