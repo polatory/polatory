@@ -110,6 +110,7 @@ class Lattice : public PrimitiveLattice {
 
         nlcs.clear();
         auto found_intersection = false;
+        auto reached_minimum = true;
         for (const auto& nlc : knn_nodes(lc, k)) {
           auto boundary_node = is_boundary_node(nlc);
 
@@ -124,13 +125,12 @@ class Lattice : public PrimitiveLattice {
             }
           }
 
-          if (boundary_node) {
-            // The gradient cannot be computed at a boundary node.
-            continue;
-          }
-
           if (std::abs(nn.value()) < std::abs(n.value())) {
-            nlcs.push_back(nlc);
+            // The gradient cannot be computed at a boundary node.
+            if (!boundary_node) {
+              nlcs.push_back(nlc);
+            }
+            reached_minimum = false;
           }
         }
 
@@ -139,7 +139,7 @@ class Lattice : public PrimitiveLattice {
         }
 
         if (nlcs.empty()) {
-          if (k >= 10) {
+          if (k >= 10 || reached_minimum) {
             // Give up.
             continue;
           }
