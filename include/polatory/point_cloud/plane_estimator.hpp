@@ -22,7 +22,7 @@ class PlaneEstimator {
   double point_error() const;
 
  private:
-  static Eigen::JacobiSVD<MatX> pca_svd(const geometry::Points3& points);
+  static Eigen::JacobiSVD<geometry::Points3> pca_svd(const geometry::Points3& points);
 
   Mat3 basis_;
 
