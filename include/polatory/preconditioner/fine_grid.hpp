@@ -2,6 +2,7 @@
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
+#include <cstring>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -145,11 +146,26 @@ class FineGrid {
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
     ldlt.resize(m_ - l_, m_ - l_);
     cache_.get(cache_id_, ldlt.data());
+    // Unpack the lower triangular part.
+    for (auto row = ldlt.rows() - 1; row >= 1; row--) {
+      const auto* src = ldlt.data() + row * (row + 1) / 2;
+      auto* dst = ldlt.data() + row * ldlt.cols();
+      auto bytes = (row + 1) * sizeof(double);
+      std::memcpy(dst, src, bytes);
+    }
   }
 
   void save_ldlt_of_qtaq() {
     auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
-    cache_id_ = cache_.put(ldlt.data(), ldlt.size() * sizeof(double));
+    // Pack the lower triangular part.
+    auto rows = ldlt.rows();
+    for (Index row = 1; row < rows; row++) {
+      const auto* src = ldlt.data() + row * ldlt.cols();
+      auto* dst = ldlt.data() + row * (row + 1) / 2;
+      auto bytes = (row + 1) * sizeof(double);
+      std::memcpy(dst, src, bytes);
+    }
+    cache_id_ = cache_.put(ldlt.data(), (rows * (rows + 1) / 2) * sizeof(double));
     ldlt.resize(0, 0);
   }
 

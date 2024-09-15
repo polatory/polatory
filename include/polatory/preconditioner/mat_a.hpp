@@ -55,7 +55,7 @@ MatX mat_a(const Model<Dim>& model, const Eigen::MatrixBase<DerivedPoints>& poin
     }
   }
 
-  a.triangularView<Eigen::Lower>() = a.transpose().triangularView<Eigen::Lower>();
+  a.triangularView<Eigen::StrictlyLower>() = a.transpose().triangularView<Eigen::StrictlyLower>();
 
   return a;
 }
