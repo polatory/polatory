@@ -17,7 +17,7 @@ void Gmres::iterate_process() {
   auto z = right_preconditioned(vs_.at(j));
   add_preconditioned_krylov_basis(z);
   vs_.push_back(left_preconditioned(op_(z)));
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (Index i = 0; i <= j; i++) {
     r_(i, j) = vs_.at(i).dot(vs_.at(j + 1));
   }

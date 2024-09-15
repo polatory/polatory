@@ -46,7 +46,7 @@ class DirectEvaluator {
       {
         VecX y_local = VecX::Zero(trg_mu_ + kDim * trg_sigma_);
 
-#pragma omp for
+#pragma omp for schedule(static)
         for (Index i = 0; i < trg_mu_; i++) {
           for (Index j = 0; j < mu_; j++) {
             Vector diff = trg_points_.row(i) - src_points_.row(j);
@@ -59,7 +59,7 @@ class DirectEvaluator {
           }
         }
 
-#pragma omp for
+#pragma omp for schedule(static)
         for (Index i = 0; i < trg_sigma_; i++) {
           for (Index j = 0; j < mu_; j++) {
             Vector diff = trg_grad_points_.row(i) - src_points_.row(j);

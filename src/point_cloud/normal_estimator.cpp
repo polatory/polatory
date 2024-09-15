@@ -45,7 +45,8 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
   std::vector<double> plane_factors;
   std::vector<geometry::Vector3> plane_normals;
 
-#pragma omp parallel for private(nn_indices, nn_distances, plane_factors, plane_normals)
+#pragma omp parallel for schedule(guided) private(nn_indices, nn_distances, plane_factors, \
+                                                      plane_normals)
   for (Index i = 0; i < n_points_; i++) {
     geometry::Point3 p = points_.row(i);
     tree_.knn_search(p, k_max, nn_indices, nn_distances);
@@ -96,7 +97,8 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
   std::vector<double> plane_factors;
   std::vector<geometry::Vector3> plane_normals;
 
-#pragma omp parallel for private(nn_indices, nn_distances, plane_factors, plane_normals)
+#pragma omp parallel for schedule(guided) private(nn_indices, nn_distances, plane_factors, \
+                                                      plane_normals)
   for (Index i = 0; i < n_points_; i++) {
     geometry::Point3 p = points_.row(i);
     tree_.radius_search(p, radius_max, nn_indices, nn_distances);
@@ -143,7 +145,7 @@ NormalEstimator& NormalEstimator::filter_by_plane_factor(double threshold) & {
 NormalEstimator& NormalEstimator::orient_toward_direction(const geometry::Vector3& direction) & {
   throw_if_not_estimated();
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (Index i = 0; i < n_points_; i++) {
     auto n = normals_.row(i);
     if (n.dot(direction) < 0.0) {
@@ -157,7 +159,7 @@ NormalEstimator& NormalEstimator::orient_toward_direction(const geometry::Vector
 NormalEstimator& NormalEstimator::orient_toward_point(const geometry::Point3& point) & {
   throw_if_not_estimated();
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (Index i = 0; i < n_points_; i++) {
     auto n = normals_.row(i);
     auto p = points_.row(i);

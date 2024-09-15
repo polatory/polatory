@@ -137,12 +137,12 @@ class RasPreconditioner : public krylov::LinearOperator {
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
           divider.choose_coarse_points(ratio);
 
-      for (auto&& d : divider.into_domains()) {
+      for (auto& d : divider.into_domains()) {
         fine_grids_.at(level).emplace_back(model, std::move(d), cache_);
       }
 
       auto n_grids = static_cast<Index>(fine_grids_.at(level).size());
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
       for (Index i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
         fine.setup(points_, grad_points_, lagrange_p_);
@@ -284,7 +284,7 @@ class RasPreconditioner : public krylov::LinearOperator {
       coarse_->set_solution_to(weights);
     } else {
       auto n_grids = static_cast<Index>(fine_grids_.at(level).size());
-#pragma omp parallel for schedule(guided)
+#pragma omp parallel for schedule(dynamic)
       for (Index i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
         fine.solve(residuals);

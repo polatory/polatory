@@ -59,7 +59,7 @@ class VariogramCalculator {
 
       VecX squared_dots;
 
-#pragma omp for schedule(dynamic)
+#pragma omp for schedule(guided)
       for (Index i = 0; i < num_points - 1; i++) {
         auto point_i = points.row(i);
         auto value_i = values(i);

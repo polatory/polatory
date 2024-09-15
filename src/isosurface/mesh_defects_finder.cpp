@@ -27,7 +27,7 @@ std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
   {
     std::vector<Index> local_result;
 
-#pragma omp for schedule(guided, 32)
+#pragma omp for schedule(guided)
     for (Index vi = 0; vi < n_vertices; vi++) {
       const auto& fis = vf_map_.at(vi);
 
@@ -73,7 +73,7 @@ std::vector<Index> MeshDefectsFinder::singular_vertices() const {
   {
     std::vector<Index> local_result;
 
-#pragma omp for schedule(guided, 32)
+#pragma omp for schedule(guided)
     for (Index vi = 0; vi < n_vertices; vi++) {
       const auto& fis = vf_map_.at(vi);
 

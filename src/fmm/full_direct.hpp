@@ -8,9 +8,9 @@ template <class Container, class Kernel>
 void full_direct(Container& particles, const Kernel& kernel) {
   static constexpr int km = static_cast<int>(Kernel::km);
   static constexpr int kn = static_cast<int>(Kernel::kn);
-  Index n_points = static_cast<Index>(particles.size());
+  auto n_points = static_cast<Index>(particles.size());
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (Index trg_idx = 0; trg_idx < n_points; trg_idx++) {
     auto p = particles.at(trg_idx);
     for (Index src_idx = 0; src_idx < n_points; src_idx++) {
@@ -36,7 +36,7 @@ void full_direct(const SourceContainer& src_particles, TargetContainer& trg_part
   auto n_src_points = static_cast<Index>(src_particles.size());
   auto n_trg_points = static_cast<Index>(trg_particles.size());
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (Index trg_idx = 0; trg_idx < n_trg_points; trg_idx++) {
     auto p = trg_particles.at(trg_idx);
     for (Index src_idx = 0; src_idx < n_src_points; src_idx++) {

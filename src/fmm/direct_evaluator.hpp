@@ -45,7 +45,7 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
     std::vector<Index> indices;
     std::vector<double> distances;
 
-#pragma omp parallel for private(indices, distances)
+#pragma omp parallel for schedule(guided) private(indices, distances)
     for (Index trg_idx = 0; trg_idx < n_trg_points_; trg_idx++) {
       auto p = trg_particles_.at(trg_idx);
       Point point;

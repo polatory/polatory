@@ -43,7 +43,7 @@ class DirectOperator : public krylov::LinearOperator {
       {
         VecX y_local = VecX::Zero(size());
 
-#pragma omp for
+#pragma omp for schedule(static)
         for (Index i = 0; i < mu_; i++) {
           for (Index j = 0; j < mu_; j++) {
             Vector diff = points_.row(i) - points_.row(j);
@@ -56,7 +56,7 @@ class DirectOperator : public krylov::LinearOperator {
           }
         }
 
-#pragma omp for
+#pragma omp for schedule(static)
         for (Index i = 0; i < sigma_; i++) {
           for (Index j = 0; j < mu_; j++) {
             Vector diff = grad_points_.row(i) - points_.row(j);

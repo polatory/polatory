@@ -513,7 +513,7 @@ class Lattice : public PrimitiveLattice {
   }
 
   void generate_vertices(const std::vector<LatticeCoordinates>& node_lcs) {
-#pragma omp parallel for
+#pragma omp parallel for schedule(guided)
     // NOLINTNEXTLINE(modernize-loop-convert)
     for (std::size_t i = 0; i < node_lcs.size(); i++) {
       const auto& lc0 = node_lcs.at(i);
