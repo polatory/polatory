@@ -41,7 +41,7 @@ class NormalEstimator {
     return std::move(filter_by_plane_factor(threshold));
   }
 
-  geometry::Vectors3&& into_normals() && {
+  geometry::Vectors3 into_normals() && {
     throw_if_not_estimated();
 
     return std::move(normals_);

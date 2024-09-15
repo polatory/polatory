@@ -91,7 +91,7 @@ class DomainDivider {
 
   const std::list<Domain>& domains() const { return domains_; }
 
-  std::list<Domain> into_domains() { return std::move(domains_); }
+  std::list<Domain> into_domains() && { return std::move(domains_); }
 
  private:
   struct MixedPoint {

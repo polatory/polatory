@@ -37,7 +37,7 @@ class BinaryCache {
     ::unlink(filename.c_str());
 #endif
 
-    records_.push_back({0, 0});
+    records_.emplace_back(0, 0);
   }
 
   ~BinaryCache() {
@@ -84,7 +84,7 @@ class BinaryCache {
 
     auto id = records_.size();
     auto offset = records_.back().offset + records_.back().size;
-    records_.push_back({offset, size});
+    records_.emplace_back(offset, size);
     return id;
   }
 

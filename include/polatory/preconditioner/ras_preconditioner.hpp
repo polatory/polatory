@@ -137,7 +137,7 @@ class RasPreconditioner : public krylov::LinearOperator {
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
           divider.choose_coarse_points(ratio);
 
-      for (auto& d : divider.into_domains()) {
+      for (auto& d : std::move(divider).into_domains()) {
         fine_grids_.at(level).emplace_back(model, std::move(d), cache_);
       }
 
