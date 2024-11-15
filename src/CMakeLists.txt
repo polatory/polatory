@@ -35,9 +35,9 @@ add_library(${TARGET} STATIC
 )
 
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror)
-    # target_compile_options(${TARGET} PUBLIC -fPIC -g -fno-omit-frame-pointer -Wall -Wextra -Werror -fsanitize=address)
-    # target_compile_options(${TARGET} PUBLIC -fPIC -g -fno-omit-frame-pointer -Wall -Wextra -Werror -fsanitize=undefined)
+    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror -fno-relaxed-template-template-args -Wno-deprecated-no-relaxed-template-template-args -Wno-unknown-warning-option)
+    # target_compile_options(${TARGET} PUBLIC -g -fno-omit-frame-pointer -fsanitize=address)
+    # target_compile_options(${TARGET} PUBLIC -g -fno-omit-frame-pointer -fsanitize=undefined)
 elseif(MSVC)
     target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702)
 endif()
@@ -84,6 +84,9 @@ include(ExternalProject)
 set(SCALFMM_CMAKE_ARGS
     -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
+    -Dscalfmm_BUILD_CHECK=OFF
+    -Dscalfmm_BUILD_EXAMPLES=OFF
+    -Dscalfmm_BUILD_TOOLS=OFF
 )
 
 if(MSVC)
