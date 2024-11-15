@@ -87,9 +87,9 @@ class Lattice : public PrimitiveLattice {
         add_node(nlc);
       }
       seeds.emplace_back(lc, geometry::Vector3::Zero(), 1);
-
-      evaluate_field(field_fm, isovalue);
     }
+
+    evaluate_field(field_fm, isovalue);
 
     std::sort(seeds.begin(), seeds.end(),
               [](const auto& a, const auto& b) { return LatticeCoordinatesLess()(a.lc, b.lc); });
