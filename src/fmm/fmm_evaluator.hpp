@@ -24,6 +24,7 @@
 
 #include "fmm_accuracy_estimator.hpp"
 #include "full_direct.hpp"
+#include "lru_cache.hpp"
 #include "utility.hpp"
 
 namespace polatory::fmm {
@@ -114,6 +115,7 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
     accuracy_ = accuracy;
 
     best_config_.clear();
+    interpolator_cache_.clear();
   }
 
   void set_source_points(const Points& points) {
@@ -134,6 +136,7 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
     src_sorted_level_ = 0;
     src_tree_.reset(nullptr);
     best_config_.clear();
+    interpolator_cache_.clear();
   }
 
   void set_target_points(const Points& points) {
@@ -185,8 +188,9 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
 
  private:
   InterpolatorConfiguration find_best_configuration(int tree_height) const {
-    if (best_config_.contains(tree_height)) {
-      return best_config_.at(tree_height);
+    auto it = best_config_.find(tree_height);
+    if (it != best_config_.end()) {
+      return it->second;
     }
 
     auto config = FmmAccuracyEstimator<Rbf, Kernel>::find_best_configuration(
@@ -223,7 +227,6 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
 
   void prepare() const {
     if (n_src_points_ * n_trg_points_ < 1024 * 1024) {
-      interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
       src_tree_.reset(nullptr);
@@ -246,9 +249,11 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
     auto config = find_best_configuration(tree_height);
 
     if (tree_height_ != tree_height || config_ != config) {
-      interpolator_ = std::make_unique<Interpolator>(kernel_, config.order, tree_height,
-                                                     box_.width(0), config.d);
-      far_field_ = std::make_unique<FarField>(*interpolator_);
+      auto [it, inserted] = interpolator_cache_.try_emplace(tree_height, kernel_, config.order,
+                                                            tree_height, box_.width(0), config.d);
+      interpolator_cache_.touch(it);
+
+      far_field_ = std::make_unique<FarField>(it->second);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       src_tree_.reset(nullptr);
       trg_tree_.reset(nullptr);
@@ -284,12 +289,12 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
   mutable bool multipole_dirty_{};
   mutable int tree_height_{};
   mutable InterpolatorConfiguration config_{};
-  mutable std::unique_ptr<Interpolator> interpolator_;
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<SourceTree> src_tree_;
   mutable std::unique_ptr<TargetTree> trg_tree_;
   mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
+  mutable LruCache<int, Interpolator> interpolator_cache_{2};
 };
 
 template <class Rbf, class Kernel>

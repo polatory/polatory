@@ -150,8 +150,9 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
 
  private:
   InterpolatorConfiguration find_best_configuration(int tree_height) const {
-    if (best_config_.contains(tree_height)) {
-      return best_config_.at(tree_height);
+    auto it = best_config_.find(tree_height);
+    if (it != best_config_.end()) {
+      return it->second;
     }
 
     auto config = FmmAccuracyEstimator<Rbf, Kernel>::find_best_configuration(
