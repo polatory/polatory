@@ -9,9 +9,11 @@ namespace polatory::rbf {
 
 namespace internal {
 
-template <int Dim>
-class CovSpheroidal3 final : public CovarianceFunctionBase<Dim> {
+template <int Dim, SpheroidalKind kind>
+class CovSpheroidal3Generic final : public CovarianceFunctionBase<Dim> {
  public:
+  using DirectPart = CovSpheroidal3Generic<Dim, SpheroidalKind::kDirectPart>;
+  using FastPart = CovSpheroidal3Generic<Dim, SpheroidalKind::kFastPart>;
   static constexpr int kDim = Dim;
   static inline const std::string kShortName = "sp3";
 
@@ -29,13 +31,14 @@ class CovSpheroidal3 final : public CovarianceFunctionBase<Dim> {
   static constexpr double kE = 0.1392464703107397;
 
  public:
+  using Base::anisotropy;
   using Base::Base;
   using Base::parameters;
   using Base::set_parameters;
 
-  explicit CovSpheroidal3(const std::vector<double>& params) { set_parameters(params); }
+  explicit CovSpheroidal3Generic(const std::vector<double>& params) { set_parameters(params); }
 
-  RbfPtr clone() const override { return std::make_unique<CovSpheroidal3>(*this); }
+  RbfPtr clone() const override { return std::make_unique<CovSpheroidal3Generic>(*this); }
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto psill = parameters().at(0);
@@ -74,7 +77,28 @@ class CovSpheroidal3 final : public CovarianceFunctionBase<Dim> {
   }
 
   std::string short_name() const override { return kShortName; }
+
+  DirectPart direct_part() const {
+    DirectPart rbf{parameters()};
+    rbf.set_anisotropy(anisotropy());
+    return rbf;
+  }
+
+  FastPart fast_part() const {
+    FastPart rbf{parameters()};
+    rbf.set_anisotropy(anisotropy());
+    return rbf;
+  }
 };
+
+template <int Dim>
+using CovSpheroidal3 = CovSpheroidal3Generic<Dim, SpheroidalKind::kFull>;
+
+template <int Dim>
+using CovSpheroidal3DirectPart = CovSpheroidal3Generic<Dim, SpheroidalKind::kDirectPart>;
+
+template <int Dim>
+using CovSpheroidal3FastPart = CovSpheroidal3Generic<Dim, SpheroidalKind::kFastPart>;
 
 }  // namespace internal
 

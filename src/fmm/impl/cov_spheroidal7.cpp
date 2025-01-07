@@ -1,7 +1,7 @@
 #include <polatory/rbf/cov_spheroidal7.hpp>
 
-#include "../fmm_evaluator.hpp"
-#include "../fmm_symmetric_evaluator.hpp"
+#include "../spheroidal_evaluator.hpp"
+#include "../spheroidal_symmetric_evaluator.hpp"
 
 namespace polatory::fmm {
 

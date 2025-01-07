@@ -37,4 +37,6 @@ class CovarianceFunctionBase : public RbfBase<Dim> {
   }
 };
 
+enum class SpheroidalKind { kFull, kDirectPart, kFastPart };
+
 }  // namespace polatory::rbf::internal
