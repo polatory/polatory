@@ -75,7 +75,7 @@ class FmmAccuracyEstimator {
                                                            const SourceContainer& src_particles,
                                                            const Box& box, int tree_height) {
     if (accuracy == std::numeric_limits<double>::infinity()) {
-      return {kMinOrder, kClassic};
+      return {.tree_height = tree_height, .order = kMinOrder, .d = kClassic};
     }
 
     // Errors at the data points are larger than those at randomly distributed points.
@@ -118,7 +118,7 @@ class FmmAccuracyEstimator {
         auto approx = evaluate(rbf, src_particles, trg_particles, box, tree_height, order, d);
         auto error = numeric::absolute_error<Eigen::Infinity>(approx, exact);
         if (error <= accuracy) {
-          return {order, d};
+          return {.tree_height = tree_height, .order = order, .d = d};
         }
         if (use_d) {
           if (error < best_error) {
@@ -135,7 +135,7 @@ class FmmAccuracyEstimator {
       }
     }
 
-    throw std::runtime_error("failed to construct an evaluator that meets the given accuracy");
+    throw std::runtime_error("failed to construct an evaluator that meets the desired accuracy");
   }
 
   static VecX evaluate(const Rbf& rbf, const SourceContainer& src_particles,

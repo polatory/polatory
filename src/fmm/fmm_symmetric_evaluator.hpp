@@ -68,7 +68,7 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
 
     prepare();
 
-    if (tree_height_ > 0) {
+    if (config_.tree_height > 0) {
       tree_->reset_multipoles();
       tree_->reset_locals();
       tree_->reset_outputs();
@@ -150,14 +150,14 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
 
  private:
   InterpolatorConfiguration find_best_configuration(int tree_height) const {
-    auto it = best_config_.find(tree_height);
-    if (it != best_config_.end()) {
-      return it->second;
+    auto [it, inserted] = best_config_.try_emplace(tree_height);
+    if (inserted) {
+      auto config = FmmAccuracyEstimator<Rbf, Kernel>::find_best_configuration(
+          rbf_, accuracy_, particles_, box_, tree_height);
+      it->second = config;
     }
 
-    auto config = FmmAccuracyEstimator<Rbf, Kernel>::find_best_configuration(
-        rbf_, accuracy_, particles_, box_, tree_height);
-    return best_config_[tree_height] = config;
+    return it->second;
   }
 
   void handle_self_interaction() const {
@@ -168,7 +168,7 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
     scalfmm::container::point<double, kDim> x{};
     auto k = kernel_.evaluate(x, x);
 
-    if (tree_height_ > 0) {
+    if (config_.tree_height > 0) {
       scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
                                         [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
@@ -195,7 +195,7 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
   VecX potentials() const {
     VecX potentials = VecX::Zero(kn * n_points_);
 
-    if (tree_height_ > 0) {
+    if (config_.tree_height > 0) {
       scalfmm::component::for_each_leaf(std::cbegin(*tree_), std::cend(*tree_),
                                         [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
@@ -225,7 +225,7 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
       tree_.reset(nullptr);
-      tree_height_ = 0;
+      config_ = {.tree_height = 0};
       return;
     }
 
@@ -237,14 +237,12 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
     }
 
     auto config = find_best_configuration(tree_height);
-
-    if (tree_height_ != tree_height || config_ != config) {
+    if (config != config_) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, config.order, tree_height,
                                                      box_.width(0), config.d);
       far_field_ = std::make_unique<FarField>(*interpolator_);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       tree_.reset(nullptr);
-      tree_height_ = tree_height;
       config_ = config;
     }
 
@@ -263,7 +261,6 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
   Index n_points_{};
   mutable Container particles_;
   mutable int sorted_level_{};
-  mutable int tree_height_{};
   mutable InterpolatorConfiguration config_{};
   mutable std::unique_ptr<Interpolator> interpolator_;
   mutable std::unique_ptr<FarField> far_field_;

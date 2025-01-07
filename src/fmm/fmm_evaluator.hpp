@@ -79,7 +79,7 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
 
     prepare();
 
-    if (tree_height_ > 0) {
+    if (config_.tree_height > 0) {
       if (multipole_dirty_) {
         src_tree_->reset_multipoles();
         scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
@@ -115,7 +115,6 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
     accuracy_ = accuracy;
 
     best_config_.clear();
-    interpolator_cache_.clear();
   }
 
   void set_source_points(const Points& points) {
@@ -136,7 +135,6 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
     src_sorted_level_ = 0;
     src_tree_.reset(nullptr);
     best_config_.clear();
-    interpolator_cache_.clear();
   }
 
   void set_target_points(const Points& points) {
@@ -188,20 +186,20 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
 
  private:
   InterpolatorConfiguration find_best_configuration(int tree_height) const {
-    auto it = best_config_.find(tree_height);
-    if (it != best_config_.end()) {
-      return it->second;
+    auto [it, inserted] = best_config_.try_emplace(tree_height);
+    if (inserted) {
+      auto config = FmmAccuracyEstimator<Rbf, Kernel>::find_best_configuration(
+          rbf_, accuracy_, src_particles_, box_, tree_height);
+      it->second = config;
     }
 
-    auto config = FmmAccuracyEstimator<Rbf, Kernel>::find_best_configuration(
-        rbf_, accuracy_, src_particles_, box_, tree_height);
-    return best_config_[tree_height] = config;
+    return it->second;
   }
 
   VecX potentials() const {
     VecX potentials = VecX::Zero(kn * n_trg_points_);
 
-    if (tree_height_ > 0) {
+    if (config_.tree_height > 0) {
       scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
                                         [&](const auto& leaf) {
                                           for (auto p_ref : leaf) {
@@ -231,7 +229,7 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
       fmm_operator_.reset(nullptr);
       src_tree_.reset(nullptr);
       trg_tree_.reset(nullptr);
-      tree_height_ = 0;
+      config_ = {.tree_height = 0};
       return;
     }
 
@@ -247,9 +245,8 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
     }
 
     auto config = find_best_configuration(tree_height);
-
-    if (tree_height_ != tree_height || config_ != config) {
-      auto [it, inserted] = interpolator_cache_.try_emplace(tree_height, kernel_, config.order,
+    if (config != config_) {
+      auto [it, inserted] = interpolator_cache_.try_emplace(config, kernel_, config.order,
                                                             tree_height, box_.width(0), config.d);
       interpolator_cache_.touch(it);
 
@@ -257,7 +254,6 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       src_tree_.reset(nullptr);
       trg_tree_.reset(nullptr);
-      tree_height_ = tree_height;
       config_ = config;
     }
 
@@ -287,14 +283,13 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
   mutable int src_sorted_level_{};
   mutable int trg_sorted_level_{};
   mutable bool multipole_dirty_{};
-  mutable int tree_height_{};
   mutable InterpolatorConfiguration config_{};
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<SourceTree> src_tree_;
   mutable std::unique_ptr<TargetTree> trg_tree_;
   mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
-  mutable LruCache<int, Interpolator> interpolator_cache_{2};
+  mutable LruCache<InterpolatorConfiguration, Interpolator> interpolator_cache_{2};
 };
 
 template <class Rbf, class Kernel>
