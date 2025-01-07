@@ -1,7 +1,6 @@
 #pragma once
 
 #include <polatory/common/io.hpp>
-#include <polatory/fmm/interpolator_configuration.hpp>
 #include <polatory/rbf/make_rbf.hpp>
 #include <polatory/rbf/rbf.hpp>
 
@@ -18,12 +17,9 @@ struct Read<rbf::Rbf<Dim>> {
     read(is, parameters);
     Mat anisotropy;
     read(is, anisotropy);
-    fmm::InterpolatorConfiguration config;
-    read(is, config);
 
     auto rbf = rbf::make_rbf<Dim>(short_name, parameters);
     rbf.set_anisotropy(anisotropy);
-    rbf.set_interpolator_configuration(config);
 
     std::swap(t, rbf);
   }
@@ -35,7 +31,6 @@ struct Write<rbf::Rbf<Dim>> {
     write(os, t.short_name());
     write(os, t.parameters());
     write(os, t.anisotropy());
-    write(os, t.interpolator_configuration());
   }
 };
 

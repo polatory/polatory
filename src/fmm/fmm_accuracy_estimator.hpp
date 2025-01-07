@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <limits>
 #include <numeric>
-#include <polatory/fmm/interpolator_configuration.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/error.hpp>
@@ -23,6 +22,7 @@
 #include <tuple>
 
 #include "full_direct.hpp"
+#include "interpolator_configuration.hpp"
 
 namespace polatory::fmm {
 
@@ -66,6 +66,7 @@ class FmmAccuracyEstimator {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
   static constexpr int kClassic = InterpolatorConfiguration::kClassic;
+  static constexpr int kMinOrder = 8;
   static constexpr int kMaxOrder = 20;
   static constexpr Index kMaxTargetSize = 10000;
 
@@ -73,10 +74,8 @@ class FmmAccuracyEstimator {
   static InterpolatorConfiguration find_best_configuration(const Rbf& rbf, double accuracy,
                                                            const SourceContainer& src_particles,
                                                            const Box& box, int tree_height) {
-    const auto& config = rbf.interpolator_configuration();
-
     if (accuracy == std::numeric_limits<double>::infinity()) {
-      return config;
+      return {kMinOrder, kClassic};
     }
 
     // Errors at the data points are larger than those at randomly distributed points.
@@ -103,10 +102,10 @@ class FmmAccuracyEstimator {
     scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
 
     auto exact = evaluate(rbf, src_particles, trg_particles, box);
-    auto use_d = config.d != kClassic;
-    auto best_d = config.d;
+    auto use_d = false;
+    auto best_d = kClassic;
     auto last_error = std::numeric_limits<double>::infinity();
-    for (auto order = config.order; order <= kMaxOrder; order++) {
+    for (auto order = kMinOrder; order <= kMaxOrder; order++) {
       auto min_d = kClassic;
       auto max_d = kClassic;
       if (use_d) {

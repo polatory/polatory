@@ -17,12 +17,6 @@ inline bool is_identifier(const std::string& token) {
   return std::regex_match(token, re);
 }
 
-inline bool is_integer(const std::string& token) {
-  static const std::regex re{"0|-?[1-9][0-9]*"};
-
-  return std::regex_match(token, re);
-}
-
 inline bool is_number(const std::string& token) {
   static const std::regex re{"-?([0-9]+\\.?|[0-9]*\\.[0-9]+)([Ee][+-]?[0-9]+)?"};
 
@@ -72,23 +66,6 @@ polatory::Model<Dim> make_model(const ModelOptions& opts) {
         }
 
         rbf.set_anisotropy(Eigen::Map<Mat>(aniso.data()));
-      } else if (*it == "config") {
-        ++it;
-
-        int order{};
-        int d{};
-        if (it != end && is_integer(*it)) {
-          order = std::stoi(*it++);
-        } else {
-          throw_unexpected_input(it, end);
-        }
-        if (it != end && is_integer(*it)) {
-          d = std::stoi(*it++);
-        } else {
-          throw_unexpected_input(it, end);
-        }
-
-        rbf.set_interpolator_configuration({order, d});
       } else {
         break;
       }

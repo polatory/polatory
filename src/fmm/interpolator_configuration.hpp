@@ -1,7 +1,5 @@
 #pragma once
 
-#include <polatory/common/io.hpp>
-
 namespace polatory::fmm {
 
 struct InterpolatorConfiguration {
@@ -25,26 +23,3 @@ inline bool operator!=(const InterpolatorConfiguration& lhs, const InterpolatorC
 }
 
 }  // namespace polatory::fmm
-
-namespace polatory::common {
-
-template <>
-struct Read<fmm::InterpolatorConfiguration> {
-  void operator()(std::istream& is, fmm::InterpolatorConfiguration& t) const {
-    int order{};
-    int d{};
-    read(is, order);
-    read(is, d);
-    t = {order, d};
-  }
-};
-
-template <>
-struct Write<fmm::InterpolatorConfiguration> {
-  void operator()(std::ostream& os, const fmm::InterpolatorConfiguration& t) const {
-    write(os, t.order);
-    write(os, t.d);
-  }
-};
-
-}  // namespace polatory::common
