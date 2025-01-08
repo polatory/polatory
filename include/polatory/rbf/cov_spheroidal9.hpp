@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <limits>
 #include <polatory/rbf/covariance_function_base.hpp>
 #include <polatory/rbf/rbf.hpp>
 #include <vector>
@@ -44,7 +45,16 @@ class CovSpheroidal9Generic final : public CovarianceFunctionBase<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    return rho < kRho0 ? psill * (1.0 - kA * rho) : psill * kB * std::pow(1.0 + rho * rho, -4.5);
+    auto lin = psill * (1.0 - kA * rho);
+    auto imq = psill * kB * std::pow(1.0 + rho * rho, -4.5);
+
+    if constexpr (kind == SpheroidalKind::kDirectPart) {
+      return rho < kRho0 ? lin - imq : 0.0;
+    }
+    if constexpr (kind == SpheroidalKind::kFastPart) {
+      return imq;
+    }
+    return rho < kRho0 ? lin : imq;
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -72,6 +82,11 @@ class CovSpheroidal9Generic final : public CovarianceFunctionBase<Dim> {
   }
 
   std::string short_name() const override { return kShortName; }
+
+  double support_radius_isotropic() const override {
+    return kind == SpheroidalKind::kDirectPart ? kRho0 * parameters().at(1)
+                                               : std::numeric_limits<double>::infinity();
+  }
 
   DirectPart direct_part() const {
     DirectPart rbf{parameters()};
