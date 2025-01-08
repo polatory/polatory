@@ -9,6 +9,8 @@ template <class Rbf, class Kernel>
 class FmmGenericEvaluator<Rbf, Kernel>::Impl {
   using RbfDirectPart = typename Rbf::DirectPart;
   using RbfFastPart = typename Rbf::FastPart;
+  using KernelDirectPart = typename Kernel::template Rebind<RbfDirectPart>;
+  using KernelFastPart = typename Kernel::template Rebind<RbfFastPart>;
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 
@@ -52,8 +54,8 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
  private:
   RbfDirectPart rbf_direct_part_;
   RbfFastPart rbf_fast_part_;
-  FmmGenericEvaluator<RbfDirectPart, Kernel> direct_eval_;
-  FmmGenericEvaluator<RbfFastPart, Kernel> fast_eval_;
+  FmmGenericEvaluator<RbfDirectPart, KernelDirectPart> direct_eval_;
+  FmmGenericEvaluator<RbfFastPart, KernelFastPart> fast_eval_;
 
   Index n_src_points_{};
   Index n_trg_points_{};
@@ -101,5 +103,16 @@ void FmmGenericEvaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<const VecX>&
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<1>);  \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<2>);  \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<3>);
+
+#define EXTERN_FMM_EVALUATORS_(RBF)                                             \
+  extern template class FmmGenericEvaluator<RBF, Kernel<RBF>>;                  \
+  extern template class FmmGenericEvaluator<RBF, GradientKernel<RBF>>;          \
+  extern template class FmmGenericEvaluator<RBF, GradientTransposeKernel<RBF>>; \
+  extern template class FmmGenericEvaluator<RBF, HessianKernel<RBF>>;
+
+#define EXTERN_FMM_EVALUATORS(RBF_NAME) \
+  EXTERN_FMM_EVALUATORS_(RBF_NAME<1>);  \
+  EXTERN_FMM_EVALUATORS_(RBF_NAME<2>);  \
+  EXTERN_FMM_EVALUATORS_(RBF_NAME<3>);
 
 }  // namespace polatory::fmm

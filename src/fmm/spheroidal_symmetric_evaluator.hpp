@@ -9,6 +9,8 @@ template <class Rbf, class Kernel>
 class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
   using RbfDirectPart = typename Rbf::DirectPart;
   using RbfFastPart = typename Rbf::FastPart;
+  using KernelDirectPart = typename Kernel::template Rebind<RbfDirectPart>;
+  using KernelFastPart = typename Kernel::template Rebind<RbfFastPart>;
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 
@@ -46,8 +48,8 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
  private:
   RbfDirectPart rbf_direct_part_;
   RbfFastPart rbf_fast_part_;
-  FmmGenericSymmetricEvaluator<RbfDirectPart, Kernel> direct_eval_;
-  FmmGenericSymmetricEvaluator<RbfFastPart, Kernel> fast_eval_;
+  FmmGenericSymmetricEvaluator<RbfDirectPart, KernelDirectPart> direct_eval_;
+  FmmGenericSymmetricEvaluator<RbfFastPart, KernelFastPart> fast_eval_;
 
   Index n_points_{};
 };
@@ -88,5 +90,14 @@ void FmmGenericSymmetricEvaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<con
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<1>);  \
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<2>);  \
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<3>);
+
+#define EXTERN_FMM_SYMMETRIC_EVALUATORS_(RBF)                           \
+  extern template class FmmGenericSymmetricEvaluator<RBF, Kernel<RBF>>; \
+  extern template class FmmGenericSymmetricEvaluator<RBF, HessianKernel<RBF>>;
+
+#define EXTERN_FMM_SYMMETRIC_EVALUATORS(RBF_NAME) \
+  EXTERN_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<1>);  \
+  EXTERN_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<2>);  \
+  EXTERN_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<3>);
 
 }  // namespace polatory::fmm

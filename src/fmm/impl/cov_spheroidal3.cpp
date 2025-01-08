@@ -5,8 +5,12 @@
 
 namespace polatory::fmm {
 
+EXTERN_FMM_EVALUATORS(rbf::internal::CovSpheroidal3DirectPart)
+EXTERN_FMM_EVALUATORS(rbf::internal::CovSpheroidal3FastPart)
 IMPLEMENT_FMM_EVALUATORS(rbf::internal::CovSpheroidal3);
 
+EXTERN_FMM_SYMMETRIC_EVALUATORS(rbf::internal::CovSpheroidal3DirectPart)
+EXTERN_FMM_SYMMETRIC_EVALUATORS(rbf::internal::CovSpheroidal3FastPart)
 IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(rbf::internal::CovSpheroidal3);
 
 }  // namespace polatory::fmm

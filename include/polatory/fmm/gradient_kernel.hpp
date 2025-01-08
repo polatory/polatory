@@ -14,6 +14,9 @@ namespace polatory::fmm {
 
 template <class Rbf>
 struct GradientKernel {
+  template <class OtherRbf>
+  using Rebind = GradientKernel<OtherRbf>;
+
   static constexpr int kDim = Rbf::kDim;
   using Mat = Mat<kDim>;
   using Vector = geometry::Vector<kDim>;
