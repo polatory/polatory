@@ -10,7 +10,7 @@ namespace polatory::rbf {
 
 namespace internal {
 
-template <int Dim, SpheroidalKind kind>
+template <int Dim, SpheroidalKind Kind>
 class CovSpheroidal3Generic final : public CovarianceFunctionBase<Dim> {
  public:
   using DirectPart = CovSpheroidal3Generic<Dim, SpheroidalKind::kDirectPart>;
@@ -47,16 +47,16 @@ class CovSpheroidal3Generic final : public CovarianceFunctionBase<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto lin = psill * (1.0 - kA * rho);
-    auto imq = psill * kB * std::pow(1.0 + kC * (rho * rho), -1.5);
+    auto lin = [=]() -> double { return psill * (1.0 - kA * rho); };
+    auto imq = [=]() -> double { return psill * kB * std::pow(1.0 + kC * (rho * rho), -1.5); };
 
-    if constexpr (kind == SpheroidalKind::kDirectPart) {
-      return rho < kRho0 ? lin - imq : 0.0;
+    if constexpr (Kind == SpheroidalKind::kDirectPart) {
+      return rho < kRho0 ? lin() - imq() : 0.0;
     }
-    if constexpr (kind == SpheroidalKind::kFastPart) {
-      return imq;
+    if constexpr (Kind == SpheroidalKind::kFastPart) {
+      return imq();
     }
-    return rho < kRho0 ? lin : imq;
+    return rho < kRho0 ? lin() : imq();
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -65,10 +65,22 @@ class CovSpheroidal3Generic final : public CovarianceFunctionBase<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff =
-        (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + kC * (rho * rho), -2.5)) /
-        (range * range);
-    return coeff * diff;
+    auto lin = [=, &diff]() -> Vector {
+      auto coeff = -psill * kA / (r * range);
+      return coeff * diff;
+    };
+    auto imq = [=, &diff]() -> Vector {
+      auto coeff = -psill * kD * std::pow(1.0 + kC * (rho * rho), -2.5) / (range * range);
+      return coeff * diff;
+    };
+
+    if constexpr (Kind == SpheroidalKind::kDirectPart) {
+      return rho < kRho0 ? Vector{lin() - imq()} : Vector::Zero();
+    }
+    if constexpr (Kind == SpheroidalKind::kFastPart) {
+      return imq();
+    }
+    return rho < kRho0 ? lin() : imq();
   }
 
   Mat evaluate_hessian_isotropic(const Vector& diff) const override {
@@ -77,18 +89,29 @@ class CovSpheroidal3Generic final : public CovarianceFunctionBase<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff =
-        (rho < kRho0 ? -psill * kA / rho : -psill * kD * std::pow(1.0 + kC * (rho * rho), -2.5)) /
-        (range * range);
-    return coeff *
-           (Mat::Identity() - (rho < kRho0 ? 1.0 / (r * r) : 5.0 / (r * r + kE * range * range)) *
-                                  diff.transpose() * diff);
+    auto lin = [=, &diff]() -> Mat {
+      auto coeff = -psill * kA / (r * range);
+      return coeff * (Mat::Identity() - 1.0 / (r * r) * diff.transpose() * diff);
+    };
+    auto imq = [=, &diff]() -> Mat {
+      auto coeff = -psill * kD * std::pow(1.0 + kC * (rho * rho), -2.5) / (range * range);
+      return coeff *
+             (Mat::Identity() - 5.0 / (r * r + kE * range * range) * diff.transpose() * diff);
+    };
+
+    if constexpr (Kind == SpheroidalKind::kDirectPart) {
+      return rho < kRho0 ? Mat{lin() - imq()} : Mat::Zero();
+    }
+    if constexpr (Kind == SpheroidalKind::kFastPart) {
+      return imq();
+    }
+    return rho < kRho0 ? lin() : imq();
   }
 
   std::string short_name() const override { return kShortName; }
 
   double support_radius_isotropic() const override {
-    return kind == SpheroidalKind::kDirectPart ? kRho0 * parameters().at(1)
+    return Kind == SpheroidalKind::kDirectPart ? kRho0 * parameters().at(1)
                                                : std::numeric_limits<double>::infinity();
   }
 
