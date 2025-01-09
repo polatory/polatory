@@ -66,7 +66,7 @@ class FmmAccuracyEstimator {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
   static constexpr int kClassic = InterpolatorConfiguration::kClassic;
-  static constexpr int kMinOrder = 8;
+  static constexpr int kMinOrder = 9;
   static constexpr int kMaxOrder = 20;
   static constexpr Index kMaxTargetSize = 10000;
 

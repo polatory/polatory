@@ -24,7 +24,7 @@ namespace {
 void test(Index n_points, Index n_grad_points) {
   constexpr int kDim = 3;
   auto tolerance = 1e-3;
-  auto grad_tolerance = 1e-2;
+  auto grad_tolerance = 1e-3;
   auto max_iter = 100;
   auto accuracy = tolerance / 100.0;
   auto grad_accuracy = grad_tolerance / 100.0;
