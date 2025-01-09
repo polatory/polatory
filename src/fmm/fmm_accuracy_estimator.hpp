@@ -66,8 +66,6 @@ class FmmAccuracyEstimator {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
   static constexpr int kClassic = InterpolatorConfiguration::kClassic;
-  static constexpr int kMinOrder = 6;
-  static constexpr int kMaxOrder = 20;
   static constexpr Index kMaxTargetSize = 10000;
 
  public:
@@ -75,7 +73,10 @@ class FmmAccuracyEstimator {
                                                            const SourceContainer& src_particles,
                                                            const Box& box, int tree_height) {
     if (accuracy == std::numeric_limits<double>::infinity()) {
-      return {.tree_height = tree_height, .order = kMinOrder, .d = kClassic};
+      return {.tree_height = tree_height, .order = 6, .d = kClassic};
+    }
+    if (accuracy == 0.0) {
+      return {.tree_height = tree_height, .order = 12, .d = 8};
     }
 
     // Errors at the data points are larger than those at randomly distributed points.
@@ -102,7 +103,7 @@ class FmmAccuracyEstimator {
     scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
 
     auto exact = evaluate(rbf, src_particles, trg_particles, box);
-    for (auto order = kMinOrder; order <= kMaxOrder; order++) {
+    for (auto order = 8; order <= 20; order++) {
       auto min_d = order >= 12 ? 7 : kClassic;
       auto max_d = order >= 12 ? 9 : kClassic;
       for (auto d = min_d; d <= max_d; d++) {
