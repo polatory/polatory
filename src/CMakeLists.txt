@@ -12,9 +12,17 @@ add_library(${TARGET} STATIC
     fmm/impl/cov_generalized_cauchy9.cpp
     fmm/impl/cov_spherical.cpp
     fmm/impl/cov_spheroidal3.cpp
+    fmm/impl/cov_spheroidal3_direct_part.cpp
+    fmm/impl/cov_spheroidal3_fast_part.cpp
     fmm/impl/cov_spheroidal5.cpp
+    fmm/impl/cov_spheroidal5_direct_part.cpp
+    fmm/impl/cov_spheroidal5_fast_part.cpp
     fmm/impl/cov_spheroidal7.cpp
+    fmm/impl/cov_spheroidal7_direct_part.cpp
+    fmm/impl/cov_spheroidal7_fast_part.cpp
     fmm/impl/cov_spheroidal9.cpp
+    fmm/impl/cov_spheroidal9_direct_part.cpp
+    fmm/impl/cov_spheroidal9_fast_part.cpp
     fmm/impl/inverse_multiquadric1.cpp
     fmm/impl/multiquadric1.cpp
     fmm/impl/multiquadric3.cpp

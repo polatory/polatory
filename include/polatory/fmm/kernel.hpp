@@ -13,6 +13,9 @@ namespace polatory::fmm {
 
 template <class Rbf>
 struct Kernel {
+  template <class OtherRbf>
+  using Rebind = Kernel<OtherRbf>;
+
   static constexpr int kDim = Rbf::kDim;
   using Vector = geometry::Vector<kDim>;
 
