@@ -37,7 +37,7 @@ class Solver {
         l_(model.poly_basis_size()),
         mu_(points.rows()),
         sigma_(grad_points.rows()),
-        op_(model, points, grad_points),
+        op_(model, points, grad_points, 0.0, 0.0),
         res_eval_(model, points, grad_points, accuracy, grad_accuracy) {
     set_points(points, grad_points);
   }
@@ -45,7 +45,7 @@ class Solver {
   Solver(const Model& model, const Bbox& bbox, double accuracy, double grad_accuracy)
       : model_(model),
         l_(model.poly_basis_size()),
-        op_(model, bbox),
+        op_(model, bbox, 0.0, 0.0),
         res_eval_(model, bbox, accuracy, grad_accuracy) {}
 
   void set_points(const Points& points) { set_points(points, Points(0, kDim)); }

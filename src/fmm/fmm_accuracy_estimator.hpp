@@ -66,7 +66,7 @@ class FmmAccuracyEstimator {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
   static constexpr int kClassic = InterpolatorConfiguration::kClassic;
-  static constexpr int kMinOrder = 9;
+  static constexpr int kMinOrder = 6;
   static constexpr int kMaxOrder = 20;
   static constexpr Index kMaxTargetSize = 10000;
 
@@ -102,35 +102,14 @@ class FmmAccuracyEstimator {
     scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
 
     auto exact = evaluate(rbf, src_particles, trg_particles, box);
-    auto use_d = false;
-    auto best_d = kClassic;
-    auto last_error = std::numeric_limits<double>::infinity();
     for (auto order = kMinOrder; order <= kMaxOrder; order++) {
-      auto min_d = kClassic;
-      auto max_d = kClassic;
-      if (use_d) {
-        // d = order - 1 give the same result as d = order - 2.
-        min_d = best_d != kClassic ? std::max(best_d - 1, 3) : 3;
-        max_d = best_d != kClassic ? std::min(best_d + 1, order - 2) : order - 2;
-      }
-      auto best_error = std::numeric_limits<double>::infinity();
+      auto min_d = order >= 12 ? 7 : kClassic;
+      auto max_d = order >= 12 ? 9 : kClassic;
       for (auto d = min_d; d <= max_d; d++) {
         auto approx = evaluate(rbf, src_particles, trg_particles, box, tree_height, order, d);
         auto error = numeric::absolute_error<Eigen::Infinity>(approx, exact);
         if (error <= accuracy) {
           return {.tree_height = tree_height, .order = order, .d = d};
-        }
-        if (use_d) {
-          if (error < best_error) {
-            best_d = d;
-            best_error = error;
-          }
-        } else {
-          if (error > last_error) {
-            use_d = true;
-            order--;
-          }
-          last_error = error;
         }
       }
     }
