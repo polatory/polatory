@@ -52,7 +52,8 @@ class DomainDivider {
     divide_domains();
   }
 
-  std::pair<std::vector<Index>, std::vector<Index>> choose_coarse_points(double ratio) const {
+  std::pair<std::vector<Index>, std::vector<Index>> choose_coarse_points(
+      Index n_coarse_points) const {
     std::vector<Index> idcs(poly_point_idcs_);
     std::vector<Index> grad_idcs;
 
@@ -66,9 +67,6 @@ class DomainDivider {
     for (auto i : grad_point_idcs_) {
       root_cluster.emplace_back(i, true, true);
     }
-
-    auto n_coarse_points = static_cast<Index>(
-        std::pow(2, std::ceil(std::log2(ratio * static_cast<double>(root_cluster.size())))));
 
     std::deque<std::vector<MixedPoint>> clusters;
     clusters.push_back(std::move(root_cluster));
