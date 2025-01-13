@@ -68,7 +68,7 @@ class DomainDivider {
     }
 
     auto n_coarse_points = static_cast<Index>(
-        std::pow(2, std::round(std::log2(ratio * static_cast<double>(root_cluster.size())))));
+        std::pow(2, std::ceil(std::log2(ratio * static_cast<double>(root_cluster.size())))));
 
     std::deque<std::vector<MixedPoint>> clusters;
     clusters.push_back(std::move(root_cluster));

@@ -49,7 +49,7 @@ class RasPreconditioner : public krylov::LinearOperator {
   using UnisolventPointSet = polynomial::UnisolventPointSet<kDim>;
 
   static constexpr bool kReportResidual = false;
-  static constexpr double kCoarseRatio = 0.1;
+  static constexpr double kCoarseRatio = 0.0625;
   static constexpr Index kNCoarsestPoints = 1024;
 
  public:
