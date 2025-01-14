@@ -49,7 +49,7 @@ class RasPreconditioner : public krylov::LinearOperator {
   using UnisolventPointSet = polynomial::UnisolventPointSet<kDim>;
 
   static constexpr bool kReportResidual = false;
-  static constexpr double kCoarseRatio = 0.0625;
+  static constexpr double kFineToCoarseRatio = 16.0;
   static constexpr Index kNCoarsestPoints = 1024;
 
  public:
@@ -63,14 +63,11 @@ class RasPreconditioner : public krylov::LinearOperator {
         bbox_(Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_))),
         finest_evaluator_(kReportResidual
                               ? std::make_unique<SymmetricEvaluator>(model, points_, grad_points_)
-                              : nullptr) {
-    auto n_fine_levels = 0;
-    while (static_cast<Index>(std::pow(16, n_fine_levels)) * kNCoarsestPoints <
-           (mu_ + kDim * sigma_) / 4) {
-      n_fine_levels++;
-    }
-    n_levels_ = n_fine_levels + 1;
-
+                              : nullptr),
+        n_levels_(static_cast<int>(std::round(
+                      std::log(static_cast<double>(mu_ + kDim * sigma_) / kNCoarsestPoints) /
+                      std::log(kFineToCoarseRatio))) +
+                  1) {
     point_idcs_.resize(n_levels_);
     grad_point_idcs_.resize(n_levels_);
 
@@ -132,7 +129,10 @@ class RasPreconditioner : public krylov::LinearOperator {
       DomainDivider divider(a_points, a_grad_points, point_idcs_.at(level),
                             grad_point_idcs_.at(level), poly_point_idcs);
 
-      auto n_coarse_points = static_cast<Index>(std::pow(16, level - 1)) * kNCoarsestPoints;
+      auto finest = std::log(mu_ + kDim * sigma_) / std::log(kFineToCoarseRatio);
+      auto coarsest = std::log(kNCoarsestPoints) / std::log(kFineToCoarseRatio);
+      auto n_coarse_points = static_cast<Index>(std::pow(
+          kFineToCoarseRatio, coarsest + (level - 1) * (finest - coarsest) / (n_levels_ - 1)));
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
           divider.choose_coarse_points(n_coarse_points);
 
