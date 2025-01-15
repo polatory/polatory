@@ -103,7 +103,7 @@ class FmmAccuracyEstimator {
     scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
 
     auto exact = evaluate(rbf, src_particles, trg_particles, box);
-    for (auto order = 8; order <= 20; order += 2) {
+    for (auto order = 8; order <= 20; order += 4) {
       auto min_d = order >= 12 ? 7 : kClassic;
       auto max_d = order >= 12 ? 9 : kClassic;
       for (auto d = min_d; d <= max_d; d++) {
