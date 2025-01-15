@@ -50,7 +50,7 @@ class RasPreconditioner : public krylov::LinearOperator {
 
   static constexpr bool kReportResidual = false;
   static constexpr double kFineToCoarseRatio = 16.0;
-  static constexpr Index kNCoarsestPoints = 1024;
+  static constexpr Index kNCoarsestPoints = 2048;
 
  public:
   RasPreconditioner(const Model& model, const Points& points, const Points& grad_points)
@@ -64,10 +64,12 @@ class RasPreconditioner : public krylov::LinearOperator {
         finest_evaluator_(kReportResidual
                               ? std::make_unique<SymmetricEvaluator>(model, points_, grad_points_)
                               : nullptr),
-        n_levels_(static_cast<int>(std::round(
-                      std::log(static_cast<double>(mu_ + kDim * sigma_) / kNCoarsestPoints) /
-                      std::log(kFineToCoarseRatio))) +
-                  1) {
+        n_levels_(
+            std::max(static_cast<int>(std::ceil(
+                         std::log(static_cast<double>(mu_ + kDim * sigma_) / kNCoarsestPoints) /
+                         std::log(kFineToCoarseRatio))),
+                     0) +
+            1) {
     point_idcs_.resize(n_levels_);
     grad_point_idcs_.resize(n_levels_);
 
