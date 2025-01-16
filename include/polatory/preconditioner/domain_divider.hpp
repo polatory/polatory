@@ -5,7 +5,6 @@
 #include <iterator>
 #include <list>
 #include <numeric>
-#include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/preconditioner/domain.hpp>
@@ -68,6 +67,9 @@ class DomainDivider {
     for (auto i : grad_point_idcs_) {
       root_points.emplace_back(i, true, true);
     }
+    std::vector<std::size_t> iota(root_points.size());
+    std::iota(iota.begin(), iota.end(), 0);
+
     Cluster root_cluster(std::move(root_points), 0);
     initialize_cluster(root_cluster);
     auto current_size = root_cluster.center.multiplicity();
@@ -82,11 +84,14 @@ class DomainDivider {
         prefix_sum_mult.push_back(prefix_sum_mult.back() + p.multiplicity());
       }
       auto cluster_size = prefix_sum_mult.back();
-      auto mid_mult =
-          static_cast<Index>(round_half_to_even(static_cast<double>(cluster_size) / 2.0));
-      auto mid = static_cast<Index>(std::distance(
-          prefix_sum_mult.begin(),
-          std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), mid_mult) - 1));
+
+      auto mid_it = std::min_element(iota.begin(), iota.begin() + points.size(),
+                                     [&](std::size_t i, std::size_t j) {
+                                       auto dl = std::abs(2 * prefix_sum_mult.at(i) - cluster_size);
+                                       auto dr = std::abs(2 * prefix_sum_mult.at(j) - cluster_size);
+                                       return dl < dr || (dl == dr && i % 2 == 0);
+                                     });
+      auto mid = std::distance(iota.begin(), mid_it);
 
       std::vector<MixedPoint> left_points(points.begin(), points.begin() + mid);
       std::vector<MixedPoint> right_points(points.begin() + mid, points.end());
