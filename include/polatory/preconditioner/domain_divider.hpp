@@ -5,12 +5,11 @@
 #include <iterator>
 #include <list>
 #include <numeric>
-#include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/types.hpp>
-#include <random>
+#include <queue>
 #include <utility>
 #include <vector>
 
@@ -34,7 +33,11 @@ class DomainDivider {
                 const std::vector<Index>& point_indices,
                 const std::vector<Index>& grad_point_indices,
                 const std::vector<Index>& poly_point_indices)
-      : points_(points), grad_points_(grad_points), poly_point_idcs_(poly_point_indices) {
+      : points_(points),
+        grad_points_(grad_points),
+        point_idcs_(point_indices),
+        grad_point_idcs_(grad_point_indices),
+        poly_point_idcs_(poly_point_indices) {
     Domain root;
 
     root.point_indices = point_indices;
@@ -48,42 +51,70 @@ class DomainDivider {
     divide_domains();
   }
 
-  std::pair<std::vector<Index>, std::vector<Index>> choose_coarse_points(double ratio) const {
+  std::pair<std::vector<Index>, std::vector<Index>> choose_coarse_points(
+      Index n_coarse_points) const {
     std::vector<Index> idcs(poly_point_idcs_);
     std::vector<Index> grad_idcs;
 
-    std::mt19937 gen;
-
-    auto n_poly_points = static_cast<Index>(poly_point_idcs_.size());
-    for (const auto& d : domains_) {
-      auto mu = d.num_points();
-      auto sigma = d.num_grad_points();
-
-      std::vector<MixedPoint> mixed_points;
-      for (Index i = n_poly_points; i < mu; i++) {
-        if (d.inner_point.at(i)) {
-          mixed_points.emplace_back(d.point_indices.at(i), true, false);
-        }
+    std::priority_queue<Cluster> clusters;
+    std::vector<MixedPoint> root_points;
+    for (auto i : point_idcs_) {
+      if (std::find(poly_point_idcs_.begin(), poly_point_idcs_.end(), i) ==
+          poly_point_idcs_.end()) {
+        root_points.emplace_back(i, true, false);
       }
-      for (Index i = 0; i < sigma; i++) {
-        if (d.inner_grad_point.at(i)) {
-          mixed_points.emplace_back(d.grad_point_indices.at(i), true, true);
-        }
+    }
+    for (auto i : grad_point_idcs_) {
+      root_points.emplace_back(i, true, true);
+    }
+    std::vector<std::size_t> iota(root_points.size());
+    std::iota(iota.begin(), iota.end(), 0);
+
+    Cluster root_cluster(std::move(root_points), 0);
+    initialize_cluster(root_cluster);
+    auto current_size = root_cluster.center.multiplicity();
+    clusters.push(root_cluster);
+
+    while (current_size < n_coarse_points) {
+      const auto& cluster = clusters.top();
+      const auto& points = cluster.points;
+
+      std::vector<Index> prefix_sum_mult{0};
+      for (const auto& p : points) {
+        prefix_sum_mult.push_back(prefix_sum_mult.back() + p.multiplicity());
       }
-      std::shuffle(mixed_points.begin(), mixed_points.end(), gen);
+      auto cluster_size = prefix_sum_mult.back();
 
-      auto n_coarse_points =
-          static_cast<Index>(round_half_to_even(ratio * static_cast<double>(mixed_points.size())));
+      auto mid_it = std::min_element(iota.begin(), iota.begin() + points.size(),
+                                     [&](std::size_t i, std::size_t j) {
+                                       auto dl = std::abs(2 * prefix_sum_mult.at(i) - cluster_size);
+                                       auto dr = std::abs(2 * prefix_sum_mult.at(j) - cluster_size);
+                                       return dl < dr || (dl == dr && i % 2 == 0);
+                                     });
+      auto mid = std::distance(iota.begin(), mid_it);
 
-      Index count{};
-      for (const auto& p : mixed_points) {
-        if (count == n_coarse_points) {
-          break;
-        }
+      std::vector<MixedPoint> left_points(points.begin(), points.begin() + mid);
+      std::vector<MixedPoint> right_points(points.begin() + mid, points.end());
 
-        (p.grad ? grad_idcs : idcs).push_back(p.index);
-        count++;
-      }
+      Cluster left(std::move(left_points), cluster.level + 1);
+      Cluster right(std::move(right_points), cluster.level + 1);
+      initialize_cluster(left);
+      initialize_cluster(right);
+
+      current_size -= cluster.center.multiplicity();
+      current_size += left.center.multiplicity();
+      current_size += right.center.multiplicity();
+
+      clusters.pop();
+      clusters.push(std::move(left));
+      clusters.push(std::move(right));
+    }
+
+    while (!clusters.empty()) {
+      const auto& cluster = clusters.top();
+      const auto& p = cluster.center;
+      (p.grad ? grad_idcs : idcs).push_back(p.index);
+      clusters.pop();
     }
 
     return {std::move(idcs), std::move(grad_idcs)};
@@ -104,6 +135,23 @@ class DomainDivider {
     Point point(const Points& points, const Points& grad_points) const {
       return grad ? grad_points.row(index) : points.row(index);
     }
+  };
+
+  struct Cluster {
+    Cluster(std::vector<MixedPoint> points, int level) : level(level), points(std::move(points)) {}
+
+    bool operator<(const Cluster& other) const {
+      if (level != other.level) {
+        return level > other.level;
+      }
+
+      return bbox.width().prod() < other.bbox.width().prod();
+    }
+
+    int level{};
+    std::vector<MixedPoint> points;
+    Bbox bbox;
+    MixedPoint center;
   };
 
   void divide_domain(typename std::list<Domain>::iterator it) {
@@ -223,12 +271,47 @@ class DomainDivider {
     return Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points));
   }
 
+  void initialize_cluster(Cluster& cluster) const {
+    auto& points = cluster.points;
+
+    Bbox bbox{};
+    for (const auto& a : points) {
+      Point p = a.point(points_, grad_points_);
+      bbox = bbox.convex_hull(Bbox{p, p});
+    }
+    cluster.bbox = bbox;
+
+    cluster.center = *std::min_element(
+        points.begin(), points.end(), [this, &bbox](const auto& a, const auto& b) {
+          auto p = a.point(points_, grad_points_);
+          auto q = b.point(points_, grad_points_);
+          return (p - bbox.center()).squaredNorm() < (q - bbox.center()).squaredNorm();
+        });
+
+    auto width = bbox.width();
+    std::array<int, kDim> axes;
+    std::iota(axes.begin(), axes.end(), 0);
+    std::sort(axes.begin(), axes.end(), [&width](auto i, auto j) { return width(i) > width(j); });
+    std::sort(points.begin(), points.end(), [this, &axes](const auto& a, const auto& b) {
+      auto p = a.point(points_, grad_points_);
+      auto q = b.point(points_, grad_points_);
+      for (auto axis : axes) {
+        if (p(axis) != q(axis)) {
+          return p(axis) < q(axis);
+        }
+      }
+      return false;
+    });
+  }
+
   static double round_half_to_even(double d) {
     return std::ceil((d - 0.5) / 2.0) + std::floor((d + 0.5) / 2.0);
   }
 
   const Points points_;
   const Points grad_points_;
+  const std::vector<Index> point_idcs_;
+  const std::vector<Index> grad_point_idcs_;
   const std::vector<Index> poly_point_idcs_;
   std::list<Domain> domains_;
 };

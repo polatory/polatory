@@ -78,12 +78,12 @@ void test() {
   EXPECT_EQ(inner_grad_points.end(),
             std::unique(inner_grad_points.begin(), inner_grad_points.end()));
 
-  auto coarse_ratio = 0.1;
-  auto [coarse_point_idcs, coarse_grad_point_idcs] = divider.choose_coarse_points(coarse_ratio);
-  EXPECT_LE(0.95 * coarse_ratio * (n_points + n_grad_points),
-            (coarse_point_idcs.size() + coarse_grad_point_idcs.size()));
-  EXPECT_GE(1.05 * coarse_ratio * (n_points + n_grad_points),
-            (coarse_point_idcs.size() + coarse_grad_point_idcs.size()));
+  auto n_coarse_points = Index{1000};
+  auto [coarse_point_idcs, coarse_grad_point_idcs] = divider.choose_coarse_points(n_coarse_points);
+  EXPECT_LE(n_coarse_points + n_poly_points,
+            coarse_point_idcs.size() + Dim * coarse_grad_point_idcs.size());
+  EXPECT_GT(n_coarse_points + n_poly_points + Dim,
+            coarse_point_idcs.size() + Dim * coarse_grad_point_idcs.size());
 
   for (Index i = 0; i < n_poly_points; i++) {
     EXPECT_EQ(poly_point_idcs.at(i), coarse_point_idcs.at(i));

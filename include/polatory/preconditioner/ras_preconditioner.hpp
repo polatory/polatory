@@ -49,8 +49,8 @@ class RasPreconditioner : public krylov::LinearOperator {
   using UnisolventPointSet = polynomial::UnisolventPointSet<kDim>;
 
   static constexpr bool kReportResidual = false;
-  static constexpr double kCoarseRatio = 0.01;
-  static constexpr Index kNCoarsestPoints = 1024;
+  static constexpr double kFineToCoarseRatio = 10.0;
+  static constexpr Index kNCoarsestPoints = 2048;
 
  public:
   RasPreconditioner(const Model& model, const Points& points, const Points& grad_points)
@@ -63,13 +63,13 @@ class RasPreconditioner : public krylov::LinearOperator {
         bbox_(Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_))),
         finest_evaluator_(kReportResidual
                               ? std::make_unique<SymmetricEvaluator>(model, points_, grad_points_)
-                              : nullptr) {
-    auto n_fine_levels =
-        std::max(0, static_cast<int>(std::ceil(std::log(static_cast<double>(mu_ + kDim * sigma_) /
-                                                        static_cast<double>(kNCoarsestPoints)) /
-                                               log(1.0 / kCoarseRatio))));
-    n_levels_ = n_fine_levels + 1;
-
+                              : nullptr),
+        n_levels_(
+            std::max(static_cast<int>(std::ceil(
+                         std::log(static_cast<double>(mu_ + kDim * sigma_) / kNCoarsestPoints) /
+                         std::log(kFineToCoarseRatio))),
+                     0) +
+            1) {
     point_idcs_.resize(n_levels_);
     grad_point_idcs_.resize(n_levels_);
 
@@ -131,11 +131,12 @@ class RasPreconditioner : public krylov::LinearOperator {
       DomainDivider divider(a_points, a_grad_points, point_idcs_.at(level),
                             grad_point_idcs_.at(level), poly_point_idcs);
 
-      auto ratio = level == 1 ? static_cast<double>(kNCoarsestPoints) /
-                                    static_cast<double>(mu + kDim * sigma)
-                              : kCoarseRatio;
+      auto finest = std::log(mu_ + kDim * sigma_) / std::log(kFineToCoarseRatio);
+      auto coarsest = std::log(kNCoarsestPoints) / std::log(kFineToCoarseRatio);
+      auto n_coarse_points = static_cast<Index>(std::pow(
+          kFineToCoarseRatio, coarsest + (level - 1) * (finest - coarsest) / (n_levels_ - 1)));
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
-          divider.choose_coarse_points(ratio);
+          divider.choose_coarse_points(n_coarse_points);
 
       for (auto& d : std::move(divider).into_domains()) {
         fine_grids_.at(level).emplace_back(model, std::move(d), cache_);
