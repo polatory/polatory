@@ -100,4 +100,28 @@ class RbfBase {
   Mat aniso_{Mat::Identity()};
 };
 
+template <int N>
+static double pow(double r) {
+  if constexpr (N == -1) {
+    return 1.0 / r;
+  }
+  if constexpr (N == 0) {
+    return 1.0;
+  }
+  if constexpr (N == 1) {
+    return r;
+  }
+  if constexpr (N == 2) {
+    return r * r;
+  }
+  if constexpr (N == 3) {
+    return r * r * r;
+  }
+  if constexpr (N == 4) {
+    auto r2 = r * r;
+    return r2 * r2;
+  }
+  return std::pow(r, N);
+}
+
 }  // namespace polatory::rbf::internal

@@ -38,7 +38,7 @@ class PolyharmonicEven : public RbfBase<Dim> {
       return 0.0;
     }
 
-    return kSign * slope * std::pow(r, k) * std::log(r);
+    return kSign * slope * pow<k>(r) * std::log(r);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -49,7 +49,7 @@ class PolyharmonicEven : public RbfBase<Dim> {
       return Vector::Zero();
     }
 
-    auto coeff = kSign * slope * std::pow(r, k - 2) * (1.0 + k * std::log(r));
+    auto coeff = kSign * slope * pow<k - 2>(r) * (1.0 + k * std::log(r));
     return coeff * diff;
   }
 
@@ -61,7 +61,7 @@ class PolyharmonicEven : public RbfBase<Dim> {
       return Mat::Zero();
     }
 
-    auto coeff = kSign * slope * std::pow(r, k - 2) * (1.0 + k * std::log(r));
+    auto coeff = kSign * slope * pow<k - 2>(r) * (1.0 + k * std::log(r));
     return coeff * (Mat::Identity() +
                     (k - 2.0 + k / (1.0 + k * std::log(r))) / (r * r) * diff.transpose() * diff);
   }

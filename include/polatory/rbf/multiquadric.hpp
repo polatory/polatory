@@ -35,7 +35,7 @@ class Multiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    return kSign * slope * std::pow(std::hypot(r, c), k);
+    return kSign * slope * pow<k>(std::hypot(r, c));
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -43,7 +43,7 @@ class Multiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = kSign * k * slope * std::pow(std::hypot(r, c), k - 2);
+    auto coeff = kSign * k * slope * pow<k - 2>(std::hypot(r, c));
     return coeff * diff;
   }
 
@@ -52,7 +52,7 @@ class Multiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = kSign * k * slope * std::pow(std::hypot(r, c), k - 2);
+    auto coeff = kSign * k * slope * pow<k - 2>(std::hypot(r, c));
     return coeff * (Mat::Identity() + (k - 2) / (r * r + c * c) * diff.transpose() * diff);
   }
 
