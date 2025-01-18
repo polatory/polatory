@@ -70,10 +70,10 @@ class DomainDivider {
     std::vector<std::size_t> iota(root_points.size());
     std::iota(iota.begin(), iota.end(), 0);
 
-    Cluster root_cluster(std::move(root_points), 0);
-    initialize_cluster(root_cluster);
-    auto current_size = root_cluster.center.multiplicity();
-    clusters.push(root_cluster);
+    Cluster root(std::move(root_points), 0);
+    initialize_cluster(root);
+    auto current_size = root.center.multiplicity();
+    clusters.push(std::move(root));
 
     while (current_size < n_coarse_points) {
       const auto& cluster = clusters.top();
@@ -96,18 +96,22 @@ class DomainDivider {
       std::vector<MixedPoint> left_points(points.begin(), points.begin() + mid);
       std::vector<MixedPoint> right_points(points.begin() + mid, points.end());
 
-      Cluster left(std::move(left_points), cluster.level + 1);
-      Cluster right(std::move(right_points), cluster.level + 1);
-      initialize_cluster(left);
-      initialize_cluster(right);
-
       current_size -= cluster.center.multiplicity();
-      current_size += left.center.multiplicity();
-      current_size += right.center.multiplicity();
-
       clusters.pop();
-      clusters.push(std::move(left));
-      clusters.push(std::move(right));
+
+      if (!left_points.empty()) {
+        Cluster left(std::move(left_points), cluster.level + 1);
+        initialize_cluster(left);
+        current_size += left.center.multiplicity();
+        clusters.push(std::move(left));
+      }
+
+      if (!right_points.empty()) {
+        Cluster right(std::move(right_points), cluster.level + 1);
+        initialize_cluster(right);
+        current_size += right.center.multiplicity();
+        clusters.push(std::move(right));
+      }
     }
 
     while (!clusters.empty()) {
