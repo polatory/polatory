@@ -11,15 +11,15 @@ namespace polatory::rbf {
 
 namespace internal {
 
-template <int Dim, int k>
+template <int Dim, int K>
 class Multiquadric : public RbfBase<Dim> {
   using Base = RbfBase<Dim>;
   using Mat = typename Base::Mat;
   using Vector = typename Base::Vector;
 
-  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer");
+  static_assert(K > 0 && K % 2 == 1, "k must be a positive odd integer");
 
-  static constexpr double kSign = ((k + 1) / 2) % 2 == 0 ? 1.0 : -1.0;
+  static constexpr double kSign = ((K + 1) / 2) % 2 == 0 ? 1.0 : -1.0;
 
  public:
   using Base::Base;
@@ -28,14 +28,14 @@ class Multiquadric : public RbfBase<Dim> {
 
   explicit Multiquadric(const std::vector<double>& params) { set_parameters(params); }
 
-  int cpd_order() const override { return (k + 1) / 2; }
+  int cpd_order() const override { return (K + 1) / 2; }
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto slope = parameters().at(0);
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    return kSign * slope * pow<k>(std::hypot(r, c));
+    return kSign * slope * pow<K>(std::hypot(r, c));
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -43,7 +43,7 @@ class Multiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = kSign * k * slope * pow<k - 2>(std::hypot(r, c));
+    auto coeff = kSign * K * slope * pow<K - 2>(std::hypot(r, c));
     return coeff * diff;
   }
 
@@ -52,8 +52,8 @@ class Multiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = kSign * k * slope * pow<k - 2>(std::hypot(r, c));
-    return coeff * (Mat::Identity() + (k - 2) / (r * r + c * c) * diff.transpose() * diff);
+    auto coeff = kSign * K * slope * pow<K - 2>(std::hypot(r, c));
+    return coeff * (Mat::Identity() + (K - 2) / (r * r + c * c) * diff.transpose() * diff);
   }
 
   Index num_parameters() const override { return 2; }

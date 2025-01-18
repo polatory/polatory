@@ -11,13 +11,13 @@ namespace polatory::rbf {
 
 namespace internal {
 
-template <int Dim, int k>
+template <int Dim, int K>
 class InverseMultiquadric : public RbfBase<Dim> {
   using Base = RbfBase<Dim>;
   using Mat = typename Base::Mat;
   using Vector = typename Base::Vector;
 
-  static_assert(k > 0 && k % 2 == 1, "k must be a positive odd integer");
+  static_assert(K > 0 && K % 2 == 1, "k must be a positive odd integer");
 
  public:
   using Base::Base;
@@ -33,7 +33,7 @@ class InverseMultiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    return slope / pow<k>(std::hypot(r, c));
+    return slope / pow<K>(std::hypot(r, c));
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -41,7 +41,7 @@ class InverseMultiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = -k * slope / pow<k + 2>(std::hypot(r, c));
+    auto coeff = -K * slope / pow<K + 2>(std::hypot(r, c));
     return coeff * diff;
   }
 
@@ -50,8 +50,8 @@ class InverseMultiquadric : public RbfBase<Dim> {
     auto c = parameters().at(1);
     auto r = diff.norm();
 
-    auto coeff = -k * slope / pow<k + 2>(std::hypot(r, c));
-    return coeff * (Mat::Identity() - (k + 2) / (r * r + c * c) * diff.transpose() * diff);
+    auto coeff = -K * slope / pow<K + 2>(std::hypot(r, c));
+    return coeff * (Mat::Identity() - (K + 2) / (r * r + c * c) * diff.transpose() * diff);
   }
 
   Index num_parameters() const override { return 2; }
