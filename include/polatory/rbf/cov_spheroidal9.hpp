@@ -46,7 +46,7 @@ class CovSpheroidal9Generic final : public CovarianceFunctionBase<Dim> {
     auto rho = r / range;
 
     auto lin = [=]() -> double { return psill * (1.0 - kA * rho); };
-    auto imq = [=]() -> double { return psill * kB * std::pow(1.0 + rho * rho, -4.5); };
+    auto imq = [=]() -> double { return psill * kB / sqrt_pow<9>(1.0 + rho * rho); };
 
     if constexpr (Kind == SpheroidalKind::kDirectPart) {
       return rho < kRho0 ? lin() - imq() : 0.0;
@@ -68,7 +68,7 @@ class CovSpheroidal9Generic final : public CovarianceFunctionBase<Dim> {
       return coeff * diff;
     };
     auto imq = [=, &diff]() -> Vector {
-      auto coeff = -psill * kD * std::pow(1.0 + rho * rho, -5.5) / (range * range);
+      auto coeff = -psill * kD / (sqrt_pow<11>(1.0 + rho * rho) * range * range);
       return coeff * diff;
     };
 
@@ -92,7 +92,7 @@ class CovSpheroidal9Generic final : public CovarianceFunctionBase<Dim> {
       return coeff * (Mat::Identity() - 1.0 / (r * r) * diff.transpose() * diff);
     };
     auto imq = [=, &diff]() -> Mat {
-      auto coeff = -psill * kD * std::pow(1.0 + rho * rho, -5.5) / (range * range);
+      auto coeff = -psill * kD / (sqrt_pow<11>(1.0 + rho * rho) * range * range);
       return coeff * (Mat::Identity() - 11.0 / (r * r + range * range) * diff.transpose() * diff);
     };
 

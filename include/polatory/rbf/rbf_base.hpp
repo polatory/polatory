@@ -101,27 +101,49 @@ class RbfBase {
 };
 
 template <int N>
-static double pow(double r) {
+static double pow(double x) {
   if constexpr (N == -1) {
-    return 1.0 / r;
+    return 1.0 / x;
   }
   if constexpr (N == 0) {
     return 1.0;
   }
   if constexpr (N == 1) {
-    return r;
+    return x;
   }
   if constexpr (N == 2) {
-    return r * r;
+    return x * x;
   }
   if constexpr (N == 3) {
-    return r * r * r;
+    return x * x * x;
   }
   if constexpr (N == 4) {
-    auto r2 = r * r;
-    return r2 * r2;
+    auto x2 = x * x;
+    return x2 * x2;
   }
-  return std::pow(r, N);
+  return std::pow(x, N);
+}
+
+template <int N>
+static double sqrt_pow(double x) {
+  if constexpr (N == 3) {
+    return x * std::sqrt(x);
+  }
+  if constexpr (N == 5) {
+    return x * x * std::sqrt(x);
+  }
+  if constexpr (N == 7) {
+    return x * x * x * std::sqrt(x);
+  }
+  if constexpr (N == 9) {
+    auto x2 = x * x;
+    return x2 * x2 * std::sqrt(x);
+  }
+  if constexpr (N == 11) {
+    auto x2 = x * x;
+    return x2 * x2 * x * std::sqrt(x);
+  }
+  return std::pow(x, N / 2.0);
 }
 
 }  // namespace polatory::rbf::internal

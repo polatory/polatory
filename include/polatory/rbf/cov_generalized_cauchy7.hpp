@@ -38,7 +38,7 @@ class CovGeneralizedCauchy7 final : public CovarianceFunctionBase<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    return psill * std::pow(1.0 + kA * rho * rho, -3.5);
+    return psill / sqrt_pow<7>(1.0 + kA * rho * rho);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
@@ -47,7 +47,7 @@ class CovGeneralizedCauchy7 final : public CovarianceFunctionBase<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff = -kA * 7.0 * psill * std::pow(1.0 + kA * rho * rho, -4.5) / (range * range);
+    auto coeff = -kA * 7.0 * psill / (sqrt_pow<9>(1.0 + kA * rho * rho) * range * range);
     return coeff * diff;
   }
 
@@ -57,7 +57,7 @@ class CovGeneralizedCauchy7 final : public CovarianceFunctionBase<Dim> {
     auto r = diff.norm();
     auto rho = r / range;
 
-    auto coeff = -kA * 7.0 * psill * std::pow(1.0 + kA * rho * rho, -4.5) / (range * range);
+    auto coeff = -kA * 7.0 * psill / (sqrt_pow<9>(1.0 + kA * rho * rho) * range * range);
     return coeff *
            (Mat::Identity() - kA * 9.0 / (kA * r * r + range * range) * diff.transpose() * diff);
   }
