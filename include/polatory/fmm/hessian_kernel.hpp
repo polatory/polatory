@@ -12,12 +12,14 @@
 
 namespace polatory::fmm {
 
-template <class Rbf>
+template <class Rbf_>
 struct HessianKernel {
+  using Rbf = Rbf_;
+  static constexpr int kDim = Rbf::kDim;
+
   template <class OtherRbf>
   using Rebind = HessianKernel<OtherRbf>;
 
-  static constexpr int kDim = Rbf::kDim;
   using Mat = Mat<kDim>;
   using Vector = geometry::Vector<kDim>;
 

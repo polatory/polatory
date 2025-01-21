@@ -12,9 +12,9 @@
 
 namespace polatory::fmm {
 
-template <class Rbf, class Kernel>
-class FmmGenericEvaluator<Rbf, Kernel>::Impl {
-  static constexpr int kDim{Rbf::kDim};
+template <class Kernel>
+class FmmGenericEvaluator<Kernel>::Impl {
+  static constexpr int kDim{Kernel::kDim};
   using Bbox = geometry::Bbox<kDim>;
   using Point = geometry::Point<kDim>;
   using Points = geometry::Points<kDim>;
@@ -139,43 +139,43 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
   std::unique_ptr<point_cloud::KdTree<kDim>> kdtree_;
 };
 
-template <class Rbf, class Kernel>
-FmmGenericEvaluator<Rbf, Kernel>::FmmGenericEvaluator(const Rbf& rbf, const Bbox& bbox)
+template <class Kernel>
+FmmGenericEvaluator<Kernel>::FmmGenericEvaluator(const Rbf& rbf, const Bbox& bbox)
     : impl_(std::make_unique<Impl>(rbf, bbox)) {}
 
-template <class Rbf, class Kernel>
-FmmGenericEvaluator<Rbf, Kernel>::~FmmGenericEvaluator() = default;
+template <class Kernel>
+FmmGenericEvaluator<Kernel>::~FmmGenericEvaluator() = default;
 
-template <class Rbf, class Kernel>
-VecX FmmGenericEvaluator<Rbf, Kernel>::evaluate() const {
+template <class Kernel>
+VecX FmmGenericEvaluator<Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_accuracy(double accuracy) {
   impl_->set_accuracy(accuracy);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_source_points(const Points& points) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_source_points(const Points& points) {
   impl_->set_source_points(points);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_target_points(const Points& points) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_target_points(const Points& points) {
   impl_->set_target_points(points);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_FMM_EVALUATORS_(RBF)                                   \
-  template class FmmGenericEvaluator<RBF, Kernel<RBF>>;                  \
-  template class FmmGenericEvaluator<RBF, GradientKernel<RBF>>;          \
-  template class FmmGenericEvaluator<RBF, GradientTransposeKernel<RBF>>; \
-  template class FmmGenericEvaluator<RBF, HessianKernel<RBF>>;
+#define IMPLEMENT_FMM_EVALUATORS_(RBF)                              \
+  template class FmmGenericEvaluator<Kernel<RBF>>;                  \
+  template class FmmGenericEvaluator<GradientKernel<RBF>>;          \
+  template class FmmGenericEvaluator<GradientTransposeKernel<RBF>>; \
+  template class FmmGenericEvaluator<HessianKernel<RBF>>;
 
 #define IMPLEMENT_FMM_EVALUATORS(RBF_NAME) \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<1>);  \

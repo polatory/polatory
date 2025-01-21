@@ -39,9 +39,11 @@ class FmmGenericSymmetricEvaluatorBase {
 template <int Dim>
 using FmmGenericSymmetricEvaluatorPtr = std::unique_ptr<FmmGenericSymmetricEvaluatorBase<Dim>>;
 
-template <class Rbf, class Kernel>
-class FmmGenericSymmetricEvaluator final : public FmmGenericSymmetricEvaluatorBase<Rbf::kDim> {
-  static constexpr int kDim = Rbf::kDim;
+template <class Kernel>
+class FmmGenericSymmetricEvaluator final : public FmmGenericSymmetricEvaluatorBase<Kernel::kDim> {
+  using Rbf = typename Kernel::Rbf;
+  static constexpr int kDim = Kernel::kDim;
+
   using Bbox = geometry::Bbox<kDim>;
   using Points = geometry::Points<kDim>;
 
@@ -70,10 +72,10 @@ class FmmGenericSymmetricEvaluator final : public FmmGenericSymmetricEvaluatorBa
 };
 
 template <class Rbf>
-using FmmSymmetricEvaluator = FmmGenericSymmetricEvaluator<Rbf, Kernel<Rbf>>;
+using FmmSymmetricEvaluator = FmmGenericSymmetricEvaluator<Kernel<Rbf>>;
 
 template <class Rbf>
-using FmmHessianSymmetricEvaluator = FmmGenericSymmetricEvaluator<Rbf, HessianKernel<Rbf>>;
+using FmmHessianSymmetricEvaluator = FmmGenericSymmetricEvaluator<HessianKernel<Rbf>>;
 
 template <int Dim>
 FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf::Rbf<Dim>& rbf,

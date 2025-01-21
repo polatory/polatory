@@ -11,12 +11,14 @@
 
 namespace polatory::fmm {
 
-template <class Rbf>
+template <class Rbf_>
 struct Kernel {
+  using Rbf = Rbf_;
+  static constexpr int kDim = Rbf::kDim;
+
   template <class OtherRbf>
   using Rebind = Kernel<OtherRbf>;
 
-  static constexpr int kDim = Rbf::kDim;
   using Vector = geometry::Vector<kDim>;
 
   static constexpr auto homogeneity_tag{scalfmm::matrix_kernels::homogeneity::non_homogenous};

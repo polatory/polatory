@@ -12,9 +12,9 @@
 
 namespace polatory::fmm {
 
-template <class Rbf, class Kernel>
-class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
-  static constexpr int kDim{Rbf::kDim};
+template <class Kernel>
+class FmmGenericSymmetricEvaluator<Kernel>::Impl {
+  static constexpr int kDim{Kernel::kDim};
   using Bbox = geometry::Bbox<kDim>;
   using Point = geometry::Point<kDim>;
   using Points = geometry::Points<kDim>;
@@ -139,37 +139,36 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
   std::unique_ptr<point_cloud::KdTree<kDim>> kdtree_;
 };
 
-template <class Rbf, class Kernel>
-FmmGenericSymmetricEvaluator<Rbf, Kernel>::FmmGenericSymmetricEvaluator(const Rbf& rbf,
-                                                                        const Bbox& bbox)
+template <class Kernel>
+FmmGenericSymmetricEvaluator<Kernel>::FmmGenericSymmetricEvaluator(const Rbf& rbf, const Bbox& bbox)
     : impl_(std::make_unique<Impl>(rbf, bbox)) {}
 
-template <class Rbf, class Kernel>
-FmmGenericSymmetricEvaluator<Rbf, Kernel>::~FmmGenericSymmetricEvaluator() = default;
+template <class Kernel>
+FmmGenericSymmetricEvaluator<Kernel>::~FmmGenericSymmetricEvaluator() = default;
 
-template <class Rbf, class Kernel>
-VecX FmmGenericSymmetricEvaluator<Rbf, Kernel>::evaluate() const {
+template <class Kernel>
+VecX FmmGenericSymmetricEvaluator<Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericSymmetricEvaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+template <class Kernel>
+void FmmGenericSymmetricEvaluator<Kernel>::set_accuracy(double accuracy) {
   impl_->set_accuracy(accuracy);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericSymmetricEvaluator<Rbf, Kernel>::set_points(const Points& points) {
+template <class Kernel>
+void FmmGenericSymmetricEvaluator<Kernel>::set_points(const Points& points) {
   impl_->set_points(points);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericSymmetricEvaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
+template <class Kernel>
+void FmmGenericSymmetricEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)                 \
-  template class FmmGenericSymmetricEvaluator<RBF, Kernel<RBF>>; \
-  template class FmmGenericSymmetricEvaluator<RBF, HessianKernel<RBF>>;
+#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)            \
+  template class FmmGenericSymmetricEvaluator<Kernel<RBF>>; \
+  template class FmmGenericSymmetricEvaluator<HessianKernel<RBF>>;
 
 #define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(RBF_NAME) \
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<1>);  \

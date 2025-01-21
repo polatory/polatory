@@ -5,8 +5,8 @@
 
 namespace polatory::fmm {
 
-template <class Rbf, class Kernel>
-class FmmGenericEvaluator<Rbf, Kernel>::Impl {
+template <class Kernel>
+class FmmGenericEvaluator<Kernel>::Impl {
   using RbfDirectPart = typename Rbf::DirectPart;
   using RbfFastPart = typename Rbf::FastPart;
   using KernelDirectPart = typename Kernel::template Rebind<RbfDirectPart>;
@@ -54,61 +54,61 @@ class FmmGenericEvaluator<Rbf, Kernel>::Impl {
  private:
   RbfDirectPart rbf_direct_part_;
   RbfFastPart rbf_fast_part_;
-  FmmGenericEvaluator<RbfDirectPart, KernelDirectPart> direct_eval_;
-  FmmGenericEvaluator<RbfFastPart, KernelFastPart> fast_eval_;
+  FmmGenericEvaluator<KernelDirectPart> direct_eval_;
+  FmmGenericEvaluator<KernelFastPart> fast_eval_;
 
   Index n_src_points_{};
   Index n_trg_points_{};
 };
 
-template <class Rbf, class Kernel>
-FmmGenericEvaluator<Rbf, Kernel>::FmmGenericEvaluator(const Rbf& rbf, const Bbox& bbox)
+template <class Kernel>
+FmmGenericEvaluator<Kernel>::FmmGenericEvaluator(const Rbf& rbf, const Bbox& bbox)
     : impl_(std::make_unique<Impl>(rbf, bbox)) {}
 
-template <class Rbf, class Kernel>
-FmmGenericEvaluator<Rbf, Kernel>::~FmmGenericEvaluator() = default;
+template <class Kernel>
+FmmGenericEvaluator<Kernel>::~FmmGenericEvaluator() = default;
 
-template <class Rbf, class Kernel>
-VecX FmmGenericEvaluator<Rbf, Kernel>::evaluate() const {
+template <class Kernel>
+VecX FmmGenericEvaluator<Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_accuracy(double accuracy) {
   impl_->set_accuracy(accuracy);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_source_points(const Points& points) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_source_points(const Points& points) {
   impl_->set_source_points(points);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_target_points(const Points& points) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_target_points(const Points& points) {
   impl_->set_target_points(points);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericEvaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
+template <class Kernel>
+void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_FMM_EVALUATORS_(RBF)                                   \
-  template class FmmGenericEvaluator<RBF, Kernel<RBF>>;                  \
-  template class FmmGenericEvaluator<RBF, GradientKernel<RBF>>;          \
-  template class FmmGenericEvaluator<RBF, GradientTransposeKernel<RBF>>; \
-  template class FmmGenericEvaluator<RBF, HessianKernel<RBF>>;
+#define IMPLEMENT_FMM_EVALUATORS_(RBF)                              \
+  template class FmmGenericEvaluator<Kernel<RBF>>;                  \
+  template class FmmGenericEvaluator<GradientKernel<RBF>>;          \
+  template class FmmGenericEvaluator<GradientTransposeKernel<RBF>>; \
+  template class FmmGenericEvaluator<HessianKernel<RBF>>;
 
 #define IMPLEMENT_FMM_EVALUATORS(RBF_NAME) \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<1>);  \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<2>);  \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<3>);
 
-#define EXTERN_FMM_EVALUATORS_(RBF)                                             \
-  extern template class FmmGenericEvaluator<RBF, Kernel<RBF>>;                  \
-  extern template class FmmGenericEvaluator<RBF, GradientKernel<RBF>>;          \
-  extern template class FmmGenericEvaluator<RBF, GradientTransposeKernel<RBF>>; \
-  extern template class FmmGenericEvaluator<RBF, HessianKernel<RBF>>;
+#define EXTERN_FMM_EVALUATORS_(RBF)                                        \
+  extern template class FmmGenericEvaluator<Kernel<RBF>>;                  \
+  extern template class FmmGenericEvaluator<GradientKernel<RBF>>;          \
+  extern template class FmmGenericEvaluator<GradientTransposeKernel<RBF>>; \
+  extern template class FmmGenericEvaluator<HessianKernel<RBF>>;
 
 #define EXTERN_FMM_EVALUATORS(RBF_NAME) \
   EXTERN_FMM_EVALUATORS_(RBF_NAME<1>);  \

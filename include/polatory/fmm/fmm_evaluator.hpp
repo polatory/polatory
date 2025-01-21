@@ -43,9 +43,11 @@ class FmmGenericEvaluatorBase {
 template <int Dim>
 using FmmGenericEvaluatorPtr = std::unique_ptr<FmmGenericEvaluatorBase<Dim>>;
 
-template <class Rbf, class Kernel>
-class FmmGenericEvaluator final : public FmmGenericEvaluatorBase<Rbf::kDim> {
-  static constexpr int kDim = Rbf::kDim;
+template <class Kernel>
+class FmmGenericEvaluator final : public FmmGenericEvaluatorBase<Kernel::kDim> {
+  using Rbf = typename Kernel::Rbf;
+  static constexpr int kDim = Kernel::kDim;
+
   using Bbox = geometry::Bbox<kDim>;
   using Points = geometry::Points<kDim>;
 
@@ -76,16 +78,16 @@ class FmmGenericEvaluator final : public FmmGenericEvaluatorBase<Rbf::kDim> {
 };
 
 template <class Rbf>
-using FmmEvaluator = FmmGenericEvaluator<Rbf, Kernel<Rbf>>;
+using FmmEvaluator = FmmGenericEvaluator<Kernel<Rbf>>;
 
 template <class Rbf>
-using FmmGradientEvaluator = FmmGenericEvaluator<Rbf, GradientKernel<Rbf>>;
+using FmmGradientEvaluator = FmmGenericEvaluator<GradientKernel<Rbf>>;
 
 template <class Rbf>
-using FmmGradientTransposeEvaluator = FmmGenericEvaluator<Rbf, GradientTransposeKernel<Rbf>>;
+using FmmGradientTransposeEvaluator = FmmGenericEvaluator<GradientTransposeKernel<Rbf>>;
 
 template <class Rbf>
-using FmmHessianEvaluator = FmmGenericEvaluator<Rbf, HessianKernel<Rbf>>;
+using FmmHessianEvaluator = FmmGenericEvaluator<HessianKernel<Rbf>>;
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::Rbf<Dim>& rbf,

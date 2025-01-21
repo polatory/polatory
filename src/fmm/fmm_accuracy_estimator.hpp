@@ -26,9 +26,11 @@
 
 namespace polatory::fmm {
 
-template <class Rbf, class Kernel>
+template <class Kernel>
 class FmmAccuracyEstimator {
-  static constexpr int kDim{Rbf::kDim};
+  using Rbf = typename Kernel::Rbf;
+  static constexpr int kDim{Kernel::kDim};
+
   using Bbox = geometry::Bbox<kDim>;
   using Point = geometry::Point<kDim>;
   using Points = geometry::Points<kDim>;

@@ -5,8 +5,8 @@
 
 namespace polatory::fmm {
 
-template <class Rbf, class Kernel>
-class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
+template <class Kernel>
+class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   using RbfDirectPart = typename Rbf::DirectPart;
   using RbfFastPart = typename Rbf::FastPart;
   using KernelDirectPart = typename Kernel::template Rebind<RbfDirectPart>;
@@ -48,52 +48,51 @@ class FmmGenericSymmetricEvaluator<Rbf, Kernel>::Impl {
  private:
   RbfDirectPart rbf_direct_part_;
   RbfFastPart rbf_fast_part_;
-  FmmGenericSymmetricEvaluator<RbfDirectPart, KernelDirectPart> direct_eval_;
-  FmmGenericSymmetricEvaluator<RbfFastPart, KernelFastPart> fast_eval_;
+  FmmGenericSymmetricEvaluator<KernelDirectPart> direct_eval_;
+  FmmGenericSymmetricEvaluator<KernelFastPart> fast_eval_;
 
   Index n_points_{};
 };
 
-template <class Rbf, class Kernel>
-FmmGenericSymmetricEvaluator<Rbf, Kernel>::FmmGenericSymmetricEvaluator(const Rbf& rbf,
-                                                                        const Bbox& bbox)
+template <class Kernel>
+FmmGenericSymmetricEvaluator<Kernel>::FmmGenericSymmetricEvaluator(const Rbf& rbf, const Bbox& bbox)
     : impl_(std::make_unique<Impl>(rbf, bbox)) {}
 
-template <class Rbf, class Kernel>
-FmmGenericSymmetricEvaluator<Rbf, Kernel>::~FmmGenericSymmetricEvaluator() = default;
+template <class Kernel>
+FmmGenericSymmetricEvaluator<Kernel>::~FmmGenericSymmetricEvaluator() = default;
 
-template <class Rbf, class Kernel>
-VecX FmmGenericSymmetricEvaluator<Rbf, Kernel>::evaluate() const {
+template <class Kernel>
+VecX FmmGenericSymmetricEvaluator<Kernel>::evaluate() const {
   return impl_->evaluate();
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericSymmetricEvaluator<Rbf, Kernel>::set_accuracy(double accuracy) {
+template <class Kernel>
+void FmmGenericSymmetricEvaluator<Kernel>::set_accuracy(double accuracy) {
   impl_->set_accuracy(accuracy);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericSymmetricEvaluator<Rbf, Kernel>::set_points(const Points& points) {
+template <class Kernel>
+void FmmGenericSymmetricEvaluator<Kernel>::set_points(const Points& points) {
   impl_->set_points(points);
 }
 
-template <class Rbf, class Kernel>
-void FmmGenericSymmetricEvaluator<Rbf, Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
+template <class Kernel>
+void FmmGenericSymmetricEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
   impl_->set_weights(weights);
 }
 
-#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)                 \
-  template class FmmGenericSymmetricEvaluator<RBF, Kernel<RBF>>; \
-  template class FmmGenericSymmetricEvaluator<RBF, HessianKernel<RBF>>;
+#define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)            \
+  template class FmmGenericSymmetricEvaluator<Kernel<RBF>>; \
+  template class FmmGenericSymmetricEvaluator<HessianKernel<RBF>>;
 
 #define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS(RBF_NAME) \
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<1>);  \
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<2>);  \
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<3>);
 
-#define EXTERN_FMM_SYMMETRIC_EVALUATORS_(RBF)                           \
-  extern template class FmmGenericSymmetricEvaluator<RBF, Kernel<RBF>>; \
-  extern template class FmmGenericSymmetricEvaluator<RBF, HessianKernel<RBF>>;
+#define EXTERN_FMM_SYMMETRIC_EVALUATORS_(RBF)                      \
+  extern template class FmmGenericSymmetricEvaluator<Kernel<RBF>>; \
+  extern template class FmmGenericSymmetricEvaluator<HessianKernel<RBF>>;
 
 #define EXTERN_FMM_SYMMETRIC_EVALUATORS(RBF_NAME) \
   EXTERN_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<1>);  \
