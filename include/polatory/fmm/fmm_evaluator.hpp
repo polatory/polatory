@@ -14,7 +14,7 @@
 
 namespace polatory::fmm {
 
-template <int Dim>
+template <int Dim, int km, int kn>
 class FmmGenericEvaluatorBase {
   static constexpr int kDim = Dim;
   using Points = geometry::Points<kDim>;
@@ -40,11 +40,12 @@ class FmmGenericEvaluatorBase {
   virtual void set_weights(const Eigen::Ref<const VecX>& weights) = 0;
 };
 
-template <int Dim>
-using FmmGenericEvaluatorPtr = std::unique_ptr<FmmGenericEvaluatorBase<Dim>>;
+template <int Dim, int km, int kn>
+using FmmGenericEvaluatorPtr = std::unique_ptr<FmmGenericEvaluatorBase<Dim, km, kn>>;
 
 template <class Kernel>
-class FmmGenericEvaluator final : public FmmGenericEvaluatorBase<Kernel::kDim> {
+class FmmGenericEvaluator final
+    : public FmmGenericEvaluatorBase<Kernel::kDim, Kernel::km, Kernel::kn> {
   using Rbf = typename Kernel::Rbf;
   static constexpr int kDim = Kernel::kDim;
 
@@ -90,19 +91,19 @@ template <class Rbf>
 using FmmHessianEvaluator = FmmGenericEvaluator<HessianKernel<Rbf>>;
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const rbf::Rbf<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim, 1, 1> make_fmm_evaluator(const rbf::Rbf<Dim>& rbf,
                                                const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const rbf::Rbf<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim, Dim, 1> make_fmm_gradient_evaluator(const rbf::Rbf<Dim>& rbf,
                                                         const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const rbf::Rbf<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim, 1, Dim> make_fmm_gradient_transpose_evaluator(const rbf::Rbf<Dim>& rbf,
                                                                   const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const rbf::Rbf<Dim>& rbf,
+FmmGenericEvaluatorPtr<Dim, Dim, Dim> make_fmm_hessian_evaluator(const rbf::Rbf<Dim>& rbf,
                                                        const geometry::Bbox<Dim>& bbox);
 
 }  // namespace polatory::fmm

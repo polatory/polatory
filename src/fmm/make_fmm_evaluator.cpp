@@ -43,7 +43,7 @@ using polatory::rbf::internal::Triharmonic3D;
 namespace polatory::fmm {
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const Rbf<Dim>& rbf, const Bbox<Dim>& bbox) {
+FmmGenericEvaluatorPtr<Dim, 1, 1> make_fmm_evaluator(const Rbf<Dim>& rbf, const Bbox<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                    \
@@ -76,15 +76,18 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const Rbf<Dim>& rbf, const Bbox<D
   throw std::runtime_error("not implemented");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_evaluator<1>(const Rbf<1>& rbf, const Bbox<1>& bbox);
+template FmmGenericEvaluatorPtr<1, 1, 1> make_fmm_evaluator<1>(const Rbf<1>& rbf,
+                                                               const Bbox<1>& bbox);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_evaluator<2>(const Rbf<2>& rbf, const Bbox<2>& bbox);
+template FmmGenericEvaluatorPtr<2, 1, 1> make_fmm_evaluator<2>(const Rbf<2>& rbf,
+                                                               const Bbox<2>& bbox);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_evaluator<3>(const Rbf<3>& rbf, const Bbox<3>& bbox);
+template FmmGenericEvaluatorPtr<3, 1, 1> make_fmm_evaluator<3>(const Rbf<3>& rbf,
+                                                               const Bbox<3>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const Rbf<Dim>& rbf,
-                                                        const Bbox<Dim>& bbox) {
+FmmGenericEvaluatorPtr<Dim, Dim, 1> make_fmm_gradient_evaluator(const Rbf<Dim>& rbf,
+                                                                const Bbox<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                            \
@@ -117,18 +120,18 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const Rbf<Dim>& rbf,
   throw std::runtime_error("not implemented");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_gradient_evaluator<1>(const Rbf<1>& rbf,
-                                                                  const Bbox<1>& bbox);
+template FmmGenericEvaluatorPtr<1, 1, 1> make_fmm_gradient_evaluator<1>(const Rbf<1>& rbf,
+                                                                        const Bbox<1>& bbox);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_gradient_evaluator<2>(const Rbf<2>& rbf,
-                                                                  const Bbox<2>& bbox);
+template FmmGenericEvaluatorPtr<2, 2, 1> make_fmm_gradient_evaluator<2>(const Rbf<2>& rbf,
+                                                                        const Bbox<2>& bbox);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_gradient_evaluator<3>(const Rbf<3>& rbf,
-                                                                  const Bbox<3>& bbox);
+template FmmGenericEvaluatorPtr<3, 3, 1> make_fmm_gradient_evaluator<3>(const Rbf<3>& rbf,
+                                                                        const Bbox<3>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const Rbf<Dim>& rbf,
-                                                                  const Bbox<Dim>& bbox) {
+FmmGenericEvaluatorPtr<Dim, 1, Dim> make_fmm_gradient_transpose_evaluator(const Rbf<Dim>& rbf,
+                                                                          const Bbox<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                                     \
@@ -161,17 +164,18 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const Rbf<Dim>
   throw std::runtime_error("not implemented");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_gradient_transpose_evaluator<1>(const Rbf<1>& rbf,
-                                                                            const Bbox<1>& bbox);
+template FmmGenericEvaluatorPtr<1, 1, 1> make_fmm_gradient_transpose_evaluator<1>(
+    const Rbf<1>& rbf, const Bbox<1>& bbox);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_gradient_transpose_evaluator<2>(const Rbf<2>& rbf,
-                                                                            const Bbox<2>& bbox);
+template FmmGenericEvaluatorPtr<2, 1, 2> make_fmm_gradient_transpose_evaluator<2>(
+    const Rbf<2>& rbf, const Bbox<2>& bbox);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_gradient_transpose_evaluator<3>(const Rbf<3>& rbf,
-                                                                            const Bbox<3>& bbox);
+template FmmGenericEvaluatorPtr<3, 1, 3> make_fmm_gradient_transpose_evaluator<3>(
+    const Rbf<3>& rbf, const Bbox<3>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const Rbf<Dim>& rbf, const Bbox<Dim>& bbox) {
+FmmGenericEvaluatorPtr<Dim, Dim, Dim> make_fmm_hessian_evaluator(const Rbf<Dim>& rbf,
+                                                                 const Bbox<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                           \
@@ -204,18 +208,18 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const Rbf<Dim>& rbf, cons
   throw std::runtime_error("not implemented");
 }
 
-template FmmGenericEvaluatorPtr<1> make_fmm_hessian_evaluator<1>(const Rbf<1>& rbf,
-                                                                 const Bbox<1>& bbox);
+template FmmGenericEvaluatorPtr<1, 1, 1> make_fmm_hessian_evaluator<1>(const Rbf<1>& rbf,
+                                                                       const Bbox<1>& bbox);
 
-template FmmGenericEvaluatorPtr<2> make_fmm_hessian_evaluator<2>(const Rbf<2>& rbf,
-                                                                 const Bbox<2>& bbox);
+template FmmGenericEvaluatorPtr<2, 2, 2> make_fmm_hessian_evaluator<2>(const Rbf<2>& rbf,
+                                                                       const Bbox<2>& bbox);
 
-template FmmGenericEvaluatorPtr<3> make_fmm_hessian_evaluator<3>(const Rbf<3>& rbf,
-                                                                 const Bbox<3>& bbox);
+template FmmGenericEvaluatorPtr<3, 3, 3> make_fmm_hessian_evaluator<3>(const Rbf<3>& rbf,
+                                                                       const Bbox<3>& bbox);
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const Rbf<Dim>& rbf,
-                                                                  const Bbox<Dim>& bbox) {
+FmmGenericSymmetricEvaluatorPtr<Dim, 1> make_fmm_symmetric_evaluator(const Rbf<Dim>& rbf,
+                                                                     const Bbox<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                             \
@@ -248,18 +252,18 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const Rbf<Dim>
   throw std::runtime_error("not implemented");
 }
 
-template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_symmetric_evaluator<1>(const Rbf<1>& rbf,
-                                                                            const Bbox<1>& bbox);
+template FmmGenericSymmetricEvaluatorPtr<1, 1> make_fmm_symmetric_evaluator<1>(const Rbf<1>& rbf,
+                                                                               const Bbox<1>& bbox);
 
-template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_symmetric_evaluator<2>(const Rbf<2>& rbf,
-                                                                            const Bbox<2>& bbox);
+template FmmGenericSymmetricEvaluatorPtr<2, 1> make_fmm_symmetric_evaluator<2>(const Rbf<2>& rbf,
+                                                                               const Bbox<2>& bbox);
 
-template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_symmetric_evaluator<3>(const Rbf<3>& rbf,
-                                                                            const Bbox<3>& bbox);
+template FmmGenericSymmetricEvaluatorPtr<3, 1> make_fmm_symmetric_evaluator<3>(const Rbf<3>& rbf,
+                                                                               const Bbox<3>& bbox);
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const Rbf<Dim>& rbf,
-                                                                          const Bbox<Dim>& bbox) {
+FmmGenericSymmetricEvaluatorPtr<Dim, Dim> make_fmm_hessian_symmetric_evaluator(
+    const Rbf<Dim>& rbf, const Bbox<Dim>& bbox) {
   auto* base = rbf.get_raw_pointer();
 
 #define CASE(RBF_NAME)                                                                    \
@@ -292,13 +296,13 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const 
   throw std::runtime_error("not implemented");
 }
 
-template FmmGenericSymmetricEvaluatorPtr<1> make_fmm_hessian_symmetric_evaluator<1>(
+template FmmGenericSymmetricEvaluatorPtr<1, 1> make_fmm_hessian_symmetric_evaluator<1>(
     const Rbf<1>& rbf, const Bbox<1>& bbox);
 
-template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_hessian_symmetric_evaluator<2>(
+template FmmGenericSymmetricEvaluatorPtr<2, 2> make_fmm_hessian_symmetric_evaluator<2>(
     const Rbf<2>& rbf, const Bbox<2>& bbox);
 
-template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_hessian_symmetric_evaluator<3>(
+template FmmGenericSymmetricEvaluatorPtr<3, 3> make_fmm_hessian_symmetric_evaluator<3>(
     const Rbf<3>& rbf, const Bbox<3>& bbox);
 
 }  // namespace polatory::fmm

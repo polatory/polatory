@@ -12,7 +12,7 @@
 
 namespace polatory::fmm {
 
-template <int Dim>
+template <int Dim, int kn>
 class FmmGenericSymmetricEvaluatorBase {
   static constexpr int kDim = Dim;
   using Points = geometry::Points<kDim>;
@@ -36,11 +36,12 @@ class FmmGenericSymmetricEvaluatorBase {
   virtual void set_weights(const Eigen::Ref<const VecX>& weights) = 0;
 };
 
-template <int Dim>
-using FmmGenericSymmetricEvaluatorPtr = std::unique_ptr<FmmGenericSymmetricEvaluatorBase<Dim>>;
+template <int Dim, int kn>
+using FmmGenericSymmetricEvaluatorPtr = std::unique_ptr<FmmGenericSymmetricEvaluatorBase<Dim, kn>>;
 
 template <class Kernel>
-class FmmGenericSymmetricEvaluator final : public FmmGenericSymmetricEvaluatorBase<Kernel::kDim> {
+class FmmGenericSymmetricEvaluator final
+    : public FmmGenericSymmetricEvaluatorBase<Kernel::kDim, Kernel::kn> {
   using Rbf = typename Kernel::Rbf;
   static constexpr int kDim = Kernel::kDim;
 
@@ -78,11 +79,11 @@ template <class Rbf>
 using FmmHessianSymmetricEvaluator = FmmGenericSymmetricEvaluator<HessianKernel<Rbf>>;
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const rbf::Rbf<Dim>& rbf,
-                                                                  const geometry::Bbox<Dim>& bbox);
+FmmGenericSymmetricEvaluatorPtr<Dim, 1> make_fmm_symmetric_evaluator(
+    const rbf::Rbf<Dim>& rbf, const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(
+FmmGenericSymmetricEvaluatorPtr<Dim, Dim> make_fmm_hessian_symmetric_evaluator(
     const rbf::Rbf<Dim>& rbf, const geometry::Bbox<Dim>& bbox);
 
 }  // namespace polatory::fmm

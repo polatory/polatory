@@ -21,11 +21,15 @@ class Operator : public krylov::LinearOperator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::Bbox<kDim>;
-  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
-  using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim>;
   using Model = Model<kDim>;
   using MonomialBasis = polynomial::MonomialBasis<kDim>;
   using Points = geometry::Points<kDim>;
+
+  template <int km, int kn>
+  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim, km, kn>;
+
+  template <int kn>
+  using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim, kn>;
 
  public:
   Operator(const Model& model, const Points& points, const Points& grad_points,
@@ -118,10 +122,10 @@ class Operator : public krylov::LinearOperator {
   Index mu_{};
   Index sigma_{};
 
-  std::vector<FmmGenericSymmetricEvaluatorPtr> a_;
-  std::vector<FmmGenericEvaluatorPtr> f_;
-  std::vector<FmmGenericEvaluatorPtr> ft_;
-  std::vector<FmmGenericSymmetricEvaluatorPtr> h_;
+  std::vector<FmmGenericSymmetricEvaluatorPtr<1>> a_;
+  std::vector<FmmGenericEvaluatorPtr<kDim, 1>> f_;
+  std::vector<FmmGenericEvaluatorPtr<1, kDim>> ft_;
+  std::vector<FmmGenericSymmetricEvaluatorPtr<kDim>> h_;
   std::unique_ptr<MonomialBasis> poly_basis_;
   MatX p_;
 };

@@ -21,12 +21,16 @@ class SymmetricEvaluator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::Bbox<kDim>;
-  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
-  using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim>;
   using Model = Model<kDim>;
   using MonomialBasis = polynomial::MonomialBasis<kDim>;
   using Points = geometry::Points<kDim>;
   using PolynomialEvaluator = polynomial::PolynomialEvaluator<MonomialBasis>;
+
+  template <int km, int kn>
+  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim, km, kn>;
+
+  template <int kn>
+  using FmmGenericSymmetricEvaluatorPtr = fmm::FmmGenericSymmetricEvaluatorPtr<kDim, kn>;
 
  public:
   SymmetricEvaluator(const Model& model, const Points& points, const Points& grad_points,
@@ -120,10 +124,10 @@ class SymmetricEvaluator {
   Index mu_{};
   Index sigma_{};
 
-  std::vector<FmmGenericSymmetricEvaluatorPtr> a_;
-  std::vector<FmmGenericEvaluatorPtr> f_;
-  std::vector<FmmGenericEvaluatorPtr> ft_;
-  std::vector<FmmGenericSymmetricEvaluatorPtr> h_;
+  std::vector<FmmGenericSymmetricEvaluatorPtr<1>> a_;
+  std::vector<FmmGenericEvaluatorPtr<kDim, 1>> f_;
+  std::vector<FmmGenericEvaluatorPtr<1, kDim>> ft_;
+  std::vector<FmmGenericSymmetricEvaluatorPtr<kDim>> h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 

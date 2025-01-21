@@ -20,11 +20,13 @@ class Evaluator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::Bbox<kDim>;
-  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim>;
   using Model = Model<kDim>;
   using MonomialBasis = polynomial::MonomialBasis<kDim>;
   using Points = geometry::Points<kDim>;
   using PolynomialEvaluator = polynomial::PolynomialEvaluator<MonomialBasis>;
+
+  template <int km, int kn>
+  using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim, km, kn>;
 
  public:
   Evaluator(const Model& model, const Points& source_points, double accuracy = kInfinity)
@@ -152,10 +154,10 @@ class Evaluator {
   Index trg_mu_{};
   Index trg_sigma_{};
 
-  std::vector<FmmGenericEvaluatorPtr> a_;
-  std::vector<FmmGenericEvaluatorPtr> f_;
-  std::vector<FmmGenericEvaluatorPtr> ft_;
-  std::vector<FmmGenericEvaluatorPtr> h_;
+  std::vector<FmmGenericEvaluatorPtr<1, 1>> a_;
+  std::vector<FmmGenericEvaluatorPtr<kDim, 1>> f_;
+  std::vector<FmmGenericEvaluatorPtr<1, kDim>> ft_;
+  std::vector<FmmGenericEvaluatorPtr<kDim, kDim>> h_;
   std::unique_ptr<PolynomialEvaluator> p_;
 };
 
