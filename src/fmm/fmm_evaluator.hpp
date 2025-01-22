@@ -79,34 +79,21 @@ class FmmGenericEvaluator<Kernel>::Impl {
 
     prepare();
 
-    if (config_.tree_height > 0) {
-      if (multipole_dirty_) {
-        src_tree_->reset_multipoles();
-        scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
-            (*src_tree_, *fmm_operator_, p2m | m2m);
-        multipole_dirty_ = false;
-      }
+    auto src_particles = src_resource_->get_particles<SourceContainer>();
+    auto trg_particles = trg_resource_->get_particles<TargetContainer>();
 
-      trg_tree_->reset_locals();
-      trg_tree_->reset_outputs();
-      if (!trg_tree_->is_interaction_m2l_lists_built()) {
-        scalfmm::list::omp::build_m2l_interaction_list(*src_tree_, *trg_tree_, 1);
-      }
-      if (!trg_tree_->is_interaction_p2p_lists_built()) {
-        scalfmm::list::omp::build_p2p_interaction_list(*src_tree_, *trg_tree_, 1, false);
-      }
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
-          (*src_tree_, *trg_tree_, *fmm_operator_, m2l | l2l | l2p | p2p);
+    if (config_.tree_height > 0) {
+      SourceTree src_tree(config_.tree_height, config_.order, box_, 10, 10, src_particles, true);
+      TargetTree trg_tree(config_.tree_height, config_.order, box_, 10, 10, trg_particles, true);
+      scalfmm::list::omp::build_m2l_interaction_list(src_tree, trg_tree, 1);
+      scalfmm::list::omp::build_p2p_interaction_list(src_tree, trg_tree, 1, false);
+      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](src_tree, trg_tree,
+                                                                            *fmm_operator_);
     } else {
-      trg_particles_.reset_outputs();
-      full_direct(src_particles_, trg_particles_, kernel_);
+      full_direct(src_particles, trg_particles, kernel_);
     }
 
     auto result = potentials();
-
-    // Release memory held by the trees.
-    src_tree_.reset(nullptr);
-    trg_tree_.reset(nullptr);
 
     return result;
   }
@@ -168,25 +155,17 @@ class FmmGenericEvaluator<Kernel>::Impl {
   }
 
   void prepare() const {
-    if (n_src_points_ * n_trg_points_ < 1024 * 1024) {
+    auto src_size = src_resource_->size();
+    auto trg_size = trg_resource_->size();
+
+    if (src_size * trg_size < 1024 * 1024) {
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
-      src_tree_.reset(nullptr);
-      trg_tree_.reset(nullptr);
       config_ = {.tree_height = 0};
       return;
     }
 
-    auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_trg_points_));
-
-    if (src_sorted_level_ < tree_height - 1) {
-      scalfmm::utils::sort_container(box_, tree_height - 1, src_particles_);
-      src_sorted_level_ = tree_height - 1;
-    }
-    if (trg_sorted_level_ < tree_height - 1) {
-      scalfmm::utils::sort_container(box_, tree_height - 1, trg_particles_);
-      trg_sorted_level_ = tree_height - 1;
-    }
+    auto tree_height = fmm_tree_height<kDim>(std::max(src_size, trg_size));
 
     auto config = find_best_configuration(tree_height);
     if (config != config_) {
@@ -196,20 +175,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
 
       far_field_ = std::make_unique<FarField>(it->second);
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
-      src_tree_.reset(nullptr);
-      trg_tree_.reset(nullptr);
       config_ = config;
-    }
-
-    if (!src_tree_) {
-      src_tree_ = std::make_unique<SourceTree>(tree_height, config.order, box_, 10, 10,
-                                               src_particles_, true);
-      multipole_dirty_ = true;
-    }
-
-    if (!trg_tree_) {
-      trg_tree_ = std::make_unique<TargetTree>(tree_height, config.order, box_, 10, 10,
-                                               trg_particles_, true);
     }
   }
 
@@ -226,8 +192,6 @@ class FmmGenericEvaluator<Kernel>::Impl {
   mutable InterpolatorConfiguration config_{};
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
-  mutable std::unique_ptr<SourceTree> src_tree_;
-  mutable std::unique_ptr<TargetTree> trg_tree_;
   mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
   mutable LruCache<InterpolatorConfiguration, Interpolator> interpolator_cache_{2};
 };

@@ -37,14 +37,14 @@ class Resource {
  public:
   Resource(const Rbf& rbf, const Bbox& bbox) : a_{rbf.anisotropy()}, box_{make_box(bbox)} {}
 
-  template <int kn>
-  auto get_particles(int level) const {
+  template <class Container>
+  Container get_particles(int level) const {
     if (sorted_level_ < level) {
       scalfmm::utils::sort_container(box_, level, particles_);
       sorted_level_ = level;
     }
 
-    scalfmm::container::particle_container<GenericParticle<kn>> result;
+    Container result;
     result.resize(particles_.size());
 
     auto p_it = particles_.cbegin();
@@ -85,6 +85,9 @@ class Resource {
     }
   }
 
+  Index size() const { return particles_.size(); }
+
+ private:
   // IMPORTANT: Keep in sync with the function in src/fmm/utility.hpp.
   Box make_box(const Bbox& bbox) {
     auto a_bbox = bbox.transform(a_);
