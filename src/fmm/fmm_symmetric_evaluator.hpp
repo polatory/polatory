@@ -121,33 +121,6 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
     best_config_.clear();
   }
 
-  void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_points_);
-
-    if (!tree_) {
-      for (Index idx = 0; idx < n_points_; idx++) {
-        auto p = particles_.at(idx);
-        auto orig_idx = std::get<0>(p.variables());
-        for (auto i = 0; i < km; i++) {
-          p.inputs(i) = weights(km * orig_idx + i);
-        }
-      }
-    } else {
-      scalfmm::component::for_each_leaf(std::begin(*tree_), std::end(*tree_),
-                                        [&](const auto& leaf) {
-                                          for (auto p_ref : leaf) {
-                                            auto p = typename Leaf::proxy_type(p_ref);
-                                            auto idx = std::get<0>(p.variables());
-                                            for (auto i = 0; i < km; i++) {
-                                              p.inputs(i) = weights(km * idx + i);
-                                            }
-                                          }
-                                        });
-    }
-
-    // NOTE: If weights are changed significantly, the best configuration must be recomputed.
-  }
-
  private:
   InterpolatorConfiguration find_best_configuration(int tree_height) const {
     auto [it, inserted] = best_config_.try_emplace(tree_height);
@@ -287,13 +260,8 @@ void FmmGenericSymmetricEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericSymmetricEvaluator<Kernel>::set_points(const Points& points) {
-  impl_->set_points(points);
-}
-
-template <class Kernel>
-void FmmGenericSymmetricEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
-  impl_->set_weights(weights);
+void FmmGenericSymmetricEvaluator<Kernel>::set_resource(const Resource& resource) {
+  impl_->set_resource(resource);
 }
 
 #define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)            \

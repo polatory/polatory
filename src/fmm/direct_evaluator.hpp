@@ -104,17 +104,6 @@ class FmmGenericEvaluator<Kernel>::Impl {
     }
   }
 
-  void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_src_points_);
-
-    for (Index idx = 0; idx < n_src_points_; idx++) {
-      auto p = src_particles_.at(idx);
-      for (auto i = 0; i < km; i++) {
-        p.inputs(i) = weights(km * idx + i);
-      }
-    }
-  }
-
  private:
   VecX potentials() const {
     VecX potentials = VecX::Zero(kn * n_trg_points_);
@@ -157,18 +146,13 @@ void FmmGenericEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_source_points(const Points& points) {
-  impl_->set_source_points(points);
+void FmmGenericEvaluator<Kernel>::set_source_resource(const Resource& resource) {
+  impl_->set_source_resource(resource);
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_target_points(const Points& points) {
-  impl_->set_target_points(points);
-}
-
-template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
-  impl_->set_weights(weights);
+void FmmGenericEvaluator<Kernel>::set_target_resource(const Resource& resource) {
+  impl_->set_target_resource(resource);
 }
 
 #define IMPLEMENT_FMM_EVALUATORS_(RBF)                              \

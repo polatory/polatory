@@ -39,12 +39,6 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
     fast_eval_.set_points(points);
   }
 
-  void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_points_);
-    direct_eval_.set_weights(weights);
-    fast_eval_.set_weights(weights);
-  }
-
  private:
   RbfDirectPart rbf_direct_part_;
   RbfFastPart rbf_fast_part_;
@@ -72,13 +66,8 @@ void FmmGenericSymmetricEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericSymmetricEvaluator<Kernel>::set_points(const Points& points) {
-  impl_->set_points(points);
-}
-
-template <class Kernel>
-void FmmGenericSymmetricEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
-  impl_->set_weights(weights);
+void FmmGenericSymmetricEvaluator<Kernel>::set_resource(const Resource& resource) {
+  impl_->set_resource(resource);
 }
 
 #define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)            \

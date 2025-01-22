@@ -88,17 +88,6 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
     kdtree_ = std::make_unique<point_cloud::KdTree<kDim>>(apoints);
   }
 
-  void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_points_);
-
-    for (Index idx = 0; idx < n_points_; idx++) {
-      auto p = particles_.at(idx);
-      for (auto i = 0; i < km; i++) {
-        p.inputs(i) = weights(km * idx + i);
-      }
-    }
-  }
-
  private:
   void handle_self_interaction() const {
     if (n_points_ == 0) {
@@ -157,13 +146,8 @@ void FmmGenericSymmetricEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericSymmetricEvaluator<Kernel>::set_points(const Points& points) {
-  impl_->set_points(points);
-}
-
-template <class Kernel>
-void FmmGenericSymmetricEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
-  impl_->set_weights(weights);
+void FmmGenericSymmetricEvaluator<Kernel>::set_resource(const Resource& resource) {
+  impl_->set_resource(resource);
 }
 
 #define IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF)            \

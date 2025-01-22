@@ -117,71 +117,15 @@ class FmmGenericEvaluator<Kernel>::Impl {
     best_config_.clear();
   }
 
-  void set_source_points(const Points& points) {
-    n_src_points_ = points.rows();
-
-    src_particles_.resize(n_src_points_);
-
-    auto a = rbf_.anisotropy();
-    for (Index idx = 0; idx < n_src_points_; idx++) {
-      auto p = src_particles_.at(idx);
-      auto ap = geometry::transform_point<kDim>(a, points.row(idx));
-      for (auto i = 0; i < kDim; i++) {
-        p.position(i) = ap(i);
-      }
-      p.variables(idx);
-    }
-
-    src_sorted_level_ = 0;
+  void set_source_resource(const Resource& resource) {
+    src_resource_ = &resource;
     src_tree_.reset(nullptr);
     best_config_.clear();
   }
 
-  void set_target_points(const Points& points) {
-    n_trg_points_ = points.rows();
-
-    trg_particles_.resize(n_trg_points_);
-
-    auto a = rbf_.anisotropy();
-    for (Index idx = 0; idx < n_trg_points_; idx++) {
-      auto p = trg_particles_.at(idx);
-      auto ap = geometry::transform_point<kDim>(a, points.row(idx));
-      for (auto i = 0; i < kDim; i++) {
-        p.position(i) = ap(i);
-      }
-      p.variables(idx);
-    }
-
-    trg_sorted_level_ = 0;
+  void set_target_resource(const Resource& resource) {
+    trg_resource_ = &resource;
     trg_tree_.reset(nullptr);
-  }
-
-  void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_src_points_);
-
-    if (!src_tree_) {
-      for (Index idx = 0; idx < n_src_points_; idx++) {
-        auto p = src_particles_.at(idx);
-        auto orig_idx = std::get<0>(p.variables());
-        for (auto i = 0; i < km; i++) {
-          p.inputs(i) = weights(km * orig_idx + i);
-        }
-      }
-    } else {
-      scalfmm::component::for_each_leaf(std::begin(*src_tree_), std::end(*src_tree_),
-                                        [&](const auto& leaf) {
-                                          for (auto p_ref : leaf) {
-                                            auto p = typename SourceLeaf::proxy_type(p_ref);
-                                            auto idx = std::get<0>(p.variables());
-                                            for (auto i = 0; i < km; i++) {
-                                              p.inputs(i) = weights(km * idx + i);
-                                            }
-                                          }
-                                        });
-      multipole_dirty_ = true;
-    }
-
-    // NOTE: If weights are changed significantly, the best configuration must be recomputed.
   }
 
  private:
@@ -276,12 +220,8 @@ class FmmGenericEvaluator<Kernel>::Impl {
   const NearField near_field_;
 
   double accuracy_{std::numeric_limits<double>::infinity()};
-  Index n_src_points_{};
-  Index n_trg_points_{};
-  mutable SourceContainer src_particles_;
-  mutable TargetContainer trg_particles_;
-  mutable int src_sorted_level_{};
-  mutable int trg_sorted_level_{};
+  Resource* src_resource_{nullptr};
+  Resource* trg_resource_{nullptr};
   mutable bool multipole_dirty_{};
   mutable InterpolatorConfiguration config_{};
   mutable std::unique_ptr<FarField> far_field_;
@@ -310,18 +250,13 @@ void FmmGenericEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_source_points(const Points& points) {
-  impl_->set_source_points(points);
+void FmmGenericEvaluator<Kernel>::set_source_resource(const Resource& resource) {
+  impl_->set_source_resource(resource);
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_target_points(const Points& points) {
-  impl_->set_target_points(points);
-}
-
-template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weights) {
-  impl_->set_weights(weights);
+void FmmGenericEvaluator<Kernel>::set_target_resource(const Resource& resource) {
+  impl_->set_target_resource(resource);
 }
 
 #define IMPLEMENT_FMM_EVALUATORS_(RBF)                              \

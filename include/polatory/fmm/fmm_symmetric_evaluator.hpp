@@ -16,6 +16,7 @@ template <int Dim, int kn>
 class FmmGenericSymmetricEvaluatorBase {
   static constexpr int kDim = Dim;
   using Points = geometry::Points<kDim>;
+  using Resource = Resource<kDim, kn>;
 
  public:
   FmmGenericSymmetricEvaluatorBase() = default;
@@ -31,7 +32,7 @@ class FmmGenericSymmetricEvaluatorBase {
 
   virtual void set_accuracy(double accuracy) = 0;
 
-  virtual void set_points(const Points& points) = 0;
+  virtual void set_resource(const Resource& resource) = 0;
 
   virtual void set_weights(const Eigen::Ref<const VecX>& weights) = 0;
 };
@@ -47,6 +48,7 @@ class FmmGenericSymmetricEvaluator final
 
   using Bbox = geometry::Bbox<kDim>;
   using Points = geometry::Points<kDim>;
+  using Resource = Resource<kDim, kn>;
 
  public:
   FmmGenericSymmetricEvaluator(const Rbf& rbf, const Bbox& bbox);
@@ -62,9 +64,7 @@ class FmmGenericSymmetricEvaluator final
 
   void set_accuracy(double accuracy) override;
 
-  void set_points(const Points& points) override;
-
-  void set_weights(const Eigen::Ref<const VecX>& weights) override;
+  void set_resource(const Resource& resource) override;
 
  private:
   class Impl;
