@@ -2,6 +2,8 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <boost/container_hash/hash.hpp>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <polatory/common/macros.hpp>
@@ -28,6 +30,15 @@
 #include "utility.hpp"
 
 namespace polatory::fmm {
+
+struct CellId {
+  std::size_t level{};
+  std::size_t morton_index{};
+
+  bool operator==(const CellId& other) const {
+    return level == other.level && morton_index == other.morton_index;
+  }
+};
 
 template <class Kernel>
 class FmmGenericEvaluator<Kernel>::Impl {
@@ -65,6 +76,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
   using TargetLeaf = scalfmm::component::leaf_view<TargetParticle>;
   using SourceTree = scalfmm::component::group_tree_view<Cell, SourceLeaf, Box>;
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
+  using LocalExpansion = typename Interpolator::storage_type::locals_container_type;
 
  public:
   Impl(const Rbf& rbf, const Bbox& bbox)
@@ -95,8 +107,34 @@ class FmmGenericEvaluator<Kernel>::Impl {
       if (!trg_tree_->is_interaction_p2p_lists_built()) {
         scalfmm::list::omp::build_p2p_interaction_list(*src_tree_, *trg_tree_, 1, false);
       }
+
+      for (std::size_t level = 2; level < trg_tree_->height() - 1; level++) {
+        scalfmm::component::for_each_cell(trg_tree_->begin(), trg_tree_->end(), level,
+                                          [&](auto& cell) {
+                                            const auto& sym = cell.symbolics();
+                                            CellId cell_id{sym.level, sym.morton_index};
+                                            auto it = local_expansions_.find(cell_id);
+                                            if (it != local_expansions_.end()) {
+                                              cell.locals() = it->second;
+                                              cell.locals_frozen() = true;
+                                            } else {
+                                              cell.locals_frozen() = false;
+                                            }
+                                          });
+      }
+
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //
           (*src_tree_, *trg_tree_, *fmm_operator_, m2l | l2l | l2p | p2p);
+
+      local_expansions_.clear();
+      for (std::size_t level = 2; level < trg_tree_->height() - 1; level++) {
+        scalfmm::component::for_each_cell(trg_tree_->begin(), trg_tree_->end(), level,
+                                          [&](const auto& cell) {
+                                            const auto& sym = cell.symbolics();
+                                            CellId cell_id{sym.level, sym.morton_index};
+                                            local_expansions_[cell_id] = cell.locals();
+                                          });
+      }
     } else {
       trg_particles_.reset_outputs();
       full_direct(src_particles_, trg_particles_, kernel_);
@@ -115,6 +153,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
     accuracy_ = accuracy;
 
     best_config_.clear();
+    local_expansions_.clear();
   }
 
   void set_source_points(const Points& points) {
@@ -135,6 +174,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
     src_sorted_level_ = 0;
     src_tree_.reset(nullptr);
     best_config_.clear();
+    local_expansions_.clear();
   }
 
   void set_target_points(const Points& points) {
@@ -182,6 +222,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
     }
 
     // NOTE: If weights are changed significantly, the best configuration must be recomputed.
+    local_expansions_.clear();
   }
 
  private:
@@ -290,6 +331,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
   mutable std::unique_ptr<TargetTree> trg_tree_;
   mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
   mutable LruCache<InterpolatorConfiguration, Interpolator> interpolator_cache_{2};
+  mutable std::unordered_map<CellId, LocalExpansion> local_expansions_;
 };
 
 template <class Kernel>
@@ -336,3 +378,13 @@ void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weig
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<3>);
 
 }  // namespace polatory::fmm
+
+template <>
+struct std::hash<polatory::fmm::CellId> {
+  std::size_t operator()(const polatory::fmm::CellId& id) const noexcept {
+    std::size_t seed{};
+    boost::hash_combine(seed, id.level);
+    boost::hash_combine(seed, id.morton_index);
+    return seed;
+  }
+};

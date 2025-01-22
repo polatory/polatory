@@ -145,7 +145,7 @@ externalproject_add(
     scalfmm
     PREFIX ${CMAKE_BINARY_DIR}/scalfmm
     GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
-    GIT_TAG polatory
+    GIT_TAG cache-locals
     GIT_SHALLOW ON
     GIT_REMOTE_UPDATE_STRATEGY CHECKOUT
     CMAKE_ARGS ${SCALFMM_CMAKE_ARGS}
