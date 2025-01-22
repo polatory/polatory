@@ -15,6 +15,7 @@ int fmm_tree_height(Index n_points) {
                   static_cast<int>(std::round(std::log(n_points) / std::log(std::pow(2.0, Dim)))));
 }
 
+// IMPORTANT: Keep in sync with the function in include/polatory/fmm/resource.hpp.
 template <class Rbf, class Box>
 Box make_box(const Rbf& rbf, const geometry::Bbox<Rbf::kDim>& bbox) {
   auto a_bbox = bbox.transform(rbf.anisotropy());

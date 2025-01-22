@@ -6,6 +6,7 @@
 #include <polatory/fmm/gradient_transpose_kernel.hpp>
 #include <polatory/fmm/hessian_kernel.hpp>
 #include <polatory/fmm/kernel.hpp>
+#include <polatory/fmm/resource.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/rbf/rbf.hpp>
@@ -18,6 +19,7 @@ template <int Dim, int km, int kn>
 class FmmGenericEvaluatorBase {
   static constexpr int kDim = Dim;
   using Points = geometry::Points<kDim>;
+  using Resource = Resource<kDim, km>;
 
  public:
   FmmGenericEvaluatorBase() = default;
@@ -92,18 +94,18 @@ using FmmHessianEvaluator = FmmGenericEvaluator<HessianKernel<Rbf>>;
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim, 1, 1> make_fmm_evaluator(const rbf::Rbf<Dim>& rbf,
-                                               const geometry::Bbox<Dim>& bbox);
+                                                     const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim, Dim, 1> make_fmm_gradient_evaluator(const rbf::Rbf<Dim>& rbf,
-                                                        const geometry::Bbox<Dim>& bbox);
+                                                                const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
-FmmGenericEvaluatorPtr<Dim, 1, Dim> make_fmm_gradient_transpose_evaluator(const rbf::Rbf<Dim>& rbf,
-                                                                  const geometry::Bbox<Dim>& bbox);
+FmmGenericEvaluatorPtr<Dim, 1, Dim> make_fmm_gradient_transpose_evaluator(
+    const rbf::Rbf<Dim>& rbf, const geometry::Bbox<Dim>& bbox);
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim, Dim, Dim> make_fmm_hessian_evaluator(const rbf::Rbf<Dim>& rbf,
-                                                       const geometry::Bbox<Dim>& bbox);
+                                                                 const geometry::Bbox<Dim>& bbox);
 
 }  // namespace polatory::fmm
