@@ -5,6 +5,7 @@
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
+#include <polatory/fmm/resource.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
@@ -20,10 +21,12 @@ class Evaluator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::Bbox<kDim>;
+  using GradResource = fmm::Resource<kDim, kDim>;
   using Model = Model<kDim>;
   using MonomialBasis = polynomial::MonomialBasis<kDim>;
   using Points = geometry::Points<kDim>;
   using PolynomialEvaluator = polynomial::PolynomialEvaluator<MonomialBasis>;
+  using Resource = fmm::Resource<kDim, 1>;
 
   template <int km, int kn>
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim, km, kn>;
@@ -53,6 +56,11 @@ class Evaluator {
             double grad_accuracy = kInfinity)
       : l_(model.poly_basis_size()), accuracy_(accuracy), grad_accuracy_(grad_accuracy) {
     for (const auto& rbf : model.rbfs()) {
+      src_resources_.emplace_back(rbf, bbox);
+      src_grad_resources_.emplace_back(rbf, bbox);
+      trg_resources_.emplace_back(rbf, bbox);
+      trg_grad_resources_.emplace_back(rbf, bbox);
+
       a_.push_back(fmm::make_fmm_evaluator(rbf, bbox));
       f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox));
       ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox));
@@ -99,10 +107,13 @@ class Evaluator {
         (sigma_ > 0 ? grad_accuracy_ / 2.0 : grad_accuracy_) / static_cast<double>(a_.size());
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
-      a_.at(i)->set_source_points(points);
-      f_.at(i)->set_source_points(grad_points);
-      ft_.at(i)->set_source_points(points);
-      h_.at(i)->set_source_points(grad_points);
+      src_resources_.at(i).set_points(points);
+      src_grad_resources_.at(i).set_points(grad_points);
+
+      a_.at(i)->set_source_resource(src_resources_.at(i));
+      f_.at(i)->set_source_resource(src_grad_resources_.at(i));
+      ft_.at(i)->set_source_resource(src_resources_.at(i));
+      h_.at(i)->set_source_resource(src_grad_resources_.at(i));
 
       a_.at(i)->set_accuracy(accuracy);
       f_.at(i)->set_accuracy(accuracy);
@@ -118,10 +129,13 @@ class Evaluator {
     trg_sigma_ = grad_points.rows();
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
-      a_.at(i)->set_target_points(points);
-      f_.at(i)->set_target_points(points);
-      ft_.at(i)->set_target_points(grad_points);
-      h_.at(i)->set_target_points(grad_points);
+      trg_resources_.at(i).set_points(points);
+      trg_grad_resources_.at(i).set_points(grad_points);
+
+      a_.at(i)->set_target_resource(trg_resources_.at(i));
+      f_.at(i)->set_target_resource(trg_resources_.at(i));
+      ft_.at(i)->set_target_resource(trg_grad_resources_.at(i));
+      h_.at(i)->set_target_resource(trg_grad_resources_.at(i));
     }
 
     if (l_ > 0) {
@@ -134,10 +148,8 @@ class Evaluator {
     POLATORY_ASSERT(weights.rows() == mu_ + kDim * sigma_ + l_);
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
-      a_.at(i)->set_weights(weights.head(mu_));
-      f_.at(i)->set_weights(weights.segment(mu_, kDim * sigma_));
-      ft_.at(i)->set_weights(weights.head(mu_));
-      h_.at(i)->set_weights(weights.segment(mu_, kDim * sigma_));
+      src_resources_.at(i).set_weights(weights.head(mu_));
+      src_grad_resources_.at(i).set_weights(weights.segment(mu_, kDim * sigma_));
     }
 
     if (l_ > 0) {
@@ -154,6 +166,10 @@ class Evaluator {
   Index trg_mu_{};
   Index trg_sigma_{};
 
+  std::vector<Resource> src_resources_;
+  std::vector<GradResource> src_grad_resources_;
+  std::vector<Resource> trg_resources_;
+  std::vector<GradResource> trg_grad_resources_;
   std::vector<FmmGenericEvaluatorPtr<1, 1>> a_;
   std::vector<FmmGenericEvaluatorPtr<kDim, 1>> f_;
   std::vector<FmmGenericEvaluatorPtr<1, kDim>> ft_;

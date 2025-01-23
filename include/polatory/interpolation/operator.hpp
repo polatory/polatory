@@ -1,11 +1,11 @@
 #pragma once
 
-#include <algorithm>
 #include <limits>
 #include <memory>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
+#include <polatory/fmm/resource.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/krylov/linear_operator.hpp>
@@ -21,9 +21,11 @@ class Operator : public krylov::LinearOperator {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::Bbox<kDim>;
+  using GradResource = fmm::Resource<kDim, kDim>;
   using Model = Model<kDim>;
   using MonomialBasis = polynomial::MonomialBasis<kDim>;
   using Points = geometry::Points<kDim>;
+  using Resource = fmm::Resource<kDim, 1>;
 
   template <int km, int kn>
   using FmmGenericEvaluatorPtr = fmm::FmmGenericEvaluatorPtr<kDim, km, kn>;
@@ -46,6 +48,9 @@ class Operator : public krylov::LinearOperator {
         accuracy_(accuracy),
         grad_accuracy_(grad_accuracy) {
     for (const auto& rbf : model.rbfs()) {
+      resources_.emplace_back(rbf, bbox);
+      grad_resources_.emplace_back(rbf, bbox);
+
       a_.push_back(fmm::make_fmm_symmetric_evaluator(rbf, bbox));
       f_.push_back(fmm::make_fmm_gradient_evaluator(rbf, bbox));
       ft_.push_back(fmm::make_fmm_gradient_transpose_evaluator(rbf, bbox));
@@ -65,10 +70,8 @@ class Operator : public krylov::LinearOperator {
     y.head(mu_) = weights.head(mu_) * model_.nugget();
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
-      a_.at(i)->set_weights(weights.head(mu_));
-      f_.at(i)->set_weights(weights.segment(mu_, kDim * sigma_));
-      ft_.at(i)->set_weights(weights.head(mu_));
-      h_.at(i)->set_weights(weights.segment(mu_, kDim * sigma_));
+      resources_.at(i).set_weights(weights.head(mu_));
+      grad_resources_.at(i).set_weights(weights.segment(mu_, kDim * sigma_));
 
       y.head(mu_) += a_.at(i)->evaluate();
       y.head(mu_) += f_.at(i)->evaluate();
@@ -94,12 +97,15 @@ class Operator : public krylov::LinearOperator {
         (sigma_ > 0 ? grad_accuracy_ / 2.0 : grad_accuracy_) / static_cast<double>(a_.size());
 
     for (std::size_t i = 0; i < a_.size(); ++i) {
-      a_.at(i)->set_points(points);
-      f_.at(i)->set_source_points(grad_points);
-      f_.at(i)->set_target_points(points);
-      ft_.at(i)->set_source_points(points);
-      ft_.at(i)->set_target_points(grad_points);
-      h_.at(i)->set_points(grad_points);
+      resources_.at(i).set_points(points);
+      grad_resources_.at(i).set_points(grad_points);
+
+      a_.at(i)->set_resource(resources_.at(i));
+      f_.at(i)->set_source_resource(grad_resources_.at(i));
+      f_.at(i)->set_target_resource(resources_.at(i));
+      ft_.at(i)->set_source_resource(resources_.at(i));
+      ft_.at(i)->set_target_resource(grad_resources_.at(i));
+      h_.at(i)->set_resource(grad_resources_.at(i));
 
       a_.at(i)->set_accuracy(accuracy);
       f_.at(i)->set_accuracy(accuracy);
@@ -122,6 +128,8 @@ class Operator : public krylov::LinearOperator {
   Index mu_{};
   Index sigma_{};
 
+  mutable std::vector<Resource> resources_;
+  mutable std::vector<GradResource> grad_resources_;
   std::vector<FmmGenericSymmetricEvaluatorPtr<1>> a_;
   std::vector<FmmGenericEvaluatorPtr<kDim, 1>> f_;
   std::vector<FmmGenericEvaluatorPtr<1, kDim>> ft_;

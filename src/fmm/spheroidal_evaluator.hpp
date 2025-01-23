@@ -22,7 +22,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
         fast_eval_{rbf_fast_part_, bbox} {}
 
   VecX evaluate() const {
-    VecX y = VecX::Zero(kn * n_trg_points_);
+    VecX y = VecX::Zero(kn * trg_resource_->size());
     y += direct_eval_.evaluate();
     y += fast_eval_.evaluate();
     return y;
@@ -33,16 +33,16 @@ class FmmGenericEvaluator<Kernel>::Impl {
     fast_eval_.set_accuracy(accuracy);
   }
 
-  void set_source_points(const Points& points) {
-    n_src_points_ = points.rows();
-    direct_eval_.set_source_points(points);
-    fast_eval_.set_source_points(points);
+  void set_source_resource(const SourceResource& resource) {
+    src_resource_ = &resource;
+    direct_eval_.set_source_resource(resource);
+    fast_eval_.set_source_resource(resource);
   }
 
-  void set_target_points(const Points& points) {
-    n_trg_points_ = points.rows();
-    direct_eval_.set_target_points(points);
-    fast_eval_.set_target_points(points);
+  void set_target_resource(const TargetResource& resource) {
+    trg_resource_ = &resource;
+    direct_eval_.set_target_resource(resource);
+    fast_eval_.set_target_resource(resource);
   }
 
  private:
@@ -51,8 +51,8 @@ class FmmGenericEvaluator<Kernel>::Impl {
   FmmGenericEvaluator<KernelDirectPart> direct_eval_;
   FmmGenericEvaluator<KernelFastPart> fast_eval_;
 
-  Index n_src_points_{};
-  Index n_trg_points_{};
+  const SourceResource* src_resource_{nullptr};
+  const TargetResource* trg_resource_{nullptr};
 };
 
 template <class Kernel>
@@ -73,12 +73,12 @@ void FmmGenericEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_source_resource(const Resource& resource) {
+void FmmGenericEvaluator<Kernel>::set_source_resource(const SourceResource& resource) {
   impl_->set_source_resource(resource);
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_target_resource(const Resource& resource) {
+void FmmGenericEvaluator<Kernel>::set_target_resource(const TargetResource& resource) {
   impl_->set_target_resource(resource);
 }
 

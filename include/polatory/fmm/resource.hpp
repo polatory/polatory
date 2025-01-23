@@ -3,6 +3,7 @@
 #include <memory>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/rbf/rbf.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/container/particle_container.hpp>
@@ -27,7 +28,7 @@ class Resource {
       /* outputs */ double, kn,
       /* variables */ Index>;
 
-  using Particle = GenericParticle<0>;
+  using Particle = GenericParticle<1>;
 
   using Container = scalfmm::container::particle_container<Particle>;
 
@@ -37,23 +38,44 @@ class Resource {
  public:
   Resource(const Rbf& rbf, const Bbox& bbox) : a_{rbf.anisotropy()}, box_{make_box(bbox)} {}
 
-  template <class Container>
+  std::unique_ptr<point_cloud::KdTree<kDim>> get_kdtree() const {
+    auto n = size();
+    Points apoints(n, kDim);
+
+    for (Index k = 0; k < n; k++) {
+      const auto p = particles_.at(k);
+      auto orig_idx = std::get<0>(p.variables());
+      for (auto i = 0; i < kDim; i++) {
+        apoints(orig_idx, i) = p.position(i);
+      }
+    }
+
+    return std::make_unique<point_cloud::KdTree<kDim>>(apoints);
+  }
+
+  template <class Container, bool Source>
   Container get_particles(int level) const {
+    static_assert(!Source || Container::particle_type::inputs_size == km);
+
     if (sorted_level_ < level) {
       scalfmm::utils::sort_container(box_, level, particles_);
       sorted_level_ = level;
     }
 
+    auto n = size();
     Container result;
-    result.resize(particles_.size());
+    result.resize(n);
 
-    auto p_it = particles_.cbegin();
-    auto p_end = particles_.cend();
-    auto q_it = result.begin();
-    for (; p_it != p_end; ++p_it, ++q_it) {
-      q_it->position() = p_it.position();
-      q_it->inputs() = p_it.inputs();
-      q_it->variables() = p_it.variables();
+    for (Index idx = 0; idx < n; idx++) {
+      const auto p = particles_.at(idx);
+      auto q = result.at(idx);
+      q.position() = p.position();
+      if constexpr (Source) {
+        for (auto i = 0; i < km; i++) {
+          q.inputs(i) = p.inputs(i);
+        }
+      }
+      q.variables() = p.variables();
     }
 
     return result;
@@ -74,7 +96,7 @@ class Resource {
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
-    Index n = particles_.size();
+    auto n = size();
 
     for (Index idx = 0; idx < n; idx++) {
       auto p = particles_.at(idx);
@@ -107,7 +129,6 @@ class Resource {
 
   Mat a_;
   Box box_;
-  Index mu_{};
   mutable Container particles_;
   mutable int sorted_level_{};
 };

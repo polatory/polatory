@@ -19,7 +19,8 @@ template <int Dim, int km, int kn>
 class FmmGenericEvaluatorBase {
   static constexpr int kDim = Dim;
   using Points = geometry::Points<kDim>;
-  using Resource = Resource<kDim, km>;
+  using SourceResource = Resource<kDim, km>;
+  using TargetResource = Resource<kDim, kn>;
 
  public:
   FmmGenericEvaluatorBase() = default;
@@ -35,9 +36,9 @@ class FmmGenericEvaluatorBase {
 
   virtual void set_accuracy(double accuracy) = 0;
 
-  virtual void set_source_resource(const Resource& resource) = 0;
+  virtual void set_source_resource(const SourceResource& resource) = 0;
 
-  virtual void set_target_resource(const Resource& resource) = 0;
+  virtual void set_target_resource(const TargetResource& resource) = 0;
 };
 
 template <int Dim, int km, int kn>
@@ -51,7 +52,8 @@ class FmmGenericEvaluator final
 
   using Bbox = geometry::Bbox<kDim>;
   using Points = geometry::Points<kDim>;
-  using Resource = Resource<kDim, km>;
+  using SourceResource = Resource<kDim, Kernel::km>;
+  using TargetResource = Resource<kDim, Kernel::kn>;
 
  public:
   FmmGenericEvaluator(const Rbf& rbf, const Bbox& bbox);
@@ -67,9 +69,9 @@ class FmmGenericEvaluator final
 
   void set_accuracy(double accuracy) override;
 
-  void set_source_resource(const Resource& resource) override;
+  void set_source_resource(const SourceResource& resource) override;
 
-  void set_target_resource(const Resource& resource) override;
+  void set_target_resource(const TargetResource& resource) override;
 
  private:
   class Impl;

@@ -22,7 +22,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
         fast_eval_{rbf_fast_part_, bbox} {}
 
   VecX evaluate() const {
-    VecX y = VecX::Zero(kn * n_points_);
+    VecX y = VecX::Zero(kn * resource_->size());
     y += direct_eval_.evaluate();
     y += fast_eval_.evaluate();
     return y;
@@ -33,10 +33,10 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
     fast_eval_.set_accuracy(accuracy);
   }
 
-  void set_points(const Points& points) {
-    n_points_ = points.rows();
-    direct_eval_.set_points(points);
-    fast_eval_.set_points(points);
+  void set_resource(const Resource& resource) {
+    resource_ = &resource;
+    direct_eval_.set_resource(resource);
+    fast_eval_.set_resource(resource);
   }
 
  private:
@@ -45,7 +45,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   FmmGenericSymmetricEvaluator<KernelDirectPart> direct_eval_;
   FmmGenericSymmetricEvaluator<KernelFastPart> fast_eval_;
 
-  Index n_points_{};
+  const Resource* resource_{nullptr};
 };
 
 template <class Kernel>

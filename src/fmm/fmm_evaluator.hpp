@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
-#include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
@@ -17,9 +16,9 @@
 #include <scalfmm/tree/for_each.hpp>
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
-#include <scalfmm/utils/sort.hpp>
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 
 #include "fmm_accuracy_estimator.hpp"
 #include "full_direct.hpp"
@@ -75,99 +74,99 @@ class FmmGenericEvaluator<Kernel>::Impl {
         near_field_(kernel_, false) {}
 
   VecX evaluate() const {
-    using namespace scalfmm::algorithms;
+    auto [src_particles, trg_particles] = prepare();
 
-    prepare();
-
-    auto src_particles = src_resource_->get_particles<SourceContainer>();
-    auto trg_particles = trg_resource_->get_particles<TargetContainer>();
-
-    if (config_.tree_height > 0) {
-      SourceTree src_tree(config_.tree_height, config_.order, box_, 10, 10, src_particles, true);
-      TargetTree trg_tree(config_.tree_height, config_.order, box_, 10, 10, trg_particles, true);
-      scalfmm::list::omp::build_m2l_interaction_list(src_tree, trg_tree, 1);
-      scalfmm::list::omp::build_p2p_interaction_list(src_tree, trg_tree, 1, false);
-      scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](src_tree, trg_tree,
-                                                                            *fmm_operator_);
-    } else {
+    if (config_.tree_height == 0) {
       full_direct(src_particles, trg_particles, kernel_);
+      return potentials(trg_particles);
     }
 
-    auto result = potentials();
-
-    return result;
+    SourceTree src_tree(config_.tree_height, config_.order, box_, 10, 10, src_particles, true);
+    TargetTree trg_tree(config_.tree_height, config_.order, box_, 10, 10, trg_particles, true);
+    scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)](src_tree, trg_tree,
+                                                                          *fmm_operator_);
+    return potentials(trg_tree);
   }
 
   void set_accuracy(double accuracy) {
     accuracy_ = accuracy;
-
     best_config_.clear();
   }
 
-  void set_source_resource(const Resource& resource) {
+  void set_source_resource(const SourceResource& resource) {
     src_resource_ = &resource;
-    src_tree_.reset(nullptr);
     best_config_.clear();
   }
 
-  void set_target_resource(const Resource& resource) {
-    trg_resource_ = &resource;
-    trg_tree_.reset(nullptr);
-  }
+  void set_target_resource(const TargetResource& resource) { trg_resource_ = &resource; }
 
  private:
-  InterpolatorConfiguration find_best_configuration(int tree_height) const {
+  InterpolatorConfiguration find_best_configuration(int tree_height,
+                                                    SourceContainer& src_particles) const {
     auto [it, inserted] = best_config_.try_emplace(tree_height);
     if (inserted) {
       auto config = FmmAccuracyEstimator<Kernel>::find_best_configuration(
-          rbf_, accuracy_, src_particles_, box_, tree_height);
+          rbf_, accuracy_, src_particles, box_, tree_height);
       it->second = config;
     }
 
     return it->second;
   }
 
-  VecX potentials() const {
-    VecX potentials = VecX::Zero(kn * n_trg_points_);
+  VecX potentials(const TargetContainer& particles) const {
+    auto size = trg_resource_->size();
+    VecX potentials = VecX::Zero(kn * size);
 
-    if (config_.tree_height > 0) {
-      scalfmm::component::for_each_leaf(std::cbegin(*trg_tree_), std::cend(*trg_tree_),
-                                        [&](const auto& leaf) {
-                                          for (auto p_ref : leaf) {
-                                            auto p = typename TargetLeaf::const_proxy_type(p_ref);
-                                            auto idx = std::get<0>(p.variables());
-                                            for (auto i = 0; i < kn; i++) {
-                                              potentials(kn * idx + i) = p.outputs(i);
-                                            }
-                                          }
-                                        });
-    } else {
-      for (Index idx = 0; idx < n_trg_points_; idx++) {
-        const auto p = trg_particles_.at(idx);
-        auto orig_idx = std::get<0>(p.variables());
-        for (auto i = 0; i < kn; i++) {
-          potentials(kn * orig_idx + i) = p.outputs(i);
-        }
+    for (Index idx = 0; idx < size; idx++) {
+      const auto p = particles.at(idx);
+      auto orig_idx = std::get<0>(p.variables());
+      for (auto i = 0; i < kn; i++) {
+        potentials(kn * orig_idx + i) = p.outputs(i);
       }
     }
 
     return potentials;
   }
 
-  void prepare() const {
+  VecX potentials(const TargetTree& tree) const {
+    auto size = trg_resource_->size();
+    VecX potentials = VecX::Zero(kn * size);
+
+    scalfmm::component::for_each_leaf(tree.begin(), tree.end(), [&](const auto& leaf) {
+      for (auto p_ref : leaf) {
+        auto p = typename TargetLeaf::const_proxy_type(p_ref);
+        auto idx = std::get<0>(p.variables());
+        for (auto i = 0; i < kn; i++) {
+          potentials(kn * idx + i) = p.outputs(i);
+        }
+      }
+    });
+
+    return potentials;
+  }
+
+  std::pair<SourceContainer, TargetContainer> prepare() const {
     auto src_size = src_resource_->size();
     auto trg_size = trg_resource_->size();
 
     if (src_size * trg_size < 1024 * 1024) {
+      auto src_particles = src_resource_->template get_particles<SourceContainer, true>(0);
+      auto trg_particles = trg_resource_->template get_particles<TargetContainer, false>(0);
+
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
       config_ = {.tree_height = 0};
-      return;
+
+      return {std::move(src_particles), std::move(trg_particles)};
     }
 
     auto tree_height = fmm_tree_height<kDim>(std::max(src_size, trg_size));
+    auto src_particles =
+        src_resource_->template get_particles<SourceContainer, true>(tree_height - 1);
+    auto trg_particles =
+        trg_resource_->template get_particles<TargetContainer, false>(tree_height - 1);
 
-    auto config = find_best_configuration(tree_height);
+    auto config = find_best_configuration(tree_height, src_particles);
     if (config != config_) {
       auto [it, inserted] = interpolator_cache_.try_emplace(config, kernel_, config.order,
                                                             tree_height, box_.width(0), config.d);
@@ -177,6 +176,8 @@ class FmmGenericEvaluator<Kernel>::Impl {
       fmm_operator_ = std::make_unique<FmmOperator>(near_field_, *far_field_);
       config_ = config;
     }
+
+    return {std::move(src_particles), std::move(trg_particles)};
   }
 
   const Rbf& rbf_;
@@ -186,14 +187,13 @@ class FmmGenericEvaluator<Kernel>::Impl {
   const NearField near_field_;
 
   double accuracy_{std::numeric_limits<double>::infinity()};
-  Resource* src_resource_{nullptr};
-  Resource* trg_resource_{nullptr};
-  mutable bool multipole_dirty_{};
+  const SourceResource* src_resource_{nullptr};
+  const TargetResource* trg_resource_{nullptr};
   mutable InterpolatorConfiguration config_{};
+  mutable LruCache<InterpolatorConfiguration, Interpolator> interpolator_cache_{2};
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
-  mutable LruCache<InterpolatorConfiguration, Interpolator> interpolator_cache_{2};
 };
 
 template <class Kernel>
@@ -214,12 +214,12 @@ void FmmGenericEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_source_resource(const Resource& resource) {
+void FmmGenericEvaluator<Kernel>::set_source_resource(const SourceResource& resource) {
   impl_->set_source_resource(resource);
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_target_resource(const Resource& resource) {
+void FmmGenericEvaluator<Kernel>::set_target_resource(const TargetResource& resource) {
   impl_->set_target_resource(resource);
 }
 

@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/types.hpp>
@@ -25,12 +24,14 @@ class FmmGenericEvaluator<Kernel>::Impl {
   using SourceParticle = scalfmm::container::particle<
       /* position */ double, kDim,
       /* inputs */ double, km,
-      /* outputs */ double, kn>;  // should be 0
+      /* outputs */ double, kn,
+      /* variables */ Index>;  // should be 0
 
   using TargetParticle = scalfmm::container::particle<
       /* position */ double, kDim,
       /* inputs */ double, km,  // should be 0
-      /* outputs */ double, kn>;
+      /* outputs */ double, kn,
+      /* variables */ Index>;
 
   using SourceContainer = scalfmm::container::particle_container<SourceParticle>;
   using TargetContainer = scalfmm::container::particle_container<TargetParticle>;
@@ -39,22 +40,34 @@ class FmmGenericEvaluator<Kernel>::Impl {
   Impl(const Rbf& rbf, const Bbox& /*bbox*/) : rbf_(rbf), kernel_(rbf) {}
 
   VecX evaluate() const {
-    trg_particles_.reset_outputs();
+    auto src_size = src_resource_->size();
+    auto trg_size = trg_resource_->size();
+
+    auto src_particles = src_resource_->template get_particles<SourceContainer, true>(0);
+    auto trg_particles = trg_resource_->template get_particles<TargetContainer, false>(0);
+
+    std::vector<Index> to_idx(src_size);
+    for (Index idx = 0; idx < src_size; idx++) {
+      const auto p = src_particles.at(idx);
+      auto orig_idx = std::get<0>(p.variables());
+      to_idx.at(orig_idx) = idx;
+    }
 
     auto radius = rbf_.support_radius_isotropic();
     std::vector<Index> indices;
     std::vector<double> distances;
 
 #pragma omp parallel for schedule(guided) private(indices, distances)
-    for (Index trg_idx = 0; trg_idx < n_trg_points_; trg_idx++) {
-      auto p = trg_particles_.at(trg_idx);
+    for (Index trg_idx = 0; trg_idx < trg_size; trg_idx++) {
+      auto p = trg_particles.at(trg_idx);
       Point point;
       for (auto i = 0; i < kDim; i++) {
         point(i) = p.position(i);
       }
       kdtree_->radius_search(point, radius, indices, distances);
-      for (auto src_idx : indices) {
-        const auto q = src_particles_.at(src_idx);
+      for (auto src_orig_idx : indices) {
+        auto src_idx = to_idx.at(src_orig_idx);
+        const auto q = src_particles.at(src_idx);
         auto k = kernel_.evaluate(p.position(), q.position());
         for (auto i = 0; i < kn; i++) {
           for (auto j = 0; j < km; j++) {
@@ -64,54 +77,30 @@ class FmmGenericEvaluator<Kernel>::Impl {
       }
     }
 
-    return potentials();
+    return potentials(trg_particles);
   }
 
   void set_accuracy(double /*accuracy*/) {
     // Do nothing.
   }
 
-  void set_source_points(const Points& points) {
-    n_src_points_ = points.rows();
-
-    src_particles_.resize(n_src_points_);
-
-    auto a = rbf_.anisotropy();
-    for (Index idx = 0; idx < n_src_points_; idx++) {
-      auto p = src_particles_.at(idx);
-      auto ap = geometry::transform_point<kDim>(a, points.row(idx));
-      for (auto i = 0; i < kDim; i++) {
-        p.position(i) = ap(i);
-      }
-    }
-
-    Points apoints = geometry::transform_points<kDim>(a, points);
-    kdtree_ = std::make_unique<point_cloud::KdTree<kDim>>(apoints);
+  void set_source_resource(const SourceResource& resource) {
+    src_resource_ = &resource;
+    kdtree_ = resource.get_kdtree();
   }
 
-  void set_target_points(const Points& points) {
-    n_trg_points_ = points.rows();
-
-    trg_particles_.resize(n_trg_points_);
-
-    auto a = rbf_.anisotropy();
-    for (Index idx = 0; idx < n_trg_points_; idx++) {
-      auto p = trg_particles_.at(idx);
-      auto ap = geometry::transform_point<kDim>(a, points.row(idx));
-      for (auto i = 0; i < kDim; i++) {
-        p.position(i) = ap(i);
-      }
-    }
-  }
+  void set_target_resource(const TargetResource& resource) { trg_resource_ = &resource; }
 
  private:
-  VecX potentials() const {
-    VecX potentials = VecX::Zero(kn * n_trg_points_);
+  VecX potentials(const TargetContainer& particles) const {
+    auto size = trg_resource_->size();
+    VecX potentials = VecX::Zero(kn * size);
 
-    for (Index idx = 0; idx < n_trg_points_; idx++) {
-      const auto p = trg_particles_.at(idx);
+    for (Index idx = 0; idx < size; idx++) {
+      const auto p = particles.at(idx);
+      auto orig_idx = std::get<0>(p.variables());
       for (auto i = 0; i < kn; i++) {
-        potentials(kn * idx + i) = p.outputs(i);
+        potentials(kn * orig_idx + i) = p.outputs(i);
       }
     }
 
@@ -121,10 +110,8 @@ class FmmGenericEvaluator<Kernel>::Impl {
   const Rbf& rbf_;
   const Kernel kernel_;
 
-  Index n_src_points_{};
-  Index n_trg_points_{};
-  mutable SourceContainer src_particles_;
-  mutable TargetContainer trg_particles_;
+  const SourceResource* src_resource_{nullptr};
+  const TargetResource* trg_resource_{nullptr};
   std::unique_ptr<point_cloud::KdTree<kDim>> kdtree_;
 };
 
@@ -146,12 +133,12 @@ void FmmGenericEvaluator<Kernel>::set_accuracy(double accuracy) {
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_source_resource(const Resource& resource) {
+void FmmGenericEvaluator<Kernel>::set_source_resource(const SourceResource& resource) {
   impl_->set_source_resource(resource);
 }
 
 template <class Kernel>
-void FmmGenericEvaluator<Kernel>::set_target_resource(const Resource& resource) {
+void FmmGenericEvaluator<Kernel>::set_target_resource(const TargetResource& resource) {
   impl_->set_target_resource(resource);
 }
 
