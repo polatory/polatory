@@ -79,7 +79,6 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
 
   void set_accuracy(double accuracy) {
     accuracy_ = accuracy;
-
     best_config_.clear();
   }
 

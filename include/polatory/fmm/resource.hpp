@@ -21,14 +21,11 @@ class Resource {
   using Points = geometry::Points<kDim>;
   using Rbf = rbf::Rbf<kDim>;
 
-  template <int kn>
-  using GenericParticle = scalfmm::container::particle<
+  using Particle = scalfmm::container::particle<
       /* position */ double, kDim,
       /* inputs */ double, km,
-      /* outputs */ double, kn,
+      /* outputs */ double, 1,
       /* variables */ Index>;
-
-  using Particle = GenericParticle<1>;
 
   using Container = scalfmm::container::particle_container<Particle>;
 
@@ -69,16 +66,18 @@ class Resource {
     for (Index idx = 0; idx < n; idx++) {
       const auto p = particles_.at(idx);
       auto q = result.at(idx);
-      q.position() = p.position();
+      for (auto i = 0; i < kDim; i++) {
+        q.position(i) = p.position(i);
+      }
       if constexpr (Source) {
         for (auto i = 0; i < km; i++) {
           q.inputs(i) = p.inputs(i);
         }
       }
-      q.variables() = p.variables();
+      q.variables(std::get<0>(p.variables()));
     }
 
-    return result;
+    return std::move(result);
   }
 
   void set_points(const Points& points) {
