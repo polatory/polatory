@@ -23,8 +23,8 @@ class KdTree<Dim>::Impl {
     flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
     flann_index_->buildIndex();
 
-    params_knn_.checks = flann::FLANN_CHECKS_UNLIMITED;
-    params_radius_.checks = flann::FLANN_CHECKS_UNLIMITED;
+    search_params_.checks = flann::FLANN_CHECKS_UNLIMITED;
+    search_params_.sorted = false;
   }
 
   void knn_search(const Point& point, Index k, std::vector<Index>& indices,
@@ -32,7 +32,7 @@ class KdTree<Dim>::Impl {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, Dim);
 
-    (void)flann_index_->knnSearch(point_mat, indices_v_, distances_v_, k, params_knn_);
+    (void)flann_index_->knnSearch(point_mat, indices_v_, distances_v_, k, search_params_);
 
     indices.resize(indices_v_[0].size());
     distances.resize(distances_v_[0].size());
@@ -51,7 +51,7 @@ class KdTree<Dim>::Impl {
 
     auto radius_sq = static_cast<float>(radius * radius);
     (void)flann_index_->radiusSearch(point_mat, indices_v_, distances_v_, radius_sq,
-                                     params_radius_);
+                                     search_params_);
 
     indices.resize(indices_v_[0].size());
     distances.resize(distances_v_[0].size());
@@ -66,8 +66,7 @@ class KdTree<Dim>::Impl {
  private:
   static thread_local inline std::vector<std::vector<std::size_t>> indices_v_;
   static thread_local inline std::vector<std::vector<double>> distances_v_;
-  flann::SearchParams params_knn_;
-  flann::SearchParams params_radius_;
+  flann::SearchParams search_params_;
   std::unique_ptr<FlannIndex> flann_index_;
 };
 
