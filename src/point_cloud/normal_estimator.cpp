@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iterator>
 #include <numeric>
+#include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
@@ -106,6 +107,9 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
     if (nn_indices.size() < 3) {
       continue;
     }
+
+    common::zip_sort(nn_indices.begin(), nn_indices.end(), nn_distances.begin(),
+                     [](const auto& a, const auto& b) { return a.second < b.second; });
 
     plane_factors.clear();
     plane_normals.clear();
