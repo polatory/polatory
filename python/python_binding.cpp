@@ -76,9 +76,6 @@ void define_module(py::module& m) {
   define_rbf<Dim, rbf::CovSpheroidal5<Dim>>(m, "CovSpheroidal5");
   define_rbf<Dim, rbf::CovSpheroidal7<Dim>>(m, "CovSpheroidal7");
   define_rbf<Dim, rbf::CovSpheroidal9<Dim>>(m, "CovSpheroidal9");
-  define_rbf<Dim, rbf::InverseMultiquadric1<Dim>>(m, "InverseMultiquadric1");
-  define_rbf<Dim, rbf::Multiquadric1<Dim>>(m, "Multiquadric1");
-  define_rbf<Dim, rbf::Multiquadric3<Dim>>(m, "Multiquadric3");
   define_rbf<Dim, rbf::Triharmonic2D<Dim>>(m, "Triharmonic2D");
   define_rbf<Dim, rbf::Triharmonic3D<Dim>>(m, "Triharmonic3D");
 

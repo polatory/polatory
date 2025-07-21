@@ -78,7 +78,7 @@ class RbfBase {
     aniso_ = aniso;
   }
 
-  void set_parameters(const std::vector<double>& params) {
+  virtual void set_parameters(const std::vector<double>& params) {
     if (static_cast<Index>(params.size()) != num_parameters()) {
       throw std::invalid_argument(std::format("params.size() must be {}", num_parameters()));
     }

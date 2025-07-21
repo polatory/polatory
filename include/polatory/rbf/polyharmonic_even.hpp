@@ -32,55 +32,76 @@ class PolyharmonicEven : public RbfBase<Dim> {
 
   double evaluate_isotropic(const Vector& diff) const override {
     auto slope = parameters().at(0);
-    auto r = diff.norm();
+    auto c = parameters().at(1);
+    auto rho2 = diff.squaredNorm() + c * c;
+    auto rho = std::sqrt(rho2);
 
-    if (r == 0.0) {
+    if (rho == 0.0) {
       return 0.0;
     }
 
-    return kSign * slope * pow<K>(r) * std::log(r);
+    return kSign * slope * pow<K>(rho) * std::log(rho);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
     auto slope = parameters().at(0);
-    auto r = diff.norm();
+    auto c = parameters().at(1);
+    auto rho2 = diff.squaredNorm() + c * c;
+    auto rho = std::sqrt(rho2);
 
-    if (r == 0.0) {
+    if (rho == 0.0) {
       return Vector::Zero();
     }
 
-    auto coeff = kSign * slope * pow<K - 2>(r) * (1.0 + K * std::log(r));
+    auto coeff = kSign * slope * pow<K - 2>(rho) * (1.0 + K * std::log(rho));
     return coeff * diff;
   }
 
   Mat evaluate_hessian_isotropic(const Vector& diff) const override {
     auto slope = parameters().at(0);
-    auto r = diff.norm();
+    auto c = parameters().at(1);
+    auto rho2 = diff.squaredNorm() + c * c;
+    auto rho = std::sqrt(rho2);
 
-    if (r == 0.0) {
+    if (rho == 0.0) {
       return Mat::Zero();
     }
 
-    auto coeff = kSign * slope * pow<K - 2>(r) * (1.0 + K * std::log(r));
+    auto coeff = kSign * slope * pow<K - 2>(rho) * (1.0 + K * std::log(rho));
     return coeff * (Mat::Identity() +
-                    (K - 2.0 + K / (1.0 + K * std::log(r))) / (r * r) * diff.transpose() * diff);
+                    (K - 2.0 + K / (1.0 + K * std::log(rho))) / rho2 * diff.transpose() * diff);
   }
 
-  Index num_parameters() const override { return 1; }
+  Index num_parameters() const override { return 2; }
 
   const std::vector<double>& parameter_lower_bounds() const override {
-    static const std::vector<double> lower_bounds{0.0};
+    static const std::vector<double> lower_bounds{0.0, 0.0};
     return lower_bounds;
   }
 
   const std::vector<std::string>& parameter_names() const override {
-    static const std::vector<std::string> names{"scale"};
+    static const std::vector<std::string> names{"scale", "c"};
     return names;
   }
 
   const std::vector<double>& parameter_upper_bounds() const override {
-    static const std::vector<double> upper_bounds{std::numeric_limits<double>::infinity()};
+    static const std::vector<double> upper_bounds{std::numeric_limits<double>::infinity(),
+                                                  std::numeric_limits<double>::infinity()};
     return upper_bounds;
+  }
+
+  void set_parameters(const std::vector<double>& params) override {
+    switch (params.size()) {
+      case 0:
+        Base::set_parameters({1.0, 0.0});
+        break;
+      case 1:
+        Base::set_parameters({params.at(0), 0.0});
+        break;
+      default:
+        Base::set_parameters(params);
+        break;
+    }
   }
 };
 

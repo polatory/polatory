@@ -23,9 +23,6 @@ add_library(${TARGET} STATIC
     fmm/impl/cov_spheroidal9.cpp
     fmm/impl/cov_spheroidal9_direct_part.cpp
     fmm/impl/cov_spheroidal9_fast_part.cpp
-    fmm/impl/inverse_multiquadric1.cpp
-    fmm/impl/multiquadric1.cpp
-    fmm/impl/multiquadric3.cpp
     fmm/impl/triharmonic2d.cpp
     fmm/impl/triharmonic3d.cpp
     fmm/make_fmm_evaluator.cpp

@@ -25,14 +25,10 @@ inline boost::program_options::options_description make_model_options_descriptio
   NAME  PARAMS       Full Name        --deg >=
   --------------------------------------------
               Polyharmonic splines
-  bh2   SCALE        Biharmonic2D            1
-  bh3   SCALE        Biharmonic3D            0
-  th2   SCALE        Triharmonic2D           2
-  th3   SCALE        Triharmonic3D           1
-             Generalized multiquadrics
-  imq1  SCALE C      InverseMultiquadric1   -1
-  mq1   SCALE C      Multiquadric1           0
-  mq3   SCALE C      Multiquadric3           1
+  bh2   [SCALE [C]]  Biharmonic2D            1
+  bh3   [SCALE [C]]  Biharmonic3D            0
+  th2   [SCALE [C]]  Triharmonic2D           2
+  th3   [SCALE [C]]  Triharmonic3D           1
               Covariance functions
   cub   PSILL RANGE  CovCubic               -1
   exp   PSILL RANGE  CovExponential         -1

@@ -13,8 +13,6 @@
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/inverse_multiquadric.hpp>
-#include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/rbf/rbf.hpp>
@@ -38,9 +36,6 @@ Rbf<Dim> make_rbf(const std::string& name, const std::vector<double>& params) {
   POLATORY_CASE(CovGeneralizedCauchy5);
   POLATORY_CASE(CovGeneralizedCauchy7);
   POLATORY_CASE(CovGeneralizedCauchy9);
-  POLATORY_CASE(InverseMultiquadric1);
-  POLATORY_CASE(Multiquadric1);
-  POLATORY_CASE(Multiquadric3);
   POLATORY_CASE(CovSpherical);
   POLATORY_CASE(CovSpheroidal3);
   POLATORY_CASE(CovSpheroidal5);

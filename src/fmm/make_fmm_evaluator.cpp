@@ -12,8 +12,6 @@
 #include <polatory/rbf/cov_spheroidal5.hpp>
 #include <polatory/rbf/cov_spheroidal7.hpp>
 #include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/inverse_multiquadric.hpp>
-#include <polatory/rbf/multiquadric.hpp>
 #include <polatory/rbf/polyharmonic_even.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <stdexcept>
@@ -34,9 +32,6 @@ using polatory::rbf::internal::CovSpheroidal3;
 using polatory::rbf::internal::CovSpheroidal5;
 using polatory::rbf::internal::CovSpheroidal7;
 using polatory::rbf::internal::CovSpheroidal9;
-using polatory::rbf::internal::InverseMultiquadric1;
-using polatory::rbf::internal::Multiquadric1;
-using polatory::rbf::internal::Multiquadric3;
 using polatory::rbf::internal::Triharmonic2D;
 using polatory::rbf::internal::Triharmonic3D;
 
@@ -65,9 +60,6 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const Rbf<Dim>& rbf, const Bbox<D
   CASE(CovSpheroidal5);
   CASE(CovSpheroidal7);
   CASE(CovSpheroidal9);
-  CASE(InverseMultiquadric1);
-  CASE(Multiquadric1);
-  CASE(Multiquadric3);
   CASE(Triharmonic2D);
   CASE(Triharmonic3D);
 
@@ -106,9 +98,6 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_evaluator(const Rbf<Dim>& rbf,
   CASE(CovSpheroidal5);
   CASE(CovSpheroidal7);
   CASE(CovSpheroidal9);
-  CASE(InverseMultiquadric1);
-  CASE(Multiquadric1);
-  CASE(Multiquadric3);
   CASE(Triharmonic2D);
   CASE(Triharmonic3D);
 
@@ -150,9 +139,6 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_gradient_transpose_evaluator(const Rbf<Dim>
   CASE(CovSpheroidal5);
   CASE(CovSpheroidal7);
   CASE(CovSpheroidal9);
-  CASE(InverseMultiquadric1);
-  CASE(Multiquadric1);
-  CASE(Multiquadric3);
   CASE(Triharmonic2D);
   CASE(Triharmonic3D);
 
@@ -193,9 +179,6 @@ FmmGenericEvaluatorPtr<Dim> make_fmm_hessian_evaluator(const Rbf<Dim>& rbf, cons
   CASE(CovSpheroidal5);
   CASE(CovSpheroidal7);
   CASE(CovSpheroidal9);
-  CASE(InverseMultiquadric1);
-  CASE(Multiquadric1);
-  CASE(Multiquadric3);
   CASE(Triharmonic2D);
   CASE(Triharmonic3D);
 
@@ -237,9 +220,6 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_symmetric_evaluator(const Rbf<Dim>
   CASE(CovSpheroidal5);
   CASE(CovSpheroidal7);
   CASE(CovSpheroidal9);
-  CASE(InverseMultiquadric1);
-  CASE(Multiquadric1);
-  CASE(Multiquadric3);
   CASE(Triharmonic2D);
   CASE(Triharmonic3D);
 
@@ -281,9 +261,6 @@ FmmGenericSymmetricEvaluatorPtr<Dim> make_fmm_hessian_symmetric_evaluator(const 
   CASE(CovSpheroidal5);
   CASE(CovSpheroidal7);
   CASE(CovSpheroidal9);
-  CASE(InverseMultiquadric1);
-  CASE(Multiquadric1);
-  CASE(Multiquadric3);
   CASE(Triharmonic2D);
   CASE(Triharmonic3D);
 
