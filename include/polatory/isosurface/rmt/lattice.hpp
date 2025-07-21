@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Eigen/Cholesky>
 #include <Eigen/Core>
 #include <Eigen/QR>
 #include <algorithm>
@@ -666,6 +665,7 @@ class Lattice : public PrimitiveLattice {
       a << v.t0 * v.t0, v.t0, 1.0, v.t1 * v.t1, v.t1, 1.0, v.t2 * v.t2, v.t2, 1.0;
       Vec b(v.v0, v.v1, v.v2);
       Eigen::ColPivHouseholderQR<Mat> qr_a(a);
+      qr_a.setThreshold(1e-10);
       if (!qr_a.isInvertible()) {
         continue;
       }
