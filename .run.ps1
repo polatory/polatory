@@ -15,7 +15,7 @@ function buildenv() {
         throw 'MSVC is not installed.'
     }
 
-    Invoke-BatchFile "$vsDir\VC\Auxiliary\Build\vcvars64.bat" "-vcvars_ver=14.38"
+    Invoke-BatchFile "$vsDir\VC\Auxiliary\Build\vcvars64.bat"
 }
 
 if ($args.Length -lt 1) {
