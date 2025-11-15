@@ -9,6 +9,7 @@ fi
 if [ "$(uname)" = 'Darwin' ]; then
   export CC="${CC:-$(brew --prefix)/opt/llvm/bin/clang}"
   export CXX="${CXX:-$(brew --prefix)/opt/llvm/bin/clang++}"
+  export LDFLAGS="${LDFLAGS:--L$(brew --prefix)/opt/llvm/lib/c++ -lc++}"
 elif [ "$(uname)" = 'Linux' ]; then
   export CC="${CC:-clang}"
   export CXX="${CXX:-clang++}"
