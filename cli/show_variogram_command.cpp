@@ -44,7 +44,7 @@ void run_impl(const Options& opts) {
       const auto& v = variog_set.variograms().at(i);
       const auto& dir = v.direction();
 
-      auto elev = std::acos(dir(2)) / deg;
+      auto elev = std::asin(dir(2)) / deg;
       auto az = std::atan2(dir(0), dir(1)) / deg;
       if (elev < 0.0) {
         elev = -elev;
