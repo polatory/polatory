@@ -90,7 +90,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
       trg_tree_->reset_locals();
       trg_tree_->reset_outputs();
       if (!trg_tree_->is_interaction_m2l_lists_built()) {
-        scalfmm::list::omp::build_m2l_interaction_list(*src_tree_, *trg_tree_, 1);
+        scalfmm::list::omp::build_m2l_interaction_list(*src_tree_, *trg_tree_, 1, 1);
       }
       if (!trg_tree_->is_interaction_p2p_lists_built()) {
         scalfmm::list::omp::build_p2p_interaction_list(*src_tree_, *trg_tree_, 1, false);

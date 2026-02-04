@@ -73,7 +73,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
       tree_->reset_locals();
       tree_->reset_outputs();
       if (!tree_->is_interaction_m2l_lists_built()) {
-        scalfmm::list::omp::build_m2l_interaction_list(*tree_, *tree_, 1);
+        scalfmm::list::omp::build_m2l_interaction_list(*tree_, *tree_, 1, 1);
       }
       if (!tree_->is_interaction_p2p_lists_built()) {
         scalfmm::list::omp::build_p2p_interaction_list(*tree_, *tree_, 1, true);
