@@ -4,7 +4,6 @@
 #include <iostream>
 #include <limits>
 #include <polatory/polatory.hpp>
-#include <stdexcept>
 #include <string>
 
 #include "../common/bbox.hpp"
@@ -16,7 +15,6 @@ struct Options {
   double tolerance{};
   int max_iter{};
   double accuracy{};
-  bool reduce{};
   polatory::geometry::Bbox3 mesh_bbox;
   double mesh_resolution{};
   std::string mesh_out;
@@ -30,7 +28,13 @@ inline Options parse_options(int argc, const char* argv[]) {
   po::options_description opts_desc("Options", 80, 50);
   opts_desc.add_options()  //
       ("in", po::value(&opts.in)->required()->value_name("FILE"),
-       "The points to offset the mesh to in CSV format:\n  X,Y,Z")  //
+       "The points to offset the mesh to in CSV format:\n  X,Y,Z,SIDE\n"
+       "where SIDE must be one of\n"
+       "   0: the point is on the output mesh\n"
+       "   1: the point is on the non-negative side\n"
+       "      of the output mesh\n"
+       "  -1: the point is on the non-positive side\n"
+       "      of the output mesh")  //
       ("mesh-in", po::value(&opts.mesh_in)->required()->value_name("FILE"),
        "The mesh to offset in OBJ format")  //
       ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
@@ -42,8 +46,6 @@ inline Options parse_options(int argc, const char* argv[]) {
            ->default_value(std::numeric_limits<double>::infinity(), "ANY")
            ->value_name("ACC"),
        "Absolute evaluation accuracy")  //
-      ("reduce", po::bool_switch(&opts.reduce),
-       "Try to reduce the number of RBF centers (incremental fitting)")  //
       ("mesh-bbox",
        po::value(&opts.mesh_bbox)
            ->multitoken()
