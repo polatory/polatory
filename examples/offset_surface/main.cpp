@@ -168,10 +168,10 @@ int main(int argc, const char* argv[]) {
     VecX DU(VecX::Constant(points.rows(), nan));
     for (Index i = 0; i < points.rows(); i++) {
       if (sides(i) < 0.0) {
-        DU(i) = D(i);
+        DL(i) = D(i);
         D(i) = nan;
       } else if (sides(i) > 0.0) {
-        DL(i) = D(i);
+        DU(i) = D(i);
         D(i) = nan;
       }
     }
