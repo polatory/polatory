@@ -141,8 +141,8 @@ class Interpolant {
         fitter.fit(values, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy);
 
     fitted_ = true;
-    centers_ = points(center_indices, Eigen::all);
-    grad_centers_ = grad_points(grad_center_indices, Eigen::all);
+    centers_ = points(center_indices, kAll);
+    grad_centers_ = grad_points(grad_center_indices, kAll);
     bbox_ = Bbox::from_points(centers_).convex_hull(Bbox::from_points(grad_centers_));
   }
 
@@ -186,7 +186,7 @@ class Interpolant {
                    initial != nullptr ? &initial_weights : nullptr);
 
     fitted_ = true;
-    centers_ = points(center_indices, Eigen::all);
+    centers_ = points(center_indices, kAll);
     bbox_ = Bbox::from_points(centers_);
   }
 

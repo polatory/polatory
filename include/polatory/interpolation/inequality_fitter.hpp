@@ -56,7 +56,7 @@ class InequalityFitter {
     std::set_union(lb_idcs.begin(), lb_idcs.end(), ub_idcs.begin(), ub_idcs.end(),
                    std::back_inserter(ineq_idcs));
     auto n_ineq = static_cast<Index>(ineq_idcs.size());
-    Points ineq_points = points_(ineq_idcs, Eigen::all);
+    Points ineq_points = points_(ineq_idcs, kAll);
 
     Solver solver(model_, bbox_, accuracy, kInfinity);
     Evaluator res_eval(model_, bbox_, accuracy, kInfinity);
@@ -87,15 +87,15 @@ class InequalityFitter {
       VecX values_fit;
       auto n_centers = static_cast<Index>(centers.size());
       if (n_centers >= n_poly_basis_) {
-        Points center_points = points_(centers, Eigen::all);
+        Points center_points = points_(centers, kAll);
 
-        VecX center_values = values(centers, Eigen::all);
+        VecX center_values = values(centers, kAll);
         for (Index i = n_eq; i < n_centers; i++) {
           auto idx = centers.at(i);
           center_values(i) = active_lb_idcs.contains(idx) ? values_lb(idx) : values_ub(idx);
         }
 
-        center_weights = weights(centers, Eigen::all);
+        center_weights = weights(centers, kAll);
         center_weights.conservativeResize(n_centers + n_poly_basis_);
         center_weights.tail(n_poly_basis_) = weights.tail(n_poly_basis_);
 

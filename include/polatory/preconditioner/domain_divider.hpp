@@ -269,8 +269,8 @@ class DomainDivider {
   }
 
   Bbox domain_bbox(const Domain& domain) const {
-    auto points = points_(domain.point_indices, Eigen::all);
-    auto grad_points = grad_points_(domain.grad_point_indices, Eigen::all);
+    auto points = points_(domain.point_indices, kAll);
+    auto grad_points = grad_points_(domain.grad_point_indices, kAll);
 
     return Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points));
   }

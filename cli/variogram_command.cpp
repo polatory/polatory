@@ -10,6 +10,7 @@
 
 #include "commands.hpp"
 
+using polatory::kAll;
 using polatory::MatX;
 using polatory::read_table;
 using polatory::VecX;
@@ -39,7 +40,7 @@ void run_impl(const Options& opts) {
   using VariogramCalculator = VariogramCalculator<Dim>;
 
   MatX table = read_table(opts.in_file);
-  Points points = table(Eigen::all, Eigen::seqN(0, Dim));
+  Points points = table(kAll, Eigen::seqN(0, Dim));
   VecX values = table.col(Dim);
 
   if (opts.detrend >= 0) {

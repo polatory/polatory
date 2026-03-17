@@ -261,17 +261,11 @@ inline std::string Model<3>::description() const {
     auto semi_major = scale(1) * range;
     auto minor = scale(2) * range;
 
-    auto euler = rotation.eulerAngles(2, 0, 2);
+    auto euler = rotation.canonicalEulerAngles(2, 0, 2);
     auto az = -euler(0) / deg;
     auto dip = -euler(1) / deg;
     auto rot = -euler(2) / deg;
-    if (dip < -90.0) {
-      dip += 180.0;
-      rot = -rot;
-    } else if (dip < 0.0) {
-      dip = -dip;
-      az += 180.0;
-    } else if (dip > 90.0) {
+    if (dip > 90.0) {
       dip = 180.0 - dip;
       az += 180.0;
       rot = -rot;

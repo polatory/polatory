@@ -29,10 +29,10 @@ VecX cross_validate(const Model<Dim>& model, const geometry::Points<Dim>& points
 
     auto train_set = common::complementary_indices(test_set, n_points);
 
-    geometry::Points<Dim> train_points = points(train_set, Eigen::all);
-    geometry::Points<Dim> test_points = points(test_set, Eigen::all);
+    geometry::Points<Dim> train_points = points(train_set, kAll);
+    geometry::Points<Dim> test_points = points(test_set, kAll);
 
-    VecX train_values = values(train_set, Eigen::all);
+    VecX train_values = values(train_set, kAll);
 
     Interpolant<Dim> interpolant(model);
     interpolant.fit(train_points, train_values, tolerance, max_iter, accuracy);

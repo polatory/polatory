@@ -126,7 +126,7 @@ class MeshClipper {
         auto i = std::distance(tri.rowwise().begin(),
                                std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
                                             [threshold](auto v) { return v(0) < threshold; }));
-        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
+        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, kAll)).eval();
         // Now vertices are ordered as (interior, exterior, exterior).
         auto t01 = (threshold - tri(0, 0)) / (tri(1, 0) - tri(0, 0));
         auto t02 = (threshold - tri(0, 0)) / (tri(2, 0) - tri(0, 0));
@@ -142,7 +142,7 @@ class MeshClipper {
         auto i = std::distance(tri.rowwise().begin(),
                                std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
                                             [threshold](auto v) { return v(0) == threshold; }));
-        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
+        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, kAll)).eval();
         // Now vertices are ordered as either (boundary, interior, exterior)
         // or (boundary, exterior, interior).
         if (tri(1, 0) < tri(2, 0)) {
@@ -165,7 +165,7 @@ class MeshClipper {
         auto i = std::distance(tri.rowwise().begin(),
                                std::find_if(tri.rowwise().begin(), tri.rowwise().end(),
                                             [threshold](auto v) { return v(0) > threshold; }));
-        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, Eigen::all)).eval();
+        tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, kAll)).eval();
         // Now vertices are ordered as (exterior, interior, interior).
         auto t10 = (threshold - tri(1, 0)) / (tri(0, 0) - tri(1, 0));
         auto t20 = (threshold - tri(2, 0)) / (tri(0, 0) - tri(2, 0));

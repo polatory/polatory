@@ -12,6 +12,7 @@
 #include "../utility.hpp"
 
 using polatory::Index;
+using polatory::kAll;
 using polatory::Model;
 using polatory::VecX;
 using polatory::interpolation::Evaluator;
@@ -49,8 +50,8 @@ TEST(rbf_incremental_fitter, trivial) {
 
   EXPECT_EQ(weights.rows(), indices.size() + kDim * grad_indices.size() + model.poly_basis_size());
 
-  Evaluator<kDim> eval(model, points(indices, Eigen::all), grad_points(grad_indices, Eigen::all),
-                       accuracy, grad_accuracy);
+  Evaluator<kDim> eval(model, points(indices, kAll), grad_points(grad_indices, kAll), accuracy,
+                       grad_accuracy);
   eval.set_weights(weights);
   eval.set_target_points(points, grad_points);
   VecX values_fit = eval.evaluate();

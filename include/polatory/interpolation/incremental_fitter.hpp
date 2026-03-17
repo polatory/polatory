@@ -76,15 +76,15 @@ class IncrementalFitter {
                   << std::endl;
       }
 
-      Points points = points_full_(centers, Eigen::all);
-      Points grad_points = grad_points_full_(grad_centers, Eigen::all);
+      Points points = points_full_(centers, kAll);
+      Points grad_points = grad_points_full_(grad_centers, kAll);
 
       if (mu >= l_ || (model_.poly_degree() == 1 && mu == 1 && sigma >= 1)) {
         solver.set_points(points, grad_points);
         VecX values(mu + kDim * sigma);
         values << values_full.head(mu_full_)(centers),
             values_full.tail(kDim * sigma_full_)
-                .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_centers, Eigen::all)
+                .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_centers, kAll)
                 .template reshaped<Eigen::RowMajor>();
         weights = solver.solve(values, tolerance, grad_tolerance, max_iter, &weights);
       }
@@ -96,10 +96,10 @@ class IncrementalFitter {
       // Evaluate residuals at remaining points.
 
       auto c_centers = common::complementary_indices(centers, mu_full_);
-      Points c_points = points_full_(c_centers, Eigen::all);
+      Points c_points = points_full_(c_centers, kAll);
 
       auto c_grad_centers = common::complementary_indices(grad_centers, sigma_full_);
-      Points c_grad_points = grad_points_full_(c_grad_centers, Eigen::all);
+      Points c_grad_points = grad_points_full_(c_grad_centers, kAll);
 
       res_eval.set_source_points(points, grad_points);
       res_eval.set_weights(weights);
@@ -201,7 +201,7 @@ class IncrementalFitter {
 
     Vectors c_grad_values =
         mixed_values_full.tail(kDim * sigma_full_)
-            .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(c_grad_centers, Eigen::all);
+            .template reshaped<Eigen::RowMajor>(sigma_full_, kDim)(c_grad_centers, kAll);
     Vectors c_grad_values_fit =
         c_mixed_values_fit.tail(kDim * c_sigma).template reshaped<Eigen::RowMajor>(c_sigma, kDim);
 

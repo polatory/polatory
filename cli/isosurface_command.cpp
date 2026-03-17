@@ -13,6 +13,7 @@
 
 using polatory::Index;
 using polatory::Interpolant;
+using polatory::kAll;
 using polatory::Mat3;
 using polatory::MatX;
 using polatory::read_table;
@@ -47,7 +48,7 @@ void run_impl(const Options& opts) {
   Points3 seed_points;
   if (!opts.seed_points_file.empty()) {
     MatX table = read_table(opts.seed_points_file);
-    seed_points = table(Eigen::all, {0, 1, 2});
+    seed_points = table(kAll, {0, 1, 2});
   }
 
   auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn,

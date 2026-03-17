@@ -141,12 +141,12 @@ class ResidualEvaluator {
                    });
     direct_grad_indices_.resize(direct_sigma_);
 
-    direct_points_ = points_(direct_indices_, Eigen::all);
-    direct_grad_points_ = grad_points_(direct_grad_indices_, Eigen::all);
+    direct_points_ = points_(direct_indices_, kAll);
+    direct_grad_points_ = grad_points_(direct_grad_indices_, kAll);
     direct_values_ = VecX::Zero(direct_mu_ + kDim * direct_sigma_);
     direct_values_ << values_.head(mu_)(direct_indices_),
         values_.tail(kDim * sigma_)
-            .reshaped<Eigen::RowMajor>(sigma_, kDim)(direct_grad_indices_, Eigen::all)
+            .reshaped<Eigen::RowMajor>(sigma_, kDim)(direct_grad_indices_, kAll)
             .reshaped<Eigen::RowMajor>();
   }
 

@@ -9,6 +9,7 @@
 #include "commands.hpp"
 
 using polatory::Index;
+using polatory::kAll;
 using polatory::MatX;
 using polatory::read_table;
 using polatory::write_table;
@@ -40,7 +41,7 @@ struct Options {
 
 void run_impl(const Options& opts) {
   MatX table = read_table(opts.in_file);
-  Points3 points = table(Eigen::all, {0, 1, 2});
+  Points3 points = table(kAll, {0, 1, 2});
 
   NormalEstimator estimator(points);
 
