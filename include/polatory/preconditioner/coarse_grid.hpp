@@ -39,8 +39,8 @@ class CoarseGrid {
 
   void setup(const Points& points_full, const Points& grad_points_full,
              const MatX& lagrange_p_full) {
-    Points points = points_full(point_idcs_, Eigen::all);
-    Points grad_points = grad_points_full(grad_point_idcs_, Eigen::all);
+    Points points = points_full(point_idcs_, kAll);
+    Points grad_points = grad_points_full(grad_point_idcs_, kAll);
 
     // Compute A.
     auto a = mat_a(model_, points, grad_points);
@@ -56,7 +56,7 @@ class CoarseGrid {
         }
 
         // Compute matrix Q.
-        auto lagrange_p = lagrange_p_full(flat_indices, Eigen::all);
+        auto lagrange_p = lagrange_p_full(flat_indices, kAll);
         q_top_ = -lagrange_p.bottomRows(m_ - l_).transpose();
 
         // Compute decomposition of Q^T A Q.
@@ -92,7 +92,7 @@ class CoarseGrid {
     weights_full(point_idcs_) = lambda_c_.head(mu_);
 
     weights_full.segment(mu_full_, kDim * sigma_full_)
-        .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, Eigen::all) =
+        .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, kAll) =
         lambda_c_.segment(mu_, kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim);
 
     weights_full.tail(l_) = lambda_c_.tail(l_);
@@ -103,7 +103,7 @@ class CoarseGrid {
     values.head(mu_) = values_full(point_idcs_);
     values.tail(kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim) =
         values_full.tail(kDim * sigma_full_)
-            .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, Eigen::all);
+            .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, kAll);
 
     if (l_ > 0) {
       lambda_c_ = VecX(m_ + l_);

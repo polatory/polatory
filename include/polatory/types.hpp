@@ -19,4 +19,6 @@ using Vec = Mat<N, 1>;
 
 using VecX = Vec<Eigen::Dynamic>;
 
+static constexpr Eigen::placeholders::all_t kAll = Eigen::placeholders::all;
+
 }  // namespace polatory

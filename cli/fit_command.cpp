@@ -14,6 +14,7 @@
 #include "commands.hpp"
 
 using polatory::Interpolant;
+using polatory::kAll;
 using polatory::MatX;
 using polatory::Model;
 using polatory::read_table;
@@ -48,7 +49,7 @@ void run_impl(const Options& opts) {
   using Vectors = Vectors<Dim>;
 
   MatX table = read_table(opts.in_file);
-  Points points = table(Eigen::all, Eigen::seqN(0, Dim));
+  Points points = table(kAll, Eigen::seqN(0, Dim));
   VecX values = table.col(Dim);
   std::optional<VecX> values_lb;
   std::optional<VecX> values_ub;
@@ -61,8 +62,8 @@ void run_impl(const Options& opts) {
   Vectors grad_values;
   if (!opts.grad_in_file.empty()) {
     MatX grad_table = read_table(opts.grad_in_file);
-    grad_points = grad_table(Eigen::all, Eigen::seqN(0, Dim));
-    grad_values = grad_table(Eigen::all, Eigen::seqN(Dim, Dim));
+    grad_points = grad_table(kAll, Eigen::seqN(0, Dim));
+    grad_values = grad_table(kAll, Eigen::seqN(Dim, Dim));
   }
 
   VecX rhs(values.size() + grad_values.size());

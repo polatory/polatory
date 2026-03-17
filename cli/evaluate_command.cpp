@@ -7,6 +7,7 @@
 #include "commands.hpp"
 
 using polatory::Interpolant;
+using polatory::kAll;
 using polatory::MatX;
 using polatory::read_table;
 using polatory::write_table;
@@ -33,7 +34,7 @@ void run_impl(const Options& opts) {
   auto inter = Interpolant::load(opts.interpolant_file);
 
   MatX table = read_table(opts.points_file);
-  Points points = table(Eigen::all, Eigen::seqN(0, Dim));
+  Points points = table(kAll, Eigen::seqN(0, Dim));
 
   auto n = points.rows();
   if (opts.grads) {

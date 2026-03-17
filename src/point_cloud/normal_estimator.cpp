@@ -56,7 +56,7 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
     plane_normals.clear();
     for (auto k : ks_sorted) {
       nn_indices.resize(k);
-      PlaneEstimator est(points_(nn_indices, Eigen::all));
+      PlaneEstimator est(points_(nn_indices, kAll));
       plane_factors.push_back(est.plane_factor());
       plane_normals.push_back(est.plane_normal());
     }
@@ -118,7 +118,7 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
       auto k = std::distance(nn_distances.begin(), it);
       nn_indices.resize(k);
       nn_distances.resize(k);
-      PlaneEstimator est(points_(nn_indices, Eigen::all));
+      PlaneEstimator est(points_(nn_indices, kAll));
       plane_factors.push_back(est.plane_factor());
       plane_normals.push_back(est.plane_normal());
     }
@@ -268,7 +268,7 @@ NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
                                              points_.row(j).dot(seed_point_direction);
                                     });
     if (normals_.row(*seed_it).dot(seed_point_direction) < 0.0) {
-      normals_(connected_component, Eigen::all) *= -1.0;
+      normals_(connected_component, kAll) *= -1.0;
     }
 
     n_connected_components++;

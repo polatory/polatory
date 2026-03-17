@@ -16,6 +16,7 @@
 
 using polatory::Index;
 using polatory::Interpolant;
+using polatory::kAll;
 using polatory::MatX;
 using polatory::Model;
 using polatory::read_table;
@@ -150,7 +151,7 @@ int main(int argc, const char* argv[]) {
 
     // Load the points and their sides of the mesh.
     MatX table = read_table(opts.in);
-    Points3 points = table(Eigen::all, {0, 1, 2});
+    Points3 points = table(kAll, {0, 1, 2});
     VecX sides = table.col(3);
 
     // Load the mesh.

@@ -45,7 +45,7 @@ class UnisolventPointSet {
       }
 
       try {
-        LagrangeBasis basis(degree, points(std::vector<Index>(set.begin(), set.end()), Eigen::all));
+        LagrangeBasis basis(degree, points(std::vector<Index>(set.begin(), set.end()), kAll));
 
         if (best_rcond < basis.rcond()) {
           best_rcond = basis.rcond();

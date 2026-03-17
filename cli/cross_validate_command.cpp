@@ -12,6 +12,7 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
+using polatory::kAll;
 using polatory::MatX;
 using polatory::Model;
 using polatory::read_table;
@@ -40,7 +41,7 @@ void run_impl(const Options& opts) {
   using Points = Points<Dim>;
 
   MatX table = read_table(opts.in_file);
-  Points points = table(Eigen::all, Eigen::seqN(0, Dim));
+  Points points = table(kAll, Eigen::seqN(0, Dim));
   VecX values = table.col(Dim);
   Eigen::VectorXi set_ids = table.col(Dim + 1).cast<int>();
 

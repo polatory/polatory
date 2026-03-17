@@ -70,7 +70,7 @@ class DistanceFilter {
 
     // Use .eval() to prevent memory corruption caused if the result is being assigned
     // back to the input matrix.
-    return m(filtered_indices_, Eigen::all).eval();
+    return m(filtered_indices_, kAll).eval();
   }
 
   template <class Derived, class... Args>

@@ -13,6 +13,7 @@
 #include "commands.hpp"
 
 using polatory::Index;
+using polatory::kAll;
 using polatory::Mat3;
 using polatory::MatX;
 using polatory::read_table;
@@ -37,8 +38,8 @@ struct Options {
 void run_impl(const Options& opts) {
   MatX table = read_table(opts.in_file);
 
-  Points3 points = table(Eigen::all, {0, 1, 2});
-  Vectors3 normals = table(Eigen::all, {3, 4, 5});
+  Points3 points = table(kAll, {0, 1, 2});
+  Vectors3 normals = table(kAll, {3, 4, 5});
 
   auto n_normals = normals.rows();
   auto n_normals_to_keep = static_cast<Index>(std::round(opts.ratio * n_normals));
@@ -47,7 +48,7 @@ void run_impl(const Options& opts) {
   // Prevent clustering of off-surface points.
   std::shuffle(indices.begin(), indices.end(), std::mt19937{});
   indices.resize(n_normals - n_normals_to_keep);
-  normals(indices, Eigen::all) *= 0.0;
+  normals(indices, kAll) *= 0.0;
 
   SdfDataGenerator sdf_data(points, normals, opts.min_offset, opts.max_offset, opts.aniso);
 

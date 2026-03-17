@@ -87,7 +87,7 @@ class RasPreconditioner : public krylov::LinearOperator {
           // The ordinary case.
           UnisolventPointSet ups(points_, model.poly_degree());
           poly_point_idcs = ups.point_indices();
-          LagrangeBasis lagrange_basis(model.poly_degree(), points_(poly_point_idcs, Eigen::all));
+          LagrangeBasis lagrange_basis(model.poly_degree(), points_(poly_point_idcs, kAll));
           lagrange_p_ = lagrange_basis.evaluate(points_, grad_points_);
         }
 
@@ -258,11 +258,11 @@ class RasPreconditioner : public krylov::LinearOperator {
     if (!evaluator_.contains(key)) {
       evaluator_.emplace(
           std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
-          std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), Eigen::all),
-                                grad_points_(grad_point_idcs_.at(src_level), Eigen::all), bbox_));
+          std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), kAll),
+                                grad_points_(grad_point_idcs_.at(src_level), kAll), bbox_));
       evaluator_.at(key).set_target_points(
-          points_(point_idcs_.at(trg_level), Eigen::all),
-          grad_points_(grad_point_idcs_.at(trg_level), Eigen::all));
+          points_(point_idcs_.at(trg_level), kAll),
+          grad_points_(grad_point_idcs_.at(trg_level), kAll));
     }
 
     return evaluator_.at(key);

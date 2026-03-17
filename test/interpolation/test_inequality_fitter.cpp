@@ -14,6 +14,7 @@
 #include "../utility.hpp"
 
 using polatory::Index;
+using polatory::kAll;
 using polatory::Model;
 using polatory::VecX;
 using polatory::geometry::Points1;
@@ -47,7 +48,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
 
   EXPECT_EQ(weights.rows(), indices.size() + model.poly_basis_size());
 
-  Evaluator<kDim> eval(model, points(indices, Eigen::all), accuracy);
+  Evaluator<kDim> eval(model, points(indices, kAll), accuracy);
   eval.set_weights(weights);
   VecX values_fit = eval.evaluate(points);
 
@@ -89,7 +90,7 @@ TEST(rbf_inequality_fitter, kostov86) {
   InequalityFitter<kDim> fitter(model, points);
   auto [indices, weights] = fitter.fit(values, values_lb, values_ub, tolerance, 32, accuracy);
 
-  Evaluator<kDim> eval(model, points(indices, Eigen::all), accuracy);
+  Evaluator<kDim> eval(model, points(indices, kAll), accuracy);
   eval.set_weights(weights);
   VecX values_fit = eval.evaluate(points);
 

@@ -18,6 +18,7 @@
 #include "../utility.hpp"
 
 using polatory::Index;
+using polatory::kAll;
 using polatory::Mat;
 using polatory::MatX;
 using polatory::Model;
@@ -81,7 +82,7 @@ void test(Index n_points, Index n_grad_points) {
       // The ordinary case.
       std::vector<Index> poly_point_idcs(domain.point_indices.begin(),
                                          domain.point_indices.begin() + l);
-      LagrangeBasis lagrange_basis(poly_degree, points(poly_point_idcs, Eigen::all));
+      LagrangeBasis lagrange_basis(poly_degree, points(poly_point_idcs, kAll));
       lagrange_p = lagrange_basis.evaluate(points, grad_points);
     }
   }
