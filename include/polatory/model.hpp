@@ -226,7 +226,8 @@ inline std::string Model<2>::description() const {
     auto major = scale(0) * range;
     auto minor = scale(1) * range;
 
-    auto rot = -std::atan2(rotation(1, 0), rotation(0, 0)) / deg;
+    auto rot = -std::atan2(rotation(1, 0), rotation(0, 0)) / deg;  // -> [0, 180)
+    rot = std::fmod(rot, 180.0);
     if (rot < 0.0) {
       rot += 180.0;
     }
@@ -262,17 +263,28 @@ inline std::string Model<3>::description() const {
     auto minor = scale(2) * range;
 
     auto euler = rotation.canonicalEulerAngles(2, 0, 2);
-    auto az = -euler(0) / deg;
-    auto dip = -euler(1) / deg;
-    auto rot = -euler(2) / deg;
+    auto az = -euler(0) / deg;   // -> [0, 360)
+    auto dip = -euler(1) / deg;  // -> [0, 90]
+    auto rot = -euler(2) / deg;  // -> [0, 180)
+    dip = std::fmod(dip, 360.0);
+    if (dip < 0.0) {
+      dip = -dip;
+      az += 180.0;
+    }
+    if (dip > 180.0) {
+      dip = 360.0 - dip;
+      az += 180.0;
+    }
     if (dip > 90.0) {
       dip = 180.0 - dip;
       az += 180.0;
       rot = -rot;
     }
+    az = std::fmod(az, 360.0);
     if (az < 0.0) {
       az += 360.0;
     }
+    rot = std::fmod(rot, 180.0);
     if (rot < 0.0) {
       rot += 180.0;
     }
