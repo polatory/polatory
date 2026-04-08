@@ -41,7 +41,7 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
 
   std::vector<Index> ks_sorted(ks);
   std::sort(ks_sorted.rbegin(), ks_sorted.rend());
-  auto k_max = ks_sorted.front();
+  auto k_max = std::min(ks_sorted.front(), n_points_);
 
   std::vector<double> plane_factors;
   std::vector<geometry::Vector3> plane_normals;
@@ -55,7 +55,7 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
     plane_factors.clear();
     plane_normals.clear();
     for (auto k : ks_sorted) {
-      nn_indices.resize(k);
+      nn_indices.resize(std::min(k, n_points_));
       PlaneEstimator est(points_(nn_indices, kAll));
       plane_factors.push_back(est.plane_factor());
       plane_normals.push_back(est.plane_normal());
@@ -188,6 +188,7 @@ NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
 
   geometry::Vector3 seed_point_direction{-geometry::Vector3::UnitY()};
   Index n_connected_components{};
+  k = std::min(k, n_points_);
 
   std::vector<bool> oriented(n_points_, false);
   for (Index i = 0; i < n_points_; i++) {
