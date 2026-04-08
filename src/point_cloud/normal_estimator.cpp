@@ -186,7 +186,7 @@ struct WeightedPair {
 NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
   throw_if_not_estimated();
 
-  geometry::Vector3 seed_point_direction{-geometry::Vector3::UnitY()};
+  geometry::Vector3 seed_point_direction{geometry::Vector3::UnitZ()};
   Index n_connected_components{};
   k = std::min(k, n_points_);
 
