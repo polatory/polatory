@@ -28,6 +28,7 @@ namespace {
 
 struct Options {
   std::string in_file;
+  double offset{};
   double ratio{};
   Mat3 aniso;
   std::string out_file;
@@ -48,7 +49,7 @@ void run_impl(const Options& opts) {
   indices.resize(n_normals - n_normals_to_keep);
   normals(indices, kAll) *= 0.0;
 
-  SdfDataGenerator sdf_data(points, normals, opts.aniso);
+  SdfDataGenerator sdf_data(points, normals, opts.offset, opts.aniso);
 
   const auto& sdf_points = sdf_data.sdf_points();
   const auto& sdf_values = sdf_data.sdf_values();
@@ -68,6 +69,8 @@ void NormalsToSdfCommand::run(const std::vector<std::string>& args,
   opts_desc.add_options()  //
       ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
        "Input file in CSV format:\n  X,Y,Z,NX,NY,NZ")  //
+      ("offset", po::value(&opts.offset)->default_value(0.0, "AUTO")->value_name("OFFSET"),
+       "Default offset distance of off-surface points")  //
       ("aniso",
        po::value(&opts.aniso)
            ->multitoken()

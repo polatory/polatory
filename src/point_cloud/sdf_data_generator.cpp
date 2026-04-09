@@ -7,11 +7,12 @@
 namespace polatory::point_cloud {
 
 SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
-                                   const geometry::Vectors3& normals)
-    : SdfDataGenerator(points, normals, Mat3::Identity()) {}
+                                   const geometry::Vectors3& normals, double offset)
+    : SdfDataGenerator(points, normals, offset, Mat3::Identity()) {}
 
 SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
-                                   const geometry::Vectors3& normals, const Mat3& aniso) {
+                                   const geometry::Vectors3& normals, double offset,
+                                   const Mat3& aniso) {
   if (normals.rows() != points.rows()) {
     throw std::invalid_argument("normals.rows() must be equal to points.rows()");
   }
@@ -21,7 +22,7 @@ SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
   }
 
   if (aniso.isIdentity()) {
-    auto [sdf_points, sdf_values] = estimate_impl(points, normals);
+    auto [sdf_points, sdf_values] = estimate_impl(points, normals, offset);
     sdf_points_ = sdf_points;
     sdf_values_ = sdf_values;
   } else {
@@ -32,14 +33,14 @@ SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
         n = n.normalized();
       }
     }
-    auto [sdf_points, sdf_values] = estimate_impl(a_points, a_normals);
+    auto [sdf_points, sdf_values] = estimate_impl(a_points, a_normals, offset);
     sdf_points_ = geometry::transform_points<3>(aniso.inverse(), sdf_points);
     sdf_values_ = sdf_values;
   }
 }
 
 std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
-    const geometry::Points3& points, const geometry::Vectors3& normals) {
+    const geometry::Points3& points, const geometry::Vectors3& normals, double offset) {
   KdTree tree(points);
 
   auto n_points = points.rows();
@@ -62,9 +63,11 @@ std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
         continue;
       }
 
-      tree.knn_search(p, std::min(static_cast<Index>(6), n_points), nn_indices, nn_distances);
-
-      auto d = nn_distances.back();
+      auto d = offset;
+      if (d <= 0.0) {
+        tree.knn_search(p, std::min(static_cast<Index>(6), n_points), nn_indices, nn_distances);
+        d = nn_distances.back();
+      }
       geometry::Point3 q = p + sign * d * n;
 
       tree.knn_search(q, 1, nn_indices, nn_distances);
