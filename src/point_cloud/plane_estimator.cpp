@@ -19,15 +19,11 @@ PlaneEstimator::PlaneEstimator(const geometry::Points3& points) {
   line_err_ = std::hypot(s1, s2) / std::sqrt(n_points);
   plane_err_ = std::abs(s2) / std::sqrt(n_points);
 
-  if (s0 == 0.0) {
-    plane_factor_ = std::numeric_limits<double>::quiet_NaN();
-  } else if (s1 == 0.0) {
-    plane_factor_ = 0.0;
-  } else if (s2 == 0.0) {
-    plane_factor_ = std::numeric_limits<double>::infinity();
-  } else {
-    plane_factor_ = line_err_ * line_err_ / (plane_err_ * point_err_);
-  }
+  point_err_ = std::max(point_err_, 1e-10);
+  line_err_ = std::max(line_err_, 1e-10 * point_err_);
+  plane_err_ = std::max(plane_err_, 1e-10 * line_err_);
+
+  plane_factor_ = line_err_ * line_err_ / (plane_err_ * point_err_);
 
   basis_ = svd.matrixV();
 }
