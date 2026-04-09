@@ -7,19 +7,13 @@
 namespace polatory::point_cloud {
 
 SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
-                                   const geometry::Vectors3& normals, double min_distance,
-                                   double max_distance)
-    : SdfDataGenerator(points, normals, min_distance, max_distance, Mat3::Identity()) {}
+                                   const geometry::Vectors3& normals)
+    : SdfDataGenerator(points, normals, Mat3::Identity()) {}
 
 SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
-                                   const geometry::Vectors3& normals, double min_distance,
-                                   double max_distance, const Mat3& aniso) {
+                                   const geometry::Vectors3& normals, const Mat3& aniso) {
   if (normals.rows() != points.rows()) {
     throw std::invalid_argument("normals.rows() must be equal to points.rows()");
-  }
-
-  if (!(min_distance <= max_distance)) {
-    throw std::invalid_argument("min_distance must be less than or equal to max_distance");
   }
 
   if (!(aniso.determinant() > 0.0)) {
@@ -27,7 +21,7 @@ SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
   }
 
   if (aniso.isIdentity()) {
-    auto [sdf_points, sdf_values] = estimate_impl(points, normals, min_distance, max_distance);
+    auto [sdf_points, sdf_values] = estimate_impl(points, normals);
     sdf_points_ = sdf_points;
     sdf_values_ = sdf_values;
   } else {
@@ -38,15 +32,14 @@ SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
         n = n.normalized();
       }
     }
-    auto [sdf_points, sdf_values] = estimate_impl(a_points, a_normals, min_distance, max_distance);
+    auto [sdf_points, sdf_values] = estimate_impl(a_points, a_normals);
     sdf_points_ = geometry::transform_points<3>(aniso.inverse(), sdf_points);
     sdf_values_ = sdf_values;
   }
 }
 
 std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
-    const geometry::Points3& points, const geometry::Vectors3& normals, double min_distance,
-    double max_distance) {
+    const geometry::Points3& points, const geometry::Vectors3& normals) {
   KdTree tree(points);
 
   auto n_points = points.rows();
@@ -69,7 +62,9 @@ std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
         continue;
       }
 
-      auto d = max_distance;
+      tree.knn_search(p, std::min(static_cast<Index>(6), n_points), nn_indices, nn_distances);
+
+      auto d = nn_distances.back();
       geometry::Point3 q = p + sign * d * n;
 
       tree.knn_search(q, 1, nn_indices, nn_distances);
@@ -83,16 +78,8 @@ std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
         d = 0.99 * r / cos;
         q = p + sign * d * n;
 
-        if (d < min_distance) {
-          break;
-        }
-
         tree.knn_search(q, 1, nn_indices, nn_distances);
         i_nearest = nn_indices.at(0);
-      }
-
-      if (d < min_distance) {
-        continue;
       }
 
       sdf_points.row(n_sdf_points) = q;

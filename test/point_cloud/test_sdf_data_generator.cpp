@@ -18,14 +18,12 @@ using polatory::point_cloud::SdfDataGenerator;
 
 TEST(sdf_data_generator, trivial) {
   const auto n_points = Index{512};
-  const auto min_distance = 1e-2;
-  const auto max_distance = 5e-1;
 
   Points3 points = random_points(Sphere3(), n_points);
   Vectors3 normals =
       (points + random_points(Sphere3(Point3::Zero(), 0.1), n_points)).rowwise().normalized();
 
-  SdfDataGenerator sdf_data(points, normals, min_distance, max_distance);
+  SdfDataGenerator sdf_data(points, normals);
   Points3 sdf_points = sdf_data.sdf_points();
   VecX sdf_values = sdf_data.sdf_values();
 
@@ -48,8 +46,6 @@ TEST(sdf_data_generator, trivial) {
       auto point = points.row(indices[0]);
       auto normal = normals.row(indices[0]);
 
-      EXPECT_GE(std::abs(sdf_value), min_distance);
-      EXPECT_LE(std::abs(sdf_value), max_distance);
       EXPECT_GT(sdf_value * normal.dot(sdf_point - point), 0.0);
     }
   }
