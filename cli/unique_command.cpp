@@ -48,8 +48,11 @@ void UniqueCommand::run(const std::vector<std::string>& args, const GlobalOption
        "Input file in CSV format:\n  X[,Y[,Z]]...")  //
       ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
        "Dimension of input points")  //
-      ("dist", po::value(&opts.dist)->default_value(0.0, "0.0")->value_name("DIST"),
-       "Minimum distance for identifying points")  //
+      ("dist",
+       po::value(&opts.dist)
+           ->default_value(DistanceFilter<1>::kMinDistance, "1e-19")
+           ->value_name("DIST"),
+       "Minimum distance between distinct points")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output file in CSV format:\n  X[,Y[,Z]]...")  //
       ;
