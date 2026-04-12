@@ -1,4 +1,5 @@
 #include <Eigen/LU>
+#include <algorithm>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <polatory/point_cloud/sdf_data_generator.hpp>
 #include <stdexcept>
@@ -66,7 +67,7 @@ std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
       auto d = offset;
       if (d <= 0.0) {
         tree.knn_search(p, std::min(static_cast<Index>(6), n_points), nn_indices, nn_distances);
-        d = nn_distances.back();
+        d = *std::max_element(nn_distances.begin(), nn_distances.end());
       }
       geometry::Point3 q = p + sign * d * n;
 

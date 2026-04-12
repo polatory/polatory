@@ -52,6 +52,9 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
     geometry::Point3 p = points_.row(i);
     tree_.knn_search(p, k_max, nn_indices, nn_distances);
 
+    common::zip_sort(nn_indices.begin(), nn_indices.end(), nn_distances.begin(),
+                     [](const auto& a, const auto& b) { return a.second < b.second; });
+
     plane_factors.clear();
     plane_normals.clear();
     for (auto k : ks_sorted) {
