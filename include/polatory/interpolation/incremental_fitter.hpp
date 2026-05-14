@@ -26,6 +26,7 @@ template <int Dim>
 class IncrementalFitter {
   static constexpr int kDim = Dim;
   using Bbox = geometry::Bbox<kDim>;
+  using DistanceFilter = point_cloud::DistanceFilter<kDim>;
   using Evaluator = Evaluator<kDim>;
   using Model = Model<kDim>;
   using Points = geometry::Points<kDim>;
@@ -49,9 +50,9 @@ class IncrementalFitter {
                                                                double grad_accuracy) const {
     POLATORY_ASSERT(values_full.size() == mu_full_ + kDim * sigma_full_);
 
-    auto filtering_distance = bbox_.width().norm();
-    point_cloud::DistanceFilter filter(points_full_);
-    point_cloud::DistanceFilter grad_filter(grad_points_full_);
+    auto filtering_distance = std::max(bbox_.width().norm(), DistanceFilter::kMinDistance);
+    DistanceFilter filter(points_full_);
+    DistanceFilter grad_filter(grad_points_full_);
 
     std::vector<Index> centers;
     std::vector<Index> grad_centers;
@@ -175,7 +176,7 @@ class IncrementalFitter {
       weights.segment(mu, kDim * last_sigma) = last_weights.segment(last_mu, kDim * last_sigma);
       weights.tail(l_) = last_weights.tail(l_);
 
-      filtering_distance *= 0.5;
+      filtering_distance = std::max(0.5 * filtering_distance, DistanceFilter::kMinDistance);
     }
 
     return {std::move(centers), std::move(grad_centers), std::move(weights)};

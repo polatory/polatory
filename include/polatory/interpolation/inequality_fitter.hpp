@@ -26,6 +26,7 @@ class InequalityFitter {
   static constexpr int kDim = Dim;
   static constexpr double kInfinity = std::numeric_limits<double>::infinity();
   using Bbox = geometry::Bbox<kDim>;
+  using DistanceFilter = point_cloud::DistanceFilter<kDim>;
   using Evaluator = Evaluator<kDim>;
   using Model = Model<kDim>;
   using Points = geometry::Points<kDim>;
@@ -43,8 +44,8 @@ class InequalityFitter {
                                           const VecX& values_ub, double tolerance, int max_iter,
                                           double accuracy,
                                           const VecX* initial_weights = nullptr) const {
-    double filtering_distance = bbox_.width().norm();
-    point_cloud::DistanceFilter filter(points_);
+    double filtering_distance = std::max(bbox_.width().norm(), DistanceFilter::kMinDistance);
+    DistanceFilter filter(points_);
 
     auto not_nan = [](double d) { return !std::isnan(d); };
     auto eq_idcs = arg_where(values, not_nan);
@@ -179,7 +180,7 @@ class InequalityFitter {
         break;
       }
 
-      filtering_distance *= 0.5;
+      filtering_distance = std::max(0.5 * filtering_distance, DistanceFilter::kMinDistance);
     }
 
     return {std::move(centers), std::move(center_weights)};
