@@ -11,7 +11,6 @@
 struct Options {
   std::string in;
   std::string mesh_in;
-  double min_distance{};
   double tolerance{};
   int max_iter{};
   double accuracy{};
