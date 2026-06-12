@@ -7,6 +7,8 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
+#include <polatory/isosurface/snap.hpp>
+#include <polatory/types.hpp>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -57,6 +59,21 @@ class Isosurface {
     return generate_common();
   }
 
+  // Sets the points that the generated mesh will be snapped to so that it passes
+  // exactly through them. Points whose projection falls outside the extended bbox
+  // are ignored, which keeps the mesh boundary intact.
+  //
+  // max_distance_ratio bounds how far a point may lie from the mesh to be snapped,
+  // as a fraction of the mesh resolution. It must be in (0, 1].
+  void set_snap_points(const geometry::Points3& points, double max_distance_ratio = 0.5) {
+    if (!(max_distance_ratio > 0.0 && max_distance_ratio <= 1.0)) {
+      throw std::invalid_argument("snap max distance ratio must be in (0, 1]");
+    }
+
+    snap_points_ = points;
+    snap_max_distance_ratio_ = max_distance_ratio;
+  }
+
  private:
   Mesh generate_common() {
     lattice_.cluster_vertices();
@@ -88,6 +105,15 @@ class Isosurface {
       }
     }
 
+    // Snap the mesh to the points before clipping. Restricting snapping to points
+    // whose projection stays inside first_extended_bbox keeps it away from the mesh
+    // boundary, which lies further out (near second_extended_bbox); the clip then
+    // produces the clean on-bbox boundary.
+    if (snap_points_.rows() > 0 && !mesh.is_empty()) {
+      auto max_distance = snap_max_distance_ratio_ * lattice_.resolution();
+      mesh = snap_mesh(mesh, snap_points_, lattice_.first_extended_bbox(), max_distance);
+    }
+
     mesh = clip(mesh, lattice_.bbox());
 
     if (mesh.is_empty() &&
@@ -101,6 +127,8 @@ class Isosurface {
   }
 
   rmt::Lattice lattice_;
+  geometry::Points3 snap_points_;
+  double snap_max_distance_ratio_{0.5};
 };
 
 }  // namespace polatory::isosurface

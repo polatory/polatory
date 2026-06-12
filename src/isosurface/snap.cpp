@@ -1,0 +1,16 @@
+#include <polatory/isosurface/snap.hpp>
+#include <polatory/isosurface/snapper/snapper.hpp>
+
+namespace polatory::isosurface {
+
+Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const geometry::Bbox3& bbox,
+               double max_distance) {
+  if (points.rows() == 0 || mesh.faces().rows() == 0) {
+    return mesh;
+  }
+
+  snapper::Snapper s(mesh.vertices(), mesh.faces(), bbox, max_distance);
+  return s.snap(points);
+}
+
+}  // namespace polatory::isosurface
