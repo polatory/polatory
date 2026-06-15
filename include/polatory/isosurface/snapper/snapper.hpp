@@ -24,33 +24,39 @@
 
 namespace polatory::isosurface::snapper {
 
-// Snaps a mesh to a subset of the given points so that the mesh passes through them
-// without becoming self-intersecting.
+// Snaps a mesh to a subset of the given points so that the mesh passes through them without
+// becoming self-intersecting. Each point is processed in turn and either snapped or dropped;
+// the result provably has no self-intersections and interpolates as many points as it can.
 //
-// Each point is classified once against the original mesh as belonging to a vertex, an
-// edge, or the interior of a face — whichever simplex's centroid (the vertex itself, an
-// edge midpoint, or the face centroid) is nearest to its projection, i.e. a Voronoi
-// classification of the face. A vertex move reuses the existing vertex; an edge snap
-// adds a vertex on the (subdivided) original edge shared by the two incident patches; a
-// face snap adds a vertex interior to one patch. Each modified patch — an original face
-// with the vertices added on its edges and in its interior — is re-triangulated from
-// scratch by a constrained Delaunay triangulation (see Triangulation), the subdivided original
-// edges being the boundary constraints, computed over the faithful (off-surface)
-// positions actually emitted.
+// Each point goes through three steps:
 //
-// Points are processed nearest the mesh first, and each is accepted only if its snap
-// keeps the mesh free of self-intersections: the affected patch(es) are re-triangulated
-// and tested against their neighborhood, and the point is rejected if any new triangle
-// would intersect a non-adjacent one. A rejected vertex or edge snap cascades to its
-// next-nearest simplex (ultimately a face snap, which perturbs only its own patch); a
-// point that cannot be placed at all is dropped. The accepted points therefore yield a
-// provably non-self-intersecting mesh, keeping the points nearest the surface.
+//  - Classify. Match the point, once and against the original mesh, to the nearest simplex of
+//    its closest face — a vertex, an edge, or the face interior — by which simplex centroid
+//    (the vertex, an edge midpoint, or the face centroid) is nearest its projection (a Voronoi
+//    classification of the face).
 //
-// A point is snapped only if both the point and its projection onto the mesh lie inside
-// the given bbox. The caller is responsible for choosing a bbox whose interior is free
-// of mesh boundary; the snapping then provably leaves the boundary of the mesh
-// untouched (no boundary vertex is moved and no boundary edge is subdivided), so no
-// special handling of boundary features is needed. See the comment on the constructor.
+//  - Snap. A vertex match reuses the existing vertex (a move); an edge match adds a vertex on
+//    the subdivided original edge shared by the two incident patches; a face match adds a
+//    vertex interior to one patch. Each affected patch — an original face with vertices added
+//    on its edges and interior — is then re-triangulated from scratch by a constrained
+//    Delaunay triangulation (see Triangulation) over the faithful (off-surface) emitted
+//    positions, with the subdivided original edges as boundary constraints.
+//
+//  - Accept or drop. Keep the snap only if it leaves the mesh free of self-intersections: the
+//    affected patches are tested against their neighborhood and rejected if any new triangle
+//    meets a non-adjacent one. A rejected vertex or edge snap cascades to its next-nearest
+//    simplex (ultimately a face snap, which perturbs only its own patch); a point that cannot
+//    be placed anywhere is dropped.
+//
+// Processing order. Points are taken in farthest-point order (each as far as possible from
+// those already placed), so a point far from the mesh — a feature the resolution
+// under-samples, such as a contour peak — is snapped while its patch is still uncrowded,
+// instead of after its near neighbors have subdivided it and left no room.
+//
+// Boundary. A point is snapped only if both it and its projection lie inside the given bbox.
+// If the bbox interior holds no mesh boundary, snapping provably leaves the boundary untouched
+// (no boundary vertex moved, no boundary edge subdivided), so boundary features need no
+// special handling. See the comment on the constructor.
 class Snapper {
   // A face as a vertex-index triple (the std::array form of the Eigen-row `Face`, used as
   // the element type of the patch triangulations).
@@ -160,7 +166,7 @@ class Snapper {
  private:
   // -- Classification (phase 1): project each point and rank the seven simplex
   // centroids of its face by distance to the projection (a Voronoi classification),
-  // then order the candidates nearest the mesh first.
+  // then order the candidates by farthest-point sampling (see reorder_farthest_point).
   std::vector<Candidate> build_candidates(const Points3& points) {
     const auto& V = mesh_.vertices();
     const auto& F = mesh_.faces();
@@ -214,7 +220,47 @@ class Snapper {
       return std::make_tuple(x.d2, x.p(0), x.p(1), x.p(2)) <
              std::make_tuple(y.d2, y.p(0), y.p(1), y.p(2));
     });
+
+    // Reorder by farthest-point sampling: place well-spread anchors first so that a point
+    // far from the mesh (a feature the resolution under-samples, e.g. a contour peak) is
+    // snapped while there is still room in its patch, instead of being blocked after its
+    // near neighbors have densely subdivided the patch. Seeded from the nearest-surface
+    // point (the prior sort's first element).
+    reorder_farthest_point(candidates);
     return candidates;
+  }
+
+  // Farthest-point sampling order (see the call site). At each step the not-yet-placed
+  // candidate farthest from every already-placed one is appended; mind holds each
+  // candidate's squared distance to the nearest placed point. O(n^2).
+  static void reorder_farthest_point(std::vector<Candidate>& cands) {
+    auto n = cands.size();
+    if (n < 3) {
+      return;
+    }
+    std::vector<Candidate> out;
+    out.reserve(n);
+    std::vector<bool> taken(n, false);
+    std::vector<double> mind(n, std::numeric_limits<double>::infinity());
+    std::size_t cur = 0;  // seed: nearest the surface
+    for (std::size_t k = 0; k < n; k++) {
+      taken.at(cur) = true;
+      out.push_back(cands.at(cur));
+      double best = -1.0;
+      std::size_t next = cur;
+      for (std::size_t i = 0; i < n; i++) {
+        if (taken.at(i)) {
+          continue;
+        }
+        mind.at(i) = std::min(mind.at(i), (cands.at(i).p - cands.at(cur).p).squaredNorm());
+        if (mind.at(i) > best) {
+          best = mind.at(i);
+          next = i;
+        }
+      }
+      cur = next;
+    }
+    cands = std::move(out);
   }
 
   // -- Greedy placement. Returns true if the candidate was accepted at this simplex.
