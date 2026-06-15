@@ -189,6 +189,11 @@ int main(int argc, const char* argv[]) {
     Isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     OffsetFieldFunction field_fn(interpolant, sdf, opts.accuracy);
 
+    if (!opts.snap_points_file.empty()) {
+      MatX snap_table = read_table(opts.snap_points_file);
+      isosurf.set_snap_points(snap_table(kAll, {0, 1, 2}), opts.snap_distance);
+    }
+
     isosurf.generate_from_seed_points(points, field_fn).export_obj(opts.mesh_out);
 
     return 0;
