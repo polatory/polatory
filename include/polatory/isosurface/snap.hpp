@@ -12,8 +12,11 @@ namespace polatory::isosurface {
 // A point is snapped only if its distance to the mesh is at most max_distance and
 // both the point and its projection onto the mesh lie inside bbox. Provided bbox
 // contains no mesh boundary in its interior, the mesh boundary is left untouched.
-// See snapper.hpp for details. Passing no points returns the mesh unchanged.
+// aniso maps world into the lattice's isotropic frame, where the snapper measures
+// distances so an anisotropic resolution is respected (identity = isotropic); the mesh,
+// points, and bbox are given in world space. See snapper.hpp. Passing no points returns
+// the mesh unchanged.
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const geometry::Bbox3& bbox,
-               double max_distance);
+               double max_distance, const Mat3& aniso = Mat3::Identity());
 
 }  // namespace polatory::isosurface

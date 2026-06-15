@@ -101,6 +101,15 @@ class Snapper {
   // A point is snapped only if its distance to the mesh is at most max_distance and
   // both the point and its projection lie inside bbox.
   //
+  // The vertices, points, and bbox are given in world space. The snapper measures all
+  // distances — the projection onto the mesh, the max_distance bound, the simplex
+  // classification, the processing order — in the lattice's isotropic frame, so that an
+  // anisotropic resolution is respected rather than skewed by world space. aniso maps world
+  // into that frame: the snapper transforms the vertices and points by it, snaps, and
+  // transforms the emitted mesh back (aniso defaults to identity, a no-op). bbox stays in
+  // world space — transforming its axis-aligned box by a rotation would inflate it — and each
+  // point is mapped back through aniso^-1 for the containment test.
+  //
   // The bbox condition keeps the mesh boundary untouched when bbox excludes the
   // boundary with a margin of at least one face. Snapping affects the boundary only by
   // moving a boundary vertex or subdividing a boundary edge, and the re-triangulation
@@ -111,16 +120,20 @@ class Snapper {
   // isosurface pipeline bbox is first_extended_bbox: Lattice::cluster_vertices
   // guarantees no boundary vertex inside it, and the boundary lies a further lattice
   // layer out.)
-  Snapper(Points3 vertices, Faces faces, const geometry::Bbox3& bbox, double max_distance)
-      : mesh_(std::move(vertices), std::move(faces)),
+  Snapper(const Points3& vertices, Faces faces, const geometry::Bbox3& bbox, double max_distance,
+          const Mat3& aniso = Mat3::Identity())
+      : mesh_(geometry::transform_points<3>(aniso, vertices), std::move(faces)),
         bbox_(bbox),
+        to_iso_(aniso),
+        to_world_(aniso.inverse()),
         max_distance_(max_distance),
         positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         moved_(mesh_.num_vertices(), false) {}
 
-  // Must be called only once.
+  // Must be called only once. points are in world space; the result is too.
   Mesh snap(const Points3& points) {
-    auto candidates = build_candidates(points);
+    auto iso_points = geometry::transform_points<3>(to_iso_, points);
+    auto candidates = build_candidates(iso_points);
     std::vector<bool> placed(candidates.size(), false);
 
     // Pass 1: vertex moves only. A candidate moves its nearest vertex only while that vertex
@@ -184,7 +197,9 @@ class Snapper {
         stats_.skipped++;
         continue;
       }
-      if (!bbox_.contains(p) || !bbox_.contains(q)) {
+      Point3 p_world = p * to_world_.transpose();
+      Point3 q_world = q * to_world_.transpose();
+      if (!bbox_.contains(p_world) || !bbox_.contains(q_world)) {
         stats_.skipped++;
         continue;
       }
@@ -730,6 +745,7 @@ class Snapper {
     for (Index v = 0; v < vertices.rows(); v++) {
       vertices.row(v) = positions_.at(v);
     }
+    vertices = geometry::transform_points<3>(to_world_, vertices);  // back to world
 
     std::vector<Face> faces;
     for (Index fi = 0; fi < F.rows(); fi++) {
@@ -749,6 +765,8 @@ class Snapper {
 
   OriginalMesh mesh_;
   geometry::Bbox3 bbox_;
+  Mat3 to_iso_;    // world -> the lattice's isotropic frame, where snapping is done (= aniso)
+  Mat3 to_world_;  // the isotropic frame -> world, for the bbox test and emit (= aniso^-1)
   double max_distance_;
 
   // The accumulated snap edits and their derived caches. positions_ is every vertex's current

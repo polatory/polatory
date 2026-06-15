@@ -20,7 +20,7 @@ class Isosurface {
       : Isosurface(bbox, resolution, Mat3::Identity()) {}
 
   Isosurface(const geometry::Bbox3& bbox, double resolution, const Mat3& aniso)
-      : lattice_(bbox, resolution, aniso) {
+      : lattice_(bbox, resolution, aniso), aniso_(aniso) {
     if (!(aniso.determinant() > 0.0)) {
       throw std::invalid_argument("aniso must have a positive determinant");
     }
@@ -111,7 +111,7 @@ class Isosurface {
     // produces the clean on-bbox boundary.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto max_distance = snap_max_distance_ratio_ * lattice_.resolution();
-      mesh = snap_mesh(mesh, snap_points_, lattice_.first_extended_bbox(), max_distance);
+      mesh = snap_mesh(mesh, snap_points_, lattice_.first_extended_bbox(), max_distance, aniso_);
     }
 
     mesh = clip(mesh, lattice_.bbox());
@@ -127,6 +127,7 @@ class Isosurface {
   }
 
   rmt::Lattice lattice_;
+  Mat3 aniso_;
   geometry::Points3 snap_points_;
   double snap_max_distance_ratio_{0.5};
 };
