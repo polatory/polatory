@@ -48,10 +48,11 @@ namespace polatory::isosurface::snapper {
 //    simplex (ultimately a face snap, which perturbs only its own patch); a point that cannot
 //    be placed anywhere is dropped.
 //
-// Processing order. Points are taken in farthest-point order (each as far as possible from
-// those already placed), so a point far from the mesh — a feature the resolution
-// under-samples, such as a contour peak — is snapped while its patch is still uncrowded,
-// instead of after its near neighbors have subdivided it and left no room.
+// Processing order. Points are taken by increasing tangential offset — the in-surface distance
+// from a point's projection to the feature it snaps to. A vertex move's distortion is its
+// tangential component (a perpendicular move only raises or lowers the height field, leaving
+// the patch shape unchanged), so taking the least-tangential snaps first lets each shared
+// vertex be claimed by its least-distorting candidate.
 //
 // Boundary. A point is snapped only if both it and its projection lie inside the given bbox.
 // If the bbox interior holds no mesh boundary, snapping provably leaves the boundary untouched
@@ -76,6 +77,7 @@ class Snapper {
   struct Candidate {
     Point3 p;
     double d2{};                     // The squared distance from p to the mesh.
+    double tang{};                   // The squared tangential offset: q to its snapped feature.
     Index face{};                    // The projected face.
     std::array<Index, 3> fv{};       // Its vertex indices.
     std::array<double, 3> l{};       // The barycentric coordinates of the projection.
@@ -179,7 +181,7 @@ class Snapper {
  private:
   // -- Classification (phase 1): project each point and rank the seven simplex
   // centroids of its face by distance to the projection (a Voronoi classification),
-  // then order the candidates by farthest-point sampling (see reorder_farthest_point).
+  // then order the candidates by increasing tangential offset (see the sort below).
   std::vector<Candidate> build_candidates(const Points3& points) {
     const auto& V = mesh_.vertices();
     const auto& F = mesh_.faces();
@@ -223,59 +225,27 @@ class Snapper {
                (q - sites.at(index_of(t))).squaredNorm();
       });
 
+      auto tang = (q - sites.at(index_of(order.front()))).squaredNorm();
       candidates.push_back({.p = p,
                             .d2 = d2,
+                            .tang = tang,
                             .face = fi,
                             .fv = {f(0), f(1), f(2)},
                             .l = {l(0), l(1), l(2)},
                             .order = order});
     }
 
+    // Order by increasing tangential offset — the in-surface distance from a point's
+    // projection to the feature it snaps to. A vertex move's distortion is its tangential
+    // component (a perpendicular move only raises or lowers the height field and leaves the
+    // patch shape unchanged), so processing the least-tangential snaps first lets each shared
+    // vertex be claimed by its least-distorting candidate, independent of how far off the
+    // surface the points lie.
     std::ranges::sort(candidates, [](const Candidate& x, const Candidate& y) {
-      return std::make_tuple(x.d2, x.p(0), x.p(1), x.p(2)) <
-             std::make_tuple(y.d2, y.p(0), y.p(1), y.p(2));
+      return std::make_tuple(x.tang, x.p(0), x.p(1), x.p(2)) <
+             std::make_tuple(y.tang, y.p(0), y.p(1), y.p(2));
     });
-
-    // Reorder by farthest-point sampling: place well-spread anchors first so that a point
-    // far from the mesh (a feature the resolution under-samples, e.g. a contour peak) is
-    // snapped while there is still room in its patch, instead of being blocked after its
-    // near neighbors have densely subdivided the patch. Seeded from the nearest-surface
-    // point (the prior sort's first element).
-    reorder_farthest_point(candidates);
     return candidates;
-  }
-
-  // Farthest-point sampling order (see the call site). At each step the not-yet-placed
-  // candidate farthest from every already-placed one is appended; mind holds each
-  // candidate's squared distance to the nearest placed point. O(n^2).
-  static void reorder_farthest_point(std::vector<Candidate>& cands) {
-    auto n = cands.size();
-    if (n < 3) {
-      return;
-    }
-    std::vector<Candidate> out;
-    out.reserve(n);
-    std::vector<bool> taken(n, false);
-    std::vector<double> mind(n, std::numeric_limits<double>::infinity());
-    std::size_t cur = 0;  // seed: nearest the surface
-    for (std::size_t k = 0; k < n; k++) {
-      taken.at(cur) = true;
-      out.push_back(cands.at(cur));
-      double best = -1.0;
-      std::size_t next = cur;
-      for (std::size_t i = 0; i < n; i++) {
-        if (taken.at(i)) {
-          continue;
-        }
-        mind.at(i) = std::min(mind.at(i), (cands.at(i).p - cands.at(cur).p).squaredNorm());
-        if (mind.at(i) > best) {
-          best = mind.at(i);
-          next = i;
-        }
-      }
-      cur = next;
-    }
-    cands = std::move(out);
   }
 
   // -- Greedy placement. Returns true if the candidate was accepted at this simplex.
