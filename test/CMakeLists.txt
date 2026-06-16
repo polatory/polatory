@@ -12,8 +12,11 @@ add_executable(${TARGET}
     interpolation/test_operator.cpp
     interpolation/test_symmetric_evaluator.cpp
     isosurface/test_bit.cpp
+    isosurface/test_cdt.cpp
     isosurface/test_isosurface.cpp
     isosurface/test_rmt.cpp
+    isosurface/test_snap.cpp
+    isosurface/test_snap_selfint.cpp
     kriging/test_detrend.cpp
     kriging/test_variogram_calculator.cpp
     krylov/test_krylov.cpp
@@ -34,6 +37,10 @@ add_executable(${TARGET}
 target_link_libraries(${TARGET} PRIVATE
     GTest::gtest GTest::gtest_main
     polatory
+)
+
+target_compile_definitions(${TARGET} PRIVATE
+    POLATORY_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
 )
 
 if(MSVC)

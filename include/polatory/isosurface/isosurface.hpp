@@ -7,6 +7,8 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
+#include <polatory/isosurface/snap.hpp>
+#include <polatory/types.hpp>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -18,7 +20,7 @@ class Isosurface {
       : Isosurface(bbox, resolution, Mat3::Identity()) {}
 
   Isosurface(const geometry::Bbox3& bbox, double resolution, const Mat3& aniso)
-      : lattice_(bbox, resolution, aniso) {
+      : lattice_(bbox, resolution, aniso), aniso_(aniso) {
     if (!(aniso.determinant() > 0.0)) {
       throw std::invalid_argument("aniso must have a positive determinant");
     }
@@ -57,6 +59,38 @@ class Isosurface {
     return generate_common();
   }
 
+  // Sets the points that the generated mesh will be snapped to so that it passes
+  // exactly through them. Points whose projection falls outside the extended bbox
+  // are ignored, which keeps the mesh boundary intact.
+  //
+  // relative_distance bounds how far a point may lie from the mesh to be snapped,
+  // as a fraction of the mesh resolution. It must be in (0, 1].
+  //
+  // relative_tolerances, if non-empty, gives a per-point minimum snapping distance as a
+  // fraction of the mesh resolution: a point that the (partially snapped) mesh already
+  // passes within its tolerance of is skipped, since snapping it would barely move the
+  // surface and only over-subdivide the patch. It must have one entry per point, each in
+  // [0, relative_distance]; an empty vector means zero (snap every point in range).
+  void set_snap_points(const geometry::Points3& points, double relative_distance = 0.5,
+                       const VecX& relative_tolerances = VecX()) {
+    if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
+      throw std::invalid_argument("snap relative distance must be in (0, 1]");
+    }
+    if (relative_tolerances.size() != 0) {
+      if (relative_tolerances.size() != points.rows()) {
+        throw std::invalid_argument("snap relative tolerances must have one entry per point");
+      }
+      if (!(relative_tolerances.minCoeff() >= 0.0 &&
+            relative_tolerances.maxCoeff() <= relative_distance)) {
+        throw std::invalid_argument("snap relative tolerances must be in [0, relative distance]");
+      }
+    }
+
+    snap_points_ = points;
+    rel_snap_dist_ = relative_distance;
+    rel_snap_tols_ = relative_tolerances;
+  }
+
  private:
   Mesh generate_common() {
     lattice_.cluster_vertices();
@@ -88,6 +122,16 @@ class Isosurface {
       }
     }
 
+    // Snap the mesh to the points before clipping. Restricting snapping to points
+    // whose projection stays inside first_extended_bbox keeps it away from the mesh
+    // boundary, which lies further out (near second_extended_bbox); the clip then
+    // produces the clean on-bbox boundary.
+    if (snap_points_.rows() > 0 && !mesh.is_empty()) {
+      auto res = lattice_.resolution();
+      mesh = snap_mesh(mesh, snap_points_, res * rel_snap_tols_, lattice_.first_extended_bbox(),
+                       res * rel_snap_dist_, aniso_);
+    }
+
     mesh = clip(mesh, lattice_.bbox());
 
     if (mesh.is_empty() &&
@@ -101,6 +145,10 @@ class Isosurface {
   }
 
   rmt::Lattice lattice_;
+  Mat3 aniso_;
+  geometry::Points3 snap_points_;
+  double rel_snap_dist_{0.5};
+  VecX rel_snap_tols_;
 };
 
 }  // namespace polatory::isosurface

@@ -27,6 +27,7 @@ add_library(${TARGET} STATIC
     fmm/impl/triharmonic3d.cpp
     fmm/make_fmm_evaluator.cpp
     isosurface/mesh_defects_finder.cpp
+    isosurface/snap.cpp
     kriging/variogram_calculator.cpp
     krylov/fgmres.cpp
     krylov/gmres_base.cpp
@@ -77,6 +78,12 @@ target_link_libraries(${TARGET} PUBLIC
     Eigen3::Eigen
     FastFloat::fast_float
     OpenMP::OpenMP_CXX
+)
+
+# igl is used only by isosurface/snap.cpp (closest-point queries); keep it private
+# so it does not leak into the public interface.
+target_link_libraries(${TARGET} PRIVATE
+    igl::igl_core
 )
 
 if(UNIX)

@@ -189,6 +189,14 @@ int main(int argc, const char* argv[]) {
     Isosurface isosurf(opts.mesh_bbox, opts.mesh_resolution);
     OffsetFieldFunction field_fn(interpolant, sdf, opts.accuracy);
 
+    if (!opts.snap_points_file.empty()) {
+      MatX snap_table = read_table(opts.snap_points_file);
+      // An optional 4th column gives each point's minimum snapping distance (a fraction of the
+      // mesh resolution); when absent, every tolerance is zero.
+      VecX tolerances = snap_table.cols() >= 4 ? VecX(snap_table(kAll, 3)) : VecX();
+      isosurf.set_snap_points(snap_table(kAll, {0, 1, 2}), opts.snap_distance, tolerances);
+    }
+
     isosurf.generate_from_seed_points(points, field_fn).export_obj(opts.mesh_out);
 
     return 0;
