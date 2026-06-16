@@ -29,7 +29,8 @@ struct Options {
   std::string in_file;
   std::string seed_points_file;
   std::string snap_points_file;
-  double snap_distance{};
+  double min_snap_distance{};
+  double max_snap_distance{};
   double accuracy{};
   double grad_accuracy{};
   double isovalue{};
@@ -55,7 +56,7 @@ void run_impl(const Options& opts) {
 
   if (!opts.snap_points_file.empty()) {
     MatX table = read_table(opts.snap_points_file);
-    isosurf.set_snap_points(table(kAll, {0, 1, 2}), opts.snap_distance);
+    isosurf.set_snap_points(table(kAll, {0, 1, 2}), opts.min_snap_distance, opts.max_snap_distance);
   }
 
   auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn,
@@ -81,7 +82,11 @@ void IsosurfaceCommand::run(const std::vector<std::string>& args,
        "Input seed points file in CSV format:\n  X,Y,Z")  //
       ("snap", po::value(&opts.snap_points_file)->value_name("FILE"),
        "Points to snap the mesh to in CSV format:\n  X,Y,Z")  //
-      ("snap-dist", po::value(&opts.snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
+      ("min-snap-dist",
+       po::value(&opts.min_snap_distance)->default_value(0.0)->value_name("0.0 to 1.0"),
+       "Minimum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
+      ("max-snap-dist",
+       po::value(&opts.max_snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
        "Maximum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
       ("acc",
        po::value(&opts.accuracy)

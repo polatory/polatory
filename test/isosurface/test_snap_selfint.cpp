@@ -336,7 +336,7 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
   for (Index n : {500, 2000}) {  // exactly 0 holds at higher densities too, but slower
     for (double off : {0.0, 0.5}) {
       auto points = plane_points(0.7, n, off * max_distance);
-      auto mesh = snap_mesh(base, points, snap_bbox, max_distance);
+      auto mesh = snap_mesh(base, points, snap_bbox, 0.0, max_distance);
       auto overlaps = count_2d_overlaps(mesh);
       std::cerr << "planar n=" << n << " off=" << off << ": faces=" << mesh.faces().rows()
                 << " 2D-overlaps=" << overlaps << "\n";
@@ -360,7 +360,7 @@ TEST(snap_selfint, curved_surface_has_no_self_intersections) {
 
   const auto max_distance = 0.05;
   auto points = sphere_points(radius, 1000, 0.5 * max_distance);
-  auto mesh = snap_mesh(base, points, bbox, max_distance);
+  auto mesh = snap_mesh(base, points, bbox, 0.0, max_distance);
 
   auto self_int = count_self_intersections(mesh);
   std::cerr << "sphere: faces=" << mesh.faces().rows() << " self-intersections=" << self_int
@@ -388,7 +388,7 @@ TEST(snap_selfint, real_surface_region_is_clean_and_manifold) {
   const auto h = 0.002;
   Bbox3 snap_bbox(center - Point3(h, h, h), center + Point3(h, h, h));
 
-  Snapper snapper(base.vertices(), base.faces(), snap_bbox, max_distance);
+  Snapper snapper(base.vertices(), base.faces(), snap_bbox, 0.0, max_distance);
   auto mesh = snapper.snap(points);
 
   auto self_int = count_self_intersections(mesh);

@@ -63,15 +63,25 @@ class Isosurface {
   // exactly through them. Points whose projection falls outside the extended bbox
   // are ignored, which keeps the mesh boundary intact.
   //
+  // min_distance_ratio, a fraction of the mesh resolution, skips a point that the
+  // (partially snapped) mesh already passes within: snapping it would barely move the
+  // surface and only over-subdivide the patch. It must be in [0, max_distance_ratio];
+  // 0 disables the skip so every point in range is snapped.
+  //
   // max_distance_ratio bounds how far a point may lie from the mesh to be snapped,
   // as a fraction of the mesh resolution. It must be in (0, 1].
-  void set_snap_points(const geometry::Points3& points, double max_distance_ratio = 0.5) {
+  void set_snap_points(const geometry::Points3& points, double min_distance_ratio = 0.0,
+                       double max_distance_ratio = 0.5) {
     if (!(max_distance_ratio > 0.0 && max_distance_ratio <= 1.0)) {
       throw std::invalid_argument("snap max distance ratio must be in (0, 1]");
+    }
+    if (!(min_distance_ratio >= 0.0 && min_distance_ratio <= max_distance_ratio)) {
+      throw std::invalid_argument("snap min distance ratio must be in [0, max distance ratio]");
     }
 
     snap_points_ = points;
     snap_max_distance_ratio_ = max_distance_ratio;
+    snap_min_distance_ratio_ = min_distance_ratio;
   }
 
  private:
@@ -110,8 +120,10 @@ class Isosurface {
     // boundary, which lies further out (near second_extended_bbox); the clip then
     // produces the clean on-bbox boundary.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
+      auto min_distance = snap_min_distance_ratio_ * lattice_.resolution();
       auto max_distance = snap_max_distance_ratio_ * lattice_.resolution();
-      mesh = snap_mesh(mesh, snap_points_, lattice_.first_extended_bbox(), max_distance, aniso_);
+      mesh = snap_mesh(mesh, snap_points_, lattice_.first_extended_bbox(), min_distance,
+                       max_distance, aniso_);
     }
 
     mesh = clip(mesh, lattice_.bbox());
@@ -130,6 +142,7 @@ class Isosurface {
   Mat3 aniso_;
   geometry::Points3 snap_points_;
   double snap_max_distance_ratio_{0.5};
+  double snap_min_distance_ratio_{0.0};
 };
 
 }  // namespace polatory::isosurface

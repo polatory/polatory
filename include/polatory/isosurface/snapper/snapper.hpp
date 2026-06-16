@@ -92,8 +92,9 @@ class Snapper {
 
  public:
   struct Stats {
-    Index skipped{};  // outside bbox or beyond max_distance
-    Index dropped{};  // classified but could not be placed without self-intersection
+    Index skipped{};    // outside bbox or beyond max_distance
+    Index satisfied{};  // already within tolerance of the snapped mesh, so not attempted
+    Index dropped{};    // classified but could not be placed without self-intersection
     Index moved_vertices{};
     Index inserted_on_edges{};
     Index inserted_in_faces{};
@@ -122,13 +123,14 @@ class Snapper {
   // isosurface pipeline bbox is first_extended_bbox: Lattice::cluster_vertices
   // guarantees no boundary vertex inside it, and the boundary lies a further lattice
   // layer out.)
-  Snapper(const Points3& vertices, Faces faces, const geometry::Bbox3& bbox, double max_distance,
-          const Mat3& aniso = Mat3::Identity())
+  Snapper(const Points3& vertices, Faces faces, const geometry::Bbox3& bbox, double min_distance,
+          double max_distance, const Mat3& aniso = Mat3::Identity())
       : mesh_(geometry::transform_points<3>(aniso, vertices), std::move(faces)),
         bbox_(bbox),
         to_iso_(aniso),
         to_world_(aniso.inverse()),
         max_distance_(max_distance),
+        min_distance_(min_distance),
         positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         moved_(mesh_.num_vertices(), false) {}
 
@@ -145,6 +147,11 @@ class Snapper {
     // slivers, and the later move would fold those slivers and be rejected.
     for (std::size_t i = 0; i < candidates.size(); i++) {
       const auto& cand = candidates.at(i);
+      if (already_satisfied(cand)) {
+        placed.at(i) = true;
+        stats_.satisfied++;
+        continue;
+      }
       for (auto code : cand.order) {
         if (index_of(code) >= index_of(Simplex::kEdge12)) {
           break;  // an edge or the face is nearer than the remaining vertices: defer to pass 2
@@ -162,6 +169,10 @@ class Snapper {
         continue;
       }
       const auto& cand = candidates.at(i);
+      if (already_satisfied(cand)) {
+        stats_.satisfied++;
+        continue;
+      }
       bool ok = false;
       for (auto code : cand.order) {
         if (try_place(cand, code)) {
@@ -615,6 +626,81 @@ class Snapper {
   // moved, otherwise its original position; or an inserted vertex's off-surface point.
   const Point3& pos(Index v) const { return positions_.at(v); }
 
+  // The squared distance from p to triangle (a, b, c) (closest point on the triangle).
+  static double point_tri_dist2(const Point3& p, const Point3& a, const Point3& b,
+                                const Point3& c) {
+    Vector3 ab = b - a;
+    Vector3 ac = c - a;
+    Vector3 ap = p - a;
+    double d1 = ab.dot(ap);
+    double d2 = ac.dot(ap);
+    if (d1 <= 0.0 && d2 <= 0.0) {
+      return ap.squaredNorm();
+    }
+    Vector3 bp = p - b;
+    double d3 = ab.dot(bp);
+    double d4 = ac.dot(bp);
+    if (d3 >= 0.0 && d4 <= d3) {
+      return bp.squaredNorm();
+    }
+    Vector3 cp = p - c;
+    double d5 = ab.dot(cp);
+    double d6 = ac.dot(cp);
+    if (d6 >= 0.0 && d5 <= d6) {
+      return cp.squaredNorm();
+    }
+    double vc = d1 * d4 - d3 * d2;
+    if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0) {
+      double v = d1 / (d1 - d3);
+      return (ap - v * ab).squaredNorm();
+    }
+    double vb = d5 * d2 - d1 * d6;
+    if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0) {
+      double w = d2 / (d2 - d6);
+      return (ap - w * ac).squaredNorm();
+    }
+    double va = d3 * d6 - d5 * d4;
+    if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0) {
+      double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+      return (p - (b + w * (c - b))).squaredNorm();
+    }
+    double denom = 1.0 / (va + vb + vc);
+    double v = vb * denom;
+    double w = vc * denom;
+    return (p - (a + ab * v + ac * w)).squaredNorm();
+  }
+
+  // Whether the current (partially snapped) mesh already passes within min_distance_ of the
+  // point, in which case snapping it would barely move the surface and only over-subdivide the
+  // patch, so it is skipped. Checks the point's projected patch and the patches across its
+  // edges (the point may have classified onto an edge).
+  bool already_satisfied(const Candidate& cand) {
+    if (!(min_distance_ > 0.0)) {
+      return false;
+    }
+    double tol2 = min_distance_ * min_distance_;
+    const auto& F = mesh_.faces();
+    auto nearest_in_patch = [&](Index fi) {
+      double best = std::numeric_limits<double>::infinity();
+      for (const auto& f : patch_faces(fi)) {
+        best = std::min(best, point_tri_dist2(cand.p, pos(f[0]), pos(f[1]), pos(f[2])));
+      }
+      return best;
+    };
+    if (nearest_in_patch(cand.face) < tol2) {
+      return true;
+    }
+    for (auto k = 0; k < 3; k++) {
+      auto e = make_edge(F(cand.face, k), F(cand.face, (k + 1) % 3));
+      for (auto fj : mesh_.edge_faces(e)) {
+        if (fj != cand.face && nearest_in_patch(fj) < tol2) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // The constrained Delaunay triangulation of a patch over its committed edge chains and
   // interior vertices, as triples of vertex ids.
   std::vector<Face> triangulate_patch(Index fi, bool* simple = nullptr) {
@@ -738,6 +824,7 @@ class Snapper {
   Mat3 to_iso_;    // world -> the lattice's isotropic frame, where snapping is done (= aniso)
   Mat3 to_world_;  // the isotropic frame -> world, for the bbox test and emit (= aniso^-1)
   double max_distance_;
+  double min_distance_;  // skip-if-already-satisfied tolerance (0 disables)
 
   // The accumulated snap edits and their derived caches. positions_ is every vertex's current
   // position (original then inserted); moved_ flags which original vertices have been claimed
