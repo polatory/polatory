@@ -31,6 +31,7 @@ struct Options {
   std::string seed_points_file;
   std::string snap_points_file;
   double snap_distance{};
+  int snap_iterations{};
   double accuracy{};
   double grad_accuracy{};
   double isovalue{};
@@ -57,9 +58,11 @@ void run_impl(const Options& opts) {
   if (!opts.snap_points_file.empty()) {
     MatX table = read_table(opts.snap_points_file);
     // An optional 4th column gives each point's minimum snapping distance (a fraction of the
-    // mesh resolution); when absent, every tolerance is zero.
+    // mesh resolution); an optional 5th column gives its priority (introduced at that iteration).
     VecX tolerances = table.cols() >= 4 ? VecX(table(kAll, 3)) : VecX();
-    isosurf.set_snap_points(table(kAll, {0, 1, 2}), opts.snap_distance, tolerances);
+    VecX priorities = table.cols() >= 5 ? VecX(table(kAll, 4)) : VecX();
+    isosurf.set_snap_points(table(kAll, {0, 1, 2}), opts.snap_distance, tolerances, priorities,
+                            opts.snap_iterations);
   }
 
   auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn,
@@ -84,10 +87,13 @@ void IsosurfaceCommand::run(const std::vector<std::string>& args,
       ("seeds", po::value(&opts.seed_points_file)->value_name("FILE"),
        "Input seed points file in CSV format:\n  X,Y,Z")  //
       ("snap", po::value(&opts.snap_points_file)->value_name("FILE"),
-       "Points to snap the mesh to in CSV format:\n  X,Y,Z[,TOL]\n"
-       "TOL is the tolerance distance as a fraction of the mesh resolution")  //
+       "Points to snap the mesh to in CSV format:\n  X,Y,Z[,TOL[,PRIORITY]]\n"
+       "TOL is the tolerance distance as a fraction of the mesh resolution; PRIORITY is the "
+       "iteration at which the point is introduced (0 first)")  //
       ("snap-dist", po::value(&opts.snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
        "Maximum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
+      ("snap-iter", po::value(&opts.snap_iterations)->default_value(1)->value_name("N"),
+       "Number of snapping iterations (experimental; needs POLATORY_RELAX)")  //
       ("acc",
        po::value(&opts.accuracy)
            ->default_value(std::numeric_limits<double>::infinity(), "ANY")

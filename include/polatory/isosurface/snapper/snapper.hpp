@@ -9,6 +9,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <limits>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -84,6 +85,7 @@ class Snapper {
     std::array<Index, 3> fv{};       // Its vertex indices.
     std::array<double, 3> l{};       // The barycentric coordinates of the projection.
     std::array<Simplex, 7> order{};  // The seven simplices, nearest centroid first.
+    Index point_index{};             // The point's index in the input array.
   };
 
   // A vertex on an edge, at parameter t from the edge's smaller-id endpoint.
@@ -132,6 +134,7 @@ class Snapper {
         to_iso_(aniso),
         to_world_(aniso.inverse()),
         max_distance_(max_distance),
+        relaxed_(std::getenv("POLATORY_RELAX") != nullptr),  // EXPERIMENT: skip self-int proxies
         positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         moved_(mesh_.num_vertices(), false) {}
 
@@ -140,12 +143,13 @@ class Snapper {
   // partially snapped mesh already passes within its tolerance, so snapping it would barely
   // move the surface and only over-subdivide the patch. An empty vector means zero (snap
   // every point in range).
-  Mesh snap(const Points3& points, const VecX& tolerances = VecX()) {
+  Mesh snap(const Points3& points, const VecX& tolerances = VecX(),
+            const std::unordered_set<Index>* exclude = nullptr) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
     }
     auto iso_points = geometry::transform_points<3>(to_iso_, points);
-    auto candidates = build_candidates(iso_points, tolerances);
+    auto candidates = build_candidates(iso_points, tolerances, exclude);
     std::vector<bool> placed(candidates.size(), false);
 
     // Pass 1: vertex moves only. A candidate moves its nearest vertex only while that vertex
@@ -188,6 +192,19 @@ class Snapper {
           break;
         }
       }
+      // EXPERIMENT: a point that the strict cascade would drop is retried without the
+      // self-intersection proxies (a real global test culls the offenders afterward).
+      if (!ok && relaxed_) {
+        relax_now_ = true;
+        for (auto code : cand.order) {
+          if (try_place(cand, code)) {
+            ok = true;
+            relaxed_captured_.insert(cand.point_index);  // eligible for self-int culling
+            break;
+          }
+        }
+        relax_now_ = false;
+      }
       if (!ok) {
         stats_.dropped++;
       }
@@ -197,17 +214,25 @@ class Snapper {
 
   const Stats& stats() const { return stats_; }
 
+  // The input indices of points captured only by the relaxed retry (skipping the self-int
+  // proxies); these are the ones eligible to be culled if they self-intersect.
+  const std::unordered_set<Index>& relaxed_captured() const { return relaxed_captured_; }
+
  private:
   // -- Classification (phase 1): project each point and rank the seven simplex
   // centroids of its face by distance to the projection (a Voronoi classification),
   // then order the candidates by increasing tangential offset (see the sort below).
-  std::vector<Candidate> build_candidates(const Points3& points, const VecX& tolerances) {
+  std::vector<Candidate> build_candidates(const Points3& points, const VecX& tolerances,
+                                          const std::unordered_set<Index>* exclude = nullptr) {
     const auto& V = mesh_.vertices();
     const auto& F = mesh_.faces();
 
     std::vector<Candidate> candidates;
     candidates.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
+      if (exclude != nullptr && exclude->contains(i)) {
+        continue;  // EXPERIMENT: a point culled by a previous self-intersection pass
+      }
       Point3 p = points.row(i);
 
       int fi{};
@@ -252,7 +277,8 @@ class Snapper {
                             .face = fi,
                             .fv = {f(0), f(1), f(2)},
                             .l = {l(0), l(1), l(2)},
-                            .order = order});
+                            .order = order,
+                            .point_index = i});
     }
 
     // Order by increasing tangential offset — the in-surface distance from a point's
@@ -300,11 +326,11 @@ class Snapper {
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
-    if (causes_overlap(changed) || creates_degenerate(changed)) {
+    if ((!relax_now_ && causes_overlap(changed)) || creates_degenerate(changed)) {
       positions_.at(v) = original;
       return false;
     }
-    if (pierces(changed)) {
+    if (!relax_now_ && pierces(changed)) {
       stats_.pierce_rejections++;
       positions_.at(v) = original;
       return false;
@@ -353,11 +379,11 @@ class Snapper {
       }
       positions_.pop_back();
     };
-    if (!simple || causes_overlap(changed) || creates_degenerate(changed)) {
+    if (!simple || (!relax_now_ && causes_overlap(changed)) || creates_degenerate(changed)) {
       revert();
       return false;
     }
-    if (pierces(changed)) {
+    if (!relax_now_ && pierces(changed)) {
       stats_.pierce_rejections++;
       revert();
       return false;
@@ -400,11 +426,11 @@ class Snapper {
       }
       positions_.pop_back();
     };
-    if (!simple || !used || causes_overlap(changed) || creates_degenerate(changed)) {
+    if (!simple || !used || (!relax_now_ && causes_overlap(changed)) || creates_degenerate(changed)) {
       revert();
       return false;
     }
-    if (pierces(changed)) {
+    if (!relax_now_ && pierces(changed)) {
       stats_.pierce_rejections++;
       revert();
       return false;
@@ -833,6 +859,9 @@ class Snapper {
   Mat3 to_iso_;    // world -> the lattice's isotropic frame, where snapping is done (= aniso)
   Mat3 to_world_;  // the isotropic frame -> world, for the bbox test and emit (= aniso^-1)
   double max_distance_;
+  bool relaxed_;        // EXPERIMENT (POLATORY_RELAX): relax as a last resort for would-be drops
+  bool relax_now_{};  // set only while retrying a would-be-dropped candidate without the proxies
+  std::unordered_set<Index> relaxed_captured_;  // point indices captured by the relaxed retry
 
   // The accumulated snap edits and their derived caches. positions_ is every vertex's current
   // position (original then inserted); moved_ flags which original vertices have been claimed

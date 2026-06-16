@@ -19,8 +19,13 @@ namespace polatory::isosurface {
 // distances so an anisotropic resolution is respected (identity = isotropic); the mesh,
 // points, and bbox are given in world space. See snapper.hpp. Passing no points returns
 // the mesh unchanged.
+//
+// EXPERIMENT (POLATORY_RELAX): priorities (per point) and snap_iter drive an iterative
+// relaxed-snap-and-cull loop; iteration k snaps the points with priority <= k. They are
+// ignored unless POLATORY_RELAX is set.
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                const geometry::Bbox3& bbox, double max_distance,
-               const Mat3& aniso = Mat3::Identity());
+               const Mat3& aniso = Mat3::Identity(), const VecX& priorities = VecX(),
+               int snap_iter = 1);
 
 }  // namespace polatory::isosurface

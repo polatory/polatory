@@ -71,8 +71,11 @@ class Isosurface {
   // passes within its tolerance of is skipped, since snapping it would barely move the
   // surface and only over-subdivide the patch. It must have one entry per point, each in
   // [0, relative_distance]; an empty vector means zero (snap every point in range).
+  // priorities (per point) and snap_iterations drive the experimental relaxed iterative snap
+  // (POLATORY_RELAX); they are ignored otherwise.
   void set_snap_points(const geometry::Points3& points, double relative_distance = 0.5,
-                       const VecX& relative_tolerances = VecX()) {
+                       const VecX& relative_tolerances = VecX(), const VecX& priorities = VecX(),
+                       int snap_iterations = 1) {
     if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
       throw std::invalid_argument("snap relative distance must be in (0, 1]");
     }
@@ -85,10 +88,15 @@ class Isosurface {
         throw std::invalid_argument("snap relative tolerances must be in [0, relative distance]");
       }
     }
+    if (priorities.size() != 0 && priorities.size() != points.rows()) {
+      throw std::invalid_argument("snap priorities must have one entry per point");
+    }
 
     snap_points_ = points;
     rel_snap_dist_ = relative_distance;
     rel_snap_tols_ = relative_tolerances;
+    snap_priorities_ = priorities;
+    snap_iterations_ = snap_iterations;
   }
 
  private:
@@ -129,7 +137,7 @@ class Isosurface {
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto res = lattice_.resolution();
       mesh = snap_mesh(mesh, snap_points_, res * rel_snap_tols_, lattice_.first_extended_bbox(),
-                       res * rel_snap_dist_, aniso_);
+                       res * rel_snap_dist_, aniso_, snap_priorities_, snap_iterations_);
     }
 
     mesh = clip(mesh, lattice_.bbox());
@@ -149,6 +157,8 @@ class Isosurface {
   geometry::Points3 snap_points_;
   double rel_snap_dist_{0.5};
   VecX rel_snap_tols_;
+  VecX snap_priorities_;
+  int snap_iterations_{1};
 };
 
 }  // namespace polatory::isosurface
