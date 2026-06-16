@@ -399,3 +399,64 @@ TEST(snap_selfint, real_surface_region_is_clean_and_manifold) {
   EXPECT_EQ(nm_edges, 0);   // the two patches agree on every shared edge's subdivision
   EXPECT_EQ(self_int, 0);   // and no pair of faces folds onto another
 }
+
+// TEMPORARY: convex-edge routing. A tent mesh (convex ridge along y at x=0, z=0.5, sloping to
+// z=0 at x=+-1) with snap points sitting UNDER the ridge. Baseline snaps them to the slope faces
+// (bumps); POLATORY_EDGE_ROUTE should route them onto the ridge edge instead.
+TEST(snap_selfint, convex_edge_routing) {
+  const int nx = 3;
+  const int ny = 9;
+  const std::array<double, 3> xv{-1.0, 0.0, 1.0};  // convex ridge (z=0.5 at x=0)
+  Points3 v(nx * ny, 3);
+  for (int j = 0; j < ny; j++) {
+    for (int i = 0; i < nx; i++) {
+      v.row(j * nx + i) << xv.at(i), static_cast<double>(j), 0.5 * (1.0 - std::abs(xv.at(i)));
+    }
+  }
+  Faces fc(2 * (nx - 1) * (ny - 1), 3);
+  Index f = 0;
+  for (int j = 0; j < ny - 1; j++) {
+    for (int i = 0; i < nx - 1; i++) {
+      Index a = j * nx + i;
+      fc.row(f++) << a, a + 1, a + nx + 1;
+      fc.row(f++) << a, a + nx + 1, a + nx;
+    }
+  }
+  Mesh mesh(std::move(v), std::move(fc));
+
+  Bbox3 bbox(Point3(-10, -10, -10), Point3(10, 20, 10));
+  const double max_distance = 1.0;
+
+  // Snap a single point and report its outcome: (M)ove, (E)dge, (F)ace, (D)rop, (s)kip.
+  auto outcome = [&](double x, double z, bool route) {
+    if (route) {
+      setenv("POLATORY_EDGE_ROUTE", "1", 1);
+    } else {
+      unsetenv("POLATORY_EDGE_ROUTE");
+    }
+    Points3 p(1, 3);
+    p.row(0) << x, 3.5, z;  // mid-quad in y
+    Snapper s(mesh.vertices(), mesh.faces(), bbox, max_distance);
+    s.snap(p);
+    const auto& st = s.stats();
+    if (st.skipped) return 's';
+    if (st.moved_vertices) return 'M';
+    if (st.inserted_on_edges) return 'E';
+    if (st.inserted_in_faces) return 'F';
+    return 'D';
+  };
+
+  // Sweep x-offset (toward the right slope) and height z (the right slope is z = 0.5(1 - x)).
+  std::cerr << "  x \\ z :   baseline -> routed   (slope z at that x in parens)\n";
+  for (double x : {0.2, 0.4, 0.6, 0.8}) {
+    double zs = 0.5 * (1.0 - x);
+    std::cerr << "  x=" << x << " (slope z=" << zs << "): ";
+    for (double dz : {0.2, 0.1, 0.0, -0.1, -0.2}) {  // above(+) / below(-) the slope
+      double z = zs + dz;
+      std::cerr << "z" << (dz >= 0 ? "+" : "") << dz << ":" << outcome(x, z, false) << "->"
+                << outcome(x, z, true) << "  ";
+    }
+    std::cerr << "\n";
+  }
+  unsetenv("POLATORY_EDGE_ROUTE");
+}

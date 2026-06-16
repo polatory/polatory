@@ -9,6 +9,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <limits>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -101,6 +102,7 @@ class Snapper {
     Index inserted_on_edges{};
     Index inserted_in_faces{};
     Index pierce_rejections{};  // snaps rejected because they would pierce a distant face
+    Index routed{};             // EXPERIMENT: candidates rerouted to a crease edge
   };
 
   // A point is snapped only if its distance to the mesh is at most max_distance and
@@ -207,6 +209,9 @@ class Snapper {
 
     std::vector<Candidate> candidates;
     candidates.reserve(points.rows());
+    // EXPERIMENT (POLATORY_EDGE_ROUTE): route a point that projects into the interior of two
+    // faces sharing an edge (a crease it sits above) to that edge instead of a face.
+    const bool edge_route = std::getenv("POLATORY_EDGE_ROUTE") != nullptr;
     for (Index i = 0; i < points.rows(); i++) {
       Point3 p = points.row(i);
 
@@ -243,6 +248,46 @@ class Snapper {
         return (q - sites.at(index_of(s))).squaredNorm() <
                (q - sites.at(index_of(t))).squaredNorm();
       });
+
+      // Crease-edge routing. The projection q is strictly interior to its nearest face fi; if p
+      // also projects into the interior of the face fj across one of fi's edges, then p sits in
+      // that edge's dihedral wedge (a crease) -- snapping it to a face would bump the surface, so
+      // try the shared edge first. (Two coplanar faces cannot both contain p's projection, so
+      // this fires only on real creases.)
+      constexpr double kInterior = 1e-6;
+      if (edge_route && l(0) > kInterior && l(1) > kInterior && l(2) > kInterior) {
+        for (int ei = 0; ei < 3; ei++) {
+          bool routed = false;
+          for (auto fj : mesh_.edge_faces(make_edge(f((ei + 1) % 3), f((ei + 2) % 3)))) {
+            if (fj == fi) {
+              continue;
+            }
+            auto g = F.row(fj);
+            Point3 ga = V.row(g(0));
+            Point3 gb = V.row(g(1));
+            Point3 gc = V.row(g(2));
+            Vector3 lj;
+            igl::barycentric_coordinates(p, ga, gb, gc, lj);
+            if (lj(0) > kInterior && lj(1) > kInterior && lj(2) > kInterior) {
+              auto target = static_cast<Simplex>(index_of(Simplex::kEdge12) + ei);
+              std::array<Simplex, 7> reordered{target};
+              std::size_t n = 1;
+              for (auto s : order) {
+                if (s != target) {
+                  reordered.at(n++) = s;
+                }
+              }
+              order = reordered;
+              stats_.routed++;
+              routed = true;
+              break;
+            }
+          }
+          if (routed) {
+            break;
+          }
+        }
+      }
 
       auto tang = (q - sites.at(index_of(order.front()))).squaredNorm();
       candidates.push_back({.p = p,
