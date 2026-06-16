@@ -185,7 +185,7 @@ Points3 center_points() {
 
 TEST(snap, points_inside_bbox_become_vertices) {
   auto points = center_points();
-  auto mesh = snap_mesh(planar_grid(3), points, kCenterBbox, 0.0, kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, kMaxDistance);
 
   // The three points whose projections lie inside the bbox pass exactly through the
   // mesh.
@@ -208,7 +208,7 @@ TEST(snap, vertex_contention_cascades) {
   Points3 points(2, 3);
   points << 1.06, 1.04, 0.03,  // nearer the mesh: takes vertex (1,1)
       1.10, 1.08, 0.06;        // farther: cascades to an edge
-  auto mesh = snap_mesh(planar_grid(3), points, kCenterBbox, 0.0, kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, kMaxDistance);
 
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(1)), 1e-12).has_value());
@@ -216,7 +216,7 @@ TEST(snap, vertex_contention_cascades) {
 }
 
 TEST(snap, manifold_and_disk_topology) {
-  auto mesh = snap_mesh(planar_grid(3), center_points(), kCenterBbox, 0.0, kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), center_points(), VecX(), kCenterBbox, kMaxDistance);
 
   ASSERT_TRUE(is_oriented_manifold(mesh));
   ASSERT_EQ(1, euler_characteristic(mesh));
@@ -225,7 +225,7 @@ TEST(snap, manifold_and_disk_topology) {
 TEST(snap, leaves_boundary_untouched) {
   auto grid = planar_grid(3);
 
-  auto mesh = snap_mesh(grid, center_points(), kCenterBbox, 0.0, kMaxDistance);
+  auto mesh = snap_mesh(grid, center_points(), VecX(), kCenterBbox, kMaxDistance);
 
   // The boundary is unchanged: snapping never reaches it, even for the point near
   // the grid corner, because its projection is outside the bbox. (Interior vertices
@@ -240,7 +240,7 @@ TEST(snap, leaves_boundary_untouched) {
 TEST(snap, empty_points_is_noop) {
   auto grid = planar_grid(3);
   Points3 points(0, 3);
-  auto mesh = snap_mesh(grid, points, kCenterBbox, 0.0, kMaxDistance);
+  auto mesh = snap_mesh(grid, points, VecX(), kCenterBbox, kMaxDistance);
 
   ASSERT_EQ(grid.vertices().rows(), mesh.vertices().rows());
   ASSERT_EQ(grid.faces().rows(), mesh.faces().rows());
@@ -252,10 +252,10 @@ TEST(snap, rejects_points_beyond_max_distance) {
   Points3 points(1, 3);
   points << 1.5, 1.5, 0.3;
 
-  auto rejected = snap_mesh(planar_grid(3), points, kCenterBbox, 0.0, 0.2);
+  auto rejected = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, 0.2);
   ASSERT_FALSE(find_vertex(rejected, Point3(points.row(0)), 1e-12).has_value());
 
-  auto accepted = snap_mesh(planar_grid(3), points, kCenterBbox, 0.0, 0.4);
+  auto accepted = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, 0.4);
   ASSERT_TRUE(find_vertex(accepted, Point3(points.row(0)), 1e-12).has_value());
 }
 
@@ -264,10 +264,46 @@ TEST(snap, rejects_invalid_max_distance_ratio) {
   Points3 points(1, 3);
   points << 0.0, 0.0, 0.0;
 
-  ASSERT_THROW(isosurf.set_snap_points(points, 0.0, 0.0), std::invalid_argument);
-  ASSERT_THROW(isosurf.set_snap_points(points, 0.0, 1.5), std::invalid_argument);
-  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.0, 1.0));
-  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.0, 0.5));
+  ASSERT_THROW(isosurf.set_snap_points(points, 0.0), std::invalid_argument);
+  ASSERT_THROW(isosurf.set_snap_points(points, 1.5), std::invalid_argument);
+  ASSERT_NO_THROW(isosurf.set_snap_points(points, 1.0));
+  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.5));
+}
+
+TEST(snap, rejects_invalid_tolerance_ratios) {
+  Isosurface isosurf(Bbox3(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0)), 0.1);
+  Points3 points(1, 3);
+  points << 0.0, 0.0, 0.0;
+
+  VecX wrong_size(2);
+  wrong_size << 0.1, 0.2;
+  VecX negative(1);
+  negative << -0.1;
+  VecX above_max(1);
+  above_max << 0.6;  // exceeds max distance ratio 0.5
+  VecX ok(1);
+  ok << 0.1;
+
+  ASSERT_THROW(isosurf.set_snap_points(points, 0.5, wrong_size), std::invalid_argument);
+  ASSERT_THROW(isosurf.set_snap_points(points, 0.5, negative), std::invalid_argument);
+  ASSERT_THROW(isosurf.set_snap_points(points, 0.5, above_max), std::invalid_argument);
+  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.5, ok));
+  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.5));  // empty tolerances disable the skip
+}
+
+TEST(snap, per_point_tolerance_skips_satisfied_point) {
+  auto points = center_points();
+
+  // The face-interior point (row 2) lies 0.02 off the mesh. A per-point tolerance of 0.1
+  // above its distance marks it already satisfied, so it is skipped; the others, with
+  // tolerance 0, still snap and become vertices.
+  VecX tolerances(points.rows());
+  tolerances << 0.0, 0.0, 0.1, 0.0;
+  auto mesh = snap_mesh(planar_grid(3), points, tolerances, kCenterBbox, kMaxDistance);
+
+  ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
+  ASSERT_TRUE(find_vertex(mesh, Point3(points.row(1)), 1e-12).has_value());
+  ASSERT_FALSE(find_vertex(mesh, Point3(points.row(2)), 1e-12).has_value());
 }
 
 TEST(snap, isosurface_integration) {

@@ -63,25 +63,32 @@ class Isosurface {
   // exactly through them. Points whose projection falls outside the extended bbox
   // are ignored, which keeps the mesh boundary intact.
   //
-  // min_distance_ratio, a fraction of the mesh resolution, skips a point that the
-  // (partially snapped) mesh already passes within: snapping it would barely move the
-  // surface and only over-subdivide the patch. It must be in [0, max_distance_ratio];
-  // 0 disables the skip so every point in range is snapped.
-  //
-  // max_distance_ratio bounds how far a point may lie from the mesh to be snapped,
+  // relative_distance bounds how far a point may lie from the mesh to be snapped,
   // as a fraction of the mesh resolution. It must be in (0, 1].
-  void set_snap_points(const geometry::Points3& points, double min_distance_ratio = 0.0,
-                       double max_distance_ratio = 0.5) {
-    if (!(max_distance_ratio > 0.0 && max_distance_ratio <= 1.0)) {
-      throw std::invalid_argument("snap max distance ratio must be in (0, 1]");
+  //
+  // relative_tolerances, if non-empty, gives a per-point minimum snapping distance as a
+  // fraction of the mesh resolution: a point that the (partially snapped) mesh already
+  // passes within its tolerance of is skipped, since snapping it would barely move the
+  // surface and only over-subdivide the patch. It must have one entry per point, each in
+  // [0, relative_distance]; an empty vector means zero (snap every point in range).
+  void set_snap_points(const geometry::Points3& points, double relative_distance = 0.5,
+                       const VecX& relative_tolerances = VecX()) {
+    if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
+      throw std::invalid_argument("snap relative distance must be in (0, 1]");
     }
-    if (!(min_distance_ratio >= 0.0 && min_distance_ratio <= max_distance_ratio)) {
-      throw std::invalid_argument("snap min distance ratio must be in [0, max distance ratio]");
+    if (relative_tolerances.size() != 0) {
+      if (relative_tolerances.size() != points.rows()) {
+        throw std::invalid_argument("snap relative tolerances must have one entry per point");
+      }
+      if (!(relative_tolerances.minCoeff() >= 0.0 &&
+            relative_tolerances.maxCoeff() <= relative_distance)) {
+        throw std::invalid_argument("snap relative tolerances must be in [0, relative distance]");
+      }
     }
 
     snap_points_ = points;
-    snap_max_distance_ratio_ = max_distance_ratio;
-    snap_min_distance_ratio_ = min_distance_ratio;
+    rel_snap_dist_ = relative_distance;
+    rel_snap_tols_ = relative_tolerances;
   }
 
  private:
@@ -120,10 +127,9 @@ class Isosurface {
     // boundary, which lies further out (near second_extended_bbox); the clip then
     // produces the clean on-bbox boundary.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
-      auto min_distance = snap_min_distance_ratio_ * lattice_.resolution();
-      auto max_distance = snap_max_distance_ratio_ * lattice_.resolution();
-      mesh = snap_mesh(mesh, snap_points_, lattice_.first_extended_bbox(), min_distance,
-                       max_distance, aniso_);
+      auto res = lattice_.resolution();
+      mesh = snap_mesh(mesh, snap_points_, res * rel_snap_tols_, lattice_.first_extended_bbox(),
+                       res * rel_snap_dist_, aniso_);
     }
 
     mesh = clip(mesh, lattice_.bbox());
@@ -141,8 +147,8 @@ class Isosurface {
   rmt::Lattice lattice_;
   Mat3 aniso_;
   geometry::Points3 snap_points_;
-  double snap_max_distance_ratio_{0.5};
-  double snap_min_distance_ratio_{0.0};
+  double rel_snap_dist_{0.5};
+  VecX rel_snap_tols_;
 };
 
 }  // namespace polatory::isosurface

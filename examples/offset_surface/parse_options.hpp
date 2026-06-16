@@ -12,8 +12,7 @@ struct Options {
   std::string in;
   std::string mesh_in;
   std::string snap_points_file;
-  double min_snap_distance{};
-  double max_snap_distance{};
+  double snap_distance{};
   double tolerance{};
   int max_iter{};
   double accuracy{};
@@ -40,12 +39,9 @@ inline Options parse_options(int argc, const char* argv[]) {
       ("mesh-in", po::value(&opts.mesh_in)->required()->value_name("FILE"),
        "The mesh to offset in OBJ format")  //
       ("snap", po::value(&opts.snap_points_file)->value_name("FILE"),
-       "Points to snap the mesh to in CSV format:\n  X,Y,Z")  //
-      ("min-snap-dist",
-       po::value(&opts.min_snap_distance)->default_value(0.0)->value_name("0.0 to 1.0"),
-       "Minimum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
-      ("max-snap-dist",
-       po::value(&opts.max_snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
+       "Points to snap the mesh to in CSV format:\n  X,Y,Z[,TOL]\n"
+       "TOL is the tolerance distance as a fraction of the mesh resolution")  //
+      ("snap-dist", po::value(&opts.snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
        "Maximum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
       ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
        "Absolute fitting tolerance")  //

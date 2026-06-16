@@ -256,7 +256,7 @@ PYBIND11_MODULE(_core, m) {
       .def("generate_from_seed_points", &isosurface::Isosurface::generate_from_seed_points,
            "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = 1)
       .def("set_snap_points", &isosurface::Isosurface::set_snap_points, "points"_a,
-           "min_distance_ratio"_a = 0.0, "max_distance_ratio"_a = 0.5);
+           "relative_distance"_a = 0.5, "relative_tolerances"_a = VecX());
 
   py::class_<isosurface::Mesh>(m, "Mesh")
       .def("export_obj", &isosurface::Mesh::export_obj, "filename"_a)

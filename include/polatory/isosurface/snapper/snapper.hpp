@@ -17,6 +17,7 @@
 #include <polatory/isosurface/snapper/triangulation.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
+#include <stdexcept>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -78,6 +79,7 @@ class Snapper {
     Point3 p;
     double d2{};                     // The squared distance from p to the mesh.
     double tang{};                   // The squared tangential offset: q to its snapped feature.
+    double min_distance{};           // Skip if the mesh already passes within this of p (0 = never).
     Index face{};                    // The projected face.
     std::array<Index, 3> fv{};       // Its vertex indices.
     std::array<double, 3> l{};       // The barycentric coordinates of the projection.
@@ -123,21 +125,27 @@ class Snapper {
   // isosurface pipeline bbox is first_extended_bbox: Lattice::cluster_vertices
   // guarantees no boundary vertex inside it, and the boundary lies a further lattice
   // layer out.)
-  Snapper(const Points3& vertices, Faces faces, const geometry::Bbox3& bbox, double min_distance,
-          double max_distance, const Mat3& aniso = Mat3::Identity())
+  Snapper(const Points3& vertices, Faces faces, const geometry::Bbox3& bbox, double max_distance,
+          const Mat3& aniso = Mat3::Identity())
       : mesh_(geometry::transform_points<3>(aniso, vertices), std::move(faces)),
         bbox_(bbox),
         to_iso_(aniso),
         to_world_(aniso.inverse()),
         max_distance_(max_distance),
-        min_distance_(min_distance),
         positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         moved_(mesh_.num_vertices(), false) {}
 
-  // Must be called only once. points are in world space; the result is too.
-  Mesh snap(const Points3& points) {
+  // Must be called only once. points are in world space; the result is too. tolerances, if
+  // non-empty, gives a per-point minimum snapping distance: a point is skipped when the
+  // partially snapped mesh already passes within its tolerance, so snapping it would barely
+  // move the surface and only over-subdivide the patch. An empty vector means zero (snap
+  // every point in range).
+  Mesh snap(const Points3& points, const VecX& tolerances = VecX()) {
+    if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
+      throw std::invalid_argument("tolerances must be empty or have one entry per point");
+    }
     auto iso_points = geometry::transform_points<3>(to_iso_, points);
-    auto candidates = build_candidates(iso_points);
+    auto candidates = build_candidates(iso_points, tolerances);
     std::vector<bool> placed(candidates.size(), false);
 
     // Pass 1: vertex moves only. A candidate moves its nearest vertex only while that vertex
@@ -193,7 +201,7 @@ class Snapper {
   // -- Classification (phase 1): project each point and rank the seven simplex
   // centroids of its face by distance to the projection (a Voronoi classification),
   // then order the candidates by increasing tangential offset (see the sort below).
-  std::vector<Candidate> build_candidates(const Points3& points) {
+  std::vector<Candidate> build_candidates(const Points3& points, const VecX& tolerances) {
     const auto& V = mesh_.vertices();
     const auto& F = mesh_.faces();
 
@@ -240,6 +248,7 @@ class Snapper {
       candidates.push_back({.p = p,
                             .d2 = d2,
                             .tang = tang,
+                            .min_distance = tolerances.size() == 0 ? 0.0 : tolerances(i),
                             .face = fi,
                             .fv = {f(0), f(1), f(2)},
                             .l = {l(0), l(1), l(2)},
@@ -670,15 +679,15 @@ class Snapper {
     return (p - (a + ab * v + ac * w)).squaredNorm();
   }
 
-  // Whether the current (partially snapped) mesh already passes within min_distance_ of the
-  // point, in which case snapping it would barely move the surface and only over-subdivide the
-  // patch, so it is skipped. Checks the point's projected patch and the patches across its
-  // edges (the point may have classified onto an edge).
+  // Whether the current (partially snapped) mesh already passes within the candidate's tolerance
+  // (its per-point min_distance) of the point, in which case snapping it would barely move the
+  // surface and only over-subdivide the patch, so it is skipped. Checks the point's projected
+  // patch and the patches across its edges (the point may have classified onto an edge).
   bool already_satisfied(const Candidate& cand) {
-    if (!(min_distance_ > 0.0)) {
+    if (!(cand.min_distance > 0.0)) {
       return false;
     }
-    double tol2 = min_distance_ * min_distance_;
+    double tol2 = cand.min_distance * cand.min_distance;
     const auto& F = mesh_.faces();
     auto nearest_in_patch = [&](Index fi) {
       double best = std::numeric_limits<double>::infinity();
@@ -824,7 +833,6 @@ class Snapper {
   Mat3 to_iso_;    // world -> the lattice's isotropic frame, where snapping is done (= aniso)
   Mat3 to_world_;  // the isotropic frame -> world, for the bbox test and emit (= aniso^-1)
   double max_distance_;
-  double min_distance_;  // skip-if-already-satisfied tolerance (0 disables)
 
   // The accumulated snap edits and their derived caches. positions_ is every vertex's current
   // position (original then inserted); moved_ flags which original vertices have been claimed
