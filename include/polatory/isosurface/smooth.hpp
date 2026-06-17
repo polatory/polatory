@@ -20,13 +20,17 @@
 namespace polatory::isosurface {
 
 // Post-process smoothing by edge flips: repeatedly flip an interior edge when doing so lowers the
-// worst dihedral (the largest bend between adjacent faces) in its neighborhood. Vertices are
-// never moved, so every snapped point stays a vertex of the mesh; only the connectivity changes,
-// which flattens the cusp/sliver artifacts a bad local triangulation produces. Each pass flips a
-// maximal set of edges that share no face (so the flips are independent); it repeats until a pass
-// makes no improving flip or max_passes is reached.
+// worst bend (the largest angle between adjacent faces' normals, 0 = flat) in its neighborhood.
+// Vertices are never moved, so every snapped point stays a vertex of the mesh; only the
+// connectivity changes, which flattens the cusp/sliver artifacts a bad local triangulation
+// produces. Each pass flips a maximal set of edges that share no face (so the flips are
+// independent); it repeats until a pass makes no improving flip or max_passes is reached.
+//
+// threshold (radians) gates which neighborhoods are touched: a flip is made only where the worst
+// bend in its quad already exceeds threshold, so a region smoother than that is left exactly as
+// generated. threshold = 0 flips wherever the worst bend can be lowered at all.
 inline Mesh smooth_by_flips(const Mesh& mesh, const Mat3& aniso = Mat3::Identity(),
-                            int max_passes = 20) {
+                            double threshold = 0.0, int max_passes = 20) {
   using geometry::Point3;
   using geometry::Vector3;
   using Face = std::array<Index, 3>;
@@ -270,7 +274,7 @@ inline Mesh smooth_by_flips(const Mesh& mesh, const Mat3& aniso = Mat3::Identity
                                 wb(f1, g_dy)});
       double after = std::max({bend(nf0, nf1), wb(nf0, g_cx), wb(nf1, g_yc), wb(nf0, g_xd),
                                wb(nf1, g_dy)});
-      if (after < before - 1e-6) {
+      if (before > threshold && after < before - 1e-6) {
         // Local self-intersection guard: neither new triangle may cross a face in the quad's
         // vertex one-ring (catches a flipped diagonal that passes over a nearby sheet).
         double tol = 1e-6 * (v.at(x) - v.at(y)).norm();

@@ -38,6 +38,7 @@ struct Options {
   double resolution{};
   Mat3 aniso;
   int refine{};
+  double smooth{-1.0};  // crease angle in degrees; < 0 means no smoothing
   std::string out_file;
 };
 
@@ -60,6 +61,10 @@ void run_impl(const Options& opts) {
     // mesh resolution); when absent, every tolerance is zero.
     VecX tolerances = table.cols() >= 4 ? VecX(table(kAll, 3)) : VecX();
     isosurf.set_snap_points(table(kAll, {0, 1, 2}), opts.snap_distance, tolerances);
+  }
+
+  if (opts.smooth >= 0.0) {
+    isosurf.set_smooth(opts.smooth);
   }
 
   auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn,
@@ -116,6 +121,9 @@ void IsosurfaceCommand::run(const std::vector<std::string>& args,
        "Output mesh isovalue")  //
       ("refine", po::value(&opts.refine)->default_value(1)->value_name("N"),
        "Number of vertex refinement passes")  //
+      ("smooth", po::value(&opts.smooth)->value_name("DEG"),
+       "Smooth the mesh by edge flips that flatten creases sharper than DEG degrees\n"
+       "(0 flattens wherever it helps); omit to disable")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output mesh file in OBJ format")  //
       ;

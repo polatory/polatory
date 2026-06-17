@@ -7,8 +7,11 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
+#include <polatory/isosurface/smooth.hpp>
 #include <polatory/isosurface/snap.hpp>
 #include <polatory/types.hpp>
+#include <numbers>
+#include <optional>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -93,6 +96,16 @@ class Isosurface {
     rel_snap_tols_ = relative_tolerances;
   }
 
+  // Enables post-process smoothing of the generated mesh by edge flips (see smooth_by_flips).
+  // threshold_degrees is the crease angle above which a neighborhood is flattened; 0 smooths
+  // wherever it helps, larger values touch only sharper creases. Must be in [0, 180).
+  void set_smooth(double threshold_degrees) {
+    if (!(threshold_degrees >= 0.0 && threshold_degrees < 180.0)) {
+      throw std::invalid_argument("smooth threshold must be in [0, 180)");
+    }
+    smooth_threshold_ = threshold_degrees;
+  }
+
  private:
   Mesh generate_common() {
     lattice_.cluster_vertices();
@@ -134,6 +147,11 @@ class Isosurface {
                        res * rel_snap_dist_, aniso_);
     }
 
+    // Smooth before clipping, like snapping, so the clip then makes the clean on-bbox boundary.
+    if (smooth_threshold_ && !mesh.is_empty()) {
+      mesh = smooth_by_flips(mesh, aniso_, *smooth_threshold_ * std::numbers::pi / 180.0);
+    }
+
     mesh = clip(mesh, lattice_.bbox());
 
     if (mesh.is_empty() &&
@@ -151,6 +169,7 @@ class Isosurface {
   geometry::Points3 snap_points_;
   double rel_snap_dist_{0.5};
   VecX rel_snap_tols_;
+  std::optional<double> smooth_threshold_;  // crease angle in degrees; unset means no smoothing
 };
 
 }  // namespace polatory::isosurface
