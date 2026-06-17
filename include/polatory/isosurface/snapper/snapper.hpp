@@ -9,6 +9,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <limits>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -101,6 +102,7 @@ class Snapper {
     Index inserted_on_edges{};
     Index inserted_in_faces{};
     Index pierce_rejections{};  // snaps rejected because they would pierce a distant face
+    Index thinned_on_edges{};   // collinear edge-chain vertices dropped (POLATORY_THIN)
   };
 
   // A point is snapped only if its distance to the mesh is at most max_distance and
@@ -190,6 +192,17 @@ class Snapper {
       }
       if (!ok) {
         stats_.dropped++;
+      }
+    }
+
+    // EXPERIMENT (POLATORY_THIN): thin near-collinear runs of inserted edge-chain vertices, which
+    // a densely sampled polyline produces. They subdivide the incident patches into slivers (e.g.
+    // vertical fins) without moving the surface and so block the edge-flip smoother. The value is
+    // the collinearity tolerance as a fraction of max_distance.
+    if (const char* s = std::getenv("POLATORY_THIN")) {
+      double factor = std::strtod(s, nullptr);
+      if (factor > 0.0) {
+        thin_chains(factor * max_distance_);
       }
     }
     return emit();
@@ -679,6 +692,14 @@ class Snapper {
     return (p - (a + ab * v + ac * w)).squaredNorm();
   }
 
+  // The squared distance from p to segment [a, b].
+  static double point_seg_dist2(const Point3& p, const Point3& a, const Point3& b) {
+    Vector3 ab = b - a;
+    double denom = ab.squaredNorm();
+    double t = denom > 0.0 ? std::clamp((p - a).dot(ab) / denom, 0.0, 1.0) : 0.0;
+    return (p - (a + t * ab)).squaredNorm();
+  }
+
   // Whether the current (partially snapped) mesh already passes within the candidate's tolerance
   // (its per-point min_distance) of the point, in which case snapping it would barely move the
   // surface and only over-subdivide the patch, so it is skipped. Checks the point's projected
@@ -802,15 +823,65 @@ class Snapper {
     return it->second;
   }
 
+  // EXPERIMENT (POLATORY_THIN). Drop inserted edge-chain vertices that lie within tol of the
+  // segment between their kept neighbours: a densely sampled, near-straight run of snap points on
+  // one original edge subdivides the incident patches into slivers without moving the surface,
+  // which blocks the edge-flip smoother. Walked from the smaller-id endpoint, each vertex within
+  // tol of the segment from the last kept vertex to its successor is a drop candidate; a drop is
+  // committed only if it leaves the mesh free of self-intersection (the insertion guards, reused),
+  // so the no-self-intersection guarantee is preserved. The dropped vertices become unreferenced
+  // and emit() compacts them away.
+  void thin_chains(double tol) {
+    double tol2 = tol * tol;
+    std::vector<Edge> edges;
+    edges.reserve(edge_chains_.size());
+    for (const auto& [e, chain] : edge_chains_) {
+      edges.push_back(e);
+    }
+    for (const auto& e : edges) {
+      auto it = edge_chains_.find(e);
+      if (it == edge_chains_.end()) {
+        continue;
+      }
+      auto& chain = it->second;
+      const auto& incident = mesh_.edge_faces(e);
+      Point3 end = pos(e.b);          // the chain runs by t from e.a (smaller id) to e.b
+      Point3 last_kept = pos(e.a);
+      for (std::size_t i = 0; i < chain.size();) {
+        Point3 cur = pos(chain.at(i).id);
+        Point3 next = i + 1 < chain.size() ? pos(chain.at(i + 1).id) : end;
+        if (point_seg_dist2(cur, last_kept, next) > tol2) {
+          last_kept = cur;
+          i++;
+          continue;
+        }
+        auto at = static_cast<std::ptrdiff_t>(i);
+        EdgeVertex removed = chain.at(i);
+        chain.erase(chain.begin() + at);
+        std::unordered_map<Index, std::vector<Face>> changed;
+        for (auto fi : incident) {
+          changed[fi] = triangulate_patch(fi);
+        }
+        if (causes_overlap(changed) || creates_degenerate(changed) || pierces(changed)) {
+          chain.insert(chain.begin() + at, removed);  // revert
+          last_kept = cur;
+          i++;
+        } else {
+          for (auto fi : incident) {
+            patch_faces_cache_[fi] = changed.at(fi);
+          }
+          stats_.thinned_on_edges++;  // keep last_kept; the successor shifts into slot i
+        }
+      }
+      if (chain.empty()) {
+        edge_chains_.erase(e);
+      }
+    }
+  }
+
   // Builds the snapped mesh from the accepted snaps.
   Mesh emit() {
     const auto& F = mesh_.faces();
-
-    Points3 vertices(static_cast<Index>(positions_.size()), 3);
-    for (Index v = 0; v < vertices.rows(); v++) {
-      vertices.row(v) = positions_.at(v);
-    }
-    vertices = geometry::transform_points<3>(to_world_, vertices);  // back to world
 
     std::vector<Face> faces;
     for (Index fi = 0; fi < F.rows(); fi++) {
@@ -819,11 +890,35 @@ class Snapper {
       }
     }
 
+    // Drop vertices no face references (chain thinning orphans the inserted ones it removes),
+    // keeping the rest in their original order so an un-thinned run emits unchanged.
+    std::vector<bool> used(positions_.size(), false);
+    for (const auto& face : faces) {
+      for (auto v : face) {
+        used.at(v) = true;
+      }
+    }
+    std::vector<Index> remap(positions_.size(), -1);
+    Index n = 0;
+    for (std::size_t v = 0; v < positions_.size(); v++) {
+      if (used.at(v)) {
+        remap.at(v) = n++;
+      }
+    }
+
+    Points3 vertices(n, 3);
+    for (std::size_t v = 0; v < positions_.size(); v++) {
+      if (used.at(v)) {
+        vertices.row(remap.at(v)) = positions_.at(v);
+      }
+    }
+    vertices = geometry::transform_points<3>(to_world_, vertices);  // back to world
+
     Faces f(static_cast<Index>(faces.size()), 3);
     for (Index i = 0; i < f.rows(); i++) {
-      f(i, 0) = faces.at(i)[0];
-      f(i, 1) = faces.at(i)[1];
-      f(i, 2) = faces.at(i)[2];
+      f(i, 0) = remap.at(faces.at(i)[0]);
+      f(i, 1) = remap.at(faces.at(i)[1]);
+      f(i, 2) = remap.at(faces.at(i)[2]);
     }
     return {std::move(vertices), std::move(f)};
   }
