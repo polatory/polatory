@@ -13,9 +13,10 @@ namespace polatory::isosurface {
 // both the point and its projection onto the mesh lie inside bbox. Provided bbox
 // contains no mesh boundary in its interior, the mesh boundary is left untouched.
 // tolerances, if non-empty, gives a per-point snapping tolerance, the distance the surface may
-// stay from the point: a point the mesh already passes within its tolerance of is skipped, and a
-// near-collinear run of inserted edge-chain vertices is thinned within their tolerances (an empty
-// vector means zero for every point, i.e. snap all points in range and thin nothing).
+// stay from the point: a point the mesh already passes within its tolerance of is skipped, and an
+// inserted vertex whose removal keeps the surface within its tolerance is dropped, so a densely
+// sampled polyline does not over-triangulate the surface (an empty vector means zero for every
+// point, i.e. snap all points in range and thin nothing).
 // aniso maps world into the lattice's isotropic frame, where the snapper measures
 // distances so an anisotropic resolution is respected (identity = isotropic); the mesh,
 // points, and bbox are given in world space. See snapper.hpp. Passing no points returns

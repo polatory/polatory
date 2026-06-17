@@ -69,8 +69,8 @@ class Isosurface {
   // relative_tolerances, if non-empty, gives a per-point snapping tolerance as a fraction of
   // the mesh resolution -- the distance the surface may stay from the point. A point the
   // (partially snapped) mesh already passes within its tolerance of is skipped (snapping it
-  // would barely move the surface and only over-subdivide the patch), and a near-collinear run
-  // of inserted edge-chain vertices is thinned within their tolerances, so a densely sampled
+  // would barely move the surface and only over-subdivide the patch), and afterwards an inserted
+  // vertex whose removal keeps the surface within its tolerance is dropped, so a densely sampled
   // polyline does not over-triangulate the surface. It must have one entry per point, each in
   // [0, relative_distance]; an empty vector means zero (snap every point in range, thin nothing).
   void set_snap_points(const geometry::Points3& points, double relative_distance = 0.5,

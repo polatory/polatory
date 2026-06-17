@@ -86,12 +86,10 @@ class Snapper {
     std::array<Simplex, 7> order{};  // The seven simplices, nearest centroid first.
   };
 
-  // A vertex on an edge, at parameter t from the edge's smaller-id endpoint. min_distance is its
-  // point's snapping tolerance, carried so the collinear thinning can drop it within that bound.
+  // A vertex on an edge, at parameter t from the edge's smaller-id endpoint.
   struct EdgeVertex {
     double t{};
     Index id{};
-    double min_distance{};
   };
 
  public:
@@ -103,7 +101,8 @@ class Snapper {
     Index inserted_on_edges{};
     Index inserted_in_faces{};
     Index pierce_rejections{};  // snaps rejected because they would pierce a distant face
-    Index thinned_on_edges{};   // collinear edge-chain vertices dropped (POLATORY_THIN)
+    Index thinned_on_edges{};   // redundant inserted edge vertices dropped within tolerance
+    Index thinned_in_faces{};   // redundant inserted interior vertices dropped within tolerance
   };
 
   // A point is snapped only if its distance to the mesh is at most max_distance and
@@ -142,9 +141,9 @@ class Snapper {
   // non-empty, gives a per-point snapping tolerance, the distance the surface may stay from the
   // point. It is used twice: a point the partially snapped mesh already passes within its
   // tolerance of is skipped (snapping it would barely move the surface and only over-subdivide
-  // the patch), and an inserted edge-chain vertex within its tolerance of the line through its
-  // neighbours is thinned away (see thin_chains). An empty vector means zero (snap every point in
-  // range, thin nothing).
+  // the patch), and afterwards an inserted vertex whose removal keeps the surface within its
+  // tolerance is dropped (see thin_inserted), so a densely sampled polyline does not over-
+  // triangulate the surface. An empty vector means zero (snap every point in range, thin nothing).
   Mesh snap(const Points3& points, const VecX& tolerances = VecX()) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
@@ -198,11 +197,10 @@ class Snapper {
       }
     }
 
-    // Thin near-collinear runs of inserted edge-chain vertices, which a densely sampled polyline
-    // produces. They subdivide the incident patches into slivers (e.g. vertical fins) without
-    // moving the surface and so block the edge-flip smoother. Each vertex is thinned within its
-    // own snapping tolerance, so this is a no-op when no tolerances were given.
-    thin_chains();
+    // Drop inserted vertices a densely sampled polyline leaves behind that the surface no longer
+    // needs (within each point's snapping tolerance), which would otherwise over-triangulate it
+    // and block the edge-flip smoother. A no-op when no tolerances were given.
+    thin_inserted();
     return emit();
   }
 
@@ -348,8 +346,7 @@ class Snapper {
     auto id = static_cast<Index>(positions_.size());
     positions_.push_back(cand.p);
     auto& chain = edge_chains_[e];
-    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t),
-                 {.t = t, .id = id, .min_distance = cand.min_distance});
+    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .id = id});
 
     std::unordered_map<Index, std::vector<Face>> changed;
     bool simple = true;
@@ -378,6 +375,7 @@ class Snapper {
     for (auto fi : incident_faces) {
       patch_faces_cache_[fi] = changed.at(fi);
     }
+    inserted_tol_[id] = cand.min_distance;
     stats_.inserted_on_edges++;
     return true;
   }
@@ -423,6 +421,7 @@ class Snapper {
     }
 
     patch_faces_cache_[fi] = std::move(faces);
+    inserted_tol_[id] = cand.min_distance;
     stats_.inserted_in_faces++;
     return true;
   }
@@ -691,13 +690,6 @@ class Snapper {
     return (p - (a + ab * v + ac * w)).squaredNorm();
   }
 
-  // The squared distance from p to segment [a, b].
-  static double point_seg_dist2(const Point3& p, const Point3& a, const Point3& b) {
-    Vector3 ab = b - a;
-    double denom = ab.squaredNorm();
-    double t = denom > 0.0 ? std::clamp((p - a).dot(ab) / denom, 0.0, 1.0) : 0.0;
-    return (p - (a + t * ab)).squaredNorm();
-  }
 
   // Whether the current (partially snapped) mesh already passes within the candidate's tolerance
   // (its per-point min_distance) of the point, in which case snapping it would barely move the
@@ -822,58 +814,133 @@ class Snapper {
     return it->second;
   }
 
-  // Drop inserted edge-chain vertices that lie within their snapping tolerance of the segment
-  // between their kept neighbours: a densely sampled, near-straight run of snap points on one
-  // original edge subdivides the incident patches into slivers without moving the surface, which
-  // blocks the edge-flip smoother. Walked from the smaller-id endpoint, a vertex within its own
-  // tolerance of the segment from the last kept vertex to its successor is a drop candidate (so a
-  // zero-tolerance vertex is never thinned); a drop is committed only if it leaves the mesh free
-  // of self-intersection (the insertion guards, reused), so the no-self-intersection guarantee is
-  // preserved. The dropped vertices become unreferenced and emit() compacts them away.
-  void thin_chains() {
-    std::vector<Edge> edges;
-    edges.reserve(edge_chains_.size());
-    for (const auto& [e, chain] : edge_chains_) {
-      edges.push_back(e);
+  // The squared distance from p to the nearest of the given triangles (emitted 3D positions).
+  double dist2_to_faces(const Point3& p, const std::vector<Face>& faces) {
+    double best = std::numeric_limits<double>::infinity();
+    for (const auto& f : faces) {
+      best = std::min(best, point_tri_dist2(p, pos(f[0]), pos(f[1]), pos(f[2])));
     }
-    for (const auto& e : edges) {
-      auto it = edge_chains_.find(e);
-      if (it == edge_chains_.end()) {
-        continue;
+    return best;
+  }
+
+  // Try to drop interior vertex `id` from patch `fi`: removing it re-triangulates the one patch.
+  // Committed only if the new patch passes within tol of the dropped point and leaves the mesh
+  // free of self-intersection (the insertion guards). Returns whether it was dropped.
+  bool try_drop_interior(Index fi, Index id, double tol) {
+    auto it = face_interior_.find(fi);
+    if (it == face_interior_.end()) {
+      return false;
+    }
+    auto& interior = it->second;
+    auto at = std::ranges::find(interior, id);
+    if (at == interior.end()) {
+      return false;
+    }
+    interior.erase(at);
+    auto faces = triangulate_patch(fi);
+    std::unordered_map<Index, std::vector<Face>> changed{{fi, faces}};
+    if (dist2_to_faces(pos(id), faces) <= tol * tol && !causes_overlap(changed) &&
+        !creates_degenerate(changed) && !pierces(changed)) {
+      patch_faces_cache_[fi] = std::move(faces);
+      if (interior.empty()) {
+        face_interior_.erase(fi);
       }
-      auto& chain = it->second;
-      const auto& incident = mesh_.edge_faces(e);
-      Point3 end = pos(e.b);          // the chain runs by t from e.a (smaller id) to e.b
-      Point3 last_kept = pos(e.a);
-      for (std::size_t i = 0; i < chain.size();) {
-        double tol = chain.at(i).min_distance;
-        Point3 cur = pos(chain.at(i).id);
-        Point3 next = i + 1 < chain.size() ? pos(chain.at(i + 1).id) : end;
-        if (!(tol > 0.0) || point_seg_dist2(cur, last_kept, next) > tol * tol) {
-          last_kept = cur;
-          i++;
-          continue;
-        }
-        auto at = static_cast<std::ptrdiff_t>(i);
-        EdgeVertex removed = chain.at(i);
-        chain.erase(chain.begin() + at);
-        std::unordered_map<Index, std::vector<Face>> changed;
-        for (auto fi : incident) {
-          changed[fi] = triangulate_patch(fi);
-        }
-        if (causes_overlap(changed) || creates_degenerate(changed) || pierces(changed)) {
-          chain.insert(chain.begin() + at, removed);  // revert
-          last_kept = cur;
-          i++;
-        } else {
-          for (auto fi : incident) {
-            patch_faces_cache_[fi] = changed.at(fi);
-          }
-          stats_.thinned_on_edges++;  // keep last_kept; the successor shifts into slot i
-        }
+      stats_.thinned_in_faces++;
+      return true;
+    }
+    interior.push_back(id);  // revert (interior order does not affect the triangulation)
+    return false;
+  }
+
+  // Try to drop edge vertex `id` from edge `e`'s chain: removing it re-triangulates both incident
+  // patches. Same accept test as try_drop_interior, against both patches' new triangulation.
+  bool try_drop_edge(const Edge& e, Index id, double tol) {
+    auto it = edge_chains_.find(e);
+    if (it == edge_chains_.end()) {
+      return false;
+    }
+    auto& chain = it->second;
+    auto at = std::ranges::find_if(chain, [id](const EdgeVertex& x) { return x.id == id; });
+    if (at == chain.end()) {
+      return false;
+    }
+    EdgeVertex removed = *at;
+    auto pos_in_chain = at - chain.begin();
+    chain.erase(at);
+    const auto& incident = mesh_.edge_faces(e);
+    std::unordered_map<Index, std::vector<Face>> changed;
+    std::vector<Face> all;
+    for (auto fi : incident) {
+      auto faces = triangulate_patch(fi);
+      all.insert(all.end(), faces.begin(), faces.end());
+      changed[fi] = std::move(faces);
+    }
+    if (dist2_to_faces(pos(id), all) <= tol * tol && !causes_overlap(changed) &&
+        !creates_degenerate(changed) && !pierces(changed)) {
+      for (auto fi : incident) {
+        patch_faces_cache_[fi] = changed.at(fi);
       }
       if (chain.empty()) {
         edge_chains_.erase(e);
+      }
+      stats_.thinned_on_edges++;
+      return true;
+    }
+    chain.insert(chain.begin() + pos_in_chain, removed);  // revert
+    return false;
+  }
+
+  // Drop inserted vertices a densely sampled polyline leaves behind that the surface no longer
+  // needs: a vertex whose removal keeps the surface within its own snapping tolerance and free of
+  // self-intersection is redundant (the surrounding snaps already pin the surface through it). Such
+  // runs over-triangulate the surface -- e.g. into vertical fins -- and block the edge-flip
+  // smoother. Unlike a per-chain collinearity test this also reaches face-interior vertices and
+  // single-vertex chains, which is most of a polyline that crosses the mesh transversally. Greedy
+  // and iterated to a fixpoint, since one drop can make a neighbour removable; a zero-tolerance
+  // vertex is never dropped, so this is a no-op when no tolerances were given. The dropped vertices
+  // become unreferenced and emit() compacts them away.
+  void thin_inserted() {
+    bool any = true;
+    while (any) {
+      any = false;
+      std::vector<Index> faces;
+      faces.reserve(face_interior_.size());
+      for (const auto& [fi, ids] : face_interior_) {
+        faces.push_back(fi);
+      }
+      for (auto fi : faces) {
+        auto it = face_interior_.find(fi);
+        if (it == face_interior_.end()) {
+          continue;
+        }
+        for (auto id : std::vector<Index>(it->second)) {
+          double tol = inserted_tol_.at(id);
+          if (tol > 0.0 && try_drop_interior(fi, id, tol)) {
+            any = true;
+          }
+        }
+      }
+      std::vector<Edge> edges;
+      edges.reserve(edge_chains_.size());
+      for (const auto& [e, chain] : edge_chains_) {
+        edges.push_back(e);
+      }
+      for (const auto& e : edges) {
+        auto it = edge_chains_.find(e);
+        if (it == edge_chains_.end()) {
+          continue;
+        }
+        std::vector<Index> ids;
+        ids.reserve(it->second.size());
+        for (const auto& x : it->second) {
+          ids.push_back(x.id);
+        }
+        for (auto id : ids) {
+          double tol = inserted_tol_.at(id);
+          if (tol > 0.0 && try_drop_edge(e, id, tol)) {
+            any = true;
+          }
+        }
       }
     }
   }
@@ -936,6 +1003,7 @@ class Snapper {
   std::unordered_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   std::unordered_map<Index, std::vector<Index>> face_interior_;
   std::unordered_map<Index, std::vector<Face>> patch_faces_cache_;
+  std::unordered_map<Index, double> inserted_tol_;  // each inserted vertex's snapping tolerance
 
   Stats stats_;
 };
