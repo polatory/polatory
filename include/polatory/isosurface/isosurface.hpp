@@ -7,8 +7,11 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
+#include <polatory/isosurface/smooth.hpp>
 #include <polatory/isosurface/snap.hpp>
 #include <polatory/types.hpp>
+#include <numbers>
+#include <optional>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -66,11 +69,13 @@ class Isosurface {
   // relative_distance bounds how far a point may lie from the mesh to be snapped,
   // as a fraction of the mesh resolution. It must be in (0, 1].
   //
-  // relative_tolerances, if non-empty, gives a per-point minimum snapping distance as a
-  // fraction of the mesh resolution: a point that the (partially snapped) mesh already
-  // passes within its tolerance of is skipped, since snapping it would barely move the
-  // surface and only over-subdivide the patch. It must have one entry per point, each in
-  // [0, relative_distance]; an empty vector means zero (snap every point in range).
+  // relative_tolerances, if non-empty, gives a per-point snapping tolerance as a fraction of
+  // the mesh resolution -- the distance the surface may stay from the point. A point the
+  // (partially snapped) mesh already passes within its tolerance of is skipped (snapping it
+  // would barely move the surface and only over-subdivide the patch), and afterwards an inserted
+  // vertex whose removal keeps the surface within its tolerance is dropped, so a densely sampled
+  // polyline does not over-triangulate the surface. It must have one entry per point, each in
+  // [0, relative_distance]; an empty vector means zero (snap every point in range, thin nothing).
   void set_snap_points(const geometry::Points3& points, double relative_distance = 0.5,
                        const VecX& relative_tolerances = VecX()) {
     if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
@@ -89,6 +94,16 @@ class Isosurface {
     snap_points_ = points;
     rel_snap_dist_ = relative_distance;
     rel_snap_tols_ = relative_tolerances;
+  }
+
+  // Enables post-process smoothing of the generated mesh by edge flips (see smooth_by_flips).
+  // threshold_degrees is the crease angle above which a neighborhood is flattened; 0 smooths
+  // wherever it helps, larger values touch only sharper creases. Must be in [0, 180).
+  void set_smooth(double threshold_degrees) {
+    if (!(threshold_degrees >= 0.0 && threshold_degrees < 180.0)) {
+      throw std::invalid_argument("smooth threshold must be in [0, 180)");
+    }
+    smooth_threshold_ = threshold_degrees;
   }
 
  private:
@@ -132,6 +147,11 @@ class Isosurface {
                        res * rel_snap_dist_, aniso_);
     }
 
+    // Smooth before clipping, like snapping, so the clip then makes the clean on-bbox boundary.
+    if (smooth_threshold_ && !mesh.is_empty()) {
+      mesh = smooth_by_flips(mesh, aniso_, *smooth_threshold_ * std::numbers::pi / 180.0);
+    }
+
     mesh = clip(mesh, lattice_.bbox());
 
     if (mesh.is_empty() &&
@@ -149,6 +169,7 @@ class Isosurface {
   geometry::Points3 snap_points_;
   double rel_snap_dist_{0.5};
   VecX rel_snap_tols_;
+  std::optional<double> smooth_threshold_;  // crease angle in degrees; unset means no smoothing
 };
 
 }  // namespace polatory::isosurface
