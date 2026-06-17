@@ -4,9 +4,11 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -84,10 +86,84 @@ inline Mesh smooth_by_flips(const Mesh& mesh, const Mat3& aniso = Mat3::Identity
     }
     return n;
   };
-  // A real crossing of a and b beyond a shared vertex or edge.
+  // A real crossing of a and b beyond a shared vertex or edge. Two cases, split by how parallel
+  // the faces are, because each case has a configuration the other mishandles:
+  //  - Near-parallel: the 3D segment test reports a grazing line of contact between two nearly
+  //    coplanar faces that merely tile (e.g. a fan around a shared vertex) as a crossing. Instead
+  //    require b to straddle a's plane and their footprints to overlap in it (separating axis,
+  //    exact for triangles), so a flat tiling is correctly not a crossing.
+  //  - Transversal: project-and-separate is invalid, so use the 3D segment test; a point touch at
+  //    a shared vertex yields a near-zero segment and stays below tol.
   auto overlaps = [&](const Face& a, const Face& b, double tol) {
     if (shared(a, b) >= 2) {
       return false;
+    }
+    Vector3 a0 = v.at(a[0]);
+    Vector3 a1 = v.at(a[1]);
+    Vector3 a2 = v.at(a[2]);
+    Vector3 b0 = v.at(b[0]);
+    Vector3 b1 = v.at(b[1]);
+    Vector3 b2 = v.at(b[2]);
+    Vector3 na = (a1 - a0).cross(a2 - a0);
+    Vector3 nb = (b1 - b0).cross(b2 - b0);
+    double la = na.norm();
+    double lb = nb.norm();
+    if (!(la > 0.0) || !(lb > 0.0)) {
+      return false;
+    }
+    if (std::abs(na.dot(nb)) >= 0.9 * la * lb) {
+      Vector3 n = na / la;
+      double dmin = std::numeric_limits<double>::infinity();
+      double dmax = -dmin;
+      for (const Vector3& p : {b0, b1, b2}) {
+        double d = n.dot(p - a0);
+        dmin = std::min(dmin, d);
+        dmax = std::max(dmax, d);
+      }
+      if (dmin > tol || dmax < -tol) {
+        return false;  // b lies entirely on one side of a's plane
+      }
+      Vector3 u = (a1 - a0).normalized();
+      Vector3 w = n.cross(u);
+      auto proj = [&](const Vector3& p) {
+        Vector3 d = p - a0;
+        return std::array<double, 2>{d.dot(u), d.dot(w)};
+      };
+      std::array<std::array<double, 2>, 3> pa{proj(a0), proj(a1), proj(a2)};
+      std::array<std::array<double, 2>, 3> pb{proj(b0), proj(b1), proj(b2)};
+      // The axis is normalized so slack is a real distance: two faces sharing a vertex touch there
+      // exactly, and that boundary contact must read as separated (not an overlap) despite the
+      // round-off in the projection.
+      auto separates = [](const std::array<std::array<double, 2>, 3>& p,
+                          const std::array<std::array<double, 2>, 3>& q, double slack) {
+        for (int e = 0; e < 3; e++) {
+          std::array<double, 2> axis{p.at(e).at(1) - p.at((e + 1) % 3).at(1),
+                                     p.at((e + 1) % 3).at(0) - p.at(e).at(0)};
+          double al = std::hypot(axis.at(0), axis.at(1));
+          if (!(al > 0.0)) {
+            continue;
+          }
+          axis.at(0) /= al;
+          axis.at(1) /= al;
+          double pmin = std::numeric_limits<double>::infinity();
+          double pmax = -pmin;
+          double qmin = pmin;
+          double qmax = pmax;
+          for (int k = 0; k < 3; k++) {
+            double pp = axis.at(0) * p.at(k).at(0) + axis.at(1) * p.at(k).at(1);
+            double qq = axis.at(0) * q.at(k).at(0) + axis.at(1) * q.at(k).at(1);
+            pmin = std::min(pmin, pp);
+            pmax = std::max(pmax, pp);
+            qmin = std::min(qmin, qq);
+            qmax = std::max(qmax, qq);
+          }
+          if (pmax <= qmin + slack || qmax <= pmin + slack) {
+            return true;
+          }
+        }
+        return false;
+      };
+      return !(separates(pa, pb, tol) || separates(pb, pa, tol));
     }
     bool coplanar = false;
     Eigen::RowVector3d s;
@@ -96,7 +172,7 @@ inline Mesh smooth_by_flips(const Mesh& mesh, const Mat3& aniso = Mat3::Identity
                                            v.at(b[1]), v.at(b[2]), coplanar, s, t)) {
       return false;
     }
-    return coplanar || (t - s).norm() > tol;
+    return !coplanar && (t - s).norm() > tol;
   };
 
   for (int pass = 0; pass < max_passes; pass++) {
