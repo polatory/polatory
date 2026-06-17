@@ -9,7 +9,6 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <cstdlib>
 #include <limits>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -87,10 +86,12 @@ class Snapper {
     std::array<Simplex, 7> order{};  // The seven simplices, nearest centroid first.
   };
 
-  // A vertex on an edge, at parameter t from the edge's smaller-id endpoint.
+  // A vertex on an edge, at parameter t from the edge's smaller-id endpoint. min_distance is its
+  // point's snapping tolerance, carried so the collinear thinning can drop it within that bound.
   struct EdgeVertex {
     double t{};
     Index id{};
+    double min_distance{};
   };
 
  public:
@@ -138,10 +139,12 @@ class Snapper {
         moved_(mesh_.num_vertices(), false) {}
 
   // Must be called only once. points are in world space; the result is too. tolerances, if
-  // non-empty, gives a per-point minimum snapping distance: a point is skipped when the
-  // partially snapped mesh already passes within its tolerance, so snapping it would barely
-  // move the surface and only over-subdivide the patch. An empty vector means zero (snap
-  // every point in range).
+  // non-empty, gives a per-point snapping tolerance, the distance the surface may stay from the
+  // point. It is used twice: a point the partially snapped mesh already passes within its
+  // tolerance of is skipped (snapping it would barely move the surface and only over-subdivide
+  // the patch), and an inserted edge-chain vertex within its tolerance of the line through its
+  // neighbours is thinned away (see thin_chains). An empty vector means zero (snap every point in
+  // range, thin nothing).
   Mesh snap(const Points3& points, const VecX& tolerances = VecX()) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
@@ -195,16 +198,11 @@ class Snapper {
       }
     }
 
-    // EXPERIMENT (POLATORY_THIN): thin near-collinear runs of inserted edge-chain vertices, which
-    // a densely sampled polyline produces. They subdivide the incident patches into slivers (e.g.
-    // vertical fins) without moving the surface and so block the edge-flip smoother. The value is
-    // the collinearity tolerance as a fraction of max_distance.
-    if (const char* s = std::getenv("POLATORY_THIN")) {
-      double factor = std::strtod(s, nullptr);
-      if (factor > 0.0) {
-        thin_chains(factor * max_distance_);
-      }
-    }
+    // Thin near-collinear runs of inserted edge-chain vertices, which a densely sampled polyline
+    // produces. They subdivide the incident patches into slivers (e.g. vertical fins) without
+    // moving the surface and so block the edge-flip smoother. Each vertex is thinned within its
+    // own snapping tolerance, so this is a no-op when no tolerances were given.
+    thin_chains();
     return emit();
   }
 
@@ -350,7 +348,8 @@ class Snapper {
     auto id = static_cast<Index>(positions_.size());
     positions_.push_back(cand.p);
     auto& chain = edge_chains_[e];
-    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .id = id});
+    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t),
+                 {.t = t, .id = id, .min_distance = cand.min_distance});
 
     std::unordered_map<Index, std::vector<Face>> changed;
     bool simple = true;
@@ -823,16 +822,15 @@ class Snapper {
     return it->second;
   }
 
-  // EXPERIMENT (POLATORY_THIN). Drop inserted edge-chain vertices that lie within tol of the
-  // segment between their kept neighbours: a densely sampled, near-straight run of snap points on
-  // one original edge subdivides the incident patches into slivers without moving the surface,
-  // which blocks the edge-flip smoother. Walked from the smaller-id endpoint, each vertex within
-  // tol of the segment from the last kept vertex to its successor is a drop candidate; a drop is
-  // committed only if it leaves the mesh free of self-intersection (the insertion guards, reused),
-  // so the no-self-intersection guarantee is preserved. The dropped vertices become unreferenced
-  // and emit() compacts them away.
-  void thin_chains(double tol) {
-    double tol2 = tol * tol;
+  // Drop inserted edge-chain vertices that lie within their snapping tolerance of the segment
+  // between their kept neighbours: a densely sampled, near-straight run of snap points on one
+  // original edge subdivides the incident patches into slivers without moving the surface, which
+  // blocks the edge-flip smoother. Walked from the smaller-id endpoint, a vertex within its own
+  // tolerance of the segment from the last kept vertex to its successor is a drop candidate (so a
+  // zero-tolerance vertex is never thinned); a drop is committed only if it leaves the mesh free
+  // of self-intersection (the insertion guards, reused), so the no-self-intersection guarantee is
+  // preserved. The dropped vertices become unreferenced and emit() compacts them away.
+  void thin_chains() {
     std::vector<Edge> edges;
     edges.reserve(edge_chains_.size());
     for (const auto& [e, chain] : edge_chains_) {
@@ -848,9 +846,10 @@ class Snapper {
       Point3 end = pos(e.b);          // the chain runs by t from e.a (smaller id) to e.b
       Point3 last_kept = pos(e.a);
       for (std::size_t i = 0; i < chain.size();) {
+        double tol = chain.at(i).min_distance;
         Point3 cur = pos(chain.at(i).id);
         Point3 next = i + 1 < chain.size() ? pos(chain.at(i + 1).id) : end;
-        if (point_seg_dist2(cur, last_kept, next) > tol2) {
+        if (!(tol > 0.0) || point_seg_dist2(cur, last_kept, next) > tol * tol) {
           last_kept = cur;
           i++;
           continue;
