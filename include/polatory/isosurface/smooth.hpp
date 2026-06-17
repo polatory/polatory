@@ -165,11 +165,25 @@ inline Mesh smooth_by_flips(const Mesh& mesh, const Mat3& aniso = Mat3::Identity
       };
       return !(separates(pa, pb, tol) || separates(pb, pa, tol));
     }
+    // Transversal: the 3D segment test, on triangles shrunk slightly toward their centroids so a
+    // bare touch at a shared vertex (a legitimate crease) separates and is not reported as a
+    // crossing, while a real overlap -- which has positive area -- survives the shrink.
+    auto shrunk = [&](const Face& t) {
+      Eigen::RowVector3d p0 = v.at(t[0]);
+      Eigen::RowVector3d p1 = v.at(t[1]);
+      Eigen::RowVector3d p2 = v.at(t[2]);
+      Eigen::RowVector3d g = (p0 + p1 + p2) / 3.0;
+      constexpr double s = 1e-6;
+      return std::array<Eigen::RowVector3d, 3>{p0 + s * (g - p0), p1 + s * (g - p1),
+                                               p2 + s * (g - p2)};
+    };
+    auto sa = shrunk(a);
+    auto sb = shrunk(b);
     bool coplanar = false;
     Eigen::RowVector3d s;
     Eigen::RowVector3d t;
-    if (!igl::tri_tri_intersection_test_3d(v.at(a[0]), v.at(a[1]), v.at(a[2]), v.at(b[0]),
-                                           v.at(b[1]), v.at(b[2]), coplanar, s, t)) {
+    if (!igl::tri_tri_intersection_test_3d(sa[0], sa[1], sa[2], sb[0], sb[1], sb[2], coplanar, s,
+                                           t)) {
       return false;
     }
     return !coplanar && (t - s).norm() > tol;
