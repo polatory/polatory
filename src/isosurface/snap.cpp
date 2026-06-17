@@ -34,13 +34,19 @@ Mesh snap_relaxed(const Mesh& mesh, const geometry::Points3& points, const VecX&
   }
   bool has_priority = priorities.size() == points.rows();
 
+  // snap_iter limits the capture effort -- how many priority levels are introduced. Once all are
+  // in, the priority level stays at the last one and the loop keeps culling self-intersecting
+  // points (giving them up) and re-snapping until the mesh is valid: it is fine not to snap every
+  // feasible point, but the result must have no self-intersection.
+  int levels = std::max(1, snap_iter);
   std::unordered_set<Index> culled;  // points that self-intersected; carried across iterations
   Mesh out;
-  for (int it = 0; it < std::max(1, snap_iter); it++) {
+  for (int it = 0; it <= levels + 256; it++) {
+    int level = std::min(it, levels - 1);  // caps once every priority level is introduced
     std::unordered_set<Index> exclude = culled;
     if (has_priority) {
       for (Index i = 0; i < points.rows(); i++) {
-        if (priorities(i) > static_cast<double>(it)) {
+        if (priorities(i) > static_cast<double>(level)) {
           exclude.insert(i);  // not yet introduced at this priority level
         }
       }
@@ -71,14 +77,22 @@ Mesh snap_relaxed(const Mesh& mesh, const geometry::Points3& points, const VecX&
         }
       }
     };
-    cull(/*relaxed_only=*/true);
-    if (culled.size() == before && !bad.empty()) {
-      cull(/*relaxed_only=*/false);
+    if (!bad.empty()) {
+      cull(/*relaxed_only=*/true);
+      if (culled.size() == before) {
+        cull(/*relaxed_only=*/false);
+      }
     }
     std::fprintf(stderr,
-                 "[relax] iter=%d active=%lld dropped=%lld self_int_faces=%zu culled=%zu\n", it,
-                 static_cast<long long>(active), static_cast<long long>(s.stats().dropped),
-                 bad.size(), culled.size());
+                 "[relax] iter=%d level=%d active=%lld dropped=%lld self_int_faces=%zu culled=%zu\n",
+                 it, level, static_cast<long long>(active),
+                 static_cast<long long>(s.stats().dropped), bad.size(), culled.size());
+
+    // Stop once every priority level is in AND the mesh is valid (or no point can be culled to
+    // make it so -- a rare residual we cannot resolve by giving up points).
+    if (it >= levels - 1 && (bad.empty() || culled.size() == before)) {
+      break;
+    }
   }
   return out;
 }
