@@ -512,11 +512,21 @@ class Lattice : public PrimitiveLattice {
   }
 
   void generate_vertices(const std::vector<LatticeCoordinates>& node_lcs) {
+    struct Crossing {
+      LatticeCoordinates lc0;
+      LatticeCoordinates lc1;
+      EdgeIndex ei;
+      double t;
+      double v0;
+      double v1;
+    };
+
+    std::vector<std::vector<Crossing>> all_crossings(node_lcs.size());
 #pragma omp parallel for schedule(guided)
     // NOLINTNEXTLINE(modernize-loop-convert)
     for (std::size_t i = 0; i < node_lcs.size(); i++) {
       const auto& lc0 = node_lcs.at(i);
-      auto& node0 = node_list_.at(lc0);
+      const auto& node0 = node_list_.at(lc0);
       auto v0 = node0.value();
       auto sign_v0 = node0.value_sign();
 
@@ -526,45 +536,48 @@ class Lattice : public PrimitiveLattice {
           continue;
         }
 
-        auto* node1_ptr = node_list_.node_ptr(lc1);
+        const auto* node1_ptr = node_list_.node_ptr(lc1);
         if (node1_ptr == nullptr) {
           // There is no neighbor node on the opposite end of the edge.
           continue;
         }
 
-        auto& node1 = *node1_ptr;
-        auto v1 = node1.value();
-        auto sign_v1 = node1.value_sign();
+        auto v1 = node1_ptr->value();
+        auto sign_v1 = node1_ptr->value_sign();
 
         if (sign_v0 == sign_v1) {
           // There is no intersection on the edge.
           continue;
         }
 
-        auto t = v0 / (v0 - v1);
+        auto& crossings = all_crossings.at(i);
+        crossings.emplace_back(lc0, lc1, ei, v0 / (v0 - v1), v0, v1);
+      }
+    }
 
-#pragma omp critical
-        {
-          auto vi = static_cast<Index>(vertices_.size());
-          auto opp_ei = kOppositeEdge.at(ei);
+    for (const auto& crossings : all_crossings) {
+      for (const auto& cr : crossings) {
+        auto& node0 = node_list_.at(cr.lc0);
+        auto& node1 = node_list_.at(cr.lc1);
+        auto vi = static_cast<Index>(vertices_.size());
+        auto opp_ei = kOppositeEdge.at(cr.ei);
 
-          if (t < 0.5) {
-            node0.insert_vertex(vi, ei);
-            vertices_.emplace_back(lc0, ei, vi,                                  //
-                                   0.0, v0,                                      //
-                                   t, std::numeric_limits<double>::quiet_NaN(),  //
-                                   1.0, v1);
-          } else {
-            node1.insert_vertex(vi, opp_ei);
-            vertices_.emplace_back(lc1, opp_ei, vi,                                    //
-                                   0.0, v1,                                            //
-                                   1.0 - t, std::numeric_limits<double>::quiet_NaN(),  //
-                                   1.0, v0);
-          }
-
-          node0.set_intersection(ei);
-          node1.set_intersection(opp_ei);
+        if (cr.t < 0.5) {
+          node0.insert_vertex(vi, cr.ei);
+          vertices_.emplace_back(cr.lc0, cr.ei, vi,                               //
+                                 0.0, cr.v0,                                      //
+                                 cr.t, std::numeric_limits<double>::quiet_NaN(),  //
+                                 1.0, cr.v1);
+        } else {
+          node1.insert_vertex(vi, opp_ei);
+          vertices_.emplace_back(cr.lc1, opp_ei, vi,                                    //
+                                 0.0, cr.v1,                                            //
+                                 1.0 - cr.t, std::numeric_limits<double>::quiet_NaN(),  //
+                                 1.0, cr.v0);
         }
+
+        node0.set_intersection(cr.ei);
+        node1.set_intersection(opp_ei);
       }
     }
   }
