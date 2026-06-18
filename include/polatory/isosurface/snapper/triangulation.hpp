@@ -5,6 +5,7 @@
 #include <iterator>
 #include <limits>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/predicates.hpp>
 #include <polatory/types.hpp>
 #include <utility>
 #include <vector>
@@ -77,30 +78,11 @@ class Triangulation {
  private:
   using Edge = std::pair<Index, Index>;
 
-  // -- Predicates.
-
-  // Twice the signed area of (a, b, c); positive iff CCW.
-  static double orient(const Point2& a, const Point2& b, const Point2& c) {
-    return (b(0) - a(0)) * (c(1) - a(1)) - (b(1) - a(1)) * (c(0) - a(0));
-  }
-
-  // Positive iff d lies inside the circumcircle of the CCW triangle (a, b, c).
-  static double incircle(const Point2& a, const Point2& b, const Point2& c, const Point2& d) {
-    auto ax = a(0) - d(0);
-    auto ay = a(1) - d(1);
-    auto bx = b(0) - d(0);
-    auto by = b(1) - d(1);
-    auto cx = c(0) - d(0);
-    auto cy = c(1) - d(1);
-    auto a2 = ax * ax + ay * ay;
-    auto b2 = bx * bx + by * by;
-    auto c2 = cx * cx + cy * cy;
-    return ax * (by * c2 - b2 * cy) - ay * (bx * c2 - b2 * cx) + a2 * (bx * cy - by * cx);
-  }
+  // -- Predicates. The 2D orientation and in-circumcircle tests are shared (see predicates.hpp).
 
   // Whether x lies in the CCW triangle (a, b, c), including its boundary.
   static bool in_triangle(const Point2& x, const Point2& a, const Point2& b, const Point2& c) {
-    return orient(a, b, x) >= 0.0 && orient(b, c, x) >= 0.0 && orient(c, a, x) >= 0.0;
+    return orient2d(a, b, x) >= 0.0 && orient2d(b, c, x) >= 0.0 && orient2d(c, a, x) >= 0.0;
   }
 
   static Edge make_edge(Index a, Index b) { return a < b ? Edge{a, b} : Edge{b, a}; }
@@ -153,7 +135,7 @@ class Triangulation {
         auto cur = ring.at(i);
         auto prev = ring.at((i + m - 1) % m);
         auto next = ring.at((i + 1) % m);
-        if (!(orient(points_.at(prev), points_.at(cur), points_.at(next)) > area_tol)) {
+        if (!(orient2d(points_.at(prev), points_.at(cur), points_.at(next)) > area_tol)) {
           continue;  // reflex or flat: not an ear
         }
         if (shares_edge(prev, next)) {
@@ -206,14 +188,14 @@ class Triangulation {
       std::array<double, 3> bl{};
       for (Index f = 0; f < static_cast<Index>(faces_.size()); f++) {
         const auto& face = faces_.at(f);
-        auto a = orient(points_.at(face[0]), points_.at(face[1]), points_.at(face[2]));
+        auto a = orient2d(points_.at(face[0]), points_.at(face[1]), points_.at(face[2]));
         if (!(a > 0.0)) {
           continue;
         }
         std::array<double, 3> l{
-            orient(points_.at(v), points_.at(face[1]), points_.at(face[2])) / a,
-            orient(points_.at(face[0]), points_.at(v), points_.at(face[2])) / a,
-            orient(points_.at(face[0]), points_.at(face[1]), points_.at(v)) / a};
+            orient2d(points_.at(v), points_.at(face[1]), points_.at(face[2])) / a,
+            orient2d(points_.at(face[0]), points_.at(v), points_.at(face[2])) / a,
+            orient2d(points_.at(face[0]), points_.at(face[1]), points_.at(v)) / a};
         auto mn = std::min({l[0], l[1], l[2]});
         if (mn > best_min) {
           best_min = mn;
@@ -349,8 +331,8 @@ class Triangulation {
               incircle_tol)) {
           continue;
         }
-        if (!(orient(points_.at(x), points_.at(d), points_.at(c)) > area_tol &&
-              orient(points_.at(d), points_.at(y), points_.at(c)) > area_tol)) {
+        if (!(orient2d(points_.at(x), points_.at(d), points_.at(c)) > area_tol &&
+              orient2d(points_.at(d), points_.at(y), points_.at(c)) > area_tol)) {
           continue;
         }
 

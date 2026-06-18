@@ -11,6 +11,7 @@
 #include <limits>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh.hpp>
+#include <polatory/isosurface/predicates.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <unordered_map>
@@ -34,7 +35,6 @@ namespace polatory::isosurface {
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
-  using Vector2 = geometry::Vector2;
   using Vector3 = geometry::Vector3;
   using Edge = std::pair<Index, Index>;
   using EdgeHash = boost::hash<Edge>;
@@ -250,38 +250,9 @@ class Smoother {
       };
       std::array<Point2, 3> pa{proj(a0), proj(a1), proj(a2)};
       std::array<Point2, 3> pb{proj(b0), proj(b1), proj(b2)};
-      // The axis is normalized so slack is a real distance: two faces sharing a vertex touch there
-      // exactly, and that boundary contact must read as separated (not an overlap) despite the
-      // round-off in the projection.
-      auto separates = [](const std::array<Point2, 3>& p, const std::array<Point2, 3>& q,
-                          double slack) {
-        for (auto e = 0; e < 3; e++) {
-          Vector2 edge = p.at((e + 1) % 3) - p.at(e);
-          Vector2 axis(-edge.y(), edge.x());
-          auto len = axis.norm();
-          if (!(len > 0.0)) {
-            continue;
-          }
-          axis /= len;
-          auto pmin = std::numeric_limits<double>::infinity();
-          auto pmax = -pmin;
-          auto qmin = pmin;
-          auto qmax = pmax;
-          for (auto k = 0; k < 3; k++) {
-            auto pp = axis.dot(p.at(k));
-            auto qq = axis.dot(q.at(k));
-            pmin = std::min(pmin, pp);
-            pmax = std::max(pmax, pp);
-            qmin = std::min(qmin, qq);
-            qmax = std::max(qmax, qq);
-          }
-          if (pmax <= qmin + slack || qmax <= pmin + slack) {
-            return true;
-          }
-        }
-        return false;
-      };
-      return !(separates(pa, pb, tol) || separates(pb, pa, tol));
+      // The footprints overlap in a's plane (slack = tol, a real distance, so a shared-vertex
+      // touch reads as separated rather than an overlap).
+      return triangles_overlap_2d(pa, pb, tol);
     }
     // Transversal: the 3D segment test, on triangles shrunk slightly toward their centroids so a
     // bare touch at a shared vertex (a legitimate crease) separates and is not reported as a

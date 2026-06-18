@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
+#include <polatory/isosurface/predicates.hpp>
 #include <unordered_map>
 
 namespace polatory::isosurface {
@@ -135,13 +136,6 @@ Index MeshDefectsFinder::prev_vertex(Index fi, Index vi) const {
   return f(1);
 }
 
-double orient2d_inexact(const geometry::Point2& a, const geometry::Point2& b,
-                        const geometry::Point2& c) {
-  Mat2 m;
-  m << a(0) - c(0), a(1) - c(1), b(0) - c(0), b(1) - c(1);
-  return m.determinant();
-}
-
 double orient3d_inexact(const geometry::Point3& a, const geometry::Point3& b,
                         const geometry::Point3& c, const geometry::Point3& d) {
   Mat3 m;
@@ -174,9 +168,9 @@ bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geom
   geometry::Point2 b2(b(i), b(j));
   geometry::Point2 c2(c(i), c(j));
 
-  auto pqa = orient2d_inexact(p2, q2, a2);
-  auto pqb = orient2d_inexact(p2, q2, b2);
-  auto pqc = orient2d_inexact(p2, q2, c2);
+  auto pqa = orient2d(p2, q2, a2);
+  auto pqb = orient2d(p2, q2, b2);
+  auto pqc = orient2d(p2, q2, c2);
 
   auto sign = [](double x) -> int { return x > 0.0 ? 1 : x < 0.0 ? -1 : 0; };
   auto make_class = [](int a, int b, int c) constexpr -> int {
@@ -194,7 +188,7 @@ bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geom
       //    B   A                  A              B                                     B   A
       // P ------- Q   or   P -B----- Q   or   P -----A- Q   or   P -B---A- Q   or   P ---C--- Q
       //      C                    C              C                    C
-      return orient2d_inexact(p2, c2, a2) >= 0.0 && orient2d_inexact(q2, b2, c2) >= 0.0;
+      return orient2d(p2, c2, a2) >= 0.0 && orient2d(q2, b2, c2) >= 0.0;
 
     case make_class(1, -1, 1):
     case make_class(0, -1, 1):
@@ -204,7 +198,7 @@ bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geom
       //    A   C                  C              A                                     A   C
       // P ------- Q   or   P -A----- Q   or   P -----C- Q   or   P -A---C- Q   or   P ---B--- Q
       //      B                    B              B                    B
-      return orient2d_inexact(p2, b2, c2) >= 0.0 && orient2d_inexact(q2, a2, b2) >= 0.0;
+      return orient2d(p2, b2, c2) >= 0.0 && orient2d(q2, a2, b2) >= 0.0;
 
     case make_class(-1, 1, 1):
     case make_class(-1, 1, 0):
@@ -214,7 +208,7 @@ bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geom
       //    C   B                  B              C                                     C   B
       // P ------- Q   or   P -C----- Q   or   P -----B- Q   or   P -C---B- Q   or   P ---A--- Q
       //      A                    A              A                    A
-      return orient2d_inexact(p2, a2, b2) >= 0.0 && orient2d_inexact(q2, c2, a2) >= 0.0;
+      return orient2d(p2, a2, b2) >= 0.0 && orient2d(q2, c2, a2) >= 0.0;
 
     case make_class(1, -1, -1):
     // case make_class(1, 0, -1):
@@ -224,7 +218,7 @@ bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geom
       //      A                    A              A                    A
       // P ------- Q   or   P -B----- Q   or   P -----C- Q   or   P -B---C- Q   or   P ---A--- Q
       //    B   C                  C              B                                     B   C
-      return orient2d_inexact(p2, c2, a2) >= 0.0 && orient2d_inexact(q2, a2, b2) >= 0.0;
+      return orient2d(p2, c2, a2) >= 0.0 && orient2d(q2, a2, b2) >= 0.0;
 
     case make_class(-1, 1, -1):
     // case make_class(-1, 1, 0):
@@ -234,7 +228,7 @@ bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geom
       //      B                    B              B                    B
       // P ------- Q   or   P -C----- Q   or   P -----A- Q   or   P -C---A- Q   or   P ---B--- Q
       //    C   A                  A              C                                     C   A
-      return orient2d_inexact(p2, a2, b2) >= 0.0 && orient2d_inexact(q2, b2, c2) >= 0.0;
+      return orient2d(p2, a2, b2) >= 0.0 && orient2d(q2, b2, c2) >= 0.0;
 
     case make_class(-1, -1, 1):
     // case make_class(0, -1, 1):
@@ -244,7 +238,7 @@ bool segment3_triangle3_intersect_coplanar(const geometry::Point3& p, const geom
       //      C                    C              C                    C
       // P ------- Q   or   P -A----- Q   or   P -----B- Q   or   P -A---B- Q   or   P ---C--- Q
       //    A   B                  B              A                                     A   B
-      return orient2d_inexact(p2, b2, c2) >= 0.0 && orient2d_inexact(q2, c2, a2) >= 0.0;
+      return orient2d(p2, b2, c2) >= 0.0 && orient2d(q2, c2, a2) >= 0.0;
 
     case make_class(-1, -1, -1):
       return false;

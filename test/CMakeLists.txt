@@ -14,6 +14,7 @@ add_executable(${TARGET}
     isosurface/test_bit.cpp
     isosurface/test_cdt.cpp
     isosurface/test_isosurface.cpp
+    isosurface/test_predicates.cpp
     isosurface/test_rmt.cpp
     isosurface/test_snap.cpp
     isosurface/test_snap_selfint.cpp

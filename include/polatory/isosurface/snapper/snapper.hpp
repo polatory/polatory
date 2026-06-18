@@ -7,12 +7,12 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh.hpp>
+#include <polatory/isosurface/predicates.hpp>
 #include <polatory/isosurface/snapper/original_mesh.hpp>
 #include <polatory/isosurface/snapper/triangulation.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -77,12 +77,12 @@ class Snapper {
   // projected face.
   struct Candidate {
     Point3 p;
-    double d2{};                     // The squared distance from p to the mesh.
-    double tang{};                   // The squared tangential offset: q to its snapped feature.
-    double min_distance{};           // Skip if the mesh already passes within this of p (0 = never).
-    Index face{};                    // The projected face.
-    std::array<Index, 3> fv{};       // Its vertex indices.
-    std::array<double, 3> l{};       // The barycentric coordinates of the projection.
+    double d2{};                // The squared distance from p to the mesh.
+    double tang{};              // The squared tangential offset: q to its snapped feature.
+    double min_distance{};      // Skip if the mesh already passes within this of p (0 = never).
+    Index face{};               // The projected face.
+    std::array<Index, 3> fv{};  // Its vertex indices.
+    std::array<double, 3> l{};  // The barycentric coordinates of the projection.
     std::array<Simplex, 7> order{};  // The seven simplices, nearest centroid first.
   };
 
@@ -501,7 +501,9 @@ class Snapper {
                              mesh_.project(fi, pos(a[2]))};
     std::array<Point2, 3> pb{mesh_.project(fi, pos(b[0])), mesh_.project(fi, pos(b[1])),
                              mesh_.project(fi, pos(b[2]))};
-    return !separated(pa, pb) && !separated(pb, pa);
+    // The slack (a real distance in the frame) lets a bare vertex/edge touch read as not
+    // overlapping; kept tiny so a true doubled-surface overlap is still caught.
+    return triangles_overlap_2d(pa, pb, 1e-9);
   }
 
   // The number of vertices triangles a and b share (0..3).
@@ -515,37 +517,6 @@ class Snapper {
       }
     }
     return n;
-  }
-
-  // Whether some edge of triangle s separates s from t (a half of the separating-axis
-  // test; call with both orderings). Contact within tol counts as separated.
-  static bool separated(const std::array<Point2, 3>& s, const std::array<Point2, 3>& t) {
-    for (auto e = 0; e < 3; e++) {
-      Point2 side = s.at((e + 1) % 3) - s.at(e);
-      Point2 axis{-side(1), side(0)};
-      auto span = std::sqrt(axis(0) * axis(0) + axis(1) * axis(1));
-      if (!(span > 0.0)) {
-        continue;
-      }
-      auto base = axis(0) * s.at(e)(0) + axis(1) * s.at(e)(1);
-      double smin = 0.0;
-      double smax = 0.0;
-      double tmin = std::numeric_limits<double>::infinity();
-      double tmax = -std::numeric_limits<double>::infinity();
-      for (auto k = 0; k < 3; k++) {
-        auto sp = axis(0) * s.at(k)(0) + axis(1) * s.at(k)(1) - base;
-        smin = std::min(smin, sp);
-        smax = std::max(smax, sp);
-        auto tp = axis(0) * t.at(k)(0) + axis(1) * t.at(k)(1) - base;
-        tmin = std::min(tmin, tp);
-        tmax = std::max(tmax, tp);
-      }
-      auto tol = 1e-9 * span;
-      if (smax < tmin + tol || tmax < smin + tol) {
-        return true;
-      }
-    }
-    return false;
   }
 
   // The faces sharing a vertex with any of the given patches, excluding the patches
@@ -689,7 +660,6 @@ class Snapper {
     double w = vc * denom;
     return (p - (a + ab * v + ac * w)).squaredNorm();
   }
-
 
   // Whether the current (partially snapped) mesh already passes within the candidate's tolerance
   // (its per-point min_distance) of the point, in which case snapping it would barely move the

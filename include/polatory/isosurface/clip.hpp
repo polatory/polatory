@@ -9,6 +9,7 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh.hpp>
+#include <polatory/isosurface/predicates.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <unordered_map>
@@ -180,7 +181,7 @@ class MeshClipper {
         Point2 b{tri.row(2).dot(u), tri.row(2).dot(v)};
         Point2 c{p20.dot(u), p20.dot(v)};
         Point2 d{p10.dot(u), p10.dot(v)};
-        if (incircle_inexact(a, b, c, d) < 0.0) {
+        if (incircle(a, b, c, d) < 0.0) {
           append((Triangle() << tri.row(1), tri.row(2), p20).finished());
           append((Triangle() << tri.row(1), p20, p10).finished());
         } else {
@@ -203,22 +204,6 @@ class MeshClipper {
 
   static bool degenerate(const Triangle& tri) {
     return tri.row(0) == tri.row(1) || tri.row(1) == tri.row(2) || tri.row(2) == tri.row(0);
-  }
-
-  static double incircle_inexact(const Point2& a, const Point2& b, const Point2& c,
-                                 const Point2& d) {
-    auto m00 = a(0) - d(0);
-    auto m01 = a(1) - d(1);
-    auto m02 = m00 * m00 + m01 * m01;
-    auto m10 = b(0) - d(0);
-    auto m11 = b(1) - d(1);
-    auto m12 = m10 * m10 + m11 * m11;
-    auto m20 = c(0) - d(0);
-    auto m21 = c(1) - d(1);
-    auto m22 = m20 * m20 + m21 * m21;
-    Mat m;
-    m << m00, m01, m02, m10, m11, m12, m20, m21, m22;
-    return m.determinant();
   }
 
   static std::pair<Vector, Vector> plane_basis(const Vector& normal) {
