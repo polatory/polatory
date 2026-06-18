@@ -48,7 +48,7 @@ std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
             continue;
           }
 
-          if (edge_face_intersect(a, b, fj) || edge_face_intersect(c, d, fi)) {
+          if (edge_face_intersect({a, b}, fj) || edge_face_intersect({c, d}, fi)) {
             local_result.push_back(fi);
             local_result.push_back(fj);
           }
@@ -277,11 +277,11 @@ bool segment3_triangle3_intersect(const geometry::Point3& p, const geometry::Poi
   return (pqab >= 0.0 && pqbc >= 0.0 && pqca >= 0.0) || (pqab <= 0.0 && pqbc <= 0.0 && pqca <= 0.0);
 }
 
-bool MeshDefectsFinder::edge_face_intersect(Index vi, Index vj, Index fi) const {
+bool MeshDefectsFinder::edge_face_intersect(const Edge& e, Index fi) const {
   auto f = faces_.row(fi);
 
-  geometry::Point3 p = vertices_.row(vi);
-  geometry::Point3 q = vertices_.row(vj);
+  geometry::Point3 p = vertices_.row(e.a);
+  geometry::Point3 q = vertices_.row(e.b);
   geometry::Point3 a = vertices_.row(f(0));
   geometry::Point3 b = vertices_.row(f(1));
   geometry::Point3 c = vertices_.row(f(2));

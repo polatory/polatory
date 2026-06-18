@@ -5,6 +5,7 @@
 #include <iterator>
 #include <limits>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/predicates.hpp>
 #include <polatory/types.hpp>
 #include <utility>
@@ -56,7 +57,7 @@ class Triangulation {
     // the winding); kept sorted so membership is a binary search.
     constraints_.reserve(nb_);
     for (Index i = 0; i < nb_; i++) {
-      constraints_.push_back(make_edge(i, (i + 1) % nb_));
+      constraints_.push_back({i, (i + 1) % nb_});
     }
     std::ranges::sort(constraints_);
 
@@ -76,8 +77,6 @@ class Triangulation {
   bool simple() const { return simple_; }
 
  private:
-  using Edge = std::pair<Index, Index>;
-
   // -- Predicates. The 2D orientation and in-circumcircle tests are shared (see predicates.hpp).
 
   // Whether x lies in the CCW triangle (a, b, c), including its boundary.
@@ -85,13 +84,13 @@ class Triangulation {
     return orient2d(a, b, x) >= 0.0 && orient2d(b, c, x) >= 0.0 && orient2d(c, a, x) >= 0.0;
   }
 
-  static Edge make_edge(Index a, Index b) { return a < b ? Edge{a, b} : Edge{b, a}; }
-
   bool is_constraint(const Edge& e) const { return std::ranges::binary_search(constraints_, e); }
 
-  // Whether boundary vertices i and j lie on a common original edge (see the constructor):
-  // a diagonal between them would run along a subdivided edge and must never be created.
-  bool shares_edge(Index i, Index j) const {
+  // Whether the edge's two boundary vertices lie on a common original edge (see the
+  // constructor): a diagonal between them would run along a subdivided edge and must never
+  // be created.
+  bool shares_edge(const Edge& e) const {
+    auto [i, j] = e;
     if (boundary_edges_.empty() || i >= nb_ || j >= nb_) {
       return false;
     }
@@ -138,7 +137,7 @@ class Triangulation {
         if (!(orient2d(points_.at(prev), points_.at(cur), points_.at(next)) > area_tol)) {
           continue;  // reflex or flat: not an ear
         }
-        if (shares_edge(prev, next)) {
+        if (shares_edge({prev, next})) {
           continue;  // the chord prev-next would cut along a subdivided edge across cur
         }
         bool ear = true;
@@ -223,7 +222,7 @@ class Triangulation {
       }
       auto u = faces_.at(best).at((kmin + 1) % 3);
       auto w = faces_.at(best).at((kmin + 2) % 3);
-      if (is_constraint(make_edge(u, w))) {
+      if (is_constraint({u, w})) {
         continue;  // never split a boundary edge
       }
 
@@ -275,7 +274,7 @@ class Triangulation {
       for (Index f = 0; f < static_cast<Index>(faces_.size()); f++) {
         const auto& face = faces_.at(f);
         for (auto k = 0; k < 3; k++) {
-          edge_faces.emplace_back(make_edge(face.at(k), face.at((k + 1) % 3)), f);
+          edge_faces.emplace_back(Edge{face.at(k), face.at((k + 1) % 3)}, f);
         }
       }
       std::ranges::sort(edge_faces);
@@ -304,7 +303,7 @@ class Triangulation {
         const auto& face1 = faces_.at(f1);
         auto i0 = 0;
         for (auto k = 0; k < 3; k++) {
-          if (make_edge(face0.at(k), face0.at((k + 1) % 3)) == e) {
+          if (e == Edge{face0.at(k), face0.at((k + 1) % 3)}) {
             i0 = k;
             break;
           }
@@ -312,16 +311,17 @@ class Triangulation {
         auto x = face0.at(i0);
         auto y = face0.at((i0 + 1) % 3);
         auto c = face0.at((i0 + 2) % 3);
+        auto [ea, eb] = e;
         auto d = face1.at(0);
         for (auto v : face1) {
-          if (v != e.first && v != e.second) {
+          if (v != ea && v != eb) {
             d = v;
           }
         }
 
         // Never flip to a diagonal that runs along a subdivided edge (the two patches
         // sharing that edge could not agree on it).
-        if (shares_edge(c, d)) {
+        if (shares_edge({c, d})) {
           continue;
         }
 

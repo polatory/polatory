@@ -11,6 +11,7 @@
 #include <limits>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/predicates.hpp>
 #include <polatory/isosurface/snapper/original_mesh.hpp>
@@ -340,7 +341,7 @@ class Snapper {
       std::swap(vj, vk);
       t = 1.0 - t;
     }
-    Edge e{.a = vj, .b = vk};
+    Edge e{vj, vk};
     const auto& incident_faces = mesh_.edge_faces(e);
 
     auto id = static_cast<Index>(positions_.size());
@@ -501,8 +502,7 @@ class Snapper {
                              mesh_.project(fi, pos(a[2]))};
     std::array<Point2, 3> pb{mesh_.project(fi, pos(b[0])), mesh_.project(fi, pos(b[1])),
                              mesh_.project(fi, pos(b[2]))};
-    // The slack (a real distance in the frame) lets a bare vertex/edge touch read as not
-    // overlapping; kept tiny so a true doubled-surface overlap is still caught.
+    // Tiny slack so a bare vertex/edge touch reads as separated but a real overlap is caught.
     return triangles_overlap_2d(pa, pb, 1e-9);
   }
 
@@ -682,7 +682,7 @@ class Snapper {
       return true;
     }
     for (auto k = 0; k < 3; k++) {
-      auto e = make_edge(F(cand.face, k), F(cand.face, (k + 1) % 3));
+      Edge e{F(cand.face, k), F(cand.face, (k + 1) % 3)};
       for (auto fj : mesh_.edge_faces(e)) {
         if (fj != cand.face && nearest_in_patch(fj) < tol2) {
           return true;
@@ -701,9 +701,9 @@ class Snapper {
     const auto& F = mesh_.faces();
     std::array<Index, 3> vertices{F(fi, 0), F(fi, 1), F(fi, 2)};
 
-    auto has_chain = [&](Index u, Index w) { return edge_chains_.contains(make_edge(u, w)); };
-    if (!face_interior_.contains(fi) && !has_chain(vertices[0], vertices[1]) &&
-        !has_chain(vertices[1], vertices[2]) && !has_chain(vertices[2], vertices[0])) {
+    auto has_chain = [&](const Edge& e) { return edge_chains_.contains(e); };
+    if (!face_interior_.contains(fi) && !has_chain({vertices[0], vertices[1]}) &&
+        !has_chain({vertices[1], vertices[2]}) && !has_chain({vertices[2], vertices[0]})) {
       return {vertices};
     }
 
@@ -726,7 +726,7 @@ class Snapper {
     auto add_chain = [&](int edge) {
       auto from = vertices.at(edge);
       auto to = vertices.at((edge + 1) % 3);
-      auto it = edge_chains_.find(make_edge(from, to));
+      auto it = edge_chains_.find({from, to});
       if (it == edge_chains_.end()) {
         return;
       }

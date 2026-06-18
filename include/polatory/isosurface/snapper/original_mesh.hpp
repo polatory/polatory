@@ -4,10 +4,9 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <boost/container_hash/hash.hpp>
-#include <cstddef>
 #include <format>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -22,28 +21,6 @@ using geometry::Point2;
 using geometry::Point3;
 using geometry::Points3;
 using geometry::Vector3;
-
-// An undirected edge between two vertices (stored with a < b), the key type for the
-// snapper's per-edge adjacency and edge chains.
-struct Edge {
-  Index a{};
-  Index b{};
-
-  bool operator==(const Edge&) const = default;
-};
-
-struct EdgeHash {
-  std::size_t operator()(const Edge& e) const noexcept {
-    std::size_t seed{};
-    boost::hash_combine(seed, e.a);
-    boost::hash_combine(seed, e.b);
-    return seed;
-  }
-};
-
-inline Edge make_edge(Index u, Index w) {
-  return u < w ? Edge{.a = u, .b = w} : Edge{.a = w, .b = u};
-}
 
 // The original mesh the snapper operates on, together with everything precomputed from it
 // that the snapping reads but never changes: the vertex/edge adjacency, an AABB tree for
@@ -62,7 +39,7 @@ class OriginalMesh {
     for (Index fi = 0; fi < f_.rows(); fi++) {
       for (auto k = 0; k < 3; k++) {
         vertex_faces_.at(f_(fi, k)).push_back(fi);
-        edge_faces_[make_edge(f_(fi, k), f_(fi, (k + 1) % 3))].push_back(fi);
+        edge_faces_[{f_(fi, k), f_(fi, (k + 1) % 3)}].push_back(fi);
       }
     }
   }

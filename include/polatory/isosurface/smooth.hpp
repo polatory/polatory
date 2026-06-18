@@ -6,10 +6,10 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
-#include <boost/container_hash/hash.hpp>
 #include <cmath>
 #include <limits>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/predicates.hpp>
 #include <polatory/isosurface/types.hpp>
@@ -36,9 +36,6 @@ class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
-  using Edge = std::pair<Index, Index>;
-  using EdgeHash = boost::hash<Edge>;
-
   static constexpr double kPi = 3.141592653589793;
 
  public:
@@ -84,7 +81,7 @@ class Smoother {
     std::unordered_map<Index, std::vector<Index>> v2f;
     for (Index fi = 0; fi < f_.rows(); fi++) {
       for (auto k = 0; k < 3; k++) {
-        auto e = make_edge(f_(fi, k), f_(fi, (k + 1) % 3));
+        Edge e{f_(fi, k), f_(fi, (k + 1) % 3)};
         auto n = count[e]++;
         if (n < 2) {
           ef[e][n] = fi;
@@ -118,15 +115,15 @@ class Smoother {
       Index x = -1;
       Index y = -1;
       for (auto k = 0; k < 3; k++) {
-        if (make_edge(f0[k], f0[(k + 1) % 3]) == e) {
+        if (e == Edge{f0[k], f0[(k + 1) % 3]}) {
           x = f0[k];
           y = f0[(k + 1) % 3];
           break;
         }
       }
-      Index c = third(f0, x, y);
-      Index d = third(f1, x, y);
-      if (c < 0 || d < 0 || c == d || count.contains(make_edge(c, d))) {
+      Index c = third(f0, e);
+      Index d = third(f1, e);
+      if (c < 0 || d < 0 || c == d || count.contains({c, d})) {
         continue;  // boundary/degenerate, or the flipped diagonal already exists
       }
 
@@ -150,10 +147,10 @@ class Smoother {
         }
       }
 
-      Index g_cx = external(make_edge(c, x), f0i, f1i);
-      Index g_yc = external(make_edge(y, c), f0i, f1i);
-      Index g_xd = external(make_edge(x, d), f0i, f1i);
-      Index g_dy = external(make_edge(d, y), f0i, f1i);
+      Index g_cx = external({c, x}, f0i, f1i);
+      Index g_yc = external({y, c}, f0i, f1i);
+      Index g_xd = external({x, d}, f0i, f1i);
+      Index g_dy = external({d, y}, f0i, f1i);
 
       auto before = std::max({bend(f0, f1), bend_with(f0, g_cx), bend_with(f0, g_yc),
                               bend_with(f1, g_xd), bend_with(f1, g_dy)});
@@ -195,8 +192,6 @@ class Smoother {
     dirty = std::move(next_dirty);
     return changed;
   }
-
-  static Edge make_edge(Index a, Index b) { return a < b ? Edge{a, b} : Edge{b, a}; }
 
   // The doubled-area normal of a face (its length is twice the area).
   Vector3 normal(const Face& t) const {
@@ -250,8 +245,7 @@ class Smoother {
       };
       std::array<Point2, 3> pa{proj(a0), proj(a1), proj(a2)};
       std::array<Point2, 3> pb{proj(b0), proj(b1), proj(b2)};
-      // The footprints overlap in a's plane (slack = tol, a real distance, so a shared-vertex
-      // touch reads as separated rather than an overlap).
+      // Footprints overlap in a's plane; slack = tol so a shared-vertex touch reads separated.
       return triangles_overlap_2d(pa, pb, tol);
     }
     // Transversal: the 3D segment test, on triangles shrunk slightly toward their centroids so a
@@ -290,10 +284,10 @@ class Smoother {
     return n;
   }
 
-  // The vertex of f that is neither a nor b, or -1 if there is none.
-  static Index third(const Face& f, Index a, Index b) {
+  // The vertex of f that is neither endpoint of e, or -1 if there is none.
+  static Index third(const Face& f, const Edge& e) {
     for (auto x : f) {
-      if (x != a && x != b) {
+      if (x != e.a && x != e.b) {
         return x;
       }
     }

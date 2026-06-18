@@ -45,16 +45,13 @@ inline double incircle(const geometry::Point2& a, const geometry::Point2& b,
   return m.determinant();
 }
 
-// Whether filled triangles a and b overlap with positive area, by the separating-axis test
-// (exact for convex polygons up to round-off). slack is a real distance: a gap or contact
-// narrower than slack along a separating axis still reads as separated, so triangles that
-// merely touch at a shared vertex or edge are not reported as overlapping. The comparison is
-// strict, so the test errs toward reporting an overlap -- the safe side when it guards
-// against self-intersection.
+// Whether filled triangles a and b overlap with positive area (separating-axis test). slack is
+// a real distance: contact narrower than slack along an axis reads as separated, so a bare
+// shared-vertex or shared-edge touch is not an overlap. The strict comparison errs toward
+// reporting an overlap -- the safe side for a self-intersection guard.
 inline bool triangles_overlap_2d(const std::array<geometry::Point2, 3>& a,
                                  const std::array<geometry::Point2, 3>& b, double slack) {
-  // Whether some edge of s lies on a separating axis that keeps t off s (half the test;
-  // the caller runs both orderings, since either triangle may carry the separating edge).
+  // Whether an edge of s separates s from t (half the test; run for both orderings).
   auto separated = [slack](const std::array<geometry::Point2, 3>& s,
                            const std::array<geometry::Point2, 3>& t) {
     for (auto e = 0; e < 3; e++) {
