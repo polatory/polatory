@@ -21,6 +21,9 @@ namespace polatory::isosurface {
 // distances so an anisotropic resolution is respected (identity = isotropic); the mesh,
 // points, and bbox are given in world space. See snapper.hpp. Passing no points returns
 // the mesh unchanged.
+//
+// This applies one snapping pass; the pipeline re-applies it to recover points that lost
+// contention, smoothing between passes (see Isosurface::generate).
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                const geometry::Bbox3& bbox, double max_distance,
                const Mat3& aniso = Mat3::Identity());

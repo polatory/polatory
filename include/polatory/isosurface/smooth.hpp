@@ -1,13 +1,11 @@
 #pragma once
 
-#include <igl/tri_tri_intersect.h>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <limits>
+#include <cstdint>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
@@ -38,12 +36,33 @@ class Smoother {
   using Vector3 = geometry::Vector3;
   static constexpr double kPi = 3.141592653589793;
 
+  // A cell of the uniform spatial grid the self-intersection guard broad-phases over.
+  using Cell = std::array<int, 3>;
+  struct CellHash {
+    std::size_t operator()(const Cell& c) const noexcept {
+      auto h = static_cast<std::size_t>(static_cast<std::uint32_t>(c[0])) * 73856093U;
+      h ^= static_cast<std::size_t>(static_cast<std::uint32_t>(c[1])) * 19349663U;
+      h ^= static_cast<std::size_t>(static_cast<std::uint32_t>(c[2])) * 83492791U;
+      return h;
+    }
+  };
+
  public:
   Smoother(const Mesh& mesh, const Mat3& aniso, double threshold, int max_passes)
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
         threshold_(threshold),
         max_passes_(max_passes) {
+    // The grid cell is the longest edge, so a face spans about one cell and its AABB touches few.
+    for (Index fi = 0; fi < f_.rows(); fi++) {
+      for (auto k = 0; k < 3; k++) {
+        cell_ = std::max(cell_, (v_.row(f_(fi, k)) - v_.row(f_(fi, (k + 1) % 3))).norm());
+      }
+    }
+    if (!(cell_ > 0.0)) {
+      cell_ = 1.0;
+    }
+
     std::vector<bool> dirty(f_.rows(), true);  // every face is worth examining in the first pass
     for (auto pass = 0; pass < max_passes_; pass++) {
       if (!flip_pass(dirty)) {
@@ -96,6 +115,37 @@ class Smoother {
       const auto& pr = ef[e];
       return pr[0] == f0 || pr[0] == f1 ? pr[1] : pr[0];
     };
+
+    // Index every face by the grid cells its AABB touches, so the guard can broad-phase against
+    // spatially near faces rather than only the quad's one-ring. Vertices never move, so a face's
+    // cells change only when it is flipped, when it is re-inserted in place (old entries left
+    // stale are harmless: a stale index still reads its current geometry, and a dropped one is
+    // re-found through the flipped face that now covers its region).
+    auto cell_of = [&](const Point3& p) -> Cell {
+      return {static_cast<int>(std::floor(p.x() / cell_)),
+              static_cast<int>(std::floor(p.y() / cell_)),
+              static_cast<int>(std::floor(p.z() / cell_))};
+    };
+    std::unordered_map<Cell, std::vector<Index>, CellHash> grid;
+    auto insert_face = [&](Index fi) {
+      Point3 p0 = v_.row(f_(fi, 0));
+      Point3 p1 = v_.row(f_(fi, 1));
+      Point3 p2 = v_.row(f_(fi, 2));
+      Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2));
+      Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2));
+      for (auto i = lo[0]; i <= hi[0]; i++) {
+        for (auto j = lo[1]; j <= hi[1]; j++) {
+          for (auto k = lo[2]; k <= hi[2]; k++) {
+            grid[Cell{i, j, k}].push_back(fi);
+          }
+        }
+      }
+    };
+    for (Index fi = 0; fi < f_.rows(); fi++) {
+      insert_face(fi);
+    }
+    std::vector<Index> visited(f_.rows(), -1);  // per-guard stamp, to test each candidate once
+    Index guard_id = 0;
 
     std::vector<bool> flipped(f_.rows(), false);
     std::vector<bool> next_dirty(f_.rows(), false);
@@ -158,27 +208,46 @@ class Smoother {
       auto after = std::max({bend(nf0, nf1), bend_with(nf0, g_cx), bend_with(nf1, g_yc),
                              bend_with(nf0, g_xd), bend_with(nf1, g_dy)});
       if (before > threshold_ && after < before - 1e-6) {
-        // Local self-intersection guard: neither new triangle may cross a face in the quad's
-        // vertex one-ring (catches a flipped diagonal that passes over a nearby sheet).
+        // Self-intersection guard: neither new triangle may cross any face whose grid cell its
+        // AABB touches -- a spatial broad-phase, so a flipped diagonal that passes over a
+        // topologically distant but spatially near sheet is caught, not just one in the one-ring.
         auto tol = 1e-6 * (v_.row(x) - v_.row(y)).norm();
-        bool safe = true;
-        for (Index ring : {x, y, c, d}) {
-          for (Index gi : v2f[ring]) {
-            if (gi != f0i && gi != f1i &&
-                (overlaps(nf0, f_.row(gi), tol) || overlaps(nf1, f_.row(gi), tol))) {
-              safe = false;
-              break;
+        guard_id++;
+        auto crosses = [&](const Face& nf) {
+          Point3 p0 = v_.row(nf[0]);
+          Point3 p1 = v_.row(nf[1]);
+          Point3 p2 = v_.row(nf[2]);
+          Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2));
+          Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2));
+          for (auto i = lo[0]; i <= hi[0]; i++) {
+            for (auto j = lo[1]; j <= hi[1]; j++) {
+              for (auto k = lo[2]; k <= hi[2]; k++) {
+                auto it = grid.find(Cell{i, j, k});
+                if (it == grid.end()) {
+                  continue;
+                }
+                for (Index gi : it->second) {
+                  if (visited[gi] == guard_id) {
+                    continue;
+                  }
+                  visited[gi] = guard_id;
+                  if (gi != f0i && gi != f1i &&
+                      (overlaps(nf0, f_.row(gi), tol) || overlaps(nf1, f_.row(gi), tol))) {
+                    return true;
+                  }
+                }
+              }
             }
           }
-          if (!safe) {
-            break;
-          }
-        }
-        if (!safe) {
+          return false;
+        };
+        if (crosses(nf0) || crosses(nf1)) {
           continue;
         }
         f_.row(f0i) = nf0;
         f_.row(f1i) = nf1;
+        insert_face(f0i);
+        insert_face(f1i);
         flipped[f0i] = true;
         flipped[f1i] = true;
         changed = true;
@@ -201,14 +270,10 @@ class Smoother {
     return Vector3(e1.cross(e2));
   }
 
-  // A real crossing of a and b beyond a shared vertex or edge. Two cases, split by how parallel
-  // the faces are, because each case has a configuration the other mishandles:
-  //  - Near-parallel: the 3D segment test reports a grazing line of contact between two nearly
-  //    coplanar faces that merely tile (e.g. a fan around a shared vertex) as a crossing. Instead
-  //    require b to straddle a's plane and their footprints to overlap in it (separating axis,
-  //    exact for triangles), so a flat tiling is correctly not a crossing.
-  //  - Transversal: project-and-separate is invalid, so use the 3D segment test; a point touch at
-  //    a shared vertex yields a near-zero segment and stays below tol.
+  // A real crossing of a and b beyond a shared vertex (see triangles_overlap_3d). Edge-adjacent
+  // pairs (shared >= 2) are skipped: a flip cannot fold the surface back on an edge without either
+  // opposing the quad normal (rejected above) or worsening a quad bend (so it is not an
+  // improvement and is not made), so the only crossings left to catch are with non-adjacent faces.
   bool overlaps(const Face& a, const Face& b, double tol) const {
     if (shared_vertices(a, b) >= 2) {
       return false;
@@ -219,57 +284,7 @@ class Smoother {
     Point3 b0 = v_.row(b[0]);
     Point3 b1 = v_.row(b[1]);
     Point3 b2 = v_.row(b[2]);
-    Vector3 na = (a1 - a0).cross(a2 - a0);
-    Vector3 nb = (b1 - b0).cross(b2 - b0);
-    auto la = na.norm();
-    auto lb = nb.norm();
-    if (!(la > 0.0) || !(lb > 0.0)) {
-      return false;
-    }
-    if (std::abs(na.dot(nb)) >= 0.9 * la * lb) {
-      Vector3 n = na / la;
-      auto dmin = std::numeric_limits<double>::infinity();
-      auto dmax = -dmin;
-      for (const Point3& p : {b0, b1, b2}) {
-        auto d = n.dot(p - a0);
-        dmin = std::min(dmin, d);
-        dmax = std::max(dmax, d);
-      }
-      if (dmin > tol || dmax < -tol) {
-        return false;  // b lies entirely on one side of a's plane
-      }
-      Vector3 u = (a1 - a0).normalized();
-      Vector3 w = n.cross(u);
-      auto proj = [&](const Point3& p) {
-        Vector3 d = p - a0;
-        return Point2(d.dot(u), d.dot(w));
-      };
-      std::array<Point2, 3> pa{proj(a0), proj(a1), proj(a2)};
-      std::array<Point2, 3> pb{proj(b0), proj(b1), proj(b2)};
-      // Footprints overlap in a's plane; slack = tol so a shared-vertex touch reads separated.
-      return triangles_overlap_2d(pa, pb, tol);
-    }
-    // Transversal: the 3D segment test, on triangles shrunk slightly toward their centroids so a
-    // bare touch at a shared vertex (a legitimate crease) separates and is not reported as a
-    // crossing, while a real overlap -- which has positive area -- survives the shrink.
-    auto shrunk = [&](const Face& t) {
-      Point3 p0 = v_.row(t[0]);
-      Point3 p1 = v_.row(t[1]);
-      Point3 p2 = v_.row(t[2]);
-      Point3 g = p0 + ((p1 - p0) + (p2 - p0)) / 3.0;
-      constexpr auto s = 1e-6;
-      return std::array<Point3, 3>{p0 + s * (g - p0), p1 + s * (g - p1), p2 + s * (g - p2)};
-    };
-    auto sa = shrunk(a);
-    auto sb = shrunk(b);
-    bool coplanar = false;
-    Point3 s;
-    Point3 t;
-    if (!igl::tri_tri_intersection_test_3d(sa[0], sa[1], sa[2], sb[0], sb[1], sb[2], coplanar, s,
-                                           t)) {
-      return false;
-    }
-    return !coplanar && (t - s).norm() > tol;
+    return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
   }
 
   static int shared_vertices(const Face& a, const Face& b) {
@@ -296,6 +311,7 @@ class Smoother {
 
   geometry::Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
   Faces f_;              // working faces; connectivity is edited in place
+  double cell_{};        // spatial-grid cell size for the self-intersection guard
   double threshold_;
   int max_passes_;
   Mesh mesh_;

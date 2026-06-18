@@ -185,97 +185,6 @@ Points3 sphere_points(double radius, Index n, double offset) {
   return points;
 }
 
-// Counts pairs of faces whose xy-projections overlap with positive area, ignoring
-// pairs that share a vertex and degenerate (near-zero-area) triangles. For a planar
-// base mesh the snapped connectivity lives in the xy plane, so the lifted 3D mesh is
-// a height field (which cannot self-intersect) iff this count is zero. The
-// separating-axis test is exact for convex triangles, so this reads 0 on any valid
-// planar triangulation.
-Index count_2d_overlaps(const Mesh& mesh) {
-  const auto& V = mesh.vertices();
-  const auto& F = mesh.faces();
-  auto n = F.rows();
-
-  auto xy = [&](Index v) { return Eigen::Vector2d(V(v, 0), V(v, 1)); };
-
-  std::vector<Eigen::AlignedBox2d> boxes(n);
-  Eigen::AlignedBox2d mesh_box;
-  for (Index i = 0; i < n; i++) {
-    for (auto k = 0; k < 3; k++) {
-      boxes.at(i).extend(xy(F(i, k)));
-    }
-  }
-  for (Index v = 0; v < V.rows(); v++) {
-    mesh_box.extend(xy(v));
-  }
-  auto diag = mesh_box.diagonal().norm();
-  auto tol = 1e-9 * diag;
-  auto area_eps = 1e-10 * diag * diag;
-
-  auto shares_vertex = [&](Index i, Index j) {
-    for (auto a = 0; a < 3; a++) {
-      for (auto b = 0; b < 3; b++) {
-        if (F(i, a) == F(j, b)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  auto area2d = [&](Index f) {
-    auto a = xy(F(f, 0));
-    auto b = xy(F(f, 1));
-    auto c = xy(F(f, 2));
-    return 0.5 * std::abs((b.x() - a.x()) * (c.y() - a.y()) - (b.y() - a.y()) * (c.x() - a.x()));
-  };
-
-  auto separated = [&](Index i, Index j) {
-    std::array<Eigen::Vector2d, 3> a{xy(F(i, 0)), xy(F(i, 1)), xy(F(i, 2))};
-    std::array<Eigen::Vector2d, 3> b{xy(F(j, 0)), xy(F(j, 1)), xy(F(j, 2))};
-    for (const auto* t : {&a, &b}) {
-      for (auto e = 0; e < 3; e++) {
-        Eigen::Vector2d edge = (*t).at((e + 1) % 3) - (*t).at(e);
-        Eigen::Vector2d axis(-edge.y(), edge.x());
-        auto span = axis.norm();
-        if (!(span > 0.0)) {
-          continue;
-        }
-        double amin = std::numeric_limits<double>::infinity();
-        double amax = -std::numeric_limits<double>::infinity();
-        double bmin = std::numeric_limits<double>::infinity();
-        double bmax = -std::numeric_limits<double>::infinity();
-        for (auto k = 0; k < 3; k++) {
-          amin = std::min(amin, axis.dot(a.at(k)));
-          amax = std::max(amax, axis.dot(a.at(k)));
-          bmin = std::min(bmin, axis.dot(b.at(k)));
-          bmax = std::max(bmax, axis.dot(b.at(k)));
-        }
-        if (amax < bmin + tol * span || bmax < amin + tol * span) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  Index count{};
-  for (Index i = 0; i < n; i++) {
-    if (area2d(i) < area_eps) {
-      continue;
-    }
-    for (Index j = i + 1; j < n; j++) {
-      if (!boxes.at(i).intersects(boxes.at(j)) || shares_vertex(i, j) || area2d(j) < area_eps) {
-        continue;
-      }
-      if (!separated(i, j)) {
-        count++;
-      }
-    }
-  }
-  return count;
-}
-
 // Points on the z = 0 plane inside a disk, on a deterministic spiral, offset in z by a
 // small alternating (two-sided) amount.
 Points3 plane_points(double radius, Index n, double offset) {
@@ -316,11 +225,10 @@ Points3 read_xyz(const std::string& path) {
 
 }  // namespace
 
-// A planar base mesh interpolating points yields a height field, which cannot
-// self-intersect, so count_2d_overlaps measures the self-intersections the snapper
-// introduces. The snapper accepts points greedily (nearest the mesh first) and only if
-// the snap keeps the mesh self-intersection-free, dropping the rest, so this must be
-// exactly zero at any density.
+// Snapping a planar base may lift points into small overhangs -- the snapper guarantees no
+// self-intersection, not a height field -- but the mesh must never actually self-intersect. The
+// planar case is the one most prone to the fragile coplanar triangle predicate, so this confirms
+// it stays exactly zero even at high density.
 TEST(snap_selfint, planar_base_has_no_self_intersections) {
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
@@ -328,7 +236,7 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
   Isosurface isosurf(bbox, resolution);
   SignedDistanceFromPlane field_fn;
   auto base = isosurf.generate(field_fn);
-  ASSERT_EQ(count_2d_overlaps(base), 0);  // tool sanity: the valid base has no overlaps
+  ASSERT_EQ(count_self_intersections(base), 0);  // tool sanity: the valid base is clean
 
   const auto max_distance = 0.1 * resolution;
   const Bbox3 snap_bbox(Point3(-0.8, -0.8, -1.0), Point3(0.8, 0.8, 1.0));
@@ -337,10 +245,10 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
     for (double off : {0.0, 0.5}) {
       auto points = plane_points(0.7, n, off * max_distance);
       auto mesh = snap_mesh(base, points, VecX(), snap_bbox, max_distance);
-      auto overlaps = count_2d_overlaps(mesh);
+      auto self_int = count_self_intersections(mesh);
       std::cerr << "planar n=" << n << " off=" << off << ": faces=" << mesh.faces().rows()
-                << " 2D-overlaps=" << overlaps << "\n";
-      EXPECT_EQ(overlaps, 0);
+                << " self-intersections=" << self_int << "\n";
+      EXPECT_EQ(self_int, 0);
     }
   }
 }
@@ -394,7 +302,6 @@ TEST(snap_selfint, real_surface_region_is_clean_and_manifold) {
   auto self_int = count_self_intersections(mesh);
   auto nm_edges = count_non_manifold_edges(mesh);
   std::cerr << "horse region: faces=" << mesh.faces().rows()
-            << " pierce_rejections=" << snapper.stats().pierce_rejections
             << " self-intersections=" << self_int << " non-manifold-edges=" << nm_edges << "\n";
   EXPECT_EQ(nm_edges, 0);   // the two patches agree on every shared edge's subdivision
   EXPECT_EQ(self_int, 0);   // and no pair of faces folds onto another

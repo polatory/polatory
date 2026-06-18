@@ -40,15 +40,18 @@ namespace polatory::isosurface::snapper {
 //  - Snap. A vertex match reuses the existing vertex (a move); an edge match adds a vertex on
 //    the subdivided original edge shared by the two incident patches; a face match adds a
 //    vertex interior to one patch. Each affected patch — an original face with vertices added
-//    on its edges and interior — is then re-triangulated from scratch by a constrained
-//    Delaunay triangulation (see Triangulation) over the faithful (off-surface) emitted
-//    positions, with the subdivided original edges as boundary constraints.
+//    on its edges and interior — is then re-triangulated from scratch by a constrained Delaunay
+//    triangulation (see Triangulation) over the vertices' *on-surface* positions, with the
+//    subdivided original edges as boundary constraints. Deciding connectivity on the flat
+//    surface, before the vertices are moved to their off-surface snap targets, keeps the
+//    triangulation valid and consistently wound no matter how steeply a feature is snapped.
 //
-//  - Accept or drop. Keep the snap only if it leaves the mesh free of self-intersections: the
-//    affected patches are tested against their neighborhood and rejected if any new triangle
-//    meets a non-adjacent one. A rejected vertex or edge snap cascades to its next-nearest
-//    simplex (ultimately a face snap, which perturbs only its own patch); a point that cannot
-//    be placed anywhere is dropped.
+//  - Accept or drop. Keep the snap only if the emitted (moved) mesh does not self-intersect: the
+//    affected patches are tested against every nearby face and rejected if any pair actually
+//    crosses. A sharp crease that merely folds over a patch's plane but meets it only along an
+//    edge is allowed — the guarantee is no self-intersection, not a single-valued height field.
+//    A rejected vertex or edge snap cascades to its next-nearest simplex (ultimately a face snap,
+//    which perturbs only its own patch); a point that cannot be placed anywhere is dropped.
 //
 // Processing order. Points are taken by increasing tangential offset — the in-surface distance
 // from a point's projection to the feature it snaps to. A vertex move's distortion is its
@@ -78,9 +81,10 @@ class Snapper {
   // projected face.
   struct Candidate {
     Point3 p;
+    Point3 q;                   // The projection of p onto the mesh (closest point).
     double d2{};                // The squared distance from p to the mesh.
     double tang{};              // The squared tangential offset: q to its snapped feature.
-    double min_distance{};      // Skip if the mesh already passes within this of p (0 = never).
+    double min_distance{};      // Skip if the mesh passes within this of p (0 = only when on it).
     Index face{};               // The projected face.
     std::array<Index, 3> fv{};  // Its vertex indices.
     std::array<double, 3> l{};  // The barycentric coordinates of the projection.
@@ -101,8 +105,7 @@ class Snapper {
     Index moved_vertices{};
     Index inserted_on_edges{};
     Index inserted_in_faces{};
-    Index pierce_rejections{};  // snaps rejected because they would pierce a distant face
-    Index thinned_on_edges{};   // redundant inserted edge vertices dropped within tolerance
+    Index thinned_on_edges{};  // redundant inserted edge vertices dropped within tolerance
     Index thinned_in_faces{};   // redundant inserted interior vertices dropped within tolerance
   };
 
@@ -136,6 +139,7 @@ class Snapper {
         to_world_(aniso.inverse()),
         max_distance_(max_distance),
         positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
+        flat_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         moved_(mesh_.num_vertices(), false) {}
 
   // Must be called only once. points are in world space; the result is too. tolerances, if
@@ -193,6 +197,11 @@ class Snapper {
           break;
         }
       }
+      // A point nearest a vertex that the cascade's single face could not place gets one more
+      // chance: insertion on any edge or face containing that vertex across its whole umbrella.
+      if (!ok && index_of(cand.order.front()) <= index_of(Simplex::kVertex2)) {
+        ok = try_vertex_umbrella(cand, cand.fv.at(index_of(cand.order.front())));
+      }
       if (!ok) {
         stats_.dropped++;
       }
@@ -210,12 +219,11 @@ class Snapper {
  private:
   // Whether the current (partially snapped) mesh already passes within the candidate's tolerance
   // (its per-point min_distance) of the point, in which case snapping it would barely move the
-  // surface and only over-subdivide the patch, so it is skipped. Checks the point's projected
-  // patch and the patches across its edges (the point may have classified onto an edge).
+  // surface and only over-subdivide the patch, so it is skipped. The bound is inclusive, so a
+  // point the surface already passes exactly through is satisfied even at zero tolerance (a vertex
+  // already snapped to it stays put on the next pass). Checks the point's projected patch and the
+  // patches across its edges (the point may have classified onto an edge).
   bool already_satisfied(const Candidate& cand) {
-    if (!(cand.min_distance > 0.0)) {
-      return false;
-    }
     double tol2 = cand.min_distance * cand.min_distance;
     const auto& F = mesh_.faces();
     auto nearest_in_patch = [&](Index fi) {
@@ -225,13 +233,13 @@ class Snapper {
       }
       return best;
     };
-    if (nearest_in_patch(cand.face) < tol2) {
+    if (nearest_in_patch(cand.face) <= tol2) {
       return true;
     }
     for (auto k = 0; k < 3; k++) {
       Edge e{F(cand.face, k), F(cand.face, (k + 1) % 3)};
       for (auto fj : mesh_.edge_faces(e)) {
-        if (fj != cand.face && nearest_in_patch(fj) < tol2) {
+        if (fj != cand.face && nearest_in_patch(fj) <= tol2) {
           return true;
         }
       }
@@ -287,6 +295,7 @@ class Snapper {
 
       auto tang = (q - sites.at(index_of(order.front()))).squaredNorm();
       candidates.push_back({.p = p,
+                            .q = q,
                             .d2 = d2,
                             .tang = tang,
                             .min_distance = tolerances.size() == 0 ? 0.0 : tolerances(i),
@@ -309,45 +318,11 @@ class Snapper {
     return candidates;
   }
 
-  // Whether any triangle of the changed patches overlaps a non-adjacent triangle in its
-  // neighborhood (the changed patches and their vertex one-ring). The test is done in
-  // the changed patch's own 2D frame: a self-intersection-free snapped surface is a
-  // height field over each patch, so two triangles overlapping when projected into the
-  // frame (and z-separated or not) is exactly the failure to avoid. Working in the
-  // frame also sidesteps the unreliable coplanar branch of a 3D triangle test. Edge-adjacent
-  // triangles are skipped (they always touch along the shared edge); see tris_overlap_2d.
-  bool causes_overlap(const std::unordered_map<Index, std::vector<Face>>& changed) {
-    std::vector<Index> changed_ids;
-    changed_ids.reserve(changed.size());
-    for (const auto& [fi, faces] : changed) {
-      changed_ids.push_back(fi);
-    }
-
-    std::vector<Face> neighborhood;
-    for (const auto& [fi, faces] : changed) {
-      neighborhood.insert(neighborhood.end(), faces.begin(), faces.end());
-    }
-    for (auto fi : one_ring(changed_ids)) {
-      const auto& faces = patch_faces(fi);
-      neighborhood.insert(neighborhood.end(), faces.begin(), faces.end());
-    }
-
-    for (const auto& [fi, faces] : changed) {
-      for (const auto& a : faces) {
-        for (const auto& b : neighborhood) {
-          if (tris_overlap_2d(fi, a, b)) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  // Whether any triangle of the changed patches is degenerate (near-zero area) when emitted
-  // in 3D. A patch is triangulated in its 2D frame, but its vertices are emitted at their
-  // off-surface 3D positions; a triangle valid in the frame can still be collinear in 3D (a
-  // moved vertex nearly in line with its edge's chain vertices), which the 2D checks miss.
+  // Whether any triangle of the changed patches is degenerate (near-zero area) when emitted in 3D.
+  // A patch is triangulated over its flat on-surface positions, but its vertices are emitted at
+  // their moved 3D positions; a triangle valid on the flat surface can still be collinear in 3D (a
+  // moved vertex nearly in line with its edge's chain vertices), which the flat triangulation
+  // misses.
   bool creates_degenerate(const std::unordered_map<Index, std::vector<Face>>& changed) {
     const auto& V = mesh_.vertices();
     const auto& F = mesh_.faces();
@@ -420,11 +395,10 @@ class Snapper {
     return {std::move(vertices), std::move(f)};
   }
 
-  // Whether disjoint triangles a and b intersect. This is the global piercing test: only
-  // faces that share no vertex matter here, because a fold between faces that share a
-  // vertex is a local (one-ring) event the height-field test in causes_overlap already
-  // covers. With the pair disjoint, the 3D triangle-crossing test (which reports a bare
-  // touch as an overlap) is exact, including for coplanar pairs.
+  // Whether disjoint triangles a and b intersect. self_intersects routes only vertex-disjoint
+  // pairs here (a vertex-sharing pair goes to overlaps_3d, which can tell a true fold from a bare
+  // shared-vertex touch). With the pair disjoint, the 3D triangle-crossing test (which would
+  // report a bare touch as an overlap) is exact, including for coplanar pairs.
   bool intersects(const Face& a, const Face& b) const {
     if (shared_vertices(a, b) != 0) {
       return false;
@@ -447,51 +421,39 @@ class Snapper {
     return igl::tri_tri_overlap_test_3d(a0, a1, a2, b0, b1, b2);
   }
 
-  // The faces sharing a vertex with any of the given patches, excluding the patches
-  // themselves.
-  std::vector<Index> one_ring(const std::vector<Index>& patches) {
-    const auto& F = mesh_.faces();
-    std::unordered_set<Index> patch_set(patches.begin(), patches.end());
-    std::unordered_set<Index> ring;
-    for (auto fi : patches) {
-      for (auto k = 0; k < 3; k++) {
-        for (auto nf : mesh_.vertex_faces(F(fi, k))) {
-          if (!patch_set.contains(nf)) {
-            ring.insert(nf);
-          }
-        }
-      }
+  // Whether triangles a and b intersect with positive measure -- a real self-intersection.
+  // Unlike intersects this also handles a shared vertex or edge (only the same face, shared == 3,
+  // is skipped), so it catches a coplanar fold-back of two edge-adjacent faces -- which the
+  // snapper's acceptance test is the sole guard against -- as well as a shared-vertex fold. See
+  // triangles_overlap_3d.
+  bool overlaps_3d(const Face& a, const Face& b) const {
+    if (shared_vertices(a, b) >= 3) {  // the same face
+      return false;
     }
-    return {ring.begin(), ring.end()};
+    Point3 a0 = pos(a[0]);
+    Point3 a1 = pos(a[1]);
+    Point3 a2 = pos(a[2]);
+    Point3 b0 = pos(b[0]);
+    Point3 b1 = pos(b[1]);
+    Point3 b2 = pos(b[2]);
+    auto tol = 1e-6 * std::max((a1 - a0).norm(), (b1 - b0).norm());
+    return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
   }
 
-  // The cached triangulation of a patch (computed on first use).
-  const std::vector<Face>& patch_faces(Index fi) {
-    auto it = patch_faces_cache_.find(fi);
-    if (it == patch_faces_cache_.end()) {
-      it = patch_faces_cache_.emplace(fi, triangulate_patch(fi)).first;
-    }
-    return it->second;
-  }
-
-  // Whether any new triangle of the changed patches transversally intersects a face that
-  // does not share a vertex with it — a self-intersection between geometrically near but
-  // topologically distant parts of the surface, which the local height-field test cannot
-  // see (and which an off-surface interior vertex can also cause). Original faces near
-  // the new triangles are found by descending the AABB tree; their current triangulations
-  // are tested with a 3D triangle-triangle intersection, skipping (near-)coplanar pairs
-  // (handled by causes_overlap) and shared-vertex pairs.
-  bool pierces(const std::unordered_map<Index, std::vector<Face>>& changed) {
+  // Whether any triangle of the changed patches actually intersects another face of the surface.
+  // This is the snapper's one geometric acceptance test: patches are triangulated over their flat
+  // (on-surface) positions, so the connectivity is always valid and consistently wound regardless
+  // of how far the vertices are then snapped (see triangulate_patch); the only thing left to
+  // forbid is an actual self-intersection of the emitted mesh. Each changed triangle is tested
+  // against every face within 2 * max_distance (the farthest a snapped face can stray from the
+  // original it might meet), found by descending the AABB tree.
+  bool self_intersects(const std::unordered_map<Index, std::vector<Face>>& changed) {
     std::unordered_set<Index> changed_ids;
     std::vector<Face> changed_faces;
     for (const auto& [fi, faces] : changed) {
       changed_ids.insert(fi);
       changed_faces.insert(changed_faces.end(), faces.begin(), faces.end());
     }
-
-    // A candidate face's snapped triangulation can be up to max_distance from its
-    // original, and the new triangle up to max_distance from the original it is near, so
-    // their original faces can be up to 2 * max_distance apart.
     auto margin = 2.0 * max_distance_;
     std::unordered_set<Index> candidates;
     for (const auto& t : changed_faces) {
@@ -503,22 +465,32 @@ class Snapper {
       mesh_.faces_near(Eigen::AlignedBox3d(lo.transpose(), hi.transpose()), changed_ids,
                        candidates);
     }
-
-    // Test the new triangles against the candidates' current triangulations, and against
-    // one another (the changed patches may pierce each other).
     std::vector<Face> others = changed_faces;
     for (auto fj : candidates) {
       const auto& faces = patch_faces(fj);
       others.insert(others.end(), faces.begin(), faces.end());
     }
+    // A disjoint pair gets the robust exact crossing test (intersects); a vertex-sharing pair
+    // gets the crease-aware test (overlaps_3d), which tells a true fold from the bare touch of a
+    // sharp crease that the exact test would report as an overlap.
     for (const auto& a : changed_faces) {
       for (const auto& b : others) {
-        if (intersects(a, b)) {
+        bool hit = shared_vertices(a, b) == 0 ? intersects(a, b) : overlaps_3d(a, b);
+        if (hit) {
           return true;
         }
       }
     }
     return false;
+  }
+
+  // The cached triangulation of a patch (computed on first use).
+  const std::vector<Face>& patch_faces(Index fi) {
+    auto it = patch_faces_cache_.find(fi);
+    if (it == patch_faces_cache_.end()) {
+      it = patch_faces_cache_.emplace(fi, triangulate_patch(fi)).first;
+    }
+    return it->second;
   }
 
   // The squared distance from p to triangle (a, b, c) (closest point on the triangle).
@@ -659,12 +631,11 @@ class Snapper {
     std::vector<std::array<int, 2>> boundary_edges;
     auto add_vertex = [&](int k) {
       boundary_ids.push_back(vertices.at(k));
-      // Project the vertex's *emitted* position (a moved vertex's snapped target), as the
-      // chains and interior vertices do, so the 2D triangulation matches the 3D mesh that is
-      // emitted. Using the original position here would leave a moved vertex and its edge's
-      // near-collinear chain vertices forming a triangle that is valid in the frame but
-      // degenerate in 3D.
-      boundary.push_back(mesh_.project(fi, pos(vertices.at(k))));
+      // Project the vertex's *flat* (on-surface) position, not its snapped target, so the 2D
+      // triangulation is over the unsnapped surface and is always a valid, non-folding,
+      // consistently-wound polygon. The emitted mesh then moves to the snapped positions; a fold
+      // or degeneracy of the moved mesh is caught by self_intersects and creates_degenerate.
+      boundary.push_back(mesh_.project(fi, flat_.at(vertices.at(k))));
       boundary_edges.push_back({k, (k + 2) % 3});
     };
     auto add_chain = [&](int edge) {
@@ -677,7 +648,7 @@ class Snapper {
       const auto& chain = it->second;  // stored by t from the smaller id to the larger
       auto append = [&](Index v) {
         boundary_ids.push_back(v);
-        boundary.push_back(mesh_.project(fi, pos(v)));
+        boundary.push_back(mesh_.project(fi, flat_.at(v)));
         boundary_edges.push_back({edge, -1});
       };
       if (from < to) {
@@ -702,7 +673,7 @@ class Snapper {
     if (auto it = face_interior_.find(fi); it != face_interior_.end()) {
       for (auto v : it->second) {
         interior_ids.push_back(v);
-        interior.push_back(mesh_.project(fi, pos(v)));
+        interior.push_back(mesh_.project(fi, flat_.at(v)));
       }
     }
 
@@ -717,23 +688,6 @@ class Snapper {
       faces.push_back({map(t[0]), map(t[1]), map(t[2])});
     }
     return faces;
-  }
-
-  // Whether triangles a and b overlap when projected into patch fi's frame.
-  bool tris_overlap_2d(Index fi, const Face& a, const Face& b) {
-    // Skip only edge-adjacent (or identical) pairs: they share an edge and always touch.
-    // A pair sharing a single vertex is kept — two patches folding back onto each other
-    // meet only at a vertex, and the separating-axis test below tells a real overlap (a
-    // doubled surface) from a mere vertex touch (a valid crease).
-    if (shared_vertices(a, b) >= 2) {
-      return false;
-    }
-    std::array<Point2, 3> pa{mesh_.project(fi, pos(a[0])), mesh_.project(fi, pos(a[1])),
-                             mesh_.project(fi, pos(a[2]))};
-    std::array<Point2, 3> pb{mesh_.project(fi, pos(b[0])), mesh_.project(fi, pos(b[1])),
-                             mesh_.project(fi, pos(b[2]))};
-    // Tiny slack so a bare vertex/edge touch reads as separated but a real overlap is caught.
-    return triangles_overlap_2d(pa, pb, 1e-9);
   }
 
   // Try to drop edge vertex `id` from edge `e`'s chain: removing it re-triangulates both incident
@@ -759,8 +713,8 @@ class Snapper {
       all.insert(all.end(), faces.begin(), faces.end());
       changed[fi] = std::move(faces);
     }
-    if (dist2_to_faces(pos(id), all) <= tol * tol && !causes_overlap(changed) &&
-        !creates_degenerate(changed) && !pierces(changed)) {
+    if (dist2_to_faces(pos(id), all) <= tol * tol && !creates_degenerate(changed) &&
+        !self_intersects(changed)) {
       for (auto fi : incident) {
         patch_faces_cache_[fi] = changed.at(fi);
       }
@@ -790,8 +744,8 @@ class Snapper {
     interior.erase(at);
     auto faces = triangulate_patch(fi);
     std::unordered_map<Index, std::vector<Face>> changed{{fi, faces}};
-    if (dist2_to_faces(pos(id), faces) <= tol * tol && !causes_overlap(changed) &&
-        !creates_degenerate(changed) && !pierces(changed)) {
+    if (dist2_to_faces(pos(id), faces) <= tol * tol && !creates_degenerate(changed) &&
+        !self_intersects(changed)) {
       patch_faces_cache_[fi] = std::move(faces);
       if (interior.empty()) {
         face_interior_.erase(fi);
@@ -819,11 +773,93 @@ class Snapper {
       std::swap(vj, vk);
       t = 1.0 - t;
     }
-    Edge e{vj, vk};
+    return insert_on_edge(cand, Edge{vj, vk}, t);
+  }
+
+  // Adding a vertex interior to a patch changes only that patch, but its off-surface position can
+  // still make the patch self-intersect a distant sheet, so the global check applies. It is also
+  // rejected if the triangulation drops it (the point fell outside the patch's subdivided polygon
+  // or onto a constraint).
+  bool try_interior(const Candidate& cand) { return insert_in_face(cand, cand.face); }
+
+  // For a point whose nearest simplex is vertex v, try inserting it on any edge or face that
+  // contains v across v's umbrella, nearest first. The cascade only saw the single AABB face,
+  // so a spoke or face of another incident face may still take a point that face had to drop.
+  bool try_vertex_umbrella(const Candidate& cand, Index v) {
+    const auto& V = mesh_.vertices();
+    const auto& F = mesh_.faces();
+
+    // The edges of the cascade's own face that contain v were already tried; skip them.
+    std::unordered_set<Edge, EdgeHash> queued;
+    for (auto k = 0; k < 3; k++) {
+      Index a = F(cand.face, k);
+      Index b = F(cand.face, (k + 1) % 3);
+      if (a == v || b == v) {
+        queued.insert({a, b});
+      }
+    }
+
+    struct Op {
+      double dist2{};
+      Index ea{-1};
+      Index eb{-1};
+      Index face{-1};
+      double t{};
+    };
+    std::vector<Op> ops;
+    for (auto fi : mesh_.vertex_faces(v)) {
+      if (fi == cand.face) {
+        continue;
+      }
+      Point3 a = V.row(F(fi, 0));
+      Point3 b = V.row(F(fi, 1));
+      Point3 c = V.row(F(fi, 2));
+      Point3 centroid = a + ((b - a) + (c - a)) / 3.0;
+      ops.push_back({.dist2 = (cand.q - centroid).squaredNorm(), .face = fi});
+      for (auto k = 0; k < 3; k++) {
+        Index x = F(fi, k);
+        Index y = F(fi, (k + 1) % 3);
+        if (x != v && y != v) {
+          continue;  // not a spoke
+        }
+        Edge e{x, y};
+        if (!queued.insert(e).second) {
+          continue;  // already tried, or a spoke shared with another incident face
+        }
+        Point3 va = V.row(e.a);
+        Point3 vb = V.row(e.b);
+        Vector3 d = vb - va;
+        auto t = (cand.q - va).dot(d) / d.squaredNorm();
+        if (!(t > 0.0 && t < 1.0)) {
+          continue;  // projects onto an endpoint
+        }
+        Point3 mid = va + 0.5 * d;
+        ops.push_back({.dist2 = (cand.q - mid).squaredNorm(), .ea = e.a, .eb = e.b, .t = t});
+      }
+    }
+
+    std::ranges::sort(ops, [](const Op& x, const Op& y) {
+      return std::make_tuple(x.dist2, x.face, x.ea, x.eb) <
+             std::make_tuple(y.dist2, y.face, y.ea, y.eb);
+    });
+    for (const auto& op : ops) {
+      auto ok = op.face >= 0 ? insert_in_face(cand, op.face)
+                             : insert_on_edge(cand, Edge{op.ea, op.eb}, op.t);
+      if (ok) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Inserts cand.p on edge e at parameter t from e's smaller-id endpoint, subdividing both its
+  // incident patches; reverts unless the re-triangulations stay free of self-intersection.
+  bool insert_on_edge(const Candidate& cand, const Edge& e, double t) {
     const auto& incident_faces = mesh_.edge_faces(e);
 
     auto id = static_cast<Index>(positions_.size());
     positions_.push_back(cand.p);
+    flat_.push_back((1.0 - t) * flat_.at(e.a) + t * flat_.at(e.b));  // on the original edge
     auto& chain = edge_chains_[e];
     chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .id = id});
 
@@ -840,13 +876,9 @@ class Snapper {
         edge_chains_.erase(e);
       }
       positions_.pop_back();
+      flat_.pop_back();
     };
-    if (!simple || causes_overlap(changed) || creates_degenerate(changed)) {
-      revert();
-      return false;
-    }
-    if (pierces(changed)) {
-      stats_.pierce_rejections++;
+    if (!simple || creates_degenerate(changed) || self_intersects(changed)) {
       revert();
       return false;
     }
@@ -859,15 +891,12 @@ class Snapper {
     return true;
   }
 
-  // Adding a vertex interior to a patch changes only that patch and never its boundary,
-  // so it cannot overlap a neighbor in the height-field sense — but an off-surface
-  // interior vertex can still pierce a distant sheet, so the global check applies. It is
-  // also rejected if the triangulation drops it (the point fell outside the patch's
-  // subdivided polygon or onto a constraint).
-  bool try_interior(const Candidate& cand) {
-    auto fi = cand.face;
+  // Inserts cand.p into face fi's interior; reverts unless the re-triangulation uses it (it
+  // projects inside the patch) and stays free of self-intersection.
+  bool insert_in_face(const Candidate& cand, Index fi) {
     auto id = static_cast<Index>(positions_.size());
     positions_.push_back(cand.p);
+    flat_.push_back(cand.q);  // the snap point's on-surface projection
     auto& interior = face_interior_[fi];
     interior.push_back(id);
 
@@ -888,13 +917,9 @@ class Snapper {
         face_interior_.erase(fi);
       }
       positions_.pop_back();
+      flat_.pop_back();
     };
-    if (!simple || !used || causes_overlap(changed) || creates_degenerate(changed)) {
-      revert();
-      return false;
-    }
-    if (pierces(changed)) {
-      stats_.pierce_rejections++;
+    if (!simple || !used || creates_degenerate(changed) || self_intersects(changed)) {
       revert();
       return false;
     }
@@ -922,10 +947,8 @@ class Snapper {
     return false;  // unreachable; all simplices are handled above
   }
 
-  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the
-  // move unless an incident triangle becomes degenerate, overlaps a non-adjacent triangle in
-  // its neighborhood, or pierces a distant face. (A fold that inverts a triangle is a
-  // self-overlap and is caught by causes_overlap.)
+  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the move
+  // unless an incident triangle becomes degenerate or self-intersects the surface.
   bool try_vertex(const Candidate& cand, Index v) {
     if (moved_.at(v)) {
       return false;
@@ -937,12 +960,7 @@ class Snapper {
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
-    if (causes_overlap(changed) || creates_degenerate(changed)) {
-      positions_.at(v) = original;
-      return false;
-    }
-    if (pierces(changed)) {
-      stats_.pierce_rejections++;
+    if (creates_degenerate(changed) || self_intersects(changed)) {
       positions_.at(v) = original;
       return false;
     }
@@ -959,9 +977,13 @@ class Snapper {
   double max_distance_;
 
   // The accumulated snap edits and their derived caches. positions_ is every vertex's current
-  // position (original then inserted); moved_ flags which original vertices have been claimed
-  // by a move (so a second snap point cannot move the same one).
+  // emitted position (original then inserted; a move/insert sets the snapped target). flat_ is
+  // every vertex's on-surface position -- originals unmoved, inserted vertices at their on-mesh
+  // projection -- which the triangulation projects so connectivity is decided on the flat surface
+  // and never folds; the emitted mesh then moves to positions_. moved_ flags which original
+  // vertices have been claimed by a move (so a second snap point cannot move the same one).
   std::vector<Point3> positions_;
+  std::vector<Point3> flat_;
   std::vector<bool> moved_;
   std::unordered_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   std::unordered_map<Index, std::vector<Index>> face_interior_;

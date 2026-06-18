@@ -76,8 +76,11 @@ class Isosurface {
   // vertex whose removal keeps the surface within its tolerance is dropped, so a densely sampled
   // polyline does not over-triangulate the surface. It must have one entry per point, each in
   // [0, relative_distance]; an empty vector means zero (snap every point in range, thin nothing).
+  //
+  // max_passes bounds how many times snapping is re-applied to recover points that lost contention
+  // (see snap_mesh). It must be at least 1, and only matters when some tolerance is positive.
   void set_snap_points(const geometry::Points3& points, double relative_distance = 0.5,
-                       const VecX& relative_tolerances = VecX()) {
+                       const VecX& relative_tolerances = VecX(), int max_passes = 8) {
     if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
       throw std::invalid_argument("snap relative distance must be in (0, 1]");
     }
@@ -90,10 +93,14 @@ class Isosurface {
         throw std::invalid_argument("snap relative tolerances must be in [0, relative distance]");
       }
     }
+    if (max_passes < 1) {
+      throw std::invalid_argument("snap max passes must be at least 1");
+    }
 
     snap_points_ = points;
     rel_snap_dist_ = relative_distance;
     rel_snap_tols_ = relative_tolerances;
+    snap_max_passes_ = max_passes;
   }
 
   // Enables post-process smoothing of the generated mesh by edge flips (see smooth_by_flips).
@@ -137,20 +144,40 @@ class Isosurface {
       }
     }
 
-    // Snap the mesh to the points before clipping. Restricting snapping to points
-    // whose projection stays inside first_extended_bbox keeps it away from the mesh
-    // boundary, which lies further out (near second_extended_bbox); the clip then
-    // produces the clean on-bbox boundary.
+    auto smooth = [&]() {
+      if (smooth_threshold_ && !mesh.is_empty()) {
+        mesh = smooth_by_flips(mesh, aniso_, *smooth_threshold_ * std::numbers::pi / 180.0);
+      }
+    };
+    auto same = [](const Mesh& a, const Mesh& b) {
+      const auto& av = a.vertices();
+      const auto& bv = b.vertices();
+      const auto& af = a.faces();
+      const auto& bf = b.faces();
+      return av.rows() == bv.rows() && af.rows() == bf.rows() && (av.array() == bv.array()).all() &&
+             (af.array() == bf.array()).all();
+    };
+
+    // Snap the mesh to the points before clipping. Snapping is re-applied until a pass changes
+    // nothing: a point that lost contention can snap to the finer mesh a later pass leaves behind.
+    // A positive tolerance's slack is what lets that settle, so without one a single pass is used.
+    // Restricting snapping to points whose projection stays inside first_extended_bbox keeps it
+    // away from the mesh boundary, which lies further out (near second_extended_bbox); the clip
+    // then makes the on-bbox boundary. The mesh is then smoothed once.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto res = lattice_.resolution();
-      mesh = snap_mesh(mesh, snap_points_, res * rel_snap_tols_, lattice_.first_extended_bbox(),
-                       res * rel_snap_dist_, aniso_);
+      VecX tols = res * rel_snap_tols_;
+      int passes = tols.size() != 0 && tols.maxCoeff() > 0.0 ? snap_max_passes_ : 1;
+      for (int pass = 0; pass < passes; pass++) {
+        Mesh before = mesh;
+        mesh = snap_mesh(mesh, snap_points_, tols, lattice_.first_extended_bbox(),
+                         res * rel_snap_dist_, aniso_);
+        if (same(mesh, before)) {
+          break;
+        }
+      }
     }
-
-    // Smooth before clipping, like snapping, so the clip then makes the clean on-bbox boundary.
-    if (smooth_threshold_ && !mesh.is_empty()) {
-      mesh = smooth_by_flips(mesh, aniso_, *smooth_threshold_ * std::numbers::pi / 180.0);
-    }
+    smooth();
 
     mesh = clip(mesh, lattice_.bbox());
 
@@ -169,6 +196,7 @@ class Isosurface {
   geometry::Points3 snap_points_;
   double rel_snap_dist_{0.5};
   VecX rel_snap_tols_;
+  int snap_max_passes_{8};
   std::optional<double> smooth_threshold_;  // crease angle in degrees; unset means no smoothing
 };
 
