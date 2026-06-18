@@ -44,21 +44,9 @@ class OriginalMesh {
     }
   }
 
-  const Points3& vertices() const { return v_; }
-
-  const Faces& faces() const { return f_; }
-
-  Index num_vertices() const { return v_.rows(); }
-
-  // The faces incident to a vertex / to an undirected edge.
-  const std::vector<Index>& vertex_faces(Index v) const { return vertex_faces_.at(v); }
   const std::vector<Index>& edge_faces(const Edge& e) const { return edge_faces_.at(e); }
 
-  // The squared distance from p to the mesh, returning the nearest face fi and the closest
-  // point q on it.
-  double nearest_face(const Point3& p, int& fi, Point3& q) const {
-    return tree_.squared_distance(v_, f_, p, fi, q);
-  }
+  const Faces& faces() const { return f_; }
 
   // Appends to `out` the faces whose bounding box overlaps `query`, skipping those in
   // `exclude` (the broad phase of the piercing check), by descending the AABB tree.
@@ -67,6 +55,14 @@ class OriginalMesh {
     descend(tree_, query, exclude, out);
   }
 
+  // The squared distance from p to the mesh, returning the nearest face fi and the closest
+  // point q on it.
+  double nearest_face(const Point3& p, int& fi, Point3& q) const {
+    return tree_.squared_distance(v_, f_, p, fi, q);
+  }
+
+  Index num_vertices() const { return v_.rows(); }
+
   // The 2D coordinates of point p in face fi's frame.
   Point2 project(Index fi, const Point3& p) const {
     const auto& fr = frame(fi);
@@ -74,20 +70,16 @@ class OriginalMesh {
     return Point2{d.dot(fr.e1), d.dot(fr.e2)};
   }
 
+  const std::vector<Index>& vertex_faces(Index v) const { return vertex_faces_.at(v); }
+
+  const Points3& vertices() const { return v_; }
+
  private:
   struct Frame {
     Point3 origin;
     Vector3 e1;
     Vector3 e2;
   };
-
-  const Frame& frame(Index fi) const {
-    auto it = frames_.find(fi);
-    if (it == frames_.end()) {
-      it = frames_.emplace(fi, compute(fi)).first;
-    }
-    return it->second;
-  }
 
   Frame compute(Index fi) const {
     auto f = f_.row(fi);
@@ -123,6 +115,14 @@ class OriginalMesh {
     if (node.m_right != nullptr) {
       descend(*node.m_right, query, exclude, out);
     }
+  }
+
+  const Frame& frame(Index fi) const {
+    auto it = frames_.find(fi);
+    if (it == frames_.end()) {
+      it = frames_.emplace(fi, compute(fi)).first;
+    }
+    return it->second;
   }
 
   Points3 v_;

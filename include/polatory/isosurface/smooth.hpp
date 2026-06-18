@@ -134,8 +134,9 @@ class Smoother {
       if (!(nn0.norm() > 0.0) || !(nn1.norm() > 0.0)) {
         continue;
       }
-      // Reject a flip that folds a triangle: its normal must not oppose the quad's (the sum of
-      // the two old face normals). This keeps the surface from turning back on itself.
+
+      // Reject a flip that folds the surface back on itself: a new normal must not oppose the
+      // quad normal (the sum of the two old face normals).
       Vector3 n0 = normal(f0);
       Vector3 n1 = normal(f1);
       auto d0 = n0.norm();
@@ -193,7 +194,7 @@ class Smoother {
     return changed;
   }
 
-  // The doubled-area normal of a face (its length is twice the area).
+  // A face's unnormalized normal (length is twice the area).
   Vector3 normal(const Face& t) const {
     Vector3 e1 = v_.row(t[1]) - v_.row(t[0]);
     Vector3 e2 = v_.row(t[2]) - v_.row(t[0]);
@@ -209,7 +210,7 @@ class Smoother {
   //  - Transversal: project-and-separate is invalid, so use the 3D segment test; a point touch at
   //    a shared vertex yields a near-zero segment and stays below tol.
   bool overlaps(const Face& a, const Face& b, double tol) const {
-    if (shared(a, b) >= 2) {
+    if (shared_vertices(a, b) >= 2) {
       return false;
     }
     Point3 a0 = v_.row(a[0]);
@@ -271,8 +272,7 @@ class Smoother {
     return !coplanar && (t - s).norm() > tol;
   }
 
-  // The number of vertices a and b share.
-  static int shared(const Face& a, const Face& b) {
+  static int shared_vertices(const Face& a, const Face& b) {
     auto n = 0;
     for (auto u : a) {
       for (auto w : b) {
@@ -298,7 +298,7 @@ class Smoother {
   Faces f_;              // working faces; connectivity is edited in place
   double threshold_;
   int max_passes_;
-  Mesh mesh_;  // the smoothed result
+  Mesh mesh_;
 };
 
 // Smooths the mesh by edge flips (see Smoother). aniso maps world into the isotropic frame;

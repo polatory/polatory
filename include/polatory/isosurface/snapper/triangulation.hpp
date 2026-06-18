@@ -77,41 +77,8 @@ class Triangulation {
   bool simple() const { return simple_; }
 
  private:
-  // -- Predicates. The 2D orientation and in-circumcircle tests are shared (see predicates.hpp).
-
-  // Whether x lies in the CCW triangle (a, b, c), including its boundary.
-  static bool in_triangle(const Point2& x, const Point2& a, const Point2& b, const Point2& c) {
-    return orient2d(a, b, x) >= 0.0 && orient2d(b, c, x) >= 0.0 && orient2d(c, a, x) >= 0.0;
-  }
-
-  bool is_constraint(const Edge& e) const { return std::ranges::binary_search(constraints_, e); }
-
-  // Whether the edge's two boundary vertices lie on a common original edge (see the
-  // constructor): a diagonal between them would run along a subdivided edge and must never
-  // be created.
-  bool shares_edge(const Edge& e) const {
-    auto [i, j] = e;
-    if (boundary_edges_.empty() || i >= nb_ || j >= nb_) {
-      return false;
-    }
-    for (auto a : boundary_edges_[i]) {
-      if (a < 0) {
-        continue;
-      }
-      for (auto b : boundary_edges_[j]) {
-        if (a == b) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // -- Phases.
-
-  // 1. Triangulate the boundary polygon by ear clipping.
+  // Triangulate the boundary polygon by ear clipping.
   void ear_clip() {
-    // The boundary indices, normalized to CCW.
     std::vector<Index> ring(nb_);
     for (Index i = 0; i < nb_; i++) {
       ring.at(i) = i;
@@ -175,7 +142,12 @@ class Triangulation {
     }
   }
 
-  // 2. Insert the interior points. A point strictly inside a triangle splits it (1 -> 3); a
+  // Whether x lies in the CCW triangle (a, b, c), including its boundary.
+  static bool in_triangle(const Point2& x, const Point2& a, const Point2& b, const Point2& c) {
+    return orient2d(a, b, x) >= 0.0 && orient2d(b, c, x) >= 0.0 && orient2d(c, a, x) >= 0.0;
+  }
+
+  // Insert the interior points. A point strictly inside a triangle splits it (1 -> 3); a
   // point on an interior edge splits both triangles sharing it (2 -> 4) to avoid degenerate
   // triangles; a point on a vertex or a constraint edge is dropped (splitting a constraint
   // edge would desynchronize the shared boundary).
@@ -251,7 +223,9 @@ class Triangulation {
     }
   }
 
-  // 3. Restore the (constrained) Delaunay property by Lawson flips, never flipping a
+  bool is_constraint(const Edge& e) const { return std::ranges::binary_search(constraints_, e); }
+
+  // Restore the (constrained) Delaunay property by Lawson flips, never flipping a
   // constraint edge or creating an along-edge chord. Each pass collects the triangles
   // sharing each edge, then flips every non-Delaunay interior edge whose two triangles have
   // not already been flipped in that pass; it repeats until a pass changes nothing. Flipping
@@ -343,6 +317,27 @@ class Triangulation {
         changed = true;
       }
     }
+  }
+
+  // Whether the edge's two boundary vertices lie on a common original edge (see the
+  // constructor): a diagonal between them would run along a subdivided edge and must never
+  // be created.
+  bool shares_edge(const Edge& e) const {
+    auto [i, j] = e;
+    if (boundary_edges_.empty() || i >= nb_ || j >= nb_) {
+      return false;
+    }
+    for (auto a : boundary_edges_[i]) {
+      if (a < 0) {
+        continue;
+      }
+      for (auto b : boundary_edges_[j]) {
+        if (a == b) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   std::vector<Point2> points_;                      // boundary..., then interior...

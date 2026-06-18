@@ -208,9 +208,40 @@ class Snapper {
   const Stats& stats() const { return stats_; }
 
  private:
-  // -- Classification (phase 1): project each point and rank the seven simplex
-  // centroids of its face by distance to the projection (a Voronoi classification),
-  // then order the candidates by increasing tangential offset (see the sort below).
+  // Whether the current (partially snapped) mesh already passes within the candidate's tolerance
+  // (its per-point min_distance) of the point, in which case snapping it would barely move the
+  // surface and only over-subdivide the patch, so it is skipped. Checks the point's projected
+  // patch and the patches across its edges (the point may have classified onto an edge).
+  bool already_satisfied(const Candidate& cand) {
+    if (!(cand.min_distance > 0.0)) {
+      return false;
+    }
+    double tol2 = cand.min_distance * cand.min_distance;
+    const auto& F = mesh_.faces();
+    auto nearest_in_patch = [&](Index fi) {
+      double best = std::numeric_limits<double>::infinity();
+      for (const auto& f : patch_faces(fi)) {
+        best = std::min(best, point_tri_dist2(cand.p, pos(f[0]), pos(f[1]), pos(f[2])));
+      }
+      return best;
+    };
+    if (nearest_in_patch(cand.face) < tol2) {
+      return true;
+    }
+    for (auto k = 0; k < 3; k++) {
+      Edge e{F(cand.face, k), F(cand.face, (k + 1) % 3)};
+      for (auto fj : mesh_.edge_faces(e)) {
+        if (fj != cand.face && nearest_in_patch(fj) < tol2) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Project each point and rank the seven simplex centroids of its face by distance to the
+  // projection (a Voronoi classification), then order the candidates by increasing tangential
+  // offset (see the sort below).
   std::vector<Candidate> build_candidates(const Points3& points, const VecX& tolerances) {
     const auto& V = mesh_.vertices();
     const auto& F = mesh_.faces();
@@ -278,51 +309,498 @@ class Snapper {
     return candidates;
   }
 
-  // -- Greedy placement. Returns true if the candidate was accepted at this simplex.
-  bool try_place(const Candidate& cand, Simplex s) {
-    switch (s) {
-      case Simplex::kVertex0:
-      case Simplex::kVertex1:
-      case Simplex::kVertex2:
-        return try_vertex(cand, cand.fv.at(index_of(s)));
-      case Simplex::kEdge12:
-      case Simplex::kEdge20:
-      case Simplex::kEdge01:
-        return try_edge(cand, index_of(s) - index_of(Simplex::kEdge12));
-      case Simplex::kFace:
-        return try_interior(cand);
+  // Whether any triangle of the changed patches overlaps a non-adjacent triangle in its
+  // neighborhood (the changed patches and their vertex one-ring). The test is done in
+  // the changed patch's own 2D frame: a self-intersection-free snapped surface is a
+  // height field over each patch, so two triangles overlapping when projected into the
+  // frame (and z-separated or not) is exactly the failure to avoid. Working in the
+  // frame also sidesteps the unreliable coplanar branch of a 3D triangle test. Edge-adjacent
+  // triangles are skipped (they always touch along the shared edge); see tris_overlap_2d.
+  bool causes_overlap(const std::unordered_map<Index, std::vector<Face>>& changed) {
+    std::vector<Index> changed_ids;
+    changed_ids.reserve(changed.size());
+    for (const auto& [fi, faces] : changed) {
+      changed_ids.push_back(fi);
     }
-    return false;  // unreachable; all simplices are handled above
+
+    std::vector<Face> neighborhood;
+    for (const auto& [fi, faces] : changed) {
+      neighborhood.insert(neighborhood.end(), faces.begin(), faces.end());
+    }
+    for (auto fi : one_ring(changed_ids)) {
+      const auto& faces = patch_faces(fi);
+      neighborhood.insert(neighborhood.end(), faces.begin(), faces.end());
+    }
+
+    for (const auto& [fi, faces] : changed) {
+      for (const auto& a : faces) {
+        for (const auto& b : neighborhood) {
+          if (tris_overlap_2d(fi, a, b)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
-  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the
-  // move unless an incident triangle becomes degenerate, overlaps a non-adjacent triangle in
-  // its neighborhood, or pierces a distant face. (A fold that inverts a triangle is a
-  // self-overlap and is caught by causes_overlap.)
-  bool try_vertex(const Candidate& cand, Index v) {
-    if (moved_.at(v)) {
+  // Whether any triangle of the changed patches is degenerate (near-zero area) when emitted
+  // in 3D. A patch is triangulated in its 2D frame, but its vertices are emitted at their
+  // off-surface 3D positions; a triangle valid in the frame can still be collinear in 3D (a
+  // moved vertex nearly in line with its edge's chain vertices), which the 2D checks miss.
+  bool creates_degenerate(const std::unordered_map<Index, std::vector<Face>>& changed) {
+    const auto& V = mesh_.vertices();
+    const auto& F = mesh_.faces();
+    for (const auto& [fi, faces] : changed) {
+      Point3 a = V.row(F(fi, 0));
+      Point3 b = V.row(F(fi, 1));
+      Point3 c = V.row(F(fi, 2));
+      auto scale = (b - a).cross(c - a).norm();  // twice the original face's area
+      for (const auto& face : faces) {
+        Vector3 e1 = pos(face[1]) - pos(face[0]);
+        Vector3 e2 = pos(face[2]) - pos(face[0]);
+        if (e1.cross(e2).norm() <= 1e-9 * scale) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // The squared distance from p to the nearest of the given triangles (emitted 3D positions).
+  double dist2_to_faces(const Point3& p, const std::vector<Face>& faces) {
+    double best = std::numeric_limits<double>::infinity();
+    for (const auto& f : faces) {
+      best = std::min(best, point_tri_dist2(p, pos(f[0]), pos(f[1]), pos(f[2])));
+    }
+    return best;
+  }
+
+  // Builds the snapped mesh from the accepted snaps.
+  Mesh emit() {
+    const auto& F = mesh_.faces();
+
+    std::vector<Face> faces;
+    for (Index fi = 0; fi < F.rows(); fi++) {
+      for (const auto& face : patch_faces(fi)) {
+        faces.push_back(face);
+      }
+    }
+
+    // Drop vertices no face references (chain thinning orphans the inserted ones it removes),
+    // keeping the rest in their original order so an un-thinned run emits unchanged.
+    std::vector<bool> used(positions_.size(), false);
+    for (const auto& face : faces) {
+      for (auto v : face) {
+        used.at(v) = true;
+      }
+    }
+    std::vector<Index> remap(positions_.size(), -1);
+    Index n = 0;
+    for (std::size_t v = 0; v < positions_.size(); v++) {
+      if (used.at(v)) {
+        remap.at(v) = n++;
+      }
+    }
+
+    Points3 vertices(n, 3);
+    for (std::size_t v = 0; v < positions_.size(); v++) {
+      if (used.at(v)) {
+        vertices.row(remap.at(v)) = positions_.at(v);
+      }
+    }
+    vertices = geometry::transform_points<3>(to_world_, vertices);  // back to world
+
+    Faces f(static_cast<Index>(faces.size()), 3);
+    for (Index i = 0; i < f.rows(); i++) {
+      f(i, 0) = remap.at(faces.at(i)[0]);
+      f(i, 1) = remap.at(faces.at(i)[1]);
+      f(i, 2) = remap.at(faces.at(i)[2]);
+    }
+    return {std::move(vertices), std::move(f)};
+  }
+
+  // Whether disjoint triangles a and b intersect. This is the global piercing test: only
+  // faces that share no vertex matter here, because a fold between faces that share a
+  // vertex is a local (one-ring) event the height-field test in causes_overlap already
+  // covers. With the pair disjoint, the 3D triangle-crossing test (which reports a bare
+  // touch as an overlap) is exact, including for coplanar pairs.
+  bool intersects(const Face& a, const Face& b) const {
+    if (shared_vertices(a, b) != 0) {
+      return false;
+    }
+    Eigen::Vector3d a0 = pos(a[0]).transpose();
+    Eigen::Vector3d a1 = pos(a[1]).transpose();
+    Eigen::Vector3d a2 = pos(a[2]).transpose();
+    Eigen::Vector3d b0 = pos(b[0]).transpose();
+    Eigen::Vector3d b1 = pos(b[1]).transpose();
+    Eigen::Vector3d b2 = pos(b[2]).transpose();
+
+    Eigen::Vector3d amin = a0.cwiseMin(a1).cwiseMin(a2);
+    Eigen::Vector3d amax = a0.cwiseMax(a1).cwiseMax(a2);
+    Eigen::Vector3d bmin = b0.cwiseMin(b1).cwiseMin(b2);
+    Eigen::Vector3d bmax = b0.cwiseMax(b1).cwiseMax(b2);
+    if ((amax.array() < bmin.array()).any() || (bmax.array() < amin.array()).any()) {
       return false;
     }
 
-    Point3 original = positions_.at(v);  // for revert
-    positions_.at(v) = cand.p;           // tentative
+    return igl::tri_tri_overlap_test_3d(a0, a1, a2, b0, b1, b2);
+  }
+
+  // The faces sharing a vertex with any of the given patches, excluding the patches
+  // themselves.
+  std::vector<Index> one_ring(const std::vector<Index>& patches) {
+    const auto& F = mesh_.faces();
+    std::unordered_set<Index> patch_set(patches.begin(), patches.end());
+    std::unordered_set<Index> ring;
+    for (auto fi : patches) {
+      for (auto k = 0; k < 3; k++) {
+        for (auto nf : mesh_.vertex_faces(F(fi, k))) {
+          if (!patch_set.contains(nf)) {
+            ring.insert(nf);
+          }
+        }
+      }
+    }
+    return {ring.begin(), ring.end()};
+  }
+
+  // The cached triangulation of a patch (computed on first use).
+  const std::vector<Face>& patch_faces(Index fi) {
+    auto it = patch_faces_cache_.find(fi);
+    if (it == patch_faces_cache_.end()) {
+      it = patch_faces_cache_.emplace(fi, triangulate_patch(fi)).first;
+    }
+    return it->second;
+  }
+
+  // Whether any new triangle of the changed patches transversally intersects a face that
+  // does not share a vertex with it — a self-intersection between geometrically near but
+  // topologically distant parts of the surface, which the local height-field test cannot
+  // see (and which an off-surface interior vertex can also cause). Original faces near
+  // the new triangles are found by descending the AABB tree; their current triangulations
+  // are tested with a 3D triangle-triangle intersection, skipping (near-)coplanar pairs
+  // (handled by causes_overlap) and shared-vertex pairs.
+  bool pierces(const std::unordered_map<Index, std::vector<Face>>& changed) {
+    std::unordered_set<Index> changed_ids;
+    std::vector<Face> changed_faces;
+    for (const auto& [fi, faces] : changed) {
+      changed_ids.insert(fi);
+      changed_faces.insert(changed_faces.end(), faces.begin(), faces.end());
+    }
+
+    // A candidate face's snapped triangulation can be up to max_distance from its
+    // original, and the new triangle up to max_distance from the original it is near, so
+    // their original faces can be up to 2 * max_distance apart.
+    auto margin = 2.0 * max_distance_;
+    std::unordered_set<Index> candidates;
+    for (const auto& t : changed_faces) {
+      Point3 a = pos(t[0]);
+      Point3 b = pos(t[1]);
+      Point3 c = pos(t[2]);
+      Point3 lo = (a.cwiseMin(b).cwiseMin(c).array() - margin).matrix();
+      Point3 hi = (a.cwiseMax(b).cwiseMax(c).array() + margin).matrix();
+      mesh_.faces_near(Eigen::AlignedBox3d(lo.transpose(), hi.transpose()), changed_ids,
+                       candidates);
+    }
+
+    // Test the new triangles against the candidates' current triangulations, and against
+    // one another (the changed patches may pierce each other).
+    std::vector<Face> others = changed_faces;
+    for (auto fj : candidates) {
+      const auto& faces = patch_faces(fj);
+      others.insert(others.end(), faces.begin(), faces.end());
+    }
+    for (const auto& a : changed_faces) {
+      for (const auto& b : others) {
+        if (intersects(a, b)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // The squared distance from p to triangle (a, b, c) (closest point on the triangle).
+  static double point_tri_dist2(const Point3& p, const Point3& a, const Point3& b,
+                                const Point3& c) {
+    Vector3 ab = b - a;
+    Vector3 ac = c - a;
+    Vector3 ap = p - a;
+    double d1 = ab.dot(ap);
+    double d2 = ac.dot(ap);
+    if (d1 <= 0.0 && d2 <= 0.0) {
+      return ap.squaredNorm();
+    }
+    Vector3 bp = p - b;
+    double d3 = ab.dot(bp);
+    double d4 = ac.dot(bp);
+    if (d3 >= 0.0 && d4 <= d3) {
+      return bp.squaredNorm();
+    }
+    Vector3 cp = p - c;
+    double d5 = ab.dot(cp);
+    double d6 = ac.dot(cp);
+    if (d6 >= 0.0 && d5 <= d6) {
+      return cp.squaredNorm();
+    }
+    double vc = d1 * d4 - d3 * d2;
+    if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0) {
+      double v = d1 / (d1 - d3);
+      return (ap - v * ab).squaredNorm();
+    }
+    double vb = d5 * d2 - d1 * d6;
+    if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0) {
+      double w = d2 / (d2 - d6);
+      return (ap - w * ac).squaredNorm();
+    }
+    double va = d3 * d6 - d5 * d4;
+    if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0) {
+      double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+      return (p - (b + w * (c - b))).squaredNorm();
+    }
+    double denom = 1.0 / (va + vb + vc);
+    double v = vb * denom;
+    double w = vc * denom;
+    return (p - (a + ab * v + ac * w)).squaredNorm();
+  }
+
+  // The current 3D position of a vertex: an original vertex's snapped target if it was
+  // moved, otherwise its original position; or an inserted vertex's off-surface point.
+  const Point3& pos(Index v) const { return positions_.at(v); }
+
+  static int shared_vertices(const Face& a, const Face& b) {
+    int n = 0;
+    for (auto u : a) {
+      for (auto w : b) {
+        if (u == w) {
+          n++;
+        }
+      }
+    }
+    return n;
+  }
+
+  // Drop inserted vertices a densely sampled polyline leaves behind that the surface no longer
+  // needs: a vertex whose removal keeps the surface within its own snapping tolerance and free of
+  // self-intersection is redundant (the surrounding snaps already pin the surface through it). Such
+  // runs over-triangulate the surface -- e.g. into vertical fins -- and block the edge-flip
+  // smoother. Unlike a per-chain collinearity test this also reaches face-interior vertices and
+  // single-vertex chains, which is most of a polyline that crosses the mesh transversally. Greedy
+  // and iterated to a fixpoint, since one drop can make a neighbour removable; a zero-tolerance
+  // vertex is never dropped, so this is a no-op when no tolerances were given. The dropped vertices
+  // become unreferenced and emit() compacts them away.
+  void thin_inserted() {
+    bool any = true;
+    while (any) {
+      any = false;
+      std::vector<Index> faces;
+      faces.reserve(face_interior_.size());
+      for (const auto& [fi, ids] : face_interior_) {
+        faces.push_back(fi);
+      }
+      for (auto fi : faces) {
+        auto it = face_interior_.find(fi);
+        if (it == face_interior_.end()) {
+          continue;
+        }
+        for (auto id : std::vector<Index>(it->second)) {
+          double tol = inserted_tol_.at(id);
+          if (tol > 0.0 && try_drop_interior(fi, id, tol)) {
+            any = true;
+          }
+        }
+      }
+      std::vector<Edge> edges;
+      edges.reserve(edge_chains_.size());
+      for (const auto& [e, chain] : edge_chains_) {
+        edges.push_back(e);
+      }
+      for (const auto& e : edges) {
+        auto it = edge_chains_.find(e);
+        if (it == edge_chains_.end()) {
+          continue;
+        }
+        std::vector<Index> ids;
+        ids.reserve(it->second.size());
+        for (const auto& x : it->second) {
+          ids.push_back(x.id);
+        }
+        for (auto id : ids) {
+          double tol = inserted_tol_.at(id);
+          if (tol > 0.0 && try_drop_edge(e, id, tol)) {
+            any = true;
+          }
+        }
+      }
+    }
+  }
+
+  // The constrained Delaunay triangulation of a patch over its committed edge chains and
+  // interior vertices, as triples of vertex ids.
+  std::vector<Face> triangulate_patch(Index fi, bool* simple = nullptr) {
+    if (simple != nullptr) {
+      *simple = true;
+    }
+    const auto& F = mesh_.faces();
+    std::array<Index, 3> vertices{F(fi, 0), F(fi, 1), F(fi, 2)};
+
+    auto has_chain = [&](const Edge& e) { return edge_chains_.contains(e); };
+    if (!face_interior_.contains(fi) && !has_chain({vertices[0], vertices[1]}) &&
+        !has_chain({vertices[1], vertices[2]}) && !has_chain({vertices[2], vertices[0]})) {
+      return {vertices};
+    }
+
+    std::vector<Point2> boundary;
+    std::vector<Index> boundary_ids;
+    // The original edge(s) each boundary vertex lies on, so the triangulation never cuts a
+    // diagonal along a subdivided edge (see Triangulation). Patch edge k joins vertices k
+    // and (k + 1) % 3; vertex k therefore lies on edges k and (k + 2) % 3.
+    std::vector<std::array<int, 2>> boundary_edges;
+    auto add_vertex = [&](int k) {
+      boundary_ids.push_back(vertices.at(k));
+      // Project the vertex's *emitted* position (a moved vertex's snapped target), as the
+      // chains and interior vertices do, so the 2D triangulation matches the 3D mesh that is
+      // emitted. Using the original position here would leave a moved vertex and its edge's
+      // near-collinear chain vertices forming a triangle that is valid in the frame but
+      // degenerate in 3D.
+      boundary.push_back(mesh_.project(fi, pos(vertices.at(k))));
+      boundary_edges.push_back({k, (k + 2) % 3});
+    };
+    auto add_chain = [&](int edge) {
+      auto from = vertices.at(edge);
+      auto to = vertices.at((edge + 1) % 3);
+      auto it = edge_chains_.find({from, to});
+      if (it == edge_chains_.end()) {
+        return;
+      }
+      const auto& chain = it->second;  // stored by t from the smaller id to the larger
+      auto append = [&](Index v) {
+        boundary_ids.push_back(v);
+        boundary.push_back(mesh_.project(fi, pos(v)));
+        boundary_edges.push_back({edge, -1});
+      };
+      if (from < to) {
+        for (const auto& x : chain) {
+          append(x.id);
+        }
+      } else {
+        for (auto i = static_cast<Index>(chain.size()) - 1; i >= 0; i--) {
+          append(chain.at(i).id);
+        }
+      }
+    };
+    add_vertex(0);
+    add_chain(0);
+    add_vertex(1);
+    add_chain(1);
+    add_vertex(2);
+    add_chain(2);
+
+    std::vector<Point2> interior;
+    std::vector<Index> interior_ids;
+    if (auto it = face_interior_.find(fi); it != face_interior_.end()) {
+      for (auto v : it->second) {
+        interior_ids.push_back(v);
+        interior.push_back(mesh_.project(fi, pos(v)));
+      }
+    }
+
+    auto nb = static_cast<Index>(boundary_ids.size());
+    Triangulation triangulation(boundary, interior, std::move(boundary_edges));
+    if (simple != nullptr) {
+      *simple = triangulation.simple();
+    }
+    std::vector<Face> faces;
+    for (const auto& t : triangulation.faces()) {
+      auto map = [&](Index i) { return i < nb ? boundary_ids.at(i) : interior_ids.at(i - nb); };
+      faces.push_back({map(t[0]), map(t[1]), map(t[2])});
+    }
+    return faces;
+  }
+
+  // Whether triangles a and b overlap when projected into patch fi's frame.
+  bool tris_overlap_2d(Index fi, const Face& a, const Face& b) {
+    // Skip only edge-adjacent (or identical) pairs: they share an edge and always touch.
+    // A pair sharing a single vertex is kept — two patches folding back onto each other
+    // meet only at a vertex, and the separating-axis test below tells a real overlap (a
+    // doubled surface) from a mere vertex touch (a valid crease).
+    if (shared_vertices(a, b) >= 2) {
+      return false;
+    }
+    std::array<Point2, 3> pa{mesh_.project(fi, pos(a[0])), mesh_.project(fi, pos(a[1])),
+                             mesh_.project(fi, pos(a[2]))};
+    std::array<Point2, 3> pb{mesh_.project(fi, pos(b[0])), mesh_.project(fi, pos(b[1])),
+                             mesh_.project(fi, pos(b[2]))};
+    // Tiny slack so a bare vertex/edge touch reads as separated but a real overlap is caught.
+    return triangles_overlap_2d(pa, pb, 1e-9);
+  }
+
+  // Try to drop edge vertex `id` from edge `e`'s chain: removing it re-triangulates both incident
+  // patches. Same accept test as try_drop_interior, against both patches' new triangulation.
+  bool try_drop_edge(const Edge& e, Index id, double tol) {
+    auto it = edge_chains_.find(e);
+    if (it == edge_chains_.end()) {
+      return false;
+    }
+    auto& chain = it->second;
+    auto at = std::ranges::find_if(chain, [id](const EdgeVertex& x) { return x.id == id; });
+    if (at == chain.end()) {
+      return false;
+    }
+    EdgeVertex removed = *at;
+    auto pos_in_chain = at - chain.begin();
+    chain.erase(at);
+    const auto& incident = mesh_.edge_faces(e);
     std::unordered_map<Index, std::vector<Face>> changed;
-    for (auto fi : mesh_.vertex_faces(v)) {
-      changed[fi] = patch_faces(fi);
+    std::vector<Face> all;
+    for (auto fi : incident) {
+      auto faces = triangulate_patch(fi);
+      all.insert(all.end(), faces.begin(), faces.end());
+      changed[fi] = std::move(faces);
     }
-    if (causes_overlap(changed) || creates_degenerate(changed)) {
-      positions_.at(v) = original;
-      return false;
+    if (dist2_to_faces(pos(id), all) <= tol * tol && !causes_overlap(changed) &&
+        !creates_degenerate(changed) && !pierces(changed)) {
+      for (auto fi : incident) {
+        patch_faces_cache_[fi] = changed.at(fi);
+      }
+      if (chain.empty()) {
+        edge_chains_.erase(e);
+      }
+      stats_.thinned_on_edges++;
+      return true;
     }
-    if (pierces(changed)) {
-      stats_.pierce_rejections++;
-      positions_.at(v) = original;
-      return false;
-    }
+    chain.insert(chain.begin() + pos_in_chain, removed);  // revert
+    return false;
+  }
 
-    moved_.at(v) = true;
-    stats_.moved_vertices++;
-    return true;
+  // Try to drop interior vertex `id` from patch `fi`: removing it re-triangulates the one patch.
+  // Committed only if the new patch passes within tol of the dropped point and leaves the mesh
+  // free of self-intersection (the insertion guards). Returns whether it was dropped.
+  bool try_drop_interior(Index fi, Index id, double tol) {
+    auto it = face_interior_.find(fi);
+    if (it == face_interior_.end()) {
+      return false;
+    }
+    auto& interior = it->second;
+    auto at = std::ranges::find(interior, id);
+    if (at == interior.end()) {
+      return false;
+    }
+    interior.erase(at);
+    auto faces = triangulate_patch(fi);
+    std::unordered_map<Index, std::vector<Face>> changed{{fi, faces}};
+    if (dist2_to_faces(pos(id), faces) <= tol * tol && !causes_overlap(changed) &&
+        !creates_degenerate(changed) && !pierces(changed)) {
+      patch_faces_cache_[fi] = std::move(faces);
+      if (interior.empty()) {
+        face_interior_.erase(fi);
+      }
+      stats_.thinned_in_faces++;
+      return true;
+    }
+    interior.push_back(id);  // revert (interior order does not affect the triangulation)
+    return false;
   }
 
   // Adding a vertex on the edge subdivides both incident patches. Accept if neither
@@ -427,536 +905,51 @@ class Snapper {
     return true;
   }
 
-  // -- Validity checks.
-
-  // Whether any triangle of the changed patches is degenerate (near-zero area) when emitted
-  // in 3D. A patch is triangulated in its 2D frame, but its vertices are emitted at their
-  // off-surface 3D positions; a triangle valid in the frame can still be collinear in 3D (a
-  // moved vertex nearly in line with its edge's chain vertices), which the 2D checks miss.
-  bool creates_degenerate(const std::unordered_map<Index, std::vector<Face>>& changed) {
-    const auto& V = mesh_.vertices();
-    const auto& F = mesh_.faces();
-    for (const auto& [fi, faces] : changed) {
-      Point3 a = V.row(F(fi, 0));
-      Point3 b = V.row(F(fi, 1));
-      Point3 c = V.row(F(fi, 2));
-      auto scale = (b - a).cross(c - a).norm();  // twice the original face's area
-      for (const auto& face : faces) {
-        Vector3 e1 = pos(face[1]) - pos(face[0]);
-        Vector3 e2 = pos(face[2]) - pos(face[0]);
-        if (e1.cross(e2).norm() <= 1e-9 * scale) {
-          return true;
-        }
-      }
+  // Returns true if the candidate was accepted at this simplex.
+  bool try_place(const Candidate& cand, Simplex s) {
+    switch (s) {
+      case Simplex::kVertex0:
+      case Simplex::kVertex1:
+      case Simplex::kVertex2:
+        return try_vertex(cand, cand.fv.at(index_of(s)));
+      case Simplex::kEdge12:
+      case Simplex::kEdge20:
+      case Simplex::kEdge01:
+        return try_edge(cand, index_of(s) - index_of(Simplex::kEdge12));
+      case Simplex::kFace:
+        return try_interior(cand);
     }
-    return false;
+    return false;  // unreachable; all simplices are handled above
   }
 
-  // Whether any triangle of the changed patches overlaps a non-adjacent triangle in its
-  // neighborhood (the changed patches and their vertex one-ring). The test is done in
-  // the changed patch's own 2D frame: a self-intersection-free snapped surface is a
-  // height field over each patch, so two triangles overlapping when projected into the
-  // frame (and z-separated or not) is exactly the failure to avoid. Working in the
-  // frame also sidesteps the unreliable coplanar branch of a 3D triangle test. Edge-adjacent
-  // triangles are skipped (they always touch along the shared edge); see tris_overlap_2d.
-  bool causes_overlap(const std::unordered_map<Index, std::vector<Face>>& changed) {
-    std::vector<Index> changed_ids;
-    changed_ids.reserve(changed.size());
-    for (const auto& [fi, faces] : changed) {
-      changed_ids.push_back(fi);
-    }
-
-    std::vector<Face> neighborhood;
-    for (const auto& [fi, faces] : changed) {
-      neighborhood.insert(neighborhood.end(), faces.begin(), faces.end());
-    }
-    for (auto fi : one_ring(changed_ids)) {
-      const auto& faces = patch_faces(fi);
-      neighborhood.insert(neighborhood.end(), faces.begin(), faces.end());
-    }
-
-    for (const auto& [fi, faces] : changed) {
-      for (const auto& a : faces) {
-        for (const auto& b : neighborhood) {
-          if (tris_overlap_2d(fi, a, b)) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  // Whether triangles a and b overlap when projected into patch fi's frame, ignoring
-  // pairs that share a vertex or are degenerate. Uses the separating-axis test, which is
-  // exact for convex shapes in 2D.
-  bool tris_overlap_2d(Index fi, const Face& a, const Face& b) {
-    // Skip only edge-adjacent (or identical) pairs: they share an edge and always touch.
-    // A pair sharing a single vertex is kept — two patches folding back onto each other
-    // meet only at a vertex, and the separating-axis test below tells a real overlap (a
-    // doubled surface) from a mere vertex touch (a valid crease).
-    if (shared_vertices(a, b) >= 2) {
-      return false;
-    }
-    std::array<Point2, 3> pa{mesh_.project(fi, pos(a[0])), mesh_.project(fi, pos(a[1])),
-                             mesh_.project(fi, pos(a[2]))};
-    std::array<Point2, 3> pb{mesh_.project(fi, pos(b[0])), mesh_.project(fi, pos(b[1])),
-                             mesh_.project(fi, pos(b[2]))};
-    // Tiny slack so a bare vertex/edge touch reads as separated but a real overlap is caught.
-    return triangles_overlap_2d(pa, pb, 1e-9);
-  }
-
-  // The number of vertices triangles a and b share (0..3).
-  static int shared_vertices(const Face& a, const Face& b) {
-    int n = 0;
-    for (auto u : a) {
-      for (auto w : b) {
-        if (u == w) {
-          n++;
-        }
-      }
-    }
-    return n;
-  }
-
-  // The faces sharing a vertex with any of the given patches, excluding the patches
-  // themselves.
-  std::vector<Index> one_ring(const std::vector<Index>& patches) {
-    const auto& F = mesh_.faces();
-    std::unordered_set<Index> patch_set(patches.begin(), patches.end());
-    std::unordered_set<Index> ring;
-    for (auto fi : patches) {
-      for (auto k = 0; k < 3; k++) {
-        for (auto nf : mesh_.vertex_faces(F(fi, k))) {
-          if (!patch_set.contains(nf)) {
-            ring.insert(nf);
-          }
-        }
-      }
-    }
-    return {ring.begin(), ring.end()};
-  }
-
-  // Whether any new triangle of the changed patches transversally intersects a face that
-  // does not share a vertex with it — a self-intersection between geometrically near but
-  // topologically distant parts of the surface, which the local height-field test cannot
-  // see (and which an off-surface interior vertex can also cause). Original faces near
-  // the new triangles are found by descending the AABB tree; their current triangulations
-  // are tested with a 3D triangle-triangle intersection, skipping (near-)coplanar pairs
-  // (handled by causes_overlap) and shared-vertex pairs.
-  bool pierces(const std::unordered_map<Index, std::vector<Face>>& changed) {
-    std::unordered_set<Index> changed_ids;
-    std::vector<Face> changed_faces;
-    for (const auto& [fi, faces] : changed) {
-      changed_ids.insert(fi);
-      changed_faces.insert(changed_faces.end(), faces.begin(), faces.end());
-    }
-
-    // A candidate face's snapped triangulation can be up to max_distance from its
-    // original, and the new triangle up to max_distance from the original it is near, so
-    // their original faces can be up to 2 * max_distance apart.
-    auto margin = 2.0 * max_distance_;
-    std::unordered_set<Index> candidates;
-    for (const auto& t : changed_faces) {
-      Point3 a = pos(t[0]);
-      Point3 b = pos(t[1]);
-      Point3 c = pos(t[2]);
-      Point3 lo = (a.cwiseMin(b).cwiseMin(c).array() - margin).matrix();
-      Point3 hi = (a.cwiseMax(b).cwiseMax(c).array() + margin).matrix();
-      mesh_.faces_near(Eigen::AlignedBox3d(lo.transpose(), hi.transpose()), changed_ids,
-                       candidates);
-    }
-
-    // Test the new triangles against the candidates' current triangulations, and against
-    // one another (the changed patches may pierce each other).
-    std::vector<Face> others = changed_faces;
-    for (auto fj : candidates) {
-      const auto& faces = patch_faces(fj);
-      others.insert(others.end(), faces.begin(), faces.end());
-    }
-    for (const auto& a : changed_faces) {
-      for (const auto& b : others) {
-        if (intersects(a, b)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // Whether disjoint triangles a and b intersect. This is the global piercing test: only
-  // faces that share no vertex matter here, because a fold between faces that share a
-  // vertex is a local (one-ring) event the height-field test in causes_overlap already
-  // covers. With the pair disjoint, the 3D triangle-crossing test (which reports a bare
-  // touch as an overlap) is exact, including for coplanar pairs.
-  bool intersects(const Face& a, const Face& b) const {
-    if (shared_vertices(a, b) != 0) {
-      return false;
-    }
-    Eigen::Vector3d a0 = pos(a[0]).transpose();
-    Eigen::Vector3d a1 = pos(a[1]).transpose();
-    Eigen::Vector3d a2 = pos(a[2]).transpose();
-    Eigen::Vector3d b0 = pos(b[0]).transpose();
-    Eigen::Vector3d b1 = pos(b[1]).transpose();
-    Eigen::Vector3d b2 = pos(b[2]).transpose();
-
-    Eigen::Vector3d amin = a0.cwiseMin(a1).cwiseMin(a2);
-    Eigen::Vector3d amax = a0.cwiseMax(a1).cwiseMax(a2);
-    Eigen::Vector3d bmin = b0.cwiseMin(b1).cwiseMin(b2);
-    Eigen::Vector3d bmax = b0.cwiseMax(b1).cwiseMax(b2);
-    if ((amax.array() < bmin.array()).any() || (bmax.array() < amin.array()).any()) {
+  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the
+  // move unless an incident triangle becomes degenerate, overlaps a non-adjacent triangle in
+  // its neighborhood, or pierces a distant face. (A fold that inverts a triangle is a
+  // self-overlap and is caught by causes_overlap.)
+  bool try_vertex(const Candidate& cand, Index v) {
+    if (moved_.at(v)) {
       return false;
     }
 
-    return igl::tri_tri_overlap_test_3d(a0, a1, a2, b0, b1, b2);
-  }
-
-  // -- Geometry.
-
-  // The current 3D position of a vertex: an original vertex's snapped target if it was
-  // moved, otherwise its original position; or an inserted vertex's off-surface point.
-  const Point3& pos(Index v) const { return positions_.at(v); }
-
-  // The squared distance from p to triangle (a, b, c) (closest point on the triangle).
-  static double point_tri_dist2(const Point3& p, const Point3& a, const Point3& b,
-                                const Point3& c) {
-    Vector3 ab = b - a;
-    Vector3 ac = c - a;
-    Vector3 ap = p - a;
-    double d1 = ab.dot(ap);
-    double d2 = ac.dot(ap);
-    if (d1 <= 0.0 && d2 <= 0.0) {
-      return ap.squaredNorm();
-    }
-    Vector3 bp = p - b;
-    double d3 = ab.dot(bp);
-    double d4 = ac.dot(bp);
-    if (d3 >= 0.0 && d4 <= d3) {
-      return bp.squaredNorm();
-    }
-    Vector3 cp = p - c;
-    double d5 = ab.dot(cp);
-    double d6 = ac.dot(cp);
-    if (d6 >= 0.0 && d5 <= d6) {
-      return cp.squaredNorm();
-    }
-    double vc = d1 * d4 - d3 * d2;
-    if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0) {
-      double v = d1 / (d1 - d3);
-      return (ap - v * ab).squaredNorm();
-    }
-    double vb = d5 * d2 - d1 * d6;
-    if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0) {
-      double w = d2 / (d2 - d6);
-      return (ap - w * ac).squaredNorm();
-    }
-    double va = d3 * d6 - d5 * d4;
-    if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0) {
-      double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-      return (p - (b + w * (c - b))).squaredNorm();
-    }
-    double denom = 1.0 / (va + vb + vc);
-    double v = vb * denom;
-    double w = vc * denom;
-    return (p - (a + ab * v + ac * w)).squaredNorm();
-  }
-
-  // Whether the current (partially snapped) mesh already passes within the candidate's tolerance
-  // (its per-point min_distance) of the point, in which case snapping it would barely move the
-  // surface and only over-subdivide the patch, so it is skipped. Checks the point's projected
-  // patch and the patches across its edges (the point may have classified onto an edge).
-  bool already_satisfied(const Candidate& cand) {
-    if (!(cand.min_distance > 0.0)) {
-      return false;
-    }
-    double tol2 = cand.min_distance * cand.min_distance;
-    const auto& F = mesh_.faces();
-    auto nearest_in_patch = [&](Index fi) {
-      double best = std::numeric_limits<double>::infinity();
-      for (const auto& f : patch_faces(fi)) {
-        best = std::min(best, point_tri_dist2(cand.p, pos(f[0]), pos(f[1]), pos(f[2])));
-      }
-      return best;
-    };
-    if (nearest_in_patch(cand.face) < tol2) {
-      return true;
-    }
-    for (auto k = 0; k < 3; k++) {
-      Edge e{F(cand.face, k), F(cand.face, (k + 1) % 3)};
-      for (auto fj : mesh_.edge_faces(e)) {
-        if (fj != cand.face && nearest_in_patch(fj) < tol2) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // The constrained Delaunay triangulation of a patch over its committed edge chains and
-  // interior vertices, as triples of vertex ids.
-  std::vector<Face> triangulate_patch(Index fi, bool* simple = nullptr) {
-    if (simple != nullptr) {
-      *simple = true;
-    }
-    const auto& F = mesh_.faces();
-    std::array<Index, 3> vertices{F(fi, 0), F(fi, 1), F(fi, 2)};
-
-    auto has_chain = [&](const Edge& e) { return edge_chains_.contains(e); };
-    if (!face_interior_.contains(fi) && !has_chain({vertices[0], vertices[1]}) &&
-        !has_chain({vertices[1], vertices[2]}) && !has_chain({vertices[2], vertices[0]})) {
-      return {vertices};
-    }
-
-    std::vector<Point2> boundary;
-    std::vector<Index> boundary_ids;
-    // The original edge(s) each boundary vertex lies on, so the triangulation never cuts a
-    // diagonal along a subdivided edge (see Triangulation). Patch edge k joins vertices k
-    // and (k + 1) % 3; vertex k therefore lies on edges k and (k + 2) % 3.
-    std::vector<std::array<int, 2>> boundary_edges;
-    auto add_vertex = [&](int k) {
-      boundary_ids.push_back(vertices.at(k));
-      // Project the vertex's *emitted* position (a moved vertex's snapped target), as the
-      // chains and interior vertices do, so the 2D triangulation matches the 3D mesh that is
-      // emitted. Using the original position here would leave a moved vertex and its edge's
-      // near-collinear chain vertices forming a triangle that is valid in the frame but
-      // degenerate in 3D.
-      boundary.push_back(mesh_.project(fi, pos(vertices.at(k))));
-      boundary_edges.push_back({k, (k + 2) % 3});
-    };
-    auto add_chain = [&](int edge) {
-      auto from = vertices.at(edge);
-      auto to = vertices.at((edge + 1) % 3);
-      auto it = edge_chains_.find({from, to});
-      if (it == edge_chains_.end()) {
-        return;
-      }
-      const auto& chain = it->second;  // stored by t from the smaller id to the larger
-      auto append = [&](Index v) {
-        boundary_ids.push_back(v);
-        boundary.push_back(mesh_.project(fi, pos(v)));
-        boundary_edges.push_back({edge, -1});
-      };
-      if (from < to) {
-        for (const auto& x : chain) {
-          append(x.id);
-        }
-      } else {
-        for (auto i = static_cast<Index>(chain.size()) - 1; i >= 0; i--) {
-          append(chain.at(i).id);
-        }
-      }
-    };
-    add_vertex(0);
-    add_chain(0);
-    add_vertex(1);
-    add_chain(1);
-    add_vertex(2);
-    add_chain(2);
-
-    std::vector<Point2> interior;
-    std::vector<Index> interior_ids;
-    if (auto it = face_interior_.find(fi); it != face_interior_.end()) {
-      for (auto v : it->second) {
-        interior_ids.push_back(v);
-        interior.push_back(mesh_.project(fi, pos(v)));
-      }
-    }
-
-    auto nb = static_cast<Index>(boundary_ids.size());
-    Triangulation triangulation(boundary, interior, std::move(boundary_edges));
-    if (simple != nullptr) {
-      *simple = triangulation.simple();
-    }
-    std::vector<Face> faces;
-    for (const auto& t : triangulation.faces()) {
-      auto map = [&](Index i) { return i < nb ? boundary_ids.at(i) : interior_ids.at(i - nb); };
-      faces.push_back({map(t[0]), map(t[1]), map(t[2])});
-    }
-    return faces;
-  }
-
-  // The cached triangulation of a patch (computed on first use).
-  const std::vector<Face>& patch_faces(Index fi) {
-    auto it = patch_faces_cache_.find(fi);
-    if (it == patch_faces_cache_.end()) {
-      it = patch_faces_cache_.emplace(fi, triangulate_patch(fi)).first;
-    }
-    return it->second;
-  }
-
-  // The squared distance from p to the nearest of the given triangles (emitted 3D positions).
-  double dist2_to_faces(const Point3& p, const std::vector<Face>& faces) {
-    double best = std::numeric_limits<double>::infinity();
-    for (const auto& f : faces) {
-      best = std::min(best, point_tri_dist2(p, pos(f[0]), pos(f[1]), pos(f[2])));
-    }
-    return best;
-  }
-
-  // Try to drop interior vertex `id` from patch `fi`: removing it re-triangulates the one patch.
-  // Committed only if the new patch passes within tol of the dropped point and leaves the mesh
-  // free of self-intersection (the insertion guards). Returns whether it was dropped.
-  bool try_drop_interior(Index fi, Index id, double tol) {
-    auto it = face_interior_.find(fi);
-    if (it == face_interior_.end()) {
-      return false;
-    }
-    auto& interior = it->second;
-    auto at = std::ranges::find(interior, id);
-    if (at == interior.end()) {
-      return false;
-    }
-    interior.erase(at);
-    auto faces = triangulate_patch(fi);
-    std::unordered_map<Index, std::vector<Face>> changed{{fi, faces}};
-    if (dist2_to_faces(pos(id), faces) <= tol * tol && !causes_overlap(changed) &&
-        !creates_degenerate(changed) && !pierces(changed)) {
-      patch_faces_cache_[fi] = std::move(faces);
-      if (interior.empty()) {
-        face_interior_.erase(fi);
-      }
-      stats_.thinned_in_faces++;
-      return true;
-    }
-    interior.push_back(id);  // revert (interior order does not affect the triangulation)
-    return false;
-  }
-
-  // Try to drop edge vertex `id` from edge `e`'s chain: removing it re-triangulates both incident
-  // patches. Same accept test as try_drop_interior, against both patches' new triangulation.
-  bool try_drop_edge(const Edge& e, Index id, double tol) {
-    auto it = edge_chains_.find(e);
-    if (it == edge_chains_.end()) {
-      return false;
-    }
-    auto& chain = it->second;
-    auto at = std::ranges::find_if(chain, [id](const EdgeVertex& x) { return x.id == id; });
-    if (at == chain.end()) {
-      return false;
-    }
-    EdgeVertex removed = *at;
-    auto pos_in_chain = at - chain.begin();
-    chain.erase(at);
-    const auto& incident = mesh_.edge_faces(e);
+    Point3 original = positions_.at(v);  // for revert
+    positions_.at(v) = cand.p;           // tentative
     std::unordered_map<Index, std::vector<Face>> changed;
-    std::vector<Face> all;
-    for (auto fi : incident) {
-      auto faces = triangulate_patch(fi);
-      all.insert(all.end(), faces.begin(), faces.end());
-      changed[fi] = std::move(faces);
+    for (auto fi : mesh_.vertex_faces(v)) {
+      changed[fi] = patch_faces(fi);
     }
-    if (dist2_to_faces(pos(id), all) <= tol * tol && !causes_overlap(changed) &&
-        !creates_degenerate(changed) && !pierces(changed)) {
-      for (auto fi : incident) {
-        patch_faces_cache_[fi] = changed.at(fi);
-      }
-      if (chain.empty()) {
-        edge_chains_.erase(e);
-      }
-      stats_.thinned_on_edges++;
-      return true;
+    if (causes_overlap(changed) || creates_degenerate(changed)) {
+      positions_.at(v) = original;
+      return false;
     }
-    chain.insert(chain.begin() + pos_in_chain, removed);  // revert
-    return false;
-  }
-
-  // Drop inserted vertices a densely sampled polyline leaves behind that the surface no longer
-  // needs: a vertex whose removal keeps the surface within its own snapping tolerance and free of
-  // self-intersection is redundant (the surrounding snaps already pin the surface through it). Such
-  // runs over-triangulate the surface -- e.g. into vertical fins -- and block the edge-flip
-  // smoother. Unlike a per-chain collinearity test this also reaches face-interior vertices and
-  // single-vertex chains, which is most of a polyline that crosses the mesh transversally. Greedy
-  // and iterated to a fixpoint, since one drop can make a neighbour removable; a zero-tolerance
-  // vertex is never dropped, so this is a no-op when no tolerances were given. The dropped vertices
-  // become unreferenced and emit() compacts them away.
-  void thin_inserted() {
-    bool any = true;
-    while (any) {
-      any = false;
-      std::vector<Index> faces;
-      faces.reserve(face_interior_.size());
-      for (const auto& [fi, ids] : face_interior_) {
-        faces.push_back(fi);
-      }
-      for (auto fi : faces) {
-        auto it = face_interior_.find(fi);
-        if (it == face_interior_.end()) {
-          continue;
-        }
-        for (auto id : std::vector<Index>(it->second)) {
-          double tol = inserted_tol_.at(id);
-          if (tol > 0.0 && try_drop_interior(fi, id, tol)) {
-            any = true;
-          }
-        }
-      }
-      std::vector<Edge> edges;
-      edges.reserve(edge_chains_.size());
-      for (const auto& [e, chain] : edge_chains_) {
-        edges.push_back(e);
-      }
-      for (const auto& e : edges) {
-        auto it = edge_chains_.find(e);
-        if (it == edge_chains_.end()) {
-          continue;
-        }
-        std::vector<Index> ids;
-        ids.reserve(it->second.size());
-        for (const auto& x : it->second) {
-          ids.push_back(x.id);
-        }
-        for (auto id : ids) {
-          double tol = inserted_tol_.at(id);
-          if (tol > 0.0 && try_drop_edge(e, id, tol)) {
-            any = true;
-          }
-        }
-      }
-    }
-  }
-
-  // Builds the snapped mesh from the accepted snaps.
-  Mesh emit() {
-    const auto& F = mesh_.faces();
-
-    std::vector<Face> faces;
-    for (Index fi = 0; fi < F.rows(); fi++) {
-      for (const auto& face : patch_faces(fi)) {
-        faces.push_back(face);
-      }
+    if (pierces(changed)) {
+      stats_.pierce_rejections++;
+      positions_.at(v) = original;
+      return false;
     }
 
-    // Drop vertices no face references (chain thinning orphans the inserted ones it removes),
-    // keeping the rest in their original order so an un-thinned run emits unchanged.
-    std::vector<bool> used(positions_.size(), false);
-    for (const auto& face : faces) {
-      for (auto v : face) {
-        used.at(v) = true;
-      }
-    }
-    std::vector<Index> remap(positions_.size(), -1);
-    Index n = 0;
-    for (std::size_t v = 0; v < positions_.size(); v++) {
-      if (used.at(v)) {
-        remap.at(v) = n++;
-      }
-    }
-
-    Points3 vertices(n, 3);
-    for (std::size_t v = 0; v < positions_.size(); v++) {
-      if (used.at(v)) {
-        vertices.row(remap.at(v)) = positions_.at(v);
-      }
-    }
-    vertices = geometry::transform_points<3>(to_world_, vertices);  // back to world
-
-    Faces f(static_cast<Index>(faces.size()), 3);
-    for (Index i = 0; i < f.rows(); i++) {
-      f(i, 0) = remap.at(faces.at(i)[0]);
-      f(i, 1) = remap.at(faces.at(i)[1]);
-      f(i, 2) = remap.at(faces.at(i)[2]);
-    }
-    return {std::move(vertices), std::move(f)};
+    moved_.at(v) = true;
+    stats_.moved_vertices++;
+    return true;
   }
 
   OriginalMesh mesh_;
