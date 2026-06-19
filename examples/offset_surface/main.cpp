@@ -197,10 +197,6 @@ int main(int argc, const char* argv[]) {
       isosurf.set_snap_points(snap_table(kAll, {0, 1, 2}), opts.snap_distance, tolerances);
     }
 
-    if (opts.smooth >= 0.0) {
-      isosurf.set_smooth(opts.smooth);
-    }
-
     isosurf.generate_from_seed_points(points, field_fn).export_obj(opts.mesh_out);
 
     return 0;

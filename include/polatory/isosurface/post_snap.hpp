@@ -48,11 +48,15 @@ class Smoother {
   };
 
  public:
-  Smoother(const Mesh& mesh, const Mat3& aniso, double threshold, int max_passes)
+  // snapped, if non-empty, has one entry per vertex; a flip is then made only where its quad
+  // touches a snapped vertex, leaving the rest of the mesh exactly as generated.
+  Smoother(const Mesh& mesh, const Mat3& aniso, double threshold, int max_passes,
+           std::vector<bool> snapped = {})
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
         threshold_(threshold),
-        max_passes_(max_passes) {
+        max_passes_(max_passes),
+        snapped_(std::move(snapped)) {
     // The grid cell is the longest edge, so a face spans about one cell and its AABB touches few.
     for (Index fi = 0; fi < f_.rows(); fi++) {
       for (auto k = 0; k < 3; k++) {
@@ -175,6 +179,10 @@ class Smoother {
       Index d = third(f1, e);
       if (c < 0 || d < 0 || c == d || count.contains({c, d})) {
         continue;  // boundary/degenerate, or the flipped diagonal already exists
+      }
+      if (!snapped_.empty() &&
+          !(snapped_[x] || snapped_[y] || snapped_[c] || snapped_[d])) {
+        continue;  // restricted to quads touching a snapped vertex
       }
 
       Face nf0{x, d, c};
@@ -314,14 +322,19 @@ class Smoother {
   double cell_{};        // spatial-grid cell size for the self-intersection guard
   double threshold_;
   int max_passes_;
+  std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
   Mesh mesh_;
 };
 
-// Smooths the mesh by edge flips (see Smoother). aniso maps world into the isotropic frame;
-// threshold (radians) is the crease angle above which a neighborhood is flattened.
-inline Mesh smooth_by_flips(const Mesh& mesh, const Mat3& aniso = Mat3::Identity(),
-                            double threshold = 0.0, int max_passes = 20) {
-  return Smoother(mesh, aniso, threshold, max_passes).mesh();
+// The post-snap cleanup: flatten the snapped region by edge flips (see Smoother), so that the
+// cusp/sliver artifacts the snapped triangulation leaves are smoothed wherever a crease exceeds
+// 5 degrees, while the rest of the mesh is left exactly as generated. aniso maps world into the
+// isotropic frame. snapped, if non-empty (one entry per vertex), restricts flips to quads touching
+// a snapped vertex; when empty, nothing is flipped. Vertices never move, so every snap point stays.
+inline Mesh post_snap(const Mesh& mesh, const Mat3& aniso = Mat3::Identity(),
+                      std::vector<bool> snapped = {}, int max_passes = 20) {
+  constexpr double kDegree = 0.017453292519943295;  // radians
+  return Smoother(mesh, aniso, 5.0 * kDegree, max_passes, std::move(snapped)).mesh();
 }
 
 }  // namespace polatory::isosurface

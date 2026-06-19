@@ -7,13 +7,15 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
-#include <polatory/isosurface/smooth.hpp>
+#include <polatory/isosurface/post_snap.hpp>
 #include <polatory/isosurface/snap.hpp>
 #include <polatory/types.hpp>
-#include <numbers>
-#include <optional>
+#include <array>
+#include <cmath>
+#include <cstdint>
 #include <stdexcept>
 #include <unordered_set>
+#include <vector>
 
 namespace polatory::isosurface {
 
@@ -103,16 +105,6 @@ class Isosurface {
     snap_max_passes_ = max_passes;
   }
 
-  // Enables post-process smoothing of the generated mesh by edge flips (see smooth_by_flips).
-  // threshold_degrees is the crease angle above which a neighborhood is flattened; 0 smooths
-  // wherever it helps, larger values touch only sharper creases. Must be in [0, 180).
-  void set_smooth(double threshold_degrees) {
-    if (!(threshold_degrees >= 0.0 && threshold_degrees < 180.0)) {
-      throw std::invalid_argument("smooth threshold must be in [0, 180)");
-    }
-    smooth_threshold_ = threshold_degrees;
-  }
-
  private:
   Mesh generate_common() {
     lattice_.cluster_vertices();
@@ -144,11 +136,6 @@ class Isosurface {
       }
     }
 
-    auto smooth = [&]() {
-      if (smooth_threshold_ && !mesh.is_empty()) {
-        mesh = smooth_by_flips(mesh, aniso_, *smooth_threshold_ * std::numbers::pi / 180.0);
-      }
-    };
     auto same = [](const Mesh& a, const Mesh& b) {
       const auto& av = a.vertices();
       const auto& bv = b.vertices();
@@ -163,7 +150,8 @@ class Isosurface {
     // A positive tolerance's slack is what lets that settle, so without one a single pass is used.
     // Restricting snapping to points whose projection stays inside first_extended_bbox keeps it
     // away from the mesh boundary, which lies further out (near second_extended_bbox); the clip
-    // then makes the on-bbox boundary. The mesh is then smoothed once.
+    // then makes the on-bbox boundary. Afterwards post_snap flattens the snapped region by edge
+    // flips, leaving the base lattice elsewhere exactly as generated.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto res = lattice_.resolution();
       VecX tols = res * rel_snap_tols_;
@@ -176,8 +164,8 @@ class Isosurface {
           break;
         }
       }
+      mesh = post_snap(mesh, aniso_, snapped_vertices(mesh));
     }
-    smooth();
 
     mesh = clip(mesh, lattice_.bbox());
 
@@ -191,13 +179,47 @@ class Isosurface {
     return mesh;
   }
 
+  // Marks each vertex that coincides with a snap point (a captured point becomes a vertex at its
+  // exact position), so the smoother can restrict its flips to the snapped region. A coordinate
+  // hash gives O(1) membership; the quantization cell is far above the world round-trip error yet
+  // far below the inter-point spacing, so a boundary miss is negligible -- and harmless, since this
+  // only chooses which quads to smooth.
+  std::vector<bool> snapped_vertices(const Mesh& mesh) const {
+    const auto& vertices = mesh.vertices();
+    std::vector<bool> snapped(vertices.rows(), false);
+    auto cell = lattice_.resolution() * 1e-6;
+    auto key = [cell](const auto& p) {
+      return std::array<std::int64_t, 3>{static_cast<std::int64_t>(std::llround(p.x() / cell)),
+                                         static_cast<std::int64_t>(std::llround(p.y() / cell)),
+                                         static_cast<std::int64_t>(std::llround(p.z() / cell))};
+    };
+    struct Hash {
+      std::size_t operator()(const std::array<std::int64_t, 3>& k) const noexcept {
+        auto h = static_cast<std::size_t>(k[0]) * 73856093U;
+        h ^= static_cast<std::size_t>(k[1]) * 19349663U;
+        h ^= static_cast<std::size_t>(k[2]) * 83492791U;
+        return h;
+      }
+    };
+    std::unordered_set<std::array<std::int64_t, 3>, Hash> points;
+    points.reserve(snap_points_.rows());
+    for (Index i = 0; i < snap_points_.rows(); i++) {
+      points.insert(key(snap_points_.row(i)));
+    }
+    for (Index v = 0; v < vertices.rows(); v++) {
+      if (points.contains(key(vertices.row(v)))) {
+        snapped[v] = true;
+      }
+    }
+    return snapped;
+  }
+
   rmt::Lattice lattice_;
   Mat3 aniso_;
   geometry::Points3 snap_points_;
   double rel_snap_dist_{0.5};
   VecX rel_snap_tols_;
   int snap_max_passes_{8};
-  std::optional<double> smooth_threshold_;  // crease angle in degrees; unset means no smoothing
 };
 
 }  // namespace polatory::isosurface
