@@ -106,7 +106,7 @@ class Snapper {
     Index inserted_on_edges{};
     Index inserted_in_faces{};
     Index thinned_on_edges{};  // redundant inserted edge vertices dropped within tolerance
-    Index thinned_in_faces{};   // redundant inserted interior vertices dropped within tolerance
+    Index thinned_in_faces{};  // redundant inserted interior vertices dropped within tolerance
   };
 
   // A point is snapped only if its distance to the mesh is at most max_distance and
@@ -454,30 +454,38 @@ class Snapper {
       changed_ids.insert(fi);
       changed_faces.insert(changed_faces.end(), faces.begin(), faces.end());
     }
+    // A disjoint pair gets the robust exact crossing test (intersects); a vertex-sharing pair gets
+    // the crease-aware test (overlaps_3d), which tells a true fold from the bare touch of a sharp
+    // crease that the exact test would report as an overlap.
+    auto crosses = [&](const Face& a, const Face& b) {
+      return shared_vertices(a, b) == 0 ? intersects(a, b) : overlaps_3d(a, b);
+    };
+    // Each changed face is tested against the other changed faces and against the faces in *its
+    // own* AABB-neighborhood (within 2 * max_distance, the farthest a snapped face can stray).
+    // Querying per changed face, rather than pooling every changed face's neighborhood and testing
+    // the full cross product, avoids checking a face against the many faces that are near a
+    // different changed face but AABB-disjoint from this one -- they cannot cross it.
     auto margin = 2.0 * max_distance_;
     std::unordered_set<Index> candidates;
-    for (const auto& t : changed_faces) {
-      Point3 a = pos(t[0]);
-      Point3 b = pos(t[1]);
-      Point3 c = pos(t[2]);
-      Point3 lo = (a.cwiseMin(b).cwiseMin(c).array() - margin).matrix();
-      Point3 hi = (a.cwiseMax(b).cwiseMax(c).array() + margin).matrix();
+    for (const auto& a : changed_faces) {
+      for (const auto& b : changed_faces) {
+        if (crosses(a, b)) {
+          return true;
+        }
+      }
+      Point3 p0 = pos(a[0]);
+      Point3 p1 = pos(a[1]);
+      Point3 p2 = pos(a[2]);
+      Point3 lo = (p0.cwiseMin(p1).cwiseMin(p2).array() - margin).matrix();
+      Point3 hi = (p0.cwiseMax(p1).cwiseMax(p2).array() + margin).matrix();
+      candidates.clear();
       mesh_.faces_near(Eigen::AlignedBox3d(lo.transpose(), hi.transpose()), changed_ids,
                        candidates);
-    }
-    std::vector<Face> others = changed_faces;
-    for (auto fj : candidates) {
-      const auto& faces = patch_faces(fj);
-      others.insert(others.end(), faces.begin(), faces.end());
-    }
-    // A disjoint pair gets the robust exact crossing test (intersects); a vertex-sharing pair
-    // gets the crease-aware test (overlaps_3d), which tells a true fold from the bare touch of a
-    // sharp crease that the exact test would report as an overlap.
-    for (const auto& a : changed_faces) {
-      for (const auto& b : others) {
-        bool hit = shared_vertices(a, b) == 0 ? intersects(a, b) : overlaps_3d(a, b);
-        if (hit) {
-          return true;
+      for (auto fj : candidates) {
+        for (const auto& b : patch_faces(fj)) {
+          if (crosses(a, b)) {
+            return true;
+          }
         }
       }
     }
