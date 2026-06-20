@@ -180,8 +180,7 @@ class Smoother {
       if (c < 0 || d < 0 || c == d || count.contains({c, d})) {
         continue;  // boundary/degenerate, or the flipped diagonal already exists
       }
-      if (!snapped_.empty() &&
-          !(snapped_[x] || snapped_[y] || snapped_[c] || snapped_[d])) {
+      if (!snapped_.empty() && !(snapped_[x] || snapped_[y] || snapped_[c] || snapped_[d])) {
         continue;  // restricted to quads touching a snapped vertex
       }
 
@@ -278,12 +277,13 @@ class Smoother {
     return Vector3(e1.cross(e2));
   }
 
-  // A real crossing of a and b beyond a shared vertex (see triangles_overlap_3d). Edge-adjacent
-  // pairs (shared >= 2) are skipped: a flip cannot fold the surface back on an edge without either
-  // opposing the quad normal (rejected above) or worsening a quad bend (so it is not an
-  // improvement and is not made), so the only crossings left to catch are with non-adjacent faces.
+  // A real crossing of a and b beyond a shared vertex. Edge-adjacent pairs (shared >= 2) are
+  // skipped: a flip cannot fold the surface back on an edge without either opposing the quad normal
+  // (rejected above) or worsening a quad bend (so it is not an improvement and is not made), so the
+  // only crossings left to catch are with non-adjacent faces.
   bool overlaps(const Face& a, const Face& b, double tol) const {
-    if (shared_vertices(a, b) >= 2) {
+    auto shared = shared_vertices(a, b);
+    if (shared >= 2) {
       return false;
     }
     Point3 a0 = v_.row(a[0]);
@@ -292,6 +292,12 @@ class Smoother {
     Point3 b0 = v_.row(b[0]);
     Point3 b1 = v_.row(b[1]);
     Point3 b2 = v_.row(b[2]);
+    if (shared == 0) {
+      // A disjoint pair gets the robust exact crossing test (no false negatives, unlike the
+      // shrink-based transversal in triangles_overlap_3d -- a flip can pass a new face over a
+      // non-adjacent sheet that the shrink test would miss).
+      return triangles_cross_3d(a0, a1, a2, b0, b1, b2);
+    }
     return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
   }
 

@@ -147,4 +147,27 @@ inline bool triangles_overlap_3d(const geometry::Point3& a0, const geometry::Poi
   return !coplanar && (t - s).norm() > tol;
 }
 
+// Whether disjoint triangles a and b cross, by the robust exact 3D test. Unlike the shrink-based
+// transversal branch of triangles_overlap_3d it has no false negatives, but it reports even a bare
+// touch as a crossing, so it is only for a pair sharing no vertex -- a shared vertex or edge must
+// go to triangles_overlap_3d instead. Bbox-rejects first.
+inline bool triangles_cross_3d(const geometry::Point3& a0, const geometry::Point3& a1,
+                               const geometry::Point3& a2, const geometry::Point3& b0,
+                               const geometry::Point3& b1, const geometry::Point3& b2) {
+  Eigen::Vector3d aa0 = a0.transpose();
+  Eigen::Vector3d aa1 = a1.transpose();
+  Eigen::Vector3d aa2 = a2.transpose();
+  Eigen::Vector3d bb0 = b0.transpose();
+  Eigen::Vector3d bb1 = b1.transpose();
+  Eigen::Vector3d bb2 = b2.transpose();
+  Eigen::Vector3d amin = aa0.cwiseMin(aa1).cwiseMin(aa2);
+  Eigen::Vector3d amax = aa0.cwiseMax(aa1).cwiseMax(aa2);
+  Eigen::Vector3d bmin = bb0.cwiseMin(bb1).cwiseMin(bb2);
+  Eigen::Vector3d bmax = bb0.cwiseMax(bb1).cwiseMax(bb2);
+  if ((amax.array() < bmin.array()).any() || (bmax.array() < amin.array()).any()) {
+    return false;
+  }
+  return igl::tri_tri_overlap_test_3d(aa0, aa1, aa2, bb0, bb1, bb2);
+}
+
 }  // namespace polatory::isosurface

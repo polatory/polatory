@@ -1,7 +1,6 @@
 #pragma once
 
 #include <igl/barycentric_coordinates.h>
-#include <igl/tri_tri_intersect.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -80,7 +79,8 @@ class Snapper {
   // A point to be snapped, with the data needed to assign it to a simplex of its
   // projected face.
   struct Candidate {
-    Point3 p;
+    Point3 p;                   // The point in the isotropic frame, where snapping is measured.
+    Point3 p_world;             // Its exact world position, emitted as-is (no aniso round-trip).
     Point3 q;                   // The projection of p onto the mesh (closest point).
     double d2{};                // The squared distance from p to the mesh.
     double tang{};              // The squared tangential offset: q to its snapped feature.
@@ -140,6 +140,7 @@ class Snapper {
         max_distance_(max_distance),
         positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         flat_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
+        world_(vertices.rowwise().begin(), vertices.rowwise().end()),
         moved_(mesh_.num_vertices(), false) {}
 
   // Must be called only once. points are in world space; the result is too. tolerances, if
@@ -153,8 +154,7 @@ class Snapper {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
     }
-    auto iso_points = geometry::transform_points<3>(to_iso_, points);
-    auto candidates = build_candidates(iso_points, tolerances);
+    auto candidates = build_candidates(points, tolerances);
     std::vector<bool> placed(candidates.size(), false);
 
     // Pass 1: vertex moves only. A candidate moves its nearest vertex only while that vertex
@@ -257,7 +257,8 @@ class Snapper {
     std::vector<Candidate> candidates;
     candidates.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
-      Point3 p = points.row(i);
+      Point3 p_world = points.row(i);
+      Point3 p = p_world * to_iso_.transpose();  // the isotropic frame, where snapping is measured
 
       int fi{};
       Point3 q;
@@ -267,7 +268,6 @@ class Snapper {
         stats_.skipped++;
         continue;
       }
-      Point3 p_world = p * to_world_.transpose();
       Point3 q_world = q * to_world_.transpose();
       if (!bbox_.contains(p_world) || !bbox_.contains(q_world)) {
         stats_.skipped++;
@@ -295,6 +295,7 @@ class Snapper {
 
       auto tang = (q - sites.at(index_of(order.front()))).squaredNorm();
       candidates.push_back({.p = p,
+                            .p_world = p_world,
                             .q = q,
                             .d2 = d2,
                             .tang = tang,
@@ -381,10 +382,9 @@ class Snapper {
     Points3 vertices(n, 3);
     for (std::size_t v = 0; v < positions_.size(); v++) {
       if (used.at(v)) {
-        vertices.row(remap.at(v)) = positions_.at(v);
+        vertices.row(remap.at(v)) = world_.at(v);  // exact world position; no aniso round-trip
       }
     }
-    vertices = geometry::transform_points<3>(to_world_, vertices);  // back to world
 
     Faces f(static_cast<Index>(faces.size()), 3);
     for (Index i = 0; i < f.rows(); i++) {
@@ -397,28 +397,13 @@ class Snapper {
 
   // Whether disjoint triangles a and b intersect. self_intersects routes only vertex-disjoint
   // pairs here (a vertex-sharing pair goes to overlaps_3d, which can tell a true fold from a bare
-  // shared-vertex touch). With the pair disjoint, the 3D triangle-crossing test (which would
-  // report a bare touch as an overlap) is exact, including for coplanar pairs.
+  // shared-vertex touch). With the pair disjoint, triangles_cross_3d is exact (it reports even a
+  // bare touch as a crossing) and has no false negatives.
   bool intersects(const Face& a, const Face& b) const {
     if (shared_vertices(a, b) != 0) {
       return false;
     }
-    Eigen::Vector3d a0 = pos(a[0]).transpose();
-    Eigen::Vector3d a1 = pos(a[1]).transpose();
-    Eigen::Vector3d a2 = pos(a[2]).transpose();
-    Eigen::Vector3d b0 = pos(b[0]).transpose();
-    Eigen::Vector3d b1 = pos(b[1]).transpose();
-    Eigen::Vector3d b2 = pos(b[2]).transpose();
-
-    Eigen::Vector3d amin = a0.cwiseMin(a1).cwiseMin(a2);
-    Eigen::Vector3d amax = a0.cwiseMax(a1).cwiseMax(a2);
-    Eigen::Vector3d bmin = b0.cwiseMin(b1).cwiseMin(b2);
-    Eigen::Vector3d bmax = b0.cwiseMax(b1).cwiseMax(b2);
-    if ((amax.array() < bmin.array()).any() || (bmax.array() < amin.array()).any()) {
-      return false;
-    }
-
-    return igl::tri_tri_overlap_test_3d(a0, a1, a2, b0, b1, b2);
+    return triangles_cross_3d(pos(a[0]), pos(a[1]), pos(a[2]), pos(b[0]), pos(b[1]), pos(b[2]));
   }
 
   // Whether triangles a and b intersect with positive measure -- a real self-intersection.
@@ -867,6 +852,7 @@ class Snapper {
 
     auto id = static_cast<Index>(positions_.size());
     positions_.push_back(cand.p);
+    world_.push_back(cand.p_world);
     flat_.push_back((1.0 - t) * flat_.at(e.a) + t * flat_.at(e.b));  // on the original edge
     auto& chain = edge_chains_[e];
     chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .id = id});
@@ -884,6 +870,7 @@ class Snapper {
         edge_chains_.erase(e);
       }
       positions_.pop_back();
+      world_.pop_back();
       flat_.pop_back();
     };
     if (!simple || creates_degenerate(changed) || self_intersects(changed)) {
@@ -904,6 +891,7 @@ class Snapper {
   bool insert_in_face(const Candidate& cand, Index fi) {
     auto id = static_cast<Index>(positions_.size());
     positions_.push_back(cand.p);
+    world_.push_back(cand.p_world);
     flat_.push_back(cand.q);  // the snap point's on-surface projection
     auto& interior = face_interior_[fi];
     interior.push_back(id);
@@ -925,6 +913,7 @@ class Snapper {
         face_interior_.erase(fi);
       }
       positions_.pop_back();
+      world_.pop_back();
       flat_.pop_back();
     };
     if (!simple || !used || creates_degenerate(changed) || self_intersects(changed)) {
@@ -962,14 +951,17 @@ class Snapper {
       return false;
     }
 
-    Point3 original = positions_.at(v);  // for revert
-    positions_.at(v) = cand.p;           // tentative
+    Point3 original = positions_.at(v);        // for revert
+    Point3 original_world = world_.at(v);
+    positions_.at(v) = cand.p;                 // tentative
+    world_.at(v) = cand.p_world;
     std::unordered_map<Index, std::vector<Face>> changed;
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
     if (creates_degenerate(changed) || self_intersects(changed)) {
       positions_.at(v) = original;
+      world_.at(v) = original_world;
       return false;
     }
 
@@ -985,13 +977,17 @@ class Snapper {
   double max_distance_;
 
   // The accumulated snap edits and their derived caches. positions_ is every vertex's current
-  // emitted position (original then inserted; a move/insert sets the snapped target). flat_ is
-  // every vertex's on-surface position -- originals unmoved, inserted vertices at their on-mesh
-  // projection -- which the triangulation projects so connectivity is decided on the flat surface
-  // and never folds; the emitted mesh then moves to positions_. moved_ flags which original
+  // position in the isotropic frame (original then inserted; a move/insert sets the snapped
+  // target), where all the geometry is measured. world_ is the same vertices' exact world
+  // positions -- the original input vertices and, for a snap, the exact input snap point -- which
+  // emit() outputs directly, so a snapped surface passes exactly through its points rather than
+  // through aniso^-1 * aniso of them. flat_ is every vertex's on-surface position -- originals
+  // unmoved, inserted vertices at their on-mesh projection -- which the triangulation projects so
+  // connectivity is decided on the flat surface and never folds. moved_ flags which original
   // vertices have been claimed by a move (so a second snap point cannot move the same one).
   std::vector<Point3> positions_;
   std::vector<Point3> flat_;
+  std::vector<Point3> world_;
   std::vector<bool> moved_;
   std::unordered_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   std::unordered_map<Index, std::vector<Index>> face_interior_;

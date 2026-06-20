@@ -11,8 +11,7 @@
 #include <polatory/isosurface/snap.hpp>
 #include <polatory/types.hpp>
 #include <array>
-#include <cmath>
-#include <cstdint>
+#include <functional>
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
@@ -179,29 +178,21 @@ class Isosurface {
     return mesh;
   }
 
-  // Marks each vertex that coincides with a snap point (a captured point becomes a vertex at its
-  // exact position), so the smoother can restrict its flips to the snapped region. A coordinate
-  // hash gives O(1) membership; the quantization cell is far above the world round-trip error yet
-  // far below the inter-point spacing, so a boundary miss is negligible -- and harmless, since this
-  // only chooses which quads to smooth.
+  // Marks each vertex that coincides with a snap point, so the smoother can restrict its flips to
+  // the snapped region. A captured point becomes a vertex emitted at its exact world position (the
+  // snapper copies it through with no arithmetic), so an exact coordinate key matches it bit for
+  // bit; an unsnapped vertex sits on the lattice and cannot collide.
   std::vector<bool> snapped_vertices(const Mesh& mesh) const {
     const auto& vertices = mesh.vertices();
     std::vector<bool> snapped(vertices.rows(), false);
-    auto cell = lattice_.resolution() * 1e-6;
-    auto key = [cell](const auto& p) {
-      return std::array<std::int64_t, 3>{static_cast<std::int64_t>(std::llround(p.x() / cell)),
-                                         static_cast<std::int64_t>(std::llround(p.y() / cell)),
-                                         static_cast<std::int64_t>(std::llround(p.z() / cell))};
-    };
+    auto key = [](const auto& p) { return std::array<double, 3>{p.x(), p.y(), p.z()}; };
     struct Hash {
-      std::size_t operator()(const std::array<std::int64_t, 3>& k) const noexcept {
-        auto h = static_cast<std::size_t>(k[0]) * 73856093U;
-        h ^= static_cast<std::size_t>(k[1]) * 19349663U;
-        h ^= static_cast<std::size_t>(k[2]) * 83492791U;
-        return h;
+      std::size_t operator()(const std::array<double, 3>& k) const noexcept {
+        std::hash<double> h;
+        return h(k[0]) ^ (h(k[1]) << 1) ^ (h(k[2]) << 2);
       }
     };
-    std::unordered_set<std::array<std::int64_t, 3>, Hash> points;
+    std::unordered_set<std::array<double, 3>, Hash> points;
     points.reserve(snap_points_.rows());
     for (Index i = 0; i < snap_points_.rows(); i++) {
       points.insert(key(snap_points_.row(i)));
