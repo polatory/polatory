@@ -30,15 +30,16 @@ namespace polatory::isosurface {
 //
 // A priority queue drives the descent: each interior edge is keyed by the bend its flip would
 // remove, and the best is taken first. A flip is applied against the current mesh (one at a time,
-// so no two interfere), its stale neighbours re-scored and re-queued, and a popped edge is re-scored
-// before use so an entry outdated by a nearby flip is simply skipped. The summed bend, bounded below
-// by zero, strictly drops each flip, so the queue drains at a local minimum.
+// so no two interfere), its stale neighbours re-scored and re-queued, and a popped edge is
+// re-scored before use so an entry outdated by a nearby flip is simply skipped. The summed bend,
+// bounded below by zero, strictly drops each flip, so the queue drains at a local minimum.
 //
 // All geometry is measured in the lattice's isotropic frame (aniso maps world into it) so the flip
-// choice respects an anisotropic resolution; only the output keeps world positions. threshold
-// (radians) gates which neighborhoods are touched: a flip is made only where the worst bend in its
-// quad already exceeds threshold, so a region smoother than that is left exactly as generated.
-// threshold = 0 flips wherever the summed bend can be lowered at all.
+// choice respects an anisotropic resolution; only the output keeps world positions. min_angle
+// (radians) caps the skew that buys the flatness: a flip that would drop a triangle's smallest
+// angle below it is rejected unless it improves on the worst angle already there, so a cusp whose
+// only flat triangulation is a sliver is left creased rather than slivered (min_angle = 0 disables
+// the cap).
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -83,12 +84,12 @@ class Smoother {
  public:
   // snapped, if non-empty, has one entry per vertex; a flip is then made only where its quad
   // touches a snapped vertex, leaving the rest of the mesh exactly as generated.
-  Smoother(const Mesh& mesh, double resolution, const Mat3& aniso, double threshold,
+  Smoother(const Mesh& mesh, double resolution, const Mat3& aniso, double min_angle,
            std::vector<bool> snapped = {})
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
         cell_(resolution),
-        threshold_(threshold),
+        min_angle_(min_angle),
         snapped_(std::move(snapped)),
         visited_(f_.rows(), -1) {
     // The grid cell is the lattice resolution, the scale of an edge in this isotropic frame, so a
@@ -177,10 +178,10 @@ class Smoother {
     return a == f0i || a == f1i ? b : a;
   }
 
-  // The candidate flip of edge e, if it is an interior edge whose flip is admissible (a new diagonal
-  // that does not already exist, touches a snapped vertex, does not fold the surface back, and
-  // strictly lowers the summed bend over a quad already creased past threshold). The cheap part of
-  // the decision; the self-intersection guard is left to the caller, run only on the chosen flip.
+  // The candidate flip of edge e, if it is an interior edge whose flip is admissible (a new
+  // diagonal that does not already exist, touches a snapped vertex, does not fold the surface back,
+  // and strictly lowers the summed bend). The cheap part of the decision; the self-intersection
+  // guard is left to the caller, run only on the chosen flip.
   std::optional<Flip> score(const Edge& e) const {
     auto it = ef_.find(e);
     if (it == ef_.end() || it->second.size() != 2) {
@@ -235,16 +236,25 @@ class Smoother {
     Index g_xd = external({x, d}, f0i, f1i);
     Index g_dy = external({d, y}, f0i, f1i);
 
-    // Gate on the worst bend (smooth neighborhoods stay as generated) but decide on the summed bend
-    // over the five touched edges, which descends the mesh's total dihedral.
-    auto worst = std::max({bend(f0, f1), bend_with(f0, g_cx), bend_with(f0, g_yc),
-                           bend_with(f1, g_xd), bend_with(f1, g_dy)});
+    // Decide on the summed bend over the five touched edges: flip whenever it strictly drops, which
+    // descends the mesh's total dihedral.
     auto before = bend(f0, f1) + bend_with(f0, g_cx) + bend_with(f0, g_yc) + bend_with(f1, g_xd) +
                   bend_with(f1, g_dy);
-    auto after = bend(nf0, nf1) + bend_with(nf0, g_cx) + bend_with(nf1, g_yc) + bend_with(nf0, g_xd) +
-                 bend_with(nf1, g_dy);
-    if (!(worst > threshold_) || !(after < before - 1e-6)) {
+    auto after = bend(nf0, nf1) + bend_with(nf0, g_cx) + bend_with(nf1, g_yc) +
+                 bend_with(nf0, g_xd) + bend_with(nf1, g_dy);
+    if (!(after < before - 1e-6)) {
       return std::nullopt;
+    }
+
+    // Aspect-ratio guard: do not flatten a cusp at the cost of a sliver. Reject a flip that pushes
+    // a triangle's smallest angle below min_angle_, unless it improves on the worst angle already
+    // there.
+    if (min_angle_ > 0.0) {
+      auto after_angle = std::min(min_angle(nf0), min_angle(nf1));
+      auto before_angle = std::min(min_angle(f0), min_angle(f1));
+      if (after_angle < min_angle_ && after_angle < before_angle) {
+        return std::nullopt;
+      }
     }
     return Flip{f0i, f1i, x, y, c, d, nf0, nf1, before - after};
   }
@@ -258,9 +268,9 @@ class Smoother {
     return !crosses(fl.nf0, fl.f0i, fl.f1i, tol) && !crosses(fl.nf1, fl.f0i, fl.f1i, tol);
   }
 
-  // Whether new triangle nf (replacing f0i/f1i) overlaps any spatially near face. A face nf overlaps
-  // has its AABB meet nf's, so scanning nf's own cells suffices; a fresh stamp per call tests each
-  // such face against nf (the sibling call covers the other new triangle independently).
+  // Whether new triangle nf (replacing f0i/f1i) overlaps any spatially near face. A face nf
+  // overlaps has its AABB meet nf's, so scanning nf's own cells suffices; a fresh stamp per call
+  // tests each such face against nf (the sibling call covers the other new triangle independently).
   bool crosses(const Face& nf, Index f0i, Index f1i, double tol) {
     guard_id_++;
     Point3 p0 = v_.row(nf[0]);
@@ -303,13 +313,14 @@ class Smoother {
   }
 
   Cell cell_of(const Point3& p) const {
-    return {static_cast<int>(std::floor(p.x() / cell_)), static_cast<int>(std::floor(p.y() / cell_)),
+    return {static_cast<int>(std::floor(p.x() / cell_)),
+            static_cast<int>(std::floor(p.y() / cell_)),
             static_cast<int>(std::floor(p.z() / cell_))};
   }
 
   // Index a face by the grid cells its AABB touches. Vertices never move, so a face's cells change
-  // only when it is flipped, when it is re-inserted in place; old entries left stale are harmless (a
-  // stale index still reads its current geometry).
+  // only when it is flipped, when it is re-inserted in place; old entries left stale are harmless
+  // (a stale index still reads its current geometry).
   void insert_face(Index fi) {
     Point3 p0 = v_.row(f_(fi, 0));
     Point3 p1 = v_.row(f_(fi, 1));
@@ -352,6 +363,22 @@ class Smoother {
     Vector3 e1 = v_.row(t[1]) - v_.row(t[0]);
     Vector3 e2 = v_.row(t[2]) - v_.row(t[0]);
     return Vector3(e1.cross(e2));
+  }
+
+  // The smallest interior angle of a triangle (radians); a sliver reads near 0.
+  double min_angle(const Face& t) const {
+    Point3 p0 = v_.row(t[0]);
+    Point3 p1 = v_.row(t[1]);
+    Point3 p2 = v_.row(t[2]);
+    auto angle = [](const Vector3& u, const Vector3& w) {
+      auto lu = u.norm();
+      auto lw = w.norm();
+      if (!(lu > 0.0) || !(lw > 0.0)) {
+        return 0.0;
+      }
+      return std::acos(std::clamp(u.dot(w) / (lu * lw), -1.0, 1.0));
+    };
+    return std::min({angle(p1 - p0, p2 - p0), angle(p0 - p1, p2 - p1), angle(p0 - p2, p1 - p2)});
   }
 
   // A real crossing of a and b beyond a shared vertex. Edge-adjacent pairs (shared >= 2) are
@@ -403,25 +430,22 @@ class Smoother {
   geometry::Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
   Faces f_;              // working faces; connectivity is edited in place
   double cell_{};        // spatial-grid cell size for the self-intersection guard
-  double threshold_;
+  double min_angle_;     // a flip may not push a triangle's smallest angle below this (0 = off)
   std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
-  std::unordered_map<Edge, std::vector<Index>, EdgeHash> ef_;     // edge -> its (<= 2) incident faces
-  std::unordered_map<Cell, std::vector<Index>, CellHash> grid_;   // spatial broad-phase for the guard
+  std::unordered_map<Edge, std::vector<Index>, EdgeHash> ef_;  // edge -> its (<= 2) incident faces
+  std::unordered_map<Cell, std::vector<Index>, CellHash>
+      grid_;                    // spatial broad-phase for the guard
   std::vector<Index> visited_;  // per-guard stamp, to test each candidate face once
   Index guard_id_{0};
   Mesh mesh_;
 };
 
-// The post-snap cleanup: flatten the snapped region by edge flips (see Smoother), so that the
-// cusp/sliver artifacts the snapped triangulation leaves are smoothed wherever a crease exceeds
-// 5 degrees, while the rest of the mesh is left exactly as generated. aniso maps world into the
-// isotropic frame and resolution is the lattice spacing in it (the broad-phase grid cell). snapped,
-// if non-empty (one entry per vertex), restricts flips to quads touching a snapped vertex; when
-// empty, nothing is flipped. Vertices never move, so every snap point stays.
 inline Mesh post_snap(const Mesh& mesh, double resolution, const Mat3& aniso,
                       std::vector<bool> snapped = {}) {
-  constexpr double kDegree = 0.017453292519943295;  // radians
-  return Smoother(mesh, resolution, aniso, 5.0 * kDegree, std::move(snapped)).mesh();
+  constexpr double kDegree = 0.017453292519943295;
+  constexpr double kMinAngle = 15.0 * kDegree;
+
+  return Smoother(mesh, resolution, aniso, kMinAngle, std::move(snapped)).mesh();
 }
 
 }  // namespace polatory::isosurface
