@@ -208,6 +208,22 @@ class Thinner {
       return false;
     }
 
+    // Thin only when it strictly recovers the aspect ratio: the worst (smallest) triangle angle in
+    // the umbrella must improve. A collapse that would leave a thinner triangle than was there is
+    // rejected, so thinning never trades fewer faces for a worse shape.
+    double after = std::numeric_limits<double>::infinity();
+    for (const auto& nf : kept) {
+      after = std::min(after, triangle_min_angle(iso_.at(nf[0]), iso_.at(nf[1]), iso_.at(nf[2])));
+    }
+    double before = std::numeric_limits<double>::infinity();
+    for (auto fi : inc) {
+      const auto& f = faces_.at(fi);
+      before = std::min(before, triangle_min_angle(iso_.at(f[0]), iso_.at(f[1]), iso_.at(f[2])));
+    }
+    if (!(after > before)) {
+      return false;
+    }
+
     // The dropped point must stay within its tolerance of the new surface.
     double best = std::numeric_limits<double>::infinity();
     for (const auto& nf : kept) {

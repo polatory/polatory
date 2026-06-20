@@ -220,6 +220,20 @@ inline double point_triangle_dist2(const geometry::Point3& p, const geometry::Po
   return (p - (a + ab * v + ac * w)).squaredNorm();
 }
 
+// The smallest interior angle of triangle (a, b, c), in radians (a sliver reads near 0).
+inline double triangle_min_angle(const geometry::Point3& a, const geometry::Point3& b,
+                                 const geometry::Point3& c) {
+  auto angle = [](const geometry::Vector3& u, const geometry::Vector3& w) {
+    auto lu = u.norm();
+    auto lw = w.norm();
+    if (!(lu > 0.0) || !(lw > 0.0)) {
+      return 0.0;
+    }
+    return std::acos(std::clamp(u.dot(w) / (lu * lw), -1.0, 1.0));
+  };
+  return std::min({angle(b - a, c - a), angle(a - b, c - b), angle(a - c, b - c)});
+}
+
 // The number of vertices the triangles (vertex-index triples) a and b share.
 inline int shared_vertices(const std::array<Index, 3>& a, const std::array<Index, 3>& b) {
   int n = 0;

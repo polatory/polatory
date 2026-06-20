@@ -30,7 +30,6 @@ Mesh smooth_snapped_mesh(const Mesh& mesh, double resolution, const Mat3& aniso,
                          std::vector<bool> snapped) {
   constexpr double kDegree = 0.017453292519943295;  // radians
   constexpr double kMinAngle = 10.0 * kDegree;
-
   return snapper::Smoother(mesh, resolution, aniso, kMinAngle, std::move(snapped)).mesh();
 }
 

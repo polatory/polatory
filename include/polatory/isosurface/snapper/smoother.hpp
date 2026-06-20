@@ -359,26 +359,15 @@ class Smoother {
   }
 
   // A face's unnormalized normal (length is twice the area).
-  Vector3 normal(const Face& t) const {
-    Vector3 e1 = v_.row(t[1]) - v_.row(t[0]);
-    Vector3 e2 = v_.row(t[2]) - v_.row(t[0]);
+  Vector3 normal(const Face& f) const {
+    Vector3 e1 = v_.row(f[1]) - v_.row(f[0]);
+    Vector3 e2 = v_.row(f[2]) - v_.row(f[0]);
     return Vector3(e1.cross(e2));
   }
 
   // The smallest interior angle of a triangle (radians); a sliver reads near 0.
-  double min_angle(const Face& t) const {
-    Point3 p0 = v_.row(t[0]);
-    Point3 p1 = v_.row(t[1]);
-    Point3 p2 = v_.row(t[2]);
-    auto angle = [](const Vector3& u, const Vector3& w) {
-      auto lu = u.norm();
-      auto lw = w.norm();
-      if (!(lu > 0.0) || !(lw > 0.0)) {
-        return 0.0;
-      }
-      return std::acos(std::clamp(u.dot(w) / (lu * lw), -1.0, 1.0));
-    };
-    return std::min({angle(p1 - p0, p2 - p0), angle(p0 - p1, p2 - p1), angle(p0 - p2, p1 - p2)});
+  double min_angle(const Face& f) const {
+    return triangle_min_angle(v_.row(f[0]), v_.row(f[1]), v_.row(f[2]));
   }
 
   // A real crossing of a and b beyond a shared vertex. Edge-adjacent pairs (shared >= 2) are
