@@ -163,7 +163,7 @@ class Isosurface {
           break;
         }
       }
-      mesh = post_snap(mesh, aniso_, snapped_vertices(mesh));
+      mesh = post_snap(mesh, res, aniso_, snapped_vertices(mesh));
     }
 
     mesh = clip(mesh, lattice_.bbox());
