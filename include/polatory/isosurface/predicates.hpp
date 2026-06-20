@@ -117,8 +117,14 @@ inline bool triangles_overlap_3d(const geometry::Point3& a0, const geometry::Poi
       dmin = std::min(dmin, d);
       dmax = std::max(dmax, d);
     }
-    if (dmin > tol || dmax < -tol) {
-      return false;  // b lies entirely on one side of a's plane
+    // b overlaps a only if it meets a's plane with positive measure: lying in it (coplanar) or
+    // crossing it (points beyond tol on both sides). A b that stays on one side -- even one merely
+    // touching the plane at a vertex it shares with a while tilting away (a fan of faces around that
+    // vertex) -- does not overlap a, though its projection onto the plane would falsely suggest it.
+    bool coplanar = dmin >= -tol && dmax <= tol;
+    bool crosses = dmin < -tol && dmax > tol;
+    if (!coplanar && !crosses) {
+      return false;
     }
     geometry::Vector3 u = (a1 - a0).normalized();
     geometry::Vector3 w = n.cross(u);
