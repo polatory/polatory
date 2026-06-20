@@ -443,7 +443,7 @@ class Smoother {
 inline Mesh post_snap(const Mesh& mesh, double resolution, const Mat3& aniso,
                       std::vector<bool> snapped = {}) {
   constexpr double kDegree = 0.017453292519943295;
-  constexpr double kMinAngle = 15.0 * kDegree;
+  constexpr double kMinAngle = 10.0 * kDegree;
 
   return Smoother(mesh, resolution, aniso, kMinAngle, std::move(snapped)).mesh();
 }
