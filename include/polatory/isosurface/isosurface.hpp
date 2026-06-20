@@ -7,7 +7,6 @@
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
-#include <polatory/isosurface/post_snap.hpp>
 #include <polatory/isosurface/snap.hpp>
 #include <polatory/types.hpp>
 #include <array>
@@ -149,8 +148,9 @@ class Isosurface {
     // A positive tolerance's slack is what lets that settle, so without one a single pass is used.
     // Restricting snapping to points whose projection stays inside first_extended_bbox keeps it
     // away from the mesh boundary, which lies further out (near second_extended_bbox); the clip
-    // then makes the on-bbox boundary. Afterwards post_snap flattens the snapped region by edge
-    // flips, leaving the base lattice elsewhere exactly as generated.
+    // then makes the on-bbox boundary. Afterwards thin_snapped_mesh drops redundant snapped
+    // vertices and smooth_snapped_mesh flattens the snapped region by edge flips, leaving the base
+    // lattice elsewhere exactly as generated.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto res = lattice_.resolution();
       VecX tols = res * rel_snap_tols_;
@@ -163,7 +163,8 @@ class Isosurface {
           break;
         }
       }
-      mesh = post_snap(mesh, res, aniso_, snapped_vertices(mesh));
+      mesh = thin_snapped_mesh(mesh, snap_points_, tols, aniso_);
+      mesh = smooth_snapped_mesh(mesh, res, aniso_, snapped_vertices(mesh));
     }
 
     mesh = clip(mesh, lattice_.bbox());

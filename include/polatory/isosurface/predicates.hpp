@@ -176,4 +176,79 @@ inline bool triangles_cross_3d(const geometry::Point3& a0, const geometry::Point
   return igl::tri_tri_overlap_test_3d(aa0, aa1, aa2, bb0, bb1, bb2);
 }
 
+// The squared distance from p to triangle (a, b, c) (its closest point), by Ericson's region test.
+inline double point_triangle_dist2(const geometry::Point3& p, const geometry::Point3& a,
+                                   const geometry::Point3& b, const geometry::Point3& c) {
+  geometry::Vector3 ab = b - a;
+  geometry::Vector3 ac = c - a;
+  geometry::Vector3 ap = p - a;
+  double d1 = ab.dot(ap);
+  double d2 = ac.dot(ap);
+  if (d1 <= 0.0 && d2 <= 0.0) {
+    return ap.squaredNorm();
+  }
+  geometry::Vector3 bp = p - b;
+  double d3 = ab.dot(bp);
+  double d4 = ac.dot(bp);
+  if (d3 >= 0.0 && d4 <= d3) {
+    return bp.squaredNorm();
+  }
+  geometry::Vector3 cp = p - c;
+  double d5 = ab.dot(cp);
+  double d6 = ac.dot(cp);
+  if (d6 >= 0.0 && d5 <= d6) {
+    return cp.squaredNorm();
+  }
+  double vc = d1 * d4 - d3 * d2;
+  if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0) {
+    double v = d1 / (d1 - d3);
+    return (ap - v * ab).squaredNorm();
+  }
+  double vb = d5 * d2 - d1 * d6;
+  if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0) {
+    double w = d2 / (d2 - d6);
+    return (ap - w * ac).squaredNorm();
+  }
+  double va = d3 * d6 - d5 * d4;
+  if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0) {
+    double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+    return (p - (b + w * (c - b))).squaredNorm();
+  }
+  double denom = 1.0 / (va + vb + vc);
+  double v = vb * denom;
+  double w = vc * denom;
+  return (p - (a + ab * v + ac * w)).squaredNorm();
+}
+
+// The number of vertices the triangles (vertex-index triples) a and b share.
+inline int shared_vertices(const std::array<Index, 3>& a, const std::array<Index, 3>& b) {
+  int n = 0;
+  for (auto u : a) {
+    for (auto w : b) {
+      if (u == w) {
+        n++;
+      }
+    }
+  }
+  return n;
+}
+
+// Whether triangles a and b intersect with positive measure, given how many vertices they share
+// (so a bare shared-vertex/edge touch of adjacent faces does not count, and shared == 3 is the same
+// face). A disjoint pair gets the robust exact test; a vertex/edge-sharing pair gets the crease-
+// aware test, which tells a true fold from the bare touch of a sharp crease. See triangles_cross_3d
+// and triangles_overlap_3d.
+inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Point3& a1,
+                                const geometry::Point3& a2, const geometry::Point3& b0,
+                                const geometry::Point3& b1, const geometry::Point3& b2, int shared) {
+  if (shared >= 3) {
+    return false;
+  }
+  if (shared == 0) {
+    return triangles_cross_3d(a0, a1, a2, b0, b1, b2);
+  }
+  auto tol = 1e-6 * std::max((a1 - a0).norm(), (b1 - b0).norm());
+  return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
+}
+
 }  // namespace polatory::isosurface

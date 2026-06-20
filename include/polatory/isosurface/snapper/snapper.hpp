@@ -105,8 +105,6 @@ class Snapper {
     Index moved_vertices{};
     Index inserted_on_edges{};
     Index inserted_in_faces{};
-    Index thinned_on_edges{};  // redundant inserted edge vertices dropped within tolerance
-    Index thinned_in_faces{};  // redundant inserted interior vertices dropped within tolerance
   };
 
   // A point is snapped only if its distance to the mesh is at most max_distance and
@@ -145,11 +143,10 @@ class Snapper {
 
   // Must be called only once. points are in world space; the result is too. tolerances, if
   // non-empty, gives a per-point snapping tolerance, the distance the surface may stay from the
-  // point. It is used twice: a point the partially snapped mesh already passes within its
-  // tolerance of is skipped (snapping it would barely move the surface and only over-subdivide
-  // the patch), and afterwards an inserted vertex whose removal keeps the surface within its
-  // tolerance is dropped (see thin_inserted), so a densely sampled polyline does not over-
-  // triangulate the surface. An empty vector means zero (snap every point in range, thin nothing).
+  // point: a point the partially snapped mesh already passes within its tolerance of is skipped,
+  // since snapping it would barely move the surface and only over-subdivide the patch. (Dropping
+  // the redundant vertices a dense polyline still leaves is done afterwards by the cross-pass
+  // Thinner; see snapper/thinner.hpp.) An empty vector means zero (snap every point in range).
   Mesh snap(const Points3& points, const VecX& tolerances = VecX()) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
@@ -207,10 +204,6 @@ class Snapper {
       }
     }
 
-    // Drop inserted vertices a densely sampled polyline leaves behind that the surface no longer
-    // needs (within each point's snapping tolerance), which would otherwise over-triangulate it
-    // and block the edge-flip smoother. A no-op when no tolerances were given.
-    thin_inserted();
     return emit();
   }
 
@@ -229,7 +222,7 @@ class Snapper {
     auto nearest_in_patch = [&](Index fi) {
       double best = std::numeric_limits<double>::infinity();
       for (const auto& f : patch_faces(fi)) {
-        best = std::min(best, point_tri_dist2(cand.p, pos(f[0]), pos(f[1]), pos(f[2])));
+        best = std::min(best, point_triangle_dist2(cand.p, pos(f[0]), pos(f[1]), pos(f[2])));
       }
       return best;
     };
@@ -343,15 +336,6 @@ class Snapper {
     return false;
   }
 
-  // The squared distance from p to the nearest of the given triangles (emitted 3D positions).
-  double dist2_to_faces(const Point3& p, const std::vector<Face>& faces) {
-    double best = std::numeric_limits<double>::infinity();
-    for (const auto& f : faces) {
-      best = std::min(best, point_tri_dist2(p, pos(f[0]), pos(f[1]), pos(f[2])));
-    }
-    return best;
-  }
-
   // Builds the snapped mesh from the accepted snaps.
   Mesh emit() {
     const auto& F = mesh_.faces();
@@ -395,36 +379,6 @@ class Snapper {
     return {std::move(vertices), std::move(f)};
   }
 
-  // Whether disjoint triangles a and b intersect. self_intersects routes only vertex-disjoint
-  // pairs here (a vertex-sharing pair goes to overlaps_3d, which can tell a true fold from a bare
-  // shared-vertex touch). With the pair disjoint, triangles_cross_3d is exact (it reports even a
-  // bare touch as a crossing) and has no false negatives.
-  bool intersects(const Face& a, const Face& b) const {
-    if (shared_vertices(a, b) != 0) {
-      return false;
-    }
-    return triangles_cross_3d(pos(a[0]), pos(a[1]), pos(a[2]), pos(b[0]), pos(b[1]), pos(b[2]));
-  }
-
-  // Whether triangles a and b intersect with positive measure -- a real self-intersection.
-  // Unlike intersects this also handles a shared vertex or edge (only the same face, shared == 3,
-  // is skipped), so it catches a coplanar fold-back of two edge-adjacent faces -- which the
-  // snapper's acceptance test is the sole guard against -- as well as a shared-vertex fold. See
-  // triangles_overlap_3d.
-  bool overlaps_3d(const Face& a, const Face& b) const {
-    if (shared_vertices(a, b) >= 3) {  // the same face
-      return false;
-    }
-    Point3 a0 = pos(a[0]);
-    Point3 a1 = pos(a[1]);
-    Point3 a2 = pos(a[2]);
-    Point3 b0 = pos(b[0]);
-    Point3 b1 = pos(b[1]);
-    Point3 b2 = pos(b[2]);
-    auto tol = 1e-6 * std::max((a1 - a0).norm(), (b1 - b0).norm());
-    return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
-  }
-
   // Whether any triangle of the changed patches actually intersects another face of the surface.
   // This is the snapper's one geometric acceptance test: patches are triangulated over their flat
   // (on-surface) positions, so the connectivity is always valid and consistently wound regardless
@@ -439,11 +393,12 @@ class Snapper {
       changed_ids.insert(fi);
       changed_faces.insert(changed_faces.end(), faces.begin(), faces.end());
     }
-    // A disjoint pair gets the robust exact crossing test (intersects); a vertex-sharing pair gets
-    // the crease-aware test (overlaps_3d), which tells a true fold from the bare touch of a sharp
-    // crease that the exact test would report as an overlap.
+    // A disjoint pair gets the robust exact crossing test; a vertex-sharing pair gets the crease-
+    // aware test, which tells a true fold from the bare touch of a sharp crease that the exact test
+    // would report as an overlap (see triangles_intersect).
     auto crosses = [&](const Face& a, const Face& b) {
-      return shared_vertices(a, b) == 0 ? intersects(a, b) : overlaps_3d(a, b);
+      return triangles_intersect(pos(a[0]), pos(a[1]), pos(a[2]), pos(b[0]), pos(b[1]), pos(b[2]),
+                                 shared_vertices(a, b));
     };
     // Each changed face is tested against the other changed faces and against the faces in *its
     // own* AABB-neighborhood (within 2 * max_distance, the farthest a snapped face can stray).
@@ -486,120 +441,9 @@ class Snapper {
     return it->second;
   }
 
-  // The squared distance from p to triangle (a, b, c) (closest point on the triangle).
-  static double point_tri_dist2(const Point3& p, const Point3& a, const Point3& b,
-                                const Point3& c) {
-    Vector3 ab = b - a;
-    Vector3 ac = c - a;
-    Vector3 ap = p - a;
-    double d1 = ab.dot(ap);
-    double d2 = ac.dot(ap);
-    if (d1 <= 0.0 && d2 <= 0.0) {
-      return ap.squaredNorm();
-    }
-    Vector3 bp = p - b;
-    double d3 = ab.dot(bp);
-    double d4 = ac.dot(bp);
-    if (d3 >= 0.0 && d4 <= d3) {
-      return bp.squaredNorm();
-    }
-    Vector3 cp = p - c;
-    double d5 = ab.dot(cp);
-    double d6 = ac.dot(cp);
-    if (d6 >= 0.0 && d5 <= d6) {
-      return cp.squaredNorm();
-    }
-    double vc = d1 * d4 - d3 * d2;
-    if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0) {
-      double v = d1 / (d1 - d3);
-      return (ap - v * ab).squaredNorm();
-    }
-    double vb = d5 * d2 - d1 * d6;
-    if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0) {
-      double w = d2 / (d2 - d6);
-      return (ap - w * ac).squaredNorm();
-    }
-    double va = d3 * d6 - d5 * d4;
-    if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0) {
-      double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-      return (p - (b + w * (c - b))).squaredNorm();
-    }
-    double denom = 1.0 / (va + vb + vc);
-    double v = vb * denom;
-    double w = vc * denom;
-    return (p - (a + ab * v + ac * w)).squaredNorm();
-  }
-
   // The current 3D position of a vertex: an original vertex's snapped target if it was
   // moved, otherwise its original position; or an inserted vertex's off-surface point.
   const Point3& pos(Index v) const { return positions_.at(v); }
-
-  static int shared_vertices(const Face& a, const Face& b) {
-    int n = 0;
-    for (auto u : a) {
-      for (auto w : b) {
-        if (u == w) {
-          n++;
-        }
-      }
-    }
-    return n;
-  }
-
-  // Drop inserted vertices a densely sampled polyline leaves behind that the surface no longer
-  // needs: a vertex whose removal keeps the surface within its own snapping tolerance and free of
-  // self-intersection is redundant (the surrounding snaps already pin the surface through it). Such
-  // runs over-triangulate the surface -- e.g. into vertical fins -- and block the edge-flip
-  // smoother. Unlike a per-chain collinearity test this also reaches face-interior vertices and
-  // single-vertex chains, which is most of a polyline that crosses the mesh transversally. Greedy
-  // and iterated to a fixpoint, since one drop can make a neighbour removable; a zero-tolerance
-  // vertex is never dropped, so this is a no-op when no tolerances were given. The dropped vertices
-  // become unreferenced and emit() compacts them away.
-  void thin_inserted() {
-    bool any = true;
-    while (any) {
-      any = false;
-      std::vector<Index> faces;
-      faces.reserve(face_interior_.size());
-      for (const auto& [fi, ids] : face_interior_) {
-        faces.push_back(fi);
-      }
-      for (auto fi : faces) {
-        auto it = face_interior_.find(fi);
-        if (it == face_interior_.end()) {
-          continue;
-        }
-        for (auto id : std::vector<Index>(it->second)) {
-          double tol = inserted_tol_.at(id);
-          if (tol > 0.0 && try_drop_interior(fi, id, tol)) {
-            any = true;
-          }
-        }
-      }
-      std::vector<Edge> edges;
-      edges.reserve(edge_chains_.size());
-      for (const auto& [e, chain] : edge_chains_) {
-        edges.push_back(e);
-      }
-      for (const auto& e : edges) {
-        auto it = edge_chains_.find(e);
-        if (it == edge_chains_.end()) {
-          continue;
-        }
-        std::vector<Index> ids;
-        ids.reserve(it->second.size());
-        for (const auto& x : it->second) {
-          ids.push_back(x.id);
-        }
-        for (auto id : ids) {
-          double tol = inserted_tol_.at(id);
-          if (tol > 0.0 && try_drop_edge(e, id, tol)) {
-            any = true;
-          }
-        }
-      }
-    }
-  }
 
   // The constrained Delaunay triangulation of a patch over its committed edge chains and
   // interior vertices, as triples of vertex ids.
@@ -681,73 +525,6 @@ class Snapper {
       faces.push_back({map(t[0]), map(t[1]), map(t[2])});
     }
     return faces;
-  }
-
-  // Try to drop edge vertex `id` from edge `e`'s chain: removing it re-triangulates both incident
-  // patches. Same accept test as try_drop_interior, against both patches' new triangulation.
-  bool try_drop_edge(const Edge& e, Index id, double tol) {
-    auto it = edge_chains_.find(e);
-    if (it == edge_chains_.end()) {
-      return false;
-    }
-    auto& chain = it->second;
-    auto at = std::ranges::find_if(chain, [id](const EdgeVertex& x) { return x.id == id; });
-    if (at == chain.end()) {
-      return false;
-    }
-    EdgeVertex removed = *at;
-    auto pos_in_chain = at - chain.begin();
-    chain.erase(at);
-    const auto& incident = mesh_.edge_faces(e);
-    std::unordered_map<Index, std::vector<Face>> changed;
-    std::vector<Face> all;
-    for (auto fi : incident) {
-      auto faces = triangulate_patch(fi);
-      all.insert(all.end(), faces.begin(), faces.end());
-      changed[fi] = std::move(faces);
-    }
-    if (dist2_to_faces(pos(id), all) <= tol * tol && !creates_degenerate(changed) &&
-        !self_intersects(changed)) {
-      for (auto fi : incident) {
-        patch_faces_cache_[fi] = changed.at(fi);
-      }
-      if (chain.empty()) {
-        edge_chains_.erase(e);
-      }
-      stats_.thinned_on_edges++;
-      return true;
-    }
-    chain.insert(chain.begin() + pos_in_chain, removed);  // revert
-    return false;
-  }
-
-  // Try to drop interior vertex `id` from patch `fi`: removing it re-triangulates the one patch.
-  // Committed only if the new patch passes within tol of the dropped point and leaves the mesh
-  // free of self-intersection (the insertion guards). Returns whether it was dropped.
-  bool try_drop_interior(Index fi, Index id, double tol) {
-    auto it = face_interior_.find(fi);
-    if (it == face_interior_.end()) {
-      return false;
-    }
-    auto& interior = it->second;
-    auto at = std::ranges::find(interior, id);
-    if (at == interior.end()) {
-      return false;
-    }
-    interior.erase(at);
-    auto faces = triangulate_patch(fi);
-    std::unordered_map<Index, std::vector<Face>> changed{{fi, faces}};
-    if (dist2_to_faces(pos(id), faces) <= tol * tol && !creates_degenerate(changed) &&
-        !self_intersects(changed)) {
-      patch_faces_cache_[fi] = std::move(faces);
-      if (interior.empty()) {
-        face_interior_.erase(fi);
-      }
-      stats_.thinned_in_faces++;
-      return true;
-    }
-    interior.push_back(id);  // revert (interior order does not affect the triangulation)
-    return false;
   }
 
   // Adding a vertex on the edge subdivides both incident patches. Accept if neither
@@ -881,7 +658,6 @@ class Snapper {
     for (auto fi : incident_faces) {
       patch_faces_cache_[fi] = changed.at(fi);
     }
-    inserted_tol_[id] = cand.min_distance;
     stats_.inserted_on_edges++;
     return true;
   }
@@ -922,7 +698,6 @@ class Snapper {
     }
 
     patch_faces_cache_[fi] = std::move(faces);
-    inserted_tol_[id] = cand.min_distance;
     stats_.inserted_in_faces++;
     return true;
   }
@@ -992,7 +767,6 @@ class Snapper {
   std::unordered_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   std::unordered_map<Index, std::vector<Index>> face_interior_;
   std::unordered_map<Index, std::vector<Face>> patch_faces_cache_;
-  std::unordered_map<Index, double> inserted_tol_;  // each inserted vertex's snapping tolerance
 
   Stats stats_;
 };

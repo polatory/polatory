@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory::isosurface {
+namespace polatory::isosurface::snapper {
 
 // Post-process smoothing by edge flips: repeatedly flip an interior edge when doing so lowers the
 // total bend (the summed angle between adjacent faces' normals, 0 = flat) over its neighborhood.
@@ -440,12 +440,4 @@ class Smoother {
   Mesh mesh_;
 };
 
-inline Mesh post_snap(const Mesh& mesh, double resolution, const Mat3& aniso,
-                      std::vector<bool> snapped = {}) {
-  constexpr double kDegree = 0.017453292519943295;
-  constexpr double kMinAngle = 10.0 * kDegree;
-
-  return Smoother(mesh, resolution, aniso, kMinAngle, std::move(snapped)).mesh();
-}
-
-}  // namespace polatory::isosurface
+}  // namespace polatory::isosurface::snapper
