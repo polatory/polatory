@@ -82,7 +82,6 @@ class Snapper {
     Point3 p_world;             // Its exact world position, emitted as-is (no aniso round-trip).
     Point3 q;                   // The projection of p onto the mesh (closest point).
     double d2{};                // The squared distance from p to the mesh.
-    double tang{};              // The squared tangential offset: q to its snapped feature.
     double min_distance{};      // Skip if the mesh passes within this of p (0 = only when on it).
     Index face{};               // The projected face.
     std::array<Index, 3> fv{};  // Its vertex indices.
@@ -462,22 +461,16 @@ class Snapper {
     return normal(V.row(F(fi, 0)), V.row(F(fi, 1)), V.row(F(fi, 2)));
   }
 
-  // Whether any emitted triangle is pulled more than its size: tilted past 45 degrees from its
-  // original face's plane, the off-surface rise exceeding the in-surface run. A dense run of
-  // collinear contour points otherwise lets a snap pull a thin sub-face up into a steep vertical
-  // sliver or fold; bounding the tilt leaves that point to a gentler simplex or drops it.
+  // Whether any emitted triangle is folded over: tilted past vertical from its original face's
+  // plane, so its normal opposes the original's. A dense run of collinear contour points can
+  // otherwise let a snap fold a thin sub-face back over the surface; rejecting that drops the point
+  // or leaves it to a gentler simplex. A face tilted up to vertical (an acute feature) is kept --
+  // a fin there is an under-resolution of the feature, for thinning or a finer mesh, not this guard.
   bool over_pulled(const std::unordered_map<Index, std::vector<Face>>& changed) {
-    constexpr double kCos45 = 0.7071067811865475;
     for (const auto& [fi, faces] : changed) {
       Vector3 o = original_normal(fi);
-      auto on = o.norm();
-      if (!(on > 0.0)) {
-        continue;
-      }
       for (const auto& face : faces) {
-        Vector3 n = emitted_normal(face);
-        auto nn = n.norm();
-        if (nn > 0.0 && n.dot(o) < kCos45 * nn * on) {
+        if (emitted_normal(face).dot(o) < 0.0) {
           return true;
         }
       }
