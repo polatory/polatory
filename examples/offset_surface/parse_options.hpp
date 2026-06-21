@@ -13,12 +13,12 @@ struct Options {
   std::string mesh_in;
   std::string snap_points_file;
   double snap_distance{};
+  int snap_iter{};
   double tolerance{};
   int max_iter{};
   double accuracy{};
   polatory::geometry::Bbox3 mesh_bbox;
   double mesh_resolution{};
-  double smooth{-1.0};  // crease angle in degrees; < 0 means no smoothing
   std::string mesh_out;
 };
 
@@ -44,6 +44,9 @@ inline Options parse_options(int argc, const char* argv[]) {
        "TOL is the tolerance distance as a fraction of the mesh resolution")  //
       ("snap-dist", po::value(&opts.snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
        "Maximum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
+      ("snap-iter", po::value(&opts.snap_iter)->default_value(8)->value_name("N"),
+       "Maximum number of snapping passes; snapping is re-applied to recover points that lost\n"
+       "contention, until the mesh stops changing (effective only with a positive TOL)")  //
       ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
        "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
@@ -61,9 +64,6 @@ inline Options parse_options(int argc, const char* argv[]) {
        "Output mesh bounding box")  //
       ("mesh-res", po::value(&opts.mesh_resolution)->required()->value_name("RES"),
        "Output mesh resolution")  //
-      ("smooth", po::value(&opts.smooth)->value_name("DEG"),
-       "Smooth the mesh by edge flips that flatten creases sharper than DEG degrees\n"
-       "(0 flattens wherever it helps); omit to disable")  //
       ("mesh-out", po::value(&opts.mesh_out)->required()->value_name("FILE"),
        "Output mesh file in OBJ format")  //
       ;

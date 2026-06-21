@@ -52,11 +52,10 @@ namespace polatory::isosurface::snapper {
 //    A rejected vertex or edge snap cascades to its next-nearest simplex (ultimately a face snap,
 //    which perturbs only its own patch); a point that cannot be placed anywhere is dropped.
 //
-// Processing order. Points are taken by increasing tangential offset — the in-surface distance
-// from a point's projection to the feature it snaps to. A vertex move's distortion is its
-// tangential component (a perpendicular move only raises or lowers the height field, leaving
-// the patch shape unchanged), so taking the least-tangential snaps first lets each shared
-// vertex be claimed by its least-distorting candidate.
+// Processing order. Points are taken by increasing distance to the mesh — the perpendicular move
+// a snap makes. Taking the least-distorting snaps first lets each shared feature be claimed by the
+// candidate that moves it least; ordering instead by the in-surface (tangential) offset let a far
+// point win a contended vertex over a near one, folding the patch into an overhang.
 //
 // Boundary. A point is snapped only if both it and its projection lie inside the given bbox.
 // If the bbox interior holds no mesh boundary, snapping provably leaves the boundary untouched
@@ -286,12 +285,10 @@ class Snapper {
                (q - sites.at(index_of(t))).squaredNorm();
       });
 
-      auto tang = (q - sites.at(index_of(order.front()))).squaredNorm();
       candidates.push_back({.p = p,
                             .p_world = p_world,
                             .q = q,
                             .d2 = d2,
-                            .tang = tang,
                             .min_distance = tolerances.size() == 0 ? 0.0 : tolerances(i),
                             .face = fi,
                             .fv = {f(0), f(1), f(2)},
@@ -299,15 +296,13 @@ class Snapper {
                             .order = order});
     }
 
-    // Order by increasing tangential offset — the in-surface distance from a point's
-    // projection to the feature it snaps to. A vertex move's distortion is its tangential
-    // component (a perpendicular move only raises or lowers the height field and leaves the
-    // patch shape unchanged), so processing the least-tangential snaps first lets each shared
-    // vertex be claimed by its least-distorting candidate, independent of how far off the
-    // surface the points lie.
+    // Order by increasing distance to the mesh — the perpendicular move a snap makes. Taking the
+    // least-distorting snaps first lets each shared feature be claimed by the candidate that moves
+    // it least; an earlier ordering by the in-surface (tangential) offset instead let a far point
+    // win a contended vertex over a near one, folding the patch into an overhang.
     std::ranges::sort(candidates, [](const Candidate& x, const Candidate& y) {
-      return std::make_tuple(x.tang, x.p(0), x.p(1), x.p(2)) <
-             std::make_tuple(y.tang, y.p(0), y.p(1), y.p(2));
+      return std::make_tuple(x.d2, x.p(0), x.p(1), x.p(2)) <
+             std::make_tuple(y.d2, y.p(0), y.p(1), y.p(2));
     });
     return candidates;
   }
