@@ -26,11 +26,13 @@ Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const 
   return t.thin();
 }
 
-Mesh smooth_snapped_mesh(const Mesh& mesh, double resolution, const Mat3& aniso,
-                         std::vector<bool> snapped) {
+Mesh smooth_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
+                         double resolution, const Mat3& aniso, std::vector<bool> snapped) {
   constexpr double kDegree = 0.017453292519943295;  // radians
   constexpr double kMinAngle = 10.0 * kDegree;
-  return snapper::Smoother(mesh, resolution, aniso, kMinAngle, std::move(snapped)).mesh();
+  return snapper::Smoother(mesh, points, tolerances, resolution, aniso, kMinAngle,
+                           std::move(snapped))
+      .mesh();
 }
 
 }  // namespace polatory::isosurface

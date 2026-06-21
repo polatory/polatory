@@ -164,7 +164,7 @@ class Isosurface {
         }
       }
       mesh = thin_snapped_mesh(mesh, snap_points_, tols, aniso_);
-      mesh = smooth_snapped_mesh(mesh, res, aniso_, snapped_vertices(mesh));
+      mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_, snapped_vertices(mesh));
     }
 
     mesh = clip(mesh, lattice_.bbox());

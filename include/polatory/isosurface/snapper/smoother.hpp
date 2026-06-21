@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
@@ -40,9 +41,16 @@ namespace polatory::isosurface::snapper {
 // angle below it is rejected unless it improves on the worst angle already there, so a cusp whose
 // only flat triangulation is a sliver is left creased rather than slivered (min_angle = 0 disables
 // the cap).
+//
+// The snap points and their tolerances are passed so the descent honors them: a flip is rejected if
+// it would push the surface beyond a point's tolerance. This protects points honored implicitly --
+// those the surface passes within tolerance of with no vertex there (a point already satisfied
+// without a snap, or one whose snapped vertex thinning later removed as redundant) -- which a flip
+// that only watches the dihedral would otherwise flatten the surface off of.
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
+  using Points3 = geometry::Points3;
   using Vector3 = geometry::Vector3;
   static constexpr double kPi = 3.141592653589793;
 
@@ -82,16 +90,23 @@ class Smoother {
   };
 
  public:
-  // snapped, if non-empty, has one entry per vertex; a flip is then made only where its quad
-  // touches a snapped vertex, leaving the rest of the mesh exactly as generated.
-  Smoother(const Mesh& mesh, double resolution, const Mat3& aniso, double min_angle,
-           std::vector<bool> snapped = {})
+  // points (world) and tolerances (one per point, isotropic-frame distances; empty = zero) are the
+  // snap targets a flip may not push the surface off. snapped, if non-empty, has one entry per
+  // vertex; a flip is then made only where its quad touches a snapped vertex, leaving the rest of
+  // the mesh exactly as generated.
+  Smoother(const Mesh& mesh, const Points3& points, const VecX& tolerances,
+           double resolution, const Mat3& aniso, double min_angle, std::vector<bool> snapped = {})
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
+        p_(geometry::transform_points<3>(aniso, points)),
+        tol_(tolerances),
         cell_(resolution),
         min_angle_(min_angle),
         snapped_(std::move(snapped)),
         visited_(f_.rows(), -1) {
+    for (Index i = 0; i < p_.rows(); i++) {
+      pgrid_[cell_of(p_.row(i))].push_back(i);
+    }
     // The grid cell is the lattice resolution, the scale of an edge in this isotropic frame, so a
     // face spans about one cell and its AABB touches few. Cell size only tunes the broad-phase, not
     // its result, so this need not be exact -- but resolution is immune to a lone long edge that a
@@ -119,7 +134,7 @@ class Smoother {
       Edge e = pq.top().e;
       pq.pop();
       auto fl = score(e);  // re-score: a nearby flip may have outdated this entry
-      if (!fl || !guard_ok(*fl)) {
+      if (!fl || !honors_ok(*fl) || !guard_ok(*fl)) {
         continue;
       }
       do_flip(*fl);
@@ -266,6 +281,61 @@ class Smoother {
   bool guard_ok(const Flip& fl) {
     auto tol = 1e-6 * (v_.row(fl.x) - v_.row(fl.y)).norm();
     return !crosses(fl.nf0, fl.f0i, fl.f1i, tol) && !crosses(fl.nf1, fl.f0i, fl.f1i, tol);
+  }
+
+  // Whether the flip keeps every snap point the mesh honors honored. The flip changes only f0/f1, so
+  // a point's distance to the mesh can grow only if a removed face was its nearest; such a point must
+  // stay within its tolerance of the new local faces (the two new triangles and the quad's outer
+  // neighbours). A point not within tolerance of either removed face is honored elsewhere by an
+  // untouched face and needs no check.
+  bool honors_ok(const Flip& fl) const {
+    if (p_.rows() == 0) {
+      return true;
+    }
+    Face f0 = f_.row(fl.f0i);
+    Face f1 = f_.row(fl.f1i);
+    std::array<Face, 6> after{fl.nf0, fl.nf1};
+    auto na = 2;
+    for (const Edge& e : {Edge{fl.c, fl.x}, Edge{fl.y, fl.c}, Edge{fl.x, fl.d}, Edge{fl.d, fl.y}}) {
+      Index g = external(e, fl.f0i, fl.f1i);
+      if (g >= 0) {
+        after.at(na++) = f_.row(g);
+      }
+    }
+    Point3 lo = v_.row(fl.x).cwiseMin(v_.row(fl.y)).cwiseMin(v_.row(fl.c)).cwiseMin(v_.row(fl.d));
+    Point3 hi = v_.row(fl.x).cwiseMax(v_.row(fl.y)).cwiseMax(v_.row(fl.c)).cwiseMax(v_.row(fl.d));
+    Cell clo = cell_of(lo);
+    Cell chi = cell_of(hi);
+    for (auto i = clo[0] - 1; i <= chi[0] + 1; i++) {
+      for (auto j = clo[1] - 1; j <= chi[1] + 1; j++) {
+        for (auto k = clo[2] - 1; k <= chi[2] + 1; k++) {
+          auto it = pgrid_.find(Cell{i, j, k});
+          if (it == pgrid_.end()) {
+            continue;
+          }
+          for (Index pi : it->second) {
+            auto tol = tol_.size() == 0 ? 0.0 : tol_(pi);
+            auto tol2 = tol * tol;
+            Point3 p = p_.row(pi);
+            if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
+              continue;  // not honored by a removed face; the flip cannot dishonor it
+            }
+            auto best = std::numeric_limits<double>::infinity();
+            for (auto m = 0; m < na; m++) {
+              best = std::min(best, dist2(p, after.at(m)));
+            }
+            if (best > tol2) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  double dist2(const Point3& p, const Face& f) const {
+    return point_triangle_dist2(p, v_.row(f[0]), v_.row(f[1]), v_.row(f[2]));
   }
 
   // Whether new triangle nf (replacing f0i/f1i) overlaps any spatially near face. A face nf
@@ -416,14 +486,17 @@ class Smoother {
     return -1;
   }
 
-  geometry::Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
-  Faces f_;              // working faces; connectivity is edited in place
+  Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
+  Faces f_;    // working faces; connectivity is edited in place
+  Points3 p_;  // snap points in the isotropic frame, the targets a flip may not move off
+  VecX tol_;             // per-point tolerance (isotropic distance); empty = zero
   double cell_{};        // spatial-grid cell size for the self-intersection guard
   double min_angle_;     // a flip may not push a triangle's smallest angle below this (0 = off)
   std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
   std::unordered_map<Edge, std::vector<Index>, EdgeHash> ef_;  // edge -> its (<= 2) incident faces
   std::unordered_map<Cell, std::vector<Index>, CellHash>
-      grid_;                    // spatial broad-phase for the guard
+      grid_;                                                    // spatial broad-phase for the guard
+  std::unordered_map<Cell, std::vector<Index>, CellHash> pgrid_;  // snap points, by cell
   std::vector<Index> visited_;  // per-guard stamp, to test each candidate face once
   Index guard_id_{0};
   Mesh mesh_;

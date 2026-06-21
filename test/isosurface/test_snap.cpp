@@ -18,6 +18,7 @@
 #include <utility>
 
 using polatory::Index;
+using polatory::Mat3;
 using polatory::VecX;
 using polatory::geometry::Bbox3;
 using polatory::geometry::Point3;
@@ -185,7 +186,7 @@ Points3 center_points() {
 
 TEST(snap, points_inside_bbox_become_vertices) {
   auto points = center_points();
-  auto mesh = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, kMaxDistance, Mat3::Identity());
 
   // The three points whose projections lie inside the bbox pass exactly through the
   // mesh.
@@ -208,7 +209,7 @@ TEST(snap, vertex_contention_cascades) {
   Points3 points(2, 3);
   points << 1.06, 1.04, 0.03,  // nearer the mesh: takes vertex (1,1)
       1.10, 1.08, 0.06;        // farther: cascades to an edge
-  auto mesh = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, kMaxDistance, Mat3::Identity());
 
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(1)), 1e-12).has_value());
@@ -216,7 +217,7 @@ TEST(snap, vertex_contention_cascades) {
 }
 
 TEST(snap, manifold_and_disk_topology) {
-  auto mesh = snap_mesh(planar_grid(3), center_points(), VecX(), kCenterBbox, kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), center_points(), VecX(), kCenterBbox, kMaxDistance, Mat3::Identity());
 
   ASSERT_TRUE(is_oriented_manifold(mesh));
   ASSERT_EQ(1, euler_characteristic(mesh));
@@ -225,7 +226,7 @@ TEST(snap, manifold_and_disk_topology) {
 TEST(snap, leaves_boundary_untouched) {
   auto grid = planar_grid(3);
 
-  auto mesh = snap_mesh(grid, center_points(), VecX(), kCenterBbox, kMaxDistance);
+  auto mesh = snap_mesh(grid, center_points(), VecX(), kCenterBbox, kMaxDistance, Mat3::Identity());
 
   // The boundary is unchanged: snapping never reaches it, even for the point near
   // the grid corner, because its projection is outside the bbox. (Interior vertices
@@ -240,7 +241,7 @@ TEST(snap, leaves_boundary_untouched) {
 TEST(snap, empty_points_is_noop) {
   auto grid = planar_grid(3);
   Points3 points(0, 3);
-  auto mesh = snap_mesh(grid, points, VecX(), kCenterBbox, kMaxDistance);
+  auto mesh = snap_mesh(grid, points, VecX(), kCenterBbox, kMaxDistance, Mat3::Identity());
 
   ASSERT_EQ(grid.vertices().rows(), mesh.vertices().rows());
   ASSERT_EQ(grid.faces().rows(), mesh.faces().rows());
@@ -252,10 +253,10 @@ TEST(snap, rejects_points_beyond_max_distance) {
   Points3 points(1, 3);
   points << 1.5, 1.5, 0.3;
 
-  auto rejected = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, 0.2);
+  auto rejected = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, 0.2, Mat3::Identity());
   ASSERT_FALSE(find_vertex(rejected, Point3(points.row(0)), 1e-12).has_value());
 
-  auto accepted = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, 0.4);
+  auto accepted = snap_mesh(planar_grid(3), points, VecX(), kCenterBbox, 0.4, Mat3::Identity());
   ASSERT_TRUE(find_vertex(accepted, Point3(points.row(0)), 1e-12).has_value());
 }
 
@@ -299,7 +300,7 @@ TEST(snap, per_point_tolerance_skips_satisfied_point) {
   // tolerance 0, still snap and become vertices.
   VecX tolerances(points.rows());
   tolerances << 0.0, 0.0, 0.1, 0.0;
-  auto mesh = snap_mesh(planar_grid(3), points, tolerances, kCenterBbox, kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), points, tolerances, kCenterBbox, kMaxDistance, Mat3::Identity());
 
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(1)), 1e-12).has_value());

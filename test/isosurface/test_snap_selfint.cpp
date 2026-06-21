@@ -23,6 +23,7 @@
 #include <vector>
 
 using polatory::Index;
+using polatory::Mat3;
 using polatory::VecX;
 using polatory::geometry::Bbox3;
 using polatory::geometry::Point3;
@@ -245,7 +246,7 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
   const Index n = 500;
   for (double off : {0.0, 0.5}) {
     auto points = plane_points(0.7, n, off * max_distance);
-    auto mesh = snap_mesh(base, points, VecX(), snap_bbox, max_distance);
+    auto mesh = snap_mesh(base, points, VecX(), snap_bbox, max_distance, Mat3::Identity());
     auto self_int = count_self_intersections(mesh);
     std::cerr << "planar off=" << off << ": faces=" << mesh.faces().rows()
               << " self-intersections=" << self_int << "\n";
@@ -268,7 +269,7 @@ TEST(snap_selfint, curved_surface_has_no_self_intersections) {
 
   const auto max_distance = 0.05;
   auto points = sphere_points(radius, 1000, 0.5 * max_distance);
-  auto mesh = snap_mesh(base, points, VecX(), bbox, max_distance);
+  auto mesh = snap_mesh(base, points, VecX(), bbox, max_distance, Mat3::Identity());
 
   auto self_int = count_self_intersections(mesh);
   std::cerr << "sphere: faces=" << mesh.faces().rows() << " self-intersections=" << self_int
