@@ -12,6 +12,7 @@
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/predicates.hpp>
+#include <polatory/isosurface/snapper/point_grid.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <queue>
@@ -78,17 +79,6 @@ class Smoother {
     bool operator()(const Item& a, const Item& b) const { return a.improve < b.improve; }
   };
 
-  // A cell of the uniform spatial grid the self-intersection guard broad-phases over.
-  using Cell = std::array<int, 3>;
-  struct CellHash {
-    std::size_t operator()(const Cell& c) const noexcept {
-      auto h = static_cast<std::size_t>(static_cast<std::uint32_t>(c[0])) * 73856093U;
-      h ^= static_cast<std::size_t>(static_cast<std::uint32_t>(c[1])) * 19349663U;
-      h ^= static_cast<std::size_t>(static_cast<std::uint32_t>(c[2])) * 83492791U;
-      return h;
-    }
-  };
-
  public:
   // points (world) and tolerances (one per point, isotropic-frame distances; empty = zero) are the
   // snap targets a flip may not push the surface off. snapped, if non-empty, has one entry per
@@ -98,15 +88,11 @@ class Smoother {
            double resolution, const Mat3& aniso, double min_angle, std::vector<bool> snapped = {})
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
-        p_(geometry::transform_points<3>(aniso, points)),
-        tol_(tolerances),
+        points_(geometry::transform_points<3>(aniso, points), tolerances, resolution),
         cell_(resolution),
         min_angle_(min_angle),
         snapped_(std::move(snapped)),
         visited_(f_.rows(), -1) {
-    for (Index i = 0; i < p_.rows(); i++) {
-      pgrid_[cell_of(p_.row(i))].push_back(i);
-    }
     // The grid cell is the lattice resolution, the scale of an edge in this isotropic frame, so a
     // face spans about one cell and its AABB touches few. Cell size only tunes the broad-phase, not
     // its result, so this need not be exact -- but resolution is immune to a lone long edge that a
@@ -289,7 +275,7 @@ class Smoother {
   // neighbours). A point not within tolerance of either removed face is honored elsewhere by an
   // untouched face and needs no check.
   bool honors_ok(const Flip& fl) const {
-    if (p_.rows() == 0) {
+    if (points_.empty()) {
       return true;
     }
     Face f0 = f_.row(fl.f0i);
@@ -304,34 +290,24 @@ class Smoother {
     }
     Point3 lo = v_.row(fl.x).cwiseMin(v_.row(fl.y)).cwiseMin(v_.row(fl.c)).cwiseMin(v_.row(fl.d));
     Point3 hi = v_.row(fl.x).cwiseMax(v_.row(fl.y)).cwiseMax(v_.row(fl.c)).cwiseMax(v_.row(fl.d));
-    Cell clo = cell_of(lo);
-    Cell chi = cell_of(hi);
-    for (auto i = clo[0] - 1; i <= chi[0] + 1; i++) {
-      for (auto j = clo[1] - 1; j <= chi[1] + 1; j++) {
-        for (auto k = clo[2] - 1; k <= chi[2] + 1; k++) {
-          auto it = pgrid_.find(Cell{i, j, k});
-          if (it == pgrid_.end()) {
-            continue;
-          }
-          for (Index pi : it->second) {
-            auto tol = tol_.size() == 0 ? 0.0 : tol_(pi);
-            auto tol2 = tol * tol;
-            Point3 p = p_.row(pi);
-            if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
-              continue;  // not honored by a removed face; the flip cannot dishonor it
-            }
-            auto best = std::numeric_limits<double>::infinity();
-            for (auto m = 0; m < na; m++) {
-              best = std::min(best, dist2(p, after.at(m)));
-            }
-            if (best > tol2) {
-              return false;
-            }
-          }
-        }
+    bool ok = true;
+    points_.for_each_near(lo, hi, [&](Index pi) {
+      auto tol2 = points_.tolerance(pi) * points_.tolerance(pi);
+      const Point3& p = points_.point(pi);
+      if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
+        return true;  // not honored by a removed face; the flip cannot dishonor it
       }
-    }
-    return true;
+      auto best = std::numeric_limits<double>::infinity();
+      for (auto m = 0; m < na; m++) {
+        best = std::min(best, dist2(p, after.at(m)));
+      }
+      if (best > tol2) {
+        ok = false;
+        return false;  // dishonored; stop the walk
+      }
+      return true;
+    });
+    return ok;
   }
 
   double dist2(const Point3& p, const Face& f) const {
@@ -346,12 +322,12 @@ class Smoother {
     Point3 p0 = v_.row(nf[0]);
     Point3 p1 = v_.row(nf[1]);
     Point3 p2 = v_.row(nf[2]);
-    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2));
-    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2));
-    for (auto i = lo[0]; i <= hi[0]; i++) {
-      for (auto j = lo[1]; j <= hi[1]; j++) {
-        for (auto k = lo[2]; k <= hi[2]; k++) {
-          auto it = grid_.find(Cell{i, j, k});
+    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
+    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
+    for (auto i = lo(0); i <= hi(0); i++) {
+      for (auto j = lo(1); j <= hi(1); j++) {
+        for (auto k = lo(2); k <= hi(2); k++) {
+          auto it = grid_.find(Cell(i, j, k));
           if (it == grid_.end()) {
             continue;
           }
@@ -382,12 +358,6 @@ class Smoother {
     insert_face(fl.f1i);
   }
 
-  Cell cell_of(const Point3& p) const {
-    return {static_cast<int>(std::floor(p.x() / cell_)),
-            static_cast<int>(std::floor(p.y() / cell_)),
-            static_cast<int>(std::floor(p.z() / cell_))};
-  }
-
   // Index a face by the grid cells its AABB touches. Vertices never move, so a face's cells change
   // only when it is flipped, when it is re-inserted in place; old entries left stale are harmless
   // (a stale index still reads its current geometry).
@@ -395,12 +365,12 @@ class Smoother {
     Point3 p0 = v_.row(f_(fi, 0));
     Point3 p1 = v_.row(f_(fi, 1));
     Point3 p2 = v_.row(f_(fi, 2));
-    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2));
-    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2));
-    for (auto i = lo[0]; i <= hi[0]; i++) {
-      for (auto j = lo[1]; j <= hi[1]; j++) {
-        for (auto k = lo[2]; k <= hi[2]; k++) {
-          grid_[Cell{i, j, k}].push_back(fi);
+    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
+    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
+    for (auto i = lo(0); i <= hi(0); i++) {
+      for (auto j = lo(1); j <= hi(1); j++) {
+        for (auto k = lo(2); k <= hi(2); k++) {
+          grid_[Cell(i, j, k)].push_back(fi);
         }
       }
     }
@@ -488,15 +458,12 @@ class Smoother {
 
   Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
   Faces f_;    // working faces; connectivity is edited in place
-  Points3 p_;  // snap points in the isotropic frame, the targets a flip may not move off
-  VecX tol_;             // per-point tolerance (isotropic distance); empty = zero
+  PointGrid points_;     // snap points + tolerances, the targets a flip may not move off
   double cell_{};        // spatial-grid cell size for the self-intersection guard
   double min_angle_;     // a flip may not push a triangle's smallest angle below this (0 = off)
   std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
   std::unordered_map<Edge, std::vector<Index>, EdgeHash> ef_;  // edge -> its (<= 2) incident faces
-  std::unordered_map<Cell, std::vector<Index>, CellHash>
-      grid_;                                                    // spatial broad-phase for the guard
-  std::unordered_map<Cell, std::vector<Index>, CellHash> pgrid_;  // snap points, by cell
+  std::unordered_map<Cell, std::vector<Index>, CellHash> grid_;  // face broad-phase for the guard
   std::vector<Index> visited_;  // per-guard stamp, to test each candidate face once
   Index guard_id_{0};
   Mesh mesh_;

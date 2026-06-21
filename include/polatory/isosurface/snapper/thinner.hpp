@@ -10,6 +10,7 @@
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/predicates.hpp>
+#include <polatory/isosurface/snapper/point_grid.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <unordered_map>
@@ -37,7 +38,8 @@ class Thinner {
 
  public:
   Thinner(const Points3& vertices, const Faces& faces, const Points3& points,
-          const VecX& tolerances, const Mat3& aniso) {
+          const VecX& tolerances, double resolution, const Mat3& aniso)
+      : points_(geometry::transform_points<3>(aniso, points), tolerances, resolution) {
     auto iso = geometry::transform_points<3>(aniso, vertices);
     world_.assign(vertices.rowwise().begin(), vertices.rowwise().end());
     iso_.assign(iso.rowwise().begin(), iso.rowwise().end());
@@ -224,19 +226,15 @@ class Thinner {
       return false;
     }
 
-    // The dropped point must stay within its tolerance of the new surface.
-    double best = std::numeric_limits<double>::infinity();
+    // The collapse's distortion, for picking the least-distorting neighbour: how far the dropped
+    // vertex ends up from the new surface.
+    dev = std::numeric_limits<double>::infinity();
     for (const auto& nf : kept) {
-      best = std::min(best, point_triangle_dist2(iso_.at(v), iso_.at(nf[0]), iso_.at(nf[1]),
-                                                 iso_.at(nf[2])));
+      dev = std::min(dev, dist2(iso_.at(v), nf));
     }
-    if (best > tol_.at(v) * tol_.at(v)) {
-      return false;
-    }
-    dev = best;
 
-    // No new face may self-intersect a nearby face (one incident to a ring vertex, outside the
-    // umbrella). A collapse is local, so the one-ring neighborhood suffices.
+    // The faces near the collapse afterwards: the new (kept) faces plus the unchanged faces incident
+    // to their vertices, outside the umbrella. Reused by the honor guard and the self-int check.
     std::unordered_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto x : nf) {
@@ -247,6 +245,12 @@ class Thinner {
         }
       }
     }
+
+    if (!honors_ok(inc, kept, nearby)) {
+      return false;
+    }
+
+    // No new face may self-intersect a nearby face. A collapse is local, so the one-ring suffices.
     for (const auto& nf : kept) {
       for (auto fi : nearby) {
         if (intersects(nf, faces_.at(fi))) {
@@ -255,6 +259,56 @@ class Thinner {
       }
     }
     return true;
+  }
+
+  // The squared distance from p to triangle f, in the isotropic frame.
+  double dist2(const Point3& p, const Face& f) const {
+    return point_triangle_dist2(p, iso_.at(f[0]), iso_.at(f[1]), iso_.at(f[2]));
+  }
+
+  // Whether every snap point the collapsing umbrella holds within tolerance stays within it of the
+  // new local surface (kept faces plus unchanged nearby faces) -- not just the dropped vertex, so a
+  // greedy chain of collapses cannot drift an already-dropped point off the surface. A point within
+  // tolerance only of an unchanged face elsewhere is unaffected, so only points within tolerance of
+  // a removed (inc) face are checked. inc holds the old faces (v not yet retargeted), kept the new.
+  bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
+                 const std::unordered_set<Index>& nearby) const {
+    if (points_.empty()) {
+      return true;
+    }
+    Point3 lo = iso_.at(faces_.at(inc.front())[0]);
+    Point3 hi = lo;
+    for (auto fi : inc) {
+      for (auto x : faces_.at(fi)) {
+        lo = lo.cwiseMin(iso_.at(x));
+        hi = hi.cwiseMax(iso_.at(x));
+      }
+    }
+    bool ok = true;
+    points_.for_each_near(lo, hi, [&](Index pi) {
+      auto t2 = points_.tolerance(pi) * points_.tolerance(pi);
+      const Point3& p = points_.point(pi);
+      auto old = std::numeric_limits<double>::infinity();
+      for (auto fi : inc) {
+        old = std::min(old, dist2(p, faces_.at(fi)));
+      }
+      if (old > t2) {
+        return true;  // not held by a removed face; the collapse cannot dishonor it
+      }
+      auto neu = std::numeric_limits<double>::infinity();
+      for (const auto& nf : kept) {
+        neu = std::min(neu, dist2(p, nf));
+      }
+      for (auto fi : nearby) {
+        neu = std::min(neu, dist2(p, faces_.at(fi)));
+      }
+      if (neu > t2) {
+        ok = false;
+        return false;  // dishonored; stop the walk
+      }
+      return true;
+    });
+    return ok;
   }
 
   void do_collapse(Index v, Index w, const std::vector<Index>& inc,
@@ -315,12 +369,13 @@ class Thinner {
     return {std::move(vertices), std::move(f)};
   }
 
+  PointGrid points_;                     // snap points + tolerances, for the honor guard
   std::vector<Point3> world_;
   std::vector<Point3> iso_;
   std::vector<Face> faces_;
   std::vector<bool> deleted_;
-  std::vector<double> tol_;                  // per vertex; -1 = not a snap point (never collapsed)
-  std::vector<std::vector<Index>> v2f_;      // vertex -> incident face ids (may include deleted)
+  std::vector<double> tol_;              // per vertex; -1 = not a snap point (never collapsed)
+  std::vector<std::vector<Index>> v2f_;  // vertex -> incident face ids (may include deleted)
 };
 
 }  // namespace polatory::isosurface::snapper

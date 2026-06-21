@@ -17,12 +17,12 @@ Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& to
 }
 
 Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
-                       const Mat3& aniso) {
+                       double resolution, const Mat3& aniso) {
   if (points.rows() == 0 || mesh.faces().rows() == 0) {
     return mesh;
   }
 
-  snapper::Thinner t(mesh.vertices(), mesh.faces(), points, tolerances, aniso);
+  snapper::Thinner t(mesh.vertices(), mesh.faces(), points, tolerances, resolution, aniso);
   return t.thin();
 }
 

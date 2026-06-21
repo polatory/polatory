@@ -12,9 +12,10 @@ namespace polatory::isosurface {
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso);
 
-// Drops snapped vertices an earlier pass left redundant, by edge collapse. See snapper/thinner.hpp.
+// Drops snapped vertices an earlier pass left redundant, by edge collapse, without moving any snap
+// point beyond its tolerance of the surface. See snapper/thinner.hpp.
 Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
-                       const Mat3& aniso);
+                       double resolution, const Mat3& aniso);
 
 // Flattens the snapped region by edge flips, never moving the surface beyond a point's tolerance.
 // See snapper/smoother.hpp.

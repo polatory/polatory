@@ -163,7 +163,7 @@ class Isosurface {
           break;
         }
       }
-      mesh = thin_snapped_mesh(mesh, snap_points_, tols, aniso_);
+      mesh = thin_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
       mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_, snapped_vertices(mesh));
     }
 
