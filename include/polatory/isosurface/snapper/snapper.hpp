@@ -313,17 +313,10 @@ class Snapper {
   // moved vertex nearly in line with its edge's chain vertices), which the flat triangulation
   // misses.
   bool creates_degenerate(const std::unordered_map<Index, std::vector<Face>>& changed) {
-    const auto& V = mesh_.vertices();
-    const auto& F = mesh_.faces();
     for (const auto& [fi, faces] : changed) {
-      Point3 a = V.row(F(fi, 0));
-      Point3 b = V.row(F(fi, 1));
-      Point3 c = V.row(F(fi, 2));
-      auto scale = (b - a).cross(c - a).norm();  // twice the original face's area
+      auto scale = original_normal(fi).norm();  // twice the original face's area
       for (const auto& face : faces) {
-        Vector3 e1 = pos(face[1]) - pos(face[0]);
-        Vector3 e2 = pos(face[2]) - pos(face[0]);
-        if (e1.cross(e2).norm() <= 1e-9 * scale) {
+        if (emitted_normal(face).norm() <= 1e-9 * scale) {
           return true;
         }
       }
@@ -373,6 +366,137 @@ class Snapper {
     }
     return {std::move(vertices), std::move(f)};
   }
+
+  // The emitted normal of a face (over its vertices' current snapped positions).
+  Vector3 emitted_normal(const Face& f) const { return normal(pos(f[0]), pos(f[1]), pos(f[2])); }
+
+  // Inserts cand.p into face fi's interior; reverts unless the re-triangulation uses it (it
+  // projects inside the patch) and stays free of self-intersection.
+  bool insert_in_face(const Candidate& cand, Index fi) {
+    auto id = static_cast<Index>(positions_.size());
+    positions_.push_back(cand.p);
+    world_.push_back(cand.p_world);
+    flat_.push_back(cand.q);  // the snap point's on-surface projection
+    auto& interior = face_interior_[fi];
+    interior.push_back(id);
+
+    bool simple = true;
+    auto faces = triangulate_patch(fi, &simple);
+    bool used = false;
+    for (const auto& face : faces) {
+      for (auto x : face) {
+        if (x == id) {
+          used = true;
+        }
+      }
+    }
+    std::unordered_map<Index, std::vector<Face>> changed{{fi, faces}};
+    auto revert = [&] {
+      interior.pop_back();
+      if (interior.empty()) {
+        face_interior_.erase(fi);
+      }
+      positions_.pop_back();
+      world_.pop_back();
+      flat_.pop_back();
+    };
+    if (!simple || !used || creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed)) {
+      revert();
+      return false;
+    }
+
+    patch_faces_cache_[fi] = std::move(faces);
+    stats_.inserted_in_faces++;
+    return true;
+  }
+
+  // Inserts cand.p on edge e at parameter t from e's smaller-id endpoint, subdividing both its
+  // incident patches; reverts unless the re-triangulations stay free of self-intersection.
+  bool insert_on_edge(const Candidate& cand, const Edge& e, double t) {
+    const auto& incident_faces = mesh_.edge_faces(e);
+
+    auto id = static_cast<Index>(positions_.size());
+    positions_.push_back(cand.p);
+    world_.push_back(cand.p_world);
+    flat_.push_back((1.0 - t) * flat_.at(e.a) + t * flat_.at(e.b));  // on the original edge
+    auto& chain = edge_chains_[e];
+    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .id = id});
+
+    std::unordered_map<Index, std::vector<Face>> changed;
+    bool simple = true;
+    for (auto fi : incident_faces) {
+      bool patch_simple = true;
+      changed[fi] = triangulate_patch(fi, &patch_simple);
+      simple = simple && patch_simple;
+    }
+    auto revert = [&] {
+      std::erase_if(chain, [id](const EdgeVertex& x) { return x.id == id; });
+      if (chain.empty()) {
+        edge_chains_.erase(e);
+      }
+      positions_.pop_back();
+      world_.pop_back();
+      flat_.pop_back();
+    };
+    if (!simple || creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed)) {
+      revert();
+      return false;
+    }
+
+    for (auto fi : incident_faces) {
+      patch_faces_cache_[fi] = changed.at(fi);
+    }
+    stats_.inserted_on_edges++;
+    return true;
+  }
+
+  // The unnormalized normal of triangle (a, b, c); its length is twice the area.
+  static Vector3 normal(const Point3& a, const Point3& b, const Point3& c) {
+    return Vector3((b - a).cross(c - a));
+  }
+
+  // The original face fi's plane normal (over the unsnapped vertices).
+  Vector3 original_normal(Index fi) const {
+    const auto& V = mesh_.vertices();
+    const auto& F = mesh_.faces();
+    return normal(V.row(F(fi, 0)), V.row(F(fi, 1)), V.row(F(fi, 2)));
+  }
+
+  // Whether any emitted triangle is pulled more than its size: tilted past 45 degrees from its
+  // original face's plane, the off-surface rise exceeding the in-surface run. A dense run of
+  // collinear contour points otherwise lets a snap pull a thin sub-face up into a steep vertical
+  // sliver or fold; bounding the tilt leaves that point to a gentler simplex or drops it.
+  bool over_pulled(const std::unordered_map<Index, std::vector<Face>>& changed) {
+    constexpr double kCos45 = 0.7071067811865475;
+    for (const auto& [fi, faces] : changed) {
+      Vector3 o = original_normal(fi);
+      auto on = o.norm();
+      if (!(on > 0.0)) {
+        continue;
+      }
+      for (const auto& face : faces) {
+        Vector3 n = emitted_normal(face);
+        auto nn = n.norm();
+        if (nn > 0.0 && n.dot(o) < kCos45 * nn * on) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // The cached triangulation of a patch (computed on first use).
+  const std::vector<Face>& patch_faces(Index fi) {
+    auto it = patch_faces_cache_.find(fi);
+    if (it == patch_faces_cache_.end()) {
+      it = patch_faces_cache_.emplace(fi, triangulate_patch(fi)).first;
+    }
+    return it->second;
+  }
+
+  // The current 3D position of a vertex: an original vertex's snapped target if it was
+  // moved, otherwise its original position; or an inserted vertex's off-surface point.
+  const Point3& pos(Index v) const { return positions_.at(v); }
 
   // Whether any triangle of the changed patches actually intersects another face of the surface.
   // This is the snapper's one geometric acceptance test: patches are triangulated over their flat
@@ -426,19 +550,6 @@ class Snapper {
     }
     return false;
   }
-
-  // The cached triangulation of a patch (computed on first use).
-  const std::vector<Face>& patch_faces(Index fi) {
-    auto it = patch_faces_cache_.find(fi);
-    if (it == patch_faces_cache_.end()) {
-      it = patch_faces_cache_.emplace(fi, triangulate_patch(fi)).first;
-    }
-    return it->second;
-  }
-
-  // The current 3D position of a vertex: an original vertex's snapped target if it was
-  // moved, otherwise its original position; or an inserted vertex's off-surface point.
-  const Point3& pos(Index v) const { return positions_.at(v); }
 
   // The constrained Delaunay triangulation of a patch over its committed edge chains and
   // interior vertices, as triples of vertex ids.
@@ -547,6 +658,49 @@ class Snapper {
   // or onto a constraint).
   bool try_interior(const Candidate& cand) { return insert_in_face(cand, cand.face); }
 
+  // Returns true if the candidate was accepted at this simplex.
+  bool try_place(const Candidate& cand, Simplex s) {
+    switch (s) {
+      case Simplex::kVertex0:
+      case Simplex::kVertex1:
+      case Simplex::kVertex2:
+        return try_vertex(cand, cand.fv.at(index_of(s)));
+      case Simplex::kEdge12:
+      case Simplex::kEdge20:
+      case Simplex::kEdge01:
+        return try_edge(cand, index_of(s) - index_of(Simplex::kEdge12));
+      case Simplex::kFace:
+        return try_interior(cand);
+    }
+    return false;  // unreachable; all simplices are handled above
+  }
+
+  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the move
+  // unless an incident triangle becomes degenerate or self-intersects the surface.
+  bool try_vertex(const Candidate& cand, Index v) {
+    if (moved_.at(v)) {
+      return false;
+    }
+
+    Point3 original = positions_.at(v);        // for revert
+    Point3 original_world = world_.at(v);
+    positions_.at(v) = cand.p;                 // tentative
+    world_.at(v) = cand.p_world;
+    std::unordered_map<Index, std::vector<Face>> changed;
+    for (auto fi : mesh_.vertex_faces(v)) {
+      changed[fi] = patch_faces(fi);
+    }
+    if (creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed)) {
+      positions_.at(v) = original;
+      world_.at(v) = original_world;
+      return false;
+    }
+
+    moved_.at(v) = true;
+    stats_.moved_vertices++;
+    return true;
+  }
+
   // For a point whose nearest simplex is vertex v, try inserting it on any edge or face that
   // contains v across v's umbrella, nearest first. The cascade only saw the single AABB face,
   // so a spoke or face of another incident face may still take a point that face had to drop.
@@ -615,129 +769,6 @@ class Snapper {
       }
     }
     return false;
-  }
-
-  // Inserts cand.p on edge e at parameter t from e's smaller-id endpoint, subdividing both its
-  // incident patches; reverts unless the re-triangulations stay free of self-intersection.
-  bool insert_on_edge(const Candidate& cand, const Edge& e, double t) {
-    const auto& incident_faces = mesh_.edge_faces(e);
-
-    auto id = static_cast<Index>(positions_.size());
-    positions_.push_back(cand.p);
-    world_.push_back(cand.p_world);
-    flat_.push_back((1.0 - t) * flat_.at(e.a) + t * flat_.at(e.b));  // on the original edge
-    auto& chain = edge_chains_[e];
-    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .id = id});
-
-    std::unordered_map<Index, std::vector<Face>> changed;
-    bool simple = true;
-    for (auto fi : incident_faces) {
-      bool patch_simple = true;
-      changed[fi] = triangulate_patch(fi, &patch_simple);
-      simple = simple && patch_simple;
-    }
-    auto revert = [&] {
-      std::erase_if(chain, [id](const EdgeVertex& x) { return x.id == id; });
-      if (chain.empty()) {
-        edge_chains_.erase(e);
-      }
-      positions_.pop_back();
-      world_.pop_back();
-      flat_.pop_back();
-    };
-    if (!simple || creates_degenerate(changed) || self_intersects(changed)) {
-      revert();
-      return false;
-    }
-
-    for (auto fi : incident_faces) {
-      patch_faces_cache_[fi] = changed.at(fi);
-    }
-    stats_.inserted_on_edges++;
-    return true;
-  }
-
-  // Inserts cand.p into face fi's interior; reverts unless the re-triangulation uses it (it
-  // projects inside the patch) and stays free of self-intersection.
-  bool insert_in_face(const Candidate& cand, Index fi) {
-    auto id = static_cast<Index>(positions_.size());
-    positions_.push_back(cand.p);
-    world_.push_back(cand.p_world);
-    flat_.push_back(cand.q);  // the snap point's on-surface projection
-    auto& interior = face_interior_[fi];
-    interior.push_back(id);
-
-    bool simple = true;
-    auto faces = triangulate_patch(fi, &simple);
-    bool used = false;
-    for (const auto& face : faces) {
-      for (auto x : face) {
-        if (x == id) {
-          used = true;
-        }
-      }
-    }
-    std::unordered_map<Index, std::vector<Face>> changed{{fi, faces}};
-    auto revert = [&] {
-      interior.pop_back();
-      if (interior.empty()) {
-        face_interior_.erase(fi);
-      }
-      positions_.pop_back();
-      world_.pop_back();
-      flat_.pop_back();
-    };
-    if (!simple || !used || creates_degenerate(changed) || self_intersects(changed)) {
-      revert();
-      return false;
-    }
-
-    patch_faces_cache_[fi] = std::move(faces);
-    stats_.inserted_in_faces++;
-    return true;
-  }
-
-  // Returns true if the candidate was accepted at this simplex.
-  bool try_place(const Candidate& cand, Simplex s) {
-    switch (s) {
-      case Simplex::kVertex0:
-      case Simplex::kVertex1:
-      case Simplex::kVertex2:
-        return try_vertex(cand, cand.fv.at(index_of(s)));
-      case Simplex::kEdge12:
-      case Simplex::kEdge20:
-      case Simplex::kEdge01:
-        return try_edge(cand, index_of(s) - index_of(Simplex::kEdge12));
-      case Simplex::kFace:
-        return try_interior(cand);
-    }
-    return false;  // unreachable; all simplices are handled above
-  }
-
-  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the move
-  // unless an incident triangle becomes degenerate or self-intersects the surface.
-  bool try_vertex(const Candidate& cand, Index v) {
-    if (moved_.at(v)) {
-      return false;
-    }
-
-    Point3 original = positions_.at(v);        // for revert
-    Point3 original_world = world_.at(v);
-    positions_.at(v) = cand.p;                 // tentative
-    world_.at(v) = cand.p_world;
-    std::unordered_map<Index, std::vector<Face>> changed;
-    for (auto fi : mesh_.vertex_faces(v)) {
-      changed[fi] = patch_faces(fi);
-    }
-    if (creates_degenerate(changed) || self_intersects(changed)) {
-      positions_.at(v) = original;
-      world_.at(v) = original_world;
-      return false;
-    }
-
-    moved_.at(v) = true;
-    stats_.moved_vertices++;
-    return true;
   }
 
   OriginalMesh mesh_;
