@@ -138,7 +138,7 @@ class Thinner {
         continue;  // collapses to a degenerate sliver, dropped
       }
       Face nf{f(0) == v ? w : f(0), f(1) == v ? w : f(1), f(2) == v ? w : f(2)};
-      Vector3 nn = normal(nf);
+      auto nn = normal(nf);
       if (!(nn.norm() > 0.0)) {
         return false;  // a kept face would become degenerate
       }

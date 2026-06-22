@@ -85,7 +85,7 @@ class Smoother {
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
         points_(geometry::transform_points<3>(aniso, points), tolerances, resolution),
-        cell_(resolution),
+        resolution_(resolution),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)),
         min_angle_(min_angle),
         snapped_(std::move(snapped)),
@@ -159,8 +159,8 @@ class Smoother {
 
   // The bend (0 = flat) between two faces; degenerate or back-to-back pairs read as the worst.
   double bend(const Face& a, const Face& b) const {
-    Vector3 na = normal(a);
-    Vector3 nb = normal(b);
+    auto na = normal(a);
+    auto nb = normal(b);
     auto da = na.norm();
     auto db = nb.norm();
     if (!(da > 0.0) || !(db > 0.0)) {
@@ -180,20 +180,20 @@ class Smoother {
     Point3 p0 = v_.row(nf(0));
     Point3 p1 = v_.row(nf(1));
     Point3 p2 = v_.row(nf(2));
-    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
-    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
+    auto lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), resolution_);
+    auto hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), resolution_);
     for (auto i = lo(0); i <= hi(0); i++) {
       for (auto j = lo(1); j <= hi(1); j++) {
         for (auto k = lo(2); k <= hi(2); k++) {
-          auto it = grid_.find(Cell(i, j, k));
+          auto it = grid_.find(Cell{i, j, k});
           if (it == grid_.end()) {
             continue;
           }
           for (Index gi : it->second) {
-            if (visited_[gi] == guard_id_) {
+            if (visited_.at(gi) == guard_id_) {
               continue;
             }
-            visited_[gi] = guard_id_;
+            visited_.at(gi) = guard_id_;
             if (gi != f0i && gi != f1i && overlaps(nf, f_.row(gi), tol)) {
               return true;
             }
@@ -226,8 +226,8 @@ class Smoother {
     if (it == ef_.end() || it->second.size() != 2) {
       return -1;
     }
-    Index a = it->second[0];
-    Index b = it->second[1];
+    Index a = it->second.at(0);
+    Index b = it->second.at(1);
     return a == f0i || a == f1i ? b : a;
   }
 
@@ -285,12 +285,12 @@ class Smoother {
     Point3 p0 = v_.row(f_(fi, 0));
     Point3 p1 = v_.row(f_(fi, 1));
     Point3 p2 = v_.row(f_(fi, 2));
-    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
-    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
+    auto lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), resolution_);
+    auto hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), resolution_);
     for (auto i = lo(0); i <= hi(0); i++) {
       for (auto j = lo(1); j <= hi(1); j++) {
         for (auto k = lo(2); k <= hi(2); k++) {
-          grid_[Cell(i, j, k)].push_back(fi);
+          grid_[Cell{i, j, k}].push_back(fi);
         }
       }
     }
@@ -356,8 +356,8 @@ class Smoother {
     if (it == ef_.end() || it->second.size() != 2) {
       return std::nullopt;
     }
-    Index f0i = it->second[0];
-    Index f1i = it->second[1];
+    Index f0i = it->second.at(0);
+    Index f1i = it->second.at(1);
     Face f0 = f_.row(f0i);
     Face f1 = f_.row(f1i);
 
@@ -378,22 +378,23 @@ class Smoother {
     if ((v_.row(c) - v_.row(d)).squaredNorm() > max_edge2_) {
       return std::nullopt;  // the new diagonal would be too long; keep triangles regular
     }
-    if (!snapped_.empty() && !(snapped_[x] || snapped_[y] || snapped_[c] || snapped_[d])) {
+    if (!snapped_.empty() &&
+        !(snapped_.at(x) || snapped_.at(y) || snapped_.at(c) || snapped_.at(d))) {
       return std::nullopt;  // restricted to quads touching a snapped vertex
     }
 
     Face nf0{x, d, c};
     Face nf1{d, y, c};
-    Vector3 nn0 = normal(nf0);
-    Vector3 nn1 = normal(nf1);
+    auto nn0 = normal(nf0);
+    auto nn1 = normal(nf1);
     if (!(nn0.norm() > 0.0) || !(nn1.norm() > 0.0)) {
       return std::nullopt;
     }
 
     // Reject a flip that folds the surface back on itself: a new normal must not oppose the quad
     // normal (the sum of the two old face normals).
-    Vector3 n0 = normal(f0);
-    Vector3 n1 = normal(f1);
+    auto n0 = normal(f0);
+    auto n1 = normal(f1);
     auto d0 = n0.norm();
     auto d1 = n1.norm();
     if (d0 > 0.0 && d1 > 0.0) {
@@ -442,7 +443,7 @@ class Smoother {
   Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
   Faces f_;    // working faces; connectivity is edited in place
   PointGrid points_;
-  double cell_{};        // spatial-grid cell size for the self-intersection guard
+  double resolution_{};  // spatial-grid cell size for the self-intersection guard
   double max_edge2_{};   // squared cap on a flipped diagonal's length
   double min_angle_;     // a flip may not push a triangle's smallest angle below this (0 = off)
   std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex

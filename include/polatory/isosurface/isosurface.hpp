@@ -204,7 +204,7 @@ class Isosurface {
     std::vector<bool> snapped(vertices.rows(), false);
     for (Index v = 0; v < vertices.rows(); v++) {
       if (points.contains(vertices.row(v))) {
-        snapped[v] = true;
+        snapped.at(v) = true;
       }
     }
     return snapped;

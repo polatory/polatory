@@ -22,20 +22,21 @@ struct CellHash {
   }
 };
 
-inline Cell cell_of(const geometry::Point3& p, double cell) {
-  return (p / cell).array().floor().cast<int>();
+inline Cell cell_of(const geometry::Point3& p, double resolution) {
+  return (p / resolution).array().floor().cast<int>();
 }
 
 class PointGrid {
   using Point3 = geometry::Point3;
 
  public:
-  PointGrid(const geometry::Points3& points, const VecX& tolerances, double cell) : cell_(cell) {
-    points_.assign(points.rowwise().begin(), points.rowwise().end());
-    tol_.resize(points_.size());
+  PointGrid(const geometry::Points3& points, const VecX& tolerances, double resolution)
+      : points_(points.rowwise().begin(), points.rowwise().end()),
+        tol_(points_.size()),
+        resolution_(resolution) {
     for (std::size_t i = 0; i < points_.size(); i++) {
       tol_.at(i) = tolerances.size() != 0 ? tolerances(static_cast<Index>(i)) : 0.0;
-      grid_[cell_of(points_.at(i), cell_)].push_back(static_cast<Index>(i));
+      grid_[cell_of(points_.at(i), resolution_)].push_back(static_cast<Index>(i));
     }
   }
 
@@ -44,12 +45,12 @@ class PointGrid {
   // The one-cell margin is enough because a tolerance is at most one cell (the resolution).
   template <class Fn>
   void for_each_near(const Point3& lo, const Point3& hi, const Fn& fn) const {
-    Cell clo = cell_of(lo, cell_);
-    Cell chi = cell_of(hi, cell_);
+    auto clo = cell_of(lo, resolution_);
+    auto chi = cell_of(hi, resolution_);
     for (auto i = clo(0) - 1; i <= chi(0) + 1; i++) {
       for (auto j = clo(1) - 1; j <= chi(1) + 1; j++) {
         for (auto k = clo(2) - 1; k <= chi(2) + 1; k++) {
-          auto it = grid_.find(Cell(i, j, k));
+          auto it = grid_.find(Cell{i, j, k});
           if (it == grid_.end()) {
             continue;
           }
@@ -70,7 +71,7 @@ class PointGrid {
  private:
   std::vector<Point3> points_;
   std::vector<double> tol_;
-  double cell_;
+  double resolution_;
   std::unordered_map<Cell, std::vector<Index>, CellHash> grid_;
 };
 

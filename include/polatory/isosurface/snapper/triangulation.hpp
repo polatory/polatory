@@ -339,11 +339,11 @@ class Triangulation {
     if (boundary_edges_.empty() || i >= nb_ || j >= nb_) {
       return false;
     }
-    for (auto a : boundary_edges_[i]) {
+    for (auto a : boundary_edges_.at(i)) {
       if (a < 0) {
         continue;
       }
-      for (auto b : boundary_edges_[j]) {
+      for (auto b : boundary_edges_.at(j)) {
         if (a == b) {
           return true;
         }
