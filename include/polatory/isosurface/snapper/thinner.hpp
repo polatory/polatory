@@ -34,11 +34,13 @@ using geometry::Points3;
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
+  static constexpr double kMaxEdgeRatio = 1.5;  // a collapse may not make an edge longer than this * res
 
  public:
   Thinner(const Points3& vertices, const Faces& faces, const Points3& points,
           const VecX& tolerances, double resolution, const Mat3& aniso)
-      : points_(geometry::transform_points<3>(aniso, points), tolerances, resolution) {
+      : points_(geometry::transform_points<3>(aniso, points), tolerances, resolution),
+        max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
     auto iso = geometry::transform_points<3>(aniso, vertices);
     world_.assign(vertices.rowwise().begin(), vertices.rowwise().end());
     iso_.assign(iso.rowwise().begin(), iso.rowwise().end());
@@ -149,20 +151,13 @@ class Thinner {
       return false;
     }
 
-    // Thin only when it strictly recovers the aspect ratio: the worst (smallest) triangle angle in
-    // the umbrella must improve. A collapse that would leave a thinner triangle than was there is
-    // rejected, so thinning never trades fewer faces for a worse shape.
-    double after = std::numeric_limits<double>::infinity();
-    for (const auto& nf : kept) {
-      after = std::min(after, triangle_min_angle(iso_.at(nf(0)), iso_.at(nf(1)), iso_.at(nf(2))));
-    }
-    double before = std::numeric_limits<double>::infinity();
-    for (auto fi : inc) {
-      const auto& f = faces_.at(fi);
-      before = std::min(before, triangle_min_angle(iso_.at(f(0)), iso_.at(f(1)), iso_.at(f(2))));
-    }
-    if (!(after > before)) {
-      return false;
+    // Keep triangles regular: a collapse stretches only v's spokes -- each edge v-r becomes w-r for a
+    // neighbour r not already adjacent to w. The ring edges between v's neighbours and the edges to
+    // the across vertices are unchanged, so only the spokes are capped.
+    for (const auto& [r, fs] : edge_faces) {
+      if (r != w && !across.contains(r) && (iso_.at(w) - iso_.at(r)).squaredNorm() > max_edge2_) {
+        return false;
+      }
     }
 
     // The collapse's distortion, for picking the least-distorting neighbour: how far the dropped
@@ -365,6 +360,7 @@ class Thinner {
   }
 
   PointGrid points_;
+  double max_edge2_{};  // squared cap on a collapsed edge's length
   std::vector<Point3> world_;
   std::vector<Point3> iso_;
   std::vector<Face> faces_;

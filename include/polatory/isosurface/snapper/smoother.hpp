@@ -37,11 +37,9 @@ namespace polatory::isosurface::snapper {
 // bounded below by zero, strictly drops each flip, so the queue drains at a local minimum.
 //
 // All geometry is measured in the lattice's isotropic frame (aniso maps world into it) so the flip
-// choice respects an anisotropic resolution; only the output keeps world positions. min_angle
-// (radians) caps the skew that buys the flatness: a flip that would drop a triangle's smallest
-// angle below it is rejected unless it improves on the worst angle already there, so a cusp whose
-// only flat triangulation is a sliver is left creased rather than slivered (min_angle = 0 disables
-// the cap).
+// choice respects an anisotropic resolution; only the output keeps world positions. A flip that
+// would stretch the new diagonal past kMaxEdgeRatio * resolution is rejected, keeping triangles
+// regular.
 //
 // A flip is rejected if it pushes the surface beyond a snap point's tolerance, protecting points
 // honored implicitly (within tolerance with no vertex there) that a dihedral-only descent flattens off.
@@ -51,6 +49,7 @@ class Smoother {
   using Points3 = geometry::Points3;
   using Vector3 = geometry::Vector3;
   static constexpr double kPi = 3.141592653589793;
+  static constexpr double kMaxEdgeRatio = 1.5;  // a flip may not make an edge longer than this * res
 
   // A candidate flip of edge {x, y} (faces f0i, f1i) into diagonal {c, d}, with the new triangles
   // and the total bend it removes (improve > 0).
@@ -81,12 +80,13 @@ class Smoother {
   // snap targets a flip may not push the surface off. snapped, if non-empty, has one entry per
   // vertex; a flip is then made only where its quad touches a snapped vertex, leaving the rest of
   // the mesh exactly as generated.
-  Smoother(const Mesh& mesh, const Points3& points, const VecX& tolerances,
-           double resolution, const Mat3& aniso, double min_angle, std::vector<bool> snapped = {})
+  Smoother(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
+           const Mat3& aniso, double min_angle, std::vector<bool> snapped = {})
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
         points_(geometry::transform_points<3>(aniso, points), tolerances, resolution),
         cell_(resolution),
+        max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)),
         min_angle_(min_angle),
         snapped_(std::move(snapped)),
         visited_(f_.rows(), -1) {
@@ -375,6 +375,9 @@ class Smoother {
     if (c < 0 || d < 0 || c == d || ef_.contains({c, d})) {
       return std::nullopt;  // boundary/degenerate, or the flipped diagonal already exists
     }
+    if ((v_.row(c) - v_.row(d)).squaredNorm() > max_edge2_) {
+      return std::nullopt;  // the new diagonal would be too long; keep triangles regular
+    }
     if (!snapped_.empty() && !(snapped_[x] || snapped_[y] || snapped_[c] || snapped_[d])) {
       return std::nullopt;  // restricted to quads touching a snapped vertex
     }
@@ -415,15 +418,13 @@ class Smoother {
       return std::nullopt;
     }
 
-    // Aspect-ratio guard: do not flatten a cusp at the cost of a sliver. Reject a flip that pushes
-    // a triangle's smallest angle below min_angle_, unless it improves on the worst angle already
-    // there.
-    if (min_angle_ > 0.0) {
-      auto after_angle = std::min(min_angle(nf0), min_angle(nf1));
-      auto before_angle = std::min(min_angle(f0), min_angle(f1));
-      if (after_angle < min_angle_ && after_angle < before_angle) {
-        return std::nullopt;
-      }
+    // Reject a flip that pushes a triangle's smallest angle below min_angle_, unless it improves on
+    // the worst angle already there -- a degenerate sliver (e.g. a new diagonal grazing a collinear
+    // vertex, a T-junction the inexact self-intersection guard misses) is worse than a crease.
+    auto after_angle = std::min(min_angle(nf0), min_angle(nf1));
+    auto before_angle = std::min(min_angle(f0), min_angle(f1));
+    if (after_angle < min_angle_ && after_angle < before_angle) {
+      return std::nullopt;
     }
     return Flip{f0i, f1i, x, y, c, d, nf0, nf1, before - after};
   }
@@ -442,6 +443,7 @@ class Smoother {
   Faces f_;    // working faces; connectivity is edited in place
   PointGrid points_;
   double cell_{};        // spatial-grid cell size for the self-intersection guard
+  double max_edge2_{};   // squared cap on a flipped diagonal's length
   double min_angle_;     // a flip may not push a triangle's smallest angle below this (0 = off)
   std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
   std::unordered_map<Edge, std::vector<Index>, EdgeHash> ef_;  // edge -> its (<= 2) incident faces

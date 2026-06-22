@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/clip.hpp>
@@ -9,8 +10,6 @@
 #include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/snap.hpp>
 #include <polatory/types.hpp>
-#include <array>
-#include <functional>
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
@@ -18,6 +17,8 @@
 namespace polatory::isosurface {
 
 class Isosurface {
+  using Point3 = geometry::Point3;
+
  public:
   Isosurface(const geometry::Bbox3& bbox, double resolution)
       : Isosurface(bbox, resolution, Mat3::Identity()) {}
@@ -143,9 +144,9 @@ class Isosurface {
              (af.array() == bf.array()).all();
     };
 
-    // Snap to the points before clipping, re-applying until a pass changes nothing: a point that lost
-    // contention can snap to the finer mesh a later pass leaves (a positive tolerance's slack lets it
-    // settle). first_extended_bbox keeps snapping off the boundary, which the clip makes.
+    // Snap to the points before clipping, re-applying until a pass changes nothing: a point that
+    // lost contention can snap to the finer mesh a later pass leaves (a positive tolerance's slack
+    // lets it settle). first_extended_bbox keeps snapping off the boundary, which the clip makes.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto res = lattice_.resolution();
       VecX tols = res * rel_snap_tols_;
@@ -158,8 +159,12 @@ class Isosurface {
           break;
         }
       }
-      mesh = thin_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
-      mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_, snapped_vertices(mesh));
+      // Thin then smooth, twice: the smoother's flips reconfigure the mesh so a second thinning
+      // pass can collapse redundant faces the first could not reach.
+      for (auto pass = 0; pass < 2; pass++) {
+        mesh = thin_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
+        mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_, snapped_vertices(mesh));
+      }
     }
 
     mesh = clip(mesh, lattice_.bbox());
@@ -179,22 +184,26 @@ class Isosurface {
   // snapper copies it through with no arithmetic), so an exact coordinate key matches it bit for
   // bit; an unsnapped vertex sits on the lattice and cannot collide.
   std::vector<bool> snapped_vertices(const Mesh& mesh) const {
-    const auto& vertices = mesh.vertices();
-    std::vector<bool> snapped(vertices.rows(), false);
-    auto key = [](const auto& p) { return std::array<double, 3>{p.x(), p.y(), p.z()}; };
     struct Hash {
-      std::size_t operator()(const std::array<double, 3>& k) const noexcept {
-        std::hash<double> h;
-        return h(k[0]) ^ (h(k[1]) << 1) ^ (h(k[2]) << 2);
+      std::size_t operator()(const Point3& p) const noexcept {
+        std::size_t seed = 0;
+        boost::hash_combine(seed, p.x());
+        boost::hash_combine(seed, p.y());
+        boost::hash_combine(seed, p.z());
+        return seed;
       }
     };
-    std::unordered_set<std::array<double, 3>, Hash> points;
+
+    std::unordered_set<Point3, Hash> points;
     points.reserve(snap_points_.rows());
     for (Index i = 0; i < snap_points_.rows(); i++) {
-      points.insert(key(snap_points_.row(i)));
+      points.insert(snap_points_.row(i));
     }
+
+    const auto& vertices = mesh.vertices();
+    std::vector<bool> snapped(vertices.rows(), false);
     for (Index v = 0; v < vertices.rows(); v++) {
-      if (points.contains(key(vertices.row(v)))) {
+      if (points.contains(vertices.row(v))) {
         snapped[v] = true;
       }
     }

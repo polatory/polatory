@@ -395,7 +395,8 @@ class Snapper {
       world_.pop_back();
       flat_.pop_back();
     };
-    if (!simple || !used || creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed)) {
+    if (!simple || !used || creates_degenerate(changed) || over_pulled(changed) ||
+        self_intersects(changed)) {
       revert();
       return false;
     }
@@ -433,7 +434,8 @@ class Snapper {
       world_.pop_back();
       flat_.pop_back();
     };
-    if (!simple || creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed)) {
+    if (!simple || creates_degenerate(changed) || over_pulled(changed) ||
+        self_intersects(changed)) {
       revert();
       return false;
     }
@@ -458,7 +460,8 @@ class Snapper {
   }
 
   // Whether any emitted triangle is folded over -- its normal opposes its original's (tilted past
-  // vertical). An acute feature up to vertical is kept; a fin there is under-resolution, not a fold.
+  // vertical). An acute feature up to vertical is kept; a fin there is under-resolution, not a
+  // fold.
   bool over_pulled(const std::unordered_map<Index, Faces>& changed) {
     for (const auto& [fi, faces] : changed) {
       Vector3 o = original_normal(fi);
@@ -673,9 +676,9 @@ class Snapper {
       return false;
     }
 
-    Point3 original = positions_.at(v);        // for revert
+    Point3 original = positions_.at(v);  // for revert
     Point3 original_world = world_.at(v);
-    positions_.at(v) = cand.p;                 // tentative
+    positions_.at(v) = cand.p;  // tentative
     world_.at(v) = cand.p_world;
     std::unordered_map<Index, Faces> changed;
     for (auto fi : mesh_.vertex_faces(v)) {
