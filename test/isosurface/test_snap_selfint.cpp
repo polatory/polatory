@@ -16,7 +16,6 @@
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/snap.hpp>
-#include <polatory/isosurface/snapper/snapper.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <string>
@@ -34,7 +33,6 @@ using polatory::isosurface::FieldFunction;
 using polatory::isosurface::Isosurface;
 using polatory::isosurface::Mesh;
 using polatory::isosurface::snap_mesh;
-using polatory::isosurface::snapper::Snapper;
 
 namespace {
 
@@ -297,8 +295,7 @@ TEST(snap_selfint, real_surface_region_stays_manifold) {
   const auto h = 0.002;
   Bbox3 snap_bbox(center - Point3(h, h, h), center + Point3(h, h, h));
 
-  Snapper snapper(base.vertices(), base.faces(), snap_bbox, max_distance);
-  auto mesh = snapper.snap(points);
+  auto mesh = snap_mesh(base, points, VecX(), snap_bbox, max_distance, Mat3::Identity());
 
   auto nm_edges = count_non_manifold_edges(mesh);
   std::cerr << "horse region: faces=" << mesh.faces().rows() << " non-manifold-edges=" << nm_edges

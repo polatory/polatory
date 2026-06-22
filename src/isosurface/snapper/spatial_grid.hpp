@@ -10,11 +10,9 @@
 
 namespace polatory::isosurface::snapper {
 
-// A uniform spatial grid mapping cells to item indices. An item is inserted over every cell its
-// world AABB touches (a point is a degenerate AABB), and for_each visits each distinct item whose
-// AABB shares a cell with the query AABB. Geometry stays with the caller; the grid holds only
-// indices, so the same grid serves snap points (a point as a tolerance-radius ball) and faces (a
-// triangle as its AABB) alike.
+// A uniform grid mapping cells to item indices: an item is inserted over the cells its world AABB
+// touches, and for_each visits each distinct item near a query AABB. Holds only indices (geometry
+// stays with the caller), so it serves both snap points (as tolerance-radius balls) and faces.
 class SpatialGrid {
   using Point3 = geometry::Point3;
   using Cell = Eigen::RowVector3i;
@@ -30,7 +28,7 @@ class SpatialGrid {
   };
 
  public:
-  // capacity is the number of items; their indices index the per-query dedup stamp.
+  // capacity = item count (sizes the dedup stamp).
   SpatialGrid(double resolution, Index capacity)
       : resolution_(resolution), visited_(capacity, -1) {}
 
@@ -45,7 +43,7 @@ class SpatialGrid {
     for (auto i = clo(0); i <= chi(0); i++) {
       for (auto j = clo(1); j <= chi(1); j++) {
         for (auto k = clo(2); k <= chi(2); k++) {
-          auto it = grid_.find(Cell{i, j, k});
+          auto it = grid_.find({i, j, k});
           if (it == grid_.end()) {
             continue;
           }
@@ -69,7 +67,7 @@ class SpatialGrid {
     for (auto i = clo(0); i <= chi(0); i++) {
       for (auto j = clo(1); j <= chi(1); j++) {
         for (auto k = clo(2); k <= chi(2); k++) {
-          grid_[Cell{i, j, k}].push_back(item);
+          grid_[{i, j, k}].push_back(item);
         }
       }
     }

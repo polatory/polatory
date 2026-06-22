@@ -1,0 +1,701 @@
+#pragma once
+
+#include <igl/barycentric_coordinates.h>
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <limits>
+#include <polatory/geometry/bbox3d.hpp>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/edge.hpp>
+#include <polatory/isosurface/mesh.hpp>
+#include "utility.hpp"
+#include "original_mesh.hpp"
+#include "triangulation.hpp"
+#include <polatory/isosurface/types.hpp>
+#include <polatory/types.hpp>
+#include <stdexcept>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace polatory::isosurface::snapper {
+
+// Snaps a mesh to a subset of the given points without introducing self-intersection: each point is
+// snapped or dropped, and the result provably has none. Three steps per point:
+//
+//  - Classify against the original mesh: the nearest simplex of its closest face (vertex, edge, or
+//    interior) by which simplex centroid is nearest the projection.
+//  - Snap: a vertex match moves that vertex; an edge match inserts a vertex on the shared subdivided
+//    edge; a face match inserts one interior to a patch. Each affected patch is re-triangulated by a
+//    constrained Delaunay triangulation over the *flat* on-surface positions -- deciding connectivity
+//    before the vertices move keeps it valid and consistently wound however steep the snap.
+//  - Accept or drop: keep only if the moved mesh stays self-intersection-free (a crease folding to a
+//    bare edge touch is allowed); else cascade to the next-nearest simplex, or drop.
+//
+// Points are processed by increasing distance to the mesh, so each shared feature is claimed by the
+// candidate that moves it least (a tangential order would fold a far point's patch into an overhang).
+// Boundary: a point snaps only if it and its projection lie in bbox; if bbox excludes the boundary,
+// the boundary is provably untouched (see the constructor).
+class Snapper {
+  // A simplex of the projected face the point may snap to; the values double as indices into the
+  // per-face site arrays (vertices 0..2, edges 3..5, face 6).
+  enum class Simplex { kVertex0, kVertex1, kVertex2, kEdge12, kEdge20, kEdge01, kFace };
+
+  static int index_of(Simplex s) { return static_cast<int>(s); }
+
+  struct Candidate {
+    Index i{};    // The snap point's index; its iso/world position and tolerance derive from it.
+    Point3 q;     // The projection of the point onto the mesh (closest point).
+    double d2{};  // The squared distance from the point to the mesh.
+    Index fi{};   // The projected face.
+    std::array<double, 3> l;       // The barycentric coordinates of the projection.
+    std::array<Simplex, 7> order;  // The seven simplices, nearest centroid first.
+  };
+
+  // A vertex on an edge, at parameter t from the edge's smaller-id endpoint.
+  struct EdgeVertex {
+    double t{};
+    Index v{};
+  };
+
+ public:
+  struct Stats {
+    Index skipped{};    // outside bbox or beyond max_distance
+    Index satisfied{};  // already within tolerance of the snapped mesh, so not attempted
+    Index dropped{};    // classified but could not be placed without self-intersection
+    Index moved_vertices{};
+    Index inserted_on_edges{};
+    Index inserted_in_faces{};
+  };
+
+  // A point snaps only if its distance to the mesh is <= max_distance and both it and its projection
+  // lie in bbox. Vertices, points, and bbox are world-space; the snapper works in the isotropic frame
+  // (aniso maps world into it) so an anisotropic resolution is respected, then emits world positions.
+  // bbox stays world-space (rotating its AABB would inflate it), each point mapped back for the test.
+  //
+  // When bbox excludes the boundary by at least one face, the boundary is provably untouched: snapping
+  // only moves a vertex or subdivides an edge of the face holding the (in-bbox) projection, so the
+  // touched feature is interior. (In the pipeline bbox is first_extended_bbox.)
+  Snapper(const Mesh& mesh, const Points3& points, const VecX& tolerances,
+          const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso = Mat3::Identity())
+      : mesh_(geometry::transform_points<3>(aniso, mesh.vertices()), mesh.faces()),
+        bbox_(bbox),
+        to_world_(aniso.inverse()),
+        max_distance_(max_distance),
+        points_(points),
+        iso_points_(geometry::transform_points<3>(aniso, points)),
+        tolerances_(tolerances),
+        positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
+        flat_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
+        world_(mesh.vertices().rowwise().begin(), mesh.vertices().rowwise().end()),
+        moved_(mesh_.num_vertices(), false) {
+    if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
+      throw std::invalid_argument("tolerances must be empty or have one entry per point");
+    }
+
+    auto candidates = build_candidates();
+    std::vector<bool> placed(candidates.size(), false);
+
+    // Pass 1: vertex moves only (the leading vertex run of each cascade). Doing all moves before any
+    // edge/face snap lets a vertex absorb its point before a snap subdivides the patch into slivers.
+    for (std::size_t i = 0; i < candidates.size(); i++) {
+      const auto& cand = candidates.at(i);
+      if (already_satisfied(cand)) {
+        placed.at(i) = true;
+        stats_.satisfied++;
+        continue;
+      }
+      for (auto s : cand.order) {
+        if (index_of(s) >= index_of(Simplex::kEdge12)) {
+          break;  // an edge or the face is nearer than the remaining vertices: defer to pass 2
+        }
+        if (try_place(cand, s)) {
+          placed.at(i) = true;
+          break;
+        }
+      }
+    }
+
+    // Pass 2: the full cascade (edge and face snaps) for everything still unplaced.
+    for (std::size_t i = 0; i < candidates.size(); i++) {
+      if (placed.at(i)) {
+        continue;
+      }
+      const auto& cand = candidates.at(i);
+      if (already_satisfied(cand)) {
+        stats_.satisfied++;
+        continue;
+      }
+      bool ok = false;
+      for (auto code : cand.order) {
+        if (try_place(cand, code)) {
+          ok = true;
+          break;
+        }
+      }
+      // A vertex point the single-face cascade missed gets one more try across the vertex's umbrella.
+      if (!ok && index_of(cand.order.front()) <= index_of(Simplex::kVertex2)) {
+        ok = try_vertex_umbrella(cand, mesh_.faces()(cand.fi, index_of(cand.order.front())));
+      }
+      if (!ok) {
+        stats_.dropped++;
+      }
+    }
+
+    result_ = emit();
+  }
+
+  Mesh result() && { return std::move(result_); }
+
+  const Stats& stats() const { return stats_; }
+
+ private:
+  // Whether the partially snapped mesh already passes within the point's tolerance, so snapping would
+  // barely move it and only over-subdivide; checks the projected patch and the patches across its edges.
+  bool already_satisfied(const Candidate& cand) {
+    auto t = tolerances_.size() == 0 ? 0.0 : tolerances_(cand.i);
+    double tol2 = t * t;
+    Point3 pc = iso_points_.row(cand.i);
+    const auto& F = mesh_.faces();
+    auto nearest_in_patch = [&](Index fi) {
+      double best = std::numeric_limits<double>::infinity();
+      for (auto f : patch_faces(fi).rowwise()) {
+        best = std::min(best, point_triangle_dist2(pc, pos(f(0)), pos(f(1)), pos(f(2))));
+      }
+      return best;
+    };
+    if (nearest_in_patch(cand.fi) <= tol2) {
+      return true;
+    }
+    for (auto k = 0; k < 3; k++) {
+      Edge e{F(cand.fi, k), F(cand.fi, (k + 1) % 3)};
+      for (auto fj : mesh_.edge_faces(e)) {
+        if (fj != cand.fi && nearest_in_patch(fj) <= tol2) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Project each point, rank its face's seven simplex centroids by distance to the projection
+  // (a Voronoi classification), and sort the candidates by distance to the mesh.
+  std::vector<Candidate> build_candidates() {
+    const auto& V = mesh_.vertices();
+    const auto& F = mesh_.faces();
+
+    std::vector<Candidate> candidates;
+    candidates.reserve(points_.rows());
+    for (Index i = 0; i < points_.rows(); i++) {
+      Point3 p_world = points_.row(i);
+      Point3 p = iso_points_.row(i);  // the isotropic frame, where snapping is measured
+
+      int fi{};
+      Point3 q;
+      auto d2 = mesh_.nearest_face(p, fi, q);
+
+      if (d2 > max_distance_ * max_distance_) {
+        stats_.skipped++;
+        continue;
+      }
+      Point3 q_world = geometry::transform_point<3>(to_world_, q);
+      if (!bbox_.contains(p_world) || !bbox_.contains(q_world)) {
+        stats_.skipped++;
+        continue;
+      }
+
+      auto f = F.row(fi);
+      Point3 a = V.row(f(0));
+      Point3 b = V.row(f(1));
+      Point3 c = V.row(f(2));
+
+      Vector3 l;
+      igl::barycentric_coordinates(q, a, b, c, l);
+
+      // The centroid of each simplex, indexed by Simplex (vertices, edge midpoints, face).
+      std::array<Point3, 7> sites{
+          a, b, c, 0.5 * (b + c), 0.5 * (c + a), 0.5 * (a + b), (a + b + c) / 3.0};
+      std::array<Simplex, 7> order{Simplex::kVertex0, Simplex::kVertex1, Simplex::kVertex2,
+                                   Simplex::kEdge12,  Simplex::kEdge20,  Simplex::kEdge01,
+                                   Simplex::kFace};
+      std::ranges::sort(order, [&](Simplex s, Simplex t) {
+        return (q - sites.at(index_of(s))).squaredNorm() <
+               (q - sites.at(index_of(t))).squaredNorm();
+      });
+
+      candidates.push_back(
+          {.i = i, .q = q, .d2 = d2, .fi = fi, .l = {l(0), l(1), l(2)}, .order = order});
+    }
+
+    // Least-distorting first (by distance to the mesh): each shared feature is claimed by the
+    // candidate that moves it least. Ordering by tangential offset instead folds patches into overhangs.
+    std::ranges::sort(candidates, [this](const Candidate& x, const Candidate& y) {
+      return std::make_tuple(x.d2, iso_points_(x.i, 0), iso_points_(x.i, 1), iso_points_(x.i, 2)) <
+             std::make_tuple(y.d2, iso_points_(y.i, 0), iso_points_(y.i, 1), iso_points_(y.i, 2));
+    });
+    return candidates;
+  }
+
+  // Whether any changed triangle, valid over its flat on-surface positions, is collinear once
+  // emitted at its moved 3D positions -- a degeneracy the flat triangulation cannot see.
+  bool creates_degenerate(const std::unordered_map<Index, Faces>& changed) {
+    for (const auto& [fi, faces] : changed) {
+      auto scale = original_normal(fi).norm();  // twice the original face's area
+      for (auto f : faces.rowwise()) {
+        if (emitted_normal(f).norm() <= 1e-9 * scale) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  Mesh emit() {
+    const auto& F = mesh_.faces();
+
+    std::vector<Face> faces;
+    for (Index fi = 0; fi < F.rows(); fi++) {
+      for (auto f : patch_faces(fi).rowwise()) {
+        faces.push_back(f);
+      }
+    }
+
+    // Drop vertices no face references (chain thinning orphans the inserted ones it removes),
+    // keeping the rest in their original order so an un-thinned run emits unchanged.
+    std::vector<bool> used(positions_.size(), false);
+    for (const auto& f : faces) {
+      for (auto v : f) {
+        used.at(v) = true;
+      }
+    }
+    std::vector<Index> remap(positions_.size(), -1);
+    Index n = 0;
+    for (std::size_t v = 0; v < positions_.size(); v++) {
+      if (used.at(v)) {
+        remap.at(v) = n++;
+      }
+    }
+
+    Points3 vertices(n, 3);
+    for (std::size_t v = 0; v < positions_.size(); v++) {
+      if (used.at(v)) {
+        vertices.row(remap.at(v)) = world_.at(v);  // exact world position; no aniso round-trip
+      }
+    }
+
+    Faces f(static_cast<Index>(faces.size()), 3);
+    for (Index i = 0; i < f.rows(); i++) {
+      f(i, 0) = remap.at(faces.at(i)(0));
+      f(i, 1) = remap.at(faces.at(i)(1));
+      f(i, 2) = remap.at(faces.at(i)(2));
+    }
+    return {std::move(vertices), std::move(f)};
+  }
+
+  Vector3 emitted_normal(const Face& f) const { return normal(pos(f(0)), pos(f(1)), pos(f(2))); }
+
+  // Inserts the point into face fi's interior; reverts unless the re-triangulation uses it (it
+  // projects inside the patch) and stays free of self-intersection.
+  bool insert_in_face(const Candidate& cand, Index fi) {
+    auto new_v = static_cast<Index>(positions_.size());
+    positions_.push_back(iso_points_.row(cand.i));
+    world_.push_back(points_.row(cand.i));
+    flat_.push_back(cand.q);  // the snap point's on-surface projection
+    auto& interior = face_interior_[fi];
+    interior.push_back(new_v);
+
+    bool simple = true;
+    auto faces = triangulate_patch(fi, &simple);
+    bool used = false;
+    for (auto f : faces.rowwise()) {
+      for (auto v : f) {
+        if (v == new_v) {
+          used = true;
+        }
+      }
+    }
+    std::unordered_map<Index, Faces> changed{{fi, faces}};
+    auto revert = [&] {
+      interior.pop_back();
+      if (interior.empty()) {
+        face_interior_.erase(fi);
+      }
+      positions_.pop_back();
+      world_.pop_back();
+      flat_.pop_back();
+    };
+    if (!simple || !used || creates_degenerate(changed) || over_pulled(changed) ||
+        self_intersects(changed)) {
+      revert();
+      return false;
+    }
+
+    patch_faces_cache_[fi] = std::move(faces);
+    stats_.inserted_in_faces++;
+    return true;
+  }
+
+  // Inserts the point on edge e at parameter t from e's smaller-id endpoint, subdividing both its
+  // incident patches; reverts unless the re-triangulations stay free of self-intersection.
+  bool insert_on_edge(const Candidate& cand, const Edge& e, double t) {
+    const auto& incident_faces = mesh_.edge_faces(e);
+
+    auto new_v = static_cast<Index>(positions_.size());
+    positions_.push_back(iso_points_.row(cand.i));
+    world_.push_back(points_.row(cand.i));
+    flat_.push_back((1.0 - t) * flat_.at(e.a) + t * flat_.at(e.b));  // on the original edge
+    auto& chain = edge_chains_[e];
+    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .v = new_v});
+
+    std::unordered_map<Index, Faces> changed;
+    bool simple = true;
+    for (auto fi : incident_faces) {
+      bool patch_simple = true;
+      changed[fi] = triangulate_patch(fi, &patch_simple);
+      simple = simple && patch_simple;
+    }
+    auto revert = [&] {
+      std::erase_if(chain, [new_v](const EdgeVertex& x) { return x.v == new_v; });
+      if (chain.empty()) {
+        edge_chains_.erase(e);
+      }
+      positions_.pop_back();
+      world_.pop_back();
+      flat_.pop_back();
+    };
+    if (!simple || creates_degenerate(changed) || over_pulled(changed) ||
+        self_intersects(changed)) {
+      revert();
+      return false;
+    }
+
+    for (auto fi : incident_faces) {
+      patch_faces_cache_[fi] = changed.at(fi);
+    }
+    stats_.inserted_on_edges++;
+    return true;
+  }
+
+  // The unnormalized normal of triangle (a, b, c); its length is twice the area.
+  static Vector3 normal(const Point3& a, const Point3& b, const Point3& c) {
+    return Vector3((b - a).cross(c - a));
+  }
+
+  // The original face fi's plane normal (over the unsnapped vertices).
+  Vector3 original_normal(Index fi) const {
+    const auto& V = mesh_.vertices();
+    const auto& F = mesh_.faces();
+    return normal(V.row(F(fi, 0)), V.row(F(fi, 1)), V.row(F(fi, 2)));
+  }
+
+  // Whether any emitted triangle is folded over -- normal opposing its original's. An acute feature
+  // up to vertical is kept; a fin there is under-resolution, not a fold.
+  bool over_pulled(const std::unordered_map<Index, Faces>& changed) {
+    for (const auto& [fi, faces] : changed) {
+      Vector3 o = original_normal(fi);
+      for (auto f : faces.rowwise()) {
+        if (emitted_normal(f).dot(o) < 0.0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // The cached triangulation of a patch (computed on first use).
+  const Faces& patch_faces(Index fi) {
+    auto it = patch_faces_cache_.find(fi);
+    if (it == patch_faces_cache_.end()) {
+      it = patch_faces_cache_.emplace(fi, triangulate_patch(fi)).first;
+    }
+    return it->second;
+  }
+
+  // A vertex's current 3D position: a moved original's snapped target, an unmoved original's
+  // position, or an inserted vertex's off-surface point.
+  const Point3& pos(Index v) const { return positions_.at(v); }
+
+  // The snapper's one geometric acceptance test: the flat triangulation is always valid, so all
+  // that remains is to forbid an actual self-intersection of the emitted mesh.
+  bool self_intersects(const std::unordered_map<Index, Faces>& changed) {
+    std::unordered_set<Index> changed_ids;
+    std::vector<Face> changed_faces;
+    for (const auto& [fi, faces] : changed) {
+      changed_ids.insert(fi);
+      for (auto f : faces.rowwise()) {
+        changed_faces.push_back(f);
+      }
+    }
+    auto crosses = [&](const Face& a, const Face& b) {
+      return triangles_intersect(pos(a(0)), pos(a(1)), pos(a(2)), pos(b(0)), pos(b(1)), pos(b(2)),
+                                 num_shared_vertices(a, b));
+    };
+    // Query per changed face (within 2 * max_distance, the farthest a snapped face can stray) rather
+    // than pooling all neighborhoods, to skip pairs that are AABB-disjoint and so cannot cross.
+    auto margin = 2.0 * max_distance_;
+    std::unordered_set<Index> candidates;
+    for (const auto& a : changed_faces) {
+      for (const auto& b : changed_faces) {
+        if (crosses(a, b)) {
+          return true;
+        }
+      }
+      Point3 p0 = pos(a(0));
+      Point3 p1 = pos(a(1));
+      Point3 p2 = pos(a(2));
+      Point3 lo = (p0.cwiseMin(p1).cwiseMin(p2).array() - margin).matrix();
+      Point3 hi = (p0.cwiseMax(p1).cwiseMax(p2).array() + margin).matrix();
+      candidates.clear();
+      mesh_.faces_near(Eigen::AlignedBox3d(lo.transpose(), hi.transpose()), changed_ids,
+                       candidates);
+      for (auto fj : candidates) {
+        for (auto b : patch_faces(fj).rowwise()) {
+          if (crosses(a, b)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  // The constrained Delaunay triangulation of a patch over its committed edge chains and
+  // interior vertices, as triples of vertex ids.
+  Faces triangulate_patch(Index fi, bool* simple = nullptr) {
+    if (simple != nullptr) {
+      *simple = true;
+    }
+    const auto& F = mesh_.faces();
+    std::array<Index, 3> vertices{F(fi, 0), F(fi, 1), F(fi, 2)};
+
+    auto has_chain = [&](const Edge& e) { return edge_chains_.contains(e); };
+    if (!face_interior_.contains(fi) && !has_chain({vertices[0], vertices[1]}) &&
+        !has_chain({vertices[1], vertices[2]}) && !has_chain({vertices[2], vertices[0]})) {
+      Faces single(1, 3);
+      single.row(0) = Face(vertices[0], vertices[1], vertices[2]);
+      return single;
+    }
+
+    std::vector<Point2> boundary;
+    std::vector<Index> boundary_ids;
+    // The original edge(s) each boundary vertex lies on, so the triangulation never cuts a diagonal
+    // along a subdivided edge (see Triangulation). Vertex k lies on patch edges k and (k + 2) % 3.
+    std::vector<std::array<int, 2>> boundary_edges;
+    auto add_vertex = [&](int k) {
+      boundary_ids.push_back(vertices.at(k));
+      // Project the *flat* (on-surface) position, not the snapped target, so the 2D polygon is
+      // always valid and consistently wound; folds of the moved mesh are caught downstream.
+      boundary.push_back(mesh_.project(fi, flat_.at(vertices.at(k))));
+      boundary_edges.push_back({k, (k + 2) % 3});
+    };
+    auto add_chain = [&](int edge) {
+      auto from = vertices.at(edge);
+      auto to = vertices.at((edge + 1) % 3);
+      auto it = edge_chains_.find({from, to});
+      if (it == edge_chains_.end()) {
+        return;
+      }
+      const auto& chain = it->second;  // stored by t from the smaller id to the larger
+      auto append = [&](Index v) {
+        boundary_ids.push_back(v);
+        boundary.push_back(mesh_.project(fi, flat_.at(v)));
+        boundary_edges.push_back({edge, -1});
+      };
+      if (from < to) {
+        for (const auto& x : chain) {
+          append(x.v);
+        }
+      } else {
+        for (auto i = static_cast<Index>(chain.size()) - 1; i >= 0; i--) {
+          append(chain.at(i).v);
+        }
+      }
+    };
+    add_vertex(0);
+    add_chain(0);
+    add_vertex(1);
+    add_chain(1);
+    add_vertex(2);
+    add_chain(2);
+
+    std::vector<Point2> interior;
+    std::vector<Index> interior_ids;
+    if (auto it = face_interior_.find(fi); it != face_interior_.end()) {
+      for (auto v : it->second) {
+        interior_ids.push_back(v);
+        interior.push_back(mesh_.project(fi, flat_.at(v)));
+      }
+    }
+
+    auto nb = static_cast<Index>(boundary_ids.size());
+    Triangulation triangulation(boundary, interior, std::move(boundary_edges));
+    if (simple != nullptr) {
+      *simple = triangulation.simple();
+    }
+    auto map = [&](Index i) { return i < nb ? boundary_ids.at(i) : interior_ids.at(i - nb); };
+    const auto& tf = triangulation.faces();
+    Faces faces(tf.rows(), 3);
+    for (Index r = 0; r < tf.rows(); r++) {
+      faces.row(r) = Face(map(tf(r, 0)), map(tf(r, 1)), map(tf(r, 2)));
+    }
+    return faces;
+  }
+
+  // Subdivides both patches incident to the edge. `i` is the local index of the vertex opposite
+  // the edge; j and k are the edge's endpoints.
+  bool try_edge(const Candidate& cand, int i) {
+    auto j = (i + 1) % 3;
+    auto k = (i + 2) % 3;
+    if (!(cand.l.at(j) + cand.l.at(k) > 0.0)) {
+      return false;
+    }
+    auto f = mesh_.faces().row(cand.fi);
+    auto vj = f(j);
+    auto vk = f(k);
+    auto t = cand.l.at(k) / (cand.l.at(j) + cand.l.at(k));
+    if (vj > vk) {
+      std::swap(vj, vk);
+      t = 1.0 - t;
+    }
+    return insert_on_edge(cand, {vj, vk}, t);
+  }
+
+  bool try_interior(const Candidate& cand) { return insert_in_face(cand, cand.fi); }
+
+  bool try_place(const Candidate& cand, Simplex s) {
+    switch (s) {
+      case Simplex::kVertex0:
+      case Simplex::kVertex1:
+      case Simplex::kVertex2:
+        return try_vertex(cand, mesh_.faces()(cand.fi, index_of(s)));
+      case Simplex::kEdge12:
+      case Simplex::kEdge20:
+      case Simplex::kEdge01:
+        return try_edge(cand, index_of(s) - index_of(Simplex::kEdge12));
+      case Simplex::kFace:
+        return try_interior(cand);
+    }
+    return false;  // unreachable; all simplices are handled above
+  }
+
+  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the move
+  // unless an incident triangle becomes degenerate or self-intersects the surface.
+  bool try_vertex(const Candidate& cand, Index v) {
+    if (moved_.at(v)) {
+      return false;
+    }
+
+    Point3 original = positions_.at(v);  // for revert
+    Point3 original_world = world_.at(v);
+    positions_.at(v) = iso_points_.row(cand.i);  // tentative
+    world_.at(v) = points_.row(cand.i);
+    std::unordered_map<Index, Faces> changed;
+    for (auto fi : mesh_.vertex_faces(v)) {
+      changed[fi] = patch_faces(fi);
+    }
+    if (creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed)) {
+      positions_.at(v) = original;
+      world_.at(v) = original_world;
+      return false;
+    }
+
+    moved_.at(v) = true;
+    stats_.moved_vertices++;
+    return true;
+  }
+
+  // Retry a vertex-classified point across v's whole umbrella, nearest first: the cascade only saw
+  // the single AABB face, so a spoke or face of another incident face may still take it.
+  bool try_vertex_umbrella(const Candidate& cand, Index v) {
+    const auto& V = mesh_.vertices();
+    const auto& F = mesh_.faces();
+
+    // The edges of the cascade's own face that contain v were already tried; skip them.
+    std::unordered_set<Edge, EdgeHash> queued;
+    for (auto k = 0; k < 3; k++) {
+      Index a = F(cand.fi, k);
+      Index b = F(cand.fi, (k + 1) % 3);
+      if (a == v || b == v) {
+        queued.insert({a, b});
+      }
+    }
+
+    struct Op {
+      double dist2{};
+      Index ea{-1};
+      Index eb{-1};
+      Index fi{-1};
+      double t{};
+    };
+    std::vector<Op> ops;
+    for (auto fi : mesh_.vertex_faces(v)) {
+      if (fi == cand.fi) {
+        continue;
+      }
+      Point3 a = V.row(F(fi, 0));
+      Point3 b = V.row(F(fi, 1));
+      Point3 c = V.row(F(fi, 2));
+      Point3 centroid = a + ((b - a) + (c - a)) / 3.0;
+      ops.push_back({.dist2 = (cand.q - centroid).squaredNorm(), .fi = fi});
+      for (auto k = 0; k < 3; k++) {
+        Index x = F(fi, k);
+        Index y = F(fi, (k + 1) % 3);
+        if (x != v && y != v) {
+          continue;  // not a spoke
+        }
+        Edge e{x, y};
+        if (!queued.insert(e).second) {
+          continue;  // already tried, or a spoke shared with another incident face
+        }
+        Point3 va = V.row(e.a);
+        Point3 vb = V.row(e.b);
+        Vector3 d = vb - va;
+        auto t = (cand.q - va).dot(d) / d.squaredNorm();
+        if (!(t > 0.0 && t < 1.0)) {
+          continue;  // projects onto an endpoint
+        }
+        Point3 mid = va + 0.5 * d;
+        ops.push_back({.dist2 = (cand.q - mid).squaredNorm(), .ea = e.a, .eb = e.b, .t = t});
+      }
+    }
+
+    std::ranges::sort(ops, [](const Op& x, const Op& y) {
+      return std::make_tuple(x.dist2, x.fi, x.ea, x.eb) <
+             std::make_tuple(y.dist2, y.fi, y.ea, y.eb);
+    });
+    for (const auto& op : ops) {
+      auto ok =
+          op.fi >= 0 ? insert_in_face(cand, op.fi) : insert_on_edge(cand, {op.ea, op.eb}, op.t);
+      if (ok) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  OriginalMesh mesh_;
+  geometry::Bbox3 bbox_;
+  Mat3 to_world_;  // the isotropic frame -> world, for the bbox containment test (= aniso^-1)
+  double max_distance_;
+  Points3 points_;      // the snap points (world); a Candidate indexes into this
+  Points3 iso_points_;  // the same points in the isotropic frame, where snapping is measured
+  VecX tolerances_;     // per-point snapping tolerance, or empty for zero
+
+  std::vector<Point3> positions_;  // current isotropic-frame position, where geometry is measured
+  std::vector<Point3> flat_;       // on-surface position the triangulation projects (never folds)
+  std::vector<Point3> world_;      // exact world position emit() outputs (passes through points exactly)
+  std::vector<bool> moved_;        // original vertices already claimed by a move
+  std::unordered_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
+  std::unordered_map<Index, std::vector<Index>> face_interior_;
+  std::unordered_map<Index, Faces> patch_faces_cache_;
+
+  Stats stats_;
+  Mesh result_;
+};
+
+}  // namespace polatory::isosurface::snapper

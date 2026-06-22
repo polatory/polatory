@@ -9,8 +9,8 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
-#include <polatory/isosurface/predicates.hpp>
-#include <polatory/isosurface/snapper/spatial_grid.hpp>
+#include "utility.hpp"
+#include "spatial_grid.hpp"
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <unordered_map>
@@ -21,16 +21,12 @@ namespace polatory::isosurface::snapper {
 
 using geometry::Points3;
 
-// Cross-pass thinning by guarded edge collapse. A snap point captured in one pass can become
-// redundant only after a neighbour is captured in a later pass (e.g. it ends up collinear between
-// two others); by then it is an ordinary vertex of the later pass's input, beyond the reach of that
-// pass's insert-only thinning (see thin_inserted in Snapper). This final sweep collapses such a
-// redundant snapped vertex onto a neighbour -- the same vertex removal, expressed on the plain mesh
-// so it reaches vertices from any pass. A collapse is kept only when the dropped point stays within
-// its snapping tolerance of the new surface and the result stays manifold, unflipped, and free of
-// self-intersection. Only snapped vertices are collapsed, so the base lattice is left as generated.
-// All geometry is measured in the lattice's isotropic frame (aniso maps world into it); the output
-// keeps world positions.
+// Cross-pass thinning by guarded edge collapse: collapses a snapped vertex that a later pass left
+// redundant (collinear between neighbours) onto a neighbour, reaching vertices from any pass that
+// the insert-only thinning could not. A collapse is kept only if the dropped point stays within its
+// tolerance of the new surface and the mesh stays manifold, unflipped, and self-intersection-free;
+// only snapped vertices collapse, so the base lattice is untouched. Geometry is in the isotropic
+// frame; the output keeps world positions.
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
@@ -38,15 +34,16 @@ class Thinner {
       1.5;  // a collapse may not make an edge longer than this * res
 
  public:
-  Thinner(const Points3& vertices, const Faces& faces, const Points3& points,
-          const VecX& tolerances, double resolution, const Mat3& aniso)
+  Thinner(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
+          const Mat3& aniso)
       : snap_points_(geometry::transform_points<3>(aniso, points)),
         snap_tols_(tolerances),
         snap_grid_(resolution, points.rows()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
-    auto iso = geometry::transform_points<3>(aniso, vertices);
-    world_.assign(vertices.rowwise().begin(), vertices.rowwise().end());
+    auto iso = geometry::transform_points<3>(aniso, mesh.vertices());
+    world_.assign(mesh.vertices().rowwise().begin(), mesh.vertices().rowwise().end());
     iso_.assign(iso.rowwise().begin(), iso.rowwise().end());
+    const auto& faces = mesh.faces();
     faces_.reserve(faces.rows());
     for (Index i = 0; i < faces.rows(); i++) {
       faces_.push_back({faces(i, 0), faces(i, 1), faces(i, 2)});
@@ -56,16 +53,14 @@ class Thinner {
     if (snap_tols_.size() == 0) {
       snap_tols_ = VecX::Zero(snap_points_.rows());
     }
-    // Each snap point is a closed ball of its tolerance radius, so a query AABB finds every point
-    // whose ball it could reach (tol <= resolution, so a ball spans about one cell).
+    // Insert each snap point as a tolerance-radius ball, so a query AABB finds every point it reaches.
     for (Index i = 0; i < snap_points_.rows(); i++) {
       Vector3 r = Vector3::Constant(snap_tols_(i));
       snap_grid_.insert(i, snap_points_.row(i) - r, snap_points_.row(i) + r);
     }
 
-    // Each vertex's snapping tolerance, by exact match to a snap point (a snapped vertex is emitted
-    // at the point's exact world position); -1 marks a vertex that is not a snap point, never
-    // moved.
+    // Per-vertex tolerance by exact match to a snap point (snapped vertices are emitted there);
+    // -1 = not a snap point, never collapsed.
     std::unordered_map<Point3, double, PointHash> point_tol;
     point_tol.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
@@ -77,17 +72,15 @@ class Thinner {
         tol_.at(v) = it->second;
       }
     }
-  }
 
-  Mesh thin() {
+    // Greedy collapse to a fixpoint: a collapse can make a neighbour collapsible (a chain of
+    // collinear points thins end to end).
     v2f_.assign(world_.size(), {});
     for (std::size_t fi = 0; fi < faces_.size(); fi++) {
       for (auto v : faces_.at(fi)) {
         v2f_.at(v).push_back(static_cast<Index>(fi));
       }
     }
-    // Greedy to a fixpoint: a collapse can make a neighbour collapsible (a chain of collinear
-    // points thins end to end).
     bool any = true;
     while (any) {
       any = false;
@@ -97,8 +90,10 @@ class Thinner {
         }
       }
     }
-    return emit();
+    result_ = emit();
   }
+
+  Mesh result() && { return std::move(result_); }
 
  private:
   struct PointHash {
@@ -108,12 +103,11 @@ class Thinner {
     }
   };
 
-  // Whether collapsing v onto w keeps the mesh manifold, unflipped, free of self-intersection, and
-  // the dropped point v within its tolerance of the new surface. dev returns that distance.
+  // Whether collapsing v onto w is admissible; dev = the dropped point's distance to the new surface.
   bool collapse_ok(Index v, Index w, const std::vector<Index>& inc,
                    const std::unordered_map<Index, std::vector<Index>>& edge_faces, double& dev) {
-    // Link condition: the only vertices adjacent to both v and w must be the two opposite the edge
-    // (v, w); otherwise the collapse folds two sheets together into a non-manifold edge.
+    // Link condition: v and w may share only the two vertices opposite edge (v, w), else the collapse
+    // folds two sheets into a non-manifold edge.
     std::unordered_set<Index> across;
     for (auto fi : edge_faces.at(w)) {
       for (auto x : faces_.at(fi)) {
@@ -126,7 +120,6 @@ class Thinner {
       if (x == w) {
         continue;
       }
-      // x is a neighbour of v; is it also a neighbour of w through a face not on edge (v, w)?
       bool adj_w = false;
       for (auto fi : v2f_.at(x)) {
         if (deleted_.at(fi)) {
@@ -143,7 +136,7 @@ class Thinner {
       }
     }
 
-    // The faces v keeps (not on edge (v, w)), with v retargeted to w.
+    // v's kept faces (those not on edge (v, w)), with v retargeted to w.
     std::vector<Face> kept;
     std::unordered_set<Index> umbrella(inc.begin(), inc.end());
     for (auto fi : inc) {
@@ -165,25 +158,21 @@ class Thinner {
       return false;
     }
 
-    // Keep triangles regular: a collapse stretches only v's spokes -- each edge v-r becomes w-r for
-    // a neighbour r not already adjacent to w. The ring edges between v's neighbours and the edges
-    // to the across vertices are unchanged, so only the spokes are capped.
+    // Cap edge length to keep triangles regular: a collapse stretches only v's spokes (v-r -> w-r),
+    // so only those are checked.
     for (const auto& [r, fs] : edge_faces) {
       if (r != w && !across.contains(r) && (iso_.at(w) - iso_.at(r)).squaredNorm() > max_edge2_) {
         return false;
       }
     }
 
-    // The collapse's distortion, for picking the least-distorting neighbour: how far the dropped
-    // vertex ends up from the new surface.
+    // Distortion (for picking the least-distorting neighbour): the dropped vertex's distance to the new surface.
     dev = std::numeric_limits<double>::infinity();
     for (const auto& nf : kept) {
       dev = std::min(dev, dist2(iso_.at(v), nf));
     }
 
-    // The faces near the collapse afterwards: the new (kept) faces plus the unchanged faces
-    // incident to their vertices, outside the umbrella. Reused by the honor guard and the self-int
-    // check.
+    // Faces near the collapse: those incident to the kept faces' vertices but outside the umbrella.
     std::unordered_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto x : nf) {
@@ -266,9 +255,8 @@ class Thinner {
     return {std::move(vertices), std::move(f)};
   }
 
-  // Every nearby snap point -- not just the dropped vertex -- must stay within tolerance, or a
-  // greedy chain drifts already-dropped points off the surface. Only points held by a removed (inc)
-  // face.
+  // Every nearby snap point held by a removed face -- not just the dropped vertex -- must stay within
+  // tolerance, else a greedy chain drifts already-dropped points off the surface.
   bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
                  const std::unordered_set<Index>& nearby) const {
     if (snap_grid_.empty()) {
@@ -309,7 +297,6 @@ class Thinner {
     return ok;
   }
 
-  // The (alive) faces incident to v.
   std::vector<Index> incident(Index v) const {
     std::vector<Index> fs;
     for (auto fi : v2f_.at(v)) {
@@ -320,7 +307,6 @@ class Thinner {
     return fs;
   }
 
-  // Whether faces a and b intersect with positive measure (a real self-intersection).
   bool intersects(const Face& a, const Face& b) const {
     return triangles_intersect(iso_.at(a(0)), iso_.at(a(1)), iso_.at(a(2)), iso_.at(b(0)),
                                iso_.at(b(1)), iso_.at(b(2)), num_shared_vertices(a, b));
@@ -336,15 +322,13 @@ class Thinner {
     return ha && hb;
   }
 
-  // Collapse the snapped vertex v onto its least-distorting admissible neighbour, if any. Returns
-  // whether a collapse was made.
+  // Collapse v onto its least-distorting admissible neighbour, if any; returns whether it did.
   bool try_collapse(Index v) {
     auto inc = incident(v);
     if (inc.size() < 3) {
       return false;
     }
-    // The neighbours of v, and the faces on each edge (v, w).
-    std::unordered_map<Index, std::vector<Index>> edge_faces;
+    std::unordered_map<Index, std::vector<Index>> edge_faces;  // neighbour w -> faces on edge (v, w)
     for (auto fi : inc) {
       for (auto w : faces_.at(fi)) {
         if (w != v) {
@@ -385,6 +369,7 @@ class Thinner {
   std::vector<bool> deleted_;
   std::vector<double> tol_;              // per vertex; -1 = not a snap point (never collapsed)
   std::vector<std::vector<Index>> v2f_;  // vertex -> incident face ids (may include deleted)
+  Mesh result_;
 };
 
 }  // namespace polatory::isosurface::snapper

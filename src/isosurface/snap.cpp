@@ -1,7 +1,7 @@
 #include <polatory/isosurface/snap.hpp>
-#include <polatory/isosurface/snapper/smoother.hpp>
-#include <polatory/isosurface/snapper/snapper.hpp>
-#include <polatory/isosurface/snapper/thinner.hpp>
+#include "snapper/smoother.hpp"
+#include "snapper/snapper.hpp"
+#include "snapper/thinner.hpp"
 #include <utility>
 
 namespace polatory::isosurface {
@@ -12,8 +12,7 @@ Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& to
     return mesh;
   }
 
-  snapper::Snapper s(mesh.vertices(), mesh.faces(), bbox, max_distance, aniso);
-  return s.snap(points, tolerances);
+  return snapper::Snapper(mesh, points, tolerances, bbox, max_distance, aniso).result();
 }
 
 Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
@@ -22,8 +21,7 @@ Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const 
     return mesh;
   }
 
-  snapper::Thinner t(mesh.vertices(), mesh.faces(), points, tolerances, resolution, aniso);
-  return t.thin();
+  return snapper::Thinner(mesh, points, tolerances, resolution, aniso).result();
 }
 
 Mesh smooth_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
@@ -32,7 +30,7 @@ Mesh smooth_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, cons
   constexpr double kMinAngle = 5.0 * kDegree;
   return snapper::Smoother(mesh, points, tolerances, resolution, aniso, kMinAngle,
                            std::move(snapped))
-      .mesh();
+      .result();
 }
 
 }  // namespace polatory::isosurface

@@ -63,23 +63,13 @@ class Isosurface {
     return generate_common();
   }
 
-  // Sets the points that the generated mesh will be snapped to so that it passes
-  // exactly through them. Points whose projection falls outside the extended bbox
-  // are ignored, which keeps the mesh boundary intact.
-  //
-  // relative_distance bounds how far a point may lie from the mesh to be snapped,
-  // as a fraction of the mesh resolution. It must be in (0, 1].
-  //
-  // relative_tolerances, if non-empty, gives a per-point snapping tolerance as a fraction of
-  // the mesh resolution -- the distance the surface may stay from the point. A point the
-  // (partially snapped) mesh already passes within its tolerance of is skipped (snapping it
-  // would barely move the surface and only over-subdivide the patch), and afterwards an inserted
-  // vertex whose removal keeps the surface within its tolerance is dropped, so a densely sampled
-  // polyline does not over-triangulate the surface. It must have one entry per point, each in
-  // [0, relative_distance]; an empty vector means zero (snap every point in range, thin nothing).
-  //
-  // max_passes bounds how many times snapping is re-applied to recover points that lost contention
-  // (see snap_mesh). It must be at least 1, and only matters when some tolerance is positive.
+  // Sets the points the generated mesh is snapped to so it passes exactly through them. All
+  // distances are fractions of the mesh resolution. Points projecting outside the extended bbox are
+  // ignored, keeping the boundary intact. relative_distance bounds how far a point may lie from the
+  // mesh to snap. relative_tolerances (if non-empty) is the slack each point's surface may keep: a
+  // point already within tolerance is skipped and a redundant inserted vertex within tolerance is
+  // thinned, so a dense polyline does not over-triangulate. max_passes re-applies snapping to
+  // recover points that lost contention, and only matters with a positive tolerance.
   void set_snap_points(const geometry::Points3& points, double relative_distance = 0.5,
                        const VecX& relative_tolerances = VecX(), int max_passes = 8) {
     if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
@@ -144,9 +134,8 @@ class Isosurface {
              (af.array() == bf.array()).all();
     };
 
-    // Snap to the points before clipping, re-applying until a pass changes nothing: a point that
-    // lost contention can snap to the finer mesh a later pass leaves (a positive tolerance's slack
-    // lets it settle). first_extended_bbox keeps snapping off the boundary, which the clip makes.
+    // Snap before clipping, re-applying until a pass is a no-op: a point that lost contention can
+    // snap to the finer mesh a later pass leaves. first_extended_bbox keeps snapping off the boundary.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto res = lattice_.resolution();
       VecX tols = res * rel_snap_tols_;
@@ -179,10 +168,9 @@ class Isosurface {
     return mesh;
   }
 
-  // Marks each vertex that coincides with a snap point, so the smoother can restrict its flips to
-  // the snapped region. A captured point becomes a vertex emitted at its exact world position (the
-  // snapper copies it through with no arithmetic), so an exact coordinate key matches it bit for
-  // bit; an unsnapped vertex sits on the lattice and cannot collide.
+  // Marks each vertex coinciding with a snap point, so the smoother can restrict its flips to the
+  // snapped region. The snapper emits a captured point at its exact world coordinate, so an exact
+  // key matches it bit for bit; an unsnapped lattice vertex cannot collide.
   std::vector<bool> snapped_vertices(const Mesh& mesh) const {
     struct Hash {
       std::size_t operator()(const Point3& p) const noexcept {

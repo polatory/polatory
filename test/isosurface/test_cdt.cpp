@@ -4,9 +4,10 @@
 #include <cmath>
 #include <cstdlib>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/snapper/triangulation.hpp>
 #include <polatory/types.hpp>
 #include <set>
+
+#include "../../src/isosurface/snapper/triangulation.hpp"
 #include <utility>
 #include <vector>
 

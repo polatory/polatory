@@ -4,10 +4,12 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/predicates.hpp>
 
+#include "../../src/isosurface/snapper/utility.hpp"
+
 using polatory::geometry::Point2;
 using polatory::isosurface::incircle;
 using polatory::isosurface::orient2d;
-using polatory::isosurface::triangles_overlap_2d;
+using polatory::isosurface::snapper::triangles_overlap_2d;
 
 namespace {
 

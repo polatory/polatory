@@ -22,15 +22,9 @@ using geometry::Point3;
 using geometry::Points3;
 using geometry::Vector3;
 
-// The original mesh the snapper operates on, together with everything precomputed from it
-// that the snapping reads but never changes: the vertex/edge adjacency, an AABB tree for
-// nearest-face and box queries, and a cached orthonormal 2D frame per face for projecting
-// points onto the face's plane. Everything here is fixed once constructed.
-//
-// A face's frame places vertex 0 at the origin with the edge to vertex 1 along the x axis;
-// project() drops a point's component along the face normal, so a vertex of the face maps to
-// its 2D coordinates in the frame and an off-surface point maps to its orthogonal projection
-// onto the face's plane. Frames are computed on first use and cached.
+// The original mesh plus fixed data the snapper reads but never changes: vertex/edge adjacency, an
+// AABB tree, and a cached per-face 2D frame (vertex 0 at the origin, edge 0->1 on x) onto which
+// project() drops a point's normal component.
 class OriginalMesh {
  public:
   OriginalMesh(Points3 vertices, Faces faces) : v_(std::move(vertices)), f_(std::move(faces)) {
@@ -48,22 +42,19 @@ class OriginalMesh {
 
   const Faces& faces() const { return f_; }
 
-  // Appends to `out` the faces whose bounding box overlaps `query`, skipping those in
-  // `exclude` (the broad phase of the piercing check), by descending the AABB tree.
+  // Appends to out the faces whose bbox overlaps query, skipping those in exclude.
   void faces_near(const Eigen::AlignedBox3d& query, const std::unordered_set<Index>& exclude,
                   std::unordered_set<Index>& out) const {
     descend(tree_, query, exclude, out);
   }
 
-  // The squared distance from p to the mesh, returning the nearest face fi and the closest
-  // point q on it.
+  // Squared distance from p to the mesh; returns the nearest face fi and closest point q.
   double nearest_face(const Point3& p, int& fi, Point3& q) const {
     return tree_.squared_distance(v_, f_, p, fi, q);
   }
 
   Index num_vertices() const { return v_.rows(); }
 
-  // The 2D coordinates of point p in face fi's frame.
   Point2 project(Index fi, const Point3& p) const {
     const auto& fr = frame(fi);
     Vector3 d = p - fr.origin;
