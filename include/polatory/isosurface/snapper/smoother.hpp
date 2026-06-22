@@ -12,7 +12,7 @@
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/predicates.hpp>
-#include <polatory/isosurface/snapper/point_grid.hpp>
+#include <polatory/isosurface/snapper/spatial_grid.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <queue>
@@ -42,14 +42,16 @@ namespace polatory::isosurface::snapper {
 // regular.
 //
 // A flip is rejected if it pushes the surface beyond a snap point's tolerance, protecting points
-// honored implicitly (within tolerance with no vertex there) that a dihedral-only descent flattens off.
+// honored implicitly (within tolerance with no vertex there) that a dihedral-only descent flattens
+// off.
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
   using Points3 = geometry::Points3;
   using Vector3 = geometry::Vector3;
   static constexpr double kPi = 3.141592653589793;
-  static constexpr double kMaxEdgeRatio = 1.5;  // a flip may not make an edge longer than this * res
+  static constexpr double kMaxEdgeRatio =
+      1.5;  // a flip may not make an edge longer than this * res
 
   // A candidate flip of edge {x, y} (faces f0i, f1i) into diagonal {c, d}, with the new triangles
   // and the total bend it removes (improve > 0).
@@ -84,12 +86,13 @@ class Smoother {
            const Mat3& aniso, double min_angle, std::vector<bool> snapped = {})
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         f_(mesh.faces()),
-        points_(geometry::transform_points<3>(aniso, points), tolerances, resolution),
-        resolution_(resolution),
+        snap_points_(geometry::transform_points<3>(aniso, points)),
+        snap_tols_(tolerances),
+        snap_grid_(resolution, points.rows()),
+        face_grid_(resolution, f_.rows()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)),
         min_angle_(min_angle),
-        snapped_(std::move(snapped)),
-        visited_(f_.rows(), -1) {
+        snapped_(std::move(snapped)) {
     // The grid cell is the lattice resolution, the scale of an edge in this isotropic frame, so a
     // face spans about one cell and its AABB touches few. Cell size only tunes the broad-phase, not
     // its result, so this need not be exact -- but resolution is immune to a lone long edge that a
@@ -97,6 +100,16 @@ class Smoother {
     for (Index fi = 0; fi < f_.rows(); fi++) {
       add_face_edges(fi);
       insert_face(fi);
+    }
+
+    if (snap_tols_.size() == 0) {
+      snap_tols_ = VecX::Zero(snap_points_.rows());
+    }
+    // Each snap point is a closed ball of its tolerance radius, so a query AABB finds every point
+    // whose ball it could reach (tol <= resolution, so a ball spans about one cell).
+    for (Index i = 0; i < snap_points_.rows(); i++) {
+      Vector3 r = Vector3::Constant(snap_tols_(i));
+      snap_grid_.insert(i, snap_points_.row(i) - r, snap_points_.row(i) + r);
     }
 
     std::priority_queue<Item, std::vector<Item>, ItemLess> pq;
@@ -172,36 +185,24 @@ class Smoother {
   // bend(a, face fi), or 0 when fi is the absent neighbour across a boundary edge (fi < 0).
   double bend_with(const Face& a, Index fi) const { return fi < 0 ? 0.0 : bend(a, f_.row(fi)); }
 
-  // Whether new triangle nf (replacing f0i/f1i) overlaps any spatially near face. A face nf
-  // overlaps has its AABB meet nf's, so scanning nf's own cells suffices; a fresh stamp per call
-  // tests each such face against nf (the sibling call covers the other new triangle independently).
+  // Whether new triangle nf (replacing f0i/f1i) overlaps any spatially near face. A face that
+  // overlaps has its AABB meet nf's, so scanning nf's own cells suffices (the sibling call covers
+  // the other new triangle independently).
   bool crosses(const Face& nf, Index f0i, Index f1i, double tol) {
-    guard_id_++;
     Point3 p0 = v_.row(nf(0));
     Point3 p1 = v_.row(nf(1));
     Point3 p2 = v_.row(nf(2));
-    auto lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), resolution_);
-    auto hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), resolution_);
-    for (auto i = lo(0); i <= hi(0); i++) {
-      for (auto j = lo(1); j <= hi(1); j++) {
-        for (auto k = lo(2); k <= hi(2); k++) {
-          auto it = grid_.find(Cell{i, j, k});
-          if (it == grid_.end()) {
-            continue;
-          }
-          for (Index gi : it->second) {
-            if (visited_.at(gi) == guard_id_) {
-              continue;
-            }
-            visited_.at(gi) = guard_id_;
-            if (gi != f0i && gi != f1i && overlaps(nf, f_.row(gi), tol)) {
-              return true;
-            }
-          }
-        }
+    Point3 lo = p0.cwiseMin(p1).cwiseMin(p2);
+    Point3 hi = p0.cwiseMax(p1).cwiseMax(p2);
+    bool hit = false;
+    face_grid_.for_each(lo, hi, [&](Index gi) {
+      if (gi != f0i && gi != f1i && overlaps(nf, f_.row(gi), tol)) {
+        hit = true;
+        return false;
       }
-    }
-    return false;
+      return true;
+    });
+    return hit;
   }
 
   double dist2(const Point3& p, const Face& f) const {
@@ -241,9 +242,10 @@ class Smoother {
   }
 
   // A point within tolerance of a removed face (f0/f1) must stay within tolerance of the new local
-  // faces (the two new triangles plus the quad's outer neighbours); only such points can be affected.
+  // faces (the two new triangles plus the quad's outer neighbours); only such points can be
+  // affected.
   bool honors_ok(const Flip& fl) const {
-    if (points_.empty()) {
+    if (snap_grid_.empty()) {
       return true;
     }
     Face f0 = f_.row(fl.f0i);
@@ -259,9 +261,9 @@ class Smoother {
     Point3 lo = v_.row(fl.x).cwiseMin(v_.row(fl.y)).cwiseMin(v_.row(fl.c)).cwiseMin(v_.row(fl.d));
     Point3 hi = v_.row(fl.x).cwiseMax(v_.row(fl.y)).cwiseMax(v_.row(fl.c)).cwiseMax(v_.row(fl.d));
     bool ok = true;
-    points_.for_each_near(lo, hi, [&](Index pi) {
-      auto tol2 = points_.tolerance(pi) * points_.tolerance(pi);
-      const Point3& p = points_.point(pi);
+    snap_grid_.for_each(lo, hi, [&](Index pi) {
+      auto tol2 = snap_tols_(pi) * snap_tols_(pi);
+      Point3 p = snap_points_.row(pi);
       if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
         return true;  // not honored by a removed face; the flip cannot dishonor it
       }
@@ -285,15 +287,7 @@ class Smoother {
     Point3 p0 = v_.row(f_(fi, 0));
     Point3 p1 = v_.row(f_(fi, 1));
     Point3 p2 = v_.row(f_(fi, 2));
-    auto lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), resolution_);
-    auto hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), resolution_);
-    for (auto i = lo(0); i <= hi(0); i++) {
-      for (auto j = lo(1); j <= hi(1); j++) {
-        for (auto k = lo(2); k <= hi(2); k++) {
-          grid_[Cell{i, j, k}].push_back(fi);
-        }
-      }
-    }
+    face_grid_.insert(fi, p0.cwiseMin(p1).cwiseMin(p2), p0.cwiseMax(p1).cwiseMax(p2));
   }
 
   // The smallest interior angle of a triangle (radians); a sliver reads near 0.
@@ -440,17 +434,16 @@ class Smoother {
     return -1;
   }
 
-  Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
-  Faces f_;    // working faces; connectivity is edited in place
-  PointGrid points_;
-  double resolution_{};  // spatial-grid cell size for the self-intersection guard
-  double max_edge2_{};   // squared cap on a flipped diagonal's length
-  double min_angle_;     // a flip may not push a triangle's smallest angle below this (0 = off)
+  Points3 v_;            // vertices in the isotropic frame, where the geometry is measured
+  Faces f_;              // working faces; connectivity is edited in place
+  Points3 snap_points_;  // snap targets in the isotropic frame
+  VecX snap_tols_;       // snapping tolerance per snap point (isotropic-frame distance)
+  SpatialGrid snap_grid_;
+  SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
+  double max_edge2_;       // squared cap on a flipped diagonal's length
+  double min_angle_;       // a flip may not push a triangle's smallest angle below this (0 = off)
   std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
   std::unordered_map<Edge, std::vector<Index>, EdgeHash> ef_;  // edge -> its (<= 2) incident faces
-  std::unordered_map<Cell, std::vector<Index>, CellHash> grid_;  // face broad-phase for the guard
-  std::vector<Index> visited_;  // per-guard stamp, to test each candidate face once
-  Index guard_id_{0};
   Mesh mesh_;
 };
 

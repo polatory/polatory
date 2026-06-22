@@ -120,8 +120,9 @@ inline bool triangles_overlap_3d(const geometry::Point3& a0, const geometry::Poi
     }
     // b overlaps a only if it meets a's plane with positive measure: lying in it (coplanar) or
     // crossing it (points beyond tol on both sides). A b that stays on one side -- even one merely
-    // touching the plane at a vertex it shares with a while tilting away (a fan of faces around that
-    // vertex) -- does not overlap a, though its projection onto the plane would falsely suggest it.
+    // touching the plane at a vertex it shares with a while tilting away (a fan of faces around
+    // that vertex) -- does not overlap a, though its projection onto the plane would falsely
+    // suggest it.
     bool coplanar = dmin >= -tol && dmax <= tol;
     bool crosses = dmin < -tol && dmax > tol;
     if (!coplanar && !crosses) {
@@ -148,7 +149,8 @@ inline bool triangles_overlap_3d(const geometry::Point3& a0, const geometry::Poi
   bool coplanar = false;
   geometry::Point3 s;
   geometry::Point3 t;
-  if (!igl::tri_tri_intersection_test_3d(sa[0], sa[1], sa[2], sb[0], sb[1], sb[2], coplanar, s, t)) {
+  if (!igl::tri_tri_intersection_test_3d(sa[0], sa[1], sa[2], sb[0], sb[1], sb[2], coplanar, s,
+                                         t)) {
     return false;
   }
   return !coplanar && (t - s).norm() > tol;
@@ -254,7 +256,8 @@ inline int num_shared_vertices(const Face& a, const Face& b) {
 // and triangles_overlap_3d.
 inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Point3& a1,
                                 const geometry::Point3& a2, const geometry::Point3& b0,
-                                const geometry::Point3& b1, const geometry::Point3& b2, int shared) {
+                                const geometry::Point3& b1, const geometry::Point3& b2,
+                                int shared) {
   if (shared >= 3) {
     return false;
   }

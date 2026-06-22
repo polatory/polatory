@@ -125,7 +125,8 @@ class Triangulation {
           if (vj == prev || vj == cur || vj == next) {
             continue;
           }
-          if (in_triangle(points_.row(vj), points_.row(prev), points_.row(cur), points_.row(next))) {
+          if (in_triangle(points_.row(vj), points_.row(prev), points_.row(cur),
+                          points_.row(next))) {
             ear = false;
             break;
           }

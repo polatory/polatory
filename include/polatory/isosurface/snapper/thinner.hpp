@@ -10,7 +10,7 @@
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/predicates.hpp>
-#include <polatory/isosurface/snapper/point_grid.hpp>
+#include <polatory/isosurface/snapper/spatial_grid.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <unordered_map>
@@ -34,12 +34,15 @@ using geometry::Points3;
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
-  static constexpr double kMaxEdgeRatio = 1.5;  // a collapse may not make an edge longer than this * res
+  static constexpr double kMaxEdgeRatio =
+      1.5;  // a collapse may not make an edge longer than this * res
 
  public:
   Thinner(const Points3& vertices, const Faces& faces, const Points3& points,
           const VecX& tolerances, double resolution, const Mat3& aniso)
-      : points_(geometry::transform_points<3>(aniso, points), tolerances, resolution),
+      : snap_points_(geometry::transform_points<3>(aniso, points)),
+        snap_tols_(tolerances),
+        snap_grid_(resolution, points.rows()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
     auto iso = geometry::transform_points<3>(aniso, vertices);
     world_.assign(vertices.rowwise().begin(), vertices.rowwise().end());
@@ -50,12 +53,23 @@ class Thinner {
     }
     deleted_.assign(faces_.size(), false);
 
+    if (snap_tols_.size() == 0) {
+      snap_tols_ = VecX::Zero(snap_points_.rows());
+    }
+    // Each snap point is a closed ball of its tolerance radius, so a query AABB finds every point
+    // whose ball it could reach (tol <= resolution, so a ball spans about one cell).
+    for (Index i = 0; i < snap_points_.rows(); i++) {
+      Vector3 r = Vector3::Constant(snap_tols_(i));
+      snap_grid_.insert(i, snap_points_.row(i) - r, snap_points_.row(i) + r);
+    }
+
     // Each vertex's snapping tolerance, by exact match to a snap point (a snapped vertex is emitted
-    // at the point's exact world position); -1 marks a vertex that is not a snap point, never moved.
+    // at the point's exact world position); -1 marks a vertex that is not a snap point, never
+    // moved.
     std::unordered_map<Point3, double, PointHash> point_tol;
     point_tol.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
-      point_tol[points.row(i)] = tolerances.size() != 0 ? tolerances(i) : 0.0;
+      point_tol[points.row(i)] = snap_tols_(i);
     }
     tol_.assign(world_.size(), -1.0);
     for (std::size_t v = 0; v < world_.size(); v++) {
@@ -151,9 +165,9 @@ class Thinner {
       return false;
     }
 
-    // Keep triangles regular: a collapse stretches only v's spokes -- each edge v-r becomes w-r for a
-    // neighbour r not already adjacent to w. The ring edges between v's neighbours and the edges to
-    // the across vertices are unchanged, so only the spokes are capped.
+    // Keep triangles regular: a collapse stretches only v's spokes -- each edge v-r becomes w-r for
+    // a neighbour r not already adjacent to w. The ring edges between v's neighbours and the edges
+    // to the across vertices are unchanged, so only the spokes are capped.
     for (const auto& [r, fs] : edge_faces) {
       if (r != w && !across.contains(r) && (iso_.at(w) - iso_.at(r)).squaredNorm() > max_edge2_) {
         return false;
@@ -167,8 +181,9 @@ class Thinner {
       dev = std::min(dev, dist2(iso_.at(v), nf));
     }
 
-    // The faces near the collapse afterwards: the new (kept) faces plus the unchanged faces incident
-    // to their vertices, outside the umbrella. Reused by the honor guard and the self-int check.
+    // The faces near the collapse afterwards: the new (kept) faces plus the unchanged faces
+    // incident to their vertices, outside the umbrella. Reused by the honor guard and the self-int
+    // check.
     std::unordered_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto x : nf) {
@@ -251,11 +266,12 @@ class Thinner {
     return {std::move(vertices), std::move(f)};
   }
 
-  // Every nearby snap point -- not just the dropped vertex -- must stay within tolerance, or a greedy
-  // chain drifts already-dropped points off the surface. Only points held by a removed (inc) face.
+  // Every nearby snap point -- not just the dropped vertex -- must stay within tolerance, or a
+  // greedy chain drifts already-dropped points off the surface. Only points held by a removed (inc)
+  // face.
   bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
                  const std::unordered_set<Index>& nearby) const {
-    if (points_.empty()) {
+    if (snap_grid_.empty()) {
       return true;
     }
     Point3 lo = iso_.at(faces_.at(inc.front())(0));
@@ -267,9 +283,9 @@ class Thinner {
       }
     }
     bool ok = true;
-    points_.for_each_near(lo, hi, [&](Index pi) {
-      auto t2 = points_.tolerance(pi) * points_.tolerance(pi);
-      const Point3& p = points_.point(pi);
+    snap_grid_.for_each(lo, hi, [&](Index pi) {
+      auto t2 = snap_tols_(pi) * snap_tols_(pi);
+      Point3 p = snap_points_.row(pi);
       auto old = std::numeric_limits<double>::infinity();
       for (auto fi : inc) {
         old = std::min(old, dist2(p, faces_.at(fi)));
@@ -359,7 +375,9 @@ class Thinner {
     return true;
   }
 
-  PointGrid points_;
+  Points3 snap_points_;  // snap targets in the isotropic frame
+  VecX snap_tols_;       // snapping tolerance per snap point (isotropic-frame distance)
+  SpatialGrid snap_grid_;
   double max_edge2_{};  // squared cap on a collapsed edge's length
   std::vector<Point3> world_;
   std::vector<Point3> iso_;
