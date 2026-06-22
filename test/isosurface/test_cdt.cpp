@@ -12,6 +12,7 @@
 
 using polatory::Index;
 using polatory::geometry::Point2;
+using polatory::isosurface::Faces;
 using polatory::isosurface::snapper::Triangulation;
 
 namespace {
@@ -41,17 +42,17 @@ void check_triangulation(const std::vector<Point2>& boundary,
 
   Triangulation triangulation(boundary, interior);
   const auto& tris = triangulation.faces();
-  ASSERT_FALSE(tris.empty());
+  ASSERT_GT(tris.rows(), 0);
 
   double sum = 0.0;
   std::set<std::pair<Index, Index>> edges;
-  for (const auto& t : tris) {
-    auto a = tri_area(p.at(t[0]), p.at(t[1]), p.at(t[2]));
+  for (auto t : tris.rowwise()) {
+    auto a = tri_area(p.at(t(0)), p.at(t(1)), p.at(t(2)));
     EXPECT_GT(a, 0.0) << "triangle is not CCW / has non-positive area";
     sum += a;
     for (auto k = 0; k < 3; k++) {
-      auto u = t.at(k);
-      auto w = t.at((k + 1) % 3);
+      auto u = t(k);
+      auto w = t((k + 1) % 3);
       edges.insert(u < w ? std::pair{u, w} : std::pair{w, u});
     }
   }
@@ -130,12 +131,12 @@ std::vector<Point2> along_edge_boundary() {
   return {pt(0, 0),       pt(0.25, -0.1), pt(0.5, -0.1), pt(0.75, -0.2),
           pt(1, 0),       pt(0.5, 0.8)};
 }
-int count_along_edge_chords(const std::vector<std::array<Index, 3>>& tris) {
+int count_along_edge_chords(const Faces& tris) {
   int chords = 0;
-  for (const auto& t : tris) {
+  for (auto t : tris.rowwise()) {
     for (auto k = 0; k < 3; k++) {
-      auto u = t.at(k);
-      auto w = t.at((k + 1) % 3);
+      auto u = t(k);
+      auto w = t((k + 1) % 3);
       if (u <= 4 && w <= 4 && std::abs(u - w) > 1) {
         chords++;
       }
@@ -156,7 +157,7 @@ TEST(cdt, no_diagonal_runs_along_a_subdivided_edge) {
   Triangulation triangulation(along_edge_boundary(), {pt(0.3, -0.05)}, boundary_edges);
   const auto& tris = triangulation.faces();
   EXPECT_TRUE(triangulation.simple());
-  ASSERT_FALSE(tris.empty());
+  ASSERT_GT(tris.rows(), 0);
   EXPECT_EQ(count_along_edge_chords(tris), 0) << "a diagonal runs along the subdivided edge";
 }
 

@@ -143,14 +143,9 @@ class Isosurface {
              (af.array() == bf.array()).all();
     };
 
-    // Snap the mesh to the points before clipping. Snapping is re-applied until a pass changes
-    // nothing: a point that lost contention can snap to the finer mesh a later pass leaves behind.
-    // A positive tolerance's slack is what lets that settle, so without one a single pass is used.
-    // Restricting snapping to points whose projection stays inside first_extended_bbox keeps it
-    // away from the mesh boundary, which lies further out (near second_extended_bbox); the clip
-    // then makes the on-bbox boundary. Afterwards thin_snapped_mesh drops redundant snapped
-    // vertices and smooth_snapped_mesh flattens the snapped region by edge flips, leaving the base
-    // lattice elsewhere exactly as generated.
+    // Snap to the points before clipping, re-applying until a pass changes nothing: a point that lost
+    // contention can snap to the finer mesh a later pass leaves (a positive tolerance's slack lets it
+    // settle). first_extended_bbox keeps snapping off the boundary, which the clip makes.
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
       auto res = lattice_.resolution();
       VecX tols = res * rel_snap_tols_;

@@ -34,7 +34,6 @@ using geometry::Points3;
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
-  using Face = std::array<Index, 3>;
 
  public:
   Thinner(const Points3& vertices, const Faces& faces, const Points3& points,
@@ -93,6 +92,212 @@ class Thinner {
     }
   };
 
+  // Whether collapsing v onto w keeps the mesh manifold, unflipped, free of self-intersection, and
+  // the dropped point v within its tolerance of the new surface. dev returns that distance.
+  bool collapse_ok(Index v, Index w, const std::vector<Index>& inc,
+                   const std::unordered_map<Index, std::vector<Index>>& edge_faces, double& dev) {
+    // Link condition: the only vertices adjacent to both v and w must be the two opposite the edge
+    // (v, w); otherwise the collapse folds two sheets together into a non-manifold edge.
+    std::unordered_set<Index> across;
+    for (auto fi : edge_faces.at(w)) {
+      for (auto x : faces_.at(fi)) {
+        if (x != v && x != w) {
+          across.insert(x);
+        }
+      }
+    }
+    for (const auto& [x, fs] : edge_faces) {
+      if (x == w) {
+        continue;
+      }
+      // x is a neighbour of v; is it also a neighbour of w through a face not on edge (v, w)?
+      bool adj_w = false;
+      for (auto fi : v2f_.at(x)) {
+        if (deleted_.at(fi)) {
+          continue;
+        }
+        const auto& f = faces_.at(fi);
+        if ((f(0) == w || f(1) == w || f(2) == w) && !on_edge(f, v, w)) {
+          adj_w = true;
+          break;
+        }
+      }
+      if (adj_w && !across.contains(x)) {
+        return false;
+      }
+    }
+
+    // The faces v keeps (not on edge (v, w)), with v retargeted to w.
+    std::vector<Face> kept;
+    std::unordered_set<Index> umbrella(inc.begin(), inc.end());
+    for (auto fi : inc) {
+      const auto& f = faces_.at(fi);
+      if (on_edge(f, v, w)) {
+        continue;  // collapses to a degenerate sliver, dropped
+      }
+      Face nf{f(0) == v ? w : f(0), f(1) == v ? w : f(1), f(2) == v ? w : f(2)};
+      Vector3 nn = normal(nf);
+      if (!(nn.norm() > 0.0)) {
+        return false;  // a kept face would become degenerate
+      }
+      if (nn.dot(normal(f)) <= 0.0) {
+        return false;  // the face would flip
+      }
+      kept.push_back(nf);
+    }
+    if (kept.empty()) {
+      return false;
+    }
+
+    // Thin only when it strictly recovers the aspect ratio: the worst (smallest) triangle angle in
+    // the umbrella must improve. A collapse that would leave a thinner triangle than was there is
+    // rejected, so thinning never trades fewer faces for a worse shape.
+    double after = std::numeric_limits<double>::infinity();
+    for (const auto& nf : kept) {
+      after = std::min(after, triangle_min_angle(iso_.at(nf(0)), iso_.at(nf(1)), iso_.at(nf(2))));
+    }
+    double before = std::numeric_limits<double>::infinity();
+    for (auto fi : inc) {
+      const auto& f = faces_.at(fi);
+      before = std::min(before, triangle_min_angle(iso_.at(f(0)), iso_.at(f(1)), iso_.at(f(2))));
+    }
+    if (!(after > before)) {
+      return false;
+    }
+
+    // The collapse's distortion, for picking the least-distorting neighbour: how far the dropped
+    // vertex ends up from the new surface.
+    dev = std::numeric_limits<double>::infinity();
+    for (const auto& nf : kept) {
+      dev = std::min(dev, dist2(iso_.at(v), nf));
+    }
+
+    // The faces near the collapse afterwards: the new (kept) faces plus the unchanged faces incident
+    // to their vertices, outside the umbrella. Reused by the honor guard and the self-int check.
+    std::unordered_set<Index> nearby;
+    for (const auto& nf : kept) {
+      for (auto x : nf) {
+        for (auto fi : v2f_.at(x)) {
+          if (!deleted_.at(fi) && !umbrella.contains(fi)) {
+            nearby.insert(fi);
+          }
+        }
+      }
+    }
+
+    if (!honors_ok(inc, kept, nearby)) {
+      return false;
+    }
+
+    // No new face may self-intersect a nearby face. A collapse is local, so the one-ring suffices.
+    for (const auto& nf : kept) {
+      for (auto fi : nearby) {
+        if (intersects(nf, faces_.at(fi))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  double dist2(const Point3& p, const Face& f) const {
+    return point_triangle_dist2(p, iso_.at(f(0)), iso_.at(f(1)), iso_.at(f(2)));
+  }
+
+  void do_collapse(Index v, Index w, const std::vector<Index>& inc,
+                   const std::vector<Index>& vw_faces) {
+    std::unordered_set<Index> dropped(vw_faces.begin(), vw_faces.end());
+    for (auto fi : inc) {
+      if (dropped.contains(fi)) {
+        deleted_.at(fi) = true;
+        continue;
+      }
+      auto& f = faces_.at(fi);
+      for (auto& x : f) {
+        if (x == v) {
+          x = w;
+        }
+      }
+      v2f_.at(w).push_back(fi);  // w gains v's retargeted faces
+    }
+  }
+
+  Mesh emit() {
+    std::vector<bool> used(world_.size(), false);
+    std::vector<Face> faces;
+    for (std::size_t fi = 0; fi < faces_.size(); fi++) {
+      if (deleted_.at(fi)) {
+        continue;
+      }
+      faces.push_back(faces_.at(fi));
+      for (auto v : faces_.at(fi)) {
+        used.at(v) = true;
+      }
+    }
+    std::vector<Index> remap(world_.size(), -1);
+    Index n = 0;
+    for (std::size_t v = 0; v < world_.size(); v++) {
+      if (used.at(v)) {
+        remap.at(v) = n++;
+      }
+    }
+    Points3 vertices(n, 3);
+    for (std::size_t v = 0; v < world_.size(); v++) {
+      if (used.at(v)) {
+        vertices.row(remap.at(v)) = world_.at(v);
+      }
+    }
+    Faces f(static_cast<Index>(faces.size()), 3);
+    for (Index i = 0; i < f.rows(); i++) {
+      f(i, 0) = remap.at(faces.at(i)(0));
+      f(i, 1) = remap.at(faces.at(i)(1));
+      f(i, 2) = remap.at(faces.at(i)(2));
+    }
+    return {std::move(vertices), std::move(f)};
+  }
+
+  // Every nearby snap point -- not just the dropped vertex -- must stay within tolerance, or a greedy
+  // chain drifts already-dropped points off the surface. Only points held by a removed (inc) face.
+  bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
+                 const std::unordered_set<Index>& nearby) const {
+    if (points_.empty()) {
+      return true;
+    }
+    Point3 lo = iso_.at(faces_.at(inc.front())(0));
+    Point3 hi = lo;
+    for (auto fi : inc) {
+      for (auto x : faces_.at(fi)) {
+        lo = lo.cwiseMin(iso_.at(x));
+        hi = hi.cwiseMax(iso_.at(x));
+      }
+    }
+    bool ok = true;
+    points_.for_each_near(lo, hi, [&](Index pi) {
+      auto t2 = points_.tolerance(pi) * points_.tolerance(pi);
+      const Point3& p = points_.point(pi);
+      auto old = std::numeric_limits<double>::infinity();
+      for (auto fi : inc) {
+        old = std::min(old, dist2(p, faces_.at(fi)));
+      }
+      if (old > t2) {
+        return true;  // not held by a removed face; the collapse cannot dishonor it
+      }
+      auto neu = std::numeric_limits<double>::infinity();
+      for (const auto& nf : kept) {
+        neu = std::min(neu, dist2(p, nf));
+      }
+      for (auto fi : nearby) {
+        neu = std::min(neu, dist2(p, faces_.at(fi)));
+      }
+      if (neu > t2) {
+        ok = false;
+        return false;  // dishonored; stop the walk
+      }
+      return true;
+    });
+    return ok;
+  }
+
   // The (alive) faces incident to v.
   std::vector<Index> incident(Index v) const {
     std::vector<Index> fs;
@@ -104,14 +309,20 @@ class Thinner {
     return fs;
   }
 
-  Vector3 normal(const Face& f) const {
-    return Vector3((iso_.at(f[1]) - iso_.at(f[0])).cross(iso_.at(f[2]) - iso_.at(f[0])));
-  }
-
   // Whether faces a and b intersect with positive measure (a real self-intersection).
   bool intersects(const Face& a, const Face& b) const {
-    return triangles_intersect(iso_.at(a[0]), iso_.at(a[1]), iso_.at(a[2]), iso_.at(b[0]),
-                               iso_.at(b[1]), iso_.at(b[2]), shared_vertices(a, b));
+    return triangles_intersect(iso_.at(a(0)), iso_.at(a(1)), iso_.at(a(2)), iso_.at(b(0)),
+                               iso_.at(b(1)), iso_.at(b(2)), num_shared_vertices(a, b));
+  }
+
+  Vector3 normal(const Face& f) const {
+    return Vector3((iso_.at(f(1)) - iso_.at(f(0))).cross(iso_.at(f(2)) - iso_.at(f(0))));
+  }
+
+  static bool on_edge(const Face& f, Index a, Index b) {
+    bool ha = f(0) == a || f(1) == a || f(2) == a;
+    bool hb = f(0) == b || f(1) == b || f(2) == b;
+    return ha && hb;
   }
 
   // Collapse the snapped vertex v onto its least-distorting admissible neighbour, if any. Returns
@@ -153,223 +364,7 @@ class Thinner {
     return true;
   }
 
-  // Whether collapsing v onto w keeps the mesh manifold, unflipped, free of self-intersection, and
-  // the dropped point v within its tolerance of the new surface. dev returns that distance.
-  bool collapse_ok(Index v, Index w, const std::vector<Index>& inc,
-                   const std::unordered_map<Index, std::vector<Index>>& edge_faces, double& dev) {
-    // Link condition: the only vertices adjacent to both v and w must be the two opposite the edge
-    // (v, w); otherwise the collapse folds two sheets together into a non-manifold edge.
-    std::unordered_set<Index> across;
-    for (auto fi : edge_faces.at(w)) {
-      for (auto x : faces_.at(fi)) {
-        if (x != v && x != w) {
-          across.insert(x);
-        }
-      }
-    }
-    for (const auto& [x, fs] : edge_faces) {
-      if (x == w) {
-        continue;
-      }
-      // x is a neighbour of v; is it also a neighbour of w through a face not on edge (v, w)?
-      bool adj_w = false;
-      for (auto fi : v2f_.at(x)) {
-        if (deleted_.at(fi)) {
-          continue;
-        }
-        const auto& f = faces_.at(fi);
-        if ((f[0] == w || f[1] == w || f[2] == w) && !on_edge(f, v, w)) {
-          adj_w = true;
-          break;
-        }
-      }
-      if (adj_w && !across.contains(x)) {
-        return false;
-      }
-    }
-
-    // The faces v keeps (not on edge (v, w)), with v retargeted to w.
-    std::vector<Face> kept;
-    std::unordered_set<Index> umbrella(inc.begin(), inc.end());
-    for (auto fi : inc) {
-      const auto& f = faces_.at(fi);
-      if (on_edge(f, v, w)) {
-        continue;  // collapses to a degenerate sliver, dropped
-      }
-      Face nf{f[0] == v ? w : f[0], f[1] == v ? w : f[1], f[2] == v ? w : f[2]};
-      Vector3 nn = normal(nf);
-      if (!(nn.norm() > 0.0)) {
-        return false;  // a kept face would become degenerate
-      }
-      if (nn.dot(normal(f)) <= 0.0) {
-        return false;  // the face would flip
-      }
-      kept.push_back(nf);
-    }
-    if (kept.empty()) {
-      return false;
-    }
-
-    // Thin only when it strictly recovers the aspect ratio: the worst (smallest) triangle angle in
-    // the umbrella must improve. A collapse that would leave a thinner triangle than was there is
-    // rejected, so thinning never trades fewer faces for a worse shape.
-    double after = std::numeric_limits<double>::infinity();
-    for (const auto& nf : kept) {
-      after = std::min(after, triangle_min_angle(iso_.at(nf[0]), iso_.at(nf[1]), iso_.at(nf[2])));
-    }
-    double before = std::numeric_limits<double>::infinity();
-    for (auto fi : inc) {
-      const auto& f = faces_.at(fi);
-      before = std::min(before, triangle_min_angle(iso_.at(f[0]), iso_.at(f[1]), iso_.at(f[2])));
-    }
-    if (!(after > before)) {
-      return false;
-    }
-
-    // The collapse's distortion, for picking the least-distorting neighbour: how far the dropped
-    // vertex ends up from the new surface.
-    dev = std::numeric_limits<double>::infinity();
-    for (const auto& nf : kept) {
-      dev = std::min(dev, dist2(iso_.at(v), nf));
-    }
-
-    // The faces near the collapse afterwards: the new (kept) faces plus the unchanged faces incident
-    // to their vertices, outside the umbrella. Reused by the honor guard and the self-int check.
-    std::unordered_set<Index> nearby;
-    for (const auto& nf : kept) {
-      for (auto x : nf) {
-        for (auto fi : v2f_.at(x)) {
-          if (!deleted_.at(fi) && !umbrella.contains(fi)) {
-            nearby.insert(fi);
-          }
-        }
-      }
-    }
-
-    if (!honors_ok(inc, kept, nearby)) {
-      return false;
-    }
-
-    // No new face may self-intersect a nearby face. A collapse is local, so the one-ring suffices.
-    for (const auto& nf : kept) {
-      for (auto fi : nearby) {
-        if (intersects(nf, faces_.at(fi))) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  // The squared distance from p to triangle f, in the isotropic frame.
-  double dist2(const Point3& p, const Face& f) const {
-    return point_triangle_dist2(p, iso_.at(f[0]), iso_.at(f[1]), iso_.at(f[2]));
-  }
-
-  // Whether every snap point the collapsing umbrella holds within tolerance stays within it of the
-  // new local surface (kept faces plus unchanged nearby faces) -- not just the dropped vertex, so a
-  // greedy chain of collapses cannot drift an already-dropped point off the surface. A point within
-  // tolerance only of an unchanged face elsewhere is unaffected, so only points within tolerance of
-  // a removed (inc) face are checked. inc holds the old faces (v not yet retargeted), kept the new.
-  bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
-                 const std::unordered_set<Index>& nearby) const {
-    if (points_.empty()) {
-      return true;
-    }
-    Point3 lo = iso_.at(faces_.at(inc.front())[0]);
-    Point3 hi = lo;
-    for (auto fi : inc) {
-      for (auto x : faces_.at(fi)) {
-        lo = lo.cwiseMin(iso_.at(x));
-        hi = hi.cwiseMax(iso_.at(x));
-      }
-    }
-    bool ok = true;
-    points_.for_each_near(lo, hi, [&](Index pi) {
-      auto t2 = points_.tolerance(pi) * points_.tolerance(pi);
-      const Point3& p = points_.point(pi);
-      auto old = std::numeric_limits<double>::infinity();
-      for (auto fi : inc) {
-        old = std::min(old, dist2(p, faces_.at(fi)));
-      }
-      if (old > t2) {
-        return true;  // not held by a removed face; the collapse cannot dishonor it
-      }
-      auto neu = std::numeric_limits<double>::infinity();
-      for (const auto& nf : kept) {
-        neu = std::min(neu, dist2(p, nf));
-      }
-      for (auto fi : nearby) {
-        neu = std::min(neu, dist2(p, faces_.at(fi)));
-      }
-      if (neu > t2) {
-        ok = false;
-        return false;  // dishonored; stop the walk
-      }
-      return true;
-    });
-    return ok;
-  }
-
-  void do_collapse(Index v, Index w, const std::vector<Index>& inc,
-                   const std::vector<Index>& vw_faces) {
-    std::unordered_set<Index> dropped(vw_faces.begin(), vw_faces.end());
-    for (auto fi : inc) {
-      if (dropped.contains(fi)) {
-        deleted_.at(fi) = true;
-        continue;
-      }
-      auto& f = faces_.at(fi);
-      for (auto& x : f) {
-        if (x == v) {
-          x = w;
-        }
-      }
-      v2f_.at(w).push_back(fi);  // w gains v's retargeted faces
-    }
-  }
-
-  static bool on_edge(const Face& f, Index a, Index b) {
-    bool ha = f[0] == a || f[1] == a || f[2] == a;
-    bool hb = f[0] == b || f[1] == b || f[2] == b;
-    return ha && hb;
-  }
-
-  Mesh emit() {
-    std::vector<bool> used(world_.size(), false);
-    std::vector<Face> faces;
-    for (std::size_t fi = 0; fi < faces_.size(); fi++) {
-      if (deleted_.at(fi)) {
-        continue;
-      }
-      faces.push_back(faces_.at(fi));
-      for (auto v : faces_.at(fi)) {
-        used.at(v) = true;
-      }
-    }
-    std::vector<Index> remap(world_.size(), -1);
-    Index n = 0;
-    for (std::size_t v = 0; v < world_.size(); v++) {
-      if (used.at(v)) {
-        remap.at(v) = n++;
-      }
-    }
-    Points3 vertices(n, 3);
-    for (std::size_t v = 0; v < world_.size(); v++) {
-      if (used.at(v)) {
-        vertices.row(remap.at(v)) = world_.at(v);
-      }
-    }
-    Faces f(static_cast<Index>(faces.size()), 3);
-    for (Index i = 0; i < f.rows(); i++) {
-      f(i, 0) = remap.at(faces.at(i)[0]);
-      f(i, 1) = remap.at(faces.at(i)[1]);
-      f(i, 2) = remap.at(faces.at(i)[2]);
-    }
-    return {std::move(vertices), std::move(f)};
-  }
-
-  PointGrid points_;                     // snap points + tolerances, for the honor guard
+  PointGrid points_;
   std::vector<Point3> world_;
   std::vector<Point3> iso_;
   std::vector<Face> faces_;

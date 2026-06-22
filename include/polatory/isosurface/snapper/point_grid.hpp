@@ -10,8 +10,6 @@
 
 namespace polatory::isosurface::snapper {
 
-// A cell of a uniform spatial grid in the isotropic frame, used as a hash-map key (the same
-// RowVector3i-plus-hash_combine idiom as rmt's LatticeCoordinates).
 using Cell = Eigen::RowVector3i;
 
 struct CellHash {
@@ -28,11 +26,6 @@ inline Cell cell_of(const geometry::Point3& p, double cell) {
   return (p / cell).array().floor().cast<int>();
 }
 
-// A uniform spatial grid of snap points (in the isotropic frame) with their tolerances, shared by
-// the thinner and smoother honor guards to find the points near a local edit. Each point is bucketed
-// by the cell it falls in; for_each_near visits every point whose cell meets a query box grown by one
-// cell, so a point within one cell-width -- the tolerance bound, since a tolerance is at most the
-// resolution -- of the box is never missed.
 class PointGrid {
   using Point3 = geometry::Point3;
 
@@ -47,11 +40,8 @@ class PointGrid {
   }
 
   bool empty() const { return points_.empty(); }
-  const Point3& point(Index i) const { return points_.at(i); }
-  double tolerance(Index i) const { return tol_.at(i); }
 
-  // Invoke fn(i) for each point index in the cells meeting [lo, hi] grown by one cell. fn returns
-  // whether to keep going; a false return stops the walk early (for the guards' first failure).
+  // The one-cell margin is enough because a tolerance is at most one cell (the resolution).
   template <class Fn>
   void for_each_near(const Point3& lo, const Point3& hi, const Fn& fn) const {
     Cell clo = cell_of(lo, cell_);
@@ -72,6 +62,10 @@ class PointGrid {
       }
     }
   }
+
+  const Point3& point(Index i) const { return points_.at(i); }
+
+  double tolerance(Index i) const { return tol_.at(i); }
 
  private:
   std::vector<Point3> points_;

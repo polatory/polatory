@@ -10,6 +10,7 @@
 #include <cmath>
 #include <limits>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::isosurface {
@@ -234,12 +235,11 @@ inline double triangle_min_angle(const geometry::Point3& a, const geometry::Poin
   return std::min({angle(b - a, c - a), angle(a - b, c - b), angle(a - c, b - c)});
 }
 
-// The number of vertices the triangles (vertex-index triples) a and b share.
-inline int shared_vertices(const std::array<Index, 3>& a, const std::array<Index, 3>& b) {
+inline int num_shared_vertices(const Face& a, const Face& b) {
   int n = 0;
-  for (auto u : a) {
-    for (auto w : b) {
-      if (u == w) {
+  for (auto i = 0; i < 3; i++) {
+    for (auto j = 0; j < 3; j++) {
+      if (a(i) == b(j)) {
         n++;
       }
     }

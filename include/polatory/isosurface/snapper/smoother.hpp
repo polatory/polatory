@@ -43,11 +43,8 @@ namespace polatory::isosurface::snapper {
 // only flat triangulation is a sliver is left creased rather than slivered (min_angle = 0 disables
 // the cap).
 //
-// The snap points and their tolerances are passed so the descent honors them: a flip is rejected if
-// it would push the surface beyond a point's tolerance. This protects points honored implicitly --
-// those the surface passes within tolerance of with no vertex there (a point already satisfied
-// without a snap, or one whose snapped vertex thinning later removed as redundant) -- which a flip
-// that only watches the dihedral would otherwise flatten the surface off of.
+// A flip is rejected if it pushes the surface beyond a snap point's tolerance, protecting points
+// honored implicitly (within tolerance with no vertex there) that a dihedral-only descent flattens off.
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -132,14 +129,14 @@ class Smoother {
       for (Index fi : {fl->f0i, fl->f1i}) {
         Face f = f_.row(fi);
         for (auto k = 0; k < 3; k++) {
-          Edge ek{f[k], f[(k + 1) % 3]};
+          Edge ek{f(k), f((k + 1) % 3)};
           enqueue(ek);
           if (auto it = ef_.find(ek); it != ef_.end()) {
             for (Index g : it->second) {
               if (g != fl->f0i && g != fl->f1i) {
                 Face fg = f_.row(g);
                 for (auto m = 0; m < 3; m++) {
-                  enqueue(Edge{fg[m], fg[(m + 1) % 3]});
+                  enqueue(Edge{fg(m), fg((m + 1) % 3)});
                 }
               }
             }
@@ -153,6 +150,13 @@ class Smoother {
   Mesh mesh() && { return std::move(mesh_); }
 
  private:
+  void add_face_edges(Index fi) {
+    Face f = f_.row(fi);
+    for (auto k = 0; k < 3; k++) {
+      ef_[Edge{f(k), f((k + 1) % 3)}].push_back(fi);
+    }
+  }
+
   // The bend (0 = flat) between two faces; degenerate or back-to-back pairs read as the worst.
   double bend(const Face& a, const Face& b) const {
     Vector3 na = normal(a);
@@ -168,6 +172,54 @@ class Smoother {
   // bend(a, face fi), or 0 when fi is the absent neighbour across a boundary edge (fi < 0).
   double bend_with(const Face& a, Index fi) const { return fi < 0 ? 0.0 : bend(a, f_.row(fi)); }
 
+  // Whether new triangle nf (replacing f0i/f1i) overlaps any spatially near face. A face nf
+  // overlaps has its AABB meet nf's, so scanning nf's own cells suffices; a fresh stamp per call
+  // tests each such face against nf (the sibling call covers the other new triangle independently).
+  bool crosses(const Face& nf, Index f0i, Index f1i, double tol) {
+    guard_id_++;
+    Point3 p0 = v_.row(nf(0));
+    Point3 p1 = v_.row(nf(1));
+    Point3 p2 = v_.row(nf(2));
+    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
+    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
+    for (auto i = lo(0); i <= hi(0); i++) {
+      for (auto j = lo(1); j <= hi(1); j++) {
+        for (auto k = lo(2); k <= hi(2); k++) {
+          auto it = grid_.find(Cell(i, j, k));
+          if (it == grid_.end()) {
+            continue;
+          }
+          for (Index gi : it->second) {
+            if (visited_[gi] == guard_id_) {
+              continue;
+            }
+            visited_[gi] = guard_id_;
+            if (gi != f0i && gi != f1i && overlaps(nf, f_.row(gi), tol)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  double dist2(const Point3& p, const Face& f) const {
+    return point_triangle_dist2(p, v_.row(f(0)), v_.row(f(1)), v_.row(f(2)));
+  }
+
+  // Apply the flip: rewrite the two faces in place and update the edge adjacency and spatial grid.
+  void do_flip(const Flip& fl) {
+    remove_face_edges(fl.f0i);
+    remove_face_edges(fl.f1i);
+    f_.row(fl.f0i) = fl.nf0;
+    f_.row(fl.f1i) = fl.nf1;
+    add_face_edges(fl.f0i);
+    add_face_edges(fl.f1i);
+    insert_face(fl.f0i);
+    insert_face(fl.f1i);
+  }
+
   // The interior face sharing e other than f0i/f1i, or -1 if e is a boundary edge.
   Index external(const Edge& e, Index f0i, Index f1i) const {
     auto it = ef_.find(e);
@@ -177,6 +229,122 @@ class Smoother {
     Index a = it->second[0];
     Index b = it->second[1];
     return a == f0i || a == f1i ? b : a;
+  }
+
+  // Whether the flip keeps the mesh free of self-intersection: neither new triangle may cross any
+  // face whose grid cell its AABB touches -- a spatial broad-phase, so a flipped diagonal that
+  // passes over a topologically distant but spatially near sheet is caught, not just one in the
+  // one-ring.
+  bool guard_ok(const Flip& fl) {
+    auto tol = 1e-6 * (v_.row(fl.x) - v_.row(fl.y)).norm();
+    return !crosses(fl.nf0, fl.f0i, fl.f1i, tol) && !crosses(fl.nf1, fl.f0i, fl.f1i, tol);
+  }
+
+  // A point within tolerance of a removed face (f0/f1) must stay within tolerance of the new local
+  // faces (the two new triangles plus the quad's outer neighbours); only such points can be affected.
+  bool honors_ok(const Flip& fl) const {
+    if (points_.empty()) {
+      return true;
+    }
+    Face f0 = f_.row(fl.f0i);
+    Face f1 = f_.row(fl.f1i);
+    std::array<Face, 6> after{fl.nf0, fl.nf1};
+    auto na = 2;
+    for (const Edge& e : {Edge{fl.c, fl.x}, Edge{fl.y, fl.c}, Edge{fl.x, fl.d}, Edge{fl.d, fl.y}}) {
+      Index g = external(e, fl.f0i, fl.f1i);
+      if (g >= 0) {
+        after.at(na++) = f_.row(g);
+      }
+    }
+    Point3 lo = v_.row(fl.x).cwiseMin(v_.row(fl.y)).cwiseMin(v_.row(fl.c)).cwiseMin(v_.row(fl.d));
+    Point3 hi = v_.row(fl.x).cwiseMax(v_.row(fl.y)).cwiseMax(v_.row(fl.c)).cwiseMax(v_.row(fl.d));
+    bool ok = true;
+    points_.for_each_near(lo, hi, [&](Index pi) {
+      auto tol2 = points_.tolerance(pi) * points_.tolerance(pi);
+      const Point3& p = points_.point(pi);
+      if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
+        return true;  // not honored by a removed face; the flip cannot dishonor it
+      }
+      auto best = std::numeric_limits<double>::infinity();
+      for (auto m = 0; m < na; m++) {
+        best = std::min(best, dist2(p, after.at(m)));
+      }
+      if (best > tol2) {
+        ok = false;
+        return false;  // dishonored; stop the walk
+      }
+      return true;
+    });
+    return ok;
+  }
+
+  // Index a face by the grid cells its AABB touches. Vertices never move, so a face's cells change
+  // only when it is flipped, when it is re-inserted in place; old entries left stale are harmless
+  // (a stale index still reads its current geometry).
+  void insert_face(Index fi) {
+    Point3 p0 = v_.row(f_(fi, 0));
+    Point3 p1 = v_.row(f_(fi, 1));
+    Point3 p2 = v_.row(f_(fi, 2));
+    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
+    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
+    for (auto i = lo(0); i <= hi(0); i++) {
+      for (auto j = lo(1); j <= hi(1); j++) {
+        for (auto k = lo(2); k <= hi(2); k++) {
+          grid_[Cell(i, j, k)].push_back(fi);
+        }
+      }
+    }
+  }
+
+  // The smallest interior angle of a triangle (radians); a sliver reads near 0.
+  double min_angle(const Face& f) const {
+    return triangle_min_angle(v_.row(f(0)), v_.row(f(1)), v_.row(f(2)));
+  }
+
+  // A face's unnormalized normal (length is twice the area).
+  Vector3 normal(const Face& f) const {
+    Vector3 e1 = v_.row(f(1)) - v_.row(f(0));
+    Vector3 e2 = v_.row(f(2)) - v_.row(f(0));
+    return Vector3(e1.cross(e2));
+  }
+
+  // A real crossing of a and b beyond a shared vertex. Edge-adjacent pairs (shared >= 2) are
+  // skipped: a flip cannot fold the surface back on an edge without either opposing the quad normal
+  // (rejected above) or worsening a quad bend (so it is not an improvement and is not made), so the
+  // only crossings left to catch are with non-adjacent faces.
+  bool overlaps(const Face& a, const Face& b, double tol) const {
+    auto shared = num_shared_vertices(a, b);
+    if (shared >= 2) {
+      return false;
+    }
+    Point3 a0 = v_.row(a(0));
+    Point3 a1 = v_.row(a(1));
+    Point3 a2 = v_.row(a(2));
+    Point3 b0 = v_.row(b(0));
+    Point3 b1 = v_.row(b(1));
+    Point3 b2 = v_.row(b(2));
+    if (shared == 0) {
+      // A disjoint pair gets the robust exact crossing test (no false negatives, unlike the
+      // shrink-based transversal in triangles_overlap_3d -- a flip can pass a new face over a
+      // non-adjacent sheet that the shrink test would miss).
+      return triangles_cross_3d(a0, a1, a2, b0, b1, b2);
+    }
+    return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
+  }
+
+  void remove_face_edges(Index fi) {
+    Face f = f_.row(fi);
+    for (auto k = 0; k < 3; k++) {
+      auto it = ef_.find(Edge{f(k), f((k + 1) % 3)});
+      if (it == ef_.end()) {
+        continue;
+      }
+      auto& faces = it->second;
+      faces.erase(std::remove(faces.begin(), faces.end(), fi), faces.end());
+      if (faces.empty()) {
+        ef_.erase(it);
+      }
+    }
   }
 
   // The candidate flip of edge e, if it is an interior edge whose flip is admissible (a new
@@ -196,9 +364,9 @@ class Smoother {
     Index x = -1;
     Index y = -1;
     for (auto k = 0; k < 3; k++) {
-      if (e == Edge{f0[k], f0[(k + 1) % 3]}) {
-        x = f0[k];
-        y = f0[(k + 1) % 3];
+      if (e == Edge{f0(k), f0((k + 1) % 3)}) {
+        x = f0(k);
+        y = f0((k + 1) % 3);
         break;
       }
     }
@@ -260,192 +428,6 @@ class Smoother {
     return Flip{f0i, f1i, x, y, c, d, nf0, nf1, before - after};
   }
 
-  // Whether the flip keeps the mesh free of self-intersection: neither new triangle may cross any
-  // face whose grid cell its AABB touches -- a spatial broad-phase, so a flipped diagonal that
-  // passes over a topologically distant but spatially near sheet is caught, not just one in the
-  // one-ring.
-  bool guard_ok(const Flip& fl) {
-    auto tol = 1e-6 * (v_.row(fl.x) - v_.row(fl.y)).norm();
-    return !crosses(fl.nf0, fl.f0i, fl.f1i, tol) && !crosses(fl.nf1, fl.f0i, fl.f1i, tol);
-  }
-
-  // Whether the flip keeps every snap point the mesh honors honored. The flip changes only f0/f1, so
-  // a point's distance to the mesh can grow only if a removed face was its nearest; such a point must
-  // stay within its tolerance of the new local faces (the two new triangles and the quad's outer
-  // neighbours). A point not within tolerance of either removed face is honored elsewhere by an
-  // untouched face and needs no check.
-  bool honors_ok(const Flip& fl) const {
-    if (points_.empty()) {
-      return true;
-    }
-    Face f0 = f_.row(fl.f0i);
-    Face f1 = f_.row(fl.f1i);
-    std::array<Face, 6> after{fl.nf0, fl.nf1};
-    auto na = 2;
-    for (const Edge& e : {Edge{fl.c, fl.x}, Edge{fl.y, fl.c}, Edge{fl.x, fl.d}, Edge{fl.d, fl.y}}) {
-      Index g = external(e, fl.f0i, fl.f1i);
-      if (g >= 0) {
-        after.at(na++) = f_.row(g);
-      }
-    }
-    Point3 lo = v_.row(fl.x).cwiseMin(v_.row(fl.y)).cwiseMin(v_.row(fl.c)).cwiseMin(v_.row(fl.d));
-    Point3 hi = v_.row(fl.x).cwiseMax(v_.row(fl.y)).cwiseMax(v_.row(fl.c)).cwiseMax(v_.row(fl.d));
-    bool ok = true;
-    points_.for_each_near(lo, hi, [&](Index pi) {
-      auto tol2 = points_.tolerance(pi) * points_.tolerance(pi);
-      const Point3& p = points_.point(pi);
-      if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
-        return true;  // not honored by a removed face; the flip cannot dishonor it
-      }
-      auto best = std::numeric_limits<double>::infinity();
-      for (auto m = 0; m < na; m++) {
-        best = std::min(best, dist2(p, after.at(m)));
-      }
-      if (best > tol2) {
-        ok = false;
-        return false;  // dishonored; stop the walk
-      }
-      return true;
-    });
-    return ok;
-  }
-
-  double dist2(const Point3& p, const Face& f) const {
-    return point_triangle_dist2(p, v_.row(f[0]), v_.row(f[1]), v_.row(f[2]));
-  }
-
-  // Whether new triangle nf (replacing f0i/f1i) overlaps any spatially near face. A face nf
-  // overlaps has its AABB meet nf's, so scanning nf's own cells suffices; a fresh stamp per call
-  // tests each such face against nf (the sibling call covers the other new triangle independently).
-  bool crosses(const Face& nf, Index f0i, Index f1i, double tol) {
-    guard_id_++;
-    Point3 p0 = v_.row(nf[0]);
-    Point3 p1 = v_.row(nf[1]);
-    Point3 p2 = v_.row(nf[2]);
-    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
-    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
-    for (auto i = lo(0); i <= hi(0); i++) {
-      for (auto j = lo(1); j <= hi(1); j++) {
-        for (auto k = lo(2); k <= hi(2); k++) {
-          auto it = grid_.find(Cell(i, j, k));
-          if (it == grid_.end()) {
-            continue;
-          }
-          for (Index gi : it->second) {
-            if (visited_[gi] == guard_id_) {
-              continue;
-            }
-            visited_[gi] = guard_id_;
-            if (gi != f0i && gi != f1i && overlaps(nf, f_.row(gi), tol)) {
-              return true;
-            }
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  // Apply the flip: rewrite the two faces in place and update the edge adjacency and spatial grid.
-  void do_flip(const Flip& fl) {
-    remove_face_edges(fl.f0i);
-    remove_face_edges(fl.f1i);
-    f_.row(fl.f0i) = fl.nf0;
-    f_.row(fl.f1i) = fl.nf1;
-    add_face_edges(fl.f0i);
-    add_face_edges(fl.f1i);
-    insert_face(fl.f0i);
-    insert_face(fl.f1i);
-  }
-
-  // Index a face by the grid cells its AABB touches. Vertices never move, so a face's cells change
-  // only when it is flipped, when it is re-inserted in place; old entries left stale are harmless
-  // (a stale index still reads its current geometry).
-  void insert_face(Index fi) {
-    Point3 p0 = v_.row(f_(fi, 0));
-    Point3 p1 = v_.row(f_(fi, 1));
-    Point3 p2 = v_.row(f_(fi, 2));
-    Cell lo = cell_of(p0.cwiseMin(p1).cwiseMin(p2), cell_);
-    Cell hi = cell_of(p0.cwiseMax(p1).cwiseMax(p2), cell_);
-    for (auto i = lo(0); i <= hi(0); i++) {
-      for (auto j = lo(1); j <= hi(1); j++) {
-        for (auto k = lo(2); k <= hi(2); k++) {
-          grid_[Cell(i, j, k)].push_back(fi);
-        }
-      }
-    }
-  }
-
-  void add_face_edges(Index fi) {
-    Face f = f_.row(fi);
-    for (auto k = 0; k < 3; k++) {
-      ef_[Edge{f[k], f[(k + 1) % 3]}].push_back(fi);
-    }
-  }
-
-  void remove_face_edges(Index fi) {
-    Face f = f_.row(fi);
-    for (auto k = 0; k < 3; k++) {
-      auto it = ef_.find(Edge{f[k], f[(k + 1) % 3]});
-      if (it == ef_.end()) {
-        continue;
-      }
-      auto& faces = it->second;
-      faces.erase(std::remove(faces.begin(), faces.end(), fi), faces.end());
-      if (faces.empty()) {
-        ef_.erase(it);
-      }
-    }
-  }
-
-  // A face's unnormalized normal (length is twice the area).
-  Vector3 normal(const Face& f) const {
-    Vector3 e1 = v_.row(f[1]) - v_.row(f[0]);
-    Vector3 e2 = v_.row(f[2]) - v_.row(f[0]);
-    return Vector3(e1.cross(e2));
-  }
-
-  // The smallest interior angle of a triangle (radians); a sliver reads near 0.
-  double min_angle(const Face& f) const {
-    return triangle_min_angle(v_.row(f[0]), v_.row(f[1]), v_.row(f[2]));
-  }
-
-  // A real crossing of a and b beyond a shared vertex. Edge-adjacent pairs (shared >= 2) are
-  // skipped: a flip cannot fold the surface back on an edge without either opposing the quad normal
-  // (rejected above) or worsening a quad bend (so it is not an improvement and is not made), so the
-  // only crossings left to catch are with non-adjacent faces.
-  bool overlaps(const Face& a, const Face& b, double tol) const {
-    auto shared = shared_vertices(a, b);
-    if (shared >= 2) {
-      return false;
-    }
-    Point3 a0 = v_.row(a[0]);
-    Point3 a1 = v_.row(a[1]);
-    Point3 a2 = v_.row(a[2]);
-    Point3 b0 = v_.row(b[0]);
-    Point3 b1 = v_.row(b[1]);
-    Point3 b2 = v_.row(b[2]);
-    if (shared == 0) {
-      // A disjoint pair gets the robust exact crossing test (no false negatives, unlike the
-      // shrink-based transversal in triangles_overlap_3d -- a flip can pass a new face over a
-      // non-adjacent sheet that the shrink test would miss).
-      return triangles_cross_3d(a0, a1, a2, b0, b1, b2);
-    }
-    return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
-  }
-
-  static int shared_vertices(const Face& a, const Face& b) {
-    auto n = 0;
-    for (auto u : a) {
-      for (auto w : b) {
-        if (u == w) {
-          n++;
-        }
-      }
-    }
-    return n;
-  }
-
   // The vertex of f that is neither endpoint of e, or -1 if there is none.
   static Index third(const Face& f, const Edge& e) {
     for (auto x : f) {
@@ -458,7 +440,7 @@ class Smoother {
 
   Points3 v_;  // vertices in the isotropic frame, where the geometry is measured
   Faces f_;    // working faces; connectivity is edited in place
-  PointGrid points_;     // snap points + tolerances, the targets a flip may not move off
+  PointGrid points_;
   double cell_{};        // spatial-grid cell size for the self-intersection guard
   double min_angle_;     // a flip may not push a triangle's smallest angle below this (0 = off)
   std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
