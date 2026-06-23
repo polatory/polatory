@@ -304,9 +304,10 @@ class Smoother {
       return std::nullopt;  // boundary/degenerate, or the flipped diagonal already exists
     }
     auto new_len2 = (v_.row(c) - v_.row(d)).squaredNorm();
+    auto cur_len2 = (v_.row(x) - v_.row(y)).squaredNorm();
     auto ceiling = kEdgeCeiling * resolution_;
-    if (new_len2 > ceiling * ceiling) {
-      return std::nullopt;  // the new diagonal exceeds the hard length ceiling
+    if (new_len2 > cur_len2 && new_len2 > ceiling * ceiling) {
+      return std::nullopt;  // a lengthening flip may not exceed the hard length ceiling
     }
     Face new_f0{c, x, d};
     Face new_f1{d, y, c};
@@ -344,14 +345,16 @@ class Smoother {
     }
     auto improve = before - after;
 
-    // Dihedral-dependent length cap: a diagonal past kEdgeFloor * res must earn its overshoot with
-    // bend reduction, else fall back to the (shorter) original diagonal. Spares the fin (a short,
-    // high-bend flip) while dropping long flat-direction flips that barely change the surface.
-    auto overshoot = std::sqrt(new_len2) / resolution_ - kEdgeFloor;
-    if (overshoot > 0.0) {
-      auto rate = kImproveFull / (kEdgeCeiling - kEdgeFloor);
-      if (improve < rate * overshoot) {
-        return std::nullopt;
+    // Dihedral-dependent length cap, only when the flip lengthens the diagonal: the overshoot past
+    // kEdgeFloor * res must be earned by bend reduction. A shortening flip adds no edge longer than
+    // the one it removes, so it skips the cap.
+    if (new_len2 > cur_len2) {
+      auto overshoot = std::sqrt(new_len2) / resolution_ - kEdgeFloor;
+      if (overshoot > 0.0) {
+        auto rate = kImproveFull / (kEdgeCeiling - kEdgeFloor);
+        if (improve < rate * overshoot) {
+          return std::nullopt;
+        }
       }
     }
 
