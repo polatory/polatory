@@ -6,10 +6,8 @@
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/bit.hpp>
 #include <polatory/isosurface/rmt/edge.hpp>
 #include <polatory/isosurface/rmt/lattice_coordinates.hpp>
-#include <polatory/isosurface/rmt/node.hpp>
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
 #include <polatory/point_cloud/random_points.hpp>
 
@@ -19,14 +17,10 @@ using polatory::geometry::Cuboid3;
 using polatory::geometry::Point3;
 using polatory::geometry::transform_vector;
 using polatory::geometry::Vector3;
-using polatory::isosurface::bit_count;
-using polatory::isosurface::bit_pop;
-using polatory::isosurface::rmt::EdgeBitset;
 using polatory::isosurface::rmt::EdgeIndex;
 using polatory::isosurface::rmt::inv_sqrt2;
 using polatory::isosurface::rmt::kLatticeBasis;
 using polatory::isosurface::rmt::kNeighborLatticeCoordinatesDeltas;
-using polatory::isosurface::rmt::kNeighborMasks;
 using polatory::isosurface::rmt::kOppositeEdge;
 using polatory::isosurface::rmt::LatticeCoordinates;
 using polatory::isosurface::rmt::PrimitiveLattice;
@@ -96,32 +90,6 @@ TEST(rmt, neighbor_cell_vectors) {
     Vector3 v = lc(0) * a0 + lc(1) * a1 + lc(2) * a2;
 
     EXPECT_EQ(neighbor_vectors.at(ei), v);
-  }
-}
-
-TEST(rmt, neighbor_masks) {
-  Vector3 a0 = inv_sqrt2 * Vector3{-1.0, 1.0, 1.0};
-  Vector3 a1 = inv_sqrt2 * Vector3{1.0, -1.0, 1.0};
-  Vector3 a2 = inv_sqrt2 * Vector3{1.0, 1.0, -1.0};
-
-  for (std::size_t i = 0; i < kNeighborMasks.size(); i++) {
-    auto mask = kNeighborMasks.at(i);
-    auto count = bit_count(mask);
-    EXPECT_TRUE(count == 4 || count == 6);
-
-    const auto& lci = kNeighborLatticeCoordinatesDeltas.at(i);
-    Vector3 vi = lci(0) * a0 + lci(1) * a1 + lci(2) * a2;
-    for (auto k = 0; k < count; k++) {
-      auto j = bit_pop(&mask);
-      const auto& lcj = kNeighborLatticeCoordinatesDeltas.at(j);
-      Vector3 vj = lcj(0) * a0 + lcj(1) * a1 + lcj(2) * a2;
-      auto vij2 = (vj - vi).squaredNorm();
-      if (vij2 > 1.75) {
-        EXPECT_DOUBLE_EQ(2.0, vij2);
-      } else {
-        EXPECT_DOUBLE_EQ(1.5, vij2);
-      }
-    }
   }
 }
 

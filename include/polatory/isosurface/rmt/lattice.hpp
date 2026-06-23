@@ -19,7 +19,6 @@
 #include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -251,34 +250,11 @@ class Lattice : public PrimitiveLattice {
     node_list_.clear();
     nodes_to_evaluate_.clear();
     vertices_.clear();
-    cluster_map_.clear();
-    clustered_vertices_.clear();
     value_at_arbitrary_point_.reset();
   }
 
-  void cluster_vertices() {
-    std::vector<geometry::Point3> vertices(vertices_.size());
-    for (std::size_t i = 0; i < vertices.size(); i++) {
-      // Use the clamped positions to reduce the risk of generating overlapping faces
-      // when there are multiple surfaces around the node.
-      vertices.at(i) = vertices_.at(i).position_clamped(node_list_);
-    }
-
-    const auto& min = first_extended_bbox().min();
-    const auto& max = first_extended_bbox().max();
-
-    for (auto& lc_node : node_list_) {
-      auto& node = lc_node.second;
-      const auto& p = node.position();
-      if ((p.array() <= min.array() || p.array() >= max.array()).any()) {
-        // Do not cluster vertices of a node on/outside the bbox,
-        // as this can produce a boundary vertex inside the bbox.
-        continue;
-      }
-      node.cluster(vertices, cluster_map_, clustered_vertices_);
-    }
-  }
-
+  // Returns the raw marching-tetrahedra mesh (one vertex per sign-change edge). Vertex clustering is
+  // a separate mesh step; see MeshClusterer.
   Mesh get_mesh() const {
     std::vector<Face> faces_v;
     auto inserter = std::back_inserter(faces_v);
@@ -290,24 +266,10 @@ class Lattice : public PrimitiveLattice {
     }
 
     Faces faces(static_cast<Index>(faces_v.size()), 3);
-    Index n_faces = 0;
-
     auto it = faces.rowwise().begin();
     for (const auto& face : faces_v) {
-      auto v0 = clustered_vertex_index(face(0));
-      auto v1 = clustered_vertex_index(face(1));
-      auto v2 = clustered_vertex_index(face(2));
-
-      if (v0 == v1 || v1 == v2 || v2 == v0) {
-        // Degenerate face (due to vertex clustering).
-        continue;
-      }
-
-      *it++ << v0, v1, v2;
-      n_faces++;
+      *it++ = face;
     }
-
-    faces.conservativeResize(n_faces, 3);
 
     return {get_vertices(), faces};
   }
@@ -344,23 +306,6 @@ class Lattice : public PrimitiveLattice {
         node1.insert_vertex(v.vi, kOppositeEdge.at(v.ei));
       }
     }
-  }
-
-  Index uncluster_vertices(const std::unordered_set<Index>& vis) {
-    Index num_unclustered = 0;
-
-    auto it = cluster_map_.begin();
-    while (it != cluster_map_.end()) {
-      if (vis.contains(it->second)) {
-        // Uncluster.
-        it = cluster_map_.erase(it);
-        ++num_unclustered;
-      } else {
-        ++it;
-      }
-    }
-
-    return num_unclustered;
   }
 
   BinarySign value_sign_at_arbitrary_point_within_bbox() const {
@@ -420,6 +365,9 @@ class Lattice : public PrimitiveLattice {
     double t2{};
     double v2{};
 
+    // Keeps the crossing off the node endpoints by kVertexPositionMinimumOffset. When several
+    // surfaces pass near a node, vertices landing exactly on it (and the clustered vertex that
+    // averages them) tend to produce overlapping faces; the offset reduces that risk.
     geometry::Point3 position_clamped(const NodeList& node_list) const {
       const auto& node0 = node_list.at(node_lc);
       const auto& node1 = node_list.at(neighbor(node_lc, ei));
@@ -478,10 +426,6 @@ class Lattice : public PrimitiveLattice {
     auto vc = volume(a, d, b, p);
     auto vd = volume(a, b, c, p);
     return geometry::Vector<4>(va, vb, vc, vd) / v;
-  }
-
-  Index clustered_vertex_index(Index vi) const {
-    return cluster_map_.contains(vi) ? cluster_map_.at(vi) : vi;
   }
 
   // Evaluates field values for each node in nodes_to_evaluate_.
@@ -583,14 +527,10 @@ class Lattice : public PrimitiveLattice {
   }
 
   geometry::Points3 get_vertices() const {
-    geometry::Points3 vertices(static_cast<Index>(vertices_.size() + clustered_vertices_.size()),
-                               3);
+    geometry::Points3 vertices(static_cast<Index>(vertices_.size()), 3);
     auto it = vertices.rowwise().begin();
     for (const auto& v : vertices_) {
       *it++ = v.position_clamped(node_list_);
-    }
-    for (const auto& v : clustered_vertices_) {
-      *it++ = v;
     }
 
     // To reduce the risk of generating near-degenerate faces during surface clipping,
@@ -729,8 +669,6 @@ class Lattice : public PrimitiveLattice {
   NodeList node_list_;
   std::vector<LatticeCoordinates> nodes_to_evaluate_;
   std::vector<Vertex> vertices_;
-  std::unordered_map<Index, Index> cluster_map_;
-  std::vector<geometry::Point3> clustered_vertices_;
   std::optional<InterpolatedValue> value_at_arbitrary_point_;
 };
 

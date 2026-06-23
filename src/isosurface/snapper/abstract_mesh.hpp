@@ -12,8 +12,8 @@ namespace polatory::isosurface::snapper {
 
 // A triangle mesh's connectivity (faces are vertex-index triples, no coordinates). Each edge stores
 // its two oriented sides -- the face traversing it as a -> b (a < b) and the one traversing it
-// reversed, -1 if absent -- so the mesh must stay orientable and manifold: a second face on the same
-// side throws. Faces have stable indices.
+// reversed, -1 if absent -- so the mesh must stay orientable and manifold: a second face on the
+// same side throws. Faces have stable indices.
 class AbstractMesh {
   using Sides = std::array<Index, 2>;
 
@@ -63,7 +63,8 @@ class AbstractMesh {
     auto c = opposite(face(fi0), e);
     auto d = opposite(face(fi1), e);
     // Remove both old faces before adding either: a new face shares an outer edge with the other
-    // old face in the same direction, so registering it while that face is still present would clash.
+    // old face in the same direction, so registering it while that face is still present would
+    // clash.
     unregister_edges(fi0);
     unregister_edges(fi1);
     faces_.row(fi0) = Face{c, e.a, d};

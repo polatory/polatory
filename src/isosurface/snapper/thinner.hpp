@@ -9,13 +9,14 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
-#include "utility.hpp"
-#include "spatial_grid.hpp"
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "spatial_grid.hpp"
+#include "utility.hpp"
 
 namespace polatory::isosurface::snapper {
 
@@ -53,7 +54,8 @@ class Thinner {
     if (snap_tols_.size() == 0) {
       snap_tols_ = VecX::Zero(snap_points_.rows());
     }
-    // Insert each snap point as a tolerance-radius ball, so a query AABB finds every point it reaches.
+    // Insert each snap point as a tolerance-radius ball, so a query AABB finds every point it
+    // reaches.
     for (Index i = 0; i < snap_points_.rows(); i++) {
       Vector3 r = Vector3::Constant(snap_tols_(i));
       snap_grid_.insert(i, snap_points_.row(i) - r, snap_points_.row(i) + r);
@@ -103,11 +105,12 @@ class Thinner {
     }
   };
 
-  // Whether collapsing v onto w is admissible; dev = the dropped point's distance to the new surface.
+  // Whether collapsing v onto w is admissible; dev = the dropped point's distance to the new
+  // surface.
   bool collapse_ok(Index v, Index w, const std::vector<Index>& inc,
                    const std::unordered_map<Index, std::vector<Index>>& edge_faces, double& dev) {
-    // Link condition: v and w may share only the two vertices opposite edge (v, w), else the collapse
-    // folds two sheets into a non-manifold edge.
+    // Link condition: v and w may share only the two vertices opposite edge (v, w), else the
+    // collapse folds two sheets into a non-manifold edge.
     std::unordered_set<Index> across;
     for (auto fi : edge_faces.at(w)) {
       for (auto x : faces_.at(fi)) {
@@ -166,7 +169,8 @@ class Thinner {
       }
     }
 
-    // Distortion (for picking the least-distorting neighbour): the dropped vertex's distance to the new surface.
+    // Distortion (for picking the least-distorting neighbour): the dropped vertex's distance to the
+    // new surface.
     dev = std::numeric_limits<double>::infinity();
     for (const auto& nf : kept) {
       dev = std::min(dev, dist2(iso_.at(v), nf));
@@ -255,8 +259,8 @@ class Thinner {
     return {std::move(vertices), std::move(f)};
   }
 
-  // Every nearby snap point held by a removed face -- not just the dropped vertex -- must stay within
-  // tolerance, else a greedy chain drifts already-dropped points off the surface.
+  // Every nearby snap point held by a removed face -- not just the dropped vertex -- must stay
+  // within tolerance, else a greedy chain drifts already-dropped points off the surface.
   bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
                  const std::unordered_set<Index>& nearby) const {
     if (snap_grid_.empty()) {
@@ -328,7 +332,8 @@ class Thinner {
     if (inc.size() < 3) {
       return false;
     }
-    std::unordered_map<Index, std::vector<Index>> edge_faces;  // neighbour w -> faces on edge (v, w)
+    std::unordered_map<Index, std::vector<Index>>
+        edge_faces;  // neighbour w -> faces on edge (v, w)
     for (auto fi : inc) {
       for (auto w : faces_.at(fi)) {
         if (w != v) {

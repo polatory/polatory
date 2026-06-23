@@ -52,7 +52,8 @@ inline bool triangles_overlap_2d(const std::array<geometry::Point2, 3>& a,
 
 // Overlap of two triangles, discounting contact narrower than tol. Two regimes: near-parallel uses
 // 2D footprint overlap (the 3D segment test false-positives on coplanar tiling, e.g. a vertex fan);
-// transversal uses the 3D segment test on centroid-shrunk triangles so a bare touch falls under tol.
+// transversal uses the 3D segment test on centroid-shrunk triangles so a bare touch falls under
+// tol.
 inline bool triangles_overlap_3d(const geometry::Point3& a0, const geometry::Point3& a1,
                                  const geometry::Point3& a2, const geometry::Point3& b0,
                                  const geometry::Point3& b1, const geometry::Point3& b2,
@@ -74,7 +75,8 @@ inline bool triangles_overlap_3d(const geometry::Point3& a0, const geometry::Poi
       dmax = std::max(dmax, d);
     }
     // b must straddle a's plane (coplanar, or beyond tol on both sides); a one-sided touch -- a
-    // shared-vertex fan tilting away -- does not overlap, though its 2D projection would suggest it.
+    // shared-vertex fan tilting away -- does not overlap, though its 2D projection would suggest
+    // it.
     bool coplanar = dmin >= -tol && dmax <= tol;
     bool crosses = dmin < -tol && dmax > tol;
     if (!coplanar && !crosses) {

@@ -26,6 +26,7 @@ add_library(${TARGET} STATIC
     fmm/impl/triharmonic2d.cpp
     fmm/impl/triharmonic3d.cpp
     fmm/make_fmm_evaluator.cpp
+    isosurface/cluster.cpp
     isosurface/mesh_defects_finder.cpp
     isosurface/snap.cpp
     kriging/variogram_calculator.cpp

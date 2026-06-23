@@ -12,9 +12,6 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
-#include "utility.hpp"
-#include "original_mesh.hpp"
-#include "triangulation.hpp"
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -23,6 +20,10 @@
 #include <unordered_set>
 #include <vector>
 
+#include "original_mesh.hpp"
+#include "triangulation.hpp"
+#include "utility.hpp"
+
 namespace polatory::isosurface::snapper {
 
 // Snaps a mesh to a subset of the given points without introducing self-intersection: each point is
@@ -30,17 +31,18 @@ namespace polatory::isosurface::snapper {
 //
 //  - Classify against the original mesh: the nearest simplex of its closest face (vertex, edge, or
 //    interior) by which simplex centroid is nearest the projection.
-//  - Snap: a vertex match moves that vertex; an edge match inserts a vertex on the shared subdivided
-//    edge; a face match inserts one interior to a patch. Each affected patch is re-triangulated by a
-//    constrained Delaunay triangulation over the *flat* on-surface positions -- deciding connectivity
-//    before the vertices move keeps it valid and consistently wound however steep the snap.
-//  - Accept or drop: keep only if the moved mesh stays self-intersection-free (a crease folding to a
-//    bare edge touch is allowed); else cascade to the next-nearest simplex, or drop.
+//  - Snap: a vertex match moves that vertex; an edge match inserts a vertex on the shared
+//    subdivided edge; a face match inserts one interior to a patch. Each affected patch is
+//    re-triangulated by a constrained Delaunay triangulation over the *flat* on-surface positions
+//    -- deciding connectivity before the vertices move keeps it valid and consistently wound
+//    however steep the snap.
+//  - Accept or drop: keep only if the moved mesh stays self-intersection-free (a crease folding to
+//    a bare edge touch is allowed); else cascade to the next-nearest simplex, or drop.
 //
 // Points are processed by increasing distance to the mesh, so each shared feature is claimed by the
-// candidate that moves it least (a tangential order would fold a far point's patch into an overhang).
-// Boundary: a point snaps only if it and its projection lie in bbox; if bbox excludes the boundary,
-// the boundary is provably untouched (see the constructor).
+// candidate that moves it least (a tangential order would fold a far point's patch into an
+// overhang). Boundary: a point snaps only if it and its projection lie in bbox; if bbox excludes
+// the boundary, the boundary is provably untouched (see the constructor).
 class Snapper {
   // A simplex of the projected face the point may snap to; the values double as indices into the
   // per-face site arrays (vertices 0..2, edges 3..5, face 6).
@@ -73,19 +75,20 @@ class Snapper {
     Index inserted_in_faces{};
   };
 
-  // A point snaps only if its distance to the mesh is <= max_distance and both it and its projection
-  // lie in bbox. Vertices, points, and bbox are world-space; the snapper works in the isotropic frame
-  // (aniso maps world into it) so an anisotropic resolution is respected, then emits world positions.
-  // bbox stays world-space (rotating its AABB would inflate it), each point mapped back for the test.
+  // A point snaps only if its distance to the mesh is <= max_distance and both it and its
+  // projection lie in bbox. Vertices, points, and bbox are world-space; the snapper works in the
+  // isotropic frame (aniso maps world into it) so an anisotropic resolution is respected, then
+  // emits world positions. bbox stays world-space (rotating its AABB would inflate it), each point
+  // mapped back for the test.
   //
-  // When bbox excludes the boundary by at least one face, the boundary is provably untouched: snapping
-  // only moves a vertex or subdivides an edge of the face holding the (in-bbox) projection, so the
-  // touched feature is interior. (In the pipeline bbox is first_extended_bbox.)
+  // When bbox excludes the boundary by at least one face, the boundary is provably untouched:
+  // snapping only moves a vertex or subdivides an edge of the face holding the (in-bbox)
+  // projection, so the touched feature is interior. (In the pipeline bbox is first_extended_bbox.)
   Snapper(const Mesh& mesh, const Points3& points, const VecX& tolerances,
           const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso = Mat3::Identity())
       : mesh_(geometry::transform_points<3>(aniso, mesh.vertices()), mesh.faces()),
         bbox_(bbox),
-        to_world_(aniso.inverse()),
+        aniso_inv_(aniso.inverse()),
         max_distance_(max_distance),
         points_(points),
         iso_points_(geometry::transform_points<3>(aniso, points)),
@@ -101,8 +104,9 @@ class Snapper {
     auto candidates = build_candidates();
     std::vector<bool> placed(candidates.size(), false);
 
-    // Pass 1: vertex moves only (the leading vertex run of each cascade). Doing all moves before any
-    // edge/face snap lets a vertex absorb its point before a snap subdivides the patch into slivers.
+    // Pass 1: vertex moves only (the leading vertex run of each cascade). Doing all moves before
+    // any edge/face snap lets a vertex absorb its point before a snap subdivides the patch into
+    // slivers.
     for (std::size_t i = 0; i < candidates.size(); i++) {
       const auto& cand = candidates.at(i);
       if (already_satisfied(cand)) {
@@ -138,7 +142,8 @@ class Snapper {
           break;
         }
       }
-      // A vertex point the single-face cascade missed gets one more try across the vertex's umbrella.
+      // A vertex point the single-face cascade missed gets one more try across the vertex's
+      // umbrella.
       if (!ok && index_of(cand.order.front()) <= index_of(Simplex::kVertex2)) {
         ok = try_vertex_umbrella(cand, mesh_.faces()(cand.fi, index_of(cand.order.front())));
       }
@@ -155,8 +160,9 @@ class Snapper {
   const Stats& stats() const { return stats_; }
 
  private:
-  // Whether the partially snapped mesh already passes within the point's tolerance, so snapping would
-  // barely move it and only over-subdivide; checks the projected patch and the patches across its edges.
+  // Whether the partially snapped mesh already passes within the point's tolerance, so snapping
+  // would barely move it and only over-subdivide; checks the projected patch and the patches across
+  // its edges.
   bool already_satisfied(const Candidate& cand) {
     auto t = tolerances_.size() == 0 ? 0.0 : tolerances_(cand.i);
     double tol2 = t * t;
@@ -203,7 +209,7 @@ class Snapper {
         stats_.skipped++;
         continue;
       }
-      Point3 q_world = geometry::transform_point<3>(to_world_, q);
+      Point3 q_world = geometry::transform_point<3>(aniso_inv_, q);
       if (!bbox_.contains(p_world) || !bbox_.contains(q_world)) {
         stats_.skipped++;
         continue;
@@ -233,7 +239,8 @@ class Snapper {
     }
 
     // Least-distorting first (by distance to the mesh): each shared feature is claimed by the
-    // candidate that moves it least. Ordering by tangential offset instead folds patches into overhangs.
+    // candidate that moves it least. Ordering by tangential offset instead folds patches into
+    // overhangs.
     std::ranges::sort(candidates, [this](const Candidate& x, const Candidate& y) {
       return std::make_tuple(x.d2, iso_points_(x.i, 0), iso_points_(x.i, 1), iso_points_(x.i, 2)) <
              std::make_tuple(y.d2, iso_points_(y.i, 0), iso_points_(y.i, 1), iso_points_(y.i, 2));
@@ -435,8 +442,9 @@ class Snapper {
       return triangles_intersect(pos(a(0)), pos(a(1)), pos(a(2)), pos(b(0)), pos(b(1)), pos(b(2)),
                                  num_shared_vertices(a, b));
     };
-    // Query per changed face (within 2 * max_distance, the farthest a snapped face can stray) rather
-    // than pooling all neighborhoods, to skip pairs that are AABB-disjoint and so cannot cross.
+    // Query per changed face (within 2 * max_distance, the farthest a snapped face can stray)
+    // rather than pooling all neighborhoods, to skip pairs that are AABB-disjoint and so cannot
+    // cross.
     auto margin = 2.0 * max_distance_;
     std::unordered_set<Index> candidates;
     for (const auto& a : changed_faces) {
@@ -680,7 +688,7 @@ class Snapper {
 
   OriginalMesh mesh_;
   geometry::Bbox3 bbox_;
-  Mat3 to_world_;  // the isotropic frame -> world, for the bbox containment test (= aniso^-1)
+  Mat3 aniso_inv_;
   double max_distance_;
   Points3 points_;      // the snap points (world); a Candidate indexes into this
   Points3 iso_points_;  // the same points in the isotropic frame, where snapping is measured
@@ -688,8 +696,9 @@ class Snapper {
 
   std::vector<Point3> positions_;  // current isotropic-frame position, where geometry is measured
   std::vector<Point3> flat_;       // on-surface position the triangulation projects (never folds)
-  std::vector<Point3> world_;      // exact world position emit() outputs (passes through points exactly)
-  std::vector<bool> moved_;        // original vertices already claimed by a move
+  std::vector<Point3>
+      world_;                // exact world position emit() outputs (passes through points exactly)
+  std::vector<bool> moved_;  // original vertices already claimed by a move
   std::unordered_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   std::unordered_map<Index, std::vector<Index>> face_interior_;
   std::unordered_map<Index, Faces> patch_faces_cache_;

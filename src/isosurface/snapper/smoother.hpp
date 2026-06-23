@@ -11,25 +11,26 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
-#include "utility.hpp"
-#include "abstract_mesh.hpp"
-#include "spatial_grid.hpp"
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <queue>
 #include <utility>
 #include <vector>
 
+#include "abstract_mesh.hpp"
+#include "spatial_grid.hpp"
+#include "utility.hpp"
+
 namespace polatory::isosurface::snapper {
 
-// Post-process smoothing by edge flips: flip an interior edge while it lowers the total bend (summed
-// dihedral). A flip changes only its five edges, so the local drop equals the global drop and the
-// mesh descends to a local minimum; vertices never move, so snapped points stay vertices. A priority
-// queue takes the largest improvement first, re-scoring each popped edge (a nearby flip may have
-// staled it). Geometry is in the isotropic frame; the output keeps world positions. A flip is
-// rejected if its new diagonal overshoots the bend-dependent length cap (see kEdgeFloor), folds the
-// surface, or pushes it beyond a snap tolerance (protecting points honored within tolerance with no
-// vertex there).
+// Post-process smoothing by edge flips: flip an interior edge while it lowers the total bend
+// (summed dihedral). A flip changes only its five edges, so the local drop equals the global drop
+// and the mesh descends to a local minimum; vertices never move, so snapped points stay vertices. A
+// priority queue takes the largest improvement first, re-scoring each popped edge (a nearby flip
+// may have staled it). Geometry is in the isotropic frame; the output keeps world positions. A flip
+// is rejected if its new diagonal overshoots the bend-dependent length cap (see kEdgeFloor), folds
+// the surface, or pushes it beyond a snap tolerance (protecting points honored within tolerance
+// with no vertex there).
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -39,7 +40,8 @@ class Smoother {
   // Dihedral-dependent length cap. A flip's new diagonal may always reach kEdgeFloor * res; beyond
   // that each unit of overshoot (in res) must be paid for by kImproveFull / (kEdgeCeiling -
   // kEdgeFloor) radians of bend reduction, and kEdgeCeiling * res is the hard ceiling. So a long
-  // diagonal is admitted only when it flattens a genuine crease, not a flat-direction (cosmetic) one.
+  // diagonal is admitted only when it flattens a genuine crease, not a flat-direction (cosmetic)
+  // one.
   static constexpr double kEdgeFloor = 1.5;
   static constexpr double kEdgeCeiling = 2.0;
   static constexpr double kImproveFull = kPi / 2;  // bend reduction earning the full ceiling
@@ -90,7 +92,8 @@ class Smoother {
     if (snap_tols_.size() == 0) {
       snap_tols_ = VecX::Zero(snap_points_.rows());
     }
-    // Insert each snap point as a tolerance-radius ball, so a query AABB finds every point it reaches.
+    // Insert each snap point as a tolerance-radius ball, so a query AABB finds every point it
+    // reaches.
     for (Index i = 0; i < snap_points_.rows(); i++) {
       Vector3 r = Vector3::Constant(snap_tols_(i));
       snap_grid_.insert(i, snap_points_.row(i) - r, snap_points_.row(i) + r);
@@ -158,8 +161,8 @@ class Smoother {
   // bend(a, face fi), or 0 when fi is the absent neighbour across a boundary edge (fi < 0).
   double bend_with(const Face& a, Index fi) const { return fi < 0 ? 0.0 : bend(a, mesh_.face(fi)); }
 
-  // Whether new_f overlaps any spatially near face; scanning new_f's own cells suffices (the sibling
-  // call covers the other new triangle).
+  // Whether new_f overlaps any spatially near face; scanning new_f's own cells suffices (the
+  // sibling call covers the other new triangle).
   bool crosses(const Face& new_f, Index fi0, Index fi1, double tol) {
     Point3 p0 = v_.row(new_f(0));
     Point3 p1 = v_.row(new_f(1));
@@ -187,8 +190,9 @@ class Smoother {
     insert_face(fi1);
   }
 
-  // Self-intersection guard: neither new triangle may cross a face in its grid cells -- a broad-phase
-  // that catches a diagonal passing over a spatially near but topologically distant sheet.
+  // Self-intersection guard: neither new triangle may cross a face in its grid cells -- a
+  // broad-phase that catches a diagonal passing over a spatially near but topologically distant
+  // sheet.
   bool guard_ok(const Flip& fl) {
     auto tol = 1e-6 * (v_.row(fl.x) - v_.row(fl.y)).norm();
     return !crosses(fl.new_f0(), fl.fi0, fl.fi1, tol) && !crosses(fl.new_f1(), fl.fi0, fl.fi1, tol);
@@ -237,8 +241,8 @@ class Smoother {
     return ok;
   }
 
-  // Index a face by the grid cells its AABB touches; stale entries from a flip are harmless (a stale
-  // index reads its current geometry).
+  // Index a face by the grid cells its AABB touches; stale entries from a flip are harmless (a
+  // stale index reads its current geometry).
   void insert_face(Index fi) {
     auto f = mesh_.face(fi);
     Point3 p0 = v_.row(f(0));
@@ -358,8 +362,9 @@ class Smoother {
       }
     }
 
-    // Reject a flip below min_angle_ unless it improves the worst angle there -- a sliver (a diagonal
-    // grazing a collinear vertex, a T-junction the inexact self-int guard misses) is worse than a crease.
+    // Reject a flip below min_angle_ unless it improves the worst angle there -- a sliver (a
+    // diagonal grazing a collinear vertex, a T-junction the inexact self-int guard misses) is worse
+    // than a crease.
     auto after_angle = std::min(min_angle(new_f0), min_angle(new_f1));
     auto before_angle = std::min(min_angle(f0), min_angle(f1));
     if (after_angle < min_angle_ && after_angle < before_angle) {

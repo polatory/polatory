@@ -6,12 +6,13 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/predicates.hpp>
-#include "abstract_mesh.hpp"
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <utility>
 #include <vector>
+
+#include "abstract_mesh.hpp"
 
 namespace polatory::isosurface::snapper {
 
@@ -23,9 +24,9 @@ using geometry::Points2;
 class Triangulation {
  public:
   // boundary: polygon vertices in order (CW/CCW auto-detected), consecutive pairs constraint edges.
-  // interior: points strictly inside. boundary_edges (optional): each boundary vertex's original-edge
-  // label(s); no triangle joins two vertices sharing a label, so patches meeting at a shared edge
-  // agree on its subdivision (a manifold seam) rather than cutting a diagonal along it.
+  // interior: points strictly inside. boundary_edges (optional): each boundary vertex's
+  // original-edge label(s); no triangle joins two vertices sharing a label, so patches meeting at a
+  // shared edge agree on its subdivision (a manifold seam) rather than cutting a diagonal along it.
   Triangulation(const std::vector<Point2>& boundary, const std::vector<Point2>& interior,
                 std::vector<std::array<int, 2>> boundary_edges = {})
       : nb_(check_nb(static_cast<Index>(boundary.size()))),
@@ -67,7 +68,8 @@ class Triangulation {
   // vertex, else interior[index - boundary.size()]).
   const Faces& faces() const { return faces_; }
 
-  // False if the polygon was not simple; the result is then an unreliable fan, treat input as invalid.
+  // False if the polygon was not simple; the result is then an unreliable fan, treat input as
+  // invalid.
   bool simple() const { return simple_; }
 
  private:
@@ -146,8 +148,9 @@ class Triangulation {
     return orient2d(a, b, x) >= 0.0 && orient2d(b, c, x) >= 0.0 && orient2d(c, a, x) >= 0.0;
   }
 
-  // A point inside a triangle splits it (1 -> 3); on an interior edge, both its faces (2 -> 4); on a
-  // vertex or constraint edge, it is dropped (splitting a constraint edge would desync the boundary).
+  // A point inside a triangle splits it (1 -> 3); on an interior edge, both its faces (2 -> 4); on
+  // a vertex or constraint edge, it is dropped (splitting a constraint edge would desync the
+  // boundary).
   void insert_interior() {
     auto n = static_cast<Index>(points_.rows());
     for (Index v = nb_; v < n; v++) {
@@ -257,7 +260,8 @@ class Triangulation {
     }
   }
 
-  // True if e's endpoints share an original edge label: a diagonal along it would desync the patches.
+  // True if e's endpoints share an original edge label: a diagonal along it would desync the
+  // patches.
   bool shares_edge(const Edge& e) const {
     auto [i, j] = e;
     if (boundary_edges_.empty() || i >= nb_ || j >= nb_) {
