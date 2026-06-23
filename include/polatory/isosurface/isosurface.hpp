@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/functional/hash.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/clip.hpp>
@@ -12,13 +11,10 @@
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <unordered_set>
-#include <vector>
 
 namespace polatory::isosurface {
 
 class Isosurface {
-  using Point3 = geometry::Point3;
-
  public:
   Isosurface(const geometry::Bbox3& bbox, double resolution)
       : Isosurface(bbox, resolution, Mat3::Identity()) {}
@@ -135,9 +131,10 @@ class Isosurface {
     };
 
     // Snap before clipping, re-applying until a pass is a no-op: a point that lost contention can
-    // snap to the finer mesh a later pass leaves. first_extended_bbox keeps snapping off the boundary.
+    // snap to the finer mesh a later pass leaves. first_extended_bbox keeps snapping off the
+    // boundary.
+    auto res = lattice_.resolution();
     if (snap_points_.rows() > 0 && !mesh.is_empty()) {
-      auto res = lattice_.resolution();
       VecX tols = res * rel_snap_tols_;
       int passes = tols.size() != 0 && tols.maxCoeff() > 0.0 ? snap_max_passes_ : 1;
       for (int pass = 0; pass < passes; pass++) {
@@ -152,8 +149,12 @@ class Isosurface {
       // pass can collapse redundant faces the first could not reach.
       for (auto pass = 0; pass < 2; pass++) {
         mesh = thin_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
-        mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_, snapped_vertices(mesh));
+        mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
       }
+    } else if (!mesh.is_empty()) {
+      // No snapping: still smooth once. With no snap points the honor guard is inert, so this is a
+      // pure bend-minimizing flip pass that aligns edges to curvature mesh-wide.
+      mesh = smooth_snapped_mesh(mesh, snap_points_, VecX(), res, aniso_);
     }
 
     mesh = clip(mesh, lattice_.bbox());
@@ -166,36 +167,6 @@ class Isosurface {
     lattice_.clear();
 
     return mesh;
-  }
-
-  // Marks each vertex coinciding with a snap point, so the smoother can restrict its flips to the
-  // snapped region. The snapper emits a captured point at its exact world coordinate, so an exact
-  // key matches it bit for bit; an unsnapped lattice vertex cannot collide.
-  std::vector<bool> snapped_vertices(const Mesh& mesh) const {
-    struct Hash {
-      std::size_t operator()(const Point3& p) const noexcept {
-        std::size_t seed = 0;
-        boost::hash_combine(seed, p.x());
-        boost::hash_combine(seed, p.y());
-        boost::hash_combine(seed, p.z());
-        return seed;
-      }
-    };
-
-    std::unordered_set<Point3, Hash> points;
-    points.reserve(snap_points_.rows());
-    for (Index i = 0; i < snap_points_.rows(); i++) {
-      points.insert(snap_points_.row(i));
-    }
-
-    const auto& vertices = mesh.vertices();
-    std::vector<bool> snapped(vertices.rows(), false);
-    for (Index v = 0; v < vertices.rows(); v++) {
-      if (points.contains(vertices.row(v))) {
-        snapped.at(v) = true;
-      }
-    }
-    return snapped;
   }
 
   rmt::Lattice lattice_;

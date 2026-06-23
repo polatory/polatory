@@ -1,8 +1,14 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <algorithm>
+#include <array>
 #include <boost/container_hash/hash.hpp>
 #include <cstddef>
+#include <random>
+#include <set>
+#include <vector>
 #include <optional>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -329,4 +335,69 @@ TEST(snap, isosurface_integration) {
   ASSERT_FALSE(find_vertex(mesh, Point3(points.row(2)), 1e-10).has_value());
 
   ASSERT_TRUE(is_oriented_manifold(mesh));
+}
+
+TEST(smooth, flat_plane_random_orientation_no_flips) {
+  using polatory::isosurface::smooth_snapped_mesh;
+
+  const int n = 25;
+  const double h = 20.0;  // grid spacing == resolution
+  std::mt19937 rng(12345);
+  std::uniform_real_distribution<double> u(-1.0, 1.0);
+  std::uniform_real_distribution<double> jit(-0.3 * h, 0.3 * h);
+
+  // n x n grid on the z = 0 plane, interior vertices jittered IN-PLANE so quads are generic but the
+  // surface stays exactly flat (every flip is bend-neutral; only FP noise could trigger one).
+  Points3 v(n * n, 3);
+  for (int j = 0; j < n; j++) {
+    for (int i = 0; i < n; i++) {
+      double x = i * h;
+      double y = j * h;
+      if (i > 0 && i < n - 1) x += jit(rng);
+      if (j > 0 && j < n - 1) y += jit(rng);
+      v.row(j * n + i) = Point3(x, y, 0.0);
+    }
+  }
+  auto id = [&](int i, int j) { return static_cast<Index>(j * n + i); };
+  std::vector<std::array<Index, 3>> tris;
+  for (int j = 0; j < n - 1; j++) {
+    for (int i = 0; i < n - 1; i++) {
+      tris.push_back({id(i, j), id(i + 1, j), id(i + 1, j + 1)});
+      tris.push_back({id(i, j), id(i + 1, j + 1), id(i, j + 1)});
+    }
+  }
+  Faces f(static_cast<Index>(tris.size()), 3);
+  for (std::size_t k = 0; k < tris.size(); k++) {
+    f.row(static_cast<Index>(k)) << tris[k][0], tris[k][1], tris[k][2];
+  }
+
+  auto edges = [](const Faces& faces) {
+    std::set<std::pair<Index, Index>> s;
+    for (Index r = 0; r < faces.rows(); r++) {
+      for (int k = 0; k < 3; k++) {
+        Index a = faces(r, k);
+        Index b = faces(r, (k + 1) % 3);
+        s.insert({std::min(a, b), std::max(a, b)});
+      }
+    }
+    return s;
+  };
+  auto before = edges(f);
+
+  // Many generic orientations: a flat surface gives every flip zero bend change, so any flip would
+  // be pure FP noise crossing the 1e-6 threshold.
+  for (int trial = 0; trial < 50; trial++) {
+    Eigen::Vector3d axis(u(rng), u(rng), u(rng));
+    axis.normalize();
+    Mat3 r = Eigen::AngleAxisd(3.141592653589793 * u(rng), axis).toRotationMatrix();
+    Points3 vr = v * r.transpose();
+
+    auto out = smooth_snapped_mesh(Mesh(vr, f), Points3(0, 3), VecX(), h, Mat3::Identity());
+    auto after = edges(out.faces());
+    int flipped = 0;
+    for (const auto& e : before) {
+      if (!after.contains(e)) flipped++;
+    }
+    EXPECT_EQ(flipped, 0) << "trial " << trial << ": " << flipped << " edges flipped on a flat plane";
+  }
 }

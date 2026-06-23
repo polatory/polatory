@@ -3,7 +3,6 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/mesh.hpp>
-#include <vector>
 
 namespace polatory::isosurface {
 
@@ -17,9 +16,9 @@ Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& to
 Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                        double resolution, const Mat3& aniso);
 
-// Flattens the snapped region by edge flips, never moving the surface beyond a point's tolerance.
+// Flattens the mesh by edge flips, never moving the surface beyond a point's tolerance.
 // See snapper/smoother.hpp.
 Mesh smooth_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
-                         double resolution, const Mat3& aniso, std::vector<bool> snapped);
+                         double resolution, const Mat3& aniso);
 
 }  // namespace polatory::isosurface

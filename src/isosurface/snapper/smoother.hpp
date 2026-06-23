@@ -27,16 +27,22 @@ namespace polatory::isosurface::snapper {
 // mesh descends to a local minimum; vertices never move, so snapped points stay vertices. A priority
 // queue takes the largest improvement first, re-scoring each popped edge (a nearby flip may have
 // staled it). Geometry is in the isotropic frame; the output keeps world positions. A flip is
-// rejected if it overstretches the diagonal (kMaxEdgeRatio * resolution), folds the surface, or
-// pushes it beyond a snap tolerance (protecting points honored within tolerance with no vertex there).
+// rejected if its new diagonal overshoots the bend-dependent length cap (see kEdgeFloor), folds the
+// surface, or pushes it beyond a snap tolerance (protecting points honored within tolerance with no
+// vertex there).
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
   using Points3 = geometry::Points3;
   using Vector3 = geometry::Vector3;
   static constexpr double kPi = 3.141592653589793;
-  static constexpr double kMaxEdgeRatio =
-      1.5;  // a flip may not make an edge longer than this * res
+  // Dihedral-dependent length cap. A flip's new diagonal may always reach kEdgeFloor * res; beyond
+  // that each unit of overshoot (in res) must be paid for by kImproveFull / (kEdgeCeiling -
+  // kEdgeFloor) radians of bend reduction, and kEdgeCeiling * res is the hard ceiling. So a long
+  // diagonal is admitted only when it flattens a genuine crease, not a flat-direction (cosmetic) one.
+  static constexpr double kEdgeFloor = 1.5;
+  static constexpr double kEdgeCeiling = 2.0;
+  static constexpr double kImproveFull = kPi / 2;  // bend reduction earning the full ceiling
 
   // A candidate flip of edge {x, y} (faces fi0, fi1) into diagonal {c, d}; improve > 0 is the total
   // bend removed.
@@ -65,19 +71,16 @@ class Smoother {
   };
 
  public:
-  // snapped, if non-empty, restricts flips to quads touching a snapped vertex, leaving the rest of
-  // the mesh as generated.
   Smoother(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
-           const Mat3& aniso, double min_angle, std::vector<bool> snapped = {})
+           const Mat3& aniso, double min_angle)
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         mesh_(mesh.faces()),
         snap_points_(geometry::transform_points<3>(aniso, points)),
         snap_tols_(tolerances),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh_.num_faces()),
-        max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)),
-        min_angle_(min_angle),
-        snapped_(std::move(snapped)) {
+        resolution_(resolution),
+        min_angle_(min_angle) {
     // Grid cell = resolution (a face spans about one cell); it only tunes the broad-phase, and
     // resolution avoids a lone long edge blowing the grid up.
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
@@ -276,8 +279,8 @@ class Smoother {
     return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
   }
 
-  // The candidate flip of edge e if admissible (interior, new diagonal absent, touches a snapped
-  // vertex, no fold, lowers the bend). The cheap checks; the self-int guard is left to the caller.
+  // The candidate flip of edge e if admissible (interior, new diagonal absent, within the length
+  // cap, no fold, lowers the bend). The cheap checks; the self-int guard is left to the caller.
   std::optional<Flip> score(const Edge& e) const {
     auto [fi0, fi1] = mesh_.faces_of(e);
     if (fi0 < 0 || fi1 < 0) {
@@ -300,14 +303,11 @@ class Smoother {
     if (c < 0 || d < 0 || c == d || mesh_.has_edge({c, d})) {
       return std::nullopt;  // boundary/degenerate, or the flipped diagonal already exists
     }
-    if ((v_.row(c) - v_.row(d)).squaredNorm() > max_edge2_) {
-      return std::nullopt;  // the new diagonal would be too long; keep triangles regular
+    auto new_len2 = (v_.row(c) - v_.row(d)).squaredNorm();
+    auto ceiling = kEdgeCeiling * resolution_;
+    if (new_len2 > ceiling * ceiling) {
+      return std::nullopt;  // the new diagonal exceeds the hard length ceiling
     }
-    if (!snapped_.empty() &&
-        !(snapped_.at(x) || snapped_.at(y) || snapped_.at(c) || snapped_.at(d))) {
-      return std::nullopt;  // restricted to quads touching a snapped vertex
-    }
-
     Face new_f0{c, x, d};
     Face new_f1{d, y, c};
     auto nn0 = normal(new_f0);
@@ -342,6 +342,18 @@ class Smoother {
     if (!(after < before - 1e-6)) {
       return std::nullopt;
     }
+    auto improve = before - after;
+
+    // Dihedral-dependent length cap: a diagonal past kEdgeFloor * res must earn its overshoot with
+    // bend reduction, else fall back to the (shorter) original diagonal. Spares the fin (a short,
+    // high-bend flip) while dropping long flat-direction flips that barely change the surface.
+    auto overshoot = std::sqrt(new_len2) / resolution_ - kEdgeFloor;
+    if (overshoot > 0.0) {
+      auto rate = kImproveFull / (kEdgeCeiling - kEdgeFloor);
+      if (improve < rate * overshoot) {
+        return std::nullopt;
+      }
+    }
 
     // Reject a flip below min_angle_ unless it improves the worst angle there -- a sliver (a diagonal
     // grazing a collinear vertex, a T-junction the inexact self-int guard misses) is worse than a crease.
@@ -350,7 +362,7 @@ class Smoother {
     if (after_angle < min_angle_ && after_angle < before_angle) {
       return std::nullopt;
     }
-    return Flip{fi0, fi1, x, y, c, d, before - after};
+    return Flip{fi0, fi1, x, y, c, d, improve};
   }
 
   Points3 v_;            // vertices in the isotropic frame, where the geometry is measured
@@ -359,9 +371,8 @@ class Smoother {
   VecX snap_tols_;       // snapping tolerance per snap point (isotropic-frame distance)
   SpatialGrid snap_grid_;
   SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
-  double max_edge2_;       // squared cap on a flipped diagonal's length
+  double resolution_;      // mesh resolution; sets the diagonal length cap
   double min_angle_;       // a flip may not push a triangle's smallest angle below this (0 = off)
-  std::vector<bool> snapped_;  // if non-empty, restrict flips to quads touching a snapped vertex
   Mesh result_;
 };
 
