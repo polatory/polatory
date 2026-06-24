@@ -40,6 +40,7 @@ class Thinner {
       : snap_points_(geometry::transform_points<3>(aniso, points)),
         snap_tols_(tolerances),
         snap_grid_(resolution, points.rows()),
+        face_grid_(resolution, mesh.faces().rows()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
     auto iso = geometry::transform_points<3>(aniso, mesh.vertices());
     world_.assign(mesh.vertices().rowwise().begin(), mesh.vertices().rowwise().end());
@@ -77,11 +78,12 @@ class Thinner {
 
     // Greedy collapse to a fixpoint: a collapse can make a neighbour collapsible (a chain of
     // collinear points thins end to end).
-    v2f_.assign(world_.size(), {});
+    vf_.assign(world_.size(), {});
     for (std::size_t fi = 0; fi < faces_.size(); fi++) {
       for (auto v : faces_.at(fi)) {
-        v2f_.at(v).push_back(static_cast<Index>(fi));
+        vf_.at(v).push_back(static_cast<Index>(fi));
       }
+      insert_face(static_cast<Index>(fi));
     }
     bool any = true;
     while (any) {
@@ -124,7 +126,7 @@ class Thinner {
         continue;
       }
       bool adj_w = false;
-      for (auto fi : v2f_.at(x)) {
+      for (auto fi : vf_.at(x)) {
         if (deleted_.at(fi)) {
           continue;
         }
@@ -180,7 +182,7 @@ class Thinner {
     std::unordered_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto x : nf) {
-        for (auto fi : v2f_.at(x)) {
+        for (auto fi : vf_.at(x)) {
           if (!deleted_.at(fi) && !umbrella.contains(fi)) {
             nearby.insert(fi);
           }
@@ -192,12 +194,25 @@ class Thinner {
       return false;
     }
 
-    // No new face may self-intersect a nearby face. A collapse is local, so the one-ring suffices.
+    // No new face may self-intersect another. A collapse only moves the kept faces, so any new
+    // overlap involves one of them; a spatial broad-phase catches a kept face pushed onto a
+    // spatially near but topologically distant sheet that the one-ring would miss.
     for (const auto& nf : kept) {
-      for (auto fi : nearby) {
-        if (intersects(nf, faces_.at(fi))) {
-          return false;
+      const auto& p0 = iso_.at(nf(0));
+      const auto& p1 = iso_.at(nf(1));
+      const auto& p2 = iso_.at(nf(2));
+      Point3 lo = p0.cwiseMin(p1).cwiseMin(p2);
+      Point3 hi = p0.cwiseMax(p1).cwiseMax(p2);
+      bool hit = false;
+      face_grid_.for_each(lo, hi, [&](Index fi) {
+        if (deleted_.at(fi) || umbrella.contains(fi) || !intersects(nf, faces_.at(fi))) {
+          return true;
         }
+        hit = true;
+        return false;
+      });
+      if (hit) {
+        return false;
       }
     }
     return true;
@@ -221,7 +236,8 @@ class Thinner {
           x = w;
         }
       }
-      v2f_.at(w).push_back(fi);  // w gains v's retargeted faces
+      vf_.at(w).push_back(fi);  // w gains v's retargeted faces
+      insert_face(fi);
     }
   }
 
@@ -303,12 +319,22 @@ class Thinner {
 
   std::vector<Index> incident(Index v) const {
     std::vector<Index> fs;
-    for (auto fi : v2f_.at(v)) {
+    for (auto fi : vf_.at(v)) {
       if (!deleted_.at(fi)) {
         fs.push_back(fi);
       }
     }
     return fs;
+  }
+
+  // Index a face by the grid cells its AABB touches; a retargeted collapse re-inserts so the moved
+  // face is found at its new cells, and a stale old entry is harmless (it reads current geometry).
+  void insert_face(Index fi) {
+    const auto& f = faces_.at(fi);
+    const auto& p0 = iso_.at(f(0));
+    const auto& p1 = iso_.at(f(1));
+    const auto& p2 = iso_.at(f(2));
+    face_grid_.insert(fi, p0.cwiseMin(p1).cwiseMin(p2), p0.cwiseMax(p1).cwiseMax(p2));
   }
 
   bool intersects(const Face& a, const Face& b) const {
@@ -367,13 +393,14 @@ class Thinner {
   Points3 snap_points_;  // snap targets in the isotropic frame
   VecX snap_tols_;       // snapping tolerance per snap point (isotropic-frame distance)
   SpatialGrid snap_grid_;
-  double max_edge2_{};  // squared cap on a collapsed edge's length
+  SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
+  double max_edge2_{};     // squared cap on a collapsed edge's length
   std::vector<Point3> world_;
   std::vector<Point3> iso_;
   std::vector<Face> faces_;
   std::vector<bool> deleted_;
-  std::vector<double> tol_;              // per vertex; -1 = not a snap point (never collapsed)
-  std::vector<std::vector<Index>> v2f_;  // vertex -> incident face ids (may include deleted)
+  std::vector<double> tol_;             // per vertex; -1 = not a snap point (never collapsed)
+  std::vector<std::vector<Index>> vf_;  // vertex -> incident face ids (may include deleted)
   Mesh result_;
 };
 
