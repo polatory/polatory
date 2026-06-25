@@ -78,7 +78,6 @@ class Smoother {
       : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
         mesh_(mesh.faces()),
         snap_points_(geometry::transform_points<3>(aniso, points)),
-        snap_tols_(tolerances),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh_.num_faces()),
         resolution_(resolution),
@@ -89,15 +88,12 @@ class Smoother {
       insert_face(fi);
     }
 
-    if (snap_tols_.size() == 0) {
-      snap_tols_ = VecX::Zero(snap_points_.rows());
+    VecX tols = tolerances;
+    if (tols.size() == 0) {
+      tols = VecX::Zero(snap_points_.rows());
     }
-    // Insert each snap point as a tolerance-radius ball, so a query AABB finds every point it
-    // reaches.
-    for (Index i = 0; i < snap_points_.rows(); i++) {
-      Vector3 r = Vector3::Constant(snap_tols_(i));
-      snap_grid_.insert(i, snap_points_.row(i) - r, snap_points_.row(i) + r);
-    }
+    snap_grid_.insert_balls(snap_points_, tols);
+    snap_tols2_ = tols.cwiseAbs2();
 
     std::priority_queue<Item, std::vector<Item>, ItemLess> pq;
     auto enqueue = [&](const Edge& e) {
@@ -223,7 +219,7 @@ class Smoother {
     Point3 hi = v_.row(fl.x).cwiseMax(v_.row(fl.y)).cwiseMax(v_.row(fl.c)).cwiseMax(v_.row(fl.d));
     bool ok = true;
     snap_grid_.for_each(lo, hi, [&](Index pi) {
-      auto tol2 = snap_tols_(pi) * snap_tols_(pi);
+      auto tol2 = snap_tols2_(pi);
       Point3 p = snap_points_.row(pi);
       if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
         return true;  // not honored by a removed face; the flip cannot dishonor it
@@ -376,7 +372,7 @@ class Smoother {
   Points3 v_;            // vertices in the isotropic frame, where the geometry is measured
   AbstractMesh mesh_;    // working connectivity, edited in place by flips
   Points3 snap_points_;  // snap targets in the isotropic frame
-  VecX snap_tols_;       // snapping tolerance per snap point (isotropic-frame distance)
+  VecX snap_tols2_;      // squared snapping tolerance per snap point (isotropic-frame)
   SpatialGrid snap_grid_;
   SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
   double resolution_;      // mesh resolution; sets the diagonal length cap

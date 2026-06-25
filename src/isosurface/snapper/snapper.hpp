@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "original_mesh.hpp"
+#include "spatial_grid.hpp"
 #include "triangulation.hpp"
 #include "utility.hpp"
 
@@ -39,9 +40,11 @@ namespace polatory::isosurface::snapper {
 //  - Accept or drop: keep only if the moved mesh stays self-intersection-free (a crease folding to
 //    a bare edge touch is allowed); else cascade to the next-nearest simplex, or drop.
 //
-// Points are processed by increasing distance to the mesh, so each shared feature is claimed by the
-// candidate that moves it least (a tangential order would fold a far point's patch into an
-// overhang). Boundary: a point snaps only if it and its projection lie in bbox; if bbox excludes
+// Points are processed by increasing distance to the mesh, so each shared feature is first claimed
+// by the candidate that moves it least (a tangential order would fold a far point's patch into an
+// overhang). A claimed vertex may still be re-moved to a farther point as long as the points it
+// already snapped stay honored, letting it migrate out to a contour tip (see try_vertex). Boundary:
+// a point snaps only if it and its projection lie in bbox; if bbox excludes
 // the boundary, the boundary is provably untouched (see the constructor).
 class Snapper {
   // A simplex of the projected face the point may snap to; the values double as indices into the
@@ -92,7 +95,7 @@ class Snapper {
         max_distance_(max_distance),
         points_(points),
         iso_points_(geometry::transform_points<3>(aniso, points)),
-        tolerances_(tolerances),
+        snap_grid_(max_distance, points.rows()),
         positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         flat_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
         world_(mesh.vertices().rowwise().begin(), mesh.vertices().rowwise().end()),
@@ -100,6 +103,13 @@ class Snapper {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
     }
+
+    VecX tols = tolerances;
+    if (tols.size() == 0) {
+      tols = VecX::Zero(points.rows());
+    }
+    snap_grid_.insert_balls(iso_points_, tols);
+    snap_tols2_ = tols.cwiseAbs2();
 
     auto candidates = build_candidates();
     std::vector<bool> placed(candidates.size(), false);
@@ -164,8 +174,7 @@ class Snapper {
   // would barely move it and only over-subdivide; checks the projected patch and the patches across
   // its edges.
   bool already_satisfied(const Candidate& cand) {
-    auto t = tolerances_.size() == 0 ? 0.0 : tolerances_(cand.i);
-    double tol2 = t * t;
+    double tol2 = snap_tols2_(cand.i);
     Point3 pc = iso_points_.row(cand.i);
     const auto& F = mesh_.faces();
     auto nearest_in_patch = [&](Index fi) {
@@ -305,6 +314,45 @@ class Snapper {
   }
 
   Vector3 emitted_normal(const Face& f) const { return normal(pos(f(0)), pos(f(1)), pos(f(2))); }
+
+  // Whether point i is within its tolerance of the faces incident to v. Checking only those, not the
+  // neighbouring faces too, can only over-reject a re-move, never dishonor.
+  bool honored_by_surface(Index v, Index i) {
+    Point3 p = iso_points_.row(i);
+    double best = std::numeric_limits<double>::infinity();
+    for (auto fi : mesh_.vertex_faces(v)) {
+      for (auto f : patch_faces(fi).rowwise()) {
+        if ((f.array() == v).any()) {
+          best = std::min(best, point_triangle_dist2(p, pos(f(0)), pos(f(1)), pos(f(2))));
+        }
+      }
+    }
+    return best <= snap_tols2_(i);
+  }
+
+  // The snap points the surface around v currently honors, found via the grid over v's patch AABB.
+  std::vector<Index> honored_points_around(Index v) {
+    Point3 lo = Point3::Constant(std::numeric_limits<double>::infinity());
+    Point3 hi = -lo;
+    for (auto fi : mesh_.vertex_faces(v)) {
+      for (auto f : patch_faces(fi).rowwise()) {
+        if ((f.array() == v).any()) {
+          for (auto w : f) {
+            lo = lo.cwiseMin(pos(w));
+            hi = hi.cwiseMax(pos(w));
+          }
+        }
+      }
+    }
+    std::vector<Index> honored;
+    snap_grid_.for_each(lo, hi, [&](Index i) {
+      if (honored_by_surface(v, i)) {
+        honored.push_back(i);
+      }
+      return true;
+    });
+    return honored;
+  }
 
   // Inserts the point into face fi's interior; reverts unless the re-triangulation uses it (it
   // projects inside the patch) and stays free of self-intersection.
@@ -591,12 +639,10 @@ class Snapper {
     return false;  // unreachable; all simplices are handled above
   }
 
-  // Moving a shared vertex changes no connectivity, only the emitted position. Accept the move
-  // unless an incident triangle becomes degenerate or self-intersects the surface.
+  // A vertex already claimed by another point may still be re-moved to a farther one, but only if
+  // every point its current surface honors stays honored.
   bool try_vertex(const Candidate& cand, Index v) {
-    if (moved_.at(v)) {
-      return false;
-    }
+    auto honored = moved_.at(v) ? honored_points_around(v) : std::vector<Index>{};
 
     Point3 original = positions_.at(v);  // for revert
     Point3 original_world = world_.at(v);
@@ -606,7 +652,10 @@ class Snapper {
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
-    if (creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed)) {
+    bool dishonors =
+        std::ranges::any_of(honored, [&](Index i) { return !honored_by_surface(v, i); });
+    if (creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed) ||
+        dishonors) {
       positions_.at(v) = original;
       world_.at(v) = original_world;
       return false;
@@ -690,10 +739,10 @@ class Snapper {
   geometry::Bbox3 bbox_;
   Mat3 aniso_inv_;
   double max_distance_;
-  Points3 points_;      // the snap points (world); a Candidate indexes into this
-  Points3 iso_points_;  // the same points in the isotropic frame, where snapping is measured
-  VecX tolerances_;     // per-point snapping tolerance, or empty for zero
-
+  Points3 points_;         // the snap points (world); a Candidate indexes into this
+  Points3 iso_points_;     // the same points in the isotropic frame, where snapping is measured
+  VecX snap_tols2_;        // squared snapping tolerance per snap point (isotropic-frame)
+  SpatialGrid snap_grid_;  // snap-point broad-phase for the re-move honor check
   std::vector<Point3> positions_;  // current isotropic-frame position, where geometry is measured
   std::vector<Point3> flat_;       // on-surface position the triangulation projects (never folds)
   std::vector<Point3>

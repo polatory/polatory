@@ -38,7 +38,6 @@ class Thinner {
   Thinner(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
           const Mat3& aniso)
       : snap_points_(geometry::transform_points<3>(aniso, points)),
-        snap_tols_(tolerances),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh.faces().rows()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
@@ -52,22 +51,19 @@ class Thinner {
     }
     deleted_.assign(faces_.size(), false);
 
-    if (snap_tols_.size() == 0) {
-      snap_tols_ = VecX::Zero(snap_points_.rows());
+    VecX tols = tolerances;
+    if (tols.size() == 0) {
+      tols = VecX::Zero(snap_points_.rows());
     }
-    // Insert each snap point as a tolerance-radius ball, so a query AABB finds every point it
-    // reaches.
-    for (Index i = 0; i < snap_points_.rows(); i++) {
-      Vector3 r = Vector3::Constant(snap_tols_(i));
-      snap_grid_.insert(i, snap_points_.row(i) - r, snap_points_.row(i) + r);
-    }
+    snap_grid_.insert_balls(snap_points_, tols);
+    snap_tols2_ = tols.cwiseAbs2();
 
     // Per-vertex tolerance by exact match to a snap point (snapped vertices are emitted there);
     // -1 = not a snap point, never collapsed.
     std::unordered_map<Point3, double, PointHash> point_tol;
     point_tol.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
-      point_tol[points.row(i)] = snap_tols_(i);
+      point_tol[points.row(i)] = tols(i);
     }
     tol_.assign(world_.size(), -1.0);
     for (std::size_t v = 0; v < world_.size(); v++) {
@@ -292,7 +288,7 @@ class Thinner {
     }
     bool ok = true;
     snap_grid_.for_each(lo, hi, [&](Index pi) {
-      auto t2 = snap_tols_(pi) * snap_tols_(pi);
+      auto t2 = snap_tols2_(pi);
       Point3 p = snap_points_.row(pi);
       auto old = std::numeric_limits<double>::infinity();
       for (auto fi : inc) {
@@ -391,7 +387,7 @@ class Thinner {
   }
 
   Points3 snap_points_;  // snap targets in the isotropic frame
-  VecX snap_tols_;       // snapping tolerance per snap point (isotropic-frame distance)
+  VecX snap_tols2_;      // squared snapping tolerance per snap point (isotropic-frame)
   SpatialGrid snap_grid_;
   SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
   double max_edge2_{};     // squared cap on a collapsed edge's length

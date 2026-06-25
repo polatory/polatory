@@ -75,6 +75,14 @@ class SpatialGrid {
 
   void insert(Index item, const Point3& p) { insert(item, p, p); }
 
+  // Insert each point as a tolerance-radius ball, so a query AABB finds every point it reaches.
+  void insert_balls(const geometry::Points3& points, const VecX& tols) {
+    for (Index i = 0; i < points.rows(); i++) {
+      geometry::Vector3 r = geometry::Vector3::Constant(tols(i));
+      insert(i, points.row(i) - r, points.row(i) + r);
+    }
+  }
+
  private:
   Cell cell_of(const Point3& p) const { return (p / resolution_).array().floor().cast<int>(); }
 
