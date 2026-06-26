@@ -27,10 +27,10 @@ namespace polatory::isosurface::snapper {
 // (summed dihedral). A flip changes only its five edges, so the local drop equals the global drop
 // and the mesh descends to a local minimum; vertices never move, so snapped points stay vertices. A
 // priority queue takes the largest improvement first, re-scoring each popped edge (a nearby flip
-// may have staled it). Geometry is in the isotropic frame; the output keeps world positions. A flip
-// is rejected if its new diagonal overshoots the bend-dependent length cap (see kEdgeFloor), folds
-// the surface, or pushes it beyond a snap tolerance (protecting points honored within tolerance
-// with no vertex there).
+// may have staled it). Geometry is in the aniso-transformed frame; the output is untransformed. A
+// flip is rejected if its new diagonal overshoots the bend-dependent length cap (see kEdgeFloor),
+// folds the surface, or pushes it beyond a snap tolerance (protecting points honored within
+// tolerance with no vertex there).
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -75,9 +75,9 @@ class Smoother {
  public:
   Smoother(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
            const Mat3& aniso, double min_angle)
-      : v_(geometry::transform_points<3>(aniso, mesh.vertices())),
+      : ap_(geometry::transform_points<3>(aniso, mesh.vertices())),
         mesh_(mesh.faces()),
-        snap_points_(geometry::transform_points<3>(aniso, points)),
+        a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh_.num_faces()),
         resolution_(resolution),
@@ -90,9 +90,9 @@ class Smoother {
 
     VecX tols = tolerances;
     if (tols.size() == 0) {
-      tols = VecX::Zero(snap_points_.rows());
+      tols = VecX::Zero(a_points_.rows());
     }
-    snap_grid_.insert_balls(snap_points_, tols);
+    snap_grid_.insert_balls(a_points_, tols);
     snap_tols2_ = tols.cwiseAbs2();
 
     std::priority_queue<Item, std::vector<Item>, ItemLess> pq;
@@ -160,9 +160,9 @@ class Smoother {
   // Whether new_f overlaps any spatially near face; scanning new_f's own cells suffices (the
   // sibling call covers the other new triangle).
   bool crosses(const Face& new_f, Index fi0, Index fi1, double tol) {
-    Point3 p0 = v_.row(new_f(0));
-    Point3 p1 = v_.row(new_f(1));
-    Point3 p2 = v_.row(new_f(2));
+    Point3 p0 = ap_.row(new_f(0));
+    Point3 p1 = ap_.row(new_f(1));
+    Point3 p2 = ap_.row(new_f(2));
     Point3 lo = p0.cwiseMin(p1).cwiseMin(p2);
     Point3 hi = p0.cwiseMax(p1).cwiseMax(p2);
     bool hit = false;
@@ -177,7 +177,7 @@ class Smoother {
   }
 
   double dist2(const Point3& p, const Face& f) const {
-    return point_triangle_dist2(p, v_.row(f(0)), v_.row(f(1)), v_.row(f(2)));
+    return point_triangle_dist2(p, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
   void do_flip(const Flip& fl) {
@@ -190,7 +190,7 @@ class Smoother {
   // broad-phase that catches a diagonal passing over a spatially near but topologically distant
   // sheet.
   bool guard_ok(const Flip& fl) {
-    auto tol = 1e-6 * (v_.row(fl.x) - v_.row(fl.y)).norm();
+    auto tol = 1e-6 * (ap_.row(fl.x) - ap_.row(fl.y)).norm();
     return !crosses(fl.new_f0(), fl.fi0, fl.fi1, tol) && !crosses(fl.new_f1(), fl.fi0, fl.fi1, tol);
   }
 
@@ -215,18 +215,20 @@ class Smoother {
     add_neighbour({fl.y, fl.c}, fl.fi0);
     add_neighbour({fl.x, fl.d}, fl.fi1);
     add_neighbour({fl.d, fl.y}, fl.fi1);
-    Point3 lo = v_.row(fl.x).cwiseMin(v_.row(fl.y)).cwiseMin(v_.row(fl.c)).cwiseMin(v_.row(fl.d));
-    Point3 hi = v_.row(fl.x).cwiseMax(v_.row(fl.y)).cwiseMax(v_.row(fl.c)).cwiseMax(v_.row(fl.d));
+    Point3 lo =
+        ap_.row(fl.x).cwiseMin(ap_.row(fl.y)).cwiseMin(ap_.row(fl.c)).cwiseMin(ap_.row(fl.d));
+    Point3 hi =
+        ap_.row(fl.x).cwiseMax(ap_.row(fl.y)).cwiseMax(ap_.row(fl.c)).cwiseMax(ap_.row(fl.d));
     bool ok = true;
-    snap_grid_.for_each(lo, hi, [&](Index pi) {
-      auto tol2 = snap_tols2_(pi);
-      Point3 p = snap_points_.row(pi);
-      if (std::min(dist2(p, f0), dist2(p, f1)) > tol2) {
+    snap_grid_.for_each(lo, hi, [&](Index i) {
+      auto tol2 = snap_tols2_(i);
+      Point3 ap = a_points_.row(i);
+      if (std::min(dist2(ap, f0), dist2(ap, f1)) > tol2) {
         return true;  // not honored by a removed face; the flip cannot dishonor it
       }
       auto best = std::numeric_limits<double>::infinity();
       for (auto m = 0; m < na; m++) {
-        best = std::min(best, dist2(p, after.at(m)));
+        best = std::min(best, dist2(ap, after.at(m)));
       }
       if (best > tol2) {
         ok = false;
@@ -241,20 +243,20 @@ class Smoother {
   // stale index reads its current geometry).
   void insert_face(Index fi) {
     auto f = mesh_.face(fi);
-    Point3 p0 = v_.row(f(0));
-    Point3 p1 = v_.row(f(1));
-    Point3 p2 = v_.row(f(2));
+    Point3 p0 = ap_.row(f(0));
+    Point3 p1 = ap_.row(f(1));
+    Point3 p2 = ap_.row(f(2));
     face_grid_.insert(fi, p0.cwiseMin(p1).cwiseMin(p2), p0.cwiseMax(p1).cwiseMax(p2));
   }
 
   double min_angle(const Face& f) const {
-    return triangle_min_angle(v_.row(f(0)), v_.row(f(1)), v_.row(f(2)));
+    return triangle_min_angle(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
   // A face's unnormalized normal (length is twice the area).
   Vector3 normal(const Face& f) const {
-    Vector3 e1 = v_.row(f(1)) - v_.row(f(0));
-    Vector3 e2 = v_.row(f(2)) - v_.row(f(0));
+    Vector3 e1 = ap_.row(f(1)) - ap_.row(f(0));
+    Vector3 e2 = ap_.row(f(2)) - ap_.row(f(0));
     return Vector3(e1.cross(e2));
   }
 
@@ -265,12 +267,12 @@ class Smoother {
     if (shared >= 2) {
       return false;
     }
-    Point3 a0 = v_.row(a(0));
-    Point3 a1 = v_.row(a(1));
-    Point3 a2 = v_.row(a(2));
-    Point3 b0 = v_.row(b(0));
-    Point3 b1 = v_.row(b(1));
-    Point3 b2 = v_.row(b(2));
+    Point3 a0 = ap_.row(a(0));
+    Point3 a1 = ap_.row(a(1));
+    Point3 a2 = ap_.row(a(2));
+    Point3 b0 = ap_.row(b(0));
+    Point3 b1 = ap_.row(b(1));
+    Point3 b2 = ap_.row(b(2));
     if (shared == 0) {
       // Disjoint pair: the exact crossing test (no false negatives, unlike the shrink-based
       // transversal) catches a new face passing over a non-adjacent sheet.
@@ -303,8 +305,8 @@ class Smoother {
     if (c < 0 || d < 0 || c == d || mesh_.has_edge({c, d})) {
       return std::nullopt;  // boundary/degenerate, or the flipped diagonal already exists
     }
-    auto new_len2 = (v_.row(c) - v_.row(d)).squaredNorm();
-    auto cur_len2 = (v_.row(x) - v_.row(y)).squaredNorm();
+    auto new_len2 = (ap_.row(c) - ap_.row(d)).squaredNorm();
+    auto cur_len2 = (ap_.row(x) - ap_.row(y)).squaredNorm();
     auto ceiling = kEdgeCeiling * resolution_;
     if (new_len2 > cur_len2 && new_len2 > ceiling * ceiling) {
       return std::nullopt;  // a lengthening flip may not exceed the hard length ceiling
@@ -369,10 +371,10 @@ class Smoother {
     return Flip{fi0, fi1, x, y, c, d, improve};
   }
 
-  Points3 v_;            // vertices in the isotropic frame, where the geometry is measured
-  AbstractMesh mesh_;    // working connectivity, edited in place by flips
-  Points3 snap_points_;  // snap targets in the isotropic frame
-  VecX snap_tols2_;      // squared snapping tolerance per snap point (isotropic-frame)
+  Points3 ap_;
+  AbstractMesh mesh_;  // working connectivity, edited in place by flips
+  Points3 a_points_;   // the snap targets
+  VecX snap_tols2_;    // squared snapping tolerance per snap point
   SpatialGrid snap_grid_;
   SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
   double resolution_;      // mesh resolution; sets the diagonal length cap

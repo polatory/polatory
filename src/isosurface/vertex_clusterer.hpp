@@ -249,20 +249,20 @@ class VertexClusterer {
       }
       vertex_ci[vv.at(cluster.rep)] = ci;
     }
-    
+
     return {Mesh{std::move(out_vertices), std::move(out_faces)}, vertex_ci};
   }
 
   // The merged vertex minimizes the area-weighted squared distance to the cluster's incident face
   // planes:  x = argmin_x  sum_f  area_f (n_f.x + d_f)^2  -- keeping a crease/corner instead of
   // averaging it away. Directions the planes leave free (a flat patch) keep the centroid; x is
-  // clamped to the cluster's AABB. Measured in the isotropic frame so the fit respects the
+  // clamped to the cluster's AABB. Measured in the aniso-transformed frame so the fit respects the
   // anisotropic resolution.
   Point3 clustered_position(const std::vector<Index>& cluster) const {
-    Points3 points = geometry::transform_points<3>(aniso_, v_(cluster, kAll));
-    Point3 centroid = points.colwise().mean();
-    Point3 lo = points.colwise().minCoeff();
-    Point3 hi = points.colwise().maxCoeff();
+    Points3 a_points = geometry::transform_points<3>(aniso_, v_(cluster, kAll));
+    Point3 centroid = a_points.colwise().mean();
+    Point3 lo = a_points.colwise().minCoeff();
+    Point3 hi = a_points.colwise().maxCoeff();
 
     std::unordered_set<Index> fis;
     for (auto v : cluster) {

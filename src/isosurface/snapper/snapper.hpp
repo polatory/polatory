@@ -54,11 +54,11 @@ class Snapper {
   static int index_of(Simplex s) { return static_cast<int>(s); }
 
   struct Candidate {
-    Index i{};    // The snap point's index; its iso/world position and tolerance derive from it.
-    Point3 q;     // The projection of the point onto the mesh (closest point).
-    double d2{};  // The squared distance from the point to the mesh.
-    Index fi{};   // The projected face.
-    std::array<double, 3> l;       // The barycentric coordinates of the projection.
+    Index i{};                // The snap point's index; its positions and tolerance derive from it.
+    Point3 aq;                // The projection of the point onto the mesh (closest point).
+    double d2{};              // The squared distance from the point to the mesh.
+    Index fi{};               // The projected face.
+    std::array<double, 3> l;  // The barycentric coordinates of the projection.
     std::array<Simplex, 7> order;  // The seven simplices, nearest centroid first.
   };
 
@@ -79,10 +79,9 @@ class Snapper {
   };
 
   // A point snaps only if its distance to the mesh is <= max_distance and both it and its
-  // projection lie in bbox. Vertices, points, and bbox are world-space; the snapper works in the
-  // isotropic frame (aniso maps world into it) so an anisotropic resolution is respected, then
-  // emits world positions. bbox stays world-space (rotating its AABB would inflate it), each point
-  // mapped back for the test.
+  // projection lie in bbox. Vertices, points, and bbox are untransformed; the snapper applies aniso
+  // (so an anisotropic resolution is respected), then emits untransformed positions. bbox stays
+  // untransformed (rotating its AABB would inflate it), each point mapped back for the test.
   //
   // When bbox excludes the boundary by at least one face, the boundary is provably untouched:
   // snapping only moves a vertex or subdivides an edge of the face holding the (in-bbox)
@@ -94,21 +93,26 @@ class Snapper {
         aniso_inv_(aniso.inverse()),
         max_distance_(max_distance),
         points_(points),
-        iso_points_(geometry::transform_points<3>(aniso, points)),
+        a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(max_distance, points.rows()),
-        positions_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
-        flat_(mesh_.vertices().rowwise().begin(), mesh_.vertices().rowwise().end()),
-        world_(mesh.vertices().rowwise().begin(), mesh.vertices().rowwise().end()),
+        nv_(mesh_.num_vertices()),
         moved_(mesh_.num_vertices(), false) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
     }
 
+    p_.resize(nv_ + points.rows(), 3);
+    ap_.resize(nv_ + points.rows(), 3);
+    aq_.resize(nv_ + points.rows(), 3);
+    p_.topRows(nv_) = mesh.vertices();
+    ap_.topRows(nv_) = mesh_.vertices();
+    aq_.topRows(nv_) = mesh_.vertices();
+
     VecX tols = tolerances;
     if (tols.size() == 0) {
       tols = VecX::Zero(points.rows());
     }
-    snap_grid_.insert_balls(iso_points_, tols);
+    snap_grid_.insert_balls(a_points_, tols);
     snap_tols2_ = tols.cwiseAbs2();
 
     auto candidates = build_candidates();
@@ -175,12 +179,13 @@ class Snapper {
   // its edges.
   bool already_satisfied(const Candidate& cand) {
     double tol2 = snap_tols2_(cand.i);
-    Point3 pc = iso_points_.row(cand.i);
+    Point3 ap = a_points_.row(cand.i);
     const auto& F = mesh_.faces();
     auto nearest_in_patch = [&](Index fi) {
       double best = std::numeric_limits<double>::infinity();
       for (auto f : patch_faces(fi).rowwise()) {
-        best = std::min(best, point_triangle_dist2(pc, pos(f(0)), pos(f(1)), pos(f(2))));
+        best =
+            std::min(best, point_triangle_dist2(ap, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2))));
       }
       return best;
     };
@@ -207,19 +212,19 @@ class Snapper {
     std::vector<Candidate> candidates;
     candidates.reserve(points_.rows());
     for (Index i = 0; i < points_.rows(); i++) {
-      Point3 p_world = points_.row(i);
-      Point3 p = iso_points_.row(i);  // the isotropic frame, where snapping is measured
+      Point3 p = points_.row(i);
+      Point3 ap = a_points_.row(i);
 
       int fi{};
-      Point3 q;
-      auto d2 = mesh_.nearest_face(p, fi, q);
+      Point3 aq;
+      auto d2 = mesh_.nearest_face(ap, fi, aq);
 
       if (d2 > max_distance_ * max_distance_) {
         stats_.skipped++;
         continue;
       }
-      Point3 q_world = geometry::transform_point<3>(aniso_inv_, q);
-      if (!bbox_.contains(p_world) || !bbox_.contains(q_world)) {
+      Point3 q = geometry::transform_point<3>(aniso_inv_, aq);
+      if (!bbox_.contains(p) || !bbox_.contains(q)) {
         stats_.skipped++;
         continue;
       }
@@ -230,7 +235,7 @@ class Snapper {
       Point3 c = V.row(f(2));
 
       Vector3 l;
-      igl::barycentric_coordinates(q, a, b, c, l);
+      igl::barycentric_coordinates(aq, a, b, c, l);
 
       // The centroid of each simplex, indexed by Simplex (vertices, edge midpoints, face).
       std::array<Point3, 7> sites{
@@ -239,20 +244,20 @@ class Snapper {
                                    Simplex::kEdge12,  Simplex::kEdge20,  Simplex::kEdge01,
                                    Simplex::kFace};
       std::ranges::sort(order, [&](Simplex s, Simplex t) {
-        return (q - sites.at(index_of(s))).squaredNorm() <
-               (q - sites.at(index_of(t))).squaredNorm();
+        return (aq - sites.at(index_of(s))).squaredNorm() <
+               (aq - sites.at(index_of(t))).squaredNorm();
       });
 
       candidates.push_back(
-          {.i = i, .q = q, .d2 = d2, .fi = fi, .l = {l(0), l(1), l(2)}, .order = order});
+          {.i = i, .aq = aq, .d2 = d2, .fi = fi, .l = {l(0), l(1), l(2)}, .order = order});
     }
 
     // Least-distorting first (by distance to the mesh): each shared feature is claimed by the
     // candidate that moves it least. Ordering by tangential offset instead folds patches into
     // overhangs.
     std::ranges::sort(candidates, [this](const Candidate& x, const Candidate& y) {
-      return std::make_tuple(x.d2, iso_points_(x.i, 0), iso_points_(x.i, 1), iso_points_(x.i, 2)) <
-             std::make_tuple(y.d2, iso_points_(y.i, 0), iso_points_(y.i, 1), iso_points_(y.i, 2));
+      return std::make_tuple(x.d2, a_points_(x.i, 0), a_points_(x.i, 1), a_points_(x.i, 2)) <
+             std::make_tuple(y.d2, a_points_(y.i, 0), a_points_(y.i, 1), a_points_(y.i, 2));
     });
     return candidates;
   }
@@ -283,24 +288,24 @@ class Snapper {
 
     // Drop vertices no face references (chain thinning orphans the inserted ones it removes),
     // keeping the rest in their original order so an un-thinned run emits unchanged.
-    std::vector<bool> used(positions_.size(), false);
+    std::vector<bool> used(nv_, false);
     for (const auto& f : faces) {
       for (auto v : f) {
         used.at(v) = true;
       }
     }
-    std::vector<Index> remap(positions_.size(), -1);
+    std::vector<Index> remap(nv_, -1);
     Index n = 0;
-    for (std::size_t v = 0; v < positions_.size(); v++) {
+    for (Index v = 0; v < nv_; v++) {
       if (used.at(v)) {
         remap.at(v) = n++;
       }
     }
 
     Points3 vertices(n, 3);
-    for (std::size_t v = 0; v < positions_.size(); v++) {
+    for (Index v = 0; v < nv_; v++) {
       if (used.at(v)) {
-        vertices.row(remap.at(v)) = world_.at(v);  // exact world position; no aniso round-trip
+        vertices.row(remap.at(v)) = p_.row(v);  // exact untransformed position; no aniso round-trip
       }
     }
 
@@ -313,17 +318,20 @@ class Snapper {
     return {std::move(vertices), std::move(f)};
   }
 
-  Vector3 emitted_normal(const Face& f) const { return normal(pos(f(0)), pos(f(1)), pos(f(2))); }
+  Vector3 emitted_normal(const Face& f) const {
+    return normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
+  }
 
-  // Whether point i is within its tolerance of the faces incident to v. Checking only those, not the
-  // neighbouring faces too, can only over-reject a re-move, never dishonor.
+  // Whether point i is within its tolerance of the faces incident to v. Checking only those, not
+  // the neighbouring faces too, can only over-reject a re-move, never dishonor.
   bool honored_by_surface(Index v, Index i) {
-    Point3 p = iso_points_.row(i);
+    Point3 ap = a_points_.row(i);
     double best = std::numeric_limits<double>::infinity();
     for (auto fi : mesh_.vertex_faces(v)) {
       for (auto f : patch_faces(fi).rowwise()) {
         if ((f.array() == v).any()) {
-          best = std::min(best, point_triangle_dist2(p, pos(f(0)), pos(f(1)), pos(f(2))));
+          best =
+              std::min(best, point_triangle_dist2(ap, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2))));
         }
       }
     }
@@ -338,8 +346,8 @@ class Snapper {
       for (auto f : patch_faces(fi).rowwise()) {
         if ((f.array() == v).any()) {
           for (auto w : f) {
-            lo = lo.cwiseMin(pos(w));
-            hi = hi.cwiseMax(pos(w));
+            lo = lo.cwiseMin(ap_.row(w));
+            hi = hi.cwiseMax(ap_.row(w));
           }
         }
       }
@@ -357,10 +365,10 @@ class Snapper {
   // Inserts the point into face fi's interior; reverts unless the re-triangulation uses it (it
   // projects inside the patch) and stays free of self-intersection.
   bool insert_in_face(const Candidate& cand, Index fi) {
-    auto new_v = static_cast<Index>(positions_.size());
-    positions_.push_back(iso_points_.row(cand.i));
-    world_.push_back(points_.row(cand.i));
-    flat_.push_back(cand.q);  // the snap point's on-surface projection
+    auto new_v = nv_++;
+    p_.row(new_v) = points_.row(cand.i);
+    ap_.row(new_v) = a_points_.row(cand.i);
+    aq_.row(new_v) = cand.aq;  // the snap point's on-surface projection
     auto& interior = face_interior_[fi];
     interior.push_back(new_v);
 
@@ -380,9 +388,7 @@ class Snapper {
       if (interior.empty()) {
         face_interior_.erase(fi);
       }
-      positions_.pop_back();
-      world_.pop_back();
-      flat_.pop_back();
+      nv_--;
     };
     if (!simple || !used || creates_degenerate(changed) || over_pulled(changed) ||
         self_intersects(changed)) {
@@ -400,10 +406,10 @@ class Snapper {
   bool insert_on_edge(const Candidate& cand, const Edge& e, double t) {
     const auto& incident_faces = mesh_.edge_faces(e);
 
-    auto new_v = static_cast<Index>(positions_.size());
-    positions_.push_back(iso_points_.row(cand.i));
-    world_.push_back(points_.row(cand.i));
-    flat_.push_back((1.0 - t) * flat_.at(e.a) + t * flat_.at(e.b));  // on the original edge
+    auto new_v = nv_++;
+    p_.row(new_v) = points_.row(cand.i);
+    ap_.row(new_v) = a_points_.row(cand.i);
+    aq_.row(new_v) = (1.0 - t) * aq_.row(e.a) + t * aq_.row(e.b);  // on the original edge
     auto& chain = edge_chains_[e];
     chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .v = new_v});
 
@@ -419,9 +425,7 @@ class Snapper {
       if (chain.empty()) {
         edge_chains_.erase(e);
       }
-      positions_.pop_back();
-      world_.pop_back();
-      flat_.pop_back();
+      nv_--;
     };
     if (!simple || creates_degenerate(changed) || over_pulled(changed) ||
         self_intersects(changed)) {
@@ -452,9 +456,9 @@ class Snapper {
   // up to vertical is kept; a fin there is under-resolution, not a fold.
   bool over_pulled(const std::unordered_map<Index, Faces>& changed) {
     for (const auto& [fi, faces] : changed) {
-      Vector3 o = original_normal(fi);
+      auto n = original_normal(fi);
       for (auto f : faces.rowwise()) {
-        if (emitted_normal(f).dot(o) < 0.0) {
+        if (emitted_normal(f).dot(n) < 0.0) {
           return true;
         }
       }
@@ -471,10 +475,6 @@ class Snapper {
     return it->second;
   }
 
-  // A vertex's current 3D position: a moved original's snapped target, an unmoved original's
-  // position, or an inserted vertex's off-surface point.
-  const Point3& pos(Index v) const { return positions_.at(v); }
-
   // The snapper's one geometric acceptance test: the flat triangulation is always valid, so all
   // that remains is to forbid an actual self-intersection of the emitted mesh.
   bool self_intersects(const std::unordered_map<Index, Faces>& changed) {
@@ -487,8 +487,8 @@ class Snapper {
       }
     }
     auto crosses = [&](const Face& a, const Face& b) {
-      return triangles_intersect(pos(a(0)), pos(a(1)), pos(a(2)), pos(b(0)), pos(b(1)), pos(b(2)),
-                                 num_shared_vertices(a, b));
+      return triangles_intersect(ap_.row(a(0)), ap_.row(a(1)), ap_.row(a(2)), ap_.row(b(0)),
+                                 ap_.row(b(1)), ap_.row(b(2)), num_shared_vertices(a, b));
     };
     // Query per changed face (within 2 * max_distance, the farthest a snapped face can stray)
     // rather than pooling all neighborhoods, to skip pairs that are AABB-disjoint and so cannot
@@ -501,9 +501,9 @@ class Snapper {
           return true;
         }
       }
-      Point3 p0 = pos(a(0));
-      Point3 p1 = pos(a(1));
-      Point3 p2 = pos(a(2));
+      Point3 p0 = ap_.row(a(0));
+      Point3 p1 = ap_.row(a(1));
+      Point3 p2 = ap_.row(a(2));
       Point3 lo = (p0.cwiseMin(p1).cwiseMin(p2).array() - margin).matrix();
       Point3 hi = (p0.cwiseMax(p1).cwiseMax(p2).array() + margin).matrix();
       candidates.clear();
@@ -546,7 +546,7 @@ class Snapper {
       boundary_ids.push_back(vertices.at(k));
       // Project the *flat* (on-surface) position, not the snapped target, so the 2D polygon is
       // always valid and consistently wound; folds of the moved mesh are caught downstream.
-      boundary.push_back(mesh_.project(fi, flat_.at(vertices.at(k))));
+      boundary.push_back(mesh_.project(fi, aq_.row(vertices.at(k))));
       boundary_edges.push_back({k, (k + 2) % 3});
     };
     auto add_chain = [&](int edge) {
@@ -559,7 +559,7 @@ class Snapper {
       const auto& chain = it->second;  // stored by t from the smaller id to the larger
       auto append = [&](Index v) {
         boundary_ids.push_back(v);
-        boundary.push_back(mesh_.project(fi, flat_.at(v)));
+        boundary.push_back(mesh_.project(fi, aq_.row(v)));
         boundary_edges.push_back({edge, -1});
       };
       if (from < to) {
@@ -584,7 +584,7 @@ class Snapper {
     if (auto it = face_interior_.find(fi); it != face_interior_.end()) {
       for (auto v : it->second) {
         interior_ids.push_back(v);
-        interior.push_back(mesh_.project(fi, flat_.at(v)));
+        interior.push_back(mesh_.project(fi, aq_.row(v)));
       }
     }
 
@@ -644,10 +644,10 @@ class Snapper {
   bool try_vertex(const Candidate& cand, Index v) {
     auto honored = moved_.at(v) ? honored_points_around(v) : std::vector<Index>{};
 
-    Point3 original = positions_.at(v);  // for revert
-    Point3 original_world = world_.at(v);
-    positions_.at(v) = iso_points_.row(cand.i);  // tentative
-    world_.at(v) = points_.row(cand.i);
+    Point3 p = p_.row(v);  // for revert
+    Point3 ap = ap_.row(v);
+    p_.row(v) = points_.row(cand.i);  // tentative
+    ap_.row(v) = a_points_.row(cand.i);
     std::unordered_map<Index, Faces> changed;
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
@@ -656,8 +656,8 @@ class Snapper {
         std::ranges::any_of(honored, [&](Index i) { return !honored_by_surface(v, i); });
     if (creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed) ||
         dishonors) {
-      positions_.at(v) = original;
-      world_.at(v) = original_world;
+      p_.row(v) = p;
+      ap_.row(v) = ap;
       return false;
     }
 
@@ -683,9 +683,9 @@ class Snapper {
     }
 
     struct Op {
-      double dist2{};
-      Index ea{-1};
-      Index eb{-1};
+      double d2{};
+      Index a{-1};
+      Index b{-1};
       Index fi{-1};
       double t{};
     };
@@ -698,7 +698,7 @@ class Snapper {
       Point3 b = V.row(F(fi, 1));
       Point3 c = V.row(F(fi, 2));
       Point3 centroid = a + ((b - a) + (c - a)) / 3.0;
-      ops.push_back({.dist2 = (cand.q - centroid).squaredNorm(), .fi = fi});
+      ops.push_back({.d2 = (cand.aq - centroid).squaredNorm(), .fi = fi});
       for (auto k = 0; k < 3; k++) {
         Index x = F(fi, k);
         Index y = F(fi, (k + 1) % 3);
@@ -712,22 +712,20 @@ class Snapper {
         Point3 va = V.row(e.a);
         Point3 vb = V.row(e.b);
         Vector3 d = vb - va;
-        auto t = (cand.q - va).dot(d) / d.squaredNorm();
+        auto t = (cand.aq - va).dot(d) / d.squaredNorm();
         if (!(t > 0.0 && t < 1.0)) {
           continue;  // projects onto an endpoint
         }
         Point3 mid = va + 0.5 * d;
-        ops.push_back({.dist2 = (cand.q - mid).squaredNorm(), .ea = e.a, .eb = e.b, .t = t});
+        ops.push_back({.d2 = (cand.aq - mid).squaredNorm(), .a = e.a, .b = e.b, .t = t});
       }
     }
 
     std::ranges::sort(ops, [](const Op& x, const Op& y) {
-      return std::make_tuple(x.dist2, x.fi, x.ea, x.eb) <
-             std::make_tuple(y.dist2, y.fi, y.ea, y.eb);
+      return std::make_tuple(x.d2, x.fi, x.a, x.b) < std::make_tuple(y.d2, y.fi, y.a, y.b);
     });
     for (const auto& op : ops) {
-      auto ok =
-          op.fi >= 0 ? insert_in_face(cand, op.fi) : insert_on_edge(cand, {op.ea, op.eb}, op.t);
+      auto ok = op.fi >= 0 ? insert_in_face(cand, op.fi) : insert_on_edge(cand, {op.a, op.b}, op.t);
       if (ok) {
         return true;
       }
@@ -739,14 +737,14 @@ class Snapper {
   geometry::Bbox3 bbox_;
   Mat3 aniso_inv_;
   double max_distance_;
-  Points3 points_;         // the snap points (world); a Candidate indexes into this
-  Points3 iso_points_;     // the same points in the isotropic frame, where snapping is measured
-  VecX snap_tols2_;        // squared snapping tolerance per snap point (isotropic-frame)
+  Points3 points_;  // the snap points; a Candidate indexes into this
+  Points3 a_points_;
+  VecX snap_tols2_;        // squared snapping tolerance per snap point
   SpatialGrid snap_grid_;  // snap-point broad-phase for the re-move honor check
-  std::vector<Point3> positions_;  // current isotropic-frame position, where geometry is measured
-  std::vector<Point3> flat_;       // on-surface position the triangulation projects (never folds)
-  std::vector<Point3>
-      world_;                // exact world position emit() outputs (passes through points exactly)
+  Index nv_{};             // current vertex count; rows [0, nv_) of ap_/aq_/p_ are live
+  Points3 p_;              // untransformed position emit() outputs (passes through points exactly)
+  Points3 ap_;
+  Points3 aq_;               // on-surface position the triangulation projects (never folds)
   std::vector<bool> moved_;  // original vertices already claimed by a move
   std::unordered_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   std::unordered_map<Index, std::vector<Index>> face_interior_;

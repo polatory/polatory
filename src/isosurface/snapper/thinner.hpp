@@ -26,8 +26,8 @@ using geometry::Points3;
 // redundant (collinear between neighbours) onto a neighbour, reaching vertices from any pass that
 // the insert-only thinning could not. A collapse is kept only if the dropped point stays within its
 // tolerance of the new surface and the mesh stays manifold, unflipped, and self-intersection-free;
-// only snapped vertices collapse, so the base lattice is untouched. Geometry is in the isotropic
-// frame; the output keeps world positions.
+// only snapped vertices collapse, so the base lattice is untouched. Geometry is in the
+// aniso-transformed frame; the output is untransformed.
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
@@ -37,13 +37,13 @@ class Thinner {
  public:
   Thinner(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
           const Mat3& aniso)
-      : snap_points_(geometry::transform_points<3>(aniso, points)),
+      : a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh.faces().rows()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
-    auto iso = geometry::transform_points<3>(aniso, mesh.vertices());
-    world_.assign(mesh.vertices().rowwise().begin(), mesh.vertices().rowwise().end());
-    iso_.assign(iso.rowwise().begin(), iso.rowwise().end());
+    p_ = mesh.vertices();
+    ap_ = geometry::transform_points<3>(aniso, mesh.vertices());
+
     const auto& faces = mesh.faces();
     faces_.reserve(faces.rows());
     for (Index i = 0; i < faces.rows(); i++) {
@@ -53,28 +53,26 @@ class Thinner {
 
     VecX tols = tolerances;
     if (tols.size() == 0) {
-      tols = VecX::Zero(snap_points_.rows());
+      tols = VecX::Zero(a_points_.rows());
     }
-    snap_grid_.insert_balls(snap_points_, tols);
+    snap_grid_.insert_balls(a_points_, tols);
     snap_tols2_ = tols.cwiseAbs2();
 
-    // Per-vertex tolerance by exact match to a snap point (snapped vertices are emitted there);
-    // -1 = not a snap point, never collapsed.
-    std::unordered_map<Point3, double, PointHash> point_tol;
-    point_tol.reserve(points.rows());
+    // Mark each vertex that coincides with a snap point (snapped vertices are emitted exactly
+    // there); only these may collapse, so the base lattice stays put.
+    std::unordered_set<Point3, PointHash> snap_positions;
+    snap_positions.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
-      point_tol[points.row(i)] = tols(i);
+      snap_positions.insert(points.row(i));
     }
-    tol_.assign(world_.size(), -1.0);
-    for (std::size_t v = 0; v < world_.size(); v++) {
-      if (auto it = point_tol.find(world_.at(v)); it != point_tol.end()) {
-        tol_.at(v) = it->second;
-      }
+    snapped_.assign(p_.rows(), false);
+    for (Index v = 0; v < p_.rows(); v++) {
+      snapped_.at(v) = snap_positions.contains(p_.row(v));
     }
 
     // Greedy collapse to a fixpoint: a collapse can make a neighbour collapsible (a chain of
     // collinear points thins end to end).
-    vf_.assign(world_.size(), {});
+    vf_.assign(p_.rows(), {});
     for (std::size_t fi = 0; fi < faces_.size(); fi++) {
       for (auto v : faces_.at(fi)) {
         vf_.at(v).push_back(static_cast<Index>(fi));
@@ -84,8 +82,8 @@ class Thinner {
     bool any = true;
     while (any) {
       any = false;
-      for (Index v = 0; v < static_cast<Index>(world_.size()); v++) {
-        if (tol_.at(v) >= 0.0 && try_collapse(v)) {
+      for (Index v = 0; v < p_.rows(); v++) {
+        if (snapped_.at(v) && try_collapse(v)) {
           any = true;
         }
       }
@@ -162,7 +160,7 @@ class Thinner {
     // Cap edge length to keep triangles regular: a collapse stretches only v's spokes (v-r -> w-r),
     // so only those are checked.
     for (const auto& [r, fs] : edge_faces) {
-      if (r != w && !across.contains(r) && (iso_.at(w) - iso_.at(r)).squaredNorm() > max_edge2_) {
+      if (r != w && !across.contains(r) && (ap_.row(w) - ap_.row(r)).squaredNorm() > max_edge2_) {
         return false;
       }
     }
@@ -171,7 +169,7 @@ class Thinner {
     // new surface.
     dev = std::numeric_limits<double>::infinity();
     for (const auto& nf : kept) {
-      dev = std::min(dev, dist2(iso_.at(v), nf));
+      dev = std::min(dev, dist2(ap_.row(v), nf));
     }
 
     // Faces near the collapse: those incident to the kept faces' vertices but outside the umbrella.
@@ -194,9 +192,9 @@ class Thinner {
     // overlap involves one of them; a spatial broad-phase catches a kept face pushed onto a
     // spatially near but topologically distant sheet that the one-ring would miss.
     for (const auto& nf : kept) {
-      const auto& p0 = iso_.at(nf(0));
-      const auto& p1 = iso_.at(nf(1));
-      const auto& p2 = iso_.at(nf(2));
+      const auto& p0 = ap_.row(nf(0));
+      const auto& p1 = ap_.row(nf(1));
+      const auto& p2 = ap_.row(nf(2));
       Point3 lo = p0.cwiseMin(p1).cwiseMin(p2);
       Point3 hi = p0.cwiseMax(p1).cwiseMax(p2);
       bool hit = false;
@@ -215,7 +213,7 @@ class Thinner {
   }
 
   double dist2(const Point3& p, const Face& f) const {
-    return point_triangle_dist2(p, iso_.at(f(0)), iso_.at(f(1)), iso_.at(f(2)));
+    return point_triangle_dist2(p, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
   void do_collapse(Index v, Index w, const std::vector<Index>& inc,
@@ -238,7 +236,7 @@ class Thinner {
   }
 
   Mesh emit() {
-    std::vector<bool> used(world_.size(), false);
+    std::vector<bool> used(p_.rows(), false);
     std::vector<Face> faces;
     for (std::size_t fi = 0; fi < faces_.size(); fi++) {
       if (deleted_.at(fi)) {
@@ -249,17 +247,17 @@ class Thinner {
         used.at(v) = true;
       }
     }
-    std::vector<Index> remap(world_.size(), -1);
+    std::vector<Index> remap(p_.rows(), -1);
     Index n = 0;
-    for (std::size_t v = 0; v < world_.size(); v++) {
+    for (Index v = 0; v < p_.rows(); v++) {
       if (used.at(v)) {
         remap.at(v) = n++;
       }
     }
     Points3 vertices(n, 3);
-    for (std::size_t v = 0; v < world_.size(); v++) {
+    for (Index v = 0; v < p_.rows(); v++) {
       if (used.at(v)) {
-        vertices.row(remap.at(v)) = world_.at(v);
+        vertices.row(remap.at(v)) = p_.row(v);
       }
     }
     Faces f(static_cast<Index>(faces.size()), 3);
@@ -278,33 +276,33 @@ class Thinner {
     if (snap_grid_.empty()) {
       return true;
     }
-    Point3 lo = iso_.at(faces_.at(inc.front())(0));
+    Point3 lo = ap_.row(faces_.at(inc.front())(0));
     Point3 hi = lo;
     for (auto fi : inc) {
       for (auto x : faces_.at(fi)) {
-        lo = lo.cwiseMin(iso_.at(x));
-        hi = hi.cwiseMax(iso_.at(x));
+        lo = lo.cwiseMin(ap_.row(x));
+        hi = hi.cwiseMax(ap_.row(x));
       }
     }
     bool ok = true;
-    snap_grid_.for_each(lo, hi, [&](Index pi) {
-      auto t2 = snap_tols2_(pi);
-      Point3 p = snap_points_.row(pi);
+    snap_grid_.for_each(lo, hi, [&](Index i) {
+      auto tol2 = snap_tols2_(i);
+      Point3 ap = a_points_.row(i);
       auto old = std::numeric_limits<double>::infinity();
       for (auto fi : inc) {
-        old = std::min(old, dist2(p, faces_.at(fi)));
+        old = std::min(old, dist2(ap, faces_.at(fi)));
       }
-      if (old > t2) {
+      if (old > tol2) {
         return true;  // not held by a removed face; the collapse cannot dishonor it
       }
       auto neu = std::numeric_limits<double>::infinity();
       for (const auto& nf : kept) {
-        neu = std::min(neu, dist2(p, nf));
+        neu = std::min(neu, dist2(ap, nf));
       }
       for (auto fi : nearby) {
-        neu = std::min(neu, dist2(p, faces_.at(fi)));
+        neu = std::min(neu, dist2(ap, faces_.at(fi)));
       }
-      if (neu > t2) {
+      if (neu > tol2) {
         ok = false;
         return false;  // dishonored; stop the walk
       }
@@ -327,19 +325,19 @@ class Thinner {
   // face is found at its new cells, and a stale old entry is harmless (it reads current geometry).
   void insert_face(Index fi) {
     const auto& f = faces_.at(fi);
-    const auto& p0 = iso_.at(f(0));
-    const auto& p1 = iso_.at(f(1));
-    const auto& p2 = iso_.at(f(2));
+    const auto& p0 = ap_.row(f(0));
+    const auto& p1 = ap_.row(f(1));
+    const auto& p2 = ap_.row(f(2));
     face_grid_.insert(fi, p0.cwiseMin(p1).cwiseMin(p2), p0.cwiseMax(p1).cwiseMax(p2));
   }
 
   bool intersects(const Face& a, const Face& b) const {
-    return triangles_intersect(iso_.at(a(0)), iso_.at(a(1)), iso_.at(a(2)), iso_.at(b(0)),
-                               iso_.at(b(1)), iso_.at(b(2)), num_shared_vertices(a, b));
+    return triangles_intersect(ap_.row(a(0)), ap_.row(a(1)), ap_.row(a(2)), ap_.row(b(0)),
+                               ap_.row(b(1)), ap_.row(b(2)), num_shared_vertices(a, b));
   }
 
   Vector3 normal(const Face& f) const {
-    return Vector3((iso_.at(f(1)) - iso_.at(f(0))).cross(iso_.at(f(2)) - iso_.at(f(0))));
+    return Vector3((ap_.row(f(1)) - ap_.row(f(0))).cross(ap_.row(f(2)) - ap_.row(f(0))));
   }
 
   static bool on_edge(const Face& f, Index a, Index b) {
@@ -386,16 +384,16 @@ class Thinner {
     return true;
   }
 
-  Points3 snap_points_;  // snap targets in the isotropic frame
-  VecX snap_tols2_;      // squared snapping tolerance per snap point (isotropic-frame)
+  Points3 a_points_;  // the snap targets
+  VecX snap_tols2_;   // squared snapping tolerance per snap point
   SpatialGrid snap_grid_;
   SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
   double max_edge2_{};     // squared cap on a collapsed edge's length
-  std::vector<Point3> world_;
-  std::vector<Point3> iso_;
+  Points3 p_;
+  Points3 ap_;
   std::vector<Face> faces_;
   std::vector<bool> deleted_;
-  std::vector<double> tol_;             // per vertex; -1 = not a snap point (never collapsed)
+  std::vector<bool> snapped_;           // per vertex; true = a snap point (only these collapse)
   std::vector<std::vector<Index>> vf_;  // vertex -> incident face ids (may include deleted)
   Mesh result_;
 };
