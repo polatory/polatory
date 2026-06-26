@@ -125,7 +125,7 @@ class Thinner {
           continue;
         }
         const auto& f = faces_.at(fi);
-        if ((f(0) == w || f(1) == w || f(2) == w) && !on_edge(f, v, w)) {
+        if ((f.array() == w).any() && !on_edge(f, v, w)) {
           adj_w = true;
           break;
         }
@@ -143,7 +143,7 @@ class Thinner {
       if (on_edge(f, v, w)) {
         continue;  // collapses to a degenerate sliver, dropped
       }
-      Face nf{f(0) == v ? w : f(0), f(1) == v ? w : f(1), f(2) == v ? w : f(2)};
+      Face nf = (f.array() == v).select(w, f);
       auto nn = normal(nf);
       if (!(nn.norm() > 0.0)) {
         return false;  // a kept face would become degenerate
@@ -192,11 +192,9 @@ class Thinner {
     // overlap involves one of them; a spatial broad-phase catches a kept face pushed onto a
     // spatially near but topologically distant sheet that the one-ring would miss.
     for (const auto& nf : kept) {
-      const auto& p0 = ap_.row(nf(0));
-      const auto& p1 = ap_.row(nf(1));
-      const auto& p2 = ap_.row(nf(2));
-      Point3 lo = p0.cwiseMin(p1).cwiseMin(p2);
-      Point3 hi = p0.cwiseMax(p1).cwiseMax(p2);
+      auto aps = ap_(nf, kAll);
+      Point3 lo = aps.colwise().minCoeff();
+      Point3 hi = aps.colwise().maxCoeff();
       bool hit = false;
       face_grid_.for_each(lo, hi, [&](Index fi) {
         if (deleted_.at(fi) || umbrella.contains(fi) || !intersects(nf, faces_.at(fi))) {
@@ -225,11 +223,7 @@ class Thinner {
         continue;
       }
       auto& f = faces_.at(fi);
-      for (auto& x : f) {
-        if (x == v) {
-          x = w;
-        }
-      }
+      f = (f.array() == v).select(w, f);
       vf_.at(w).push_back(fi);  // w gains v's retargeted faces
       insert_face(fi);
     }
@@ -247,26 +241,31 @@ class Thinner {
         used.at(v) = true;
       }
     }
-    std::vector<Index> remap(p_.rows(), -1);
+    std::vector<Index> vv(p_.rows(), -1);
     Index n = 0;
     for (Index v = 0; v < p_.rows(); v++) {
       if (used.at(v)) {
-        remap.at(v) = n++;
+        vv.at(v) = n++;
       }
     }
     Points3 vertices(n, 3);
     for (Index v = 0; v < p_.rows(); v++) {
       if (used.at(v)) {
-        vertices.row(remap.at(v)) = p_.row(v);
+        vertices.row(vv.at(v)) = p_.row(v);
       }
     }
     Faces f(static_cast<Index>(faces.size()), 3);
     for (Index i = 0; i < f.rows(); i++) {
-      f(i, 0) = remap.at(faces.at(i)(0));
-      f(i, 1) = remap.at(faces.at(i)(1));
-      f(i, 2) = remap.at(faces.at(i)(2));
+      f(i, 0) = vv.at(faces.at(i)(0));
+      f(i, 1) = vv.at(faces.at(i)(1));
+      f(i, 2) = vv.at(faces.at(i)(2));
     }
     return {std::move(vertices), std::move(f)};
+  }
+
+  // Whether snap point i lies within its tolerance of face f.
+  bool honored_by(Index i, const Face& f) const {
+    return dist2(a_points_.row(i), f) <= snap_tols2_(i);
   }
 
   // Every nearby snap point held by a removed face -- not just the dropped vertex -- must stay
@@ -286,23 +285,12 @@ class Thinner {
     }
     bool ok = true;
     snap_grid_.for_each(lo, hi, [&](Index i) {
-      auto tol2 = snap_tols2_(i);
-      Point3 ap = a_points_.row(i);
-      auto old = std::numeric_limits<double>::infinity();
-      for (auto fi : inc) {
-        old = std::min(old, dist2(ap, faces_.at(fi)));
-      }
-      if (old > tol2) {
+      auto honored = [&](const auto& f) { return honored_by(i, f); };
+      auto face_of = [&](Index fi) -> const Face& { return faces_.at(fi); };
+      if (std::ranges::none_of(inc, honored, face_of)) {
         return true;  // not held by a removed face; the collapse cannot dishonor it
       }
-      auto neu = std::numeric_limits<double>::infinity();
-      for (const auto& nf : kept) {
-        neu = std::min(neu, dist2(ap, nf));
-      }
-      for (auto fi : nearby) {
-        neu = std::min(neu, dist2(ap, faces_.at(fi)));
-      }
-      if (neu > tol2) {
+      if (std::ranges::none_of(kept, honored) && std::ranges::none_of(nearby, honored, face_of)) {
         ok = false;
         return false;  // dishonored; stop the walk
       }
@@ -325,10 +313,10 @@ class Thinner {
   // face is found at its new cells, and a stale old entry is harmless (it reads current geometry).
   void insert_face(Index fi) {
     const auto& f = faces_.at(fi);
-    const auto& p0 = ap_.row(f(0));
-    const auto& p1 = ap_.row(f(1));
-    const auto& p2 = ap_.row(f(2));
-    face_grid_.insert(fi, p0.cwiseMin(p1).cwiseMin(p2), p0.cwiseMax(p1).cwiseMax(p2));
+    auto aps = ap_(f, kAll);
+    Point3 lo = aps.colwise().minCoeff();
+    Point3 hi = aps.colwise().maxCoeff();
+    face_grid_.insert(fi, lo, hi);
   }
 
   bool intersects(const Face& a, const Face& b) const {
@@ -341,8 +329,8 @@ class Thinner {
   }
 
   static bool on_edge(const Face& f, Index a, Index b) {
-    bool ha = f(0) == a || f(1) == a || f(2) == a;
-    bool hb = f(0) == b || f(1) == b || f(2) == b;
+    bool ha = (f.array() == a).any();
+    bool hb = (f.array() == b).any();
     return ha && hb;
   }
 

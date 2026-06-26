@@ -6,7 +6,6 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <limits>
 #include <optional>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
@@ -160,11 +159,9 @@ class Smoother {
   // Whether new_f overlaps any spatially near face; scanning new_f's own cells suffices (the
   // sibling call covers the other new triangle).
   bool crosses(const Face& new_f, Index fi0, Index fi1, double tol) {
-    Point3 p0 = ap_.row(new_f(0));
-    Point3 p1 = ap_.row(new_f(1));
-    Point3 p2 = ap_.row(new_f(2));
-    Point3 lo = p0.cwiseMin(p1).cwiseMin(p2);
-    Point3 hi = p0.cwiseMax(p1).cwiseMax(p2);
+    auto aps = ap_(new_f, kAll);
+    Point3 lo = aps.colwise().minCoeff();
+    Point3 hi = aps.colwise().maxCoeff();
     bool hit = false;
     face_grid_.for_each(lo, hi, [&](Index gi) {
       if (gi != fi0 && gi != fi1 && overlaps(new_f, mesh_.face(gi), tol)) {
@@ -194,6 +191,11 @@ class Smoother {
     return !crosses(fl.new_f0(), fl.fi0, fl.fi1, tol) && !crosses(fl.new_f1(), fl.fi0, fl.fi1, tol);
   }
 
+  // Whether snap point i lies within its tolerance of face f.
+  bool honored_by(Index i, const Face& f) const {
+    return dist2(a_points_.row(i), f) <= snap_tols2_(i);
+  }
+
   // A point within tolerance of a removed face must stay within tolerance of the new local faces
   // (the two new triangles plus the quad's outer neighbours); only such points can be affected.
   bool honors_ok(const Flip& fl) const {
@@ -215,22 +217,16 @@ class Smoother {
     add_neighbour({fl.y, fl.c}, fl.fi0);
     add_neighbour({fl.x, fl.d}, fl.fi1);
     add_neighbour({fl.d, fl.y}, fl.fi1);
-    Point3 lo =
-        ap_.row(fl.x).cwiseMin(ap_.row(fl.y)).cwiseMin(ap_.row(fl.c)).cwiseMin(ap_.row(fl.d));
-    Point3 hi =
-        ap_.row(fl.x).cwiseMax(ap_.row(fl.y)).cwiseMax(ap_.row(fl.c)).cwiseMax(ap_.row(fl.d));
+    auto aps = ap_({fl.x, fl.y, fl.c, fl.d}, kAll);
+    Point3 lo = aps.colwise().minCoeff();
+    Point3 hi = aps.colwise().maxCoeff();
     bool ok = true;
     snap_grid_.for_each(lo, hi, [&](Index i) {
-      auto tol2 = snap_tols2_(i);
-      Point3 ap = a_points_.row(i);
-      if (std::min(dist2(ap, f0), dist2(ap, f1)) > tol2) {
+      auto honored = [&](const auto& f) { return honored_by(i, f); };
+      if (!honored(f0) && !honored(f1)) {
         return true;  // not honored by a removed face; the flip cannot dishonor it
       }
-      auto best = std::numeric_limits<double>::infinity();
-      for (auto m = 0; m < na; m++) {
-        best = std::min(best, dist2(ap, after.at(m)));
-      }
-      if (best > tol2) {
+      if (std::ranges::none_of(after.begin(), after.begin() + na, honored)) {
         ok = false;
         return false;  // dishonored; stop the walk
       }
@@ -243,10 +239,10 @@ class Smoother {
   // stale index reads its current geometry).
   void insert_face(Index fi) {
     auto f = mesh_.face(fi);
-    Point3 p0 = ap_.row(f(0));
-    Point3 p1 = ap_.row(f(1));
-    Point3 p2 = ap_.row(f(2));
-    face_grid_.insert(fi, p0.cwiseMin(p1).cwiseMin(p2), p0.cwiseMax(p1).cwiseMax(p2));
+    auto aps = ap_(f, kAll);
+    Point3 lo = aps.colwise().minCoeff();
+    Point3 hi = aps.colwise().maxCoeff();
+    face_grid_.insert(fi, lo, hi);
   }
 
   double min_angle(const Face& f) const {

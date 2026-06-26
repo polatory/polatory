@@ -178,24 +178,22 @@ class Snapper {
   // would barely move it and only over-subdivide; checks the projected patch and the patches across
   // its edges.
   bool already_satisfied(const Candidate& cand) {
-    double tol2 = snap_tols2_(cand.i);
-    Point3 ap = a_points_.row(cand.i);
     const auto& F = mesh_.faces();
-    auto nearest_in_patch = [&](Index fi) {
-      double best = std::numeric_limits<double>::infinity();
+    auto patch_honors = [&](Index fi) {
       for (auto f : patch_faces(fi).rowwise()) {
-        best =
-            std::min(best, point_triangle_dist2(ap, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2))));
+        if (honored_by(cand.i, f)) {
+          return true;
+        }
       }
-      return best;
+      return false;
     };
-    if (nearest_in_patch(cand.fi) <= tol2) {
+    if (patch_honors(cand.fi)) {
       return true;
     }
     for (auto k = 0; k < 3; k++) {
       Edge e{F(cand.fi, k), F(cand.fi, (k + 1) % 3)};
       for (auto fj : mesh_.edge_faces(e)) {
-        if (fj != cand.fi && nearest_in_patch(fj) <= tol2) {
+        if (fj != cand.fi && patch_honors(fj)) {
           return true;
         }
       }
@@ -276,6 +274,10 @@ class Snapper {
     return false;
   }
 
+  double dist2(const Point3& p, const Face& f) const {
+    return point_triangle_dist2(p, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
+  }
+
   Mesh emit() {
     const auto& F = mesh_.faces();
 
@@ -294,26 +296,26 @@ class Snapper {
         used.at(v) = true;
       }
     }
-    std::vector<Index> remap(nv_, -1);
+    std::vector<Index> vv(nv_, -1);
     Index n = 0;
     for (Index v = 0; v < nv_; v++) {
       if (used.at(v)) {
-        remap.at(v) = n++;
+        vv.at(v) = n++;
       }
     }
 
     Points3 vertices(n, 3);
     for (Index v = 0; v < nv_; v++) {
       if (used.at(v)) {
-        vertices.row(remap.at(v)) = p_.row(v);  // exact untransformed position; no aniso round-trip
+        vertices.row(vv.at(v)) = p_.row(v);  // exact untransformed position; no aniso round-trip
       }
     }
 
     Faces f(static_cast<Index>(faces.size()), 3);
     for (Index i = 0; i < f.rows(); i++) {
-      f(i, 0) = remap.at(faces.at(i)(0));
-      f(i, 1) = remap.at(faces.at(i)(1));
-      f(i, 2) = remap.at(faces.at(i)(2));
+      f(i, 0) = vv.at(faces.at(i)(0));
+      f(i, 1) = vv.at(faces.at(i)(1));
+      f(i, 2) = vv.at(faces.at(i)(2));
     }
     return {std::move(vertices), std::move(f)};
   }
@@ -322,20 +324,22 @@ class Snapper {
     return normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
+  // Whether snap point i lies within its tolerance of face f.
+  bool honored_by(Index i, const Face& f) const {
+    return dist2(a_points_.row(i), f) <= snap_tols2_(i);
+  }
+
   // Whether point i is within its tolerance of the faces incident to v. Checking only those, not
   // the neighbouring faces too, can only over-reject a re-move, never dishonor.
   bool honored_by_surface(Index v, Index i) {
-    Point3 ap = a_points_.row(i);
-    double best = std::numeric_limits<double>::infinity();
     for (auto fi : mesh_.vertex_faces(v)) {
       for (auto f : patch_faces(fi).rowwise()) {
-        if ((f.array() == v).any()) {
-          best =
-              std::min(best, point_triangle_dist2(ap, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2))));
+        if ((f.array() == v).any() && honored_by(i, f)) {
+          return true;
         }
       }
     }
-    return best <= snap_tols2_(i);
+    return false;
   }
 
   // The snap points the surface around v currently honors, found via the grid over v's patch AABB.
@@ -374,14 +378,7 @@ class Snapper {
 
     bool simple = true;
     auto faces = triangulate_patch(fi, &simple);
-    bool used = false;
-    for (auto f : faces.rowwise()) {
-      for (auto v : f) {
-        if (v == new_v) {
-          used = true;
-        }
-      }
-    }
+    bool used = (faces.array() == new_v).any();
     std::unordered_map<Index, Faces> changed{{fi, faces}};
     auto revert = [&] {
       interior.pop_back();
@@ -501,11 +498,9 @@ class Snapper {
           return true;
         }
       }
-      Point3 p0 = ap_.row(a(0));
-      Point3 p1 = ap_.row(a(1));
-      Point3 p2 = ap_.row(a(2));
-      Point3 lo = (p0.cwiseMin(p1).cwiseMin(p2).array() - margin).matrix();
-      Point3 hi = (p0.cwiseMax(p1).cwiseMax(p2).array() + margin).matrix();
+      auto aps = ap_(a, kAll);
+      Point3 lo = (aps.colwise().minCoeff().array() - margin).matrix();
+      Point3 hi = (aps.colwise().maxCoeff().array() + margin).matrix();
       candidates.clear();
       mesh_.faces_near(Eigen::AlignedBox3d(lo.transpose(), hi.transpose()), changed_ids,
                        candidates);
