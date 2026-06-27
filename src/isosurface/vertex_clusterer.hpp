@@ -1,11 +1,12 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 #include <algorithm>
+#include <array>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
+#include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice_coordinates.hpp>
@@ -15,6 +16,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#include "quadric_position.hpp"
 
 namespace polatory::isosurface {
 
@@ -29,7 +32,6 @@ class VertexClusterer {
   using Point3 = geometry::Point3;
   using Points3 = geometry::Points3;
   using PrimitiveLattice = rmt::PrimitiveLattice;
-  using Vector3 = geometry::Vector3;
 
   struct Cluster {
     std::vector<Index> vertices;
@@ -109,7 +111,7 @@ class VertexClusterer {
 
       if (can_cluster(component)) {
         Index rep = *std::min_element(component.begin(), component.end());
-        Point3 position = clustered_position(component);
+        Point3 position = clustered_position(component, lattice, vertex_node.at(rep));
         clusters_.emplace_back(std::move(component), rep, position);
         register_cluster(clusters_.back());
       }
@@ -131,48 +133,40 @@ class VertexClusterer {
         faces.insert(fi);
       }
     }
-    std::unordered_map<Index, std::vector<Index>> link;
-    Index n_edges = 0;
+    // The link -- the star edges opposite the component -- as a graph over a local vertex
+    // numbering.
+    std::unordered_map<Index, Index> to_local;
+    auto local = [&](Index v) {
+      return to_local.try_emplace(v, static_cast<Index>(to_local.size())).first->second;
+    };
+    std::vector<std::array<Index, 2>> link_edges;
     for (auto fi : faces) {
-      std::array<Index, 3> out{};
+      std::array<Index, 2> out{};
       auto n_out = 0;
       for (auto k = 0; k < 3; k++) {
         if (!in_component.contains(f_(fi, k))) {
-          out.at(n_out++) = f_(fi, k);
+          if (n_out < 2) {
+            out.at(n_out) = f_(fi, k);
+          }
+          n_out++;
         }
       }
       if (n_out == 2) {
-        link[out.at(0)].push_back(out.at(1));
-        link[out.at(1)].push_back(out.at(0));
-        n_edges++;
+        link_edges.push_back({local(out.at(0)), local(out.at(1))});
       }
     }
-    if (n_edges < 3 || static_cast<Index>(link.size()) != n_edges) {
+    if (link_edges.empty()) {
       return false;
     }
-    for (const auto& [w, nbrs] : link) {
-      if (nbrs.size() != 2) {
-        return false;
-      }
+
+    DenseUndirectedGraph link(static_cast<Index>(to_local.size()));
+    for (const auto& e : link_edges) {
+      link.add_edge(e.at(0), e.at(1));
     }
-    Index start = link.begin()->first;
-    Index prev = -1;
-    Index cur = start;
-    Index seen = 0;
-    while (true) {
-      seen++;
-      const auto& nbrs = link.at(cur);
-      Index next = nbrs.at(0) == prev ? nbrs.at(1) : nbrs.at(0);
-      prev = cur;
-      cur = next;
-      if (cur == start) {
-        break;
-      }
-      if (seen > n_edges) {
-        return false;
-      }
-    }
-    return seen == n_edges;
+
+    // A disk: the link is a single cycle -- connected and 2-regular, with at least three vertices.
+    return link.order() >= 3 && link.is_connected() && link.min_degree() == 2 &&
+           link.max_degree() == 2;
   }
 
   Mesh cluster() {
@@ -253,60 +247,22 @@ class VertexClusterer {
     return {Mesh{std::move(out_vertices), std::move(out_faces)}, vertex_ci};
   }
 
-  // The merged vertex minimizes the area-weighted squared distance to the cluster's incident face
-  // planes:  x = argmin_x  sum_f  area_f (n_f.x + d_f)^2  -- keeping a crease/corner instead of
-  // averaging it away. Directions the planes leave free (a flat patch) keep the centroid; x is
-  // clamped to the cluster's AABB. Measured in the aniso-transformed frame so the fit respects the
-  // anisotropic resolution.
-  Point3 clustered_position(const std::vector<Index>& cluster) const {
-    Points3 a_points = geometry::transform_points<3>(aniso_, v_(cluster, kAll));
-    Point3 centroid = a_points.colwise().mean();
-    Point3 lo = a_points.colwise().minCoeff();
-    Point3 hi = a_points.colwise().maxCoeff();
-
+  // Merges the cluster's vertices to the quadric minimizer over its incident face planes (see
+  // quadric_position), keeping a crease/corner instead of averaging it away.
+  Point3 clustered_position(const std::vector<Index>& cluster, const PrimitiveLattice& lattice,
+                            const LatticeCoordinates& node) const {
     std::unordered_set<Index> fis;
     for (auto v : cluster) {
       for (auto fi : vf_.at(v)) {
         fis.insert(fi);
       }
     }
-
-    // Accumulate aa and bb, the matrix and vector of that energy's normal equation.
-    Mat3 aa = Mat3::Zero();
-    Vector3 bb = Vector3::Zero();
+    std::vector<std::array<Point3, 3>> triangles;
+    triangles.reserve(fis.size());
     for (auto fi : fis) {
-      Point3 p0 = geometry::transform_point<3>(aniso_, v_.row(f_(fi, 0)));
-      Point3 p1 = geometry::transform_point<3>(aniso_, v_.row(f_(fi, 1)));
-      Point3 p2 = geometry::transform_point<3>(aniso_, v_.row(f_(fi, 2)));
-      Vector3 n = (p1 - p0).cross(p2 - p0);
-      auto w = n.norm();
-      if (w == 0.0) {
-        continue;
-      }
-      n /= w;
-      auto d = -n.dot(p0);
-      aa += w * n.transpose() * n;
-      bb += w * d * n;
+      triangles.push_back({v_.row(f_(fi, 0)), v_.row(f_(fi, 1)), v_.row(f_(fi, 2))});
     }
-
-    // Solve the normal equation aa x = -bb in a rank-revealing manner: move off the centroid only
-    // when aa constrains more than one direction -- a crease (rank 2) or corner (rank 3) -- and
-    // along just those. A flat patch (rank 1) stays at the centroid.
-    Eigen::SelfAdjointEigenSolver<Mat3> es(aa);
-    auto floor = 1e-3 * es.eigenvalues()(2);
-    Vector3 y = Vector3::Zero();
-    if (es.eigenvalues()(1) > floor) {
-      Vector3 r = -(centroid * aa + bb);
-      for (auto k = 0; k < 3; k++) {
-        auto eval = es.eigenvalues()(k);
-        if (eval > floor) {
-          Vector3 evec = es.eigenvectors().col(k).transpose();
-          y += (r.dot(evec) / eval) * evec;
-        }
-      }
-    }
-    Point3 x = (centroid + y).cwiseMax(lo).cwiseMin(hi);
-    return geometry::transform_point<3>(aniso_inv_, x);
+    return quadric_position(v_(cluster, kAll), triangles, aniso_, aniso_inv_, lattice, node);
   }
 
   // Apply a cluster's merge to rep_/pos_, or undo it.
