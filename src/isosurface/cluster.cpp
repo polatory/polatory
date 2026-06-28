@@ -10,8 +10,8 @@ Mesh cluster_mesh_vertices(const Mesh& mesh, const rmt::PrimitiveLattice& lattic
   return VertexClusterer(mesh, lattice, aniso).result();
 }
 
-Mesh reduce_genus(const Mesh& mesh, const rmt::PrimitiveLattice& lattice, const Mat3& aniso) {
-  return GenusReducer(mesh, lattice, aniso).result();
+Mesh reduce_genus(const Mesh& mesh, const rmt::PrimitiveLattice& lattice) {
+  return GenusReducer(mesh, lattice).result();
 }
 
 }  // namespace polatory::isosurface

@@ -18,7 +18,6 @@
 #include "dense_undirected_graph.hpp"
 #include "disjoint_sets.hpp"
 #include "indexer.hpp"
-#include "quadric_position.hpp"
 #include "snapper/utility.hpp"
 
 namespace polatory::isosurface {
@@ -44,15 +43,12 @@ class GenusReducer {
   };
 
  public:
-  GenusReducer(const Mesh& mesh, const PrimitiveLattice& lattice, const Mat3& aniso)
+  GenusReducer(const Mesh& mesh, const PrimitiveLattice& lattice)
       : v_(mesh.vertices()),
         f_(mesh.faces()),
         nv_(v_.rows()),
         nf_(f_.rows()),
         vf_(nv_),
-        lattice_(lattice),
-        aniso_(aniso),
-        aniso_inv_(aniso.inverse()),
         deleted_(nf_, false) {
     for (Index fi = 0; fi < nf_; fi++) {
       for (auto k = 0; k < 3; k++) {
@@ -211,10 +207,9 @@ class GenusReducer {
     return true;
   }
 
-  // Cuts an isolated annulus node: one apex per link cycle, placed by the area-weighted quadric fit
-  // of the retained faces around the loop (the same placement vertex clustering uses), so each cap
-  // lands on the surrounding surface and the caps separate to opposite tunnel sides. A cut whose
-  // caps are not emittable is dropped (no rollback follows this pass), leaving the tunnel.
+  // Cuts the region: one cap per link cycle, its apex placed two thirds of the way from the opening
+  // into the bore (toward the region centroid) so the caps seal the openings from inside. A cut
+  // whose caps would self-intersect is dropped -- no rollback follows -- leaving the tunnel.
   void commit(const Candidate& candidate) {
     const auto& vs = candidate.vs;
     const auto& loops = candidate.loops;
@@ -236,32 +231,31 @@ class GenusReducer {
       }
     }
 
+    // The region centroid: the bore lies on its side of each opening.
+    Point3 region_centroid = Point3::Zero();
+    for (auto v : vs) {
+      region_centroid += v_.row(v);
+    }
+    region_centroid /= static_cast<double>(vs.size());
+
     std::vector<Point3> apex_pos(n_cycles);
     std::unordered_set<Index> retained;  // faces around the loops, kept (the caps continue them)
     for (Index c = 0; c < n_cycles; c++) {
       const auto& loop = loops.at(c);
-      std::unordered_set<Index> cap_faces;
       for (auto w : loop) {
         for (auto fi : vf_.at(w)) {
           if (!candidate.star.contains(fi)) {
-            cap_faces.insert(fi);
+            retained.insert(fi);
           }
         }
       }
-      retained.insert(cap_faces.begin(), cap_faces.end());
-      Points3 anchor(static_cast<Index>(loop.size()), 3);
-      for (Index j = 0; j < static_cast<Index>(loop.size()); j++) {
-        anchor.row(j) = v_.row(loop.at(j));
+      // Two thirds of the way from the opening to the region centroid -- into the bore.
+      Point3 loop_centroid = Point3::Zero();
+      for (auto w : loop) {
+        loop_centroid += v_.row(w);
       }
-      std::vector<std::array<Point3, 3>> triangles;
-      triangles.reserve(cap_faces.size());
-      for (auto fi : cap_faces) {
-        triangles.push_back({v_.row(f_(fi, 0)), v_.row(f_(fi, 1)), v_.row(f_(fi, 2))});
-      }
-      // The apex is clamped to the lattice node of the loop's own centroid, so it is held at the
-      // opening rather than pulled toward a node elsewhere on a multi-node region.
-      auto node = lattice_.lattice_coordinates_rounded(anchor.colwise().mean());
-      apex_pos.at(c) = quadric_position(anchor, triangles, aniso_, aniso_inv_, lattice_, node);
+      loop_centroid /= static_cast<double>(loop.size());
+      apex_pos.at(c) = (1.0 / 3.0) * loop_centroid + (2.0 / 3.0) * region_centroid;
     }
 
     if (!caps_ok(apex_pos, caps, retained, vs)) {
@@ -369,9 +363,6 @@ class GenusReducer {
   Index nv_;
   Index nf_;
   std::vector<std::vector<Index>> vf_;
-  const PrimitiveLattice& lattice_;
-  Mat3 aniso_;
-  Mat3 aniso_inv_;
   std::vector<bool> deleted_;          // original faces removed by a cut
   std::vector<Point3> new_positions_;  // cap apexes, indexed from nv_
   std::vector<Face> new_faces_;        // cap triangles
