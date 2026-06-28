@@ -5,7 +5,6 @@
 #include <array>
 #include <optional>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/rmt/lattice_coordinates.hpp>
@@ -16,16 +15,20 @@
 #include <unordered_set>
 #include <vector>
 
+#include "dense_undirected_graph.hpp"
+#include "disjoint_sets.hpp"
+#include "indexer.hpp"
 #include "quadric_position.hpp"
 #include "snapper/utility.hpp"
 
 namespace polatory::isosurface {
 
-// Cuts sub-resolution tunnels from the RMT surface. A lattice node whose surface star is an annulus
-// -- its link (the edges opposite the node) forms >= 2 disjoint cycles instead of one disk boundary
-// -- straddles a tunnel pinched below the resolution. Replacing the star with one cap per link
-// cycle severs the tunnel and seals each opening, dropping the genus while changing only that
-// node's incident faces; a clean single-disk node is left untouched.
+// Cuts sub-resolution tunnels from the RMT surface. A region whose link -- the star edges opposite
+// it -- forms two or more disjoint cycles rather than one disk boundary is an annulus straddling a
+// tunnel pinched below the resolution; capping each cycle severs it, dropping the genus. A region
+// is a connected component of annulus nodes' vertices, so a tunnel in one node or spanning several
+// is cut as one, while walls that merely abut at link vertices stay separate; distinct components
+// share no face, so the cuts are independent and need no rollback.
 class GenusReducer {
   using LatticeCoordinates = rmt::LatticeCoordinates;
   using LatticeCoordinatesHash = rmt::LatticeCoordinatesHash;
@@ -33,15 +36,11 @@ class GenusReducer {
   using Points3 = geometry::Points3;
   using PrimitiveLattice = rmt::PrimitiveLattice;
 
-  // An annulus node found in pass 1, carrying everything pass 2 needs to cut it. star_vs (the
-  // node's vertices plus the link vertices) are what neighboring cuts are tested against.
+  // An annulus region, carrying everything commit needs to cut it.
   struct Candidate {
-    LatticeCoordinates node{};
-    std::unordered_set<Index> vs;               // the node's vertices
-    std::vector<Index> star;                    // the star face indices
-    std::unordered_map<Index, Index> cycle_of;  // each link vertex -> its link cycle
-    Index n_cycles = 0;
-    std::vector<Index> star_vs;  // the node's vertices + link vertices, for disjointness
+    std::unordered_set<Index> vs;           // the region's vertices
+    std::unordered_set<Index> star;         // the star face indices
+    std::vector<std::vector<Index>> loops;  // per link cycle, its link vertices
   };
 
  public:
@@ -67,28 +66,22 @@ class GenusReducer {
       node_vs[lattice.lattice_coordinates_rounded(v_.row(v))].insert(v);
     }
 
-    // Pass 1: find every annulus node. Each node's star is read off the original mesh
-    // independently, so the set of cuts does not depend on the order nodes are visited. Each cut
-    // claims its star's vertices.
-    std::vector<Candidate> candidates;
-    std::unordered_map<Index, int> claims;
-    for (auto& [node, vs] : node_vs) {
-      auto candidate = analyze(node, std::move(vs));
-      if (candidate) {
-        for (auto v : candidate->star_vs) {
-          claims[v]++;
-        }
-        candidates.push_back(std::move(*candidate));
+    // Pass 1: gather the vertices of every annulus node -- a node whose own link is a tunnel.
+    // Each node is judged off the original mesh, so the verdict is independent of any cut.
+    std::unordered_set<Index> candidate_vs;
+    for (const auto& [node, vertices] : node_vs) {
+      if (analyze(vertices)) {
+        candidate_vs.insert(vertices.begin(), vertices.end());
       }
     }
 
-    // Pass 2: cut only annulus nodes whose star is vertex-disjoint from every other annulus node.
-    // Such cuts touch disjoint faces, so they are mutually independent and their combined result is
-    // the same in any order. Two adjacent annuli -- which could leave a shared vertex non-manifold
-    // if both were cut, with no rollback in this pass to catch it -- are both left uncut.
-    for (const auto& candidate : candidates) {
-      if (std::ranges::all_of(candidate.star_vs, [&](Index v) { return claims.at(v) == 1; })) {
-        commit(candidate);
+    // Pass 2: cut each connected component of those vertices whose link is an annulus. Splitting
+    // into components is what isolates a single tunnel wall: a wall pinched in one node or spanning
+    // several is one component, while two walls touching only at link vertices are separate.
+    // Components share no face, so the cuts are mutually independent and need no rollback.
+    for (const auto& component : connected_components(candidate_vs)) {
+      if (auto candidate = analyze(component)) {
+        commit(*candidate);
       }
     }
 
@@ -98,47 +91,38 @@ class GenusReducer {
   Mesh result() && { return std::move(result_); }
 
  private:
-  // Tests whether node is an annulus -- its link is two or more disjoint simple cycles rather than
-  // the single cycle bounding an ordinary disk -- reading the star off the original mesh so the
-  // verdict is independent of any other cut. Returns the data to cut it, or nullopt.
-  std::optional<Candidate> analyze(const LatticeCoordinates& node,
-                                   std::unordered_set<Index> vs) const {
+  // Tests whether the vertex set vs is an annulus -- its link, the star edges opposite vs, is two
+  // or more disjoint simple cycles rather than the single cycle bounding an ordinary disk --
+  // reading the star off the original mesh so the verdict is independent of any cut. Returns the
+  // data to cut it, or nullopt.
+  std::optional<Candidate> analyze(const std::unordered_set<Index>& vs) const {
     if (vs.size() < 2) {
       return std::nullopt;
     }
 
-    std::vector<Index> star;
-    std::unordered_set<Index> star_set;
+    std::unordered_set<Index> star;
     for (auto v : vs) {
       for (auto fi : vf_.at(v)) {
-        if (star_set.insert(fi).second) {
-          star.push_back(fi);
-        }
+        star.insert(fi);
       }
     }
 
-    // The link -- the star edges opposite the node -- as a graph over a local vertex numbering.
-    std::unordered_map<Index, Index> to_local;
-    std::vector<Index> from_local;
-    auto local = [&](Index v) {
-      auto [it, inserted] = to_local.try_emplace(v, static_cast<Index>(from_local.size()));
-      if (inserted) {
-        from_local.push_back(v);
-      }
-      return it->second;
-    };
-    std::vector<std::array<Index, 2>> link_edges;
+    // The link -- the star edges opposite vs -- as a graph over the link vertices.
+    ValueIndexer<Index> link_vertices;
+    std::vector<Edge> link_edges;
     for (auto fi : star) {
       if (auto e = link_edge(fi, vs)) {
-        link_edges.push_back({local(e->a), local(e->b)});
+        link_vertices.insert(e->a);
+        link_vertices.insert(e->b);
+        link_edges.push_back(*e);
       }
     }
     if (link_edges.empty()) {
       return std::nullopt;
     }
-    DenseUndirectedGraph link(static_cast<Index>(from_local.size()));
+    DenseUndirectedGraph link(std::move(link_vertices));
     for (const auto& e : link_edges) {
-      link.add_edge(e.at(0), e.at(1));
+      link.add_edge(e.a, e.b);
     }
 
     // is_simple rejects a doubled edge (two star faces sharing one opposite edge, which degree
@@ -146,22 +130,15 @@ class GenusReducer {
     if (!(link.is_simple() && link.min_degree() == 2 && link.max_degree() == 2)) {
       return std::nullopt;
     }
-    auto cycle = link.connected_components();
-    auto n_cycles = *std::ranges::max_element(cycle) + 1;
-    if (n_cycles < 2) {
+    auto loops = link.connected_components();  // each cycle's link vertices
+    if (loops.size() < 2) {
       return std::nullopt;  // a single disk boundary -- an ordinary node, not a tunnel
     }
 
     Candidate candidate;
-    candidate.node = node;
-    candidate.star = star;
-    candidate.n_cycles = n_cycles;
-    for (Index i = 0; i < static_cast<Index>(from_local.size()); i++) {
-      candidate.cycle_of.emplace(from_local.at(i), cycle.at(i));
-    }
-    candidate.star_vs.assign(vs.begin(), vs.end());
-    candidate.star_vs.insert(candidate.star_vs.end(), from_local.begin(), from_local.end());
-    candidate.vs = std::move(vs);
+    candidate.vs = vs;
+    candidate.star = std::move(star);
+    candidate.loops = std::move(loops);
     return candidate;
   }
 
@@ -240,12 +217,23 @@ class GenusReducer {
   // caps are not emittable is dropped (no rollback follows this pass), leaving the tunnel.
   void commit(const Candidate& candidate) {
     const auto& vs = candidate.vs;
-    auto n_cycles = candidate.n_cycles;
-    std::unordered_set<Index> star_set(candidate.star.begin(), candidate.star.end());
+    const auto& loops = candidate.loops;
+    auto n_cycles = static_cast<Index>(loops.size());
 
-    std::vector<std::vector<Index>> loops(n_cycles);
-    for (const auto& [v, c] : candidate.cycle_of) {
-      loops.at(c).push_back(v);
+    // Each link vertex -> its cycle, for routing each cap to its cycle's apex.
+    std::unordered_map<Index, Index> cycle_of;
+    for (Index c = 0; c < n_cycles; c++) {
+      for (auto v : loops.at(c)) {
+        cycle_of.emplace(v, c);
+      }
+    }
+
+    // Each link-edge star face becomes a cap (its node vertex -> the apex of that edge's cycle).
+    std::vector<std::pair<Index, Index>> caps;  // (cycle, star face)
+    for (auto fi : candidate.star) {
+      if (auto e = link_edge(fi, vs)) {
+        caps.emplace_back(cycle_of.at(e->a), fi);
+      }
     }
 
     std::vector<Point3> apex_pos(n_cycles);
@@ -255,7 +243,7 @@ class GenusReducer {
       std::unordered_set<Index> cap_faces;
       for (auto w : loop) {
         for (auto fi : vf_.at(w)) {
-          if (!star_set.contains(fi)) {
+          if (!candidate.star.contains(fi)) {
             cap_faces.insert(fi);
           }
         }
@@ -270,16 +258,10 @@ class GenusReducer {
       for (auto fi : cap_faces) {
         triangles.push_back({v_.row(f_(fi, 0)), v_.row(f_(fi, 1)), v_.row(f_(fi, 2))});
       }
-      apex_pos.at(c) =
-          quadric_position(anchor, triangles, aniso_, aniso_inv_, lattice_, candidate.node);
-    }
-
-    // Each link-edge star face becomes a cap (its node vertex -> the apex of that edge's cycle).
-    std::vector<std::pair<Index, Index>> caps;  // (cycle, star face)
-    for (auto fi : candidate.star) {
-      if (auto e = link_edge(fi, vs)) {
-        caps.emplace_back(candidate.cycle_of.at(e->a), fi);
-      }
+      // The apex is clamped to the lattice node of the loop's own centroid, so it is held at the
+      // opening rather than pulled toward a node elsewhere on a multi-node region.
+      auto node = lattice_.lattice_coordinates_rounded(anchor.colwise().mean());
+      apex_pos.at(c) = quadric_position(anchor, triangles, aniso_, aniso_inv_, lattice_, node);
     }
 
     if (!caps_ok(apex_pos, caps, retained, vs)) {
@@ -303,6 +285,27 @@ class GenusReducer {
       }
       new_faces_.push_back(cap);
     }
+  }
+
+  // Splits a vertex set into its connected components over mesh edges joining two of its vertices.
+  std::vector<std::unordered_set<Index>> connected_components(
+      const std::unordered_set<Index>& vs) const {
+    DisjointSets sets(ValueIndexer<Index>{vs});
+    for (auto v : vs) {
+      for (auto fi : vf_.at(v)) {
+        for (auto k = 0; k < 3; k++) {
+          Index w = f_(fi, k);
+          if (w != v && vs.contains(w)) {
+            sets.unite(v, w);
+          }
+        }
+      }
+    }
+    std::vector<std::unordered_set<Index>> components;
+    for (auto& members : sets.groups()) {
+      components.emplace_back(members.begin(), members.end());
+    }
+    return components;
   }
 
   Mesh emit() const {

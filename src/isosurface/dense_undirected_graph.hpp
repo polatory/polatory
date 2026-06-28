@@ -10,26 +10,31 @@
 
 namespace polatory::isosurface {
 
+// An undirected multigraph.
+template <class Indexer>
 class DenseUndirectedGraph {
   using Matrix = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+  using Value = typename Indexer::value_type;
 
  public:
-  explicit DenseUndirectedGraph(Index order) : m_(Matrix::Zero(order, order)) {
-    if (order <= 0) {
+  explicit DenseUndirectedGraph(Indexer indexer)
+      : indexer_(std::move(indexer)), m_(Matrix::Zero(indexer_.size(), indexer_.size())) {
+    if (indexer_.size() <= 0) {
       throw std::invalid_argument("order must be positive");
     }
   }
 
-  void add_edge(Index i, Index j) {
+  void add_edge(const Value& a, const Value& b) {
+    auto i = indexer_.to_index(a);
+    auto j = indexer_.to_index(b);
     if (i > j) {
       std::swap(i, j);
     }
     m_(i, j)++;
   }
 
-  // A component label in [0, count) per vertex, vertices in the same connected component sharing
-  // one.
-  std::vector<Index> connected_components() const {
+  // The values of each connected component.
+  std::vector<std::vector<Value>> connected_components() const {
     std::vector<Index> component(order(), -1);
     Index count = 0;
     for (Index s = 0; s < order(); s++) {
@@ -51,18 +56,11 @@ class DenseUndirectedGraph {
       }
       count++;
     }
-    return component;
-  }
-
-  Index degree(Index i) const {
-    return m_.col(i).cast<Index>().sum() + m_.row(i).cast<Index>().sum() - m_(i, i);
-  }
-
-  bool has_edge(Index i, Index j) const {
-    if (i > j) {
-      std::swap(i, j);
+    std::vector<std::vector<Value>> result(count);
+    for (Index i = 0; i < order(); i++) {
+      result.at(component.at(i)).push_back(indexer_.to_value(i));
     }
-    return m_(i, j) != 0;
+    return result;
   }
 
   bool is_connected() const {
@@ -122,6 +120,19 @@ class DenseUndirectedGraph {
   Index order() const { return m_.rows(); }
 
  private:
+  Index degree(Index i) const {
+    return m_.col(i).template cast<Index>().sum() + m_.row(i).template cast<Index>().sum() -
+           m_(i, i);
+  }
+
+  bool has_edge(Index i, Index j) const {
+    if (i > j) {
+      std::swap(i, j);
+    }
+    return m_(i, j) != 0;
+  }
+
+  Indexer indexer_;
   Matrix m_;
 };
 

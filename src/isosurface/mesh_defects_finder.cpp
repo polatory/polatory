@@ -1,10 +1,12 @@
 #include <Eigen/Geometry>
 #include <Eigen/LU>
 #include <algorithm>
-#include <polatory/isosurface/dense_undirected_graph.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/predicates.hpp>
 #include <unordered_map>
+
+#include "dense_undirected_graph.hpp"
+#include "indexer.hpp"
 
 namespace polatory::isosurface {
 
@@ -92,7 +94,7 @@ std::vector<Index> MeshDefectsFinder::singular_vertices() const {
       auto order = static_cast<Index>(to_local_vi.size());
 
       // The graph that represents the link complex of the vertex.
-      DenseUndirectedGraph g(order);
+      DenseUndirectedGraph g(IdentityIndexer{order});
 
       for (auto fi : fis) {
         auto i = to_local_vi.at(next_vertex(fi, vi));

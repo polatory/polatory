@@ -6,7 +6,7 @@
 #include <array>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/dense_undirected_graph.hpp>
+#include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/rmt/lattice_coordinates.hpp>
@@ -17,6 +17,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "dense_undirected_graph.hpp"
+#include "disjoint_sets.hpp"
+#include "indexer.hpp"
 #include "quadric_position.hpp"
 
 namespace polatory::isosurface {
@@ -60,35 +63,18 @@ class VertexClusterer {
       vertex_node.at(v) = lattice.lattice_coordinates_rounded(v_.row(v));
     }
 
-    // Union-find forest grouping each node's vertices into connected components over same-node
-    // edges.
-    std::vector<Index> parent(nv_);
-    std::iota(parent.begin(), parent.end(), Index{0});
-    auto find = [&](Index v) {
-      while (parent.at(v) != v) {
-        parent.at(v) = parent.at(parent.at(v));
-        v = parent.at(v);
-      }
-      return v;
-    };
+    // Split each node's vertices into pieces connected by mesh edges within the node.
+    DisjointSets sets(IdentityIndexer{nv_});
     for (auto f : f_.rowwise()) {
       for (auto k = 0; k < 3; k++) {
         Index v0 = f(k);
         Index v1 = f((k + 1) % 3);
         if (vertex_node.at(v0) == vertex_node.at(v1)) {
-          auto r0 = find(v0);
-          auto r1 = find(v1);
-          if (r0 != r1) {
-            parent.at(r0) = r1;
-          }
+          sets.unite(v0, v1);
         }
       }
     }
-
-    std::unordered_map<Index, std::vector<Index>> components;
-    for (Index v = 0; v < nv_; v++) {
-      components[find(v)].push_back(v);
-    }
+    auto components = sets.groups();
 
     rep_.resize(nv_);
     std::iota(rep_.begin(), rep_.end(), Index{0});
@@ -96,7 +82,7 @@ class VertexClusterer {
 
     const auto& lo = lattice.first_extended_bbox().min();
     const auto& hi = lattice.first_extended_bbox().max();
-    for (auto& [_, component] : components) {
+    for (auto& component : components) {
       if (component.size() < 2) {
         continue;
       }
@@ -133,13 +119,9 @@ class VertexClusterer {
         faces.insert(fi);
       }
     }
-    // The link -- the star edges opposite the component -- as a graph over a local vertex
-    // numbering.
-    std::unordered_map<Index, Index> to_local;
-    auto local = [&](Index v) {
-      return to_local.try_emplace(v, static_cast<Index>(to_local.size())).first->second;
-    };
-    std::vector<std::array<Index, 2>> link_edges;
+    // The link -- the star edges opposite the component -- as a graph over the link vertices.
+    ValueIndexer<Index> link_vertices;
+    std::vector<Edge> link_edges;
     for (auto fi : faces) {
       std::array<Index, 2> out{};
       auto n_out = 0;
@@ -152,16 +134,18 @@ class VertexClusterer {
         }
       }
       if (n_out == 2) {
-        link_edges.push_back({local(out.at(0)), local(out.at(1))});
+        link_vertices.insert(out.at(0));
+        link_vertices.insert(out.at(1));
+        link_edges.emplace_back(out.at(0), out.at(1));
       }
     }
     if (link_edges.empty()) {
       return false;
     }
 
-    DenseUndirectedGraph link(static_cast<Index>(to_local.size()));
+    DenseUndirectedGraph link(std::move(link_vertices));
     for (const auto& e : link_edges) {
-      link.add_edge(e.at(0), e.at(1));
+      link.add_edge(e.a, e.b);
     }
 
     // A disk: the link is a single cycle -- connected and 2-regular, with at least three vertices.
