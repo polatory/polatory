@@ -8,6 +8,7 @@
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/rmt/lattice_coordinates.hpp>
+#include <polatory/isosurface/rmt/neighbor.hpp>
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
@@ -22,12 +23,10 @@
 
 namespace polatory::isosurface {
 
-// Cuts sub-resolution tunnels from the RMT surface. A region whose link -- the star edges opposite
-// it -- forms two or more disjoint cycles rather than one disk boundary is an annulus straddling a
-// tunnel pinched below the resolution; capping each cycle severs it, dropping the genus. A region
-// is a connected component of annulus nodes' vertices, so a tunnel in one node or spanning several
-// is cut as one, while walls that merely abut at link vertices stay separate; distinct components
-// share no face, so the cuts are independent and need no rollback.
+// Removes sub-resolution topological artifacts from the RMT surface. A vertex set whose link -- the
+// star edges opposite it -- is two or more disjoint cycles forms an annulus; capping each cycle
+// severs it. Some artifacts make a single node's link an annulus; others appear only on the union
+// of two adjacent nodes. Cuts share no face, so they are independent and need no rollback.
 class GenusReducer {
   using LatticeCoordinates = rmt::LatticeCoordinates;
   using LatticeCoordinatesHash = rmt::LatticeCoordinatesHash;
@@ -62,22 +61,45 @@ class GenusReducer {
       node_vs[lattice.lattice_coordinates_rounded(v_.row(v))].insert(v);
     }
 
-    // Pass 1: gather the vertices of every annulus node -- a node whose own link is a tunnel.
-    // Each node is judged off the original mesh, so the verdict is independent of any cut.
-    std::unordered_set<Index> candidate_vs;
+    // Vertices of every node whose own link is an annulus.
+    std::unordered_set<Index> lone_vs;
     for (const auto& [node, vertices] : node_vs) {
       if (analyze(vertices)) {
-        candidate_vs.insert(vertices.begin(), vertices.end());
+        lone_vs.insert(vertices.begin(), vertices.end());
       }
     }
 
-    // Pass 2: cut each connected component of those vertices whose link is an annulus. Splitting
-    // into components is what isolates a single tunnel wall: a wall pinched in one node or spanning
-    // several is one component, while two walls touching only at link vertices are separate.
-    // Components share no face, so the cuts are mutually independent and need no rollback.
-    for (const auto& component : connected_components(candidate_vs)) {
+    // Vertices of every adjacent node pair whose combined link is an annulus though neither node's
+    // is. Kept apart from lone_vs so they cannot merge a lone-node annulus into a non-annulus blob.
+    std::unordered_set<Index> pair_vs;
+    for (const auto& [lc, verts] : node_vs) {
+      for (rmt::EdgeIndex ei = 0; ei < 14; ei++) {
+        auto nlc = rmt::neighbor(lc, ei);
+        auto it = node_vs.find(nlc);
+        if (it == node_vs.end() || rmt::LatticeCoordinatesLess()(nlc, lc)) {
+          continue;
+        }
+        std::unordered_set<Index> u = verts;
+        u.insert(it->second.begin(), it->second.end());
+        if (analyze(u)) {
+          pair_vs.insert(u.begin(), u.end());
+        }
+      }
+    }
+
+    // Cut each set's components, lone-node first; a component is one artifact, spanning any number
+    // of nodes. A pair component whose star an earlier cut already touched is skipped, keeping cuts
+    // independent.
+    for (const auto& component : connected_components(lone_vs)) {
       if (auto candidate = analyze(component)) {
         commit(*candidate);
+      }
+    }
+    for (const auto& component : connected_components(pair_vs)) {
+      if (auto candidate = analyze(component)) {
+        if (std::ranges::none_of(candidate->star, [this](Index fi) { return deleted_.at(fi); })) {
+          commit(*candidate);
+        }
       }
     }
 
@@ -128,7 +150,7 @@ class GenusReducer {
     }
     auto loops = link.connected_components();  // each cycle's link vertices
     if (loops.size() < 2) {
-      return std::nullopt;  // a single disk boundary -- an ordinary node, not a tunnel
+      return std::nullopt;  // a single disk boundary -- not an annulus
     }
 
     Candidate candidate;
@@ -208,8 +230,8 @@ class GenusReducer {
   }
 
   // Cuts the region: one cap per link cycle, its apex placed two thirds of the way from the opening
-  // into the bore (toward the region centroid) so the caps seal the openings from inside. A cut
-  // whose caps would self-intersect is dropped -- no rollback follows -- leaving the tunnel.
+  // toward the region centroid, so the caps seal the openings from inside. A cut whose caps would
+  // self-intersect is dropped -- no rollback follows -- leaving the region uncut.
   void commit(const Candidate& candidate) {
     const auto& vs = candidate.vs;
     const auto& loops = candidate.loops;
@@ -231,7 +253,7 @@ class GenusReducer {
       }
     }
 
-    // The region centroid: the bore lies on its side of each opening.
+    // The region centroid, on the inner side of every opening.
     Point3 region_centroid = Point3::Zero();
     for (auto v : vs) {
       region_centroid += v_.row(v);
@@ -249,7 +271,7 @@ class GenusReducer {
           }
         }
       }
-      // Two thirds of the way from the opening to the region centroid -- into the bore.
+      // Two thirds of the way from the opening toward the region centroid.
       Point3 loop_centroid = Point3::Zero();
       for (auto w : loop) {
         loop_centroid += v_.row(w);
