@@ -99,13 +99,13 @@ class Isosurface {
     auto mesh = lattice_.get_mesh();
     if (!mesh.is_empty()) {
       mesh = defeature(mesh, lattice_);
-      mesh = cluster_mesh_vertices(mesh, lattice_, aniso_);
+      mesh = cluster_vertices(mesh, lattice_, aniso_);
       mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
 
       // A smoothing flip can make a vertex link contractible that the first cluster could not
       // merge, so re-cluster afterwards to catch those.
       auto before = mesh.vertices().rows();
-      mesh = cluster_mesh_vertices(mesh, lattice_, aniso_);
+      mesh = cluster_vertices(mesh, lattice_, aniso_);
       if (mesh.vertices().rows() < before) {
         mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
       }

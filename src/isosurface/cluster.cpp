@@ -5,8 +5,7 @@
 
 namespace polatory::isosurface {
 
-Mesh cluster_mesh_vertices(const Mesh& mesh, const rmt::PrimitiveLattice& lattice,
-                           const Mat3& aniso) {
+Mesh cluster_vertices(const Mesh& mesh, const rmt::PrimitiveLattice& lattice, const Mat3& aniso) {
   return VertexClusterer(mesh, lattice, aniso).result();
 }
 
