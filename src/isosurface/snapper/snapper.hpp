@@ -12,6 +12,7 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
+#include <polatory/isosurface/snap.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
@@ -69,15 +70,6 @@ class Snapper {
   };
 
  public:
-  struct Stats {
-    Index skipped{};    // outside bbox or beyond max_distance
-    Index satisfied{};  // already within tolerance of the snapped mesh, so not attempted
-    Index dropped{};    // classified but could not be placed without self-intersection
-    Index moved_vertices{};
-    Index inserted_on_edges{};
-    Index inserted_in_faces{};
-  };
-
   // A point snaps only if its distance to the mesh is <= max_distance and both it and its
   // projection lie in bbox. Vertices, points, and bbox are untransformed; the snapper applies aniso
   // (so an anisotropic resolution is respected), then emits untransformed positions. bbox stays

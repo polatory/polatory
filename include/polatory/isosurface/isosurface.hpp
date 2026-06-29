@@ -61,13 +61,6 @@ class Isosurface {
     return generate_common();
   }
 
-  // Sets the points the generated mesh is snapped to so it passes exactly through them. All
-  // distances are fractions of the mesh resolution. Points projecting outside the extended bbox are
-  // ignored, keeping the boundary intact. relative_distance bounds how far a point may lie from the
-  // mesh to snap. relative_tolerances (if non-empty) is the slack each point's surface may keep: a
-  // point already within tolerance is skipped and a redundant inserted vertex within tolerance is
-  // thinned, so a dense polyline does not over-triangulate. max_passes re-applies snapping to
-  // recover points that lost contention, and only matters with a positive tolerance.
   void set_snap_points(const Points3& points, double relative_distance = 0.5,
                        const VecX& relative_tolerances = VecX(), int max_passes = 8) {
     if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
@@ -99,51 +92,36 @@ class Isosurface {
     auto mesh = lattice_.get_mesh();
     if (!mesh.is_empty()) {
       mesh = defeature(mesh, lattice_);
-      mesh = cluster_vertices(mesh, lattice_, aniso_);
-      mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
 
-      // A smoothing flip can make a vertex link contractible that the first cluster could not
-      // merge, so re-cluster afterwards to catch those.
-      auto before = mesh.vertices().rows();
-      mesh = cluster_vertices(mesh, lattice_, aniso_);
-      if (mesh.vertices().rows() < before) {
+      for (auto pass = 0; pass < 2; pass++) {
+        auto before = mesh.vertices().rows();
+        mesh = cluster_vertices(mesh, lattice_, aniso_);
+        if (pass > 0 && mesh.vertices().rows() == before) {
+          break;
+        }
         mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
       }
-    }
 
-    if (snap_points_.rows() != 0 && !mesh.is_empty()) {
-      auto same = [](const Mesh& a, const Mesh& b) {
-        const auto& av = a.vertices();
-        const auto& bv = b.vertices();
-        const auto& af = a.faces();
-        const auto& bf = b.faces();
-        return av.rows() == bv.rows() && af.rows() == bf.rows() &&
-               (av.array() == bv.array()).all() && (af.array() == bf.array()).all();
-      };
+      if (snap_points_.rows() != 0) {
+        VecX tols = res * rel_snap_tols_;
+        auto passes = tols.size() != 0 && tols.maxCoeff() > 0.0 ? snap_max_passes_ : 1;
+        for (auto pass = 0; pass < passes; pass++) {
+          Stats stats;
+          mesh = snap_mesh(mesh, snap_points_, tols, lattice_.first_extended_bbox(),
+                           res * rel_snap_dist_, aniso_, &stats);
+          if (!stats.changed()) {
+            break;
+          }
+        }
 
-      // Snap before clipping, re-applying until a pass is a no-op: a point that lost contention can
-      // snap to the finer mesh a later pass leaves. first_extended_bbox keeps snapping off the
-      // boundary.
-      VecX tols = res * rel_snap_tols_;
-      auto passes = tols.size() != 0 && tols.maxCoeff() > 0.0 ? snap_max_passes_ : 1;
-      for (auto pass = 0; pass < passes; pass++) {
-        Mesh before = mesh;
-        mesh = snap_mesh(mesh, snap_points_, tols, lattice_.first_extended_bbox(),
-                         res * rel_snap_dist_, aniso_);
-        if (same(mesh, before)) {
-          break;
+        for (auto pass = 0; pass < 2; pass++) {
+          mesh = thin_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
+          mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
         }
       }
 
-      // Thin then smooth, twice: the smoother's flips reconfigure the mesh so a second thinning
-      // pass can collapse redundant faces the first could not reach.
-      for (auto pass = 0; pass < 2; pass++) {
-        mesh = thin_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
-        mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
-      }
+      mesh = clip(mesh, lattice_.bbox());
     }
-
-    mesh = clip(mesh, lattice_.bbox());
 
     if (mesh.is_empty() &&
         lattice_.value_sign_at_arbitrary_point_within_bbox() == BinarySign::kNeg) {

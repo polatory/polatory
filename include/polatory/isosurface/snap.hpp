@@ -6,10 +6,24 @@
 
 namespace polatory::isosurface {
 
+struct Stats {
+  Index skipped{};    // outside bbox or beyond max_distance
+  Index satisfied{};  // already within tolerance of the snapped mesh, so not attempted
+  Index dropped{};    // classified but could not be placed without self-intersection
+  Index moved_vertices{};
+  Index inserted_on_edges{};
+  Index inserted_in_faces{};
+
+  bool changed() const {
+    return moved_vertices != 0 || inserted_on_edges != 0 || inserted_in_faces != 0;
+  }
+};
+
 // Snaps the mesh to pass exactly through the given points, which become vertices. One pass; the
 // pipeline re-applies it. See snapper/snapper.hpp.
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
-               const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso);
+               const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso,
+               Stats* stats = nullptr);
 
 // Drops snapped vertices an earlier pass left redundant, by edge collapse, without moving any snap
 // point beyond its tolerance of the surface. See snapper/thinner.hpp.
