@@ -27,7 +27,7 @@ namespace polatory::isosurface {
 // star edges opposite it -- is two or more disjoint cycles forms an annulus; capping each cycle
 // severs it. Some artifacts make a single node's link an annulus; others appear only on the union
 // of two adjacent nodes. Cuts share no face, so they are independent and need no rollback.
-class GenusReducer {
+class Defeaturer {
   using LatticeCoordinates = rmt::LatticeCoordinates;
   using LatticeCoordinatesHash = rmt::LatticeCoordinatesHash;
   using Point3 = geometry::Point3;
@@ -42,7 +42,7 @@ class GenusReducer {
   };
 
  public:
-  GenusReducer(const Mesh& mesh, const PrimitiveLattice& lattice)
+  Defeaturer(const Mesh& mesh, const PrimitiveLattice& lattice)
       : v_(mesh.vertices()),
         f_(mesh.faces()),
         nv_(v_.rows()),

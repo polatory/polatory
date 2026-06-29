@@ -1,6 +1,6 @@
 #include <polatory/isosurface/cluster.hpp>
 
-#include "genus_reducer.hpp"
+#include "defeaturer.hpp"
 #include "vertex_clusterer.hpp"
 
 namespace polatory::isosurface {
@@ -10,8 +10,8 @@ Mesh cluster_mesh_vertices(const Mesh& mesh, const rmt::PrimitiveLattice& lattic
   return VertexClusterer(mesh, lattice, aniso).result();
 }
 
-Mesh reduce_genus(const Mesh& mesh, const rmt::PrimitiveLattice& lattice) {
-  return GenusReducer(mesh, lattice).result();
+Mesh defeature(const Mesh& mesh, const rmt::PrimitiveLattice& lattice) {
+  return Defeaturer(mesh, lattice).result();
 }
 
 }  // namespace polatory::isosurface
