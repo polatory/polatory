@@ -192,7 +192,7 @@ class Thinner {
     // overlap involves one of them; a spatial broad-phase catches a kept face pushed onto a
     // spatially near but topologically distant sheet that the one-ring would miss.
     for (const auto& nf : kept) {
-      auto aps = ap_(nf, kAll);
+      auto aps = p_(nf, kAll);
       Point3 lo = aps.colwise().minCoeff();
       Point3 hi = aps.colwise().maxCoeff();
       bool hit = false;
@@ -313,15 +313,17 @@ class Thinner {
   // face is found at its new cells, and a stale old entry is harmless (it reads current geometry).
   void insert_face(Index fi) {
     const auto& f = faces_.at(fi);
-    auto aps = ap_(f, kAll);
+    auto aps = p_(f, kAll);
     Point3 lo = aps.colwise().minCoeff();
     Point3 hi = aps.colwise().maxCoeff();
     face_grid_.insert(fi, lo, hi);
   }
 
+  // The self-intersection guard runs in the untransformed frame (p_), where defects are judged,
+  // matching the defect finder.
   bool intersects(const Face& a, const Face& b) const {
-    return triangles_intersect(ap_.row(a(0)), ap_.row(a(1)), ap_.row(a(2)), ap_.row(b(0)),
-                               ap_.row(b(1)), ap_.row(b(2)), num_shared_vertices(a, b));
+    return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)), p_.row(b(1)),
+                               p_.row(b(2)), num_shared_vertices(a, b));
   }
 
   Vector3 normal(const Face& f) const {

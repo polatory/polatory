@@ -475,9 +475,11 @@ class Snapper {
         changed_faces.push_back(f);
       }
     }
+    // The predicate runs in the untransformed frame (p_), where defects are judged, matching the
+    // defect finder; the broad-phase below stays in the aniso frame of mesh_.
     auto crosses = [&](const Face& a, const Face& b) {
-      return triangles_intersect(ap_.row(a(0)), ap_.row(a(1)), ap_.row(a(2)), ap_.row(b(0)),
-                                 ap_.row(b(1)), ap_.row(b(2)), num_shared_vertices(a, b));
+      return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)),
+                                 p_.row(b(1)), p_.row(b(2)), num_shared_vertices(a, b));
     };
     // Query per changed face (within 2 * max_distance, the farthest a snapped face can stray)
     // rather than pooling all neighborhoods, to skip pairs that are AABB-disjoint and so cannot

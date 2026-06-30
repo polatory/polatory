@@ -74,7 +74,8 @@ class Smoother {
  public:
   Smoother(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
            const Mat3& aniso, double min_angle)
-      : ap_(geometry::transform_points<3>(aniso, mesh.vertices())),
+      : p_(mesh.vertices()),
+        ap_(geometry::transform_points<3>(aniso, mesh.vertices())),
         mesh_(mesh.faces()),
         a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(resolution, points.rows()),
@@ -156,15 +157,15 @@ class Smoother {
   // bend(a, face fi), or 0 when fi is the absent neighbour across a boundary edge (fi < 0).
   double bend_with(const Face& a, Index fi) const { return fi < 0 ? 0.0 : bend(a, mesh_.face(fi)); }
 
-  // Whether new_f overlaps any spatially near face; scanning new_f's own cells suffices (the
+  // Whether new_f intersects any spatially near face; scanning new_f's own cells suffices (the
   // sibling call covers the other new triangle).
-  bool crosses(const Face& new_f, Index fi0, Index fi1, double tol) {
-    auto aps = ap_(new_f, kAll);
-    Point3 lo = aps.colwise().minCoeff();
-    Point3 hi = aps.colwise().maxCoeff();
+  bool crosses(const Face& new_f, Index fi0, Index fi1) {
+    auto ps = p_(new_f, kAll);
+    Point3 lo = ps.colwise().minCoeff();
+    Point3 hi = ps.colwise().maxCoeff();
     bool hit = false;
     face_grid_.for_each(lo, hi, [&](Index gi) {
-      if (gi != fi0 && gi != fi1 && overlaps(new_f, mesh_.face(gi), tol)) {
+      if (gi != fi0 && gi != fi1 && overlaps(new_f, mesh_.face(gi))) {
         hit = true;
         return false;
       }
@@ -187,8 +188,7 @@ class Smoother {
   // broad-phase that catches a diagonal passing over a spatially near but topologically distant
   // sheet.
   bool guard_ok(const Flip& fl) {
-    auto tol = 1e-6 * (ap_.row(fl.x) - ap_.row(fl.y)).norm();
-    return !crosses(fl.new_f0(), fl.fi0, fl.fi1, tol) && !crosses(fl.new_f1(), fl.fi0, fl.fi1, tol);
+    return !crosses(fl.new_f0(), fl.fi0, fl.fi1) && !crosses(fl.new_f1(), fl.fi0, fl.fi1);
   }
 
   // Whether snap point i lies within its tolerance of face f.
@@ -239,9 +239,9 @@ class Smoother {
   // stale index reads its current geometry).
   void insert_face(Index fi) {
     auto f = mesh_.face(fi);
-    auto aps = ap_(f, kAll);
-    Point3 lo = aps.colwise().minCoeff();
-    Point3 hi = aps.colwise().maxCoeff();
+    auto ps = p_(f, kAll);
+    Point3 lo = ps.colwise().minCoeff();
+    Point3 hi = ps.colwise().maxCoeff();
     face_grid_.insert(fi, lo, hi);
   }
 
@@ -256,29 +256,22 @@ class Smoother {
     return Vector3(e1.cross(e2));
   }
 
-  // A real crossing beyond a shared vertex. Edge-adjacent pairs (shared >= 2) are skipped: such a
-  // fold would oppose the quad normal or worsen the bend, so it is rejected elsewhere.
-  bool overlaps(const Face& a, const Face& b, double tol) const {
+  // Whether the two faces intersect, via triangles_intersect (the defect finder's edge-pierce test)
+  // in the untransformed frame -- the same predicate and frame the finder uses, so the guard
+  // rejects exactly what it would flag. Edge-adjacent pairs (shared >= 2) are left to the
+  // fold-opposing-the-quad-normal rejection in score().
+  bool overlaps(const Face& a, const Face& b) const {
     auto shared = num_shared_vertices(a, b);
     if (shared >= 2) {
       return false;
     }
-    Point3 a0 = ap_.row(a(0));
-    Point3 a1 = ap_.row(a(1));
-    Point3 a2 = ap_.row(a(2));
-    Point3 b0 = ap_.row(b(0));
-    Point3 b1 = ap_.row(b(1));
-    Point3 b2 = ap_.row(b(2));
-    if (shared == 0) {
-      // Disjoint pair: the exact crossing test (no false negatives, unlike the shrink-based
-      // transversal) catches a new face passing over a non-adjacent sheet.
-      return triangles_cross_3d(a0, a1, a2, b0, b1, b2);
-    }
-    return triangles_overlap_3d(a0, a1, a2, b0, b1, b2, tol);
+    return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)), p_.row(b(1)),
+                               p_.row(b(2)), shared);
   }
 
   // The candidate flip of edge e if admissible (interior, new diagonal absent, within the length
-  // cap, no fold, lowers the bend). The cheap checks; the self-int guard is left to the caller.
+  // cap, no fold, lowers the bend). The cheap checks; the self-intersection guard is left to the
+  // caller.
   std::optional<Flip> score(const Edge& e) const {
     auto [fi0, fi1] = mesh_.faces_of(e);
     if (fi0 < 0 || fi1 < 0) {
@@ -357,8 +350,8 @@ class Smoother {
     }
 
     // Reject a flip below min_angle_ unless it improves the worst angle there -- a sliver (a
-    // diagonal grazing a collinear vertex, a T-junction the inexact self-int guard misses) is worse
-    // than a crease.
+    // diagonal grazing a collinear vertex, a T-junction the inexact self-intersection guard misses)
+    // is worse than a crease.
     auto after_angle = std::min(min_angle(new_f0), min_angle(new_f1));
     auto before_angle = std::min(min_angle(f0), min_angle(f1));
     if (after_angle < min_angle_ && after_angle < before_angle) {
@@ -367,6 +360,7 @@ class Smoother {
     return Flip{fi0, fi1, x, y, c, d, improve};
   }
 
+  Points3 p_;
   Points3 ap_;
   AbstractMesh mesh_;  // working connectivity, edited in place by flips
   Points3 a_points_;   // the snap targets
