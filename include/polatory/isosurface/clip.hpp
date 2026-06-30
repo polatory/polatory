@@ -129,12 +129,8 @@ class MeshClipper {
                                             [threshold](auto v) { return v(0) < threshold; }));
         tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, kAll)).eval();
         // Now vertices are ordered as (interior, exterior, exterior).
-        auto t01 = (threshold - tri(0, 0)) / (tri(1, 0) - tri(0, 0));
-        auto t02 = (threshold - tri(0, 0)) / (tri(2, 0) - tri(0, 0));
-        Point p01 = tri.row(0) + t01 * (tri.row(1) - tri.row(0));
-        Point p02 = tri.row(0) + t02 * (tri.row(2) - tri.row(0));
-        p01(0) = threshold;
-        p02(0) = threshold;
+        Point p01 = intersect(tri.row(0), tri.row(1), threshold);
+        Point p02 = intersect(tri.row(0), tri.row(2), threshold);
         append((Triangle() << tri.row(0), p01, p02).finished());
         break;
       }
@@ -146,18 +142,13 @@ class MeshClipper {
         tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, kAll)).eval();
         // Now vertices are ordered as either (boundary, interior, exterior)
         // or (boundary, exterior, interior).
+        Point p12 = intersect(tri.row(1), tri.row(2), threshold);
         if (tri(1, 0) < tri(2, 0)) {
           // (boundary, interior, exterior).
-          auto t12 = (threshold - tri(1, 0)) / (tri(2, 0) - tri(1, 0));
-          Point p12 = tri.row(1) + t12 * (tri.row(2) - tri.row(1));
-          p12(0) = threshold;
           append((Triangle() << tri.row(0), tri.row(1), p12).finished());
         } else {
           // (boundary, exterior, interior).
-          auto t21 = (threshold - tri(2, 0)) / (tri(1, 0) - tri(2, 0));
-          Point p21 = tri.row(2) + t21 * (tri.row(1) - tri.row(2));
-          p21(0) = threshold;
-          append((Triangle() << tri.row(0), p21, tri.row(2)).finished());
+          append((Triangle() << tri.row(0), p12, tri.row(2)).finished());
         }
         break;
       }
@@ -168,12 +159,8 @@ class MeshClipper {
                                             [threshold](auto v) { return v(0) > threshold; }));
         tri = (tri({i, (i + 1) % 3, (i + 2) % 3}, kAll)).eval();
         // Now vertices are ordered as (exterior, interior, interior).
-        auto t10 = (threshold - tri(1, 0)) / (tri(0, 0) - tri(1, 0));
-        auto t20 = (threshold - tri(2, 0)) / (tri(0, 0) - tri(2, 0));
-        Point p10 = tri.row(1) + t10 * (tri.row(0) - tri.row(1));
-        Point p20 = tri.row(2) + t20 * (tri.row(0) - tri.row(2));
-        p10(0) = threshold;
-        p20(0) = threshold;
+        Point p10 = intersect(tri.row(1), tri.row(0), threshold);
+        Point p20 = intersect(tri.row(2), tri.row(0), threshold);
         // Delaunay triangulation.
         Vector normal = (tri.row(1) - tri.row(0)).cross(tri.row(2) - tri.row(0));
         auto [u, v] = plane_basis(normal);
@@ -204,6 +191,19 @@ class MeshClipper {
 
   static bool degenerate(const Triangle& tri) {
     return tri.row(0) == tri.row(1) || tri.row(1) == tri.row(2) || tri.row(2) == tri.row(0);
+  }
+
+  // Where edge a-b crosses the plane x = threshold. The endpoints are ordered canonically so that
+  // both triangles sharing the edge compute the bit-identical point, letting the final vertex merge
+  // dedup it instead of leaving two near-coincident boundary vertices.
+  static Point intersect(Point a, Point b, double threshold) {
+    if (std::lexicographical_compare(b.begin(), b.end(), a.begin(), a.end())) {
+      std::swap(a, b);
+    }
+    auto t = (threshold - a(0)) / (b(0) - a(0));
+    Point p = a + t * (b - a);
+    p(0) = threshold;
+    return p;
   }
 
   static std::pair<Vector, Vector> plane_basis(const Vector& normal) {
