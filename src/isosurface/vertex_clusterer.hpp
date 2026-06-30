@@ -4,6 +4,7 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
+#include <map>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
@@ -17,7 +18,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "dense_undirected_graph.hpp"
 #include "disjoint_sets.hpp"
 #include "indexer.hpp"
 #include "quadric_position.hpp"
@@ -25,11 +25,11 @@
 namespace polatory::isosurface {
 
 // Clusters the RMT surface as a standalone mesh step, so it can be re-run between smoothing passes.
-// Each lattice node's vertices are split into connected components, and a component is merged into
-// one vertex (a quotient) only where merging stays manifold on the CURRENT mesh, so smoothing-
-// induced connectivity changes make more nodes mergeable. That per-component test is necessary but
-// not sufficient globally, so a detect-and-uncluster loop forbids any cluster whose merged vertex a
-// defect finder flags, until the result is manifold.
+// Each lattice node's vertices are split into connected components, and every component is merged
+// into one vertex (a quotient). Forcing the merge can fold the surface onto itself, which shows up
+// as a coincident opposite-winding face pair; dropping that pair leaves the merged vertex manifold.
+// A detect-and-uncluster loop then forbids any remaining cluster whose merged vertex a defect
+// finder still flags, until the result is manifold.
 class VertexClusterer {
   using LatticeCoordinates = rmt::LatticeCoordinates;
   using Point3 = geometry::Point3;
@@ -95,12 +95,10 @@ class VertexClusterer {
         continue;
       }
 
-      if (can_cluster(component)) {
-        Index rep = *std::min_element(component.begin(), component.end());
-        Point3 position = clustered_position(component, lattice, vertex_node.at(rep));
-        clusters_.emplace_back(std::move(component), rep, position);
-        register_cluster(clusters_.back());
-      }
+      Index rep = *std::min_element(component.begin(), component.end());
+      Point3 position = clustered_position(component, lattice, vertex_node.at(rep));
+      clusters_.emplace_back(std::move(component), rep, position);
+      register_cluster(clusters_.back());
     }
 
     result_ = cluster();
@@ -109,53 +107,10 @@ class VertexClusterer {
   Mesh result() && { return std::move(result_); }
 
  private:
-  // Merging the component keeps the mesh manifold iff its link -- the outer edges of its incident
-  // faces -- forms a single cycle (the component is a disk).
-  bool can_cluster(const std::vector<Index>& component) const {
-    std::unordered_set<Index> in_component(component.begin(), component.end());
-    std::unordered_set<Index> faces;
-    for (auto v : component) {
-      for (auto fi : vf_.at(v)) {
-        faces.insert(fi);
-      }
-    }
-    // The link -- the star edges opposite the component -- as a graph over the link vertices.
-    ValueIndexer<Index> link_vertices;
-    std::vector<Edge> link_edges;
-    for (auto fi : faces) {
-      std::array<Index, 2> out{};
-      auto n_out = 0;
-      for (auto k = 0; k < 3; k++) {
-        if (!in_component.contains(f_(fi, k))) {
-          if (n_out < 2) {
-            out.at(n_out) = f_(fi, k);
-          }
-          n_out++;
-        }
-      }
-      if (n_out == 2) {
-        link_vertices.insert(out.at(0));
-        link_vertices.insert(out.at(1));
-        link_edges.emplace_back(out.at(0), out.at(1));
-      }
-    }
-    if (link_edges.empty()) {
-      return false;
-    }
-
-    DenseUndirectedGraph link(std::move(link_vertices));
-    for (const auto& e : link_edges) {
-      link.add_edge(e.a, e.b);
-    }
-
-    // A disk: the link is a single cycle -- connected and 2-regular, with at least three vertices.
-    return link.order() >= 3 && link.is_connected() && link.min_degree() == 2 &&
-           link.max_degree() == 2;
-  }
-
   Mesh cluster() {
     while (true) {
       auto [mesh, vertex_ci] = clustered_mesh();
+      mesh = remove_back_to_back(mesh);
       MeshDefectsFinder defects(mesh);
       auto vis = defects.singular_vertices();
       auto fis = defects.intersecting_faces();
@@ -165,20 +120,41 @@ class VertexClusterer {
           flagged.insert(mesh.faces()(fi, k));
         }
       }
-      bool changed = false;
-      for (auto v : flagged) {
-        auto it = vertex_ci.find(v);
-        if (it == vertex_ci.end()) {
-          continue;
+
+      // Each vertex maps to the clusters whose merged vertex shares a face with it.
+      std::unordered_map<Index, std::unordered_set<std::size_t>> incident;
+      for (auto f : mesh.faces().rowwise()) {
+        for (auto k = 0; k < 3; k++) {
+          auto it = vertex_ci.find(f(k));
+          if (it != vertex_ci.end()) {
+            incident[f((k + 1) % 3)].insert(it->second);
+            incident[f((k + 2) % 3)].insert(it->second);
+          }
         }
-        auto& cluster = clusters_.at(it->second);
-        if (cluster.deleted) {
-          continue;
-        }
-        unregister_cluster(cluster);
-        cluster.deleted = true;
-        changed = true;
       }
+
+      bool changed = false;
+      auto rollback = [&](std::size_t ci) {
+        auto& cluster = clusters_.at(ci);
+        if (!cluster.deleted) {
+          unregister_cluster(cluster);
+          cluster.deleted = true;
+          changed = true;
+        }
+      };
+
+      // Undo the merge behind each flagged vertex: its own if it is a merged vertex, otherwise
+      // every merge incident to it, since which neighbor spoiled it is unknown.
+      for (auto v : flagged) {
+        if (auto it = vertex_ci.find(v); it != vertex_ci.end()) {
+          rollback(it->second);
+        } else if (auto jt = incident.find(v); jt != incident.end()) {
+          for (auto ci : jt->second) {
+            rollback(ci);
+          }
+        }
+      }
+
       if (!changed) {
         return mesh;
       }
@@ -249,12 +225,73 @@ class VertexClusterer {
     return quadric_position(v_(cluster, kAll), triangles, aniso_, aniso_inv_, lattice, node);
   }
 
-  // Apply a cluster's merge to rep_/pos_, or undo it.
   void register_cluster(const Cluster& cluster) {
     pos_.row(cluster.rep) = cluster.position;
     for (auto v : cluster.vertices) {
       rep_.at(v) = cluster.rep;
     }
+  }
+
+  // Drops every coincident opposite-winding face pair -- a zero-volume fold left where a forced
+  // merge folded the surface onto itself. The pair adds two faces to each of its three edges, which
+  // the drop removes. Whether the drop is safe depends on the edge's face count beforehand:
+  //   - Two: the pair alone. The drop leaves zero, so the edge vanishes. Safe.
+  //   - Three: the drop leaves one face, a boundary edge -- a hole. Kept.
+  //   - Four: the pair plus a sheet it folded onto. The drop leaves the sheet's two. Safe.
+  //   - Five or more: the drop leaves three or more, still non-manifold. Kept.
+  static Mesh remove_back_to_back(const Mesh& mesh) {
+    const auto& f = mesh.faces();
+    std::map<Edge, int> edge_faces;
+    for (Index fi = 0; fi < f.rows(); fi++) {
+      for (auto k = 0; k < 3; k++) {
+        edge_faces[{f(fi, k), f(fi, (k + 1) % 3)}]++;
+      }
+    }
+    std::map<std::array<Index, 3>, std::vector<Index>> by_vertices;
+    for (Index fi = 0; fi < f.rows(); fi++) {
+      std::array<Index, 3> key{f(fi, 0), f(fi, 1), f(fi, 2)};
+      std::sort(key.begin(), key.end());
+      by_vertices[key].push_back(fi);
+    }
+    std::vector<bool> dropped(f.rows(), false);
+    for (const auto& [key, fis] : by_vertices) {
+      if (fis.size() != 2 || same_winding(f, fis.at(0), fis.at(1))) {
+        continue;
+      }
+      auto fi = fis.at(0);
+      auto safe = true;
+      for (auto k = 0; k < 3; k++) {
+        auto count = edge_faces.at(Edge{f(fi, k), f(fi, (k + 1) % 3)});
+        safe = safe && (count == 2 || count == 4);
+      }
+      if (safe) {
+        dropped.at(fis.at(0)) = true;
+        dropped.at(fis.at(1)) = true;
+      }
+    }
+    Index out_nf = 0;
+    for (Index fi = 0; fi < f.rows(); fi++) {
+      if (!dropped.at(fi)) {
+        out_nf++;
+      }
+    }
+    Faces out(out_nf, 3);
+    Index r = 0;
+    for (Index fi = 0; fi < f.rows(); fi++) {
+      if (!dropped.at(fi)) {
+        out.row(r++) = f.row(fi);
+      }
+    }
+    return {mesh.vertices(), std::move(out)};
+  }
+
+  static bool same_winding(const Faces& f, Index a, Index b) {
+    for (auto s = 0; s < 3; s++) {
+      if (f(a, 0) == f(b, s) && f(a, 1) == f(b, (s + 1) % 3) && f(a, 2) == f(b, (s + 2) % 3)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void unregister_cluster(const Cluster& cluster) {

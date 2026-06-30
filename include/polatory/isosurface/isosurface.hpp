@@ -94,11 +94,7 @@ class Isosurface {
       mesh = defeature(mesh, lattice_);
 
       for (auto pass = 0; pass < 2; pass++) {
-        auto before = mesh.vertices().rows();
         mesh = cluster_vertices(mesh, lattice_, aniso_);
-        if (pass > 0 && mesh.vertices().rows() == before) {
-          break;
-        }
         mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
       }
 
