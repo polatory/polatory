@@ -10,8 +10,4 @@ namespace polatory::isosurface {
 // mesh non-manifold. See vertex_clusterer.hpp.
 Mesh cluster_vertices(const Mesh& mesh, const rmt::PrimitiveLattice& lattice, const Mat3& aniso);
 
-// Removes sub-resolution topological artifacts (annulus regions) from the RMT surface. See
-// defeaturer.hpp.
-Mesh defeature(const Mesh& mesh, const rmt::PrimitiveLattice& lattice);
-
 }  // namespace polatory::isosurface
