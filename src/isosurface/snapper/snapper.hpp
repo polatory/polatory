@@ -108,8 +108,7 @@ class Snapper {
         max_distance_(max_distance),
         snap_grid_(max_distance, nv_ + np_),
         face_grid_(resolution, mesh.faces().rows()),
-        patches_(mesh_.num_faces()),
-        moved_(nv_, false) {
+        patches_(mesh_.num_faces()) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
     }
@@ -706,10 +705,11 @@ class Snapper {
     return false;  // unreachable; all simplices are handled above
   }
 
-  // A vertex already claimed by another point may still be re-moved to a farther one, but only if
-  // every point its current surface honors stays honored.
+  // Moves v onto the candidate's point, but only if every point the surface around v currently
+  // honors stays honored -- so no move (a first move or a re-move to a farther point) dishonors an
+  // already-served point.
   bool try_vertex(const Candidate& cand, Index v) {
-    auto honored = moved_.at(v) ? honored_points_around(v) : std::vector<Index>{};
+    auto honored = honored_points_around(v);
 
     Point3 p = p_.row(v);  // for revert
     Point3 ap = ap_.row(v);
@@ -728,7 +728,6 @@ class Snapper {
       return false;
     }
 
-    moved_.at(v) = true;
     for (auto fi : mesh_.incident(v)) {
       reindex_patch(fi);
     }
@@ -818,7 +817,6 @@ class Snapper {
   Points3 ap_;  // aniso position; [0, nv_) move, [nv_, .) are the immutable snap points
   Points3 aq_;  // on-surface anchor the triangulation projects; [0, nv_) are the original
                 // (never-moved) vertex geometry, [nv_, .) each insert's projection
-  std::vector<bool> moved_;
   boost::unordered_flat_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   Stats stats_;
   Mesh result_;
