@@ -7,6 +7,7 @@
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <unordered_map>
+#include <vector>
 
 namespace polatory::isosurface::snapper {
 
@@ -18,7 +19,8 @@ class AbstractMesh {
   using Sides = std::array<Index, 2>;
 
  public:
-  explicit AbstractMesh(Faces faces) : faces_(std::move(faces)), nf_(faces_.rows()) {
+  explicit AbstractMesh(Faces faces)
+      : faces_(std::move(faces)), nf_(faces_.rows()), deleted_(nf_, false) {
     for (Index fi = 0; fi < nf_; fi++) {
       register_edges(fi);
     }
@@ -45,8 +47,34 @@ class AbstractMesh {
   Index add_face(const Face& f) {
     auto fi = nf_++;
     faces_.row(fi) = f;
+    deleted_.push_back(false);
     register_edges(fi);
     return fi;
+  }
+
+  // Collapses edge e onto its endpoint v_keep: the faces on e are deleted, and the rest of the
+  // dropped endpoint's star is retargeted to v_keep. Precondition: the result is manifold (the
+  // caller checks the link condition). Returns the retargeted faces.
+  std::vector<Index> collapse(const Edge& e, Index v_keep) {
+    auto v_drop = e.a == v_keep ? e.b : e.a;
+    auto star = incident(v_drop);  // copy: retargeting rewrites the adjacency
+    // Remove every face before retargeting any: a retargeted face claims an edge side vacated by
+    // a deleted face, so registering it while that face is still present would clash.
+    for (auto fi : star) {
+      unregister_edges(fi);
+    }
+    std::vector<Index> moved;
+    for (auto fi : star) {
+      Face f = faces_.row(fi);
+      if ((f.array() == v_keep).any()) {
+        deleted_.at(fi) = true;  // a face on e collapses to a degenerate sliver
+        continue;
+      }
+      faces_.row(fi) = (f.array() == v_drop).select(v_keep, f);
+      register_edges(fi);
+      moved.push_back(fi);
+    }
+    return moved;
   }
 
   Face face(Index fi) const { return faces_.row(fi); }
@@ -82,6 +110,11 @@ class AbstractMesh {
   }
 
   bool has_edge(const Edge& e) const { return ef_.contains(e); }
+
+  const std::vector<Index>& incident(Index v) const {
+    static const std::vector<Index> none;
+    return v < static_cast<Index>(vf_.size()) ? vf_.at(v) : none;
+  }
 
   // v must be a new vertex.
   void insert_in_face(Index fi, Index v) {
@@ -123,7 +156,13 @@ class AbstractMesh {
   }
 
   Faces take_faces() && {
-    faces_.conservativeResize(nf_, Eigen::NoChange);
+    Index n = 0;
+    for (Index fi = 0; fi < nf_; fi++) {
+      if (!deleted_.at(fi)) {
+        faces_.row(n++) = faces_.row(fi);
+      }
+    }
+    faces_.conservativeResize(n, Eigen::NoChange);
     return std::move(faces_);
   }
 
@@ -139,6 +178,12 @@ class AbstractMesh {
         throw std::runtime_error("non-manifold or inconsistently oriented edge");
       }
       sides.at(slot) = fi;
+    }
+    for (auto v : f) {
+      if (v >= static_cast<Index>(vf_.size())) {
+        vf_.resize(v + 1);
+      }
+      vf_.at(v).push_back(fi);
     }
   }
 
@@ -166,11 +211,16 @@ class AbstractMesh {
         ef_.erase(it);
       }
     }
+    for (auto v : f) {
+      std::erase(vf_.at(v), fi);
+    }
   }
 
   Faces faces_;
   Index nf_{};
+  std::vector<bool> deleted_;
   std::unordered_map<Edge, Sides, EdgeHash> ef_;
+  std::vector<std::vector<Index>> vf_;
 };
 
 }  // namespace polatory::isosurface::snapper

@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "abstract_mesh.hpp"
 #include "spatial_grid.hpp"
 #include "utility.hpp"
 
@@ -37,20 +38,13 @@ class Thinner {
  public:
   Thinner(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
           const Mat3& aniso)
-      : a_points_(geometry::transform_points<3>(aniso, points)),
+      : p_(mesh.vertices()),
+        ap_(geometry::transform_points<3>(aniso, mesh.vertices())),
+        mesh_(mesh.faces()),
+        a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh.faces().rows()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
-    p_ = mesh.vertices();
-    ap_ = geometry::transform_points<3>(aniso, mesh.vertices());
-
-    const auto& faces = mesh.faces();
-    faces_.reserve(faces.rows());
-    for (Index i = 0; i < faces.rows(); i++) {
-      faces_.push_back({faces(i, 0), faces(i, 1), faces(i, 2)});
-    }
-    deleted_.assign(faces_.size(), false);
-
     VecX tols = tolerances;
     if (tols.size() == 0) {
       tols = VecX::Zero(a_points_.rows());
@@ -72,12 +66,8 @@ class Thinner {
 
     // Greedy collapse to a fixpoint: a collapse can make a neighbour collapsible (a chain of
     // collinear points thins end to end).
-    vf_.assign(p_.rows(), {});
-    for (std::size_t fi = 0; fi < faces_.size(); fi++) {
-      for (auto v : faces_.at(fi)) {
-        vf_.at(v).push_back(static_cast<Index>(fi));
-      }
-      insert_face(static_cast<Index>(fi));
+    for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
+      insert_face(fi);
     }
     bool any = true;
     while (any) {
@@ -109,28 +99,14 @@ class Thinner {
     // collapse folds two sheets into a non-manifold edge.
     std::unordered_set<Index> across;
     for (auto fi : edge_faces.at(w)) {
-      for (auto x : faces_.at(fi)) {
+      for (auto x : mesh_.face(fi)) {
         if (x != v && x != w) {
           across.insert(x);
         }
       }
     }
     for (const auto& [x, fs] : edge_faces) {
-      if (x == w) {
-        continue;
-      }
-      bool adj_w = false;
-      for (auto fi : vf_.at(x)) {
-        if (deleted_.at(fi)) {
-          continue;
-        }
-        const auto& f = faces_.at(fi);
-        if ((f.array() == w).any() && !on_edge(f, v, w)) {
-          adj_w = true;
-          break;
-        }
-      }
-      if (adj_w && !across.contains(x)) {
+      if (x != w && !across.contains(x) && mesh_.has_edge({x, w})) {
         return false;
       }
     }
@@ -139,7 +115,7 @@ class Thinner {
     std::vector<Face> kept;
     std::unordered_set<Index> umbrella(inc.begin(), inc.end());
     for (auto fi : inc) {
-      const auto& f = faces_.at(fi);
+      auto f = mesh_.face(fi);
       if (on_edge(f, v, w)) {
         continue;  // collapses to a degenerate sliver, dropped
       }
@@ -176,8 +152,8 @@ class Thinner {
     std::unordered_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto x : nf) {
-        for (auto fi : vf_.at(x)) {
-          if (!deleted_.at(fi) && !umbrella.contains(fi)) {
+        for (auto fi : mesh_.incident(x)) {
+          if (!umbrella.contains(fi)) {
             nearby.insert(fi);
           }
         }
@@ -197,7 +173,7 @@ class Thinner {
       Point3 hi = aps.colwise().maxCoeff();
       bool hit = false;
       face_grid_.for_each(lo, hi, [&](Index fi) {
-        if (deleted_.at(fi) || umbrella.contains(fi) || !intersects(nf, faces_.at(fi))) {
+        if (umbrella.contains(fi) || !intersects(nf, mesh_.face(fi))) {
           return true;
         }
         hit = true;
@@ -214,31 +190,12 @@ class Thinner {
     return point_triangle_dist2(p, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
-  void do_collapse(Index v, Index w, const std::vector<Index>& inc,
-                   const std::vector<Index>& vw_faces) {
-    std::unordered_set<Index> dropped(vw_faces.begin(), vw_faces.end());
-    for (auto fi : inc) {
-      if (dropped.contains(fi)) {
-        deleted_.at(fi) = true;
-        continue;
-      }
-      auto& f = faces_.at(fi);
-      f = (f.array() == v).select(w, f);
-      vf_.at(w).push_back(fi);  // w gains v's retargeted faces
-      insert_face(fi);
-    }
-  }
-
   Mesh emit() {
+    Faces faces = std::move(mesh_).take_faces();
     std::vector<bool> used(p_.rows(), false);
-    std::vector<Face> faces;
-    for (std::size_t fi = 0; fi < faces_.size(); fi++) {
-      if (deleted_.at(fi)) {
-        continue;
-      }
-      faces.push_back(faces_.at(fi));
-      for (auto v : faces_.at(fi)) {
-        used.at(v) = true;
+    for (Index i = 0; i < faces.rows(); i++) {
+      for (auto k = 0; k < 3; k++) {
+        used.at(faces(i, k)) = true;
       }
     }
     std::vector<Index> vv(p_.rows(), -1);
@@ -254,13 +211,12 @@ class Thinner {
         vertices.row(vv.at(v)) = p_.row(v);
       }
     }
-    Faces f(static_cast<Index>(faces.size()), 3);
-    for (Index i = 0; i < f.rows(); i++) {
-      f(i, 0) = vv.at(faces.at(i)(0));
-      f(i, 1) = vv.at(faces.at(i)(1));
-      f(i, 2) = vv.at(faces.at(i)(2));
+    for (Index i = 0; i < faces.rows(); i++) {
+      for (auto k = 0; k < 3; k++) {
+        faces(i, k) = vv.at(faces(i, k));
+      }
     }
-    return {std::move(vertices), std::move(f)};
+    return {std::move(vertices), std::move(faces)};
   }
 
   // Whether snap point i lies within its tolerance of face f.
@@ -275,10 +231,10 @@ class Thinner {
     if (snap_grid_.empty()) {
       return true;
     }
-    Point3 lo = ap_.row(faces_.at(inc.front())(0));
+    Point3 lo = ap_.row(mesh_.face(inc.front())(0));
     Point3 hi = lo;
     for (auto fi : inc) {
-      for (auto x : faces_.at(fi)) {
+      for (auto x : mesh_.face(fi)) {
         lo = lo.cwiseMin(ap_.row(x));
         hi = hi.cwiseMax(ap_.row(x));
       }
@@ -286,7 +242,7 @@ class Thinner {
     bool ok = true;
     snap_grid_.for_each(lo, hi, [&](Index i) {
       auto honored = [&](const auto& f) { return honored_by(i, f); };
-      auto face_of = [&](Index fi) -> const Face& { return faces_.at(fi); };
+      auto face_of = [&](Index fi) -> Face { return mesh_.face(fi); };
       if (std::ranges::none_of(inc, honored, face_of)) {
         return true;  // not held by a removed face; the collapse cannot dishonor it
       }
@@ -299,20 +255,8 @@ class Thinner {
     return ok;
   }
 
-  std::vector<Index> incident(Index v) const {
-    std::vector<Index> fs;
-    for (auto fi : vf_.at(v)) {
-      if (!deleted_.at(fi)) {
-        fs.push_back(fi);
-      }
-    }
-    return fs;
-  }
-
-  // Index a face by the grid cells its AABB touches; a retargeted collapse re-inserts so the moved
-  // face is found at its new cells, and a stale old entry is harmless (it reads current geometry).
   void insert_face(Index fi) {
-    const auto& f = faces_.at(fi);
+    auto f = mesh_.face(fi);
     auto aps = p_(f, kAll);
     Point3 lo = aps.colwise().minCoeff();
     Point3 hi = aps.colwise().maxCoeff();
@@ -336,16 +280,24 @@ class Thinner {
     return ha && hb;
   }
 
+  void remove_face(Index fi) {
+    auto f = mesh_.face(fi);
+    auto aps = p_(f, kAll);
+    Point3 lo = aps.colwise().minCoeff();
+    Point3 hi = aps.colwise().maxCoeff();
+    face_grid_.remove(fi, lo, hi);
+  }
+
   // Collapse v onto its least-distorting admissible neighbour, if any; returns whether it did.
   bool try_collapse(Index v) {
-    auto inc = incident(v);
+    const auto& inc = mesh_.incident(v);
     if (inc.size() < 3) {
       return false;
     }
     std::unordered_map<Index, std::vector<Index>>
         edge_faces;  // neighbour w -> faces on edge (v, w)
     for (auto fi : inc) {
-      for (auto w : faces_.at(fi)) {
+      for (auto w : mesh_.face(fi)) {
         if (w != v) {
           edge_faces[w].push_back(fi);
         }
@@ -370,21 +322,26 @@ class Thinner {
     if (best < 0) {
       return false;
     }
-    do_collapse(v, best, inc, edge_faces.at(best));
+    // Drop the star from the grid before the collapse rewrites it (remove_face reads live
+    // geometry), then re-add the retargeted faces.
+    for (auto fi : inc) {
+      remove_face(fi);
+    }
+    for (auto fi : mesh_.collapse({v, best}, best)) {
+      insert_face(fi);
+    }
     return true;
   }
 
-  Points3 a_points_;  // the snap targets
-  VecX snap_tols2_;   // squared snapping tolerance per snap point
-  SpatialGrid snap_grid_;
-  SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
-  double max_edge2_{};     // squared cap on a collapsed edge's length
   Points3 p_;
   Points3 ap_;
-  std::vector<Face> faces_;
-  std::vector<bool> deleted_;
-  std::vector<bool> snapped_;           // per vertex; true = a snap point (only these collapse)
-  std::vector<std::vector<Index>> vf_;  // vertex -> incident face ids (may include deleted)
+  AbstractMesh mesh_;  // working connectivity, edited in place by collapses
+  Points3 a_points_;   // the snap targets
+  VecX snap_tols2_;    // squared snapping tolerance per snap point
+  SpatialGrid snap_grid_;
+  SpatialGrid face_grid_;
+  double max_edge2_{};         // squared cap on a collapsed edge's length
+  std::vector<bool> snapped_;  // per vertex; true = a snap point (only these collapse)
   Mesh result_;
 };
 

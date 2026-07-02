@@ -83,6 +83,22 @@ class SpatialGrid {
     }
   }
 
+  // Pass the same AABB the item was inserted with, else stale cell entries are left behind.
+  void remove(Index item, const Point3& lo, const Point3& hi) {
+    auto clo = cell_of(lo);
+    auto chi = cell_of(hi);
+    for (auto i = clo(0); i <= chi(0); i++) {
+      for (auto j = clo(1); j <= chi(1); j++) {
+        for (auto k = clo(2); k <= chi(2); k++) {
+          auto it = grid_.find({i, j, k});
+          if (it != grid_.end()) {
+            std::erase(it->second, item);
+          }
+        }
+      }
+    }
+  }
+
  private:
   Cell cell_of(const Point3& p) const { return (p / resolution_).array().floor().cast<int>(); }
 
