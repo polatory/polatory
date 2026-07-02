@@ -298,12 +298,13 @@ class Lattice : public PrimitiveLattice {
       refine_vertices(vertices_);
     }
 
-    for (const auto& v : vertices_) {
+    for (Index i = 0; i < n; i++) {
+      const auto& v = vertices_.at(i);
       if (v.t1 >= 0.5) {
         auto& node0 = node_list_.at(v.node_lc);
         auto& node1 = node_list_.at(neighbor(v.node_lc, v.ei));
         node0.remove_vertex(v.ei);
-        node1.insert_vertex(v.vi, kOppositeEdge.at(v.ei));
+        node1.insert_vertex(i, kOppositeEdge.at(v.ei));
       }
     }
   }
@@ -357,7 +358,6 @@ class Lattice : public PrimitiveLattice {
   struct Vertex {
     LatticeCoordinates node_lc;
     EdgeIndex ei{};
-    Index vi{};
     double t0{};
     double v0{};
     double t1{};
@@ -508,13 +508,13 @@ class Lattice : public PrimitiveLattice {
 
         if (cr.t < 0.5) {
           node0.insert_vertex(vi, cr.ei);
-          vertices_.emplace_back(cr.lc0, cr.ei, vi,                               //
+          vertices_.emplace_back(cr.lc0, cr.ei,                                   //
                                  0.0, cr.v0,                                      //
                                  cr.t, std::numeric_limits<double>::quiet_NaN(),  //
                                  1.0, cr.v1);
         } else {
           node1.insert_vertex(vi, opp_ei);
-          vertices_.emplace_back(cr.lc1, opp_ei, vi,                                    //
+          vertices_.emplace_back(cr.lc1, opp_ei,                                        //
                                  0.0, cr.v1,                                            //
                                  1.0 - cr.t, std::numeric_limits<double>::quiet_NaN(),  //
                                  1.0, cr.v0);
