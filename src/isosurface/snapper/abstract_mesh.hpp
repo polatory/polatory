@@ -2,21 +2,33 @@
 
 #include <Eigen/Core>
 #include <array>
+#include <boost/container/static_vector.hpp>
+#include <boost/container_hash/hash.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
-#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace polatory::isosurface::snapper {
 
-// A triangle mesh's connectivity (faces are vertex-index triples, no coordinates). Each edge stores
-// its two oriented sides -- the face traversing it as a -> b (a < b) and the one traversing it
-// reversed, -1 if absent -- so the mesh must stay orientable and manifold: a second face on the
-// same side throws. Faces have stable indices.
+// A triangle mesh's connectivity (faces are vertex-index triples, no coordinates). Each directed
+// edge (halfedge) maps to its incident face, so the two halfedges of an edge are its two oriented
+// sides; a second face on the same halfedge throws, keeping the mesh orientable and manifold. Faces
+// have stable indices.
 class AbstractMesh {
-  using Sides = std::array<Index, 2>;
+  using Halfedge = std::pair<Index, Index>;
+
+  struct HalfedgeHash {
+    std::size_t operator()(const Halfedge& he) const noexcept {
+      std::size_t seed{};
+      boost::hash_combine(seed, he.first);
+      boost::hash_combine(seed, he.second);
+      return seed;
+    }
+  };
 
  public:
   explicit AbstractMesh(Faces faces)
@@ -30,16 +42,13 @@ class AbstractMesh {
   explicit AbstractMesh(Index capacity) : faces_(capacity, 3) {}
 
   Index across(const Edge& e, Index fi) const {
-    auto it = ef_.find(e);
-    if (it == ef_.end()) {
-      return -1;
+    auto f_ab = face_on(e.a, e.b);
+    auto f_ba = face_on(e.b, e.a);
+    if (f_ab == fi) {
+      return f_ba;
     }
-    auto [s0, s1] = it->second;
-    if (s0 == fi) {
-      return s1;
-    }
-    if (s1 == fi) {
-      return s0;
+    if (f_ba == fi) {
+      return f_ab;
     }
     return -1;
   }
@@ -79,15 +88,23 @@ class AbstractMesh {
 
   Face face(Index fi) const { return faces_.row(fi); }
 
-  const Sides& faces_of(const Edge& e) const {
-    static const Sides none{-1, -1};
-    auto it = ef_.find(e);
-    return it == ef_.end() ? none : it->second;
+  // The faces (at most two) incident to e, the a -> b side first when both are present.
+  boost::container::static_vector<Index, 2> faces_of(const Edge& e) const {
+    boost::container::static_vector<Index, 2> fs;
+    if (auto fi = face_on(e.a, e.b); fi >= 0) {
+      fs.push_back(fi);
+    }
+    if (auto fi = face_on(e.b, e.a); fi >= 0) {
+      fs.push_back(fi);
+    }
+    return fs;
   }
 
   // Precondition: e has two faces (an interior edge).
   std::array<Index, 2> flip(const Edge& e) {
-    auto [fi0, fi1] = faces_of(e);  // fi0 traverses e.a -> e.b, fi1 the reverse
+    auto sides = faces_of(e);  // interior edge: sides[0] traverses e.a -> e.b, sides[1] the reverse
+    auto fi0 = sides[0];
+    auto fi1 = sides[1];
     auto c = opposite(face(fi0), e);
     auto d = opposite(face(fi1), e);
     // Remove both old faces before adding either: a new face shares an outer edge with the other
@@ -104,12 +121,20 @@ class AbstractMesh {
 
   template <class Fn>
   void for_each_edge(const Fn& fn) const {
-    for (const auto& [e, sides] : ef_) {
-      fn(e, sides);
+    for (const auto& [he, fi] : he_) {
+      auto [u, w] = he;
+      // Visit each undirected edge once: from its a -> b halfedge if present, else the lone b -> a.
+      if (u < w) {
+        fn(Edge{u, w}, std::array<Index, 2>{fi, face_on(w, u)});
+      } else if (face_on(w, u) < 0) {
+        fn(Edge{u, w}, std::array<Index, 2>{-1, fi});
+      }
     }
   }
 
-  bool has_edge(const Edge& e) const { return ef_.contains(e); }
+  bool has_edge(const Edge& e) const {
+    return he_.contains({e.a, e.b}) || he_.contains({e.b, e.a});
+  }
 
   const std::vector<Index>& incident(Index v) const {
     static const std::vector<Index> none;
@@ -128,9 +153,6 @@ class AbstractMesh {
   void insert_on_edge(const Edge& e, Index v) {
     auto sides = faces_of(e);  // copy: set_face below rewrites the incidence
     for (auto fi : sides) {
-      if (fi < 0) {
-        continue;
-      }
       auto f = face(fi);
       auto i = 0;
       for (auto k = 0; k < 3; k++) {
@@ -167,17 +189,18 @@ class AbstractMesh {
   }
 
  private:
+  // The face traversing the directed edge u -> w, or -1 if none.
+  Index face_on(Index u, Index w) const {
+    auto it = he_.find({u, w});
+    return it != he_.end() ? it->second : -1;
+  }
+
   void register_edges(Index fi) {
     Face f = faces_.row(fi);
     for (auto k = 0; k < 3; k++) {
-      Index u = f(k);
-      Index w = f((k + 1) % 3);
-      auto& sides = ef_.try_emplace(Edge{u, w}, Sides{-1, -1}).first->second;
-      auto slot = u < w ? 0 : 1;
-      if (sides.at(slot) >= 0) {
+      if (!he_.emplace(Halfedge{f(k), f((k + 1) % 3)}, fi).second) {
         throw std::runtime_error("non-manifold or inconsistently oriented edge");
       }
-      sides.at(slot) = fi;
     }
     for (auto v : f) {
       if (v >= static_cast<Index>(vf_.size())) {
@@ -196,20 +219,7 @@ class AbstractMesh {
   void unregister_edges(Index fi) {
     Face f = faces_.row(fi);
     for (auto k = 0; k < 3; k++) {
-      auto it = ef_.find({f(k), f((k + 1) % 3)});
-      if (it == ef_.end()) {
-        continue;
-      }
-      auto& sides = it->second;
-      if (sides.at(0) == fi) {
-        sides.at(0) = -1;
-      }
-      if (sides.at(1) == fi) {
-        sides.at(1) = -1;
-      }
-      if (sides.at(0) < 0 && sides.at(1) < 0) {
-        ef_.erase(it);
-      }
+      he_.erase({f(k), f((k + 1) % 3)});
     }
     for (auto v : f) {
       std::erase(vf_.at(v), fi);
@@ -219,7 +229,7 @@ class AbstractMesh {
   Faces faces_;
   Index nf_{};
   std::vector<bool> deleted_;
-  std::unordered_map<Edge, Sides, EdgeHash> ef_;
+  boost::unordered_flat_map<Halfedge, Index, HalfedgeHash> he_;
   std::vector<std::vector<Index>> vf_;
 };
 

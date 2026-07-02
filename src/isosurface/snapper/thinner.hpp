@@ -3,6 +3,8 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <array>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <cstddef>
 #include <functional>
 #include <limits>
@@ -11,8 +13,6 @@
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "abstract_mesh.hpp"
@@ -54,7 +54,7 @@ class Thinner {
 
     // Mark each vertex that coincides with a snap point (snapped vertices are emitted exactly
     // there); only these may collapse, so the base lattice stays put.
-    std::unordered_set<Point3, PointHash> snap_positions;
+    boost::unordered_flat_set<Point3, PointHash> snap_positions;
     snap_positions.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
       snap_positions.insert(points.row(i));
@@ -94,10 +94,11 @@ class Thinner {
   // Whether collapsing v onto w is admissible; dev = the dropped point's distance to the new
   // surface.
   bool collapse_ok(Index v, Index w, const std::vector<Index>& inc,
-                   const std::unordered_map<Index, std::vector<Index>>& edge_faces, double& dev) {
+                   const boost::unordered_flat_map<Index, std::vector<Index>>& edge_faces,
+                   double& dev) {
     // Link condition: v and w may share only the two vertices opposite edge (v, w), else the
     // collapse folds two sheets into a non-manifold edge.
-    std::unordered_set<Index> across;
+    boost::unordered_flat_set<Index> across;
     for (auto fi : edge_faces.at(w)) {
       for (auto x : mesh_.face(fi)) {
         if (x != v && x != w) {
@@ -113,7 +114,7 @@ class Thinner {
 
     // v's kept faces (those not on edge (v, w)), with v retargeted to w.
     std::vector<Face> kept;
-    std::unordered_set<Index> umbrella(inc.begin(), inc.end());
+    boost::unordered_flat_set<Index> umbrella(inc.begin(), inc.end());
     for (auto fi : inc) {
       auto f = mesh_.face(fi);
       if (on_edge(f, v, w)) {
@@ -149,7 +150,7 @@ class Thinner {
     }
 
     // Faces near the collapse: those incident to the kept faces' vertices but outside the umbrella.
-    std::unordered_set<Index> nearby;
+    boost::unordered_flat_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto x : nf) {
         for (auto fi : mesh_.incident(x)) {
@@ -227,7 +228,7 @@ class Thinner {
   // Every nearby snap point held by a removed face -- not just the dropped vertex -- must stay
   // within tolerance, else a greedy chain drifts already-dropped points off the surface.
   bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
-                 const std::unordered_set<Index>& nearby) const {
+                 const boost::unordered_flat_set<Index>& nearby) const {
     if (snap_grid_.empty()) {
       return true;
     }
@@ -294,7 +295,7 @@ class Thinner {
     if (inc.size() < 3) {
       return false;
     }
-    std::unordered_map<Index, std::vector<Index>>
+    boost::unordered_flat_map<Index, std::vector<Index>>
         edge_faces;  // neighbour w -> faces on edge (v, w)
     for (auto fi : inc) {
       for (auto w : mesh_.face(fi)) {

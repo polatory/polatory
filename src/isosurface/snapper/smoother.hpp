@@ -273,10 +273,12 @@ class Smoother {
   // cap, no fold, lowers the bend). The cheap checks; the self-intersection guard is left to the
   // caller.
   std::optional<Flip> score(const Edge& e) const {
-    auto [fi0, fi1] = mesh_.faces_of(e);
-    if (fi0 < 0 || fi1 < 0) {
+    auto sides = mesh_.faces_of(e);
+    if (sides.size() < 2) {
       return std::nullopt;
     }
+    auto fi0 = sides[0];
+    auto fi1 = sides[1];
     auto f0 = mesh_.face(fi0);
     auto f1 = mesh_.face(fi1);
 

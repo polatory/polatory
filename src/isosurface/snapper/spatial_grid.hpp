@@ -2,10 +2,10 @@
 
 #include <Eigen/Core>
 #include <boost/container_hash/hash.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <cstddef>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
-#include <unordered_map>
 #include <vector>
 
 namespace polatory::isosurface::snapper {
@@ -103,7 +103,7 @@ class SpatialGrid {
   Cell cell_of(const Point3& p) const { return (p / resolution_).array().floor().cast<int>(); }
 
   double resolution_;
-  std::unordered_map<Cell, std::vector<Index>, CellHash> grid_;
+  boost::unordered_flat_map<Cell, std::vector<Index>, CellHash> grid_;
   mutable std::vector<Index> visited_;  // per-query dedup stamp
   mutable Index guard_{};
 };

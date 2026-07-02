@@ -226,10 +226,12 @@ class Triangulation {
         if (is_constraint(e)) {
           continue;
         }
-        auto [fi0, fi1] = mesh_.faces_of(e);
-        if (fi0 < 0 || fi1 < 0 || flipped.at(fi0) || flipped.at(fi1)) {
+        auto sides = mesh_.faces_of(e);
+        if (sides.size() < 2 || flipped.at(sides[0]) || flipped.at(sides[1])) {
           continue;  // a boundary edge now, or a face already flipped this pass
         }
+        auto fi0 = sides[0];
+        auto fi1 = sides[1];
 
         // fi0 traverses e.a -> e.b, so (e.a, e.b, c) is CCW; d is fi1's apex.
         auto x = e.a;
