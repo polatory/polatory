@@ -1,7 +1,5 @@
 #pragma once
 
-#include <igl/AABB.h>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <format>
@@ -11,7 +9,6 @@
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -22,13 +19,12 @@ using geometry::Point3;
 using geometry::Points3;
 using geometry::Vector3;
 
-// The original mesh plus fixed data the snapper reads but never changes: vertex/edge adjacency, an
-// AABB tree, and a cached per-face 2D frame (vertex 0 at the origin, edge 0->1 on x) onto which
-// project() drops a point's normal component.
+// The original mesh plus fixed data the snapper reads but never changes: vertex/edge adjacency and
+// a cached per-face 2D frame (vertex 0 at the origin, edge 0->1 on x) onto which project() drops a
+// point's normal component.
 class OriginalMesh {
  public:
   OriginalMesh(Points3 vertices, Faces faces) : v_(std::move(vertices)), f_(std::move(faces)) {
-    tree_.init(v_, f_);
     vertex_faces_.resize(v_.rows());
     for (Index fi = 0; fi < f_.rows(); fi++) {
       for (auto k = 0; k < 3; k++) {
@@ -41,17 +37,6 @@ class OriginalMesh {
   const std::vector<Index>& edge_faces(const Edge& e) const { return edge_faces_.at(e); }
 
   const Faces& faces() const { return f_; }
-
-  // Appends to out the faces whose bbox overlaps query, skipping those in exclude.
-  void faces_near(const Eigen::AlignedBox3d& query, const std::unordered_set<Index>& exclude,
-                  std::unordered_set<Index>& out) const {
-    descend(tree_, query, exclude, out);
-  }
-
-  // Squared distance from p to the mesh; returns the nearest face fi and closest point q.
-  double nearest_face(const Point3& p, int& fi, Point3& q) const {
-    return tree_.squared_distance(v_, f_, p, fi, q);
-  }
 
   Index num_vertices() const { return v_.rows(); }
 
@@ -88,26 +73,6 @@ class OriginalMesh {
     return {.origin = a, .e1 = e1, .e2 = e2};
   }
 
-  static void descend(const igl::AABB<Points3, 3>& node, const Eigen::AlignedBox3d& query,
-                      const std::unordered_set<Index>& exclude, std::unordered_set<Index>& out) {
-    if (!node.m_box.intersects(query)) {
-      return;
-    }
-    if (node.m_primitive != -1) {
-      auto fj = static_cast<Index>(node.m_primitive);
-      if (!exclude.contains(fj)) {
-        out.insert(fj);
-      }
-      return;
-    }
-    if (node.m_left != nullptr) {
-      descend(*node.m_left, query, exclude, out);
-    }
-    if (node.m_right != nullptr) {
-      descend(*node.m_right, query, exclude, out);
-    }
-  }
-
   const Frame& frame(Index fi) const {
     auto it = frames_.find(fi);
     if (it == frames_.end()) {
@@ -118,7 +83,6 @@ class OriginalMesh {
 
   Points3 v_;
   Faces f_;
-  igl::AABB<Points3, 3> tree_;
   std::vector<std::vector<Index>> vertex_faces_;
   std::unordered_map<Edge, std::vector<Index>, EdgeHash> edge_faces_;
   mutable std::unordered_map<Index, Frame> frames_;  // lazy projection cache

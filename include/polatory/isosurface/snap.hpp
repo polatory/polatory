@@ -22,8 +22,8 @@ struct Stats {
 // Snaps the mesh to pass exactly through the given points, which become vertices. One pass; the
 // pipeline re-applies it. See snapper/snapper.hpp.
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
-               const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso,
-               Stats* stats = nullptr);
+               double resolution, const geometry::Bbox3& bbox, double max_distance,
+               const Mat3& aniso, Stats* stats = nullptr);
 
 // Drops snapped vertices an earlier pass left redundant, by edge collapse, without moving any snap
 // point beyond its tolerance of the surface. See snapper/thinner.hpp.

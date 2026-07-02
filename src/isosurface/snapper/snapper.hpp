@@ -78,7 +78,7 @@ class Snapper {
   // When bbox excludes the boundary by at least one face, the boundary is provably untouched:
   // snapping only moves a vertex or subdivides an edge of the face holding the (in-bbox)
   // projection, so the touched feature is interior. (In the pipeline bbox is first_extended_bbox.)
-  Snapper(const Mesh& mesh, const Points3& points, const VecX& tolerances,
+  Snapper(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
           const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso = Mat3::Identity())
       : mesh_(geometry::transform_points<3>(aniso, mesh.vertices()), mesh.faces()),
         bbox_(bbox),
@@ -87,6 +87,7 @@ class Snapper {
         points_(points),
         a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(max_distance, points.rows()),
+        face_grid_(resolution, mesh.faces().rows()),
         nv_(mesh_.num_vertices()),
         moved_(mesh_.num_vertices(), false) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
@@ -106,6 +107,16 @@ class Snapper {
     }
     snap_grid_.insert_balls(a_points_, tols);
     snap_tols2_ = tols.cwiseAbs2();
+
+    const auto& V = mesh_.vertices();
+    const auto& F = mesh_.faces();
+    for (Index fi = 0; fi < F.rows(); fi++) {
+      auto ps = V(F.row(fi), kAll);
+      Point3 lo = ps.colwise().minCoeff();
+      Point3 hi = ps.colwise().maxCoeff();
+      face_grid_.insert(fi, lo, hi);
+      patch_box_.emplace(fi, std::pair{lo, hi});
+    }
 
     auto candidates = build_candidates();
     std::vector<bool> placed(candidates.size(), false);
@@ -205,11 +216,26 @@ class Snapper {
       Point3 p = points_.row(i);
       Point3 ap = a_points_.row(i);
 
-      int fi{};
+      // The nearest face within max_distance, via the grid over the original faces (empty here);
+      // classification skips anything farther, so a max_distance-radius query suffices.
+      int fi = -1;
       Point3 aq;
-      auto d2 = mesh_.nearest_face(ap, fi, aq);
+      auto d2 = std::numeric_limits<double>::infinity();
+      Point3 lo = (ap.array() - max_distance_).matrix();
+      Point3 hi = (ap.array() + max_distance_).matrix();
+      face_grid_.for_each(lo, hi, [&](Index fj) {
+        auto f = F.row(fj);
+        Point3 cp;
+        auto dd = point_triangle_closest(ap, V.row(f(0)), V.row(f(1)), V.row(f(2)), cp);
+        if (dd < d2) {
+          d2 = dd;
+          fi = static_cast<int>(fj);
+          aq = cp;
+        }
+        return true;
+      });
 
-      if (d2 > max_distance_ * max_distance_) {
+      if (fi < 0 || d2 > max_distance_ * max_distance_) {
         stats_.skipped++;
         continue;
       }
@@ -386,6 +412,7 @@ class Snapper {
     }
 
     patch_faces_cache_[fi] = std::move(faces);
+    reindex_patch(fi);
     stats_.inserted_in_faces++;
     return true;
   }
@@ -424,6 +451,7 @@ class Snapper {
 
     for (auto fi : incident_faces) {
       patch_faces_cache_[fi] = changed.at(fi);
+      reindex_patch(fi);
     }
     stats_.inserted_on_edges++;
     return true;
@@ -464,6 +492,23 @@ class Snapper {
     return it->second;
   }
 
+  // Refreshes fi's grid entry to the current bbox of its committed sub-faces. Call after a commit
+  // that moved or re-triangulated the patch.
+  void reindex_patch(Index fi) {
+    const auto& [lo0, hi0] = patch_box_.at(fi);
+    face_grid_.remove(fi, lo0, hi0);
+    auto inf = std::numeric_limits<double>::infinity();
+    Point3 lo = Point3::Constant(inf);
+    Point3 hi = Point3::Constant(-inf);
+    for (auto f : patch_faces(fi).rowwise()) {
+      auto ps = ap_(f, kAll);
+      lo = lo.cwiseMin(Point3(ps.colwise().minCoeff()));
+      hi = hi.cwiseMax(Point3(ps.colwise().maxCoeff()));
+    }
+    face_grid_.insert(fi, lo, hi);
+    patch_box_.at(fi) = {lo, hi};
+  }
+
   // The snapper's one geometric acceptance test: the flat triangulation is always valid, so all
   // that remains is to forbid an actual self-intersection of the emitted mesh.
   bool self_intersects(const std::unordered_map<Index, Faces>& changed) {
@@ -481,10 +526,8 @@ class Snapper {
       return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)),
                                  p_.row(b(1)), p_.row(b(2)), num_shared_vertices(a, b));
     };
-    // Query per changed face (within 2 * max_distance, the farthest a snapped face can stray)
-    // rather than pooling all neighborhoods, to skip pairs that are AABB-disjoint and so cannot
-    // cross.
-    auto margin = 2.0 * max_distance_;
+    // Query per changed face against the committed patches near its exact AABB (face_grid_ tracks
+    // their current geometry, so no margin is needed), rather than pooling all neighborhoods.
     std::unordered_set<Index> candidates;
     for (const auto& a : changed_faces) {
       for (const auto& b : changed_faces) {
@@ -493,11 +536,15 @@ class Snapper {
         }
       }
       auto aps = ap_(a, kAll);
-      Point3 lo = (aps.colwise().minCoeff().array() - margin).matrix();
-      Point3 hi = (aps.colwise().maxCoeff().array() + margin).matrix();
+      Point3 lo = aps.colwise().minCoeff();
+      Point3 hi = aps.colwise().maxCoeff();
       candidates.clear();
-      mesh_.faces_near(Eigen::AlignedBox3d(lo.transpose(), hi.transpose()), changed_ids,
-                       candidates);
+      face_grid_.for_each(lo, hi, [&](Index fj) {
+        if (!changed_ids.contains(fj)) {
+          candidates.insert(fj);
+        }
+        return true;
+      });
       for (auto fj : candidates) {
         for (auto b : patch_faces(fj).rowwise()) {
           if (crosses(a, b)) {
@@ -651,6 +698,9 @@ class Snapper {
     }
 
     moved_.at(v) = true;
+    for (auto fi : mesh_.vertex_faces(v)) {
+      reindex_patch(fi);
+    }
     stats_.moved_vertices++;
     return true;
   }
@@ -730,8 +780,11 @@ class Snapper {
   Points3 a_points_;
   VecX snap_tols2_;        // squared snapping tolerance per snap point
   SpatialGrid snap_grid_;  // snap-point broad-phase for the re-move honor check
-  Index nv_{};             // current vertex count; rows [0, nv_) of ap_/aq_/p_ are live
-  Points3 p_;              // untransformed position emit() outputs (passes through points exactly)
+  SpatialGrid face_grid_;  // committed-patch broad-phase for the self-intersection guard
+  std::unordered_map<Index, std::pair<Point3, Point3>>
+      patch_box_;  // each patch's current grid AABB
+  Index nv_{};     // current vertex count; rows [0, nv_) of ap_/aq_/p_ are live
+  Points3 p_;      // untransformed position emit() outputs (passes through points exactly)
   Points3 ap_;
   Points3 aq_;               // on-surface position the triangulation projects (never folds)
   std::vector<bool> moved_;  // original vertices already claimed by a move

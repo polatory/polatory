@@ -101,7 +101,7 @@ class Isosurface {
         auto passes = tols.size() != 0 && tols.maxCoeff() > 0.0 ? snap_max_passes_ : 1;
         for (auto pass = 0; pass < passes; pass++) {
           Stats stats;
-          mesh = snap_mesh(mesh, snap_points_, tols, lattice_.first_extended_bbox(),
+          mesh = snap_mesh(mesh, snap_points_, tols, res, lattice_.first_extended_bbox(),
                            res * rel_snap_dist_, aniso_, &stats);
           if (!stats.changed()) {
             break;
