@@ -3,43 +3,36 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <numeric>
 #include <polatory/types.hpp>
-#include <utility>
 #include <vector>
 
 namespace polatory::isosurface {
 
-// A disjoint-set (union-find) forest with path halving.
-template <class Indexer>
+// A disjoint-set (union-find) forest with path halving over indices [0, n).
 class DisjointSets {
-  using Value = typename Indexer::value_type;
-
  public:
-  explicit DisjointSets(Indexer indexer) : indexer_(std::move(indexer)), parent_(indexer_.size()) {
+  explicit DisjointSets(Index n) : parent_(n) {
     std::iota(parent_.begin(), parent_.end(), Index{0});
   }
 
   // The members of each set.
-  std::vector<std::vector<Value>> groups() {
-    boost::unordered_flat_map<Index, Index>
-        group_of;  // a set's root index -> its position in result
-    std::vector<std::vector<Value>> result;
+  std::vector<std::vector<Index>> groups() {
+    boost::unordered_flat_map<Index, Index> group_of;  // a set's root -> its position in result
+    std::vector<std::vector<Index>> result;
     for (Index i = 0; i < static_cast<Index>(parent_.size()); i++) {
       auto [it, inserted] = group_of.try_emplace(find(i), static_cast<Index>(result.size()));
       if (inserted) {
         result.emplace_back();
       }
-      result.at(it->second).push_back(indexer_.to_value(i));
+      result.at(it->second).push_back(i);
     }
     return result;
   }
 
-  // Merges the sets containing values a and b.
-  void unite(const Value& a, const Value& b) {
-    parent_.at(find(indexer_.to_index(a))) = find(indexer_.to_index(b));
-  }
+  // Merges the sets containing i and j.
+  void unite(Index i, Index j) { parent_.at(find(i)) = find(j); }
 
  private:
-  // The representative index of i's set, compressing i's path on the way.
+  // The representative of i's set, compressing i's path on the way.
   Index find(Index i) {
     while (parent_.at(i) != i) {
       parent_.at(i) = parent_.at(parent_.at(i));
@@ -48,7 +41,6 @@ class DisjointSets {
     return i;
   }
 
-  Indexer indexer_;
   std::vector<Index> parent_;
 };
 

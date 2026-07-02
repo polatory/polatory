@@ -10,31 +10,26 @@
 
 namespace polatory::isosurface {
 
-// An undirected multigraph.
-template <class Indexer>
+// An undirected multigraph over vertices [0, order).
 class DenseUndirectedGraph {
   using Matrix = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-  using Value = typename Indexer::value_type;
 
  public:
-  explicit DenseUndirectedGraph(Indexer indexer)
-      : indexer_(std::move(indexer)), m_(Matrix::Zero(indexer_.size(), indexer_.size())) {
-    if (indexer_.size() <= 0) {
+  explicit DenseUndirectedGraph(Index order) : m_(Matrix::Zero(order, order)) {
+    if (order <= 0) {
       throw std::invalid_argument("order must be positive");
     }
   }
 
-  void add_edge(const Value& a, const Value& b) {
-    auto i = indexer_.to_index(a);
-    auto j = indexer_.to_index(b);
+  void add_edge(Index i, Index j) {
     if (i > j) {
       std::swap(i, j);
     }
     m_(i, j)++;
   }
 
-  // The values of each connected component.
-  std::vector<std::vector<Value>> connected_components() const {
+  // The vertices of each connected component.
+  std::vector<std::vector<Index>> connected_components() const {
     std::vector<Index> component(order(), -1);
     Index count = 0;
     for (Index s = 0; s < order(); s++) {
@@ -56,9 +51,9 @@ class DenseUndirectedGraph {
       }
       count++;
     }
-    std::vector<std::vector<Value>> result(count);
+    std::vector<std::vector<Index>> result(count);
     for (Index i = 0; i < order(); i++) {
-      result.at(component.at(i)).push_back(indexer_.to_value(i));
+      result.at(component.at(i)).push_back(i);
     }
     return result;
   }
@@ -132,7 +127,6 @@ class DenseUndirectedGraph {
     return m_(i, j) != 0;
   }
 
-  Indexer indexer_;
   Matrix m_;
 };
 

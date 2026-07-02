@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "disjoint_sets.hpp"
-#include "indexer.hpp"
 #include "quadric_position.hpp"
 
 namespace polatory::isosurface {
@@ -64,7 +63,7 @@ class VertexClusterer {
     }
 
     // Split each node's vertices into pieces connected by mesh edges within the node.
-    DisjointSets sets(IdentityIndexer{nv_});
+    DisjointSets sets(nv_);
     for (auto f : f_.rowwise()) {
       for (auto k = 0; k < 3; k++) {
         Index v0 = f(k);
