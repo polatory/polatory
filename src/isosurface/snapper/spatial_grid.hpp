@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <algorithm>
 #include <boost/container_hash/hash.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <cstddef>
+#include <limits>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 #include <vector>
@@ -29,15 +31,20 @@ class SpatialGrid {
 
  public:
   // capacity = item count (sizes the dedup stamp).
-  SpatialGrid(double resolution, Index capacity)
-      : resolution_(resolution), visited_(capacity, -1) {}
+  SpatialGrid(double resolution, Index capacity) : resolution_(resolution), visited_(capacity, 0) {}
 
   bool empty() const { return grid_.empty(); }
 
   // Visits each distinct item whose cells meet the query AABB, until fn returns false.
   template <class Fn>
   void for_each(const Point3& lo, const Point3& hi, const Fn& fn) const {
+    // Reset before signed overflow (UB); at one bump per query this fires astronomically rarely.
+    if (guard_ == std::numeric_limits<int>::max()) {
+      std::ranges::fill(visited_, 0);
+      guard_ = 0;
+    }
     guard_++;
+
     auto clo = cell_of(lo);
     auto chi = cell_of(hi);
     for (auto i = clo(0); i <= chi(0); i++) {
@@ -104,8 +111,8 @@ class SpatialGrid {
 
   double resolution_;
   boost::unordered_flat_map<Cell, std::vector<Index>, CellHash> grid_;
-  mutable std::vector<Index> visited_;  // per-query dedup stamp
-  mutable Index guard_{};
+  mutable std::vector<int> visited_;  // per-query dedup stamp (epoch of last visit)
+  mutable int guard_{};
 };
 
 }  // namespace polatory::isosurface::snapper
