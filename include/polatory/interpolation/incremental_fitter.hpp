@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <format>
 #include <iostream>
 #include <iterator>
@@ -16,7 +17,6 @@
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/types.hpp>
 #include <tuple>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -145,8 +145,8 @@ class IncrementalFitter {
       std::vector<Index> indices(centers);
       std::copy(c_centers.rbegin(), c_centers.rend(), std::back_inserter(indices));
       filter.filter(filtering_distance, indices);
-      std::unordered_set<Index> filtered_indices(filter.filtered_indices().begin(),
-                                                 filter.filtered_indices().end());
+      boost::unordered_flat_set<Index> filtered_indices(filter.filtered_indices().begin(),
+                                                        filter.filtered_indices().end());
 
       for (auto it = c_centers.rbegin(); it != c_centers.rbegin() + n_points_need_fitting; ++it) {
         if (filtered_indices.contains(*it)) {
@@ -157,8 +157,8 @@ class IncrementalFitter {
       std::vector<Index> grad_indices(grad_centers);
       std::copy(c_grad_centers.rbegin(), c_grad_centers.rend(), std::back_inserter(grad_indices));
       grad_filter.filter(filtering_distance, grad_indices);
-      std::unordered_set<Index> grad_filtered_indices(grad_filter.filtered_indices().begin(),
-                                                      grad_filter.filtered_indices().end());
+      boost::unordered_flat_set<Index> grad_filtered_indices(grad_filter.filtered_indices().begin(),
+                                                             grad_filter.filtered_indices().end());
 
       for (auto it = c_grad_centers.rbegin();
            it != c_grad_centers.rbegin() + n_grad_points_need_fitting; ++it) {

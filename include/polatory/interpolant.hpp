@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <boost/container_hash/hash.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <format>
 #include <limits>
 #include <memory>
@@ -17,7 +18,6 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -242,8 +242,8 @@ class Interpolant {
       return weights;
     }
 
-    std::unordered_map<Point, Index, PointHash> ini_points;
-    std::unordered_map<Point, Index, PointHash> ini_grad_points;
+    boost::unordered_flat_map<Point, Index, PointHash> ini_points;
+    boost::unordered_flat_map<Point, Index, PointHash> ini_grad_points;
 
     auto ini_mu = initial.centers_.rows();
     auto ini_sigma = initial.grad_centers_.rows();

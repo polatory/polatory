@@ -1,12 +1,12 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <polatory/common/complementary_indices.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/interpolant.hpp>
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
-#include <unordered_set>
 #include <vector>
 
 namespace polatory::kriging {
@@ -18,7 +18,7 @@ VecX cross_validate(const Model<Dim>& model, const geometry::Points<Dim>& points
   auto n_points = points.rows();
   VecX predictions = VecX::Zero(n_points);
 
-  std::unordered_set<int> ids(set_ids.begin(), set_ids.end());
+  boost::unordered_flat_set<int> ids(set_ids.begin(), set_ids.end());
   for (auto id : ids) {
     std::vector<Index> test_set;
     for (Index i = 0; i < n_points; i++) {

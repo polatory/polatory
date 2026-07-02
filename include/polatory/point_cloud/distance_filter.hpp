@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <format>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
@@ -8,7 +9,6 @@
 #include <polatory/types.hpp>
 #include <stdexcept>
 #include <tuple>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -34,7 +34,7 @@ class DistanceFilter {
           std::format("distance must be larger than or equal to {}", kMinDistance));
     }
 
-    std::unordered_set<Index> indices_to_remove;
+    boost::unordered_flat_set<Index> indices_to_remove;
 
     std::vector<Index> nn_indices;
     std::vector<double> nn_distances;

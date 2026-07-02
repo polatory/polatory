@@ -3,13 +3,13 @@
 #include <igl/read_triangle_mesh.h>
 
 #include <Eigen/Core>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <cmath>
 #include <exception>
 #include <iostream>
 #include <limits>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
-#include <unordered_set>
 #include <utility>
 
 #include "parse_options.hpp"
@@ -117,8 +117,8 @@ class SignedDistanceField {
   Points3 vertices_;
   Faces faces_;
   igl::AABB<Points3, 3> tree_;
-  std::unordered_set<Halfedge, HalfedgeHash> boundary_;
-  std::unordered_set<Index> boundary_vertices_;
+  boost::unordered_flat_set<Halfedge, HalfedgeHash> boundary_;
+  boost::unordered_flat_set<Index> boundary_vertices_;
 };
 
 class OffsetFieldFunction : public FieldFunction {

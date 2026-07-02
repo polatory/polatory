@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <cmath>
 #include <iostream>
 #include <iterator>
@@ -15,7 +16,6 @@
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/types.hpp>
 #include <set>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -133,8 +133,8 @@ class InequalityFitter {
       common::zip_sort(indices.begin(), indices.end(), residuals.begin(),
                        [](const auto& a, const auto& b) { return a.second > b.second; });
       filter.filter(filtering_distance, indices);
-      std::unordered_set<Index> filtered_indices(filter.filtered_indices().begin(),
-                                                 filter.filtered_indices().end());
+      boost::unordered_flat_set<Index> filtered_indices(filter.filtered_indices().begin(),
+                                                        filter.filtered_indices().end());
 
       // Update the active set.
 
