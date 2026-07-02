@@ -4,7 +4,9 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
-#include <map>
+#include <boost/container_hash/hash.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
@@ -14,8 +16,6 @@
 #include <polatory/isosurface/rmt/primitive_lattice.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "disjoint_sets.hpp"
@@ -114,7 +114,7 @@ class VertexClusterer {
       MeshDefectsFinder defects(mesh);
       auto vis = defects.singular_vertices();
       auto fis = defects.intersecting_faces();
-      std::unordered_set<Index> flagged(vis.begin(), vis.end());
+      boost::unordered_flat_set<Index> flagged(vis.begin(), vis.end());
       for (auto fi : fis) {
         for (auto k = 0; k < 3; k++) {
           flagged.insert(mesh.faces()(fi, k));
@@ -122,7 +122,7 @@ class VertexClusterer {
       }
 
       // Each vertex maps to the clusters whose merged vertex shares a face with it.
-      std::unordered_map<Index, std::unordered_set<std::size_t>> incident;
+      boost::unordered_flat_map<Index, boost::unordered_flat_set<std::size_t>> incident;
       for (auto f : mesh.faces().rowwise()) {
         for (auto k = 0; k < 3; k++) {
           auto it = vertex_ci.find(f(k));
@@ -162,7 +162,7 @@ class VertexClusterer {
   }
 
   // Second return maps each merged output vertex to the cluster it came from.
-  std::pair<Mesh, std::unordered_map<Index, std::size_t>> clustered_mesh() const {
+  std::pair<Mesh, boost::unordered_flat_map<Index, std::size_t>> clustered_mesh() const {
     Index out_nv = 0;
     Index out_nf = 0;
 
@@ -195,7 +195,7 @@ class VertexClusterer {
     }
     out_faces.conservativeResize(out_nf, 3);
 
-    std::unordered_map<Index, std::size_t> vertex_ci;
+    boost::unordered_flat_map<Index, std::size_t> vertex_ci;
     for (std::size_t ci = 0; ci < clusters_.size(); ci++) {
       const auto& cluster = clusters_.at(ci);
       if (cluster.deleted) {
@@ -211,7 +211,7 @@ class VertexClusterer {
   // quadric_position), keeping a crease/corner instead of averaging it away.
   Point3 clustered_position(const std::vector<Index>& cluster, const PrimitiveLattice& lattice,
                             const LatticeCoordinates& node) const {
-    std::unordered_set<Index> fis;
+    boost::unordered_flat_set<Index> fis;
     for (auto v : cluster) {
       for (auto fi : vf_.at(v)) {
         fis.insert(fi);
@@ -241,13 +241,15 @@ class VertexClusterer {
   //   - Five or more: the drop leaves three or more, still non-manifold. Kept.
   static Mesh remove_back_to_back(const Mesh& mesh) {
     const auto& f = mesh.faces();
-    std::map<Edge, int> edge_faces;
+    boost::unordered_flat_map<Edge, int, EdgeHash> edge_faces;
     for (Index fi = 0; fi < f.rows(); fi++) {
       for (auto k = 0; k < 3; k++) {
         edge_faces[{f(fi, k), f(fi, (k + 1) % 3)}]++;
       }
     }
-    std::map<std::array<Index, 3>, std::vector<Index>> by_vertices;
+    boost::unordered_flat_map<std::array<Index, 3>, std::vector<Index>,
+                              boost::hash<std::array<Index, 3>>>
+        by_vertices;
     for (Index fi = 0; fi < f.rows(); fi++) {
       std::array<Index, 3> key{f(fi, 0), f(fi, 1), f(fi, 2)};
       std::sort(key.begin(), key.end());

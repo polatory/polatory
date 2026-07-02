@@ -1,8 +1,8 @@
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <numeric>
 #include <polatory/types.hpp>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -20,7 +20,8 @@ class DisjointSets {
 
   // The members of each set.
   std::vector<std::vector<Value>> groups() {
-    std::unordered_map<Index, Index> group_of;  // a set's root index -> its position in result
+    boost::unordered_flat_map<Index, Index>
+        group_of;  // a set's root index -> its position in result
     std::vector<std::vector<Value>> result;
     for (Index i = 0; i < static_cast<Index>(parent_.size()); i++) {
       auto [it, inserted] = group_of.try_emplace(find(i), static_cast<Index>(result.size()));

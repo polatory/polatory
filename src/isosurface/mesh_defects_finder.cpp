@@ -1,9 +1,9 @@
 #include <Eigen/Geometry>
 #include <Eigen/LU>
 #include <algorithm>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/predicates.hpp>
-#include <unordered_map>
 
 #include "dense_undirected_graph.hpp"
 #include "indexer.hpp"
@@ -85,7 +85,7 @@ std::vector<Index> MeshDefectsFinder::singular_vertices() const {
         continue;
       }
 
-      std::unordered_map<Index, Index> to_local_vi;
+      boost::unordered_flat_map<Index, Index> to_local_vi;
       for (auto fi : fis) {
         to_local_vi.emplace(next_vertex(fi, vi), to_local_vi.size());
         to_local_vi.emplace(prev_vertex(fi, vi), to_local_vi.size());

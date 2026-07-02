@@ -4,6 +4,7 @@
 #include <Eigen/QR>
 #include <algorithm>
 #include <array>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <cmath>
 #include <iterator>
 #include <polatory/geometry/bbox3d.hpp>
@@ -19,7 +20,6 @@
 #include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -188,7 +188,7 @@ class Lattice : public PrimitiveLattice {
       evaluate_field(field_fm, isovalue);
     }
 
-    std::unordered_set<LatticeCoordinatesPair, LatticeCoordinatesPairHash> visited_pairs;
+    boost::unordered_flat_set<LatticeCoordinatesPair, LatticeCoordinatesPairHash> visited_pairs;
     std::vector<LatticeCoordinatesPair> new_pairs;
     std::vector<LatticeCoordinates> neighbors0;
     std::vector<LatticeCoordinates> neighbors1;
@@ -253,8 +253,8 @@ class Lattice : public PrimitiveLattice {
     value_at_arbitrary_point_.reset();
   }
 
-  // Returns the raw marching-tetrahedra mesh (one vertex per sign-change edge). Vertex clustering is
-  // a separate mesh step; see MeshClusterer.
+  // Returns the raw marching-tetrahedra mesh (one vertex per sign-change edge). Vertex clustering
+  // is a separate mesh step; see MeshClusterer.
   Mesh get_mesh() const {
     std::vector<Face> faces_v;
     auto inserter = std::back_inserter(faces_v);
@@ -579,7 +579,7 @@ class Lattice : public PrimitiveLattice {
   }
 
   std::vector<LatticeCoordinates> knn_nodes(const LatticeCoordinates& lc, int k) const {
-    std::unordered_set<LatticeCoordinates, LatticeCoordinatesHash> visited;
+    boost::unordered_flat_set<LatticeCoordinates, LatticeCoordinatesHash> visited;
     visited.insert(lc);
 
     std::vector<LatticeCoordinates> frontier{lc};

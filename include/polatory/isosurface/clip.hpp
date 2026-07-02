@@ -5,6 +5,7 @@
 #include <Eigen/LU>
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <iterator>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -12,7 +13,6 @@
 #include <polatory/isosurface/predicates.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -65,7 +65,7 @@ class MeshClipper {
       clipped.clear();
     }
 
-    std::unordered_map<Point, Index, PointHash> vertex_map;
+    boost::unordered_flat_map<Point, Index, PointHash> vertex_map;
     for (const auto& tri : triangles) {
       for (auto v : tri.rowwise()) {
         if (!vertex_map.contains(v)) {
