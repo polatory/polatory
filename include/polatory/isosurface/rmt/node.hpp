@@ -12,10 +12,10 @@
 
 namespace polatory::isosurface::rmt {
 
-// Encodes 0 or 1 on 14 outgoing halfedges for each node.
-using EdgeBitset = std::uint16_t;
-
 class Node {
+  // Encodes 0 or 1 on 14 outgoing halfedges for each node.
+  using EdgeBitset = std::uint16_t;
+
  public:
   explicit Node(const geometry::Point3& position) : position_(position) {}
 
