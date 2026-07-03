@@ -61,11 +61,11 @@ class Snapper {
   static int index_of(Simplex s) { return static_cast<int>(s); }
 
   struct Candidate {
-    Index i{};    // The snap point's vertex row (>= nv_); positions/tolerance index by it.
-    Point3 aq;    // The projection of the point onto the mesh (closest point).
-    double d2{};  // The squared distance from the point to the mesh.
-    Index fi{};   // The projected face.
-    std::array<double, 3> l;       // The barycentric coordinates of the projection.
+    Index i{};                // The snap point's row [0, np_); indexes its position and tolerance.
+    Point3 aq;                // The projection of the point onto the mesh (closest point).
+    double d2{};              // The squared distance from the point to the mesh.
+    Index fi{};               // The projected face.
+    std::array<double, 3> l;  // The barycentric coordinates of the projection.
     std::array<Simplex, 7> order;  // The seven simplices, nearest centroid first.
   };
 
@@ -102,36 +102,31 @@ class Snapper {
           const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso = Mat3::Identity())
       : nv_(mesh.vertices().rows()),
         np_(points.rows()),
-        mesh_(mesh.faces()),
+        mesh_((mesh.faces().array() + np_).matrix()),  // shift original vertices to rows [np_, .)
         bbox_(bbox),
         aniso_inv_(aniso.inverse()),
         max_distance_(max_distance),
-        snap_grid_(max_distance, nv_ + np_),
+        snap_grid_(max_distance, np_),
         face_grid_(resolution, mesh.faces().rows()),
         patches_(mesh_.num_faces()) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {
       throw std::invalid_argument("tolerances must be empty or have one entry per point");
     }
 
-    p_.resize(nv_ + np_, 3);
-    ap_.resize(nv_ + np_, 3);
-    aq_.resize(nv_ + np_, 3);
-    p_.topRows(nv_) = mesh.vertices();
-    p_.bottomRows(np_) = points;
-    ap_.topRows(nv_) = geometry::transform_points<3>(aniso, mesh.vertices());
-    ap_.bottomRows(np_) = geometry::transform_points<3>(aniso, points);
-    // aq_'s original rows never move, so they double as the immutable original vertex geometry.
-    aq_.topRows(nv_) = ap_.topRows(nv_);
+    p_.resize(np_ + nv_, 3);
+    ap_.resize(np_ + nv_, 3);
+    aq_.resize(np_ + nv_, 3);
+    p_.topRows(np_) = points;
+    p_.bottomRows(nv_) = mesh.vertices();
+    ap_.topRows(np_) = geometry::transform_points<3>(aniso, points);
+    ap_.bottomRows(nv_) = geometry::transform_points<3>(aniso, mesh.vertices());
+    aq_.bottomRows(nv_) = ap_.bottomRows(nv_);  // the anchor starts at the position; only ap_ moves
 
     VecX tols = tolerances;
     if (tols.size() == 0) {
       tols = VecX::Zero(np_);
     }
-    for (Index i = 0; i < np_; i++) {
-      Point3 c = ap_.row(nv_ + i);
-      Vector3 r = Vector3::Constant(tols(i));
-      snap_grid_.insert(nv_ + i, c - r, c + r);
-    }
+    snap_grid_.insert_balls(ap_.topRows(np_), tols);
     snap_tols2_ = tols.cwiseAbs2();
 
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
@@ -235,8 +230,8 @@ class Snapper {
     const auto& V = aq_;
 
     std::vector<Candidate> candidates;
-    candidates.reserve(ap_.rows() - nv_);
-    for (Index i = nv_; i < ap_.rows(); i++) {
+    candidates.reserve(np_);
+    for (Index i = 0; i < np_; i++) {
       Point3 p = p_.row(i);
       Point3 ap = ap_.row(i);
 
@@ -328,18 +323,24 @@ class Snapper {
       }
     }
 
-    // Drop vertices no face references (chain thinning orphans the inserted ones it removes),
-    // keeping the rest in their original order so an un-thinned run emits unchanged.
-    auto n_all = nv_ + np_;
+    // Drop vertices no face references (chain thinning orphans the inserted ones it removes).
+    auto n_all = np_ + nv_;
     std::vector<bool> used(n_all, false);
     for (const auto& f : faces) {
       for (auto v : f) {
         used.at(v) = true;
       }
     }
+    // Number the original vertices (rows [np_, .)) first, then the inserted snap rows, so the
+    // output keeps the input vertex order and an un-snapped run emits unchanged.
     std::vector<Index> vv(n_all, -1);
     Index n = 0;
-    for (Index v = 0; v < n_all; v++) {
+    for (Index v = np_; v < n_all; v++) {
+      if (used.at(v)) {
+        vv.at(v) = n++;
+      }
+    }
+    for (Index v = 0; v < np_; v++) {
       if (used.at(v)) {
         vv.at(v) = n++;
       }
@@ -379,9 +380,7 @@ class Snapper {
   }
 
   // Whether snap point i lies within its tolerance of face f.
-  bool honored_by(Index i, const Face& f) const {
-    return dist2(ap_.row(i), f) <= snap_tols2_(i - nv_);
-  }
+  bool honored_by(Index i, const Face& f) const { return dist2(ap_.row(i), f) <= snap_tols2_(i); }
 
   // Whether point i is within its tolerance of the faces incident to v. Checking only those, not
   // the neighbouring faces too, can only over-reject a re-move, never dishonor.
@@ -813,10 +812,13 @@ class Snapper {
   SpatialGrid snap_grid_;  // snap-point broad-phase for the re-move honor check
   SpatialGrid face_grid_;  // committed-patch broad-phase for the self-intersection guard
   std::vector<Patch> patches_;
-  Points3 p_;   // untransformed position emit() outputs (passes through points exactly)
-  Points3 ap_;  // aniso position; [0, nv_) move, [nv_, .) are the immutable snap points
-  Points3 aq_;  // on-surface anchor the triangulation projects; [0, nv_) are the original
-                // (never-moved) vertex geometry, [nv_, .) each insert's projection
+  // Positions indexed by vertex row: row i (< np_) is snap point i; row np_ + v is original vertex
+  // v. mesh_ is built from faces shifted by np_, so mesh_.face already yields these rows.
+  Points3 p_;   // untransformed position emit() outputs (snap points pass through exactly)
+  Points3 ap_;  // aniso position, for the geometry/self-intersection tests; a moving vertex's
+                // original row is overwritten, snap-point rows are immutable
+  Points3 aq_;  // aniso on-surface anchor the triangulation projects; original rows never move (the
+                // immutable original geometry), snap rows hold each insert's projection
   boost::unordered_flat_map<Edge, std::vector<EdgeVertex>, EdgeHash> edge_chains_;
   Stats stats_;
   Mesh result_;
