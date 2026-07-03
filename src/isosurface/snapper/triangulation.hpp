@@ -213,31 +213,32 @@ class Triangulation {
     while (changed && budget-- > 0) {
       changed = false;
 
-      std::vector<Edge> edges;
-      mesh_.for_each_edge([&](const Edge& e, const auto& sides) {
-        if (sides[0] >= 0 && sides[1] >= 0) {
-          edges.push_back(e);
+      std::vector<Halfedge> hs;
+      mesh_.for_each_halfedge([&](Halfedge h) {
+        if (h.from < h.to && !mesh_.is_boundary(h.opposite())) {
+          hs.push_back(h);  // the canonical side of each interior edge
         }
       });
-      std::ranges::sort(edges);
+      std::ranges::sort(hs);
 
       std::vector<bool> flipped(mesh_.num_faces(), false);
-      for (const auto& e : edges) {
+      for (auto h : hs) {
+        Edge e{h.from, h.to};
         if (is_constraint(e)) {
           continue;
         }
-        auto sides = mesh_.faces_of(e);
-        if (sides.size() < 2 || flipped.at(sides[0]) || flipped.at(sides[1])) {
-          continue;  // a boundary edge now, or a face already flipped this pass
+        auto opp_h = h.opposite();
+        auto fi0 = mesh_.face(h);
+        auto fi1 = mesh_.face(opp_h);
+        if (fi0 < 0 || fi1 < 0 || flipped.at(fi0) || flipped.at(fi1)) {
+          continue;  // a prior flip removed this edge, or a face was already flipped this pass
         }
-        auto fi0 = sides[0];
-        auto fi1 = sides[1];
 
-        // fi0 traverses e.a -> e.b, so (e.a, e.b, c) is CCW; d is fi1's apex.
-        auto x = e.a;
-        auto y = e.b;
-        auto c = AbstractMesh::opposite(mesh_.face(fi0), e);
-        auto d = AbstractMesh::opposite(mesh_.face(fi1), e);
+        // h traverses e.a -> e.b, so (e.a, e.b, c) is CCW; d is the other side's apex.
+        auto x = h.from;
+        auto y = h.to;
+        auto c = mesh_.apex(h);
+        auto d = mesh_.apex(opp_h);
 
         if (shares_edge({c, d})) {
           continue;  // never cut a diagonal along a subdivided edge (the patches would disagree)

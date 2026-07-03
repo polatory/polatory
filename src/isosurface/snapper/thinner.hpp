@@ -2,8 +2,6 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <array>
-#include <boost/unordered/unordered_flat_map.hpp>
 #include <boost/unordered/unordered_flat_set.hpp>
 #include <cstddef>
 #include <functional>
@@ -67,7 +65,7 @@ class Thinner {
     // Greedy collapse to a fixpoint: a collapse can make a neighbour collapsible (a chain of
     // collinear points thins end to end).
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
-      insert_face(fi);
+      index_face(fi);
     }
     bool any = true;
     while (any) {
@@ -93,37 +91,33 @@ class Thinner {
 
   // Whether collapsing v onto w is admissible; dev = the dropped point's distance to the new
   // surface.
-  bool collapse_ok(Index v, Index w, const std::vector<Index>& inc,
-                   const boost::unordered_flat_map<Index, std::vector<Index>>& edge_faces,
+  bool collapse_ok(Halfedge h, const std::vector<Index>& inc, const std::vector<Halfedge>& hs,
                    double& dev) {
-    // Link condition: v and w may share only the two vertices opposite edge (v, w), else the
-    // collapse folds two sheets into a non-manifold edge.
-    boost::unordered_flat_set<Index> across;
-    for (auto fi : edge_faces.at(w)) {
-      for (auto x : mesh_.face(fi)) {
-        if (x != v && x != w) {
-          across.insert(x);
-        }
-      }
-    }
-    for (const auto& [x, fs] : edge_faces) {
-      if (x != w && !across.contains(x) && mesh_.has_edge({x, w})) {
+    auto a = h.from;  // the dropped vertex
+    auto b = h.to;    // the kept vertex
+    auto c = mesh_.apex(h);
+    auto d = mesh_.apex(h.opposite());
+
+    // The link condition: Lk(a) \cap Lk(b) =? Lk(a \cup b) = {c, d}.
+    for (auto [_, v] : hs) {
+      if (v != b && v != c && v != d && mesh_.has_edge({v, b})) {
+        // v \in Lk(a) \cap Lk(b).
         return false;
       }
     }
 
-    // v's kept faces (those not on edge (v, w)), with v retargeted to w.
+    // a's kept faces (those not on edge ab), with a retargeted to b.
     std::vector<Face> kept;
     boost::unordered_flat_set<Index> umbrella(inc.begin(), inc.end());
     for (auto fi : inc) {
       auto f = mesh_.face(fi);
-      if (on_edge(f, v, w)) {
+      if (on_edge(f, a, b)) {
         continue;  // collapses to a degenerate sliver, dropped
       }
-      Face nf = (f.array() == v).select(w, f);
+      Face nf = (f.array() == a).select(b, f);
       auto nn = normal(nf);
       if (!(nn.norm() > 0.0)) {
-        return false;  // a kept face would become degenerate
+        return false;  // the face would become degenerate
       }
       if (nn.dot(normal(f)) <= 0.0) {
         return false;  // the face would flip
@@ -134,10 +128,9 @@ class Thinner {
       return false;
     }
 
-    // Cap edge length to keep triangles regular: a collapse stretches only v's spokes (v-r -> w-r),
-    // so only those are checked.
-    for (const auto& [r, fs] : edge_faces) {
-      if (r != w && !across.contains(r) && (ap_.row(w) - ap_.row(r)).squaredNorm() > max_edge2_) {
+    // Cap edge length to keep triangles regular.
+    for (auto [_, v] : hs) {
+      if (v != b && v != c && v != d && (ap_.row(b) - ap_.row(v)).squaredNorm() > max_edge2_) {
         return false;
       }
     }
@@ -146,14 +139,14 @@ class Thinner {
     // new surface.
     dev = std::numeric_limits<double>::infinity();
     for (const auto& nf : kept) {
-      dev = std::min(dev, dist2(ap_.row(v), nf));
+      dev = std::min(dev, dist2(ap_.row(a), nf));
     }
 
     // Faces near the collapse: those incident to the kept faces' vertices but outside the umbrella.
     boost::unordered_flat_set<Index> nearby;
     for (const auto& nf : kept) {
-      for (auto x : nf) {
-        for (auto fi : mesh_.incident(x)) {
+      for (auto v : nf) {
+        for (auto fi : mesh_.incident(v)) {
           if (!umbrella.contains(fi)) {
             nearby.insert(fi);
           }
@@ -184,6 +177,7 @@ class Thinner {
         return false;
       }
     }
+
     return true;
   }
 
@@ -256,7 +250,7 @@ class Thinner {
     return ok;
   }
 
-  void insert_face(Index fi) {
+  void index_face(Index fi) {
     auto f = mesh_.face(fi);
     auto aps = p_(f, kAll);
     Point3 lo = aps.colwise().minCoeff();
@@ -276,17 +270,7 @@ class Thinner {
   }
 
   static bool on_edge(const Face& f, Index a, Index b) {
-    bool ha = (f.array() == a).any();
-    bool hb = (f.array() == b).any();
-    return ha && hb;
-  }
-
-  void remove_face(Index fi) {
-    auto f = mesh_.face(fi);
-    auto aps = p_(f, kAll);
-    Point3 lo = aps.colwise().minCoeff();
-    Point3 hi = aps.colwise().maxCoeff();
-    face_grid_.remove(fi, lo, hi);
+    return (f.array() == a).any() && (f.array() == b).any();
   }
 
   // Collapse v onto its least-distorting admissible neighbour, if any; returns whether it did.
@@ -295,43 +279,50 @@ class Thinner {
     if (inc.size() < 3) {
       return false;
     }
-    boost::unordered_flat_map<Index, std::vector<Index>>
-        edge_faces;  // neighbour w -> faces on edge (v, w)
-    for (auto fi : inc) {
-      for (auto w : mesh_.face(fi)) {
-        if (w != v) {
-          edge_faces[w].push_back(fi);
-        }
+    // v's outgoing halfedges v -> w. v must be an interior manifold vertex: each halfedge's
+    // opposite (w -> v) must also have a face.
+    std::vector<Halfedge> hs;
+    hs.reserve(inc.size());
+    bool interior = true;
+    mesh_.for_each_outgoing(v, [&](Halfedge h) {
+      if (mesh_.is_boundary(h.opposite())) {
+        interior = false;
       }
-    }
-    // v must be an interior manifold vertex: every spoke shared by exactly two incident faces.
-    for (const auto& [w, fs] : edge_faces) {
-      if (fs.size() != 2) {
-        return false;
-      }
+      hs.push_back(h);
+    });
+    if (!interior) {
+      return false;
     }
 
-    Index best = -1;
+    Halfedge best{-1, -1};  // the chosen collapse v -> w; .to < 0 means none
     double best_dev = std::numeric_limits<double>::infinity();
-    for (const auto& [w, fs] : edge_faces) {
+    for (auto h : hs) {
       double dev = 0.0;
-      if (collapse_ok(v, w, inc, edge_faces, dev) && dev < best_dev) {
-        best = w;
+      if (collapse_ok(h, inc, hs, dev) && dev < best_dev) {
+        best = h;
         best_dev = dev;
       }
     }
-    if (best < 0) {
+    if (best.to < 0) {
       return false;
     }
-    // Drop the star from the grid before the collapse rewrites it (remove_face reads live
+    // Drop the star from the grid before the collapse rewrites it (unindex_face reads live
     // geometry), then re-add the retargeted faces.
     for (auto fi : inc) {
-      remove_face(fi);
+      unindex_face(fi);
     }
-    for (auto fi : mesh_.collapse({v, best}, best)) {
-      insert_face(fi);
+    for (auto fi : mesh_.collapse(best)) {  // drop best.from onto best.to
+      index_face(fi);
     }
     return true;
+  }
+
+  void unindex_face(Index fi) {
+    auto f = mesh_.face(fi);
+    auto aps = p_(f, kAll);
+    Point3 lo = aps.colwise().minCoeff();
+    Point3 hi = aps.colwise().maxCoeff();
+    face_grid_.remove(fi, lo, hi);
   }
 
   Points3 p_;

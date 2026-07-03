@@ -75,7 +75,7 @@ class Snapper {
     Index v{};
   };
 
-  // A face's 2D frame: vertex 0 at the origin, edge 0->1 on x.
+  // A face's 2D frame: origin at vertex 0, e1 the unit edge 0->1, e2 the in-plane perpendicular.
   struct Frame {
     Point3 origin;
     Vector3 e1;
@@ -207,13 +207,11 @@ class Snapper {
     if (patch_honors(cand.fi)) {
       return true;
     }
-    auto cf = mesh_.face(cand.fi);
     for (auto k = 0; k < 3; k++) {
-      Edge e{cf(k), cf((k + 1) % 3)};
-      for (auto fj : mesh_.faces_of(e)) {
-        if (fj != cand.fi && patch_honors(fj)) {
-          return true;
-        }
+      auto h = mesh_.halfedge(cand.fi, k);
+      Index fj = mesh_.face(h.opposite());
+      if (fj >= 0 && patch_honors(fj)) {
+        return true;
       }
     }
     return false;
@@ -232,7 +230,7 @@ class Snapper {
 
       // The nearest face within max_distance; classification skips anything farther, so a
       // max_distance-radius query over face_grid_ suffices.
-      int fi = -1;
+      Index fi = -1;
       Point3 aq;
       auto d2 = std::numeric_limits<double>::infinity();
       Point3 lo = (ap.array() - max_distance_).matrix();
@@ -243,7 +241,7 @@ class Snapper {
         auto dd = point_triangle_closest(ap, V.row(f(0)), V.row(f(1)), V.row(f(2)), cp);
         if (dd < d2) {
           d2 = dd;
-          fi = static_cast<int>(fj);
+          fi = fj;
           aq = cp;
         }
         return true;
@@ -273,7 +271,7 @@ class Snapper {
       std::array<Simplex, 7> order{Simplex::kVertex0, Simplex::kVertex1, Simplex::kVertex2,
                                    Simplex::kEdge12,  Simplex::kEdge20,  Simplex::kEdge01,
                                    Simplex::kFace};
-      std::ranges::sort(order, [&](Simplex s, Simplex t) {
+      std::ranges::sort(order, [&](auto s, auto t) {
         return (aq - sites.at(index_of(s))).squaredNorm() <
                (aq - sites.at(index_of(t))).squaredNorm();
       });
@@ -285,20 +283,28 @@ class Snapper {
     // Least-distorting first (by distance to the mesh): each shared feature is claimed by the
     // candidate that moves it least. Ordering by tangential offset instead folds patches into
     // overhangs.
-    std::ranges::sort(candidates, [this](const Candidate& x, const Candidate& y) {
+    std::ranges::sort(candidates, [this](const auto& x, const auto& y) {
       return std::make_tuple(x.d2, ap_(x.i, 0), ap_(x.i, 1), ap_(x.i, 2)) <
              std::make_tuple(y.d2, ap_(y.i, 0), ap_(y.i, 1), ap_(y.i, 2));
     });
     return candidates;
   }
 
-  // Whether any changed triangle, valid over its flat on-surface positions, is collinear once
-  // emitted at its moved 3D positions -- a degeneracy the flat triangulation cannot see.
-  bool creates_degenerate(const boost::unordered_flat_map<Index, Faces>& changed) {
+  // Whether any emitted triangle (at its moved 3D positions) is degenerate -- collinear, a
+  // zero-area sliver the flat triangulation cannot see -- or folded over, its normal opposing the
+  // original face's. An acute feature up to vertical is kept; a fin there is under-resolution, not
+  // a fold.
+  bool degenerate_or_folded(const boost::unordered_flat_map<Index, Faces>& changed) {
+    auto normal = [](const Point3& a, const Point3& b, const Point3& c) {
+      return Vector3((b - a).cross(c - a));
+    };
     for (const auto& [fi, faces] : changed) {
-      auto scale = original_normal(fi).norm();  // twice the original face's area
-      for (auto f : faces.rowwise()) {
-        if (emitted_normal(f).norm() <= 1e-9 * scale) {
+      auto f = mesh_.face(fi);
+      auto n = normal(aq_.row(f(0)), aq_.row(f(1)), aq_.row(f(2)));
+      auto scale = n.norm();  // twice the original face's area
+      for (auto nf : faces.rowwise()) {
+        auto nn = normal(ap_.row(nf(0)), ap_.row(nf(1)), ap_.row(nf(2)));
+        if (nn.norm() <= 1e-9 * scale || nn.dot(n) < 0.0) {
           return true;
         }
       }
@@ -357,10 +363,6 @@ class Snapper {
     return {std::move(vertices), std::move(f)};
   }
 
-  Vector3 emitted_normal(const Face& f) const {
-    return normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
-  }
-
   // The 2D frame of the original (unsnapped) face fi.
   Frame frame(Index fi) const {
     auto f = mesh_.face(fi);
@@ -377,9 +379,8 @@ class Snapper {
   // Whether snap point i lies within its tolerance of face f.
   bool honored_by(Index i, const Face& f) const { return dist2(ap_.row(i), f) <= snap_tols2_(i); }
 
-  // Whether point i is within its tolerance of the faces incident to v. Checking only those, not
-  // the neighbouring faces too, can only over-reject a re-move, never dishonor.
-  bool honored_by_surface(Index v, Index i) {
+  // Whether point i is within its tolerance of v's star (the faces incident to v).
+  bool honored_by_star(Index i, Index v) {
     for (auto fi : mesh_.incident(v)) {
       for (auto f : patch_faces(fi).rowwise()) {
         if ((f.array() == v).any() && honored_by(i, f)) {
@@ -406,99 +407,12 @@ class Snapper {
     }
     std::vector<Index> honored;
     snap_grid_.for_each(lo, hi, [&](Index i) {
-      if (honored_by_surface(v, i)) {
+      if (honored_by_star(i, v)) {
         honored.push_back(i);
       }
       return true;
     });
     return honored;
-  }
-
-  // Inserts the point into face fi's interior; reverts unless the re-triangulation uses it (it
-  // projects inside the patch) and stays free of self-intersection.
-  bool insert_in_face(const Candidate& cand, Index fi) {
-    auto new_v = cand.i;       // the snap point's row; p_/ap_ already hold its position
-    aq_.row(new_v) = cand.aq;  // the snap point's on-surface projection
-    auto& interior = patches_.at(fi).interior;
-    interior.push_back(new_v);
-
-    bool simple = true;
-    auto faces = triangulate_patch(fi, &simple);
-    bool used = (faces.array() == new_v).any();
-    boost::unordered_flat_map<Index, Faces> changed{{fi, faces}};
-    auto revert = [&] { interior.pop_back(); };
-    if (!simple || !used || creates_degenerate(changed) || over_pulled(changed) ||
-        self_intersects(changed)) {
-      revert();
-      return false;
-    }
-
-    patches_.at(fi).faces = std::move(faces);
-    reindex_patch(fi);
-    stats_.inserted_in_faces++;
-    return true;
-  }
-
-  // Inserts the point on edge e at parameter t from e's smaller-id endpoint, subdividing both its
-  // incident patches; reverts unless the re-triangulations stay free of self-intersection.
-  bool insert_on_edge(const Candidate& cand, const Edge& e, double t) {
-    auto incident_faces = mesh_.faces_of(e);
-
-    auto new_v = cand.i;  // the snap point's row; p_/ap_ already hold its position
-    aq_.row(new_v) = (1.0 - t) * aq_.row(e.a) + t * aq_.row(e.b);  // on the original edge
-    auto& chain = edge_chains_[e];
-    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .v = new_v});
-
-    boost::unordered_flat_map<Index, Faces> changed;
-    bool simple = true;
-    for (auto fi : incident_faces) {
-      bool patch_simple = true;
-      changed[fi] = triangulate_patch(fi, &patch_simple);
-      simple = simple && patch_simple;
-    }
-    auto revert = [&] {
-      std::erase_if(chain, [new_v](const EdgeVertex& x) { return x.v == new_v; });
-      if (chain.empty()) {
-        edge_chains_.erase(e);
-      }
-    };
-    if (!simple || creates_degenerate(changed) || over_pulled(changed) ||
-        self_intersects(changed)) {
-      revert();
-      return false;
-    }
-
-    for (auto fi : incident_faces) {
-      patches_.at(fi).faces = changed.at(fi);
-      reindex_patch(fi);
-    }
-    stats_.inserted_on_edges++;
-    return true;
-  }
-
-  // The unnormalized normal of triangle (a, b, c); its length is twice the area.
-  static Vector3 normal(const Point3& a, const Point3& b, const Point3& c) {
-    return Vector3((b - a).cross(c - a));
-  }
-
-  // The original face fi's plane normal (over the unsnapped vertices).
-  Vector3 original_normal(Index fi) const {
-    auto f = mesh_.face(fi);
-    return normal(aq_.row(f(0)), aq_.row(f(1)), aq_.row(f(2)));
-  }
-
-  // Whether any emitted triangle is folded over -- normal opposing its original's. An acute feature
-  // up to vertical is kept; a fin there is under-resolution, not a fold.
-  bool over_pulled(const boost::unordered_flat_map<Index, Faces>& changed) {
-    for (const auto& [fi, faces] : changed) {
-      auto n = original_normal(fi);
-      for (auto f : faces.rowwise()) {
-        if (emitted_normal(f).dot(n) < 0.0) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   // The cached triangulation of a patch (computed on first use).
@@ -551,31 +465,35 @@ class Snapper {
       return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)),
                                  p_.row(b(1)), p_.row(b(2)), num_shared_vertices(a, b));
     };
-    // Query per changed face against the committed patches near its exact AABB (face_grid_ tracks
-    // their current geometry, so no margin is needed), rather than pooling all neighborhoods.
-    boost::unordered_flat_set<Index> candidates;
-    for (const auto& a : changed_faces) {
-      for (const auto& b : changed_faces) {
-        if (crosses(a, b)) {
+    // Any two changed faces crossing each other.
+    for (std::size_t i = 0; i + 1 < changed_faces.size(); i++) {
+      for (std::size_t j = i + 1; j < changed_faces.size(); j++) {
+        if (crosses(changed_faces.at(i), changed_faces.at(j))) {
           return true;
         }
       }
+    }
+    // Each changed face against the committed patches near its exact AABB (face_grid_ tracks their
+    // current geometry, so no margin is needed), rather than pooling all neighborhoods.
+    for (const auto& a : changed_faces) {
       auto aps = ap_(a, kAll);
       Point3 lo = aps.colwise().minCoeff();
       Point3 hi = aps.colwise().maxCoeff();
-      candidates.clear();
+      bool hit = false;
       face_grid_.for_each(lo, hi, [&](Index fj) {
-        if (!changed_ids.contains(fj)) {
-          candidates.insert(fj);
+        if (changed_ids.contains(fj)) {
+          return true;  // skip a changed face
+        }
+        for (auto b : patch_faces(fj).rowwise()) {
+          if (crosses(a, b)) {
+            hit = true;
+            return false;
+          }
         }
         return true;
       });
-      for (auto fj : candidates) {
-        for (auto b : patch_faces(fj).rowwise()) {
-          if (crosses(a, b)) {
-            return true;
-          }
-        }
+      if (hit) {
+        return true;
       }
     }
     return false;
@@ -588,13 +506,13 @@ class Snapper {
       *simple = true;
     }
     auto f = mesh_.face(fi);
-    std::array<Index, 3> vertices{f(0), f(1), f(2)};
+    const auto& patch = patches_.at(fi);
 
     auto has_chain = [&](const Edge& e) { return edge_chains_.contains(e); };
-    if (patches_.at(fi).interior.empty() && !has_chain({vertices[0], vertices[1]}) &&
-        !has_chain({vertices[1], vertices[2]}) && !has_chain({vertices[2], vertices[0]})) {
+    if (patch.interior.empty() && !has_chain({f(0), f(1)}) && !has_chain({f(1), f(2)}) &&
+        !has_chain({f(2), f(0)})) {
       Faces single(1, 3);
-      single.row(0) = Face(vertices[0], vertices[1], vertices[2]);
+      single.row(0) = f;
       return single;
     }
 
@@ -605,15 +523,15 @@ class Snapper {
     // along a subdivided edge (see Triangulation). Vertex k lies on patch edges k and (k + 2) % 3.
     std::vector<std::array<int, 2>> boundary_edges;
     auto add_vertex = [&](int k) {
-      boundary_ids.push_back(vertices.at(k));
+      boundary_ids.push_back(f(k));
       // Project the *flat* (on-surface) position, not the snapped target, so the 2D polygon is
       // always valid and consistently wound; folds of the moved mesh are caught downstream.
-      boundary.push_back(project(fr, aq_.row(vertices.at(k))));
+      boundary.push_back(project(fr, aq_.row(f(k))));
       boundary_edges.push_back({k, (k + 2) % 3});
     };
     auto add_chain = [&](int edge) {
-      auto from = vertices.at(edge);
-      auto to = vertices.at((edge + 1) % 3);
+      auto from = f(edge);
+      auto to = f((edge + 1) % 3);
       auto it = edge_chains_.find({from, to});
       if (it == edge_chains_.end()) {
         return;
@@ -642,9 +560,7 @@ class Snapper {
     add_chain(2);
 
     std::vector<Point2> interior;
-    std::vector<Index> interior_ids;
-    for (auto v : patches_.at(fi).interior) {
-      interior_ids.push_back(v);
+    for (auto v : patch.interior) {
       interior.push_back(project(fr, aq_.row(v)));
     }
 
@@ -653,7 +569,7 @@ class Snapper {
     if (simple != nullptr) {
       *simple = triangulation.simple();
     }
-    auto map = [&](Index i) { return i < nb ? boundary_ids.at(i) : interior_ids.at(i - nb); };
+    auto map = [&](Index i) { return i < nb ? boundary_ids.at(i) : patch.interior.at(i - nb); };
     const auto& tf = triangulation.faces();
     Faces faces(tf.rows(), 3);
     for (Index r = 0; r < tf.rows(); r++) {
@@ -662,8 +578,7 @@ class Snapper {
     return faces;
   }
 
-  // Subdivides both patches incident to the edge. `i` is the local index of the vertex opposite
-  // the edge; j and k are the edge's endpoints.
+  // Tries to insert the point on edge i (the local index of the vertex opposite it).
   bool try_edge(const Candidate& cand, int i) {
     auto j = (i + 1) % 3;
     auto k = (i + 2) % 3;
@@ -671,17 +586,66 @@ class Snapper {
       return false;
     }
     auto f = mesh_.face(cand.fi);
-    auto vj = f(j);
-    auto vk = f(k);
-    auto t = cand.l.at(k) / (cand.l.at(j) + cand.l.at(k));
-    if (vj > vk) {
-      std::swap(vj, vk);
-      t = 1.0 - t;
+    Edge e{f(j), f(k)};
+    if (e.a != f(j)) {
+      std::swap(j, k);
     }
-    return insert_on_edge(cand, {vj, vk}, t);
+    auto t = cand.l.at(k) / (cand.l.at(j) + cand.l.at(k));
+
+    auto incident_faces = mesh_.faces_of(e);
+    auto new_v = cand.i;  // the snap point's row; p_/ap_ already hold its position
+    aq_.row(new_v) = aq_.row(e.a) + t * (aq_.row(e.b) - aq_.row(e.a));  // on the original edge
+    auto& chain = edge_chains_[e];
+    chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .v = new_v});
+
+    boost::unordered_flat_map<Index, Faces> changed;
+    auto simple = true;
+    for (auto fi : incident_faces) {
+      auto patch_simple = true;
+      changed[fi] = triangulate_patch(fi, &patch_simple);
+      simple = simple && patch_simple;
+    }
+
+    if (!simple || degenerate_or_folded(changed) || self_intersects(changed)) {
+      // Revert.
+      std::erase_if(chain, [new_v](const EdgeVertex& x) { return x.v == new_v; });
+      if (chain.empty()) {
+        edge_chains_.erase(e);
+      }
+      return false;
+    }
+
+    for (auto fi : incident_faces) {
+      patches_.at(fi).faces = changed.at(fi);
+      reindex_patch(fi);
+    }
+    stats_.inserted_on_edges++;
+    return true;
   }
 
-  bool try_interior(const Candidate& cand) { return insert_in_face(cand, cand.fi); }
+  // Tries to insert the point into its projected face's interior.
+  bool try_face(const Candidate& cand) {
+    auto fi = cand.fi;
+    auto new_v = cand.i;       // the snap point's row; p_/ap_ already hold its position
+    aq_.row(new_v) = cand.aq;  // the snap point's on-surface projection
+    auto& interior = patches_.at(fi).interior;
+    interior.push_back(new_v);
+
+    auto simple = true;
+    auto faces = triangulate_patch(fi, &simple);
+    bool used = (faces.array() == new_v).any();  // false if the point did not project inside
+    boost::unordered_flat_map<Index, Faces> changed{{fi, faces}};
+
+    if (!simple || !used || degenerate_or_folded(changed) || self_intersects(changed)) {
+      interior.pop_back();  // revert
+      return false;
+    }
+
+    patches_.at(fi).faces = std::move(faces);
+    reindex_patch(fi);
+    stats_.inserted_in_faces++;
+    return true;
+  }
 
   bool try_place(const Candidate& cand, Simplex s) {
     switch (s) {
@@ -694,14 +658,12 @@ class Snapper {
       case Simplex::kEdge01:
         return try_edge(cand, index_of(s) - index_of(Simplex::kEdge12));
       case Simplex::kFace:
-        return try_interior(cand);
+        return try_face(cand);
     }
     return false;  // unreachable; all simplices are handled above
   }
 
-  // Moves v onto the candidate's point, but only if every point the surface around v currently
-  // honors stays honored -- so no move (a first move or a re-move to a farther point) dishonors an
-  // already-served point.
+  // Tries to move v onto the candidate's point.
   bool try_vertex(const Candidate& cand, Index v) {
     auto honored = honored_points_around(v);
 
@@ -709,14 +671,15 @@ class Snapper {
     Point3 ap = ap_.row(v);
     p_.row(v) = p_.row(cand.i);  // tentative
     ap_.row(v) = ap_.row(cand.i);
+
     boost::unordered_flat_map<Index, Faces> changed;
     for (auto fi : mesh_.incident(v)) {
       changed[fi] = patch_faces(fi);
     }
-    bool dishonors =
-        std::ranges::any_of(honored, [&](Index i) { return !honored_by_surface(v, i); });
-    if (creates_degenerate(changed) || over_pulled(changed) || self_intersects(changed) ||
-        dishonors) {
+
+    bool dishonors = std::ranges::any_of(honored, [&](Index i) { return !honored_by_star(i, v); });
+    if (degenerate_or_folded(changed) || self_intersects(changed) || dishonors) {
+      // Revert.
       p_.row(v) = p;
       ap_.row(v) = ap;
       return false;

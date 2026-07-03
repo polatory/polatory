@@ -85,7 +85,7 @@ class Smoother {
     // Grid cell = resolution (a face spans about one cell); it only tunes the broad-phase, and
     // resolution avoids a lone long edge blowing the grid up.
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
-      insert_face(fi);
+      index_face(fi);
     }
 
     VecX tols = tolerances;
@@ -101,9 +101,9 @@ class Smoother {
         pq.push({e, fl->improve});
       }
     };
-    mesh_.for_each_edge([&](const Edge& e, const auto& sides) {
-      if (sides[0] >= 0 && sides[1] >= 0) {
-        enqueue(e);
+    mesh_.for_each_halfedge([&](Halfedge h) {
+      if (h.from < h.to && !mesh_.is_boundary(h.opposite())) {
+        enqueue(Edge{h.from, h.to});  // the canonical side of each interior edge
       }
     });
 
@@ -122,11 +122,10 @@ class Smoother {
       }
       // Re-score the edges of the two changed faces and of their neighbours.
       for (Index fi : {fl->fi0, fl->fi1}) {
-        auto f = mesh_.face(fi);
         for (auto k = 0; k < 3; k++) {
-          Edge ek{f(k), f((k + 1) % 3)};
-          enqueue(ek);
-          Index gi = mesh_.across(ek, fi);
+          auto h = mesh_.halfedge(fi, k);
+          enqueue(Edge{h.from, h.to});
+          Index gi = mesh_.face(h.opposite());
           if (gi >= 0 && gi != fl->fi0 && gi != fl->fi1) {
             auto g = mesh_.face(gi);
             for (auto m = 0; m < 3; m++) {
@@ -179,9 +178,11 @@ class Smoother {
   }
 
   void do_flip(const Flip& fl) {
-    auto [fi0, fi1] = mesh_.flip({fl.x, fl.y});
-    insert_face(fi0);
-    insert_face(fi1);
+    unindex_face(fl.fi0);
+    unindex_face(fl.fi1);
+    mesh_.flip({fl.x, fl.y});
+    index_face(fl.fi0);
+    index_face(fl.fi1);
   }
 
   // Self-intersection guard: neither new triangle may cross a face in its grid cells -- a
@@ -206,17 +207,18 @@ class Smoother {
     auto f1 = mesh_.face(fl.fi1);
     std::array<Face, 6> after{fl.new_f0(), fl.new_f1()};
     auto na = 2;
-    // Each outer edge belongs to one removed face; its neighbour across that face also bends.
-    auto add_neighbour = [&](const Edge& e, Index owner) {
-      Index gi = mesh_.across(e, owner);
+    // Each outer edge belongs to one removed face; its neighbour across that face also bends. Each
+    // halfedge is directed as its removed face (f0 = x -> y -> c, f1 = y -> x -> d) traverses it.
+    auto add_neighbour = [&](Halfedge h) {
+      Index gi = mesh_.face(h.opposite());
       if (gi >= 0) {
         after.at(na++) = mesh_.face(gi);
       }
     };
-    add_neighbour({fl.c, fl.x}, fl.fi0);
-    add_neighbour({fl.y, fl.c}, fl.fi0);
-    add_neighbour({fl.x, fl.d}, fl.fi1);
-    add_neighbour({fl.d, fl.y}, fl.fi1);
+    add_neighbour({fl.c, fl.x});
+    add_neighbour({fl.y, fl.c});
+    add_neighbour({fl.x, fl.d});
+    add_neighbour({fl.d, fl.y});
     auto aps = ap_({fl.x, fl.y, fl.c, fl.d}, kAll);
     Point3 lo = aps.colwise().minCoeff();
     Point3 hi = aps.colwise().maxCoeff();
@@ -235,9 +237,8 @@ class Smoother {
     return ok;
   }
 
-  // Index a face by the grid cells its AABB touches; stale entries from a flip are harmless (a
-  // stale index reads its current geometry).
-  void insert_face(Index fi) {
+  // Index a face by the grid cells its current AABB touches.
+  void index_face(Index fi) {
     auto f = mesh_.face(fi);
     auto ps = p_(f, kAll);
     Point3 lo = ps.colwise().minCoeff();
@@ -273,28 +274,22 @@ class Smoother {
   // cap, no fold, lowers the bend). The cheap checks; the self-intersection guard is left to the
   // caller.
   std::optional<Flip> score(const Edge& e) const {
-    auto sides = mesh_.faces_of(e);
-    if (sides.size() < 2) {
-      return std::nullopt;
+    Halfedge h{e.a, e.b};  // canonical (e.a < e.b); traverses x -> y in f0
+    auto opp_h = h.opposite();
+    auto fi0 = mesh_.face(h);
+    auto fi1 = mesh_.face(opp_h);
+    if (fi0 < 0 || fi1 < 0) {
+      return std::nullopt;  // a boundary edge
     }
-    auto fi0 = sides[0];
-    auto fi1 = sides[1];
     auto f0 = mesh_.face(fi0);
     auto f1 = mesh_.face(fi1);
 
-    Index x = -1;
-    Index y = -1;
-    for (auto k = 0; k < 3; k++) {
-      if (e == Edge{f0(k), f0((k + 1) % 3)}) {
-        x = f0(k);
-        y = f0((k + 1) % 3);
-        break;
-      }
-    }
-    Index c = AbstractMesh::opposite(f0, e);
-    Index d = AbstractMesh::opposite(f1, e);
-    if (c < 0 || d < 0 || c == d || mesh_.has_edge({c, d})) {
-      return std::nullopt;  // boundary/degenerate, or the flipped diagonal already exists
+    Index x = h.from;
+    Index y = h.to;
+    Index c = mesh_.apex(h);
+    Index d = mesh_.apex(opp_h);
+    if (c == d || mesh_.has_edge({c, d})) {
+      return std::nullopt;  // degenerate, or the flipped diagonal already exists
     }
     auto new_len2 = (ap_.row(c) - ap_.row(d)).squaredNorm();
     auto cur_len2 = (ap_.row(x) - ap_.row(y)).squaredNorm();
@@ -323,10 +318,11 @@ class Smoother {
       }
     }
 
-    Index gi_cx = mesh_.across({c, x}, fi0);
-    Index gi_yc = mesh_.across({y, c}, fi0);
-    Index gi_xd = mesh_.across({x, d}, fi1);
-    Index gi_dy = mesh_.across({d, y}, fi1);
+    // The quad's four outer neighbours, across the edges next/prev to the flipped edge.
+    Index gi_cx = mesh_.face(mesh_.prev(h).opposite());
+    Index gi_yc = mesh_.face(mesh_.next(h).opposite());
+    Index gi_xd = mesh_.face(mesh_.next(opp_h).opposite());
+    Index gi_dy = mesh_.face(mesh_.prev(opp_h).opposite());
 
     // Flip whenever the summed bend over the five touched edges strictly drops.
     auto before = bend(f0, f1) + bend_with(f0, gi_cx) + bend_with(f0, gi_yc) +
@@ -360,6 +356,15 @@ class Smoother {
       return std::nullopt;
     }
     return Flip{fi0, fi1, x, y, c, d, improve};
+  }
+
+  // Detach a face from the grid; reads its current geometry, so call before that geometry changes.
+  void unindex_face(Index fi) {
+    auto f = mesh_.face(fi);
+    auto ps = p_(f, kAll);
+    Point3 lo = ps.colwise().minCoeff();
+    Point3 hi = ps.colwise().maxCoeff();
+    face_grid_.remove(fi, lo, hi);
   }
 
   Points3 p_;
