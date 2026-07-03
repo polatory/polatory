@@ -173,16 +173,11 @@ class Snapper {
         continue;
       }
       bool ok = false;
-      for (auto code : cand.order) {
-        if (try_place(cand, code)) {
+      for (auto s : cand.order) {
+        if (try_place(cand, s)) {
           ok = true;
           break;
         }
-      }
-      // A vertex point the single-face cascade missed gets one more try across the vertex's
-      // umbrella.
-      if (!ok && index_of(cand.order.front()) <= index_of(Simplex::kVertex2)) {
-        ok = try_vertex_umbrella(cand, mesh_.face(cand.fi)(index_of(cand.order.front())));
       }
       if (!ok) {
         stats_.dropped++;
@@ -732,74 +727,6 @@ class Snapper {
     }
     stats_.moved_vertices++;
     return true;
-  }
-
-  // Retry a vertex-classified point across v's whole umbrella, nearest first: the cascade only saw
-  // the single AABB face, so a spoke or face of another incident face may still take it.
-  bool try_vertex_umbrella(const Candidate& cand, Index v) {
-    const auto& V = aq_;
-
-    // The edges of the cascade's own face that contain v were already tried; skip them.
-    boost::unordered_flat_set<Edge, EdgeHash> queued;
-    auto cf = mesh_.face(cand.fi);
-    for (auto k = 0; k < 3; k++) {
-      Index a = cf(k);
-      Index b = cf((k + 1) % 3);
-      if (a == v || b == v) {
-        queued.insert({a, b});
-      }
-    }
-
-    struct Op {
-      double d2{};
-      Index a{-1};
-      Index b{-1};
-      Index fi{-1};
-      double t{};
-    };
-    std::vector<Op> ops;
-    for (auto fi : mesh_.incident(v)) {
-      if (fi == cand.fi) {
-        continue;
-      }
-      auto f = mesh_.face(fi);
-      Point3 a = V.row(f(0));
-      Point3 b = V.row(f(1));
-      Point3 c = V.row(f(2));
-      Point3 centroid = a + ((b - a) + (c - a)) / 3.0;
-      ops.push_back({.d2 = (cand.aq - centroid).squaredNorm(), .fi = fi});
-      for (auto k = 0; k < 3; k++) {
-        Index x = f(k);
-        Index y = f((k + 1) % 3);
-        if (x != v && y != v) {
-          continue;  // not a spoke
-        }
-        Edge e{x, y};
-        if (!queued.insert(e).second) {
-          continue;  // already tried, or a spoke shared with another incident face
-        }
-        Point3 va = V.row(e.a);
-        Point3 vb = V.row(e.b);
-        Vector3 d = vb - va;
-        auto t = (cand.aq - va).dot(d) / d.squaredNorm();
-        if (!(t > 0.0 && t < 1.0)) {
-          continue;  // projects onto an endpoint
-        }
-        Point3 mid = va + 0.5 * d;
-        ops.push_back({.d2 = (cand.aq - mid).squaredNorm(), .a = e.a, .b = e.b, .t = t});
-      }
-    }
-
-    std::ranges::sort(ops, [](const Op& x, const Op& y) {
-      return std::make_tuple(x.d2, x.fi, x.a, x.b) < std::make_tuple(y.d2, y.fi, y.a, y.b);
-    });
-    for (const auto& op : ops) {
-      auto ok = op.fi >= 0 ? insert_in_face(cand, op.fi) : insert_on_edge(cand, {op.a, op.b}, op.t);
-      if (ok) {
-        return true;
-      }
-    }
-    return false;
   }
 
   const Index nv_;
