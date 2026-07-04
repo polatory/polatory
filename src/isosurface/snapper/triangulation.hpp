@@ -52,14 +52,13 @@ class Triangulation {
     }
     std::ranges::sort(constraints_);
 
-    try {
-      ear_clip();
-      insert_interior();
-      make_delaunay();
-    } catch (const std::runtime_error&) {
-      // A non-simple polygon drove the triangulation non-manifold; the result is unreliable.
-      simple_ = false;
+    ear_clip();
+    if (!simple_) {
+      return;
     }
+
+    insert_interior();
+    make_delaunay();
 
     faces_ = std::move(mesh_).take_faces();
   }
@@ -243,7 +242,6 @@ class Triangulation {
         if (shares_edge({c, d})) {
           continue;  // never cut a diagonal along a subdivided edge (the patches would disagree)
         }
-
         // Flip only when d is decisively inside (x, y, c)'s circumcircle and both new triangles are
         // strictly positive.
         if (!(incircle(points_.row(x), points_.row(y), points_.row(c), points_.row(d)) >
@@ -253,6 +251,10 @@ class Triangulation {
         if (!(orient2d(points_.row(x), points_.row(d), points_.row(c)) > area_tol &&
               orient2d(points_.row(d), points_.row(y), points_.row(c)) > area_tol)) {
           continue;
+        }
+
+        if (mesh_.has_edge({c, d})) {
+          continue;  // the diagonal already exists: an inexact predicate green-lit a bad flip
         }
 
         mesh_.flip(e);

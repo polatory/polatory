@@ -601,9 +601,10 @@ class Snapper {
     boost::unordered_flat_map<Index, Faces> changed;
     auto simple = true;
     for (auto fi : incident_faces) {
-      auto patch_simple = true;
-      changed[fi] = triangulate_patch(fi, &patch_simple);
-      simple = simple && patch_simple;
+      changed[fi] = triangulate_patch(fi, &simple);
+      if (!simple) {
+        break;
+      }
     }
 
     if (!simple || degenerate_or_folded(changed) || self_intersects(changed)) {
