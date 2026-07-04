@@ -62,9 +62,9 @@ class Snapper {
 
   struct Candidate {
     Index i{};                // The snap point's row [0, np_); indexes its position and tolerance.
+    Index fi{};               // The projected face.
     Point3 aq;                // The projection of the point onto the mesh (closest point).
     double d2{};              // The squared distance from the point to the mesh.
-    Index fi{};               // The projected face.
     std::array<double, 3> l;  // The barycentric coordinates of the projection.
     std::array<Simplex, 7> order;  // The seven simplices, nearest centroid first.
   };
@@ -230,40 +230,44 @@ class Snapper {
 
       // The nearest face within max_distance; classification skips anything farther, so a
       // max_distance-radius query over face_grid_ suffices.
-      Index fi = -1;
-      Point3 aq;
-      auto d2 = std::numeric_limits<double>::infinity();
+      Index best_fi = -1;
+      Point3 best_aq;
+      auto best_d2 = std::numeric_limits<double>::infinity();
+
       Point3 lo = (ap.array() - max_distance_).matrix();
       Point3 hi = (ap.array() + max_distance_).matrix();
-      face_grid_.for_each(lo, hi, [&](Index fj) {
-        auto f = mesh_.face(fj);
-        Point3 cp;
-        auto dd = point_triangle_closest(ap, V.row(f(0)), V.row(f(1)), V.row(f(2)), cp);
-        if (dd < d2) {
-          d2 = dd;
-          fi = fj;
-          aq = cp;
+      face_grid_.for_each(lo, hi, [&](Index fi) {
+        const auto& [blo, bhi] = patches_.at(fi).box;
+        Point3 aq = ap.cwiseMax(blo).cwiseMin(bhi);
+        if ((ap - aq).squaredNorm() < best_d2) {
+          auto f = mesh_.face(fi);
+          auto d2 = point_triangle_closest(ap, V.row(f(0)), V.row(f(1)), V.row(f(2)), aq);
+          if (d2 < best_d2) {
+            best_fi = fi;
+            best_aq = aq;
+            best_d2 = d2;
+          }
         }
         return true;
       });
 
-      if (fi < 0 || d2 > max_distance_ * max_distance_) {
+      if (best_fi < 0 || best_d2 > max_distance_ * max_distance_) {
         stats_.skipped++;
         continue;
       }
-      Point3 q = geometry::transform_point<3>(aniso_inv_, aq);
+      Point3 q = geometry::transform_point<3>(aniso_inv_, best_aq);
       if (!bbox_.contains(p) || !bbox_.contains(q)) {
         stats_.skipped++;
         continue;
       }
 
-      auto f = mesh_.face(fi);
+      auto f = mesh_.face(best_fi);
       Point3 a = V.row(f(0));
       Point3 b = V.row(f(1));
       Point3 c = V.row(f(2));
 
       Vector3 l;
-      igl::barycentric_coordinates(aq, a, b, c, l);
+      igl::barycentric_coordinates(best_aq, a, b, c, l);
 
       // The centroid of each simplex, indexed by Simplex (vertices, edge midpoints, face).
       std::array<Point3, 7> sites{
@@ -272,12 +276,16 @@ class Snapper {
                                    Simplex::kEdge12,  Simplex::kEdge20,  Simplex::kEdge01,
                                    Simplex::kFace};
       std::ranges::sort(order, [&](auto s, auto t) {
-        return (aq - sites.at(index_of(s))).squaredNorm() <
-               (aq - sites.at(index_of(t))).squaredNorm();
+        return (best_aq - sites.at(index_of(s))).squaredNorm() <
+               (best_aq - sites.at(index_of(t))).squaredNorm();
       });
 
-      candidates.push_back(
-          {.i = i, .aq = aq, .d2 = d2, .fi = fi, .l = {l(0), l(1), l(2)}, .order = order});
+      candidates.push_back({.i = i,
+                            .fi = best_fi,
+                            .aq = best_aq,
+                            .d2 = best_d2,
+                            .l = {l(0), l(1), l(2)},
+                            .order = order});
     }
 
     // Least-distorting first (by distance to the mesh): each shared feature is claimed by the
