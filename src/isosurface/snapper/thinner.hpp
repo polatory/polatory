@@ -91,8 +91,7 @@ class Thinner {
 
   // Whether collapsing v onto w is admissible; dev = the dropped point's distance to the new
   // surface.
-  bool collapse_ok(Halfedge h, const std::vector<Index>& inc, const std::vector<Halfedge>& hs,
-                   double& dev) {
+  bool collapse_ok(Halfedge h, const std::vector<Halfedge>& hs, double& dev) {
     auto a = mesh_.from(h);  // the dropped vertex
     auto b = mesh_.to(h);    // the kept vertex
     auto c = mesh_.apex(h);
@@ -109,8 +108,10 @@ class Thinner {
 
     // a's kept faces (those not on edge ab), with a retargeted to b.
     std::vector<Face> kept;
-    boost::unordered_flat_set<Index> umbrella(inc.begin(), inc.end());
-    for (auto fi : inc) {
+    boost::unordered_flat_set<Index> star;
+    for (auto hh : hs) {
+      auto fi = mesh_.face(hh);
+      star.insert(fi);
       auto f = mesh_.face(fi);
       if (on_edge(f, a, b)) {
         continue;  // collapses to a degenerate sliver, dropped
@@ -144,19 +145,20 @@ class Thinner {
       dev = std::min(dev, dist2(ap_.row(a), nf));
     }
 
-    // Faces near the collapse: those incident to the kept faces' vertices but outside the umbrella.
+    // Faces near the collapse: those incident to the kept faces' vertices but outside the star.
     boost::unordered_flat_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto v : nf) {
-        for (auto fi : mesh_.incident(v)) {
-          if (!umbrella.contains(fi)) {
+        for (auto h : mesh_.outgoing(v)) {
+          auto fi = mesh_.face(h);
+          if (!star.contains(fi)) {
             nearby.insert(fi);
           }
         }
       }
     }
 
-    if (!honors_ok(inc, kept, nearby)) {
+    if (!honors_ok(star, kept, nearby)) {
       return false;
     }
 
@@ -169,7 +171,7 @@ class Thinner {
       Point3 hi = aps.colwise().maxCoeff();
       bool hit = false;
       face_grid_.for_each(lo, hi, [&](Index fi) {
-        if (umbrella.contains(fi) || !intersects(nf, mesh_.face(fi))) {
+        if (star.contains(fi) || !intersects(nf, mesh_.face(fi))) {
           return true;
         }
         hit = true;
@@ -214,15 +216,16 @@ class Thinner {
 
   // Every nearby snap point held by a removed face -- not just the dropped vertex -- must stay
   // within tolerance, else a greedy chain drifts already-dropped points off the surface.
-  bool honors_ok(const std::vector<Index>& inc, const std::vector<Face>& kept,
+  bool honors_ok(const boost::unordered_flat_set<Index>& star, const std::vector<Face>& kept,
                  const boost::unordered_flat_set<Index>& nearby) const {
     if (snap_grid_.empty()) {
       return true;
     }
-    Point3 lo = ap_.row(mesh_.face(inc.front())(0));
+    auto face_of = [&](Index fi) -> Face { return mesh_.face(fi); };
+    Point3 lo = ap_.row(face_of(*star.begin())(0));
     Point3 hi = lo;
-    for (auto fi : inc) {
-      for (auto x : mesh_.face(fi)) {
+    for (auto fi : star) {
+      for (auto x : face_of(fi)) {
         lo = lo.cwiseMin(ap_.row(x));
         hi = hi.cwiseMax(ap_.row(x));
       }
@@ -230,8 +233,7 @@ class Thinner {
     bool ok = true;
     snap_grid_.for_each(lo, hi, [&](Index i) {
       auto honored = [&](const auto& f) { return honored_by(i, f); };
-      auto face_of = [&](Index fi) -> Face { return mesh_.face(fi); };
-      if (std::ranges::none_of(inc, honored, face_of)) {
+      if (std::ranges::none_of(star, honored, face_of)) {
         return true;  // not held by a removed face; the collapse cannot dishonor it
       }
       if (std::ranges::none_of(kept, honored) && std::ranges::none_of(nearby, honored, face_of)) {
@@ -268,22 +270,13 @@ class Thinner {
 
   // Collapse v onto its least-distorting admissible neighbour, if any; returns whether it did.
   bool try_collapse(Index v) {
-    const auto& inc = mesh_.incident(v);
-    if (inc.size() < 3) {
+    auto hs = mesh_.outgoing(v);  // copy: the collapse below rewrites the adjacency
+    if (hs.size() < 3) {
       return false;
     }
-    // v's outgoing halfedges v -> w. v must be an interior manifold vertex: each halfedge's
+    // hs holds v's outgoing halfedges v -> w. v must be an interior manifold vertex: each one's
     // opposite (w -> v) must also have a face.
-    std::vector<Halfedge> hs;
-    hs.reserve(inc.size());
-    bool interior = true;
-    mesh_.for_each_outgoing(v, [&](Halfedge h) {
-      if (!mesh_.opposite(h).is_valid()) {
-        interior = false;
-      }
-      hs.push_back(h);
-    });
-    if (!interior) {
+    if (std::ranges::any_of(hs, [&](Halfedge h) { return !mesh_.opposite(h).is_valid(); })) {
       return false;
     }
 
@@ -291,7 +284,7 @@ class Thinner {
     double best_dev = std::numeric_limits<double>::infinity();
     for (auto h : hs) {
       double dev = 0.0;
-      if (collapse_ok(h, inc, hs, dev) && dev < best_dev) {
+      if (collapse_ok(h, hs, dev) && dev < best_dev) {
         best = h;
         best_dev = dev;
       }
@@ -301,8 +294,8 @@ class Thinner {
     }
     // Drop the star from the grid before the collapse rewrites it (unindex_face reads live
     // geometry), then re-add the retargeted faces.
-    for (auto fi : inc) {
-      unindex_face(fi);
+    for (auto h : hs) {
+      unindex_face(mesh_.face(h));
     }
     for (auto fi : mesh_.collapse(best)) {  // drop best.from onto best.to
       index_face(fi);
