@@ -317,50 +317,27 @@ class Snapper {
   }
 
   Mesh emit() {
-    std::vector<Face> faces;
+    Points3 vertices(p_.rows(), 3);
+    Faces faces(mesh_.num_faces() + 2 * (stats_.inserted_on_edges + stats_.inserted_in_faces), 3);
+    Index nf = 0;
+    Index nv = 0;
+    std::vector<Index> vv(p_.rows(), -1);
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
       for (auto f : patch_faces(fi).rowwise()) {
-        faces.push_back(f);
+        for (auto k = 0; k < 3; k++) {
+          auto v = f(k);
+          if (vv.at(v) < 0) {
+            vv.at(v) = nv;
+            vertices.row(nv) = p_.row(v);
+            nv++;
+          }
+          faces(nf, k) = vv.at(v);
+        }
+        nf++;
       }
     }
-
-    // Drop vertices no face references (chain thinning orphans the inserted ones it removes).
-    auto n_all = np_ + nv_;
-    std::vector<bool> used(n_all, false);
-    for (const auto& f : faces) {
-      for (auto v : f) {
-        used.at(v) = true;
-      }
-    }
-    // Number the original vertices (rows [np_, .)) first, then the inserted snap rows, so the
-    // output keeps the input vertex order and an un-snapped run emits unchanged.
-    std::vector<Index> vv(n_all, -1);
-    Index n = 0;
-    for (Index v = np_; v < n_all; v++) {
-      if (used.at(v)) {
-        vv.at(v) = n++;
-      }
-    }
-    for (Index v = 0; v < np_; v++) {
-      if (used.at(v)) {
-        vv.at(v) = n++;
-      }
-    }
-
-    Points3 vertices(n, 3);
-    for (Index v = 0; v < n_all; v++) {
-      if (used.at(v)) {
-        vertices.row(vv.at(v)) = p_.row(v);  // exact untransformed position; no aniso round-trip
-      }
-    }
-
-    Faces f(static_cast<Index>(faces.size()), 3);
-    for (Index i = 0; i < f.rows(); i++) {
-      f(i, 0) = vv.at(faces.at(i)(0));
-      f(i, 1) = vv.at(faces.at(i)(1));
-      f(i, 2) = vv.at(faces.at(i)(2));
-    }
-    return {std::move(vertices), std::move(f)};
+    vertices.conservativeResize(nv, Eigen::NoChange);
+    return {std::move(vertices), std::move(faces)};
   }
 
   // The 2D frame of the original (unsnapped) face fi.

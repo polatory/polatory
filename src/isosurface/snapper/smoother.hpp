@@ -135,6 +135,7 @@ class Smoother {
         }
       }
     }
+
     result_ = {mesh.vertices(), std::move(mesh_).take_faces()};
   }
 

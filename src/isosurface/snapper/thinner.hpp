@@ -186,31 +186,22 @@ class Thinner {
   }
 
   Mesh emit() {
-    Faces faces = std::move(mesh_).take_faces();
-    std::vector<bool> used(p_.rows(), false);
-    for (Index i = 0; i < faces.rows(); i++) {
-      for (auto k = 0; k < 3; k++) {
-        used.at(faces(i, k)) = true;
-      }
-    }
+    Points3 vertices(p_.rows(), 3);
+    auto faces = std::move(mesh_).take_faces();
+    Index nv = 0;
     std::vector<Index> vv(p_.rows(), -1);
-    Index n = 0;
-    for (Index v = 0; v < p_.rows(); v++) {
-      if (used.at(v)) {
-        vv.at(v) = n++;
-      }
-    }
-    Points3 vertices(n, 3);
-    for (Index v = 0; v < p_.rows(); v++) {
-      if (used.at(v)) {
-        vertices.row(vv.at(v)) = p_.row(v);
-      }
-    }
-    for (Index i = 0; i < faces.rows(); i++) {
+    for (auto f : faces.rowwise()) {
       for (auto k = 0; k < 3; k++) {
-        faces(i, k) = vv.at(faces(i, k));
+        auto v = f(k);
+        if (vv.at(v) < 0) {
+          vv.at(v) = nv;
+          vertices.row(nv) = p_.row(v);
+          nv++;
+        }
+        f(k) = vv.at(v);
       }
     }
+    vertices.conservativeResize(nv, Eigen::NoChange);
     return {std::move(vertices), std::move(faces)};
   }
 
