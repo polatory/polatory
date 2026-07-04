@@ -39,13 +39,14 @@ class AbstractMesh {
  public:
   explicit AbstractMesh(Faces faces)
       : faces_(std::move(faces)), nf_(faces_.rows()), deleted_(nf_, false) {
+    he_.reserve(3 * nf_);
     for (Index fi = 0; fi < nf_; fi++) {
       register_face(fi);
     }
   }
 
   // Reserve capacity for an incremental build via add_face.
-  explicit AbstractMesh(Index capacity) : faces_(capacity, 3) {}
+  explicit AbstractMesh(Index capacity) : faces_(capacity, 3) { he_.reserve(3 * capacity); }
 
   Index add_face(const Face& f) {
     auto fi = nf_++;
