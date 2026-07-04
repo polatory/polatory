@@ -209,7 +209,7 @@ class Snapper {
     }
     for (auto k = 0; k < 3; k++) {
       auto h = mesh_.halfedge(cand.fi, k);
-      Index fj = mesh_.face(h.opposite());
+      Index fj = mesh_.face(mesh_.opposite(h));
       if (fj >= 0 && patch_honors(fj)) {
         return true;
       }

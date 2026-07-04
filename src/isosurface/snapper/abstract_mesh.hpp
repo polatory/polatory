@@ -1,9 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <array>
 #include <boost/container/static_vector.hpp>
-#include <boost/unordered/unordered_flat_map.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
@@ -13,71 +11,50 @@
 
 namespace polatory::isosurface::snapper {
 
+// A directed side of a face, identified by its index 4 * fi + k (fi the face, k in 0..2) in the
+// implicit halfedge list. The stride is 4, not 3, so fi = h.i >> 2 and k = h.i & 3 are bit ops
+// rather than division by three; the fourth slot per face is unused.
 struct Halfedge {
-  Index from;
-  Index to;
+  Index i{-1};  // -1 for none
 
-  Halfedge opposite() const { return {to, from}; }
-
-  auto operator<=>(const Halfedge&) const = default;
+  bool is_valid() const { return i >= 0; }
 };
 
-struct HalfedgeHash {
-  std::size_t operator()(const Halfedge& he) const noexcept {
-    std::size_t seed{};
-    boost::hash_combine(seed, he.from);
-    boost::hash_combine(seed, he.to);
-    return seed;
-  }
-};
-
-// A triangle mesh's connectivity (faces are vertex-index triples, no coordinates). Each directed
-// edge (halfedge) maps to its incident face, so the two halfedges of an edge are its two oriented
-// sides; a second face on the same halfedge throws, keeping the mesh orientable and manifold. Faces
-// have stable indices.
+// A triangle mesh's connectivity (faces are vertex-index triples, no coordinates). opp_ pairs each
+// halfedge with its opposite, and vf_ lists each vertex's incident faces; there is no hashing --
+// opposites and vertex-pair lookups are found by circulating a vertex's faces. A second face on the
+// same directed edge throws, keeping the mesh orientable and manifold. Faces have stable indices.
 class AbstractMesh {
  public:
   explicit AbstractMesh(Faces faces)
-      : faces_(std::move(faces)), nf_(faces_.rows()), deleted_(nf_, false) {
-    he_.reserve(3 * nf_);
+      : faces_(std::move(faces)), nf_(faces_.rows()), deleted_(nf_, false), opp_(4 * nf_) {
     for (Index fi = 0; fi < nf_; fi++) {
       register_face(fi);
     }
   }
 
   // Reserve capacity for an incremental build via add_face.
-  explicit AbstractMesh(Index capacity) : faces_(capacity, 3) { he_.reserve(3 * capacity); }
+  explicit AbstractMesh(Index capacity) : faces_(capacity, 3) { opp_.reserve(4 * capacity); }
 
   Index add_face(const Face& f) {
     auto fi = nf_++;
     faces_.row(fi) = f;
     deleted_.push_back(false);
+    opp_.resize(4 * nf_);
     register_face(fi);
     return fi;
   }
 
   // The vertex of h's face opposite its edge (the h.to -> apex -> h.from fan), or -1 if h has no
   // face.
-  Index apex(Halfedge h) const {
-    auto fi = face(h);
-    if (fi < 0) {
-      return -1;
-    }
-    auto f = face(fi);
-    for (auto v : f) {
-      if (v != h.from && v != h.to) {
-        return v;
-      }
-    }
-    return -1;  // unreachable for a valid triangle
-  }
+  Index apex(Halfedge h) const { return h.is_valid() ? faces_(h.i >> 2, cw(h.i & 3)) : -1; }
 
-  // Collapses halfedge h, merging h.from into h.to: the faces on the edge are deleted, and the rest
-  // of h.from's star is retargeted to h.to. Precondition: the result is manifold (the caller checks
-  // the link condition). Returns the retargeted faces.
+  // Collapses halfedge h, merging from(h) into to(h): the faces on the edge are deleted, and the
+  // rest of from(h)'s star is retargeted to to(h). Precondition: the result is manifold (the caller
+  // checks the link condition). Returns the retargeted faces.
   std::vector<Index> collapse(Halfedge h) {
-    auto v_drop = h.from;
-    auto v_keep = h.to;
+    auto v_drop = from(h);
+    auto v_keep = to(h);
     auto star = incident(v_drop);  // copy: retargeting rewrites the adjacency
     // Remove every face before retargeting any: a retargeted face claims an edge side vacated by
     // a deleted face, so registering it while that face is still present would clash.
@@ -100,19 +77,16 @@ class AbstractMesh {
 
   Face face(Index fi) const { return faces_.row(fi); }
 
-  // The face incident to halfedge h (traversing from -> to), or -1 if none (h is a boundary side).
-  Index face(Halfedge h) const {
-    auto it = he_.find(h);
-    return it != he_.end() ? it->second : -1;
-  }
+  // The face incident to halfedge h, or -1 if none (h is a boundary side).
+  Index face(Halfedge h) const { return h.is_valid() ? h.i >> 2 : -1; }
 
   // The faces (at most two) incident to e, the a -> b side first when both are present.
   boost::container::static_vector<Index, 2> faces_of(const Edge& e) const {
     boost::container::static_vector<Index, 2> fs;
-    if (auto fi = face({e.a, e.b}); fi >= 0) {
+    if (auto fi = face(halfedge_of(e.a, e.b)); fi >= 0) {
       fs.push_back(fi);
     }
-    if (auto fi = face({e.b, e.a}); fi >= 0) {
+    if (auto fi = face(halfedge_of(e.b, e.a)); fi >= 0) {
       fs.push_back(fi);
     }
     return fs;
@@ -120,11 +94,12 @@ class AbstractMesh {
 
   // Precondition: e has two faces (an interior edge).
   void flip(const Edge& e) {
-    auto sides = faces_of(e);  // interior edge: sides[0] traverses e.a -> e.b, sides[1] the reverse
-    auto fi0 = sides[0];
-    auto fi1 = sides[1];
-    auto c = apex({e.a, e.b});  // fi0's apex (fi0 traverses e.a -> e.b)
-    auto d = apex({e.b, e.a});  // fi1's apex
+    auto h0 = halfedge_of(e.a, e.b);  // traverses e.a -> e.b
+    auto h1 = halfedge_of(e.b, e.a);  // the reverse side
+    auto fi0 = face(h0);
+    auto fi1 = face(h1);
+    auto c = apex(h0);  // fi0's apex
+    auto d = apex(h1);  // fi1's apex
     // Remove both old faces before adding either: a new face shares an outer edge with the other
     // old face in the same direction, so registering it while that face is still present would
     // clash.
@@ -136,11 +111,16 @@ class AbstractMesh {
     register_face(fi1);
   }
 
-  // Visits each present halfedge (each directed side that has a face) once, in no set order.
+  // Visits each present halfedge (each directed side that has a face) once, in face-corner order.
   template <class Fn>
   void for_each_halfedge(const Fn& fn) const {
-    for (const auto& [he, fi] : he_) {
-      fn(he);
+    for (Index fi = 0; fi < nf_; fi++) {
+      if (deleted_.at(fi)) {
+        continue;
+      }
+      for (auto k = 0; k < 3; k++) {
+        fn(Halfedge{4 * fi + k});
+      }
     }
   }
 
@@ -151,21 +131,35 @@ class AbstractMesh {
       auto f = face(fi);
       for (auto k = 0; k < 3; k++) {
         if (f(k) == v) {
-          fn(Halfedge{v, f((k + 1) % 3)});
+          fn(Halfedge{4 * fi + k});
           break;
         }
       }
     }
   }
 
+  // The tail vertex of h (h traverses from -> to).
+  Index from(Halfedge h) const { return faces_(h.i >> 2, h.i & 3); }
+
   // Halfedge k of face fi: from vertex k to vertex k + 1.
-  Halfedge halfedge(Index fi, int k) const {
-    auto f = face(fi);
-    return {f(k), f((k + 1) % 3)};
+  Halfedge halfedge(Index fi, int k) const { return {4 * fi + k}; }
+
+  // The halfedge traversing from -> to, or an invalid halfedge if there is none. Found by
+  // circulating from's incident faces.
+  Halfedge halfedge_of(Index from, Index to) const {
+    for (auto fi : incident(from)) {
+      auto f = face(fi);
+      for (auto k = 0; k < 3; k++) {
+        if (f(k) == from && f((k + 1) % 3) == to) {
+          return {4 * fi + k};
+        }
+      }
+    }
+    return {};
   }
 
   bool has_edge(const Edge& e) const {
-    return he_.contains({e.a, e.b}) || he_.contains({e.b, e.a});
+    return halfedge_of(e.a, e.b).is_valid() || halfedge_of(e.b, e.a).is_valid();
   }
 
   const std::vector<Index>& incident(Index v) const {
@@ -198,16 +192,20 @@ class AbstractMesh {
     }
   }
 
-  // Whether h has no face -- the outer side of a boundary edge.
-  bool is_boundary(Halfedge h) const { return !he_.contains(h); }
-
   // The next halfedge around h's face.
-  Halfedge next(Halfedge h) const { return {h.to, apex(h)}; }
+  Halfedge next(Halfedge h) const { return {(h.i & ~Index{3}) + ccw(h.i & 3)}; }
 
   Index num_faces() const { return nf_; }
 
+  // The halfedge on the other side of h's edge, or an invalid halfedge if h is a boundary side or
+  // itself invalid.
+  Halfedge opposite(Halfedge h) const { return h.is_valid() ? opp_.at(h.i) : Halfedge{}; }
+
   // The previous halfedge around h's face.
-  Halfedge prev(Halfedge h) const { return {apex(h), h.from}; }
+  Halfedge prev(Halfedge h) const { return {(h.i & ~Index{3}) + cw(h.i & 3)}; }
+
+  // The head vertex of h.
+  Index to(Halfedge h) const { return faces_(h.i >> 2, ccw(h.i & 3)); }
 
   Faces take_faces() && {
     Index n = 0;
@@ -221,11 +219,25 @@ class AbstractMesh {
   }
 
  private:
+  // Rotate the local index k (= h.i & 3, in 0..2) forward/back within its triangle.
+  static Index ccw(Index k) { return k == 2 ? 0 : k + 1; }
+  static Index cw(Index k) { return k == 0 ? 2 : k - 1; }
+
   void register_face(Index fi) {
     Face f = faces_.row(fi);
+    // fi is not yet in vf_, so the lookups below never find fi itself.
     for (auto k = 0; k < 3; k++) {
-      if (!he_.emplace(Halfedge{f(k), f((k + 1) % 3)}, fi).second) {
+      Halfedge h{4 * fi + k};
+      Index a = f(k);
+      Index b = f((k + 1) % 3);
+      if (halfedge_of(a, b).is_valid()) {
         throw std::runtime_error("non-manifold or inconsistently oriented edge");
+      }
+      if (auto opp_h = halfedge_of(b, a); opp_h.is_valid()) {  // pair the opposite
+        opp_.at(h.i) = opp_h;
+        opp_.at(opp_h.i) = h;
+      } else {
+        opp_.at(h.i) = Halfedge{};
       }
     }
     for (auto v : f) {
@@ -245,7 +257,11 @@ class AbstractMesh {
   void unregister_face(Index fi) {
     Face f = faces_.row(fi);
     for (auto k = 0; k < 3; k++) {
-      he_.erase({f(k), f((k + 1) % 3)});
+      Halfedge h{4 * fi + k};
+      if (auto opp_h = opp_.at(h.i); opp_h.is_valid()) {
+        opp_.at(opp_h.i) = Halfedge{};  // the opposite becomes a boundary side
+        opp_.at(h.i) = Halfedge{};
+      }
     }
     for (auto v : f) {
       std::erase(vf_.at(v), fi);
@@ -255,8 +271,8 @@ class AbstractMesh {
   Faces faces_;
   Index nf_{};
   std::vector<bool> deleted_;
-  boost::unordered_flat_map<Halfedge, Index, HalfedgeHash> he_;
-  std::vector<std::vector<Index>> vf_;
+  std::vector<Halfedge> opp_;  // opp_[4 * fi + k] = the opposite halfedge, invalid on the boundary
+  std::vector<std::vector<Index>> vf_;  // vertex -> its incident faces
 };
 
 }  // namespace polatory::isosurface::snapper

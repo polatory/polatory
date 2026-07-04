@@ -93,13 +93,14 @@ class Thinner {
   // surface.
   bool collapse_ok(Halfedge h, const std::vector<Index>& inc, const std::vector<Halfedge>& hs,
                    double& dev) {
-    auto a = h.from;  // the dropped vertex
-    auto b = h.to;    // the kept vertex
+    auto a = mesh_.from(h);  // the dropped vertex
+    auto b = mesh_.to(h);    // the kept vertex
     auto c = mesh_.apex(h);
-    auto d = mesh_.apex(h.opposite());
+    auto d = mesh_.apex(mesh_.opposite(h));
 
     // The link condition: Lk(a) \cap Lk(b) =? Lk(a \cup b) = {c, d}.
-    for (auto [_, v] : hs) {
+    for (auto hh : hs) {
+      auto v = mesh_.to(hh);
       if (v != b && v != c && v != d && mesh_.has_edge({v, b})) {
         // v \in Lk(a) \cap Lk(b).
         return false;
@@ -129,7 +130,8 @@ class Thinner {
     }
 
     // Cap edge length to keep triangles regular.
-    for (auto [_, v] : hs) {
+    for (auto hh : hs) {
+      auto v = mesh_.to(hh);
       if (v != b && v != c && v != d && (ap_.row(b) - ap_.row(v)).squaredNorm() > max_edge2_) {
         return false;
       }
@@ -276,7 +278,7 @@ class Thinner {
     hs.reserve(inc.size());
     bool interior = true;
     mesh_.for_each_outgoing(v, [&](Halfedge h) {
-      if (mesh_.is_boundary(h.opposite())) {
+      if (!mesh_.opposite(h).is_valid()) {
         interior = false;
       }
       hs.push_back(h);
@@ -285,7 +287,7 @@ class Thinner {
       return false;
     }
 
-    Halfedge best{-1, -1};  // the chosen collapse v -> w; .to < 0 means none
+    Halfedge best{};  // the chosen collapse v -> w
     double best_dev = std::numeric_limits<double>::infinity();
     for (auto h : hs) {
       double dev = 0.0;
@@ -294,7 +296,7 @@ class Thinner {
         best_dev = dev;
       }
     }
-    if (best.to < 0) {
+    if (!best.is_valid()) {
       return false;
     }
     // Drop the star from the grid before the collapse rewrites it (unindex_face reads live

@@ -102,8 +102,8 @@ class Smoother {
       }
     };
     mesh_.for_each_halfedge([&](Halfedge h) {
-      if (h.from < h.to && !mesh_.is_boundary(h.opposite())) {
-        enqueue(Edge{h.from, h.to});  // the canonical side of each interior edge
+      if (mesh_.from(h) < mesh_.to(h) && mesh_.opposite(h).is_valid()) {
+        enqueue(Edge{mesh_.from(h), mesh_.to(h)});  // the canonical side of each interior edge
       }
     });
 
@@ -124,8 +124,8 @@ class Smoother {
       for (Index fi : {fl->fi0, fl->fi1}) {
         for (auto k = 0; k < 3; k++) {
           auto h = mesh_.halfedge(fi, k);
-          enqueue(Edge{h.from, h.to});
-          Index gi = mesh_.face(h.opposite());
+          enqueue(Edge{mesh_.from(h), mesh_.to(h)});
+          Index gi = mesh_.face(mesh_.opposite(h));
           if (gi >= 0 && gi != fl->fi0 && gi != fl->fi1) {
             auto g = mesh_.face(gi);
             for (auto m = 0; m < 3; m++) {
@@ -210,16 +210,16 @@ class Smoother {
     auto na = 2;
     // Each outer edge belongs to one removed face; its neighbour across that face also bends. Each
     // halfedge is directed as its removed face (f0 = x -> y -> c, f1 = y -> x -> d) traverses it.
-    auto add_neighbour = [&](Halfedge h) {
-      Index gi = mesh_.face(h.opposite());
+    auto add_neighbour = [&](Index from, Index to) {
+      Index gi = mesh_.face(mesh_.opposite(mesh_.halfedge_of(from, to)));
       if (gi >= 0) {
         after.at(na++) = mesh_.face(gi);
       }
     };
-    add_neighbour({fl.c, fl.x});
-    add_neighbour({fl.y, fl.c});
-    add_neighbour({fl.x, fl.d});
-    add_neighbour({fl.d, fl.y});
+    add_neighbour(fl.c, fl.x);
+    add_neighbour(fl.y, fl.c);
+    add_neighbour(fl.x, fl.d);
+    add_neighbour(fl.d, fl.y);
     auto aps = ap_({fl.x, fl.y, fl.c, fl.d}, kAll);
     Point3 lo = aps.colwise().minCoeff();
     Point3 hi = aps.colwise().maxCoeff();
@@ -275,18 +275,18 @@ class Smoother {
   // cap, no fold, lowers the bend). The cheap checks; the self-intersection guard is left to the
   // caller.
   std::optional<Flip> score(const Edge& e) const {
-    Halfedge h{e.a, e.b};  // canonical (e.a < e.b); traverses x -> y in f0
-    auto opp_h = h.opposite();
+    auto h = mesh_.halfedge_of(e.a, e.b);  // canonical (e.a < e.b); traverses x -> y in f0
+    auto opp_h = mesh_.opposite(h);
     auto fi0 = mesh_.face(h);
     auto fi1 = mesh_.face(opp_h);
     if (fi0 < 0 || fi1 < 0) {
-      return std::nullopt;  // a boundary edge
+      return std::nullopt;  // not a present interior edge (a boundary, or a prior flip removed it)
     }
     auto f0 = mesh_.face(fi0);
     auto f1 = mesh_.face(fi1);
 
-    Index x = h.from;
-    Index y = h.to;
+    Index x = mesh_.from(h);
+    Index y = mesh_.to(h);
     Index c = mesh_.apex(h);
     Index d = mesh_.apex(opp_h);
     if (c == d || mesh_.has_edge({c, d})) {
@@ -320,10 +320,10 @@ class Smoother {
     }
 
     // The quad's four outer neighbours, across the edges next/prev to the flipped edge.
-    Index gi_cx = mesh_.face(mesh_.prev(h).opposite());
-    Index gi_yc = mesh_.face(mesh_.next(h).opposite());
-    Index gi_xd = mesh_.face(mesh_.next(opp_h).opposite());
-    Index gi_dy = mesh_.face(mesh_.prev(opp_h).opposite());
+    Index gi_cx = mesh_.face(mesh_.opposite(mesh_.prev(h)));
+    Index gi_yc = mesh_.face(mesh_.opposite(mesh_.next(h)));
+    Index gi_xd = mesh_.face(mesh_.opposite(mesh_.next(opp_h)));
+    Index gi_dy = mesh_.face(mesh_.opposite(mesh_.prev(opp_h)));
 
     // Flip whenever the summed bend over the five touched edges strictly drops.
     auto before = bend(f0, f1) + bend_with(f0, gi_cx) + bend_with(f0, gi_yc) +

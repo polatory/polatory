@@ -214,19 +214,21 @@ class Triangulation {
 
       std::vector<Halfedge> hs;
       mesh_.for_each_halfedge([&](Halfedge h) {
-        if (h.from < h.to && !mesh_.is_boundary(h.opposite())) {
+        if (mesh_.from(h) < mesh_.to(h) && mesh_.opposite(h).is_valid()) {
           hs.push_back(h);  // the canonical side of each interior edge
         }
       });
-      std::ranges::sort(hs);
+      std::ranges::sort(hs, [&](Halfedge a, Halfedge b) {
+        return std::pair(mesh_.from(a), mesh_.to(a)) < std::pair(mesh_.from(b), mesh_.to(b));
+      });
 
       std::vector<bool> flipped(mesh_.num_faces(), false);
       for (auto h : hs) {
-        Edge e{h.from, h.to};
+        Edge e{mesh_.from(h), mesh_.to(h)};
         if (is_constraint(e)) {
           continue;
         }
-        auto opp_h = h.opposite();
+        auto opp_h = mesh_.opposite(h);
         auto fi0 = mesh_.face(h);
         auto fi1 = mesh_.face(opp_h);
         if (fi0 < 0 || fi1 < 0 || flipped.at(fi0) || flipped.at(fi1)) {
@@ -234,8 +236,8 @@ class Triangulation {
         }
 
         // h traverses e.a -> e.b, so (e.a, e.b, c) is CCW; d is the other side's apex.
-        auto x = h.from;
-        auto y = h.to;
+        auto x = mesh_.from(h);
+        auto y = mesh_.to(h);
         auto c = mesh_.apex(h);
         auto d = mesh_.apex(opp_h);
 
