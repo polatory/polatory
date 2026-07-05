@@ -7,7 +7,6 @@
 #include <boost/container_hash/hash.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <boost/unordered/unordered_flat_set.hpp>
-#include <numeric>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
@@ -50,7 +49,8 @@ class VertexClusterer {
         aniso_inv_(aniso.inverse()),
         nv_(v_.rows()),
         nf_(f_.rows()),
-        vf_(nv_) {
+        vf_(nv_),
+        cluster_of_(nv_, -1) {
     for (Index fi = 0; fi < nf_; fi++) {
       for (auto k = 0; k < 3; k++) {
         vf_.at(f_(fi, k)).push_back(fi);
@@ -75,10 +75,6 @@ class VertexClusterer {
     }
     auto components = sets.groups();
 
-    rep_.resize(nv_);
-    std::iota(rep_.begin(), rep_.end(), Index{0});
-    pos_ = v_;
-
     const auto& lo = lattice.first_extended_bbox().min();
     const auto& hi = lattice.first_extended_bbox().max();
     for (auto& component : components) {
@@ -97,7 +93,7 @@ class VertexClusterer {
       Index rep = *std::min_element(component.begin(), component.end());
       Point3 position = clustered_position(component, lattice, vertex_node.at(rep));
       clusters_.emplace_back(std::move(component), rep, position);
-      register_cluster(clusters_.back());
+      register_cluster(clusters_.size() - 1);
     }
 
     result_ = cluster();
@@ -136,7 +132,7 @@ class VertexClusterer {
       auto rollback = [&](std::size_t ci) {
         auto& cluster = clusters_.at(ci);
         if (!cluster.deleted) {
-          unregister_cluster(cluster);
+          unregister_cluster(ci);
           cluster.deleted = true;
           changed = true;
         }
@@ -170,10 +166,11 @@ class VertexClusterer {
     for (auto f : f_.rowwise()) {
       Face g;
       for (auto k = 0; k < 3; k++) {
-        Index v = rep_.at(f(k));
+        auto ci = cluster_of_.at(f(k));
+        auto v = ci < 0 ? f(k) : clusters_.at(ci).rep;
         if (vv.at(v) < 0) {
           vv.at(v) = nv;
-          vertices.row(nv) = pos_.row(v);
+          vertices.row(nv) = ci < 0 ? v_.row(f(k)) : clusters_.at(ci).position;
           nv++;
         }
         g(k) = vv.at(v);
@@ -217,10 +214,9 @@ class VertexClusterer {
     return quadric_position(v_(cluster, kAll), triangles, aniso_, aniso_inv_, lattice, node);
   }
 
-  void register_cluster(const Cluster& cluster) {
-    pos_.row(cluster.rep) = cluster.position;
-    for (auto v : cluster.vertices) {
-      rep_.at(v) = cluster.rep;
+  void register_cluster(std::size_t ci) {
+    for (auto v : clusters_.at(ci).vertices) {
+      cluster_of_.at(v) = static_cast<Index>(ci);
     }
   }
 
@@ -288,10 +284,9 @@ class VertexClusterer {
     return false;
   }
 
-  void unregister_cluster(const Cluster& cluster) {
-    pos_.row(cluster.rep) = v_.row(cluster.rep);
-    for (auto v : cluster.vertices) {
-      rep_.at(v) = v;
+  void unregister_cluster(std::size_t ci) {
+    for (auto v : clusters_.at(ci).vertices) {
+      cluster_of_.at(v) = -1;
     }
   }
 
@@ -303,8 +298,7 @@ class VertexClusterer {
   Index nf_;
   std::vector<std::vector<Index>> vf_;
   std::vector<Cluster> clusters_;
-  std::vector<Index> rep_;  // vertex -> its registered cluster's representative, else itself
-  Points3 pos_;             // vertex positions with registered clusters merged
+  std::vector<Index> cluster_of_;  // vertex -> its registered cluster, or -1 if unclustered
   Mesh result_;
 };
 
