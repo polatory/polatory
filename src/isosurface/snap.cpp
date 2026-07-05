@@ -7,8 +7,7 @@
 namespace polatory::isosurface {
 
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
-               double resolution, const geometry::Bbox3& bbox, double max_distance,
-               const Mat3& aniso, Stats* stats) {
+               double resolution, const Mat3& aniso, double max_distance, Stats* stats) {
   if (stats != nullptr) {
     *stats = {};
   }
@@ -16,7 +15,7 @@ Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& to
     return mesh;
   }
 
-  snapper::Snapper snapper(mesh, points, tolerances, resolution, bbox, max_distance, aniso);
+  snapper::Snapper snapper(mesh, points, tolerances, resolution, aniso, max_distance);
   if (stats != nullptr) {
     *stats = snapper.stats();
   }

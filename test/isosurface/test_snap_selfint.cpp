@@ -239,13 +239,11 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
   ASSERT_EQ(count_self_intersections(base), 0);  // tool sanity: the valid base is clean
 
   const auto max_distance = 0.1 * resolution;
-  const Bbox3 snap_bbox(Point3(-0.8, -0.8, -1.0), Point3(0.8, 0.8, 1.0));
 
   const Index n = 500;
   for (double off : {0.0, 0.5}) {
     auto points = plane_points(0.7, n, off * max_distance);
-    auto mesh =
-        snap_mesh(base, points, VecX(), resolution, snap_bbox, max_distance, Mat3::Identity());
+    auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity(), max_distance);
     auto self_int = count_self_intersections(mesh);
     std::cerr << "planar off=" << off << ": faces=" << mesh.faces().rows()
               << " self-intersections=" << self_int << "\n";
@@ -268,7 +266,7 @@ TEST(snap_selfint, curved_surface_has_no_self_intersections) {
 
   const auto max_distance = 0.05;
   auto points = sphere_points(radius, 1000, 0.5 * max_distance);
-  auto mesh = snap_mesh(base, points, VecX(), resolution, bbox, max_distance, Mat3::Identity());
+  auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity(), max_distance);
 
   auto self_int = count_self_intersections(mesh);
   std::cerr << "sphere: faces=" << mesh.faces().rows() << " self-intersections=" << self_int
@@ -292,11 +290,8 @@ TEST(snap_selfint, real_surface_region_stays_manifold) {
   ASSERT_EQ(count_non_manifold_edges(base), 0);
 
   const auto max_distance = 0.5 * 5e-4;  // snap ratio 0.5 * resolution 5e-4
-  const Point3 center(0.03260, -0.06588, -0.02514);
-  const auto h = 0.002;
-  Bbox3 snap_bbox(center - Point3(h, h, h), center + Point3(h, h, h));
 
-  auto mesh = snap_mesh(base, points, VecX(), 5e-4, snap_bbox, max_distance, Mat3::Identity());
+  auto mesh = snap_mesh(base, points, VecX(), 5e-4, Mat3::Identity(), max_distance);
 
   auto nm_edges = count_non_manifold_edges(mesh);
   std::cerr << "horse region: faces=" << mesh.faces().rows() << " non-manifold-edges=" << nm_edges

@@ -11,7 +11,6 @@
 #include <cstddef>
 #include <format>
 #include <limits>
-#include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
@@ -45,9 +44,7 @@ namespace polatory::isosurface::snapper {
 // Points are processed by increasing distance to the mesh, so each shared feature is first claimed
 // by the candidate that moves it least (a tangential order would fold a far point's patch into an
 // overhang). A claimed vertex may still be re-moved to a farther point as long as the points it
-// already snapped stay honored, letting it migrate out to a contour tip (see try_vertex). Boundary:
-// a point snaps only if it and its projection lie in bbox; if bbox excludes
-// the boundary, the boundary is provably untouched (see the constructor).
+// already snapped stay honored, letting it migrate out to a contour tip (see try_vertex).
 class Snapper {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -90,20 +87,14 @@ class Snapper {
   };
 
  public:
-  // A point snaps only if its distance to the mesh is <= max_distance and both it and its
-  // projection lie in bbox. Vertices, points, and bbox are untransformed; the snapper applies aniso
-  // (so an anisotropic resolution is respected), then emits untransformed positions. bbox stays
-  // untransformed (rotating its AABB would inflate it), each point mapped back for the test.
-  //
-  // When bbox excludes the boundary by at least one face, the boundary is provably untouched:
-  // snapping only moves a vertex or subdivides an edge of the face holding the (in-bbox)
-  // projection, so the touched feature is interior. (In the pipeline bbox is first_extended_bbox.)
+  // A point snaps only if its distance to the mesh is <= max_distance. Vertices and points are
+  // untransformed; the snapper applies aniso (so an anisotropic resolution is respected), then
+  // emits untransformed positions.
   Snapper(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
-          const geometry::Bbox3& bbox, double max_distance, const Mat3& aniso = Mat3::Identity())
+          const Mat3& aniso, double max_distance)
       : nv_(mesh.vertices().rows()),
         np_(points.rows()),
         mesh_((mesh.faces().array() + np_).matrix()),  // shift original vertices to rows [np_, .)
-        bbox_(bbox),
         aniso_inv_(aniso.inverse()),
         max_distance_(max_distance),
         snap_grid_(max_distance, np_),
@@ -252,11 +243,6 @@ class Snapper {
       });
 
       if (best_fi < 0 || best_d2 > max_distance_ * max_distance_) {
-        stats_.skipped++;
-        continue;
-      }
-      Point3 q = geometry::transform_point<3>(aniso_inv_, best_aq);
-      if (!bbox_.contains(p) || !bbox_.contains(q)) {
         stats_.skipped++;
         continue;
       }
@@ -578,6 +564,13 @@ class Snapper {
     auto t = cand.l.at(k) / (cand.l.at(j) + cand.l.at(k));
 
     auto incident_faces = mesh_.faces_of(e);
+    if (incident_faces.size() < 2) {
+      // A boundary edge is not a snap-insert target: it lies on the padding skirt (beyond the user
+      // bbox, clipped off at the end), and splitting its lone triangle would move a boundary the
+      // output discards. The cascade falls through to a face snap instead.
+      return false;
+    }
+
     auto new_v = cand.i;  // the snap point's row; p_/ap_ already hold its position
     aq_.row(new_v) = aq_.row(e.a) + t * (aq_.row(e.b) - aq_.row(e.a));  // on the original edge
     auto& chain = edge_chains_[e];
@@ -681,7 +674,6 @@ class Snapper {
   const Index nv_;
   const Index np_;
   AbstractMesh mesh_;
-  geometry::Bbox3 bbox_;
   Mat3 aniso_inv_;
   double max_distance_;
   VecX snap_tols2_;

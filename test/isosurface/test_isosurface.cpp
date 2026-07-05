@@ -1,14 +1,19 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <boost/container_hash/hash.hpp>
+#include <cmath>
+#include <limits>
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/types.hpp>
+#include <random>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "../utility.hpp"
 
@@ -63,6 +68,69 @@ class SignedDistanceFromPlane : public FieldFunction {
   Vector3 normal_;
   double d_;
 };
+
+double point_tri_dist2(const Point3& p, const Point3& a, const Point3& b, const Point3& c) {
+  Vector3 ab = b - a;
+  Vector3 ac = c - a;
+  Vector3 ap = p - a;
+  double d1 = ab.dot(ap);
+  double d2 = ac.dot(ap);
+  if (d1 <= 0.0 && d2 <= 0.0) {
+    return ap.squaredNorm();
+  }
+  Vector3 bp = p - b;
+  double d3 = ab.dot(bp);
+  double d4 = ac.dot(bp);
+  if (d3 >= 0.0 && d4 <= d3) {
+    return bp.squaredNorm();
+  }
+  double vc = d1 * d4 - d3 * d2;
+  if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0) {
+    double v = d1 / (d1 - d3);
+    return (ap - v * ab).squaredNorm();
+  }
+  Vector3 cp = p - c;
+  double d5 = ab.dot(cp);
+  double d6 = ac.dot(cp);
+  if (d6 >= 0.0 && d5 <= d6) {
+    return cp.squaredNorm();
+  }
+  double vb = d5 * d2 - d1 * d6;
+  if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0) {
+    double w = d2 / (d2 - d6);
+    return (ap - w * ac).squaredNorm();
+  }
+  double va = d3 * d6 - d5 * d4;
+  if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0) {
+    double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+    return (p - (b + w * (c - b))).squaredNorm();
+  }
+  double denom = 1.0 / (va + vb + vc);
+  double v = vb * denom;
+  double w = vc * denom;
+  return (ap - v * ab - w * ac).squaredNorm();
+}
+
+// The largest distance from any vertex of `from` lying in `region` to the surface of `to`. Measures
+// where the meshes pass, not vertex identity -- clipping trims vertices, but the surface location
+// must be bbox-independent.
+double max_surface_dist(const Mesh& from, const Mesh& to, const Bbox3& region) {
+  const auto& fv = from.vertices();
+  const auto& tv = to.vertices();
+  const auto& tf = to.faces();
+  double worst = 0.0;
+  for (auto p : fv.rowwise()) {
+    if (!region.contains(p)) {
+      continue;
+    }
+    double best = std::numeric_limits<double>::infinity();
+    for (auto f : tf.rowwise()) {
+      best = std::min(best, point_tri_dist2(p, tv.row(f(0)), tv.row(f(1)), tv.row(f(2))));
+    }
+    worst = std::max(worst, std::sqrt(best));
+  }
+  return worst;
+}
 
 using Halfedge = std::pair<Index, Index>;
 
@@ -286,4 +354,82 @@ TEST(isosurface, boundary_coordinates_seed_points) {
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
 
   ASSERT_TRUE(test_boundary_coordinates(mesh, bbox));
+}
+
+// `count` deterministic, randomly distributed points on the plane through `origin` with normal `n`,
+// within `region`.
+Points3 plane_points(const Point3& origin, const Vector3& n, const Bbox3& region, Index count) {
+  Vector3 t1 = n.unitOrthogonal();
+  Vector3 t2 = n.cross(t1);
+  std::mt19937 rng(42);
+  std::uniform_real_distribution<double> dist(-2.0, 2.0);
+  std::vector<Point3> pts;
+  while (static_cast<Index>(pts.size()) < count) {
+    Point3 p = origin + dist(rng) * t1 + dist(rng) * t2;
+    if (region.contains(p)) {
+      pts.push_back(p);
+    }
+  }
+  Points3 out(count, 3);
+  for (std::size_t k = 0; k < pts.size(); k++) {
+    out.row(static_cast<Index>(k)) = pts.at(k);
+  }
+  return out;
+}
+
+// The surface location must not depend on the bbox: a larger or shifted box only changes where the
+// mesh is clipped, not where it passes. Compares the two surfaces two rows in from the shared clip
+// edge (nuance 2: "where the mesh passes", not vertex identity, and not a clipped edge against live
+// surface), and expects them to coincide to rounding -- far below the resolution.
+void expect_bbox_independent(const char* label, const Mesh& mesh_a, const Mesh& mesh_b,
+                             const Bbox3& a, const Bbox3& b, double resolution) {
+  Bbox3 common(a.min().cwiseMax(b.min()), a.max().cwiseMin(b.max()));
+  auto margin = 2.0 * resolution;
+  const Bbox3 region(common.min().array() + margin, common.max().array() - margin);
+  EXPECT_LT(max_surface_dist(mesh_a, mesh_b, region), 1e-9) << label;
+  EXPECT_LT(max_surface_dist(mesh_b, mesh_a, region), 1e-9) << label;
+}
+
+void expect_bbox_independent(const char* label, FieldFunction& field_fn, double isovalue,
+                             const Bbox3& a, const Bbox3& b, double resolution) {
+  auto mesh_a = Isosurface(a, resolution).generate(field_fn, isovalue);
+  auto mesh_b = Isosurface(b, resolution).generate(field_fn, isovalue);
+  expect_bbox_independent(label, mesh_a, mesh_b, a, b, resolution);
+}
+
+TEST(isosurface, bbox_independence) {
+  const auto resolution = 0.1;
+
+  // A tilted plane through the origin: a deterministic analytic field (it ignores the evaluation
+  // bbox, unlike the RBF field), and it exits any bbox so clipping actually cuts the surface.
+  SignedDistanceFromPlane plane(Point3(0.017, 0.023, 0.011),
+                                Vector3(0.31, 0.53, 0.79).normalized());
+  // A curved surface that also exits the bbox: the r=6 sphere about (0,0,-5) passes through z~1.
+  DistanceFromPoint sphere(Point3(0.0, 0.0, -5.0));
+
+  const Bbox3 small(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
+  const Bbox3 large(Point3(-2.0, -2.0, -2.0), Point3(2.0, 2.0, 2.0));    // concentric, larger
+  const Bbox3 shifted(Point3(-1.5, -1.3, -1.1), Point3(0.9, 1.1, 1.3));  // off-center
+
+  expect_bbox_independent("plane/larger", plane, 0.0, small, large, resolution);
+  expect_bbox_independent("plane/shifted", plane, 0.0, small, shifted, resolution);
+  expect_bbox_independent("sphere/larger", sphere, 6.0, small, large, resolution);
+  expect_bbox_independent("sphere/shifted", sphere, 6.0, small, shifted, resolution);
+
+  // The snapping path: the snap guard uses first_extended_bbox, which depends on the bbox, so this
+  // is where bbox-dependence would leak in. Snap the mesh to deterministic, randomly distributed
+  // points on the plane.
+  const Point3 origin(0.017, 0.023, 0.011);
+  const Vector3 normal = Vector3(0.31, 0.53, 0.79).normalized();
+  auto snap = plane_points(origin, normal,
+                           Bbox3(small.min().array() + 0.15, small.max().array() - 0.15), 500);
+  VecX tols = VecX::Constant(snap.rows(), 0.5);
+  auto snapped = [&](const Bbox3& box) {
+    Isosurface iso(box, resolution);
+    iso.set_snap_points(snap, 1.0, tols, 8);
+    return iso.generate(plane, 0.0);
+  };
+  auto mesh_s = snapped(small);
+  auto mesh_l = snapped(large);
+  expect_bbox_independent("plane/snap", mesh_s, mesh_l, small, large, resolution);
 }
