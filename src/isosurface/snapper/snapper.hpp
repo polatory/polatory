@@ -366,8 +366,8 @@ class Snapper {
 
   // Whether point i is within its tolerance of v's star (the faces incident to v).
   bool honored_by_star(Index i, Index v) {
-    for (auto h : mesh_.outgoing(v)) {
-      for (auto f : patch_faces(mesh_.face(h)).rowwise()) {
+    for (auto fi : mesh_.vertex_faces(v)) {
+      for (auto f : patch_faces(fi).rowwise()) {
         if ((f.array() == v).any() && honored_by(i, f)) {
           return true;
         }
@@ -380,8 +380,8 @@ class Snapper {
   std::vector<Index> honored_points_around(Index v) {
     Point3 lo = Point3::Constant(std::numeric_limits<double>::infinity());
     Point3 hi = -lo;
-    for (auto h : mesh_.outgoing(v)) {
-      for (auto f : patch_faces(mesh_.face(h)).rowwise()) {
+    for (auto fi : mesh_.vertex_faces(v)) {
+      for (auto f : patch_faces(fi).rowwise()) {
         if ((f.array() == v).any()) {
           for (auto w : f) {
             lo = lo.cwiseMin(ap_.row(w));
@@ -659,8 +659,7 @@ class Snapper {
     ap_.row(v) = ap_.row(cand.i);
 
     boost::unordered_flat_map<Index, Faces> changed;
-    for (auto h : mesh_.outgoing(v)) {
-      auto fi = mesh_.face(h);
+    for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
 
@@ -672,8 +671,8 @@ class Snapper {
       return false;
     }
 
-    for (auto h : mesh_.outgoing(v)) {
-      reindex_patch(mesh_.face(h));
+    for (auto fi : mesh_.vertex_faces(v)) {
+      reindex_patch(fi);
     }
     stats_.moved_vertices++;
     return true;

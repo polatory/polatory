@@ -2,6 +2,8 @@
 
 #include <Eigen/Core>
 #include <boost/container/static_vector.hpp>
+#include <cstddef>
+#include <iterator>
 #include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
@@ -20,6 +22,95 @@ struct Halfedge {
   bool is_valid() const { return i >= 0; }
 
   bool operator==(const Halfedge&) const = default;
+};
+
+class VertexFaceRange {
+ public:
+  class Iterator {
+   public:
+    using iterator_category = std::input_iterator_tag;
+    using value_type = Index;
+    using difference_type = std::ptrdiff_t;
+    using pointer = void;
+    using reference = Index;
+
+    Iterator() = default;
+
+    explicit Iterator(const Halfedge* p) : p_(p) {}
+
+    Index operator*() const { return p_->i >> 2; }  // the outgoing halfedge's face
+
+    Iterator& operator++() {
+      ++p_;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      auto it = *this;
+      ++p_;
+      return it;
+    }
+
+    bool operator==(const Iterator&) const = default;
+
+   private:
+    const Halfedge* p_ = nullptr;
+  };
+
+  VertexFaceRange(const Halfedge* begin, const Halfedge* end) : begin_(begin), end_(end) {}
+
+  Iterator begin() const { return Iterator{begin_}; }
+
+  Iterator end() const { return Iterator{end_}; }
+
+ private:
+  const Halfedge* begin_;
+  const Halfedge* end_;
+};
+
+class VertexOutgoingHalfedgeRange {
+ public:
+  class Iterator {
+   public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Halfedge;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const Halfedge*;
+    using reference = const Halfedge&;
+
+    Iterator() = default;
+
+    explicit Iterator(const Halfedge* p) : p_(p) {}
+
+    reference operator*() const { return *p_; }
+
+    Iterator& operator++() {
+      ++p_;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      auto it = *this;
+      ++p_;
+      return it;
+    }
+
+    bool operator==(const Iterator&) const = default;
+
+   private:
+    const Halfedge* p_ = nullptr;
+  };
+
+  VertexOutgoingHalfedgeRange(const Halfedge* begin, const Halfedge* end)
+      : begin_(begin), end_(end) {}
+
+  Iterator begin() const { return Iterator{begin_}; }
+
+  Iterator end() const { return Iterator{end_}; }
+
+ private:
+  const Halfedge* begin_;
+  const Halfedge* end_;
 };
 
 // A triangle mesh's connectivity (faces are vertex-index triples, no coordinates). A second face on
@@ -56,15 +147,15 @@ class AbstractMesh {
   std::vector<Index> collapse(Halfedge h) {
     auto v_drop = from(h);
     auto v_keep = to(h);
-    auto hs = outgoing(v_drop);  // copy: retargeting rewrites the adjacency
+    auto out = vertex_faces(v_drop);
+    std::vector<Index> star(out.begin(), out.end());  // copy: retargeting rewrites the adjacency
     // Remove every face before retargeting any: a retargeted face claims an edge side vacated by
     // a deleted face, so registering it while that face is still present would clash.
-    for (auto hh : hs) {
-      unregister_face(face(hh));
+    for (auto fi : star) {
+      unregister_face(fi);
     }
     std::vector<Index> moved;
-    for (auto hh : hs) {
-      auto fi = face(hh);
+    for (auto fi : star) {
       Face f = faces_.row(fi);
       if ((f.array() == v_keep).any()) {
         deleted_.at(fi) = true;  // a face on the collapsed edge becomes a degenerate sliver
@@ -135,7 +226,7 @@ class AbstractMesh {
   // The halfedge traversing from -> to, or an invalid halfedge if there is none. Found by scanning
   // from's outgoing halfedges.
   Halfedge halfedge_of(Index from, Index to) const {
-    for (auto h : outgoing(from)) {
+    for (auto h : vertex_outgoing_halfedges(from)) {
       if (this->to(h) == to) {
         return h;
       }
@@ -181,17 +272,8 @@ class AbstractMesh {
   // itself invalid.
   Halfedge opposite(Halfedge h) const { return h.is_valid() ? opp_.at(h.i) : Halfedge{}; }
 
-  // v's outgoing halfedges, one per incident face (face(h) recovers the face).
-  const std::vector<Halfedge>& outgoing(Index v) const {
-    static const std::vector<Halfedge> none;
-    return v < static_cast<Index>(vh_.size()) ? vh_.at(v) : none;
-  }
-
   // The previous halfedge around h's face.
   Halfedge prev(Halfedge h) const { return {(h.i & ~Index{3}) + cw(h.i & 3)}; }
-
-  // The head vertex of h.
-  Index to(Halfedge h) const { return faces_(h.i >> 2, ccw(h.i & 3)); }
 
   Faces take_faces() && {
     Index n = 0;
@@ -202,6 +284,21 @@ class AbstractMesh {
     }
     faces_.conservativeResize(n, Eigen::NoChange);
     return std::move(faces_);
+  }
+
+  // The head vertex of h.
+  Index to(Halfedge h) const { return faces_(h.i >> 2, ccw(h.i & 3)); }
+
+  VertexFaceRange vertex_faces(Index v) const {
+    static const std::vector<Halfedge> none;
+    const auto& hs = v < static_cast<Index>(vh_.size()) ? vh_.at(v) : none;
+    return {hs.data(), hs.data() + hs.size()};
+  }
+
+  VertexOutgoingHalfedgeRange vertex_outgoing_halfedges(Index v) const {
+    static const std::vector<Halfedge> none;
+    const auto& hs = v < static_cast<Index>(vh_.size()) ? vh_.at(v) : none;
+    return {hs.data(), hs.data() + hs.size()};
   }
 
  private:

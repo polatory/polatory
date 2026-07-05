@@ -149,8 +149,7 @@ class Thinner {
     boost::unordered_flat_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto v : nf) {
-        for (auto h : mesh_.outgoing(v)) {
-          auto fi = mesh_.face(h);
+        for (auto fi : mesh_.vertex_faces(v)) {
           if (!star.contains(fi)) {
             nearby.insert(fi);
           }
@@ -270,7 +269,8 @@ class Thinner {
 
   // Collapse v onto its least-distorting admissible neighbour, if any; returns whether it did.
   bool try_collapse(Index v) {
-    auto hs = mesh_.outgoing(v);  // copy: the collapse below rewrites the adjacency
+    auto out = mesh_.vertex_outgoing_halfedges(v);
+    std::vector<Halfedge> hs(out.begin(), out.end());  // copy: collapse rewrites the adjacency
     if (hs.size() < 3) {
       return false;
     }
