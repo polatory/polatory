@@ -102,7 +102,7 @@ class Isosurface {
         for (auto pass = 0; pass < passes; pass++) {
           Stats stats;
           mesh = snap_mesh(mesh, snap_points_, tols, res, aniso_, res * rel_snap_dist_, &stats);
-          if (!stats.changed()) {
+          if (!stats.changed() || stats.all_snapped_or_satisfied()) {
             break;
           }
         }

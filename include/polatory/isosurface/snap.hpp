@@ -13,6 +13,8 @@ struct Stats {
   Index inserted_on_edges{};
   Index inserted_in_faces{};
 
+  bool all_snapped_or_satisfied() const { return dropped == 0 && skipped == 0; }
+
   bool changed() const {
     return moved_vertices != 0 || inserted_on_edges != 0 || inserted_in_faces != 0;
   }
