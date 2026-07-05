@@ -162,37 +162,30 @@ class VertexClusterer {
 
   // Second return maps each merged output vertex to the cluster it came from.
   std::pair<Mesh, boost::unordered_flat_map<Index, std::size_t>> clustered_mesh() const {
-    Index out_nv = 0;
-    Index out_nf = 0;
-
-    // Each vertex maps to the output index of its representative (reps numbered in index order).
+    Points3 vertices(nv_, 3);
+    Faces faces(nf_, 3);
+    Index nv = 0;
+    Index nf = 0;
     std::vector<Index> vv(nv_, -1);
-    for (Index v = 0; v < nv_; v++) {
-      Index r = rep_.at(v);
-      if (vv.at(r) < 0) {
-        vv.at(r) = out_nv++;
-      }
-      vv.at(v) = vv.at(r);
-    }
-
-    Points3 out_vertices(out_nv, 3);
-    for (Index v = 0; v < nv_; v++) {
-      if (rep_.at(v) == v) {
-        out_vertices.row(vv.at(v)) = pos_.row(v);
-      }
-    }
-
-    Faces out_faces(nf_, 3);
     for (auto f : f_.rowwise()) {
-      Index v0 = vv.at(f(0));
-      Index v1 = vv.at(f(1));
-      Index v2 = vv.at(f(2));
-      if (v0 == v1 || v1 == v2 || v2 == v0) {
-        continue;
+      Face g;
+      for (auto k = 0; k < 3; k++) {
+        Index v = rep_.at(f(k));
+        if (vv.at(v) < 0) {
+          vv.at(v) = nv;
+          vertices.row(nv) = pos_.row(v);
+          nv++;
+        }
+        g(k) = vv.at(v);
       }
-      out_faces.row(out_nf++) = Face{v0, v1, v2};
+      if (g(0) == g(1) || g(1) == g(2) || g(2) == g(0)) {
+        continue;  // the cluster collapsed this face to fewer than three vertices
+      }
+      faces.row(nf) = g;
+      nf++;
     }
-    out_faces.conservativeResize(out_nf, 3);
+    vertices.conservativeResize(nv, Eigen::NoChange);
+    faces.conservativeResize(nf, Eigen::NoChange);
 
     boost::unordered_flat_map<Index, std::size_t> vertex_ci;
     for (std::size_t ci = 0; ci < clusters_.size(); ci++) {
@@ -203,7 +196,7 @@ class VertexClusterer {
       vertex_ci[vv.at(cluster.rep)] = ci;
     }
 
-    return {Mesh{std::move(out_vertices), std::move(out_faces)}, vertex_ci};
+    return {Mesh{std::move(vertices), std::move(faces)}, vertex_ci};
   }
 
   // Merges the cluster's vertices to the quadric minimizer over its incident face planes (see
