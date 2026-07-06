@@ -526,7 +526,7 @@ class Snapper {
       dishonored.clear();
       bool ok = false;
       for (auto s : cand.order) {
-        if (try_place(cand, s, dishonored)) {
+        if (try_snap(cand, s, dishonored)) {
           ok = true;
           break;
         }
@@ -624,8 +624,24 @@ class Snapper {
     return faces;
   }
 
+  bool try_snap(const Candidate& cand, Simplex s, std::vector<Index>& dishonored) {
+    switch (s) {
+      case Simplex::kVertex0:
+      case Simplex::kVertex1:
+      case Simplex::kVertex2:
+        return try_snap_vertex(cand, mesh_.face(cand.fi)(index_of(s)), dishonored);
+      case Simplex::kEdge12:
+      case Simplex::kEdge20:
+      case Simplex::kEdge01:
+        return try_snap_edge(cand, index_of(s) - index_of(Simplex::kEdge12), dishonored);
+      case Simplex::kFace:
+        return try_snap_face(cand, dishonored);
+    }
+    return false;  // unreachable; all simplices are handled above
+  }
+
   // Tries to insert the point on edge i (the local index of the vertex opposite it).
-  bool try_edge(const Candidate& cand, int i, std::vector<Index>& dishonored) {
+  bool try_snap_edge(const Candidate& cand, int i, std::vector<Index>& dishonored) {
     auto j = (i + 1) % 3;
     auto k = (i + 2) % 3;
     if (!(cand.l.at(j) + cand.l.at(k) > 0.0)) {
@@ -684,7 +700,7 @@ class Snapper {
   }
 
   // Tries to insert the point into its projected face's interior.
-  bool try_face(const Candidate& cand, std::vector<Index>& dishonored) {
+  bool try_snap_face(const Candidate& cand, std::vector<Index>& dishonored) {
     auto fi = cand.fi;
     auto prev_honored = points_honored_by_patches({fi});
 
@@ -712,24 +728,8 @@ class Snapper {
     return true;
   }
 
-  bool try_place(const Candidate& cand, Simplex s, std::vector<Index>& dishonored) {
-    switch (s) {
-      case Simplex::kVertex0:
-      case Simplex::kVertex1:
-      case Simplex::kVertex2:
-        return try_vertex(cand, mesh_.face(cand.fi)(index_of(s)), dishonored);
-      case Simplex::kEdge12:
-      case Simplex::kEdge20:
-      case Simplex::kEdge01:
-        return try_edge(cand, index_of(s) - index_of(Simplex::kEdge12), dishonored);
-      case Simplex::kFace:
-        return try_face(cand, dishonored);
-    }
-    return false;  // unreachable; all simplices are handled above
-  }
-
   // Tries to move v onto the candidate's point.
-  bool try_vertex(const Candidate& cand, Index v, std::vector<Index>& dishonored) {
+  bool try_snap_vertex(const Candidate& cand, Index v, std::vector<Index>& dishonored) {
     auto prev_honored = points_honored_by_star(v);
 
     Point3 p = p_.row(v);  // for revert
