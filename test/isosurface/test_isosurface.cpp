@@ -426,7 +426,7 @@ TEST(isosurface, bbox_independence) {
   VecX tols = VecX::Constant(snap.rows(), 0.5);
   auto snapped = [&](const Bbox3& box) {
     Isosurface iso(box, resolution);
-    iso.set_snap_points(snap, 1.0, tols);
+    iso.set_snap_points(snap, tols);
     return iso.generate(plane, 0.0);
   };
   auto mesh_s = snapped(small);

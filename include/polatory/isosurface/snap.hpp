@@ -7,16 +7,16 @@ namespace polatory::isosurface {
 
 // The three counts partition the snap points.
 struct Stats {
-  Index skipped{};     // no candidate: the nearest face was beyond max_distance
+  Index skipped{};     // no candidate: the nearest face was beyond the resolution
   Index honored{};     // ended within tolerance of the surface
-  Index dishonored{};  // within max_distance but left off the surface (contention, or unplaceable
+  Index dishonored{};  // within the resolution but left off the surface (contention, or unplaceable
                        // without self-intersection)
 };
 
 // Snaps the mesh to pass exactly through the given points, which become vertices. One pass; the
 // pipeline re-applies it. See snapper/snapper.hpp.
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
-               double resolution, const Mat3& aniso, double max_distance, Stats* stats = nullptr);
+               double resolution, const Mat3& aniso, Stats* stats = nullptr);
 
 // Drops snapped vertices an earlier pass left redundant, by edge collapse, without moving any snap
 // point beyond its tolerance of the surface. See snapper/thinner.hpp.

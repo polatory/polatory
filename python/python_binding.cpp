@@ -199,7 +199,7 @@ PYBIND11_MODULE(_core, m) {
       .def_property_readonly("normals", &NormalEstimator::normals)
       .def_property_readonly("plane_factors", &NormalEstimator::plane_factors)
       .def("estimate_with_knn",
-           static_cast<NormalEstimator& (NormalEstimator::*)(Index)&>(
+           static_cast<NormalEstimator& (NormalEstimator::*)(Index) &>(
                &NormalEstimator::estimate_with_knn),
            "k"_a)
       .def("estimate_with_knn",
@@ -227,7 +227,7 @@ PYBIND11_MODULE(_core, m) {
                &NormalEstimator::orient_toward_point),
            "point"_a)
       .def("orient_closed_surface",
-           static_cast<NormalEstimator& (NormalEstimator::*)(Index)&>(
+           static_cast<NormalEstimator& (NormalEstimator::*)(Index) &>(
                &NormalEstimator::orient_closed_surface),
            "k"_a = 100);
 
@@ -256,7 +256,7 @@ PYBIND11_MODULE(_core, m) {
       .def("generate_from_seed_points", &isosurface::Isosurface::generate_from_seed_points,
            "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = 1)
       .def("set_snap_points", &isosurface::Isosurface::set_snap_points, "points"_a,
-           "relative_distance"_a = 0.5, "relative_tolerances"_a = VecX());
+           "relative_tolerances"_a = VecX());
 
   py::class_<isosurface::Mesh>(m, "Mesh")
       .def("export_obj", &isosurface::Mesh::export_obj, "filename"_a)

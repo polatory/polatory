@@ -139,10 +139,6 @@ class SignedDistanceFromPlane : public FieldFunction {
   double d_;
 };
 
-// A generous absolute snapping distance: the grid cells have unit size and the test
-// points sit at most 0.06 off the z = 0 plane.
-constexpr double kMaxDistance = 0.5;
-
 // Points exercising the three Voronoi regions of the center cell (whose diagonal runs from (1,1) to
 // (2,2)): they project nearest to, respectively, the interior vertex (1,1), the diagonal midpoint,
 // and a face centroid.
@@ -158,7 +154,7 @@ Points3 center_points() {
 
 TEST(snap, points_become_vertices) {
   auto points = center_points();
-  auto mesh = snap_mesh(planar_grid(3), points, VecX(), 1.0, Mat3::Identity(), kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), points, VecX(), 1.0, Mat3::Identity());
 
   // Each point passes exactly through the mesh.
   for (Index i = 0; i < points.rows(); i++) {
@@ -169,24 +165,28 @@ TEST(snap, points_become_vertices) {
   }
 }
 
-TEST(snap, vertex_contention_cascades) {
-  // Two points fall in the Voronoi cell of the same vertex (1,1). The one nearer the
-  // mesh takes the vertex; the other cannot (a vertex cannot be split), so it
-  // cascades to its next-nearest simplex (an edge) and is still snapped. Both pass
-  // through the mesh exactly.
+TEST(snap, vertex_contention_honors_one) {
+  // Two points fall in the Voronoi cell of the same vertex (1,1). Only one can take it (a
+  // vertex cannot be split); the snapper prefers a clean vertex move over a sliver-pinning
+  // insert, so the loser is left for a later pass rather than cascaded in this one. The
+  // winner passes through the mesh exactly and the result stays a manifold.
   Points3 points(2, 3);
-  points << 1.06, 1.04, 0.03,  // nearer the mesh: takes vertex (1,1)
-      1.10, 1.08, 0.06;        // farther: cascades to an edge
-  auto mesh = snap_mesh(planar_grid(3), points, VecX(), 1.0, Mat3::Identity(), kMaxDistance);
+  points << 1.06, 1.04, 0.03,  //
+      1.10, 1.08, 0.06;
+  auto mesh = snap_mesh(planar_grid(3), points, VecX(), 1.0, Mat3::Identity());
 
-  ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
-  ASSERT_TRUE(find_vertex(mesh, Point3(points.row(1)), 1e-12).has_value());
+  Index honored = 0;
+  for (Index i = 0; i < points.rows(); i++) {
+    if (find_vertex(mesh, Point3(points.row(i)), 1e-12).has_value()) {
+      honored++;
+    }
+  }
+  ASSERT_EQ(honored, 1);
   ASSERT_TRUE(is_oriented_manifold(mesh));
 }
 
 TEST(snap, manifold_and_disk_topology) {
-  auto mesh =
-      snap_mesh(planar_grid(3), center_points(), VecX(), 1.0, Mat3::Identity(), kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), center_points(), VecX(), 1.0, Mat3::Identity());
 
   ASSERT_TRUE(is_oriented_manifold(mesh));
   ASSERT_EQ(1, euler_characteristic(mesh));
@@ -195,34 +195,25 @@ TEST(snap, manifold_and_disk_topology) {
 TEST(snap, empty_points_is_noop) {
   auto grid = planar_grid(3);
   Points3 points(0, 3);
-  auto mesh = snap_mesh(grid, points, VecX(), 1.0, Mat3::Identity(), kMaxDistance);
+  auto mesh = snap_mesh(grid, points, VecX(), 1.0, Mat3::Identity());
 
   ASSERT_EQ(grid.vertices().rows(), mesh.vertices().rows());
   ASSERT_EQ(grid.faces().rows(), mesh.faces().rows());
 }
 
-TEST(snap, rejects_points_beyond_max_distance) {
-  // The diagonal point projects to the edge midpoint (1.5, 1.5) at distance 0.3; a
-  // max distance of 0.2 rejects it, while 0.4 accepts it.
-  Points3 points(1, 3);
-  points << 1.5, 1.5, 0.3;
+TEST(snap, rejects_points_beyond_the_resolution) {
+  // Both points project to the edge midpoint (1.5, 1.5); with the resolution 1.0, the one
+  // 0.3 away is within the snapping distance and accepted, the one 1.5 away is rejected.
+  Points3 near_point(1, 3);
+  near_point << 1.5, 1.5, 0.3;
+  Points3 far_point(1, 3);
+  far_point << 1.5, 1.5, 1.5;
 
-  auto rejected = snap_mesh(planar_grid(3), points, VecX(), 1.0, Mat3::Identity(), 0.2);
-  ASSERT_FALSE(find_vertex(rejected, Point3(points.row(0)), 1e-12).has_value());
+  auto accepted = snap_mesh(planar_grid(3), near_point, VecX(), 1.0, Mat3::Identity());
+  ASSERT_TRUE(find_vertex(accepted, Point3(near_point.row(0)), 1e-12).has_value());
 
-  auto accepted = snap_mesh(planar_grid(3), points, VecX(), 1.0, Mat3::Identity(), 0.4);
-  ASSERT_TRUE(find_vertex(accepted, Point3(points.row(0)), 1e-12).has_value());
-}
-
-TEST(snap, rejects_invalid_max_distance_ratio) {
-  Isosurface isosurf(Bbox3(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0)), 0.1);
-  Points3 points(1, 3);
-  points << 0.0, 0.0, 0.0;
-
-  ASSERT_THROW(isosurf.set_snap_points(points, 0.0), std::invalid_argument);
-  ASSERT_THROW(isosurf.set_snap_points(points, 1.5), std::invalid_argument);
-  ASSERT_NO_THROW(isosurf.set_snap_points(points, 1.0));
-  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.5));
+  auto rejected = snap_mesh(planar_grid(3), far_point, VecX(), 1.0, Mat3::Identity());
+  ASSERT_FALSE(find_vertex(rejected, Point3(far_point.row(0)), 1e-12).has_value());
 }
 
 TEST(snap, rejects_invalid_tolerance_ratios) {
@@ -235,15 +226,15 @@ TEST(snap, rejects_invalid_tolerance_ratios) {
   VecX negative(1);
   negative << -0.1;
   VecX above_max(1);
-  above_max << 0.6;  // exceeds max distance ratio 0.5
+  above_max << 1.5;  // exceeds the maximum ratio 1.0
   VecX ok(1);
   ok << 0.1;
 
-  ASSERT_THROW(isosurf.set_snap_points(points, 0.5, wrong_size), std::invalid_argument);
-  ASSERT_THROW(isosurf.set_snap_points(points, 0.5, negative), std::invalid_argument);
-  ASSERT_THROW(isosurf.set_snap_points(points, 0.5, above_max), std::invalid_argument);
-  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.5, ok));
-  ASSERT_NO_THROW(isosurf.set_snap_points(points, 0.5));  // empty tolerances disable the skip
+  ASSERT_THROW(isosurf.set_snap_points(points, wrong_size), std::invalid_argument);
+  ASSERT_THROW(isosurf.set_snap_points(points, negative), std::invalid_argument);
+  ASSERT_THROW(isosurf.set_snap_points(points, above_max), std::invalid_argument);
+  ASSERT_NO_THROW(isosurf.set_snap_points(points, ok));
+  ASSERT_NO_THROW(isosurf.set_snap_points(points));  // empty tolerances disable the skip
 }
 
 TEST(snap, per_point_tolerance_skips_satisfied_point) {
@@ -254,7 +245,7 @@ TEST(snap, per_point_tolerance_skips_satisfied_point) {
   // tolerance 0, still snap and become vertices.
   VecX tolerances(points.rows());
   tolerances << 0.0, 0.0, 0.1;
-  auto mesh = snap_mesh(planar_grid(3), points, tolerances, 1.0, Mat3::Identity(), kMaxDistance);
+  auto mesh = snap_mesh(planar_grid(3), points, tolerances, 1.0, Mat3::Identity());
 
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
   ASSERT_TRUE(find_vertex(mesh, Point3(points.row(1)), 1e-12).has_value());

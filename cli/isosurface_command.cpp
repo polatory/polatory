@@ -30,7 +30,6 @@ struct Options {
   std::string in_file;
   std::string seed_points_file;
   std::string snap_points_file;
-  double snap_distance{};
   double accuracy{};
   double grad_accuracy{};
   double isovalue{};
@@ -59,7 +58,7 @@ void run_impl(const Options& opts) {
     // An optional 4th column gives each point's minimum snapping distance (a fraction of the
     // mesh resolution); when absent, every tolerance is zero.
     VecX tolerances = table.cols() >= 4 ? VecX(table(kAll, 3)) : VecX();
-    isosurf.set_snap_points(table(kAll, {0, 1, 2}), opts.snap_distance, tolerances);
+    isosurf.set_snap_points(table(kAll, {0, 1, 2}), tolerances);
   }
 
   auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn,
@@ -86,8 +85,6 @@ void IsosurfaceCommand::run(const std::vector<std::string>& args,
       ("snap", po::value(&opts.snap_points_file)->value_name("FILE"),
        "Points to snap the mesh to in CSV format:\n  X,Y,Z[,TOL]\n"
        "TOL is the tolerance distance as a fraction of the mesh resolution")  //
-      ("snap-dist", po::value(&opts.snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
-       "Maximum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
       ("acc",
        po::value(&opts.accuracy)
            ->default_value(std::numeric_limits<double>::infinity(), "ANY")

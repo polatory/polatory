@@ -93,18 +93,18 @@ class Snapper {
   };
 
  public:
-  // A point snaps only if its distance to the mesh is <= max_distance. Vertices and points are
+  // A point snaps only if its distance to the mesh is <= the resolution. Vertices and points are
   // untransformed; the snapper applies aniso (so an anisotropic resolution is respected), then
   // emits untransformed positions.
   Snapper(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
-          const Mat3& aniso, double max_distance)
+          const Mat3& aniso)
       : nv_(mesh.vertices().rows()),
         np_(points.rows()),
         mesh_((mesh.faces().array() + np_).matrix()),  // shift original vertices to rows [np_, .)
         aniso_inv_(aniso.inverse()),
-        max_distance_(max_distance),
+        max_distance_(resolution),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)),
-        snap_grid_(max_distance, np_),
+        snap_grid_(resolution, np_),
         face_grid_(resolution, mesh.faces().rows()),
         patches_(mesh_.num_faces()) {
     if (tolerances.size() != 0 && tolerances.size() != points.rows()) {

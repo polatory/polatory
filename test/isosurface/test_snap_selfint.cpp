@@ -238,12 +238,12 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
   auto base = isosurf.generate(field_fn);
   ASSERT_EQ(count_self_intersections(base), 0);  // tool sanity: the valid base is clean
 
-  const auto max_distance = 0.1 * resolution;
+  const auto max_offset = 0.1 * resolution;
 
   const Index n = 500;
   for (double off : {0.0, 0.5}) {
-    auto points = plane_points(0.7, n, off * max_distance);
-    auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity(), max_distance);
+    auto points = plane_points(0.7, n, off * max_offset);
+    auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity());
     auto self_int = count_self_intersections(mesh);
     std::cerr << "planar off=" << off << ": faces=" << mesh.faces().rows()
               << " self-intersections=" << self_int << "\n";
@@ -264,9 +264,9 @@ TEST(snap_selfint, curved_surface_has_no_self_intersections) {
   auto base = isosurf.generate(field_fn);
   ASSERT_EQ(count_self_intersections(base), 0);
 
-  const auto max_distance = 0.05;
-  auto points = sphere_points(radius, 1000, 0.5 * max_distance);
-  auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity(), max_distance);
+  const auto max_offset = 0.05;
+  auto points = sphere_points(radius, 1000, 0.5 * max_offset);
+  auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity());
 
   auto self_int = count_self_intersections(mesh);
   std::cerr << "sphere: faces=" << mesh.faces().rows() << " self-intersections=" << self_int
@@ -289,9 +289,7 @@ TEST(snap_selfint, real_surface_region_stays_manifold) {
   auto points = read_xyz(std::string(POLATORY_TEST_DATA_DIR) + "/horse_region_points.xyz");
   ASSERT_EQ(count_non_manifold_edges(base), 0);
 
-  const auto max_distance = 0.5 * 5e-4;  // snap ratio 0.5 * resolution 5e-4
-
-  auto mesh = snap_mesh(base, points, VecX(), 5e-4, Mat3::Identity(), max_distance);
+  auto mesh = snap_mesh(base, points, VecX(), 5e-4, Mat3::Identity());
 
   auto nm_edges = count_non_manifold_edges(mesh);
   std::cerr << "horse region: faces=" << mesh.faces().rows() << " non-manifold-edges=" << nm_edges

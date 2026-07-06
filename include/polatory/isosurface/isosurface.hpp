@@ -64,23 +64,17 @@ class Isosurface {
     return generate_common();
   }
 
-  void set_snap_points(const Points3& points, double relative_distance = 0.5,
-                       const VecX& relative_tolerances = VecX()) {
-    if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
-      throw std::invalid_argument("snap relative distance must be in (0, 1]");
-    }
+  void set_snap_points(const Points3& points, const VecX& relative_tolerances = VecX()) {
     if (relative_tolerances.size() != 0) {
       if (relative_tolerances.size() != points.rows()) {
         throw std::invalid_argument("snap relative tolerances must have one entry per point");
       }
-      if (!(relative_tolerances.minCoeff() >= 0.0 &&
-            relative_tolerances.maxCoeff() <= relative_distance)) {
-        throw std::invalid_argument("snap relative tolerances must be in [0, relative distance]");
+      if (!(relative_tolerances.minCoeff() >= 0.0 && relative_tolerances.maxCoeff() <= 1.0)) {
+        throw std::invalid_argument("snap relative tolerances must be in [0, 1]");
       }
     }
 
     snap_points_ = points;
-    rel_snap_dist_ = relative_distance;
     rel_snap_tols_ = relative_tolerances;
   }
 
@@ -112,7 +106,7 @@ class Isosurface {
         std::vector<std::size_t> mesh_hashes;
         for (auto iter = 0; iter < 20; iter++) {
           Stats stats;
-          mesh = snap_mesh(mesh, snap_points_, tols, res, aniso_, res * rel_snap_dist_, &stats);
+          mesh = snap_mesh(mesh, snap_points_, tols, res, aniso_, &stats);
           mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
           if (stats.skipped + stats.dishonored == 0) {
             break;
@@ -150,7 +144,6 @@ class Isosurface {
   rmt::Lattice lattice_;
   Mat3 aniso_;
   Points3 snap_points_;
-  double rel_snap_dist_{0.5};
   VecX rel_snap_tols_;
 };
 
