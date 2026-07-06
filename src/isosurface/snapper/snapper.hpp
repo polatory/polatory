@@ -55,7 +55,7 @@ class Snapper {
   static constexpr std::size_t kNoCand = -1;  // snap point with no candidate (beyond max_distance)
   static constexpr int kSnapBudget = 8;  // max times a point may be re-queued after dishonoring
   // a move may not make an edge longer than this * res
-  static constexpr double kMaxEdgeRatio = 1.5;
+  static constexpr double kMaxEdgeRatio = 2.0;
 
   // A simplex of the projected face the point may snap to; the values double as indices into the
   // per-face site arrays (vertices 0..2, edges 3..5, face 6).
