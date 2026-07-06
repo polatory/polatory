@@ -84,6 +84,8 @@ class Snapper {
     std::pair<Point3, Point3> box;  // AABB currently registered in face_grid_
     std::vector<Index> interior;
     Faces faces;  // cached triangulation; empty until first computed
+    std::vector<Index> honored;
+    bool honored_valid = false;
   };
 
  public:
@@ -122,9 +124,9 @@ class Snapper {
 
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
       auto f = mesh_.face(fi);
-      auto ps = aq_(f, kAll);
-      Point3 lo = ps.colwise().minCoeff();
-      Point3 hi = ps.colwise().maxCoeff();
+      auto aqs = aq_(f, kAll);
+      Point3 lo = aqs.colwise().minCoeff();
+      Point3 hi = aqs.colwise().maxCoeff();
       face_grid_.insert(fi, lo, hi);
       patches_.at(fi).box = {lo, hi};
     }
@@ -187,25 +189,25 @@ class Snapper {
   // would barely move it and only over-subdivide; checks the projected patch and the patches across
   // its edges.
   bool already_satisfied(const Candidate& cand) {
-    auto patch_honors = [&](Index fi) {
-      for (auto f : patch_faces(fi).rowwise()) {
-        if (honored_by(cand.i, f)) {
-          return true;
-        }
-      }
-      return false;
-    };
-    if (patch_honors(cand.fi)) {
+    if (honored_by_patch(cand.i, cand.fi)) {
       return true;
     }
     for (auto k = 0; k < 3; k++) {
       auto h = mesh_.halfedge(cand.fi, k);
       Index fj = mesh_.face(mesh_.opposite(h));
-      if (fj >= 0 && patch_honors(fj)) {
+      if (fj >= 0 && honored_by_patch(cand.i, fj)) {
         return true;
       }
     }
     return false;
+  }
+
+  // The k-th rollback slot, snapshotted into by copy-assignment so its storage is reused.
+  Patch& backup_slot(std::size_t k) {
+    if (k == backups_.size()) {
+      backups_.emplace_back();
+    }
+    return backups_.at(k);
   }
 
   // Project each point, rank its face's seven simplex centroids by distance to the projection
@@ -306,10 +308,6 @@ class Snapper {
     return false;
   }
 
-  double dist2(const Point3& p, const Face& f) const {
-    return point_triangle_dist2(p, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
-  }
-
   Mesh emit() {
     Points3 vertices(p_.rows(), 3);
     Faces faces(mesh_.num_faces() + 2 * (stats_.inserted_on_edges + stats_.inserted_in_faces), 3);
@@ -348,7 +346,44 @@ class Snapper {
   }
 
   // Whether snap point i lies within its tolerance of face f.
-  bool honored_by(Index i, const Face& f) const { return dist2(ap_.row(i), f) <= snap_tols2_(i); }
+  bool honored_by(Index i, const Face& f) const {
+    auto aps = ap_(f, kAll);
+    Point3 ap = ap_.row(i);
+    Point3 lo = aps.colwise().minCoeff();
+    Point3 hi = aps.colwise().maxCoeff();
+    Point3 aq = ap.cwiseMax(lo).cwiseMin(hi);
+    if ((ap - aq).squaredNorm() > snap_tols2_(i)) {
+      return false;
+    }
+    return point_triangle_dist2(ap, aps.row(0), aps.row(1), aps.row(2)) <= snap_tols2_(i);
+  }
+
+  // Whether the committed mesh honors point i; call after a commit (reads the face grid).
+  bool honored_by_mesh(Index i) {
+    double tol = std::sqrt(snap_tols2_(i));
+    Point3 ap = ap_.row(i);
+    Point3 lo = (ap.array() - tol).matrix();
+    Point3 hi = (ap.array() + tol).matrix();
+    bool honored = false;
+    face_grid_.for_each(lo, hi, [&](Index fi) {
+      if (honored_by_patch(i, fi)) {
+        honored = true;
+        return false;
+      }
+      return true;
+    });
+    return honored;
+  }
+
+  // Whether patch fi's current triangulation honors point i.
+  bool honored_by_patch(Index i, Index fi) {
+    for (auto f : patch_faces(fi).rowwise()) {
+      if (honored_by(i, f)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // Whether point i is within its tolerance of v's star (the faces incident to v).
   bool honored_by_star(Index i, Index v) {
@@ -362,17 +397,49 @@ class Snapper {
     return false;
   }
 
+  // The cached triangulation of a patch (computed on first use).
+  const Faces& patch_faces(Index fi) {
+    auto& patch = patches_.at(fi);
+    if (patch.faces.rows() == 0) {
+      patch.faces = triangulate_patch(fi);
+    }
+    return patch.faces;
+  }
+
+  // The snap points the given patches honor; each patch's set is cached until it is reindexed.
+  std::vector<Index> points_honored_by_patches(
+      const boost::container::static_vector<Index, 2>& patches) {
+    std::vector<Index> honored;
+    for (auto fi : patches) {
+      auto& patch = patches_.at(fi);
+      if (!patch.honored_valid) {
+        patch.honored.clear();
+        if (!snap_grid_.empty()) {
+          const auto& [lo, hi] = patch.box;
+          snap_grid_.for_each(lo, hi, [&](Index i) {
+            if (honored_by_patch(i, fi)) {
+              patch.honored.push_back(i);
+            }
+            return true;
+          });
+        }
+        patch.honored_valid = true;
+      }
+      honored.insert(honored.end(), patch.honored.begin(), patch.honored.end());
+    }
+    return honored;
+  }
+
   // The snap points the surface around v currently honors, found via the grid over v's patch AABB.
-  std::vector<Index> honored_points_around(Index v) {
+  std::vector<Index> points_honored_by_star(Index v) {
     Point3 lo = Point3::Constant(std::numeric_limits<double>::infinity());
     Point3 hi = -lo;
     for (auto fi : mesh_.vertex_faces(v)) {
       for (auto f : patch_faces(fi).rowwise()) {
         if ((f.array() == v).any()) {
-          for (auto w : f) {
-            lo = lo.cwiseMin(ap_.row(w));
-            hi = hi.cwiseMax(ap_.row(w));
-          }
+          auto aps = ap_(f, kAll);
+          lo = lo.cwiseMin(aps.colwise().minCoeff());
+          hi = hi.cwiseMax(aps.colwise().maxCoeff());
         }
       }
     }
@@ -384,15 +451,6 @@ class Snapper {
       return true;
     });
     return honored;
-  }
-
-  // The cached triangulation of a patch (computed on first use).
-  const Faces& patch_faces(Index fi) {
-    auto& patch = patches_.at(fi);
-    if (patch.faces.rows() == 0) {
-      patch.faces = triangulate_patch(fi);
-    }
-    return patch.faces;
   }
 
   // Drops p onto the face frame fr (its normal component removed).
@@ -411,12 +469,23 @@ class Snapper {
     Point3 lo = Point3::Constant(inf);
     Point3 hi = Point3::Constant(-inf);
     for (auto f : patch_faces(fi).rowwise()) {
-      auto ps = ap_(f, kAll);
-      lo = lo.cwiseMin(Point3(ps.colwise().minCoeff()));
-      hi = hi.cwiseMax(Point3(ps.colwise().maxCoeff()));
+      auto aps = ap_(f, kAll);
+      lo = lo.cwiseMin(aps.colwise().minCoeff());
+      hi = hi.cwiseMax(aps.colwise().maxCoeff());
     }
     face_grid_.insert(fi, lo, hi);
     patch.box = {lo, hi};
+    patch.honored_valid = false;
+  }
+
+  // Rolls fi back to a pre-commit snapshot, re-registering it under its restored box. Recovers the
+  // prior faces and honored cache without re-triangulating or recomputing them.
+  void restore_patch(Index fi, Patch& backup) {
+    const auto& [lo0, hi0] = patches_.at(fi).box;
+    face_grid_.remove(fi, lo0, hi0);
+    std::swap(patches_.at(fi), backup);
+    const auto& [lo, hi] = patches_.at(fi).box;
+    face_grid_.insert(fi, lo, hi);
   }
 
   // The snapper's one geometric acceptance test: the flat triangulation is always valid, so all
@@ -571,10 +640,18 @@ class Snapper {
       return false;
     }
 
+    auto honored = points_honored_by_patches(incident_faces);  // honored before the insert
+
     auto new_v = cand.i;  // the snap point's row; p_/ap_ already hold its position
     aq_.row(new_v) = aq_.row(e.a) + t * (aq_.row(e.b) - aq_.row(e.a));  // on the original edge
     auto& chain = edge_chains_[e];
     chain.insert(std::ranges::lower_bound(chain, t, {}, &EdgeVertex::t), {.t = t, .v = new_v});
+    auto revert = [&] {
+      std::erase_if(chain, [new_v](const EdgeVertex& x) { return x.v == new_v; });
+      if (chain.empty()) {
+        edge_chains_.erase(e);
+      }
+    };
 
     boost::unordered_flat_map<Index, Faces> changed;
     auto simple = true;
@@ -586,18 +663,28 @@ class Snapper {
     }
 
     if (!simple || degenerate_or_folded(changed) || self_intersects(changed)) {
-      // Revert.
-      std::erase_if(chain, [new_v](const EdgeVertex& x) { return x.v == new_v; });
-      if (chain.empty()) {
-        edge_chains_.erase(e);
-      }
+      revert();
       return false;
     }
 
+    std::size_t b = 0;
+    for (auto fi : incident_faces) {
+      backup_slot(b++) = patches_.at(fi);
+    }
     for (auto fi : incident_faces) {
       patches_.at(fi).faces = changed.at(fi);
       reindex_patch(fi);
     }
+
+    if (!std::ranges::all_of(honored, [&](Index i) { return honored_by_mesh(i); })) {
+      revert();
+      b = 0;
+      for (auto fi : incident_faces) {
+        restore_patch(fi, backups_.at(b++));
+      }
+      return false;
+    }
+
     stats_.inserted_on_edges++;
     return true;
   }
@@ -605,10 +692,13 @@ class Snapper {
   // Tries to insert the point into its projected face's interior.
   bool try_face(const Candidate& cand) {
     auto fi = cand.fi;
+    auto honored = points_honored_by_patches({fi});  // honored before the insert
+
     auto new_v = cand.i;       // the snap point's row; p_/ap_ already hold its position
     aq_.row(new_v) = cand.aq;  // the snap point's on-surface projection
     auto& interior = patches_.at(fi).interior;
     interior.push_back(new_v);
+    auto revert = [&] { interior.pop_back(); };
 
     auto simple = true;
     auto faces = triangulate_patch(fi, &simple);
@@ -616,12 +706,21 @@ class Snapper {
     boost::unordered_flat_map<Index, Faces> changed{{fi, faces}};
 
     if (!simple || !used || degenerate_or_folded(changed) || self_intersects(changed)) {
-      interior.pop_back();  // revert
+      revert();
       return false;
     }
 
+    backup_slot(0) =
+        patches_.at(fi);  // snapshot before the overwrite (still holds the added point)
     patches_.at(fi).faces = std::move(faces);
     reindex_patch(fi);
+
+    if (!std::ranges::all_of(honored, [&](Index i) { return honored_by_mesh(i); })) {
+      restore_patch(fi, backups_.at(0));  // prior faces and honored cache, no re-triangulation
+      revert();                           // drop the point the snapshot carried
+      return false;
+    }
+
     stats_.inserted_in_faces++;
     return true;
   }
@@ -644,29 +743,43 @@ class Snapper {
 
   // Tries to move v onto the candidate's point.
   bool try_vertex(const Candidate& cand, Index v) {
-    auto honored = honored_points_around(v);
+    auto honored = points_honored_by_star(v);  // honored before the move
 
     Point3 p = p_.row(v);  // for revert
     Point3 ap = ap_.row(v);
     p_.row(v) = p_.row(cand.i);  // tentative
     ap_.row(v) = ap_.row(cand.i);
+    auto revert = [&] {
+      p_.row(v) = p;
+      ap_.row(v) = ap;
+    };
 
     boost::unordered_flat_map<Index, Faces> changed;
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
-
-    bool dishonors = std::ranges::any_of(honored, [&](Index i) { return !honored_by_star(i, v); });
-    if (degenerate_or_folded(changed) || self_intersects(changed) || dishonors) {
-      // Revert.
-      p_.row(v) = p;
-      ap_.row(v) = ap;
+    if (degenerate_or_folded(changed) || self_intersects(changed)) {
+      revert();
       return false;
     }
 
+    std::size_t b = 0;
+    for (auto fi : mesh_.vertex_faces(v)) {
+      backup_slot(b++) = patches_.at(fi);
+    }
     for (auto fi : mesh_.vertex_faces(v)) {
       reindex_patch(fi);
     }
+
+    if (!std::ranges::all_of(honored, [&](Index i) { return honored_by_mesh(i); })) {
+      revert();
+      b = 0;
+      for (auto fi : mesh_.vertex_faces(v)) {
+        restore_patch(fi, backups_.at(b++));
+      }
+      return false;
+    }
+
     stats_.moved_vertices++;
     return true;
   }
@@ -680,6 +793,7 @@ class Snapper {
   SpatialGrid snap_grid_;  // snap-point broad-phase for the re-move honor check
   SpatialGrid face_grid_;  // committed-patch broad-phase for the self-intersection guard
   std::vector<Patch> patches_;
+  std::vector<Patch> backups_;  // reused scratch holding pre-commit patch state for rollback
   // Positions indexed by vertex row: row i (< np_) is snap point i; row np_ + v is original vertex
   // v. mesh_ is built from faces shifted by np_, so mesh_.face already yields these rows.
   Points3 p_;   // untransformed position emit() outputs (snap points pass through exactly)

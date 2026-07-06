@@ -165,9 +165,9 @@ class Thinner {
     // overlap involves one of them; a spatial broad-phase catches a kept face pushed onto a
     // spatially near but topologically distant sheet that the one-ring would miss.
     for (const auto& nf : kept) {
-      auto aps = p_(nf, kAll);
-      Point3 lo = aps.colwise().minCoeff();
-      Point3 hi = aps.colwise().maxCoeff();
+      auto ps = p_(nf, kAll);
+      Point3 lo = ps.colwise().minCoeff();
+      Point3 hi = ps.colwise().maxCoeff();
       bool hit = false;
       face_grid_.for_each(lo, hi, [&](Index fi) {
         if (star.contains(fi) || !intersects(nf, mesh_.face(fi))) {
@@ -246,9 +246,9 @@ class Thinner {
 
   void index_face(Index fi) {
     auto f = mesh_.face(fi);
-    auto aps = p_(f, kAll);
-    Point3 lo = aps.colwise().minCoeff();
-    Point3 hi = aps.colwise().maxCoeff();
+    auto ps = p_(f, kAll);
+    Point3 lo = ps.colwise().minCoeff();
+    Point3 hi = ps.colwise().maxCoeff();
     face_grid_.insert(fi, lo, hi);
   }
 
@@ -305,9 +305,9 @@ class Thinner {
 
   void unindex_face(Index fi) {
     auto f = mesh_.face(fi);
-    auto aps = p_(f, kAll);
-    Point3 lo = aps.colwise().minCoeff();
-    Point3 hi = aps.colwise().maxCoeff();
+    auto ps = p_(f, kAll);
+    Point3 lo = ps.colwise().minCoeff();
+    Point3 hi = ps.colwise().maxCoeff();
     face_grid_.remove(fi, lo, hi);
   }
 
