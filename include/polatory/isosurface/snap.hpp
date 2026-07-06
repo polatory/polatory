@@ -5,19 +5,12 @@
 
 namespace polatory::isosurface {
 
+// The three counts partition the snap points.
 struct Stats {
-  Index skipped{};    // beyond max_distance from the mesh
-  Index satisfied{};  // already within tolerance of the snapped mesh, so not attempted
-  Index dropped{};    // classified but could not be placed without self-intersection
-  Index moved_vertices{};
-  Index inserted_on_edges{};
-  Index inserted_in_faces{};
-
-  bool all_snapped_or_satisfied() const { return dropped == 0 && skipped == 0; }
-
-  bool changed() const {
-    return moved_vertices != 0 || inserted_on_edges != 0 || inserted_in_faces != 0;
-  }
+  Index skipped{};     // no candidate: the nearest face was beyond max_distance
+  Index honored{};     // ended within tolerance of the surface
+  Index dishonored{};  // within max_distance but left off the surface (contention, or unplaceable
+                       // without self-intersection)
 };
 
 // Snaps the mesh to pass exactly through the given points, which become vertices. One pass; the

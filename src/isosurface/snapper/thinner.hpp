@@ -30,8 +30,9 @@ using geometry::Points3;
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
-  static constexpr double kMaxEdgeRatio =
-      1.5;  // a collapse may not make an edge longer than this * res
+
+  // a collapse may not make an edge longer than this * res
+  static constexpr double kMaxEdgeRatio = 1.5;
 
  public:
   Thinner(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,

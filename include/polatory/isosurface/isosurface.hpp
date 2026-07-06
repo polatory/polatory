@@ -106,20 +106,25 @@ class Isosurface {
 
       if (snap_points_.rows() != 0) {
         VecX tols = res * rel_snap_tols_;
+        // Smooth interleaves the snap loop so a later snap can reclaim points that within-pass
+        // contention left dishonored; thinning stays out (its collapses churn the mesh and would
+        // stall convergence).
         std::vector<std::size_t> mesh_hashes;
-        for (auto pass = 0; pass < 20; pass++) {
+        for (auto iter = 0; iter < 20; iter++) {
           Stats stats;
           mesh = snap_mesh(mesh, snap_points_, tols, res, aniso_, res * rel_snap_dist_, &stats);
-          if (!stats.changed() || stats.all_snapped_or_satisfied()) {
+          mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
+          if (stats.skipped + stats.dishonored == 0) {
             break;
           }
-          // Re-queued dishonoring can leave the snapper in a limit cycle (a contending
-          // sub-resolution point pair flips each pass); since a pass is deterministic, a mesh that
-          // repeats an earlier one would only repeat the whole sequence -- stop.
+
+          // Some points are unreachable (sub-resolution contention); a deterministic pass that
+          // repeats an earlier mesh has reached a fixpoint or a cycle, so stop either way.
           auto hash = hash_mesh(mesh);
           if (std::ranges::find(mesh_hashes, hash) != mesh_hashes.end()) {
             break;
           }
+
           mesh_hashes.push_back(hash);
         }
 

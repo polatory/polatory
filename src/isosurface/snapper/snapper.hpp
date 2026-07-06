@@ -54,6 +54,8 @@ class Snapper {
 
   static constexpr std::size_t kNoCand = -1;  // snap point with no candidate (beyond max_distance)
   static constexpr int kSnapBudget = 8;  // max times a point may be re-queued after dishonoring
+  // a move may not make an edge longer than this * res
+  static constexpr double kMaxEdgeRatio = 1.5;
 
   // A simplex of the projected face the point may snap to; the values double as indices into the
   // per-face site arrays (vertices 0..2, edges 3..5, face 6).
@@ -101,6 +103,7 @@ class Snapper {
         mesh_((mesh.faces().array() + np_).matrix()),  // shift original vertices to rows [np_, .)
         aniso_inv_(aniso.inverse()),
         max_distance_(max_distance),
+        max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)),
         snap_grid_(max_distance, np_),
         face_grid_(resolution, mesh.faces().rows()),
         patches_(mesh_.num_faces()) {
@@ -139,6 +142,16 @@ class Snapper {
       candidate_of_point.at(candidates.at(ci).i) = ci;
     }
     snap(candidates, candidate_of_point);
+    for (Index i = 0; i < np_; i++) {
+      if (candidate_of_point.at(i) == kNoCand) {
+        continue;  // a skipped point, already counted at classification
+      }
+      if (honored_by_mesh(i)) {
+        stats_.honored++;
+      } else {
+        stats_.dishonored++;
+      }
+    }
 
     result_ = emit();
   }
@@ -274,8 +287,13 @@ class Snapper {
   }
 
   Mesh emit() {
+    Index nf_total = 0;
+    for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
+      nf_total += patch_faces(fi).rows();
+    }
+
     Points3 vertices(p_.rows(), 3);
-    Faces faces(mesh_.num_faces() + 2 * (stats_.inserted_on_edges + stats_.inserted_in_faces), 3);
+    Faces faces(nf_total, 3);
     Index nf = 0;
     Index nv = 0;
     std::vector<Index> vv(p_.rows(), -1);
@@ -520,7 +538,6 @@ class Snapper {
       pq.pop();
       const auto& cand = candidates.at(ci);
       if (already_satisfied(cand)) {
-        stats_.satisfied++;
         continue;
       }
       dishonored.clear();
@@ -532,7 +549,6 @@ class Snapper {
         }
       }
       if (!ok) {
-        stats_.dropped++;
         continue;
       }
       for (auto point : dishonored) {
@@ -694,8 +710,6 @@ class Snapper {
       reindex_patch(fi);
     }
     collect_dishonored(prev_honored, dishonored);
-
-    stats_.inserted_on_edges++;
     return true;
   }
 
@@ -723,8 +737,6 @@ class Snapper {
     patches_.at(fi).faces = std::move(faces);
     reindex_patch(fi);
     collect_dishonored(prev_honored, dishonored);
-
-    stats_.inserted_in_faces++;
     return true;
   }
 
@@ -745,6 +757,19 @@ class Snapper {
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
+    // Reject a move that stretches an edge incident to v past the cap: such long-edge moves feed a
+    // limit cycle on over-sampled meshes (a vertex ping-ponging between two far snap points).
+    for (const auto& [fi, faces] : changed) {
+      for (auto f : faces.rowwise()) {
+        for (auto e = 0; e < 3; e++) {
+          if (f(e) == v && ((ap_.row(v) - ap_.row(f((e + 1) % 3))).squaredNorm() > max_edge2_ ||
+                            (ap_.row(v) - ap_.row(f((e + 2) % 3))).squaredNorm() > max_edge2_)) {
+            revert();
+            return false;
+          }
+        }
+      }
+    }
     if (degenerate_or_folded(changed) || self_intersects(changed)) {
       revert();
       return false;
@@ -755,7 +780,6 @@ class Snapper {
     }
     collect_dishonored(prev_honored, dishonored);
 
-    stats_.moved_vertices++;
     return true;
   }
 
@@ -764,6 +788,7 @@ class Snapper {
   AbstractMesh mesh_;
   Mat3 aniso_inv_;
   double max_distance_;
+  double max_edge2_;  // squared cap on an edge a vertex move may create
   VecX snap_tols2_;
   SpatialGrid snap_grid_;  // snap-point broad-phase for finding the points a patch honors
   SpatialGrid face_grid_;  // committed-patch broad-phase for the self-intersection guard

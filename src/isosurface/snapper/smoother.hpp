@@ -35,6 +35,7 @@ class Smoother {
   using Point3 = geometry::Point3;
   using Points3 = geometry::Points3;
   using Vector3 = geometry::Vector3;
+
   static constexpr double kPi = 3.141592653589793;
   // Dihedral-dependent length cap. A flip's new diagonal may always reach kEdgeFloor * res; beyond
   // that each unit of overshoot (in res) must be paid for by kImproveFull / (kEdgeCeiling -
@@ -44,6 +45,8 @@ class Smoother {
   static constexpr double kEdgeFloor = 1.5;
   static constexpr double kEdgeCeiling = 2.0;
   static constexpr double kImproveFull = kPi / 2;  // bend reduction earning the full ceiling
+  // A flip may shrink the smaller angle only to this fraction of the old.
+  static constexpr double kMinAngleRatio = 0.5;
 
   // A candidate flip of edge {x, y} (faces fi0, fi1) into diagonal {c, d}; improve > 0 is the total
   // bend removed.
@@ -73,15 +76,14 @@ class Smoother {
 
  public:
   Smoother(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
-           const Mat3& aniso, double min_angle)
+           const Mat3& aniso)
       : p_(mesh.vertices()),
         ap_(geometry::transform_points<3>(aniso, mesh.vertices())),
         mesh_(mesh.faces()),
         a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh_.num_faces()),
-        resolution_(resolution),
-        min_angle_(min_angle) {
+        resolution_(resolution) {
     // Grid cell = resolution (a face spans about one cell); it only tunes the broad-phase, and
     // resolution avoids a lone long edge blowing the grid up.
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
@@ -348,12 +350,13 @@ class Smoother {
       }
     }
 
-    // Reject a flip below min_angle_ unless it improves the worst angle there -- a sliver (a
-    // diagonal grazing a collinear vertex, a T-junction the inexact self-intersection guard misses)
-    // is worse than a crease.
+    // Reject a flip that shrinks the smaller angle to less than kMinAngleRatio of the old -- a
+    // diagonal grazing a collinear vertex or a T-junction the inexact self-intersection guard
+    // misses. A flip that only mildly thins an already-slim triangle to flatten a crease is kept: a
+    // sliver beats a crease.
     auto after_angle = std::min(min_angle(new_f0), min_angle(new_f1));
     auto before_angle = std::min(min_angle(f0), min_angle(f1));
-    if (after_angle < min_angle_ && after_angle < before_angle) {
+    if (after_angle < kMinAngleRatio * before_angle) {
       return std::nullopt;
     }
     return Flip{fi0, fi1, x, y, c, d, improve};
@@ -376,7 +379,6 @@ class Smoother {
   SpatialGrid snap_grid_;
   SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
   double resolution_;      // mesh resolution; sets the diagonal length cap
-  double min_angle_;       // a flip may not push a triangle's smallest angle below this (0 = off)
   Mesh result_;
 };
 

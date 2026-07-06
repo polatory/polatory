@@ -33,9 +33,7 @@ Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const 
 
 Mesh smooth_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                          double resolution, const Mat3& aniso) {
-  constexpr double kDegree = 0.017453292519943295;
-  constexpr double kMinAngle = 5.0 * kDegree;
-  return snapper::Smoother(mesh, points, tolerances, resolution, aniso, kMinAngle).result();
+  return snapper::Smoother(mesh, points, tolerances, resolution, aniso).result();
 }
 
 }  // namespace polatory::isosurface
