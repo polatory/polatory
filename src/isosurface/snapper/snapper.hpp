@@ -44,8 +44,8 @@ namespace polatory::isosurface::snapper {
 //
 // Points are processed by increasing distance to the mesh, so each shared feature is first claimed
 // by the candidate that moves it least (a tangential order would fold a far point's patch into an
-// overhang). A claimed vertex may still be re-moved to a farther point as long as the points it
-// already snapped stay honored, letting it migrate out to a contour tip (see try_vertex).
+// overhang). A claimed vertex may still be re-moved to a farther point; any point knocked off the
+// surface by a placement is re-queued to snap again (see snap).
 class Snapper {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -503,7 +503,7 @@ class Snapper {
             const std::vector<std::size_t>& candidate_of_point) {
     struct QueueItem {
       double d2;
-      std::size_t ci;  // candidate index; tie-breaks equal distances for a deterministic order
+      std::size_t ci;  // tie-breaks equal distances for a deterministic pop order
       bool operator>(const QueueItem& other) const {
         return std::tie(d2, ci) > std::tie(other.d2, other.ci);
       }
@@ -765,7 +765,7 @@ class Snapper {
   Mat3 aniso_inv_;
   double max_distance_;
   VecX snap_tols2_;
-  SpatialGrid snap_grid_;  // snap-point broad-phase for the re-move honor check
+  SpatialGrid snap_grid_;  // snap-point broad-phase for finding the points a patch honors
   SpatialGrid face_grid_;  // committed-patch broad-phase for the self-intersection guard
   std::vector<Patch> patches_;
   // Positions indexed by vertex row: row i (< np_) is snap point i; row np_ + v is original vertex
