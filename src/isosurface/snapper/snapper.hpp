@@ -54,8 +54,6 @@ class Snapper {
 
   static constexpr std::size_t kNoCand = -1;  // snap point with no candidate (beyond max_distance)
   static constexpr int kSnapBudget = 8;  // max times a point may be re-queued after dishonoring
-  // a move may not make an edge longer than this * res
-  static constexpr double kMaxEdgeRatio = 2.0;
 
   // A simplex of the projected face the point may snap to; the values double as indices into the
   // per-face site arrays (vertices 0..2, edges 3..5, face 6).
@@ -103,7 +101,6 @@ class Snapper {
         mesh_((mesh.faces().array() + np_).matrix()),  // shift original vertices to rows [np_, .)
         aniso_inv_(aniso.inverse()),
         max_distance_(resolution),
-        max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)),
         snap_grid_(resolution, np_),
         face_grid_(resolution, mesh.faces().rows()),
         patches_(mesh_.num_faces()) {
@@ -757,19 +754,6 @@ class Snapper {
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
-    // Reject a move that stretches an edge incident to v past the cap: such long-edge moves feed a
-    // limit cycle on over-sampled meshes (a vertex ping-ponging between two far snap points).
-    for (const auto& [fi, faces] : changed) {
-      for (auto f : faces.rowwise()) {
-        for (auto e = 0; e < 3; e++) {
-          if (f(e) == v && ((ap_.row(v) - ap_.row(f((e + 1) % 3))).squaredNorm() > max_edge2_ ||
-                            (ap_.row(v) - ap_.row(f((e + 2) % 3))).squaredNorm() > max_edge2_)) {
-            revert();
-            return false;
-          }
-        }
-      }
-    }
     if (degenerate_or_folded(changed) || self_intersects(changed)) {
       revert();
       return false;
@@ -788,7 +772,6 @@ class Snapper {
   AbstractMesh mesh_;
   Mat3 aniso_inv_;
   double max_distance_;
-  double max_edge2_;  // squared cap on an edge a vertex move may create
   VecX snap_tols2_;
   SpatialGrid snap_grid_;  // snap-point broad-phase for finding the points a patch honors
   SpatialGrid face_grid_;  // committed-patch broad-phase for the self-intersection guard
