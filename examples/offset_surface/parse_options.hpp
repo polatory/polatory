@@ -13,7 +13,6 @@ struct Options {
   std::string mesh_in;
   std::string snap_points_file;
   double snap_distance{};
-  int snap_iter{};
   double tolerance{};
   int max_iter{};
   double accuracy{};
@@ -44,9 +43,6 @@ inline Options parse_options(int argc, const char* argv[]) {
        "TOL is the tolerance distance as a fraction of the mesh resolution")  //
       ("snap-dist", po::value(&opts.snap_distance)->default_value(0.5)->value_name("0.0 to 1.0"),
        "Maximum distance of a snapping point to the mesh as a fraction of the mesh resolution")  //
-      ("snap-iter", po::value(&opts.snap_iter)->default_value(8)->value_name("N"),
-       "Maximum number of snapping passes; snapping is re-applied to recover points that lost\n"
-       "contention, until the mesh stops changing (effective only with a positive TOL)")  //
       ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
        "Absolute fitting tolerance")  //
       ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),

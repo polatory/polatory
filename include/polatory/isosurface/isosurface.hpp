@@ -1,5 +1,8 @@
 #pragma once
 
+#include <algorithm>
+#include <boost/container_hash/hash.hpp>
+#include <cstddef>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/clip.hpp>
@@ -62,7 +65,7 @@ class Isosurface {
   }
 
   void set_snap_points(const Points3& points, double relative_distance = 0.5,
-                       const VecX& relative_tolerances = VecX(), int max_passes = 8) {
+                       const VecX& relative_tolerances = VecX()) {
     if (!(relative_distance > 0.0 && relative_distance <= 1.0)) {
       throw std::invalid_argument("snap relative distance must be in (0, 1]");
     }
@@ -75,17 +78,22 @@ class Isosurface {
         throw std::invalid_argument("snap relative tolerances must be in [0, relative distance]");
       }
     }
-    if (max_passes < 1) {
-      throw std::invalid_argument("snap max passes must be at least 1");
-    }
 
     snap_points_ = points;
     rel_snap_dist_ = relative_distance;
     rel_snap_tols_ = relative_tolerances;
-    snap_max_passes_ = max_passes;
   }
 
  private:
+  static std::size_t hash_mesh(const Mesh& m) {
+    std::size_t seed = 0;
+    const auto& v = m.vertices();
+    const auto& f = m.faces();
+    boost::hash_combine(seed, boost::hash_range(v.data(), v.data() + v.size()));
+    boost::hash_combine(seed, boost::hash_range(f.data(), f.data() + f.size()));
+    return seed;
+  }
+
   Mesh generate_common() {
     auto res = lattice_.resolution();
 
@@ -98,13 +106,21 @@ class Isosurface {
 
       if (snap_points_.rows() != 0) {
         VecX tols = res * rel_snap_tols_;
-        auto passes = tols.size() != 0 && tols.maxCoeff() > 0.0 ? snap_max_passes_ : 1;
-        for (auto pass = 0; pass < passes; pass++) {
+        std::vector<std::size_t> mesh_hashes;
+        for (auto pass = 0; pass < 20; pass++) {
           Stats stats;
           mesh = snap_mesh(mesh, snap_points_, tols, res, aniso_, res * rel_snap_dist_, &stats);
           if (!stats.changed() || stats.all_snapped_or_satisfied()) {
             break;
           }
+          // Re-queued dishonoring can leave the snapper in a limit cycle (a contending
+          // sub-resolution point pair flips each pass); since a pass is deterministic, a mesh that
+          // repeats an earlier one would only repeat the whole sequence -- stop.
+          auto hash = hash_mesh(mesh);
+          if (std::ranges::find(mesh_hashes, hash) != mesh_hashes.end()) {
+            break;
+          }
+          mesh_hashes.push_back(hash);
         }
 
         for (auto pass = 0; pass < 2; pass++) {
@@ -131,7 +147,6 @@ class Isosurface {
   Points3 snap_points_;
   double rel_snap_dist_{0.5};
   VecX rel_snap_tols_;
-  int snap_max_passes_{8};
 };
 
 }  // namespace polatory::isosurface
