@@ -77,11 +77,10 @@ class Isosurface {
     if (!mesh.is_empty()) {
       for (auto pass = 0; pass < 2; pass++) {
         mesh = cluster_vertices(mesh, lattice_, aniso_);
+        if (refine && pass == 1) {
+          mesh = refine_vertices(mesh, field_fn, isovalue, res, aniso_);
+        }
         mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
-      }
-
-      if (refine) {
-        mesh = refine_vertices(mesh, field_fn, isovalue, res, aniso_);
       }
 
       if (snap_points_.rows() != 0) {
