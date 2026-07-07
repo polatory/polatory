@@ -47,10 +47,10 @@ class Smoother {
   static constexpr double kImproveFull = kPi / 2;  // bend reduction earning the full ceiling
   // A flip may shrink the smaller angle only to this fraction of the old.
   static constexpr double kMinAngleRatio = 0.5;
-  // A flip that flattens an edge folded past this to below it bypasses the length and min-angle
-  // quality caps (an over-sampled near-fold must go), subject to the usual validity checks. Sits
-  // above any genuine feature crease.
-  static constexpr double kSevereFold = 3 * kPi / 4;
+  // A flip whose five touched edges are folded past this in total (summed dihedral) bypasses the
+  // length and min-angle quality caps (a severely folded neighbourhood or cave must go), subject to
+  // the usual validity checks.
+  static constexpr double kSevereFoldSum = 5 * kPi / 3;  // 300 deg
 
   // A candidate flip of edge {x, y} (faces fi0, fi1) into diagonal {c, d}; improve > 0 is the total
   // bend removed.
@@ -319,10 +319,11 @@ class Smoother {
 
     auto improve = before - after;
 
-    // A severe-fold flip flattens an edge folded past kSevereFold to below it; it bypasses the
-    // quality caps below (an over-sampled near-fold must go).
-    bool severe = bend(f0, f1) > kSevereFold && bend(new_f0, new_f1) < kSevereFold;
-    if (!severe) {
+    // The length and min-angle quality caps below, applied unless the neighbourhood is severely
+    // folded (five-edge dihedral sum >= kSevereFoldSum -- a cave that must go regardless of
+    // triangle shape). Validity, the bend-sum drop above, and honors_ok/guard_ok still gate the
+    // flip.
+    if (before < kSevereFoldSum) {
       // Length: a lengthening flip may not pass the hard ceiling, and any overshoot past
       // kEdgeFloor * res must be earned by bend reduction. A shortening flip adds no longer edge.
       auto new_len2 = (ap_.row(c) - ap_.row(d)).squaredNorm();
