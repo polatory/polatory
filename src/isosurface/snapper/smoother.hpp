@@ -28,7 +28,7 @@ namespace polatory::isosurface::snapper {
 // priority queue takes the largest improvement first, re-scoring each popped edge (a nearby flip
 // may have staled it). Geometry is in the aniso-transformed frame; the output is untransformed. A
 // flip is rejected if its new diagonal overshoots the bend-dependent length cap (see kEdgeFloor),
-// folds the surface, or pushes it beyond a snap tolerance (protecting points honored within
+// self-intersects, or pushes the surface beyond a snap tolerance (protecting points honored within
 // tolerance with no vertex there).
 class Smoother {
   using Point2 = geometry::Point2;
@@ -47,6 +47,10 @@ class Smoother {
   static constexpr double kImproveFull = kPi / 2;  // bend reduction earning the full ceiling
   // A flip may shrink the smaller angle only to this fraction of the old.
   static constexpr double kMinAngleRatio = 0.5;
+  // A flip that flattens an edge folded past this to below it bypasses the length and min-angle
+  // quality caps (an over-sampled near-fold must go), subject to the usual validity checks. Sits
+  // above any genuine feature crease.
+  static constexpr double kSevereFold = 3 * kPi / 4;
 
   // A candidate flip of edge {x, y} (faces fi0, fi1) into diagonal {c, d}; improve > 0 is the total
   // bend removed.
@@ -262,8 +266,8 @@ class Smoother {
 
   // Whether the two faces intersect, via triangles_intersect (the defect finder's edge-pierce test)
   // in the untransformed frame -- the same predicate and frame the finder uses, so the guard
-  // rejects exactly what it would flag. Edge-adjacent pairs (shared >= 2) are left to the
-  // fold-opposing-the-quad-normal rejection in score().
+  // rejects exactly what it would flag. Edge-adjacent pairs (shared >= 2) legitimately meet at
+  // their shared edge, so they are not treated as intersecting.
   bool overlaps(const Face& a, const Face& b) const {
     auto shared = num_shared_vertices(a, b);
     if (shared >= 2) {
@@ -273,9 +277,9 @@ class Smoother {
                                p_.row(b(2)), shared);
   }
 
-  // The candidate flip of edge e if admissible (interior, new diagonal absent, within the length
-  // cap, no fold, lowers the bend). The cheap checks; the self-intersection guard is left to the
-  // caller.
+  // The candidate flip of edge e if admissible (interior, new diagonal absent and non-degenerate,
+  // within the length cap, lowers the bend). The cheap checks; the self-intersection guard is left
+  // to the caller.
   std::optional<Flip> score(const Edge& e) const {
     auto h = mesh_.halfedge_of(e.a, e.b);  // canonical (e.a < e.b); traverses x -> y in f0
     auto opp_h = mesh_.opposite(h);
@@ -284,8 +288,6 @@ class Smoother {
     if (fi0 < 0 || fi1 < 0) {
       return std::nullopt;  // not a present interior edge (a boundary, or a prior flip removed it)
     }
-    auto f0 = mesh_.face(fi0);
-    auto f1 = mesh_.face(fi1);
 
     Index x = mesh_.from(h);
     Index y = mesh_.to(h);
@@ -294,32 +296,11 @@ class Smoother {
     if (c == d || mesh_.has_edge({c, d})) {
       return std::nullopt;  // degenerate, or the flipped diagonal already exists
     }
-    auto new_len2 = (ap_.row(c) - ap_.row(d)).squaredNorm();
-    auto cur_len2 = (ap_.row(x) - ap_.row(y)).squaredNorm();
-    auto ceiling = kEdgeCeiling * resolution_;
-    if (new_len2 > cur_len2 && new_len2 > ceiling * ceiling) {
-      return std::nullopt;  // a lengthening flip may not exceed the hard length ceiling
-    }
+
+    auto f0 = mesh_.face(fi0);
+    auto f1 = mesh_.face(fi1);
     Face new_f0{c, x, d};
     Face new_f1{d, y, c};
-    auto nn0 = normal(new_f0);
-    auto nn1 = normal(new_f1);
-    if (!(nn0.norm() > 0.0) || !(nn1.norm() > 0.0)) {
-      return std::nullopt;
-    }
-
-    // Reject a flip that folds the surface back on itself: a new normal must not oppose the quad
-    // normal (the sum of the two old face normals).
-    auto n0 = normal(f0);
-    auto n1 = normal(f1);
-    auto d0 = n0.norm();
-    auto d1 = n1.norm();
-    if (d0 > 0.0 && d1 > 0.0) {
-      Vector3 avg = n0 / d0 + n1 / d1;
-      if (nn0.dot(avg) <= 0.0 || nn1.dot(avg) <= 0.0) {
-        return std::nullopt;
-      }
-    }
 
     // The quad's four outer neighbours, across the edges next/prev to the flipped edge.
     Index gi_cx = mesh_.face(mesh_.opposite(mesh_.prev(h)));
@@ -327,7 +308,7 @@ class Smoother {
     Index gi_xd = mesh_.face(mesh_.opposite(mesh_.next(opp_h)));
     Index gi_dy = mesh_.face(mesh_.opposite(mesh_.prev(opp_h)));
 
-    // Flip whenever the summed bend over the five touched edges strictly drops.
+    // The reason to flip: the summed bend over the five touched edges must strictly drop.
     auto before = bend(f0, f1) + bend_with(f0, gi_cx) + bend_with(f0, gi_yc) +
                   bend_with(f1, gi_xd) + bend_with(f1, gi_dy);
     auto after = bend(new_f0, new_f1) + bend_with(new_f0, gi_cx) + bend_with(new_f1, gi_yc) +
@@ -335,30 +316,40 @@ class Smoother {
     if (!(after < before - 1e-6)) {
       return std::nullopt;
     }
+
     auto improve = before - after;
 
-    // Dihedral-dependent length cap, only when the flip lengthens the diagonal: the overshoot past
-    // kEdgeFloor * res must be earned by bend reduction. A shortening flip adds no edge longer than
-    // the one it removes, so it skips the cap.
-    if (new_len2 > cur_len2) {
-      auto overshoot = std::sqrt(new_len2) / resolution_ - kEdgeFloor;
-      if (overshoot > 0.0) {
+    // A severe-fold flip flattens an edge folded past kSevereFold to below it; it bypasses the
+    // quality caps below (an over-sampled near-fold must go).
+    bool severe = bend(f0, f1) > kSevereFold && bend(new_f0, new_f1) < kSevereFold;
+    if (!severe) {
+      // Length: a lengthening flip may not pass the hard ceiling, and any overshoot past
+      // kEdgeFloor * res must be earned by bend reduction. A shortening flip adds no longer edge.
+      auto new_len2 = (ap_.row(c) - ap_.row(d)).squaredNorm();
+      auto cur_len2 = (ap_.row(x) - ap_.row(y)).squaredNorm();
+      if (new_len2 > cur_len2) {
+        auto new_len = std::sqrt(new_len2);
+        if (new_len > kEdgeCeiling * resolution_) {
+          return std::nullopt;
+        }
+
+        auto overshoot = new_len / resolution_ - kEdgeFloor;
         auto rate = kImproveFull / (kEdgeCeiling - kEdgeFloor);
-        if (improve < rate * overshoot) {
+        if (overshoot > 0.0 && improve < rate * overshoot) {
           return std::nullopt;
         }
       }
+
+      // Min angle: a flip may not shrink the smaller angle below kMinAngleRatio of the old -- a
+      // diagonal grazing a collinear vertex or a T-junction the inexact self-intersection guard
+      // misses. A mild thinning to flatten a crease is kept: a sliver beats a crease.
+      auto after_angle = std::min(min_angle(new_f0), min_angle(new_f1));
+      auto before_angle = std::min(min_angle(f0), min_angle(f1));
+      if (after_angle < kMinAngleRatio * before_angle) {
+        return std::nullopt;
+      }
     }
 
-    // Reject a flip that shrinks the smaller angle to less than kMinAngleRatio of the old -- a
-    // diagonal grazing a collinear vertex or a T-junction the inexact self-intersection guard
-    // misses. A flip that only mildly thins an already-slim triangle to flatten a crease is kept: a
-    // sliver beats a crease.
-    auto after_angle = std::min(min_angle(new_f0), min_angle(new_f1));
-    auto before_angle = std::min(min_angle(f0), min_angle(f1));
-    if (after_angle < kMinAngleRatio * before_angle) {
-      return std::nullopt;
-    }
     return Flip{fi0, fi1, x, y, c, d, improve};
   }
 
