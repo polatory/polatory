@@ -22,10 +22,11 @@
 #include <tuple>
 #include <vector>
 
-#include "abstract_mesh.hpp"
-#include "spatial_grid.hpp"
+#include "../abstract_mesh.hpp"
+#include "../face_grid.hpp"
+#include "../spatial_grid.hpp"
+#include "../utility.hpp"
 #include "triangulation.hpp"
-#include "utility.hpp"
 
 namespace polatory::isosurface::snapper {
 
@@ -83,7 +84,6 @@ class Snapper {
 
   // A face's mutable snapping state.
   struct Patch {
-    std::pair<Point3, Point3> box;  // AABB currently registered in face_grid_
     std::vector<Index> interior;
     Faces faces;  // cached triangulation; empty until first computed
     std::vector<Index> honored;
@@ -125,12 +125,7 @@ class Snapper {
     snap_tols2_ = tols.cwiseAbs2();
 
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
-      auto f = mesh_.face(fi);
-      auto aqs = aq_(f, kAll);
-      Point3 lo = aqs.colwise().minCoeff();
-      Point3 hi = aqs.colwise().maxCoeff();
-      face_grid_.insert(fi, lo, hi);
-      patches_.at(fi).box = {lo, hi};
+      face_grid_.insert(fi, aq_(mesh_.face(fi), kAll));
     }
 
     auto candidates = build_candidates();
@@ -195,7 +190,7 @@ class Snapper {
       Point3 lo = (ap.array() - max_distance_).matrix();
       Point3 hi = (ap.array() + max_distance_).matrix();
       face_grid_.for_each(lo, hi, [&](Index fi) {
-        const auto& [blo, bhi] = patches_.at(fi).box;
+        const auto& [blo, bhi] = face_grid_.box(fi);
         Point3 aq = ap.cwiseMax(blo).cwiseMin(bhi);
         if ((ap - aq).squaredNorm() < best_d2) {
           auto f = mesh_.face(fi);
@@ -397,7 +392,7 @@ class Snapper {
       if (!patch.honored_valid) {
         patch.honored.clear();
         if (!snap_grid_.empty()) {
-          const auto& [lo, hi] = patch.box;
+          const auto& [lo, hi] = face_grid_.box(fi);
           snap_grid_.for_each(lo, hi, [&](Index i) {
             if (honored_by_patch(i, fi)) {
               patch.honored.push_back(i);
@@ -445,8 +440,7 @@ class Snapper {
   // that moved or re-triangulated the patch.
   void reindex_patch(Index fi) {
     auto& patch = patches_.at(fi);
-    const auto& [lo0, hi0] = patch.box;
-    face_grid_.remove(fi, lo0, hi0);
+    face_grid_.remove(fi);
     auto inf = std::numeric_limits<double>::infinity();
     Point3 lo = Point3::Constant(inf);
     Point3 hi = Point3::Constant(-inf);
@@ -456,7 +450,6 @@ class Snapper {
       hi = hi.cwiseMax(aps.colwise().maxCoeff());
     }
     face_grid_.insert(fi, lo, hi);
-    patch.box = {lo, hi};
     patch.honored_valid = false;
   }
 
@@ -491,18 +484,16 @@ class Snapper {
       auto aps = ap_(a, kAll);
       Point3 lo = aps.colwise().minCoeff();
       Point3 hi = aps.colwise().maxCoeff();
-      bool hit = false;
-      face_grid_.for_each(lo, hi, [&](Index fj) {
+      bool hit = face_grid_.any_of(lo, hi, [&](Index fj) {
         if (changed_ids.contains(fj)) {
-          return true;  // skip a changed face
+          return false;  // skip a changed face
         }
         for (auto b : patch_faces(fj).rowwise()) {
           if (crosses(a, b)) {
-            hit = true;
-            return false;
+            return true;
           }
         }
-        return true;
+        return false;
       });
       if (hit) {
         return true;
@@ -774,7 +765,7 @@ class Snapper {
   double max_distance_;
   VecX snap_tols2_;
   SpatialGrid snap_grid_;  // snap-point broad-phase for finding the points a patch honors
-  SpatialGrid face_grid_;  // committed-patch broad-phase for the self-intersection guard
+  FaceGrid face_grid_;     // committed-patch broad-phase for the self-intersection guard
   std::vector<Patch> patches_;
   // Positions indexed by vertex row: row i (< np_) is snap point i; row np_ + v is original vertex
   // v. mesh_ is built from faces shifted by np_, so mesh_.face already yields these rows.

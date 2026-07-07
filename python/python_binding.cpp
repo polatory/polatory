@@ -252,9 +252,9 @@ PYBIND11_MODULE(_core, m) {
       .def(py::init<const Bbox&, double, const Mat&>(), "bbox"_a, "resolution"_a,
            "aniso"_a = Mat::Identity())
       .def("generate", &isosurface::Isosurface::generate, "field_fn"_a, "isovalue"_a = 0.0,
-           "refine"_a = 1)
+           "refine"_a = true)
       .def("generate_from_seed_points", &isosurface::Isosurface::generate_from_seed_points,
-           "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = 1)
+           "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = true)
       .def("set_snap_points", &isosurface::Isosurface::set_snap_points, "points"_a,
            "relative_tolerances"_a = VecX());
 

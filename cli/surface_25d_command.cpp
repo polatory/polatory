@@ -30,7 +30,6 @@ struct Options {
   double grad_accuracy{};
   Bbox3 bbox;
   double resolution{};
-  int refine{};
   std::string out_file;
 };
 
@@ -47,9 +46,8 @@ void run_impl(const Options& opts) {
     seed_points = table(kAll, {0, 1, 2});
   }
 
-  auto mesh = seed_points.rows() > 0
-                  ? isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, opts.refine)
-                  : isosurf.generate(field_fn, 0.0, opts.refine);
+  auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn, 0.0)
+                                     : isosurf.generate(field_fn, 0.0);
 
   mesh.export_obj(opts.out_file);
 }
@@ -86,8 +84,6 @@ void Surface25DCommand::run(const std::vector<std::string>& args,
        "Output mesh bounding box")  //
       ("res", po::value(&opts.resolution)->required()->value_name("RES"),
        "Output mesh resolution")  //
-      ("refine", po::value(&opts.refine)->default_value(1)->value_name("N"),
-       "Number of vertex refinement passes")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output mesh file in OBJ format")  //
       ;

@@ -9,6 +9,8 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
+#include <polatory/isosurface/refine.hpp>
+#include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 #include <random>
 #include <unordered_set>
@@ -24,10 +26,12 @@ using polatory::geometry::Bbox3;
 using polatory::geometry::Point3;
 using polatory::geometry::Points3;
 using polatory::geometry::Vector3;
+using polatory::isosurface::Faces;
 using polatory::isosurface::FieldFunction;
 using polatory::isosurface::Isosurface;
 using polatory::isosurface::Mesh;
 using polatory::isosurface::MeshDefectsFinder;
+using polatory::isosurface::refine_vertices;
 
 namespace {
 
@@ -301,8 +305,8 @@ TEST(isosurface, generate_plane) {
 
   auto mesh = isosurf.generate(field_fn);
 
-  ASSERT_EQ(819, mesh.vertices().rows());
-  ASSERT_EQ(1420, mesh.faces().rows());
+  ASSERT_EQ(821, mesh.vertices().rows());
+  ASSERT_EQ(1422, mesh.faces().rows());
 }
 
 TEST(isosurface, manifold) {
@@ -313,7 +317,7 @@ TEST(isosurface, manifold) {
   Isosurface isosurf(bbox, resolution, aniso);
   RandomFieldFunction field_fn;
 
-  auto mesh = isosurf.generate(field_fn, 0.0, 0);
+  auto mesh = isosurf.generate(field_fn, 0.0);
 
   MeshDefectsFinder defects(mesh);
 
@@ -335,7 +339,7 @@ TEST(isosurface, boundary_coordinates) {
   Isosurface isosurf(bbox, resolution, aniso);
   RandomFieldFunction field_fn;
 
-  auto mesh = isosurf.generate(field_fn, 0.0, 0);
+  auto mesh = isosurf.generate(field_fn, 0.0);
 
   ASSERT_TRUE(test_boundary_coordinates(mesh, bbox));
 }
@@ -351,7 +355,7 @@ TEST(isosurface, boundary_coordinates_seed_points) {
   Points3 seed_points(1, 3);
   seed_points << Point3::Zero();
 
-  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, 0);
+  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0);
 
   ASSERT_TRUE(test_boundary_coordinates(mesh, bbox));
 }
@@ -432,4 +436,39 @@ TEST(isosurface, bbox_independence) {
   auto mesh_s = snapped(small);
   auto mesh_l = snapped(large);
   expect_bbox_independent("plane/snap", mesh_s, mesh_l, small, large, resolution);
+}
+
+// refine_vertices projects mesh vertices onto the field's level set: the max distance from the
+// surface must stay tiny.
+TEST(refine, vertices_on_surface) {
+  const double res = 0.1;
+  const double pad = 3.0 * res;
+
+  DistanceFromPoint field_fn;  // the unit sphere as the level set f = 1
+  const Bbox3 bbox(Point3(-1 - pad, -1 - pad, -1 - pad), Point3(1 + pad, 1 + pad, 1 + pad));
+  auto mesh = Isosurface(bbox, res).generate(field_fn, 1.0);
+  EXPECT_LT((field_fn(mesh.vertices()).array() - 1.0).abs().maxCoeff(), 1e-5 * res);
+}
+
+// The guard must reject a move that folds an incident face over its opposite edge. A flat diamond
+// fan around the apex (index 0); the tilted plane f = (-x - y)/sqrt2 + 1 has gradient
+// (-1,-1,0)/sqrt2 and residual 1 at the origin, so an unguarded Newton step would drive the apex
+// ~1 (the 0.5*res cap) across edge {1,2} (distance 0.707), inverting a face.
+TEST(refine, rejects_fold) {
+  Points3 v(5, 3);
+  v << 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 0, -1, 0;
+  Faces f(4, 3);
+  f << 0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1;
+
+  SignedDistanceFromPlane field_fn(Point3(std::sqrt(2.0), 0.0, 0.0), Vector3(-1.0, -1.0, 0.0));
+  auto out = refine_vertices(Mesh(v, f), field_fn, 0.0, 2.0, Mat3::Identity());
+
+  const auto& ov = out.vertices();
+  const auto& of = out.faces();
+  for (Index i = 0; i < of.rows(); i++) {
+    Vector3 a = ov.row(of(i, 0));
+    Vector3 b = ov.row(of(i, 1));
+    Vector3 c = ov.row(of(i, 2));
+    EXPECT_GT((b - a).cross(c - a)(2), 0.0) << "face " << i << " inverted";
+  }
 }

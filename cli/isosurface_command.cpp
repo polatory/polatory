@@ -36,7 +36,6 @@ struct Options {
   Bbox3 bbox;
   double resolution{};
   Mat3 aniso;
-  int refine{};
   std::string out_file;
 };
 
@@ -61,9 +60,9 @@ void run_impl(const Options& opts) {
     isosurf.set_snap_points(table(kAll, {0, 1, 2}), tolerances);
   }
 
-  auto mesh = seed_points.rows() > 0 ? isosurf.generate_from_seed_points(seed_points, field_fn,
-                                                                         opts.isovalue, opts.refine)
-                                     : isosurf.generate(field_fn, opts.isovalue, opts.refine);
+  auto mesh = seed_points.rows() > 0
+                  ? isosurf.generate_from_seed_points(seed_points, field_fn, opts.isovalue)
+                  : isosurf.generate(field_fn, opts.isovalue);
 
   mesh.export_obj(opts.out_file);
 }
@@ -111,8 +110,6 @@ void IsosurfaceCommand::run(const std::vector<std::string>& args,
        "Elements of the anisotropy matrix")  //
       ("isoval", po::value(&opts.isovalue)->default_value(0.0, "0.0")->value_name("VAL"),
        "Output mesh isovalue")  //
-      ("refine", po::value(&opts.refine)->default_value(1)->value_name("N"),
-       "Number of vertex refinement passes")  //
       ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
        "Output mesh file in OBJ format")  //
       ;

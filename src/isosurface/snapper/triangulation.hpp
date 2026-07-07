@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "abstract_mesh.hpp"
+#include "../abstract_mesh.hpp"
 
 namespace polatory::isosurface::snapper {
 

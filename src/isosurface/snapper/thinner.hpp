@@ -13,9 +13,10 @@
 #include <polatory/types.hpp>
 #include <vector>
 
-#include "abstract_mesh.hpp"
-#include "spatial_grid.hpp"
-#include "utility.hpp"
+#include "../abstract_mesh.hpp"
+#include "../face_grid.hpp"
+#include "../spatial_grid.hpp"
+#include "../utility.hpp"
 
 namespace polatory::isosurface::snapper {
 
@@ -169,15 +170,9 @@ class Thinner {
       auto ps = p_(nf, kAll);
       Point3 lo = ps.colwise().minCoeff();
       Point3 hi = ps.colwise().maxCoeff();
-      bool hit = false;
-      face_grid_.for_each(lo, hi, [&](Index fi) {
-        if (star.contains(fi) || !intersects(nf, mesh_.face(fi))) {
-          return true;
-        }
-        hit = true;
-        return false;
-      });
-      if (hit) {
+      if (face_grid_.any_of(lo, hi, [&](Index fi) {
+            return !star.contains(fi) && intersects(nf, mesh_.face(fi));
+          })) {
         return false;
       }
     }
@@ -245,13 +240,7 @@ class Thinner {
     return ok;
   }
 
-  void index_face(Index fi) {
-    auto f = mesh_.face(fi);
-    auto ps = p_(f, kAll);
-    Point3 lo = ps.colwise().minCoeff();
-    Point3 hi = ps.colwise().maxCoeff();
-    face_grid_.insert(fi, lo, hi);
-  }
+  void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
   // The self-intersection guard runs in the untransformed frame (p_), where defects are judged,
   // matching the defect finder.
@@ -261,7 +250,7 @@ class Thinner {
   }
 
   Vector3 normal(const Face& f) const {
-    return Vector3((ap_.row(f(1)) - ap_.row(f(0))).cross(ap_.row(f(2)) - ap_.row(f(0))));
+    return triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
   static bool on_edge(const Face& f, Index a, Index b) {
@@ -293,8 +282,8 @@ class Thinner {
     if (!best.is_valid()) {
       return false;
     }
-    // Drop the star from the grid before the collapse rewrites it (unindex_face reads live
-    // geometry), then re-add the retargeted faces.
+    // Drop the star from the grid before the collapse rewrites its faces, then re-add the
+    // retargeted faces.
     for (auto h : hs) {
       unindex_face(mesh_.face(h));
     }
@@ -304,13 +293,7 @@ class Thinner {
     return true;
   }
 
-  void unindex_face(Index fi) {
-    auto f = mesh_.face(fi);
-    auto ps = p_(f, kAll);
-    Point3 lo = ps.colwise().minCoeff();
-    Point3 hi = ps.colwise().maxCoeff();
-    face_grid_.remove(fi, lo, hi);
-  }
+  void unindex_face(Index fi) { face_grid_.remove(fi); }
 
   Points3 p_;
   Points3 ap_;
@@ -318,7 +301,7 @@ class Thinner {
   Points3 a_points_;   // the snap targets
   VecX snap_tols2_;    // squared snapping tolerance per snap point
   SpatialGrid snap_grid_;
-  SpatialGrid face_grid_;
+  FaceGrid face_grid_;
   double max_edge2_{};         // squared cap on a collapsed edge's length
   std::vector<bool> snapped_;  // per vertex; true = a snap point (only these collapse)
   Mesh result_;

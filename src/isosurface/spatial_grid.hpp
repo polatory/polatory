@@ -10,7 +10,7 @@
 #include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory::isosurface::snapper {
+namespace polatory::isosurface {
 
 // A uniform grid mapping cells to item indices: an item is inserted over the cells its world AABB
 // touches, and for_each visits each distinct item near a query AABB. Holds only indices (geometry
@@ -115,4 +115,4 @@ class SpatialGrid {
   mutable int guard_{};
 };
 
-}  // namespace polatory::isosurface::snapper
+}  // namespace polatory::isosurface

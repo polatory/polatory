@@ -8,6 +8,7 @@
 #include <polatory/isosurface/clip.hpp>
 #include <polatory/isosurface/cluster.hpp>
 #include <polatory/isosurface/mesh.hpp>
+#include <polatory/isosurface/refine.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/snap.hpp>
@@ -33,35 +34,25 @@ class Isosurface {
 
   void clear() { lattice_.clear(); }
 
-  Mesh generate(FieldFunction& field_fn, double isovalue = 0.0, int refine = 1) {
-    if (refine < 0) {
-      throw std::runtime_error("refine must be non-negative");
-    }
-
+  Mesh generate(FieldFunction& field_fn, double isovalue = 0.0, bool refine = true) {
     field_fn.set_evaluation_bbox(lattice_.second_extended_bbox());
 
     lattice_.add_all_nodes(field_fn, isovalue);
-    lattice_.refine_vertices(field_fn, isovalue, refine);
 
-    return generate_common();
+    return generate_common(field_fn, isovalue, refine);
   }
 
   Mesh generate_from_seed_points(const Points3& seed_points, FieldFunction& field_fn,
-                                 double isovalue = 0.0, int refine = 1) {
+                                 double isovalue = 0.0, bool refine = true) {
     if (seed_points.rows() == 0) {
       throw std::runtime_error("seed points must not be empty");
-    }
-
-    if (refine < 0) {
-      throw std::runtime_error("refine must be non-negative");
     }
 
     field_fn.set_evaluation_bbox(lattice_.second_extended_bbox());
 
     lattice_.add_nodes_from_seed_points(seed_points, field_fn, isovalue);
-    lattice_.refine_vertices(field_fn, isovalue, refine);
 
-    return generate_common();
+    return generate_common(field_fn, isovalue, refine);
   }
 
   void set_snap_points(const Points3& points, const VecX& relative_tolerances = VecX()) {
@@ -79,16 +70,7 @@ class Isosurface {
   }
 
  private:
-  static std::size_t hash_mesh(const Mesh& m) {
-    std::size_t seed = 0;
-    const auto& v = m.vertices();
-    const auto& f = m.faces();
-    boost::hash_combine(seed, boost::hash_range(v.data(), v.data() + v.size()));
-    boost::hash_combine(seed, boost::hash_range(f.data(), f.data() + f.size()));
-    return seed;
-  }
-
-  Mesh generate_common() {
+  Mesh generate_common(const FieldFunction& field_fn, double isovalue, bool refine) {
     auto res = lattice_.resolution();
 
     auto mesh = lattice_.get_mesh();
@@ -96,6 +78,10 @@ class Isosurface {
       for (auto pass = 0; pass < 2; pass++) {
         mesh = cluster_vertices(mesh, lattice_, aniso_);
         mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
+      }
+
+      if (refine) {
+        mesh = refine_vertices(mesh, field_fn, isovalue, res, aniso_);
       }
 
       if (snap_points_.rows() != 0) {
@@ -139,6 +125,15 @@ class Isosurface {
     lattice_.clear();
 
     return mesh;
+  }
+
+  static std::size_t hash_mesh(const Mesh& m) {
+    std::size_t seed = 0;
+    const auto& v = m.vertices();
+    const auto& f = m.faces();
+    boost::hash_combine(seed, boost::hash_range(v.data(), v.data() + v.size()));
+    boost::hash_combine(seed, boost::hash_range(f.data(), f.data() + f.size()));
+    return seed;
   }
 
   rmt::Lattice lattice_;

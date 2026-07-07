@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace polatory::isosurface::snapper {
+namespace polatory::isosurface {
 
 // A directed side of a face, identified by its index 4 * fi + k (fi the face, k in 0..2) in the
 // implicit halfedge list. The stride is 4, not 3, so fi = h.i >> 2 and k = h.i & 3 are bit ops
@@ -357,4 +357,4 @@ class AbstractMesh {
   std::vector<std::vector<Halfedge>> vh_;  // vertex -> its outgoing halfedges
 };
 
-}  // namespace polatory::isosurface::snapper
+}  // namespace polatory::isosurface

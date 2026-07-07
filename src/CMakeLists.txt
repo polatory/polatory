@@ -28,6 +28,7 @@ add_library(${TARGET} STATIC
     fmm/make_fmm_evaluator.cpp
     isosurface/cluster.cpp
     isosurface/mesh_defects_finder.cpp
+    isosurface/refine.cpp
     isosurface/snap.cpp
     kriging/variogram_calculator.cpp
     krylov/fgmres.cpp

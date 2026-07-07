@@ -46,18 +46,6 @@ class Node {
 
   const geometry::Point3& position() const { return position_; }
 
-  void remove_vertex(EdgeIndex edge_idx) {
-    POLATORY_ASSERT(has_vertex(edge_idx));
-
-    EdgeBitset edge_bit = 1 << edge_idx;
-    EdgeBitset edge_count_mask = edge_bit - 1;
-
-    intersections_ ^= edge_bit;
-
-    auto it = vis_->begin() + bit_count(static_cast<EdgeBitset>(intersections_ & edge_count_mask));
-    vis_->erase(it);
-  }
-
   void set_intersection(EdgeIndex edge_idx) {
     EdgeBitset edge_bit = 1 << edge_idx;
 

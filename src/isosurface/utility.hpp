@@ -9,7 +9,7 @@
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 
-namespace polatory::isosurface::snapper {
+namespace polatory::isosurface {
 
 // Ericson's closest-point region test; sets closest to the nearest point of triangle (a, b, c).
 inline double point_triangle_closest(const geometry::Point3& p, const geometry::Point3& a,
@@ -82,6 +82,12 @@ inline double triangle_min_angle(const geometry::Point3& a, const geometry::Poin
   return std::min({angle(b - a, c - a), angle(a - b, c - b), angle(a - c, b - c)});
 }
 
+// The unnormalized normal of triangle (a, b, c); its length is twice the triangle's area.
+inline geometry::Vector3 triangle_normal(const geometry::Point3& a, const geometry::Point3& b,
+                                         const geometry::Point3& c) {
+  return geometry::Vector3((b - a).cross(c - a));
+}
+
 inline int num_shared_vertices(const Face& a, const Face& b) {
   int n = 0;
   for (auto i = 0; i < 3; i++) {
@@ -135,4 +141,4 @@ inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Poin
   return pierces(a, b) || pierces(b, a);
 }
 
-}  // namespace polatory::isosurface::snapper
+}  // namespace polatory::isosurface

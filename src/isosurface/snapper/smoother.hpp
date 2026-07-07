@@ -16,9 +16,10 @@
 #include <utility>
 #include <vector>
 
-#include "abstract_mesh.hpp"
-#include "spatial_grid.hpp"
-#include "utility.hpp"
+#include "../abstract_mesh.hpp"
+#include "../face_grid.hpp"
+#include "../spatial_grid.hpp"
+#include "../utility.hpp"
 
 namespace polatory::isosurface::snapper {
 
@@ -169,15 +170,9 @@ class Smoother {
     auto ps = p_(new_f, kAll);
     Point3 lo = ps.colwise().minCoeff();
     Point3 hi = ps.colwise().maxCoeff();
-    bool hit = false;
-    face_grid_.for_each(lo, hi, [&](Index gi) {
-      if (gi != fi0 && gi != fi1 && overlaps(new_f, mesh_.face(gi))) {
-        hit = true;
-        return false;
-      }
-      return true;
+    return face_grid_.any_of(lo, hi, [&](Index gi) {
+      return gi != fi0 && gi != fi1 && overlaps(new_f, mesh_.face(gi));
     });
-    return hit;
   }
 
   double dist2(const Point3& p, const Face& f) const {
@@ -245,23 +240,14 @@ class Smoother {
   }
 
   // Index a face by the grid cells its current AABB touches.
-  void index_face(Index fi) {
-    auto f = mesh_.face(fi);
-    auto ps = p_(f, kAll);
-    Point3 lo = ps.colwise().minCoeff();
-    Point3 hi = ps.colwise().maxCoeff();
-    face_grid_.insert(fi, lo, hi);
-  }
+  void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
   double min_angle(const Face& f) const {
     return triangle_min_angle(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
-  // A face's unnormalized normal (length is twice the area).
   Vector3 normal(const Face& f) const {
-    Vector3 e1 = ap_.row(f(1)) - ap_.row(f(0));
-    Vector3 e2 = ap_.row(f(2)) - ap_.row(f(0));
-    return Vector3(e1.cross(e2));
+    return triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
   // Whether the two faces intersect, via triangles_intersect (the defect finder's edge-pierce test)
@@ -354,14 +340,7 @@ class Smoother {
     return Flip{fi0, fi1, x, y, c, d, improve};
   }
 
-  // Detach a face from the grid; reads its current geometry, so call before that geometry changes.
-  void unindex_face(Index fi) {
-    auto f = mesh_.face(fi);
-    auto ps = p_(f, kAll);
-    Point3 lo = ps.colwise().minCoeff();
-    Point3 hi = ps.colwise().maxCoeff();
-    face_grid_.remove(fi, lo, hi);
-  }
+  void unindex_face(Index fi) { face_grid_.remove(fi); }
 
   Points3 p_;
   Points3 ap_;
@@ -369,8 +348,8 @@ class Smoother {
   Points3 a_points_;   // the snap targets
   VecX snap_tols2_;    // squared snapping tolerance per snap point
   SpatialGrid snap_grid_;
-  SpatialGrid face_grid_;  // face broad-phase for the self-intersection guard
-  double resolution_;      // mesh resolution; sets the diagonal length cap
+  FaceGrid face_grid_;  // face broad-phase for the self-intersection guard
+  double resolution_;   // mesh resolution; sets the diagonal length cap
   Mesh result_;
 };
 

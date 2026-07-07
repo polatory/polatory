@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Eigen/QR>
 #include <algorithm>
 #include <array>
 #include <boost/unordered/unordered_flat_set.hpp>
@@ -274,41 +273,6 @@ class Lattice : public PrimitiveLattice {
     return {get_vertices(), faces};
   }
 
-  void refine_vertices(const FieldFunction& field_fn, double isovalue, int num_passes) {
-    if (num_passes <= 0) {
-      return;
-    }
-
-    auto n = static_cast<Index>(vertices_.size());
-    geometry::Points3 vertices(n, 3);
-
-    for (auto pass = 0; pass < num_passes; pass++) {
-      for (Index i = 0; i < n; i++) {
-        const auto& v = vertices_.at(i);
-        vertices.row(i) = v.position_unclamped(node_list_);
-      }
-
-      VecX vertex_values = field_fn(vertices).array() - isovalue;
-
-      for (Index i = 0; i < n; i++) {
-        auto& v = vertices_.at(i);
-        v.v1 = vertex_values(i);
-      }
-
-      refine_vertices(vertices_);
-    }
-
-    for (Index i = 0; i < n; i++) {
-      const auto& v = vertices_.at(i);
-      if (v.t1 >= 0.5) {
-        auto& node0 = node_list_.at(v.node_lc);
-        auto& node1 = node_list_.at(neighbor(v.node_lc, v.ei));
-        node0.remove_vertex(v.ei);
-        node1.insert_vertex(i, kOppositeEdge.at(v.ei));
-      }
-    }
-  }
-
   BinarySign value_sign_at_arbitrary_point_within_bbox() const {
     return value_at_arbitrary_point_.value().value_sign();
   }
@@ -358,12 +322,7 @@ class Lattice : public PrimitiveLattice {
   struct Vertex {
     LatticeCoordinates node_lc;
     EdgeIndex ei{};
-    double t0{};
-    double v0{};
-    double t1{};
-    double v1{};
-    double t2{};
-    double v2{};
+    double t{};
 
     // Keeps the crossing off the node endpoints by kVertexPositionMinimumOffset. When several
     // surfaces pass near a node, vertices landing exactly on it (and the clustered vertex that
@@ -373,17 +332,8 @@ class Lattice : public PrimitiveLattice {
       const auto& node1 = node_list.at(neighbor(node_lc, ei));
       const auto& p0 = node0.position();
       const auto& p1 = node1.position();
-      auto t = std::clamp(t1, kVertexPositionMinimumOffset, 1.0 - kVertexPositionMinimumOffset);
-      return p0 + t * (p1 - p0);
-    }
-
-    geometry::Point3 position_unclamped(const NodeList& node_list) const {
-      const auto& node0 = node_list.at(node_lc);
-      const auto& node1 = node_list.at(neighbor(node_lc, ei));
-      const auto& p0 = node0.position();
-      const auto& p1 = node1.position();
-      auto t = t1;
-      return p0 + t * (p1 - p0);
+      auto tc = std::clamp(t, kVertexPositionMinimumOffset, 1.0 - kVertexPositionMinimumOffset);
+      return p0 + tc * (p1 - p0);
     }
   };
 
@@ -508,16 +458,10 @@ class Lattice : public PrimitiveLattice {
 
         if (cr.t < 0.5) {
           node0.insert_vertex(vi, cr.ei);
-          vertices_.emplace_back(cr.lc0, cr.ei,                                   //
-                                 0.0, cr.v0,                                      //
-                                 cr.t, std::numeric_limits<double>::quiet_NaN(),  //
-                                 1.0, cr.v1);
+          vertices_.emplace_back(cr.lc0, cr.ei, cr.t);
         } else {
           node1.insert_vertex(vi, opp_ei);
-          vertices_.emplace_back(cr.lc1, opp_ei,                                        //
-                                 0.0, cr.v1,                                            //
-                                 1.0 - cr.t, std::numeric_limits<double>::quiet_NaN(),  //
-                                 1.0, cr.v0);
+          vertices_.emplace_back(cr.lc1, opp_ei, 1.0 - cr.t);
         }
 
         node0.set_intersection(cr.ei);
@@ -608,41 +552,6 @@ class Lattice : public PrimitiveLattice {
     return frontier;
   }
 
-  static void refine_vertices(std::vector<Vertex>& vertices) {
-    using Mat = Mat3;
-    using Vec = Vec<3>;
-
-    for (auto& v : vertices) {
-      // Solve y = a x^2 + b x + c for a, b, c with (x, y) = (t0, v0), (t1, v1), (t2, v2).
-      Mat a;
-      a << v.t0 * v.t0, v.t0, 1.0, v.t1 * v.t1, v.t1, 1.0, v.t2 * v.t2, v.t2, 1.0;
-      Vec b(v.v0, v.v1, v.v2);
-      Eigen::ColPivHouseholderQR<Mat> qr_a(a);
-      qr_a.setThreshold(1e-10);
-      if (!qr_a.isInvertible()) {
-        continue;
-      }
-      Vec c = qr_a.solve(b);
-
-      // Solve a x^2 + b x + c = 0 for x, where 0 < x < 1.
-      auto [s0, s1] = solve_quadratic(c(0), c(1), c(2));
-      auto s = v.t0 < s0 && s0 < v.t2 ? s0 : s1;
-
-      if (s < v.t1) {
-        // (t0', t1', t2') = (t0, s, t1).
-        v.t2 = v.t1;
-        v.v2 = v.v1;
-      } else {
-        // (t0', t1', t2') = (t1, s, t2).
-        v.t0 = v.t1;
-        v.v0 = v.v1;
-      }
-
-      v.t1 = s;
-      v.v1 = std::numeric_limits<double>::quiet_NaN();
-    }
-  }
-
   // Removes nodes without any intersections.
   void remove_free_nodes(const std::vector<LatticeCoordinates>& node_lcs) {
     for (const auto& lc : node_lcs) {
@@ -651,19 +560,6 @@ class Lattice : public PrimitiveLattice {
         node_list_.erase(it->first);
       }
     }
-  }
-
-  static std::pair<double, double> solve_quadratic(double a, double b, double c) {
-    auto d = b * b - 4.0 * a * c;
-    auto sqrt_d = std::sqrt(d);
-
-    if (b > 0.0) {
-      return {(-b - sqrt_d) / (2.0 * a), 2.0 * c / (-b - sqrt_d)};
-    }
-    if (b < 0.0) {
-      return {2.0 * c / (-b + sqrt_d), (-b + sqrt_d) / (2.0 * a)};
-    }
-    return {(-b - sqrt_d) / (2.0 * a), (-b + sqrt_d) / (2.0 * a)};
   }
 
   NodeList node_list_;
