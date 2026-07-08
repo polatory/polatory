@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <optional>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/edge.hpp>
@@ -130,20 +131,34 @@ class Smoother {
       if (++flips > cap) {
         break;
       }
-      // Re-score the edges of the two changed faces and of their neighbours.
-      for (Index fi : {fl->fi0, fl->fi1}) {
-        for (auto k = 0; k < 3; k++) {
-          auto h = mesh_.halfedge(fi, k);
-          enqueue(Edge{mesh_.from(h), mesh_.to(h)});
-          Index gi = mesh_.face(mesh_.opposite(h));
-          if (gi >= 0 && gi != fl->fi0 && gi != fl->fi1) {
-            auto g = mesh_.face(gi);
-            for (auto m = 0; m < 3; m++) {
-              enqueue({g(m), g((m + 1) % 3)});
-            }
-          }
-        }
+      reenqueue_around(*fl, enqueue);
+    }
+
+    // Second pass: flip toward interior valence 6 for more regular triangles. Vertices never move,
+    // so the surface stays put; honors_ok keeps snapped features on the mesh.
+    std::priority_queue<Item, std::vector<Item>, ItemLess> vpq;
+    auto venqueue = [&](const Edge& e) {
+      if (auto fl = score_valence(e)) {
+        vpq.push({e, fl->improve});
       }
+    };
+    mesh_.for_each_halfedge([&](Halfedge h) {
+      if (mesh_.from(h) < mesh_.to(h) && mesh_.opposite(h).is_valid()) {
+        venqueue(Edge{mesh_.from(h), mesh_.to(h)});
+      }
+    });
+    while (!vpq.empty()) {
+      Edge e = vpq.top().e;
+      vpq.pop();
+      auto fl = score_valence(e);
+      if (!fl || creates_degenerate(*fl) || !honors_ok(*fl) || !guard_ok(*fl)) {
+        continue;
+      }
+      do_flip(*fl);
+      if (++flips > cap) {
+        break;
+      }
+      reenqueue_around(*fl, venqueue);
     }
 
     result_ = {mesh.vertices(), std::move(mesh_).take_faces()};
@@ -186,6 +201,12 @@ class Smoother {
            normal(fl.new_f1()).norm() <= kDegenerateAreaRatio * scale;
   }
 
+  // The number of edges incident to v (its outgoing halfedges).
+  Index degree(Index v) const {
+    auto r = mesh_.vertex_outgoing_halfedges(v);
+    return static_cast<Index>(std::distance(r.begin(), r.end()));
+  }
+
   double dist2(const Point3& p, const Face& f) const {
     return point_triangle_dist2(p, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
@@ -196,6 +217,45 @@ class Smoother {
     mesh_.flip({fl.x, fl.y});
     index_face(fl.fi0);
     index_face(fl.fi1);
+  }
+
+  // The flippable interior edge e as a Flip (improve unset), with the summed five-edge bend before
+  // and after the flip returned by reference; nullopt if e is a boundary or its flipped diagonal is
+  // degenerate or already present. Shared by score() and score_valence().
+  std::optional<Flip> flip_geometry(const Edge& e, double& before, double& after) const {
+    auto h = mesh_.halfedge_of(e.a, e.b);  // canonical (e.a < e.b); traverses x -> y in f0
+    auto opp_h = mesh_.opposite(h);
+    auto fi0 = mesh_.face(h);
+    auto fi1 = mesh_.face(opp_h);
+    if (fi0 < 0 || fi1 < 0) {
+      return std::nullopt;  // not a present interior edge (a boundary, or a prior flip removed it)
+    }
+
+    Index x = mesh_.from(h);
+    Index y = mesh_.to(h);
+    Index c = mesh_.apex(h);
+    Index d = mesh_.apex(opp_h);
+    if (c == d || mesh_.has_edge({c, d})) {
+      return std::nullopt;  // degenerate, or the flipped diagonal already exists
+    }
+
+    auto f0 = mesh_.face(fi0);
+    auto f1 = mesh_.face(fi1);
+    Face new_f0{c, x, d};
+    Face new_f1{d, y, c};
+
+    // The quad's four outer neighbours, across the edges next/prev to the flipped edge.
+    Index gi_cx = mesh_.face(mesh_.opposite(mesh_.prev(h)));
+    Index gi_yc = mesh_.face(mesh_.opposite(mesh_.next(h)));
+    Index gi_xd = mesh_.face(mesh_.opposite(mesh_.next(opp_h)));
+    Index gi_dy = mesh_.face(mesh_.opposite(mesh_.prev(opp_h)));
+
+    before = bend(f0, f1) + bend_with(f0, gi_cx) + bend_with(f0, gi_yc) + bend_with(f1, gi_xd) +
+             bend_with(f1, gi_dy);
+    after = bend(new_f0, new_f1) + bend_with(new_f0, gi_cx) + bend_with(new_f1, gi_yc) +
+            bend_with(new_f0, gi_xd) + bend_with(new_f1, gi_dy);
+
+    return Flip{fi0, fi1, x, y, c, d, 0.0};
   }
 
   // Self-intersection guard: neither new triangle may cross a face in its grid cells -- a
@@ -253,8 +313,26 @@ class Smoother {
   // Index a face by the grid cells its current AABB touches.
   void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
+  // Whether every edge incident to v has two faces (v is not on the mesh boundary).
+  bool is_interior(Index v) const {
+    for (auto h : mesh_.vertex_outgoing_halfedges(v)) {
+      if (!mesh_.opposite(h).is_valid()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   double min_angle(const Face& f) const {
     return triangle_min_angle(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
+  }
+
+  // Whether the flip keeps the smaller of its two new triangles' min angle at least kMinAngleRatio
+  // of the old -- forbids trading a bend or valence gain for a much worse sliver.
+  bool min_angle_ok(const Flip& fl) const {
+    auto after_angle = std::min(min_angle(fl.new_f0()), min_angle(fl.new_f1()));
+    auto before_angle = std::min(min_angle(mesh_.face(fl.fi0)), min_angle(mesh_.face(fl.fi1)));
+    return after_angle >= kMinAngleRatio * before_angle;
   }
 
   Vector3 normal(const Face& f) const {
@@ -274,57 +352,50 @@ class Smoother {
                                p_.row(b(2)), shared);
   }
 
-  // The candidate flip of edge e if admissible (interior, new diagonal absent and non-degenerate,
-  // within the length cap, lowers the bend). The cheap checks; the self-intersection guard is left
-  // to the caller.
+  // Re-score the edges of the flip's two changed faces and of their outer neighbours (a flip alters
+  // only these), pushing each back onto the queue via enqueue.
+  template <class Enqueue>
+  void reenqueue_around(const Flip& fl, const Enqueue& enqueue) const {
+    for (Index fi : {fl.fi0, fl.fi1}) {
+      for (auto k = 0; k < 3; k++) {
+        auto h = mesh_.halfedge(fi, k);
+        enqueue(Edge{mesh_.from(h), mesh_.to(h)});
+        Index gi = mesh_.face(mesh_.opposite(h));
+        if (gi >= 0 && gi != fl.fi0 && gi != fl.fi1) {
+          auto g = mesh_.face(gi);
+          for (auto m = 0; m < 3; m++) {
+            enqueue({g(m), g((m + 1) % 3)});
+          }
+        }
+      }
+    }
+  }
+
+  // The candidate flip of edge e if it strictly lowers the summed five-edge bend and passes the
+  // length and min-angle caps (bypassed only for a severely folded neighbourhood). The
+  // self-intersection guard is left to the caller.
   std::optional<Flip> score(const Edge& e) const {
-    auto h = mesh_.halfedge_of(e.a, e.b);  // canonical (e.a < e.b); traverses x -> y in f0
-    auto opp_h = mesh_.opposite(h);
-    auto fi0 = mesh_.face(h);
-    auto fi1 = mesh_.face(opp_h);
-    if (fi0 < 0 || fi1 < 0) {
-      return std::nullopt;  // not a present interior edge (a boundary, or a prior flip removed it)
+    double before = 0.0;
+    double after = 0.0;
+    auto fl = flip_geometry(e, before, after);
+    if (!fl) {
+      return std::nullopt;
     }
-
-    Index x = mesh_.from(h);
-    Index y = mesh_.to(h);
-    Index c = mesh_.apex(h);
-    Index d = mesh_.apex(opp_h);
-    if (c == d || mesh_.has_edge({c, d})) {
-      return std::nullopt;  // degenerate, or the flipped diagonal already exists
-    }
-
-    auto f0 = mesh_.face(fi0);
-    auto f1 = mesh_.face(fi1);
-    Face new_f0{c, x, d};
-    Face new_f1{d, y, c};
-
-    // The quad's four outer neighbours, across the edges next/prev to the flipped edge.
-    Index gi_cx = mesh_.face(mesh_.opposite(mesh_.prev(h)));
-    Index gi_yc = mesh_.face(mesh_.opposite(mesh_.next(h)));
-    Index gi_xd = mesh_.face(mesh_.opposite(mesh_.next(opp_h)));
-    Index gi_dy = mesh_.face(mesh_.opposite(mesh_.prev(opp_h)));
-
     // The reason to flip: the summed bend over the five touched edges must strictly drop.
-    auto before = bend(f0, f1) + bend_with(f0, gi_cx) + bend_with(f0, gi_yc) +
-                  bend_with(f1, gi_xd) + bend_with(f1, gi_dy);
-    auto after = bend(new_f0, new_f1) + bend_with(new_f0, gi_cx) + bend_with(new_f1, gi_yc) +
-                 bend_with(new_f0, gi_xd) + bend_with(new_f1, gi_dy);
     if (!(after < before - 1e-6)) {
       return std::nullopt;
     }
-
-    auto improve = before - after;
+    fl->improve = before - after;
 
     // The length and min-angle quality caps below, applied unless the neighbourhood is severely
     // folded (five-edge dihedral sum >= kSevereFoldSum -- a cave that must go regardless of
     // triangle shape). Validity, the bend-sum drop above, and honors_ok/guard_ok still gate the
     // flip.
     if (before < kSevereFoldSum) {
-      // Length: a lengthening flip may not pass the hard ceiling, and any overshoot past
-      // kEdgeFloor * res must be earned by bend reduction. A shortening flip adds no longer edge.
-      auto new_len2 = (ap_.row(c) - ap_.row(d)).squaredNorm();
-      auto cur_len2 = (ap_.row(x) - ap_.row(y)).squaredNorm();
+      // Length: a lengthening flip may not pass the hard ceiling, and any overshoot past kEdgeFloor
+      // * res must be earned by bend reduction. A shortening flip adds no longer edge.
+      auto new_len2 = (ap_.row(fl->c) - ap_.row(fl->d)).squaredNorm();
+      auto cur_len2 = (ap_.row(fl->x) - ap_.row(fl->y)).squaredNorm();
       if (new_len2 > cur_len2) {
         auto new_len = std::sqrt(new_len2);
         if (new_len > kEdgeCeiling * resolution_) {
@@ -333,7 +404,7 @@ class Smoother {
 
         auto overshoot = new_len / resolution_ - kEdgeFloor;
         auto rate = kImproveFull / (kEdgeCeiling - kEdgeFloor);
-        if (overshoot > 0.0 && improve < rate * overshoot) {
+        if (overshoot > 0.0 && fl->improve < rate * overshoot) {
           return std::nullopt;
         }
       }
@@ -341,14 +412,55 @@ class Smoother {
       // Min angle: a flip may not shrink the smaller angle below kMinAngleRatio of the old -- a
       // diagonal grazing a collinear vertex or a T-junction the inexact self-intersection guard
       // misses. A mild thinning to flatten a crease is kept: a sliver beats a crease.
-      auto after_angle = std::min(min_angle(new_f0), min_angle(new_f1));
-      auto before_angle = std::min(min_angle(f0), min_angle(f1));
-      if (after_angle < kMinAngleRatio * before_angle) {
+      if (!min_angle_ok(*fl)) {
         return std::nullopt;
       }
     }
 
-    return Flip{fi0, fi1, x, y, c, d, improve};
+    return fl;
+  }
+
+  // The candidate flip of a flat edge e toward interior valence 6: both the current edge and the
+  // new diagonal must be flat (so the quad is planar and the flip shifts no boundary crease), all
+  // four vertices interior, and the summed squared valence deviation must strictly drop. improve =
+  // that drop. The self-intersection and honor guards are left to the caller.
+  std::optional<Flip> score_valence(const Edge& e) const {
+    double before = 0.0;
+    double after = 0.0;
+    auto fl = flip_geometry(e, before, after);
+    if (!fl) {
+      return std::nullopt;
+    }
+    // Valence flips run on any interior quad, curved regions and creases included -- every feature
+    // is a snap point, so honors_ok rejects a flip that would dishonor one and the iterated + final
+    // snap re-forms it. Regularizing only flat quads left the marching-tetrahedra valence pattern on
+    // curved surfaces untouched.
+    if (!(is_interior(fl->x) && is_interior(fl->y) && is_interior(fl->c) && is_interior(fl->d))) {
+      return std::nullopt;  // interior valence 6 is the target only away from the boundary
+    }
+
+    auto dev = [](Index deg) {
+      auto k = deg - 6;
+      return k * k;
+    };
+    auto before_dev =
+        dev(degree(fl->x)) + dev(degree(fl->y)) + dev(degree(fl->c)) + dev(degree(fl->d));
+    auto after_dev = dev(degree(fl->x) - 1) + dev(degree(fl->y) - 1) + dev(degree(fl->c) + 1) +
+                     dev(degree(fl->d) + 1);
+    if (after_dev >= before_dev) {
+      return std::nullopt;
+    }
+    fl->improve = static_cast<double>(before_dev - after_dev);
+
+    // A valence flip earns no length overshoot, so hold the new diagonal to the always-allowed floor
+    // and forbid a worse sliver.
+    if ((ap_.row(fl->c) - ap_.row(fl->d)).norm() > kEdgeFloor * resolution_) {
+      return std::nullopt;
+    }
+    if (!min_angle_ok(*fl)) {
+      return std::nullopt;
+    }
+    return fl;
   }
 
   void unindex_face(Index fi) { face_grid_.remove(fi); }

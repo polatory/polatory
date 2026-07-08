@@ -29,6 +29,7 @@ add_library(${TARGET} STATIC
     isosurface/cluster.cpp
     isosurface/mesh_defects_finder.cpp
     isosurface/refine.cpp
+    isosurface/relax.cpp
     isosurface/snap.cpp
     kriging/variogram_calculator.cpp
     krylov/fgmres.cpp

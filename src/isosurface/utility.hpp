@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <functional>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/predicates.hpp>
@@ -24,6 +26,14 @@ inline geometry::Point3 snap_to_bbox(const geometry::Point3& p, const geometry::
   q = ((q.array() - max.array()).abs() < tiny).select(max, q);
   return q;
 }
+
+// Hashes a point by its exact coordinates, for deduplicating or matching coincident positions.
+struct PointHash {
+  std::size_t operator()(const geometry::Point3& p) const noexcept {
+    std::hash<double> h;
+    return h(p.x()) ^ (h(p.y()) << 1) ^ (h(p.z()) << 2);
+  }
+};
 
 // Ericson's closest-point region test; sets closest to the nearest point of triangle (a, b, c).
 inline double point_triangle_closest(const geometry::Point3& p, const geometry::Point3& a,

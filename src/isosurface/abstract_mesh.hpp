@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <algorithm>
 #include <boost/container/static_vector.hpp>
 #include <cstddef>
 #include <iterator>
@@ -130,6 +131,10 @@ class AbstractMesh {
 
   Index add_face(const Face& f) {
     auto fi = nf_++;
+    if (fi >= faces_.rows()) {
+      // Grow (doubling) when built from a full Faces matrix rather than reserved capacity.
+      faces_.conservativeResize(std::max<Index>(fi + 1, 2 * faces_.rows()), Eigen::NoChange);
+    }
     faces_.row(fi) = f;
     deleted_.push_back(false);
     opp_.resize(4 * nf_);

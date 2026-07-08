@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <boost/container_hash/hash.hpp>
+#include <cmath>
 #include <cstddef>
 #include <optional>
 #include <polatory/geometry/bbox3d.hpp>
@@ -18,6 +19,7 @@
 #include <random>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -137,6 +139,88 @@ class SignedDistanceFromPlane : public FieldFunction {
  private:
   Vector3 normal_;
   double d_;
+};
+
+// Exact signed distance to a capped cylinder of the given radius and half-height, axis along z.
+class SignedDistanceFromCappedCylinder : public FieldFunction {
+ public:
+  SignedDistanceFromCappedCylinder(double radius, double half_height)
+      : radius_(radius), half_height_(half_height) {}
+
+  VecX operator()(const Points3& points) const override {
+    VecX d(points.rows());
+    for (Index i = 0; i < points.rows(); i++) {
+      double dr = std::hypot(points(i, 0), points(i, 1)) - radius_;
+      double dz = std::abs(points(i, 2)) - half_height_;
+      double outside = std::hypot(std::max(dr, 0.0), std::max(dz, 0.0));
+      double inside = std::min(std::max(dr, dz), 0.0);
+      d(i) = inside + outside;
+    }
+    return d;
+  }
+
+ private:
+  double radius_;
+  double half_height_;
+};
+
+// Approximate signed distance to a solid acute cone: apex at (0, 0, height), circular base of the
+// given radius at z = 0. The intersection of the lateral cone and the base half-space; the lateral
+// implicit is divided by its gradient magnitude to read as a distance near the surface.
+class SignedDistanceFromCone : public FieldFunction {
+ public:
+  SignedDistanceFromCone(double radius, double height) : radius_(radius), height_(height) {}
+
+  VecX operator()(const Points3& points) const override {
+    double slope = std::hypot(1.0, radius_ / height_);
+    VecX d(points.rows());
+    for (Index i = 0; i < points.rows(); i++) {
+      double rho = std::hypot(points(i, 0), points(i, 1));
+      double lateral = (rho - radius_ * (height_ - points(i, 2)) / height_) / slope;
+      double base = -points(i, 2);
+      d(i) = std::max(lateral, base);
+    }
+    return d;
+  }
+
+ private:
+  double radius_;
+  double height_;
+};
+
+// Exact signed distance to a sphere of the given radius centered at the origin.
+class SignedDistanceFromSphere : public FieldFunction {
+ public:
+  explicit SignedDistanceFromSphere(double radius) : radius_(radius) {}
+
+  VecX operator()(const Points3& points) const override {
+    return points.rowwise().norm().array() - radius_;
+  }
+
+ private:
+  double radius_;
+};
+
+// Exact signed distance to an axis-aligned cube centered at the origin with the given half-extent.
+class SignedDistanceFromCube : public FieldFunction {
+ public:
+  explicit SignedDistanceFromCube(double half_extent) : half_(half_extent) {}
+
+  VecX operator()(const Points3& points) const override {
+    VecX d(points.rows());
+    for (Index i = 0; i < points.rows(); i++) {
+      double qx = std::abs(points(i, 0)) - half_;
+      double qy = std::abs(points(i, 1)) - half_;
+      double qz = std::abs(points(i, 2)) - half_;
+      double outside = std::hypot(std::max(qx, 0.0), std::max(qy, 0.0), std::max(qz, 0.0));
+      double inside = std::min(std::max({qx, qy, qz}), 0.0);
+      d(i) = inside + outside;
+    }
+    return d;
+  }
+
+ private:
+  double half_;
 };
 
 // Points exercising the three Voronoi regions of the center cell (whose diagonal runs from (1,1) to
@@ -292,6 +376,163 @@ TEST(snap, isosurface_integration) {
   ASSERT_FALSE(find_vertex(mesh, Point3(points.row(2)), 1e-10).has_value());
 
   ASSERT_TRUE(is_oriented_manifold(mesh));
+}
+
+// TEMPORARY (no assertions): sweeps capped cylinders of varying radius/half-height/resolution,
+// snapping each to its two rim circles plus four vertical laterals (at 45/135/225/315, crossing
+// both rims). Writes /tmp/cyl_<name>.obj per config.
+TEST(snap, TEMP_cylinder_feature_lines) {
+  struct Config {
+    const char* name;
+    double radius, half_height, resolution;
+  };
+  const Config configs[] = {
+      {"R1_H1_res0.2", 1.0, 1.0, 0.2},     {"R1_H1_res0.1", 1.0, 1.0, 0.1},
+      {"R1_H2_res0.2", 1.0, 2.0, 0.2},     {"R2_H1_res0.2", 2.0, 1.0, 0.2},
+      {"R0.5_H1.5_res0.1", 0.5, 1.5, 0.1},
+  };
+  const double two_pi = 2.0 * std::acos(-1.0);
+  for (const auto& cfg : configs) {
+    const double radius = cfg.radius, half_height = cfg.half_height, resolution = cfg.resolution;
+    const double pad = 3.0 * resolution;
+    const Bbox3 bbox(Point3(-radius - pad, -radius - pad, -half_height - pad),
+                     Point3(radius + pad, radius + pad, half_height + pad));
+    SignedDistanceFromCappedCylinder field_fn(radius, half_height);
+
+    // Rims + laterals sampled at ~1/4 res; n a multiple of 8 so a rim sample lands on each lateral.
+    const Index n =
+        8 * std::max<Index>(
+                1, static_cast<Index>(std::llround(two_pi * radius / (0.25 * resolution) / 8.0)));
+    const Index n_lat = 4;
+    const Index m = static_cast<Index>(2.0 * half_height / (0.25 * resolution));
+    Points3 snap(2 * n + n_lat * (m - 1), 3);
+    Index row = 0;
+    for (Index i = 0; i < n; i++) {
+      double a = two_pi * static_cast<double>(i) / static_cast<double>(n);
+      snap.row(row++) << radius * std::cos(a), radius * std::sin(a), half_height;
+      snap.row(row++) << radius * std::cos(a), radius * std::sin(a), -half_height;
+    }
+    for (Index g = 0; g < n_lat; g++) {
+      double a = two_pi * (static_cast<double>(g) + 0.5) / static_cast<double>(n_lat);
+      double cx = radius * std::cos(a), cy = radius * std::sin(a);
+      for (Index j = 1; j < m; j++) {
+        double z =
+            -half_height + static_cast<double>(j) * (2.0 * half_height / static_cast<double>(m));
+        snap.row(row++) << cx, cy, z;
+      }
+    }
+    Isosurface snap_iso(bbox, resolution);
+    snap_iso.set_snap_points(snap, VecX::Constant(snap.rows(), 0.05));
+    snap_iso.generate(field_fn, 0.0).export_obj(std::string("/tmp/cyl_") + cfg.name + ".obj");
+  }
+}
+
+// TEMPORARY (no assertions): sweeps solid cones of varying radius/height/resolution (acute to
+// obtuse), snapping each to its base rim, four apex-to-rim generators, and those generators
+// continued across the base cap to its centre -- where the four lines cross. Writes
+// /tmp/cone_<name>.obj per config.
+TEST(snap, TEMP_cone_feature_lines) {
+  struct Config {
+    const char* name;
+    double radius, height, resolution;
+  };
+  const Config configs[] = {
+      {"R1_H4_res0.2", 1.0, 4.0, 0.2},     {"R1_H2_res0.2", 1.0, 2.0, 0.2},
+      {"R1_H1_res0.2", 1.0, 1.0, 0.2},     {"R1_H1_res0.1", 1.0, 1.0, 0.1},
+      {"R1_H0.5_res0.2", 1.0, 0.5, 0.2},    // obtuse: rim sits beyond max_distance = res
+      {"R1_H0.25_res0.2", 1.0, 0.25, 0.2},  // harsher: rim ~2 res beyond max_distance
+  };
+  const double two_pi = 2.0 * std::acos(-1.0);
+  for (const auto& cfg : configs) {
+    const double radius = cfg.radius, height = cfg.height, resolution = cfg.resolution;
+    const double pad = 3.0 * resolution;
+    const Bbox3 bbox(Point3(-radius - pad, -radius - pad, -pad),
+                     Point3(radius + pad, radius + pad, height + pad));
+    SignedDistanceFromCone field_fn(radius, height);
+    const Point3 apex(0.0, 0.0, height);
+
+    const Index n_rim = static_cast<Index>(two_pi * radius / (0.25 * resolution));
+    const Index n_gen = 8;
+    const double slant = std::hypot(radius, height);
+    const Index m = static_cast<Index>(slant / (0.25 * resolution));
+    const Index m_cap = static_cast<Index>(radius / (0.25 * resolution));
+    Points3 snap(n_rim + 1 + n_gen * (m - 1) + n_gen * (m_cap - 1) + 1, 3);
+    Index row = 0;
+    for (Index i = 0; i < n_rim; i++) {
+      double a = two_pi * static_cast<double>(i) / static_cast<double>(n_rim);
+      snap.row(row++) << radius * std::cos(a), radius * std::sin(a), 0.0;
+    }
+    snap.row(row++) = apex;
+    for (Index g = 0; g < n_gen; g++) {
+      double a = two_pi * (static_cast<double>(g) + 0.5) / static_cast<double>(n_gen);
+      Point3 rim(radius * std::cos(a), radius * std::sin(a), 0.0);
+      for (Index j = 1; j < m; j++) {
+        double t = static_cast<double>(j) / static_cast<double>(m);
+        snap.row(row++) = apex + t * (rim - apex);
+      }
+      // Continue the generator across the base cap from the rim toward the centre; the opposite
+      // generator does the same, so the four lines cross at the centre (added once below).
+      for (Index j = 1; j < m_cap; j++) {
+        double t = static_cast<double>(j) / static_cast<double>(m_cap);
+        snap.row(row++) = (1.0 - t) * rim;
+      }
+    }
+    snap.row(row++) = Point3(0.0, 0.0, 0.0);
+    Isosurface snap_iso(bbox, resolution);
+    snap_iso.set_snap_points(snap, VecX::Constant(snap.rows(), 0.05));
+    snap_iso.generate(field_fn, 0.0).export_obj(std::string("/tmp/cone_") + cfg.name + ".obj");
+  }
+}
+
+// TEMPORARY (no assertions): sweeps axis-aligned cubes of varying size/resolution, snapping each to
+// its 8 corners plus 12 edges (each sampled at ~1/4 res). Writes /tmp/cube_<name>.obj per config.
+TEST(snap, TEMP_cube_feature_lines) {
+  struct Config {
+    const char* name;
+    double half, resolution;
+  };
+  const Config configs[] = {
+      {"S1_res0.2", 0.5, 0.2},
+      {"S1_res0.1", 0.5, 0.1},
+      {"S2_res0.2", 1.0, 0.2},
+      {"S2_res0.1", 1.0, 0.1},
+  };
+  for (const auto& cfg : configs) {
+    const double half = cfg.half, resolution = cfg.resolution;
+    const double pad = 3.0 * resolution;
+    const Bbox3 bbox(Point3(-half - pad, -half - pad, -half - pad),
+                     Point3(half + pad, half + pad, half + pad));
+    SignedDistanceFromCube field_fn(half);
+
+    const Index m = static_cast<Index>(2.0 * half / (0.25 * resolution));
+    Points3 snap(8 + 12 * (m - 1), 3);
+    Index row = 0;
+    for (int sx = -1; sx <= 1; sx += 2) {
+      for (int sy = -1; sy <= 1; sy += 2) {
+        for (int sz = -1; sz <= 1; sz += 2) {
+          snap.row(row++) << sx * half, sy * half, sz * half;
+        }
+      }
+    }
+    for (int axis = 0; axis < 3; axis++) {
+      int a1 = (axis + 1) % 3, a2 = (axis + 2) % 3;
+      for (int s1 = -1; s1 <= 1; s1 += 2) {
+        for (int s2 = -1; s2 <= 1; s2 += 2) {
+          for (Index j = 1; j < m; j++) {
+            double t = -half + static_cast<double>(j) * (2.0 * half / static_cast<double>(m));
+            Point3 p;
+            p(axis) = t;
+            p(a1) = s1 * half;
+            p(a2) = s2 * half;
+            snap.row(row++) = p;
+          }
+        }
+      }
+    }
+    Isosurface snap_iso(bbox, resolution);
+    snap_iso.set_snap_points(snap, VecX::Constant(snap.rows(), 0.05));
+    snap_iso.generate(field_fn, 0.0).export_obj(std::string("/tmp/cube_") + cfg.name + ".obj");
+  }
 }
 
 TEST(smooth, flat_plane_random_orientation_no_flips) {

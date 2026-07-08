@@ -95,12 +95,13 @@ class Snapper {
   // untransformed; the snapper applies aniso (so an anisotropic resolution is respected), then
   // emits untransformed positions.
   Snapper(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
-          const Mat3& aniso)
+          const Mat3& aniso, bool move_nearby_vertices = true)
       : nv_(mesh.vertices().rows()),
         np_(points.rows()),
         mesh_((mesh.faces().array() + np_).matrix()),  // shift original vertices to rows [np_, .)
         aniso_inv_(aniso.inverse()),
         max_distance_(resolution),
+        move_nearby_vertices_(move_nearby_vertices),
         snap_grid_(resolution, np_),
         face_grid_(resolution, mesh.faces().rows()),
         patches_(mesh_.num_faces()) {
@@ -526,7 +527,7 @@ class Snapper {
       pq.pop();
       const auto& cand = candidates.at(ci);
       dishonored.clear();
-      bool ok = try_move_nearby_vertex(cand, dishonored);
+      bool ok = move_nearby_vertices_ && try_move_nearby_vertex(cand, dishonored);
       if (!ok && !already_satisfied(cand)) {
         for (auto s : cand.order) {
           if (try_snap(cand, s, dishonored)) {
@@ -781,6 +782,7 @@ class Snapper {
   AbstractMesh mesh_;
   Mat3 aniso_inv_;
   double max_distance_;
+  bool move_nearby_vertices_;  // move a near vertex exactly onto a point even if already honored
   VecX snap_tols2_;
   SpatialGrid snap_grid_;  // snap-point broad-phase for finding the points a patch honors
   FaceGrid face_grid_;     // committed-patch broad-phase for the self-intersection guard

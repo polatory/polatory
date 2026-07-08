@@ -9,6 +9,7 @@
 #include <polatory/isosurface/cluster.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/refine.hpp>
+#include <polatory/isosurface/relax.hpp>
 #include <polatory/isosurface/rmt/lattice.hpp>
 #include <polatory/isosurface/sign.hpp>
 #include <polatory/isosurface/snap.hpp>
@@ -72,30 +73,32 @@ class Isosurface {
  private:
   Mesh generate_common(const FieldFunction& field_fn, double isovalue, bool refine) {
     auto res = lattice_.resolution();
+    // The lattice's natural edge is ~1.2x its resolution; target the remesh at 1.2 * res so the
+    // output lands on the desired edge length rather than the lattice's coarser natural edge. The
+    // caller builds the lattice 1.2x finer than the edge length it wants.
+    auto rres = 1.2 * res;
 
     auto mesh = lattice_.get_mesh();
     if (!mesh.is_empty()) {
       for (auto pass = 0; pass < 2; pass++) {
         mesh = cluster_vertices(mesh, lattice_, aniso_);
         if (refine && pass == 1) {
-          mesh = refine_vertices(mesh, field_fn, isovalue, lattice_.bbox(), res, aniso_);
+          mesh = refine_vertices(mesh, field_fn, isovalue, lattice_.bbox(), rres, aniso_);
         }
-        mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), res, aniso_);
+        mesh = smooth_snapped_mesh(mesh, Points3(), VecX(), rres, aniso_);
       }
 
+      VecX tols = rres * rel_snap_tols_;  // empty unless snap points were set
       if (snap_points_.rows() != 0) {
-        VecX tols = res * rel_snap_tols_;
-        // Smooth interleaves the snap loop so a later snap can reclaim points that within-pass
-        // contention left dishonored; thinning stays out (its collapses churn the mesh and would
-        // stall convergence).
+        // Relax, snap, and smooth interleave so a later snap can reclaim points that a relaxation
+        // or within-pass contention left dishonored. Edge optimization stays out: a feature snaps
+        // gradually (it grows from where it is reachable), and honors_ok protects only points
+        // already honored, so a collapse here would shrink a feature still forming.
         std::vector<std::size_t> mesh_hashes;
         for (auto iter = 0; iter < 20; iter++) {
           Stats stats;
-          mesh = snap_mesh(mesh, snap_points_, tols, res, aniso_, &stats);
-          mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
-          if (stats.skipped + stats.dishonored == 0) {
-            break;
-          }
+          mesh = snap_mesh(mesh, snap_points_, tols, rres, aniso_, &stats);
+          mesh = smooth_snapped_mesh(mesh, snap_points_, tols, rres, aniso_);
 
           // Some points are unreachable (sub-resolution contention); a deterministic pass that
           // repeats an earlier mesh has reached a fixpoint or a cycle, so stop either way.
@@ -107,9 +110,28 @@ class Isosurface {
           mesh_hashes.push_back(hash);
         }
 
-        for (auto pass = 0; pass < 2; pass++) {
-          mesh = thin_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
-          mesh = smooth_snapped_mesh(mesh, snap_points_, tols, res, aniso_);
+        // Snapping has settled: every reachable point is now honored, so honors_ok fully protects
+        // the features and no feature is still forming for a collapse to fight. Remesh toward
+        // uniform edges: optimize edge lengths (split long / collapse short), flip toward valence,
+        // then relax the vertices. Relaxation slides snap points freely but re-projects them onto
+        // the level set, which holds them on the features; it equalizes the triangles the split and
+        // collapse leave, so a later round's collapse frees a sliver its guards had to defer.
+        for (auto pass = 0; pass < 4; pass++) {
+          mesh = optimize_edges(mesh, snap_points_, tols, rres, aniso_);
+          mesh = smooth_snapped_mesh(mesh, snap_points_, tols, rres, aniso_);
+          mesh = relax_vertices(mesh, field_fn, isovalue, rres, aniso_, 5, lattice_.bbox());
+        }
+
+        // Relaxation slides the honored vertices tangentially along the features; a final snap
+        // re-places any point it pushed outside tolerance. move_nearby_vertices is off here: a
+        // point still honored within tolerance keeps its relaxed position rather than having a
+        // vertex pulled exactly onto it, so the uniform edges survive.
+        mesh = snap_mesh(mesh, snap_points_, tols, rres, aniso_, nullptr, false);
+      } else {
+        for (auto pass = 0; pass < 4; pass++) {
+          mesh = optimize_edges(mesh, snap_points_, tols, rres, aniso_);
+          mesh = smooth_snapped_mesh(mesh, snap_points_, tols, rres, aniso_);
+          mesh = relax_vertices(mesh, field_fn, isovalue, rres, aniso_, 5, lattice_.bbox());
         }
       }
 
