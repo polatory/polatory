@@ -252,6 +252,24 @@ TEST(snap, per_point_tolerance_skips_satisfied_point) {
   ASSERT_FALSE(find_vertex(mesh, Point3(points.row(2)), 1e-12).has_value());
 }
 
+TEST(snap, vertex_within_tolerance_ball_is_moved_not_inserted) {
+  auto base = planar_grid(3);
+  auto n_vertices = base.vertices().rows();
+
+  // The point lies ~0.06 from vertex (1, 1), within its 0.1 tolerance ball. The snapper moves that
+  // vertex exactly onto the point rather than inserting a new one, so the point becomes a vertex,
+  // vertex (1, 1) leaves its place, and the vertex count is unchanged.
+  Points3 points(1, 3);
+  points << 1.05, 1.03, 0.02;
+  VecX tolerances(1);
+  tolerances << 0.1;
+  auto mesh = snap_mesh(base, points, tolerances, 1.0, Mat3::Identity());
+
+  ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
+  ASSERT_FALSE(find_vertex(mesh, Point3(1.0, 1.0, 0.0), 1e-12).has_value());
+  ASSERT_EQ(mesh.vertices().rows(), n_vertices);
+}
+
 TEST(snap, isosurface_integration) {
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;

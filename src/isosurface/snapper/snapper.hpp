@@ -525,15 +525,14 @@ class Snapper {
       auto ci = pq.top().ci;
       pq.pop();
       const auto& cand = candidates.at(ci);
-      if (already_satisfied(cand)) {
-        continue;
-      }
       dishonored.clear();
-      bool ok = false;
-      for (auto s : cand.order) {
-        if (try_snap(cand, s, dishonored)) {
-          ok = true;
-          break;
+      bool ok = try_move_nearby_vertex(cand, dishonored);
+      if (!ok && !already_satisfied(cand)) {
+        for (auto s : cand.order) {
+          if (try_snap(cand, s, dishonored)) {
+            ok = true;
+            break;
+          }
         }
       }
       if (!ok) {
@@ -626,6 +625,25 @@ class Snapper {
       faces.row(r) = Face(map(tf(r, 0)), map(tf(r, 1)), map(tf(r, 2)));
     }
     return faces;
+  }
+
+  // If the projected face's nearest vertex lies within the point's tolerance ball, move it exactly
+  // onto the point -- reusing it, adding none -- so a placed feature stays a clean vertex instead
+  // of an inserted one.
+  bool try_move_nearby_vertex(const Candidate& cand, std::vector<Index>& dishonored) {
+    auto tol2 = snap_tols2_(cand.i);
+    if (!(tol2 > 0.0)) {
+      return false;
+    }
+    for (auto s : cand.order) {  // nearest-first; the first vertex simplex is the nearest vertex
+      if (index_of(s) > index_of(Simplex::kVertex2)) {
+        continue;
+      }
+      Index v = mesh_.face(cand.fi)(index_of(s));
+      return (ap_.row(v) - ap_.row(cand.i)).squaredNorm() <= tol2 &&
+             try_snap_vertex(cand, v, dishonored);
+    }
+    return false;
   }
 
   bool try_snap(const Candidate& cand, Simplex s, std::vector<Index>& dishonored) {
