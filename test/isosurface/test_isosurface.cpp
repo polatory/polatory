@@ -223,8 +223,8 @@ TEST(isosurface, generate_from_seed_points) {
 
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
-  ASSERT_EQ(1084, mesh.vertices().rows());
-  ASSERT_EQ(2164, mesh.faces().rows());
+  ASSERT_EQ(1082, mesh.vertices().rows());
+  ASSERT_EQ(2160, mesh.faces().rows());
 }
 
 TEST(isosurface, generate_empty) {

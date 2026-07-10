@@ -52,6 +52,9 @@ class Smoother {
   // length and min-angle quality caps (a severely folded neighbourhood or cave must go), subject to
   // the usual validity checks.
   static constexpr double kSevereFoldSum = 5 * kPi / 3;  // 300 deg
+  // A flip may never create a triangle whose area has collapsed below this fraction of the area of
+  // the faces it replaces -- a degenerate face the severe-fold bypass would otherwise admit.
+  static constexpr double kDegenerateAreaRatio = 1e-9;
 
   // A candidate flip of edge {x, y} (faces fi0, fi1) into diagonal {c, d}; improve > 0 is the total
   // bend removed.
@@ -120,7 +123,7 @@ class Smoother {
       Edge e = pq.top().e;
       pq.pop();
       auto fl = score(e);  // re-score: a nearby flip may have outdated this entry
-      if (!fl || !honors_ok(*fl) || !guard_ok(*fl)) {
+      if (!fl || creates_degenerate(*fl) || !honors_ok(*fl) || !guard_ok(*fl)) {
         continue;
       }
       do_flip(*fl);
@@ -173,6 +176,14 @@ class Smoother {
     return face_grid_.any_of(lo, hi, [&](Index gi) {
       return gi != fi0 && gi != fi1 && overlaps(new_f, mesh_.face(gi));
     });
+  }
+
+  // Whether the flip would create a degenerate triangle -- its area collapsed to almost nothing next
+  // to the faces it replaces.
+  bool creates_degenerate(const Flip& fl) const {
+    auto scale = std::max(normal(mesh_.face(fl.fi0)).norm(), normal(mesh_.face(fl.fi1)).norm());
+    return normal(fl.new_f0()).norm() <= kDegenerateAreaRatio * scale ||
+           normal(fl.new_f1()).norm() <= kDegenerateAreaRatio * scale;
   }
 
   double dist2(const Point3& p, const Face& f) const {
