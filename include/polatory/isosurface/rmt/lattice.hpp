@@ -253,7 +253,7 @@ class Lattice : public PrimitiveLattice {
   }
 
   // Returns the raw marching-tetrahedra mesh (one vertex per sign-change edge). Vertex clustering
-  // is a separate mesh step; see MeshClusterer.
+  // is a separate mesh step.
   Mesh get_mesh() const {
     std::vector<Face> faces_v;
     auto inserter = std::back_inserter(faces_v);

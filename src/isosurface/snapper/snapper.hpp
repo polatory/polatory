@@ -46,7 +46,7 @@ namespace polatory::isosurface::snapper {
 // Points are processed by increasing distance to the mesh, so each shared feature is first claimed
 // by the candidate that moves it least (a tangential order would fold a far point's patch into an
 // overhang). A claimed vertex may still be re-moved to a farther point; any point knocked off the
-// surface by a placement is re-queued to snap again (see snap).
+// surface by a placement is re-queued to snap again.
 class Snapper {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -570,7 +570,7 @@ class Snapper {
     std::vector<Point2> boundary;
     std::vector<Index> boundary_ids;
     // The original edge(s) each boundary vertex lies on, so the triangulation never cuts a diagonal
-    // along a subdivided edge (see Triangulation). Vertex k lies on patch edges k and (k + 2) % 3.
+    // along a subdivided edge. Vertex k lies on patch edges k and (k + 2) % 3.
     std::vector<std::array<int, 2>> boundary_edges;
     auto add_vertex = [&](int k) {
       boundary_ids.push_back(f(k));

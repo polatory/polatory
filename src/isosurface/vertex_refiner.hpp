@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <array>
+#include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/field_function.hpp>
 #include <polatory/isosurface/mesh.hpp>
@@ -26,10 +27,11 @@ class VertexRefiner {
   using Vector3 = geometry::Vector3;
 
  public:
-  VertexRefiner(const Mesh& mesh, const FieldFunction& field_fn, double isovalue, double resolution,
-                const Mat3& aniso)
+  VertexRefiner(const Mesh& mesh, const FieldFunction& field_fn, double isovalue,
+                const geometry::Bbox3& bbox, double resolution, const Mat3& aniso)
       : field_fn_(field_fn),
         isovalue_(isovalue),
+        bbox_(bbox),
         resolution_(resolution),
         aniso_(aniso),
         p_(mesh.vertices()),
@@ -107,7 +109,8 @@ class VertexRefiner {
     return moves;
   }
 
-  bool try_move(Index vi, const Point3& new_p) {
+  bool try_move(Index vi, const Point3& target) {
+    auto new_p = snap_to_bbox(target, bbox_, resolution_);
     for (auto fi : mesh_.vertex_faces(vi)) {
       auto f = mesh_.face(fi);
       auto a = moved_face(fi, vi, new_p);
@@ -151,6 +154,7 @@ class VertexRefiner {
 
   const FieldFunction& field_fn_;
   double isovalue_;
+  geometry::Bbox3 bbox_;
   double resolution_;
   Mat3 aniso_;
   Points3 p_;

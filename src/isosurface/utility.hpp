@@ -4,12 +4,26 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/predicates.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
 
 namespace polatory::isosurface {
+
+// Snaps any coordinate of p within 1e-10 * resolution of a bbox face exactly onto it.
+inline geometry::Point3 snap_to_bbox(const geometry::Point3& p, const geometry::Bbox3& bbox,
+                                     double resolution) {
+  const auto& min = bbox.min();
+  const auto& max = bbox.max();
+  auto tiny = 1e-10 * resolution;
+
+  geometry::Point3 q = p;
+  q = ((q.array() - min.array()).abs() < tiny).select(min, q);
+  q = ((q.array() - max.array()).abs() < tiny).select(max, q);
+  return q;
+}
 
 // Ericson's closest-point region test; sets closest to the nearest point of triangle (a, b, c).
 inline double point_triangle_closest(const geometry::Point3& p, const geometry::Point3& a,

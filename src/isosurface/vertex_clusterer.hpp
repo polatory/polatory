@@ -19,6 +19,7 @@
 
 #include "disjoint_sets.hpp"
 #include "quadric_position.hpp"
+#include "utility.hpp"
 
 namespace polatory::isosurface {
 
@@ -196,8 +197,8 @@ class VertexClusterer {
     return {Mesh{std::move(vertices), std::move(faces)}, vertex_ci};
   }
 
-  // Merges the cluster's vertices to the quadric minimizer over its incident face planes (see
-  // quadric_position), keeping a crease/corner instead of averaging it away.
+  // Merges the cluster's vertices to the quadric minimizer over its incident face planes,
+  // keeping a crease/corner instead of averaging it away.
   Point3 clustered_position(const std::vector<Index>& cluster, const PrimitiveLattice& lattice,
                             const LatticeCoordinates& node) const {
     boost::unordered_flat_set<Index> fis;
@@ -211,7 +212,8 @@ class VertexClusterer {
     for (auto fi : fis) {
       triangles.push_back({v_.row(f_(fi, 0)), v_.row(f_(fi, 1)), v_.row(f_(fi, 2))});
     }
-    return quadric_position(v_(cluster, kAll), triangles, aniso_, aniso_inv_, lattice, node);
+    auto p = quadric_position(v_(cluster, kAll), triangles, aniso_, aniso_inv_, lattice, node);
+    return snap_to_bbox(p, lattice.bbox(), lattice.resolution());
   }
 
   void register_cluster(std::size_t ci) {

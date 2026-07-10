@@ -461,7 +461,8 @@ TEST(refine, rejects_fold) {
   f << 0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1;
 
   SignedDistanceFromPlane field_fn(Point3(std::sqrt(2.0), 0.0, 0.0), Vector3(-1.0, -1.0, 0.0));
-  auto out = refine_vertices(Mesh(v, f), field_fn, 0.0, 2.0, Mat3::Identity());
+  const Bbox3 bbox({-10, -10, -10}, {10, 10, 10});
+  auto out = refine_vertices(Mesh(v, f), field_fn, 0.0, bbox, 2.0, Mat3::Identity());
 
   const auto& ov = out.vertices();
   const auto& of = out.faces();

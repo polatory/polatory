@@ -28,7 +28,7 @@ namespace polatory::isosurface::snapper {
 // and the mesh descends to a local minimum; vertices never move, so snapped points stay vertices. A
 // priority queue takes the largest improvement first, re-scoring each popped edge (a nearby flip
 // may have staled it). Geometry is in the aniso-transformed frame; the output is untransformed. A
-// flip is rejected if its new diagonal overshoots the bend-dependent length cap (see kEdgeFloor),
+// flip is rejected if its new diagonal overshoots the bend-dependent length cap,
 // self-intersects, or pushes the surface beyond a snap tolerance (protecting points honored within
 // tolerance with no vertex there).
 class Smoother {
