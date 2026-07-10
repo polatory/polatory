@@ -119,19 +119,15 @@ class Isosurface {
         for (auto pass = 0; pass < 4; pass++) {
           mesh = optimize_edges(mesh, snap_points_, tols, rres, aniso_);
           mesh = smooth_snapped_mesh(mesh, snap_points_, tols, rres, aniso_);
-          mesh = relax_vertices(mesh, field_fn, isovalue, rres, aniso_, 5, lattice_.bbox());
+          mesh = relax_vertices(mesh, field_fn, isovalue, rres, aniso_, 5, lattice_.bbox(),
+                                snap_points_, tols);
         }
-
-        // Relaxation slides the honored vertices tangentially along the features; a final snap
-        // re-places any point it pushed outside tolerance. move_nearby_vertices is off here: a
-        // point still honored within tolerance keeps its relaxed position rather than having a
-        // vertex pulled exactly onto it, so the uniform edges survive.
-        mesh = snap_mesh(mesh, snap_points_, tols, rres, aniso_, nullptr, false);
       } else {
         for (auto pass = 0; pass < 4; pass++) {
           mesh = optimize_edges(mesh, snap_points_, tols, rres, aniso_);
           mesh = smooth_snapped_mesh(mesh, snap_points_, tols, rres, aniso_);
-          mesh = relax_vertices(mesh, field_fn, isovalue, rres, aniso_, 5, lattice_.bbox());
+          mesh = relax_vertices(mesh, field_fn, isovalue, rres, aniso_, 5, lattice_.bbox(),
+                                snap_points_, tols);
         }
       }
 

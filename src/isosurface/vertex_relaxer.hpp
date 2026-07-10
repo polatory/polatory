@@ -16,6 +16,7 @@
 #include "abstract_mesh.hpp"
 #include "face_grid.hpp"
 #include "level_set_projection.hpp"
+#include "spatial_grid.hpp"
 #include "utility.hpp"
 
 namespace polatory::isosurface {
@@ -41,18 +42,29 @@ class VertexRelaxer {
 
  public:
   VertexRelaxer(const Mesh& mesh, const FieldFunction& field_fn, double isovalue, double resolution,
-                const Mat3& aniso, int passes, const geometry::Bbox3& bbox)
+                const Mat3& aniso, int passes, const geometry::Bbox3& bbox,
+                const geometry::Points3& points, const VecX& tolerances)
       : field_fn_(field_fn),
         isovalue_(isovalue),
         resolution_(resolution),
         aniso_(aniso),
+        aniso_inv_(aniso.inverse()),
         bbox_(bbox),
         p_(mesh.vertices()),
+        ap_(geometry::transform_points<3>(aniso, mesh.vertices())),
         mesh_(mesh.faces()),
+        a_points_(geometry::transform_points<3>(aniso, points)),
+        snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh_.num_faces()) {
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
       index_face(fi);
     }
+    VecX tols = tolerances;
+    if (tols.size() == 0) {
+      tols = VecX::Zero(a_points_.rows());
+    }
+    snap_grid_.insert_balls(a_points_, tols);
+    snap_tols2_ = tols.cwiseAbs2();
     classify();
     for (auto pass = 0; pass < passes; pass++) {
       auto areas = voronoi_areas();
@@ -155,37 +167,38 @@ class VertexRelaxer {
     return Point3(p_.row(vi)) + kDamping * delta;
   }
 
-  // The relaxed position for a feature vertex: the same area-weighted centroid pull, then confined
-  // to the intersection of the supporting planes of its original star faces -- solved directly as a
-  // QEF (min over the plane distances) rather than by iterated projection, which crawls when an
-  // obtuse crease's two planes are nearly parallel. Truncating the near-zero eigenvalue leaves the
-  // along-ridge tangent free: two planes (a crease) confine it to the ridge line, three (a corner)
-  // pin it. The level set is not applied to these vertices -- it would pull them off the crease.
+  // The relaxed position for a feature vertex, computed entirely in the aniso-transformed frame (so
+  // it respects the anisotropic resolution) and transformed back: the area-weighted centroid pull,
+  // then confined to the intersection of the supporting planes of its original star faces -- solved
+  // directly as an area-weighted QEF (min over the plane distances) rather than by iterated
+  // projection, which crawls when an obtuse crease's two planes are nearly parallel. Truncating the
+  // near-zero eigenvalue leaves the along-ridge tangent free: two planes (a crease) confine it to
+  // the ridge line, three (a corner) pin it. The level set is not applied to these vertices.
   Point3 feature_position(Index vi, const std::vector<double>& areas) const {
-    Vector3 offset = Vector3::Zero();  // area-weighted sum of (neighbor - vi)
+    Vector3 offset = Vector3::Zero();  // area-weighted sum of (neighbor - vi), aniso frame
     double total = 0.0;
     for (auto h : mesh_.vertex_outgoing_halfedges(vi)) {
       auto w = mesh_.to(h);
       auto weight = areas.at(w);
-      offset += weight * Vector3(p_.row(w) - p_.row(vi));
+      offset += weight * Vector3(ap_.row(w) - ap_.row(vi));
       total += weight;
     }
     if (!(total > 0.0)) {
       return p_.row(vi);
     }
-    Eigen::Vector3d g = (Point3(p_.row(vi)) + kDamping * (offset / total)).transpose();
+    Eigen::Vector3d g = (Point3(ap_.row(vi)) + kDamping * (offset / total)).transpose();
     Mat3 a = Mat3::Zero();
     Eigen::Vector3d b = Eigen::Vector3d::Zero();
     for (auto fi : mesh_.vertex_faces(vi)) {
       auto f = mesh_.face(fi);
-      Vector3 nr = triangle_normal(p_.row(f(0)), p_.row(f(1)), p_.row(f(2)));
-      auto nn = nr.norm();
-      if (!(nn > 0.0)) {
+      Vector3 nr = triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
+      auto w = nr.norm();  // twice the aniso-frame triangle area, the plane's weight
+      if (!(w > 0.0)) {
         continue;
       }
-      Eigen::Vector3d n = (nr / nn).transpose();
-      a += n * n.transpose();
-      b += Vector3(p_.row(f(0))).dot(nr / nn) * n;  // (n . x0) n
+      Eigen::Vector3d n = (nr / w).transpose();
+      a += w * n * n.transpose();
+      b += w * Vector3(ap_.row(f(0))).dot(nr / w) * n;  // w (n . x0) n
     }
     Eigen::SelfAdjointEigenSolver<Mat3> es(a);
     Eigen::Vector3d ev = es.eigenvalues();  // ascending; ev(2) is the largest
@@ -197,7 +210,7 @@ class VertexRelaxer {
         pos -= (v.col(k).dot(residual) / ev(k)) * v.col(k);
       }
     }
-    return Point3(pos.transpose());
+    return geometry::transform_point<3>(aniso_inv_, Point3(pos.transpose()));
   }
 
   // Each vertex's mixed Voronoi area (Meyer et al.): the cotangent-weighted cell area, with the
@@ -237,10 +250,73 @@ class VertexRelaxer {
     return areas;
   }
 
+  double dist2(const Point3& p, const Face& f) const {
+    return point_triangle_dist2(p, ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
+  }
+
+  // Whether snap point i lies within its tolerance of face f (aniso frame).
+  bool honored_by(Index i, const Face& f) const {
+    return dist2(a_points_.row(i), f) <= snap_tols2_(i);
+  }
+
+  // honored_by for face f with vertex vi moved to a_new_p (its aniso position after the move).
+  bool honored_by_moved(Index i, const Face& f, Index vi, const Point3& a_new_p) const {
+    Point3 v0 = f(0) == vi ? a_new_p : Point3(ap_.row(f(0)));
+    Point3 v1 = f(1) == vi ? a_new_p : Point3(ap_.row(f(1)));
+    Point3 v2 = f(2) == vi ? a_new_p : Point3(ap_.row(f(2)));
+    return point_triangle_dist2(a_points_.row(i), v0, v1, v2) <= snap_tols2_(i);
+  }
+
+  // Whether moving vi (to new_p, aniso a_new_p) leaves every snap point it currently honors still
+  // honored: a point held by one of vi's faces must, after the move, be held by a moved face of vi
+  // or by an unmoved face nearby -- the edge optimizer's honor guard, for a vertex move.
+  bool honors_ok(Index vi, const Point3& new_p, const Point3& a_new_p) const {
+    if (snap_grid_.empty()) {
+      return true;
+    }
+    std::vector<Index> star;
+    for (auto fi : mesh_.vertex_faces(vi)) {
+      star.push_back(fi);
+    }
+    Point3 alo = a_new_p;
+    Point3 ahi = a_new_p;
+    Point3 ulo = new_p;
+    Point3 uhi = new_p;
+    for (auto fi : star) {
+      for (auto x : mesh_.face(fi)) {
+        Point3 ax = x == vi ? a_new_p : Point3(ap_.row(x));
+        alo = alo.cwiseMin(ax);
+        ahi = ahi.cwiseMax(ax);
+        Point3 ux = x == vi ? new_p : Point3(p_.row(x));
+        ulo = ulo.cwiseMin(ux);
+        uhi = uhi.cwiseMax(ux);
+      }
+    }
+    bool ok = true;
+    snap_grid_.for_each(alo, ahi, [&](Index i) {
+      auto face_of = [&](Index fi) { return mesh_.face(fi); };
+      if (std::ranges::none_of(star, [&](Index fi) { return honored_by(i, face_of(fi)); })) {
+        return true;  // not held by a face of vi; this move cannot dishonor it
+      }
+      if (std::ranges::any_of(star,
+                              [&](Index fi) { return honored_by_moved(i, face_of(fi), vi, a_new_p); }) ||
+          face_grid_.any_of(ulo, uhi, [&](Index fj) {
+            return std::ranges::find(star, fj) == star.end() && honored_by(i, face_of(fj));
+          })) {
+        return true;
+      }
+      ok = false;
+      return false;  // dishonored
+    });
+    return ok;
+  }
+
   // Commits moving vertex vi to target (snapped onto the bbox if within tolerance) iff no incident
-  // face inverts or collapses and no new self-intersection results.
+  // face inverts or collapses, no new self-intersection results, and no honored snap point is
+  // dishonored.
   bool try_move(Index vi, const Point3& target) {
     auto new_p = snap_to_bbox(target, bbox_, resolution_);
+    Point3 a_new_p = geometry::transform_point<3>(aniso_, new_p);
     for (auto fi : mesh_.vertex_faces(vi)) {
       auto f = mesh_.face(fi);
       auto a = moved_face(fi, vi, new_p);
@@ -270,10 +346,15 @@ class VertexRelaxer {
       }
     }
 
+    if (!honors_ok(vi, new_p, a_new_p)) {
+      return false;
+    }
+
     for (auto fi : mesh_.vertex_faces(vi)) {
       unindex_face(fi);
     }
     p_.row(vi) = new_p;
+    ap_.row(vi) = a_new_p;
     for (auto fi : mesh_.vertex_faces(vi)) {
       index_face(fi);
     }
@@ -286,10 +367,15 @@ class VertexRelaxer {
   double isovalue_;
   double resolution_;
   Mat3 aniso_;
+  Mat3 aniso_inv_;
   geometry::Bbox3 bbox_;
   Points3 p_;
+  Points3 ap_;         // p_ in the aniso-transformed frame, where snap distances are measured
   AbstractMesh mesh_;
+  Points3 a_points_;   // the snap targets, aniso-transformed
+  SpatialGrid snap_grid_;
   FaceGrid face_grid_;
+  VecX snap_tols2_;    // squared snapping tolerance per snap point
   std::vector<bool> pinned_;
   std::vector<bool> feature_;
 };

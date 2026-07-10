@@ -323,8 +323,8 @@ TEST(isosurface, generate_plane) {
 
   auto mesh = isosurf.generate(field_fn);
 
-  ASSERT_EQ(881, mesh.vertices().rows());
-  ASSERT_EQ(1545, mesh.faces().rows());
+  ASSERT_EQ(862, mesh.vertices().rows());
+  ASSERT_EQ(1510, mesh.faces().rows());
 }
 
 TEST(isosurface, manifold) {
