@@ -30,7 +30,6 @@ class SpatialGrid {
   };
 
  public:
-  // capacity = item count (sizes the dedup stamp).
   SpatialGrid(double resolution, Index capacity) : resolution_(resolution), visited_(capacity, 0) {}
 
   bool empty() const { return grid_.empty(); }
@@ -69,6 +68,7 @@ class SpatialGrid {
   }
 
   void insert(Index item, const Point3& lo, const Point3& hi) {
+    reserve(item + 1);
     auto clo = cell_of(lo);
     auto chi = cell_of(hi);
     for (auto i = clo(0); i <= chi(0); i++) {
@@ -103,6 +103,12 @@ class SpatialGrid {
           }
         }
       }
+    }
+  }
+
+  void reserve(Index capacity) {
+    if (static_cast<Index>(visited_.size()) < capacity) {
+      visited_.resize(capacity, 0);
     }
   }
 

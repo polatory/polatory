@@ -40,6 +40,7 @@ class FaceGrid {
   }
 
   void insert(Index fi, const Point3& lo, const Point3& hi) {
+    reserve(fi + 1);
     grid_.insert(fi, lo, hi);
     box_.at(fi) = {lo, hi};
   }
@@ -53,6 +54,13 @@ class FaceGrid {
   void remove(Index fi) {
     const auto& [lo, hi] = box_.at(fi);
     grid_.remove(fi, lo, hi);
+  }
+
+  void reserve(Index capacity) {
+    if (static_cast<Index>(box_.size()) < capacity) {
+      box_.resize(capacity);
+    }
+    grid_.reserve(capacity);
   }
 
  private:
