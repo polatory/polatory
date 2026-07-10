@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <boost/container_hash/hash.hpp>
 #include <cmath>
+#include <cstddef>
+#include <cstdlib>
 #include <limits>
 #include <numbers>
 #include <polatory/geometry/bbox3d.hpp>
@@ -49,13 +51,27 @@ class DistanceFromPoint : public FieldFunction {
   Point3 point_;
 };
 
+// A per-point pseudo-random field. Hashing the exact coordinates makes it a true function (same
+// point, same value) and reproducible across runs and test order, unlike Eigen's global-RNG Random.
 class RandomFieldFunction : public FieldFunction {
  public:
   VecX operator()(const Points3& points) const override {
-    VecX values = VecX::Random(points.rows());
-    // Randomly replace some values with 0.0.
-    values = (VecX::Random(points.rows()).array().abs() < 0.1).select(0.0, values);
+    VecX values(points.rows());
+    for (Index i = 0; i < points.rows(); i++) {
+      Point3 p = points.row(i);
+      values(i) = unit_hash(p, 1) < 0.1 ? 0.0 : 2.0 * unit_hash(p, 0) - 1.0;
+    }
     return values;
+  }
+
+ private:
+  // A deterministic value in [0, 1) from a point's exact coordinates and a salt.
+  static double unit_hash(const Point3& p, std::size_t salt) {
+    std::size_t h = salt;
+    boost::hash_combine(h, p.x());
+    boost::hash_combine(h, p.y());
+    boost::hash_combine(h, p.z());
+    return static_cast<double>(h % 1000000) / 1000000.0;
   }
 };
 
@@ -270,6 +286,7 @@ TEST(isosurface, generate_entire_from_seed_points) {
 }
 
 TEST(isosurface, generate_from_seed_points_gradient_search) {
+  std::srand(1);
   const Bbox3 bbox(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
   const auto resolution = 0.1;
 
@@ -286,13 +303,7 @@ TEST(isosurface, generate_from_seed_points_gradient_search) {
     isosurf.clear();
     auto actual = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
-    // Both calls build the same surface from the same field, but the FMM evaluates it in a tree
-    // order that depends on which nodes are present, so the two meshes order near-coincident
-    // vertices differently. Vertex clustering's manifold guard then makes a few different merge
-    // choices near the boundary, leaving the face counts close but not exactly equal (worst case 3
-    // of ~1257 across these 100 cases). Allow that small jitter rather than chase FMM ordering.
-    ASSERT_LE(std::abs(expected.faces().rows() - actual.faces().rows()),
-              expected.faces().rows() / 100 + 4);
+    ASSERT_EQ(expected.faces().rows(), actual.faces().rows());
   }
 }
 
@@ -310,6 +321,7 @@ TEST(isosurface, generate_plane) {
 }
 
 TEST(isosurface, manifold) {
+  std::srand(1);
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();
@@ -332,6 +344,7 @@ TEST(isosurface, manifold) {
 }
 
 TEST(isosurface, boundary_coordinates) {
+  std::srand(1);
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();
@@ -345,6 +358,7 @@ TEST(isosurface, boundary_coordinates) {
 }
 
 TEST(isosurface, boundary_coordinates_seed_points) {
+  std::srand(1);
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();
