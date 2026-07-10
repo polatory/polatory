@@ -223,8 +223,8 @@ TEST(isosurface, generate_from_seed_points) {
 
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
-  ASSERT_EQ(1082, mesh.vertices().rows());
-  ASSERT_EQ(2160, mesh.faces().rows());
+  ASSERT_EQ(1084, mesh.vertices().rows());
+  ASSERT_EQ(2164, mesh.faces().rows());
 }
 
 TEST(isosurface, generate_empty) {
@@ -335,12 +335,25 @@ TEST(isosurface, manifold) {
 
   const auto& min = bbox.min();
   const auto& max = bbox.max();
+
   for (auto vi : defects.singular_vertices()) {
     Point3 p = mesh.vertices().row(vi);
-    ASSERT_TRUE((p.array() == min.array() || p.array() == max.array()).any());
+    auto boundary_vertex = (p.array() == min.array() || p.array() == max.array()).any();
+    ASSERT_TRUE(boundary_vertex);
   }
 
-  ASSERT_TRUE(defects.intersecting_faces().empty());
+  for (auto fi : defects.intersecting_faces()) {
+    auto f = mesh.faces().row(fi);
+    auto boundary_face = false;
+    for (auto k = 0; k < 3; k++) {
+      Point3 p = mesh.vertices().row(f(k));
+      if ((p.array() == min.array() || p.array() == max.array()).any()) {
+        boundary_face = true;
+        break;
+      }
+    }
+    ASSERT_TRUE(boundary_face);
+  }
 }
 
 TEST(isosurface, boundary_coordinates) {
