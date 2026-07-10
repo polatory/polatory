@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Eigenvalues>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -33,6 +34,10 @@ class VertexRelaxer {
   static constexpr double kPi = 3.141592653589793;
   static constexpr double kDamping = 0.5;
   static constexpr double kFeatureAngle = 30 * kPi / 180;  // a sharper edge is a crease
+  // A star-plane direction counts as constrained when its QEF eigenvalue exceeds this fraction of
+  // the largest; below it the direction is free (the crease's along-ridge tangent). Small enough to
+  // keep the weak second direction of an obtuse crease, whose two planes are nearly parallel.
+  static constexpr double kQefEps = 1e-3;
 
  public:
   VertexRelaxer(const Mesh& mesh, const FieldFunction& field_fn, double isovalue, double resolution,
@@ -48,21 +53,23 @@ class VertexRelaxer {
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
       index_face(fi);
     }
-    classify_pinned();
+    classify();
     for (auto pass = 0; pass < passes; pass++) {
       auto areas = voronoi_areas();
       Points3 relaxed = p_;
       for (Index vi = 0; vi < relaxed.rows(); vi++) {
         if (!pinned_.at(vi)) {
-          relaxed.row(vi) = relaxed_position(vi, areas);
+          relaxed.row(vi) =
+              feature_.at(vi) ? feature_position(vi, areas) : relaxed_position(vi, areas);
         }
       }
-      // Refine the tangentially slid positions back onto the level set. A vertex the projection
-      // leaves alone -- already on the level set, as every vertex on a flat region is after a
-      // purely tangential slide -- keeps that slide, which try_move below still commits.
+      // Re-project the free (non-feature) vertices onto the level set. A feature vertex is held on
+      // the supporting planes of its star instead, off which the level set would pull it.
       for (const auto& [vi, target] :
            project_to_level_set(field_fn_, isovalue_, relaxed, resolution_, aniso_)) {
-        relaxed.row(vi) = target;
+        if (!feature_.at(vi)) {
+          relaxed.row(vi) = target;
+        }
       }
       for (Index vi = 0; vi < relaxed.rows(); vi++) {
         if (!pinned_.at(vi)) {
@@ -86,21 +93,27 @@ class VertexRelaxer {
     return std::acos(std::clamp(na.dot(nb) / (da * db), -1.0, 1.0));
   }
 
-  // Marks each vertex that must not move: on a sharp edge (a crease or corner) or on the mesh
-  // boundary.
-  void classify_pinned() {
+  // The vertex triple of the face incident to halfedge h.
+  Face face_of(Halfedge h) const { return mesh_.face(mesh_.face(h)); }
+
+  // Pins the mesh boundary and marks as a feature vertex any interior vertex on a sharp edge
+  // (dihedral > kFeatureAngle). A feature vertex relaxes against the supporting planes of its star,
+  // which confine a crease vertex to the ridge line and pin a corner -- the plane count sorts the
+  // two out, so the dihedral test only has to separate a feature from a merely curved region.
+  void classify() {
     pinned_.assign(p_.rows(), false);
+    feature_.assign(p_.rows(), false);
     mesh_.for_each_halfedge([&](Halfedge h) {
       auto opp = mesh_.opposite(h);
-      if (!opp.is_valid() || bend(face_of(h), face_of(opp)) > kFeatureAngle) {
+      if (!opp.is_valid()) {
         pinned_.at(mesh_.from(h)) = true;
         pinned_.at(mesh_.to(h)) = true;
+      } else if (mesh_.from(h) < mesh_.to(h) && bend(face_of(h), face_of(opp)) > kFeatureAngle) {
+        feature_.at(mesh_.from(h)) = true;
+        feature_.at(mesh_.to(h)) = true;
       }
     });
   }
-
-  // The vertex triple of the face incident to halfedge h.
-  Face face_of(Halfedge h) const { return mesh_.face(mesh_.face(h)); }
 
   void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
@@ -114,10 +127,9 @@ class VertexRelaxer {
     return t;
   }
 
-  // The tangential move for vertex vi: a damped slide toward the Voronoi-area-weighted average of
-  // its one-ring neighbors, with the component along the vertex normal removed so it stays on the
-  // surface. Weighting each neighbor by its Voronoi area (areas) targets a uniform vertex
-  // distribution. Worked in offsets from vi, so no positions are summed.
+  // The tangential move for a free vertex: a damped slide toward the Voronoi-area-weighted average
+  // of its one-ring neighbors (targeting a uniform distribution), with the component along the
+  // vertex normal removed so it stays on the surface; the level set refines it afterward.
   Point3 relaxed_position(Index vi, const std::vector<double>& areas) const {
     Vector3 offset = Vector3::Zero();  // area-weighted sum of (neighbor - vi)
     Vector3 normal = Vector3::Zero();
@@ -141,6 +153,51 @@ class VertexRelaxer {
       delta -= (delta.dot(normal) / n2) * normal;  // project out the normal component
     }
     return Point3(p_.row(vi)) + kDamping * delta;
+  }
+
+  // The relaxed position for a feature vertex: the same area-weighted centroid pull, then confined
+  // to the intersection of the supporting planes of its original star faces -- solved directly as a
+  // QEF (min over the plane distances) rather than by iterated projection, which crawls when an
+  // obtuse crease's two planes are nearly parallel. Truncating the near-zero eigenvalue leaves the
+  // along-ridge tangent free: two planes (a crease) confine it to the ridge line, three (a corner)
+  // pin it. The level set is not applied to these vertices -- it would pull them off the crease.
+  Point3 feature_position(Index vi, const std::vector<double>& areas) const {
+    Vector3 offset = Vector3::Zero();  // area-weighted sum of (neighbor - vi)
+    double total = 0.0;
+    for (auto h : mesh_.vertex_outgoing_halfedges(vi)) {
+      auto w = mesh_.to(h);
+      auto weight = areas.at(w);
+      offset += weight * Vector3(p_.row(w) - p_.row(vi));
+      total += weight;
+    }
+    if (!(total > 0.0)) {
+      return p_.row(vi);
+    }
+    Eigen::Vector3d g = (Point3(p_.row(vi)) + kDamping * (offset / total)).transpose();
+    Mat3 a = Mat3::Zero();
+    Eigen::Vector3d b = Eigen::Vector3d::Zero();
+    for (auto fi : mesh_.vertex_faces(vi)) {
+      auto f = mesh_.face(fi);
+      Vector3 nr = triangle_normal(p_.row(f(0)), p_.row(f(1)), p_.row(f(2)));
+      auto nn = nr.norm();
+      if (!(nn > 0.0)) {
+        continue;
+      }
+      Eigen::Vector3d n = (nr / nn).transpose();
+      a += n * n.transpose();
+      b += Vector3(p_.row(f(0))).dot(nr / nn) * n;  // (n . x0) n
+    }
+    Eigen::SelfAdjointEigenSolver<Mat3> es(a);
+    Eigen::Vector3d ev = es.eigenvalues();  // ascending; ev(2) is the largest
+    Mat3 v = es.eigenvectors();
+    Eigen::Vector3d residual = a * g - b;
+    Eigen::Vector3d pos = g;
+    for (auto k = 0; k < 3; k++) {
+      if (ev(k) > kQefEps * ev(2)) {
+        pos -= (v.col(k).dot(residual) / ev(k)) * v.col(k);
+      }
+    }
+    return Point3(pos.transpose());
   }
 
   // Each vertex's mixed Voronoi area (Meyer et al.): the cotangent-weighted cell area, with the
@@ -234,6 +291,7 @@ class VertexRelaxer {
   AbstractMesh mesh_;
   FaceGrid face_grid_;
   std::vector<bool> pinned_;
+  std::vector<bool> feature_;
 };
 
 }  // namespace polatory::isosurface
