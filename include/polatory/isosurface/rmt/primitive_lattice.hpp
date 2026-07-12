@@ -120,8 +120,7 @@ class PrimitiveLattice {
     return lattice_coordinates_unrounded(p).array().round().cast<int>();
   }
 
-  // Clamps p into node lc's cell -- the lattice-coordinate box [lc - 0.495, lc + 0.495], 0.99 of
-  // the rounding cell -- so the result stays strictly nearest to lc (and rounds back to it).
+  // Clamps p to node lc's cell so it still rounds to lc.
   geometry::Point3 clamp_to_node(const geometry::Point3& p, const LatticeCoordinates& lc) const {
     geometry::Vector3 u = lattice_coordinates_unrounded(p);
     geometry::Vector3 c = lc.cast<double>();
