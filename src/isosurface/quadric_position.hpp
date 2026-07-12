@@ -28,9 +28,9 @@ inline geometry::Point3 quadric_position(
   Points3 a_anchor = geometry::transform_points<3>(aniso, anchor);
   Point3 centroid = a_anchor.colwise().mean();
 
-  // Accumulate aa and bb, the matrix and vector of that energy's normal equation.
-  Mat3 aa = Mat3::Zero();
-  Vector3 bb = Vector3::Zero();
+  // Accumulate a and b, the matrix and vector of that energy's normal equation a x = b.
+  Mat3 a = Mat3::Zero();
+  Vector3 b = Vector3::Zero();
   for (const auto& t : triangles) {
     Point3 p0 = geometry::transform_point<3>(aniso, t.at(0));
     Point3 p1 = geometry::transform_point<3>(aniso, t.at(1));
@@ -41,19 +41,18 @@ inline geometry::Point3 quadric_position(
       continue;
     }
     n /= w;
-    auto d = -n.dot(p0);
-    aa += w * n.transpose() * n;
-    bb += w * d * n;
+    a += w * n.transpose() * n;
+    b += w * n.dot(p0) * n;
   }
 
-  // Solve aa x = -bb in a rank-revealing manner: move off the centroid only when aa constrains more
-  // than one direction -- a crease (rank 2) or corner (rank 3) -- and along just those. A flat
-  // patch (rank 1) stays at the centroid.
-  Eigen::SelfAdjointEigenSolver<Mat3> es(aa);
+  // Solve a x = b in a rank-revealing manner: move off the centroid only when a constrains more than
+  // one direction -- a crease (rank 2) or corner (rank 3) -- and along just those. A flat patch
+  // (rank 1) stays at the centroid.
+  Eigen::SelfAdjointEigenSolver<Mat3> es(a);
   auto floor = 1e-3 * es.eigenvalues()(2);
   Vector3 y = Vector3::Zero();
   if (es.eigenvalues()(1) > floor) {
-    Vector3 r = -(centroid * aa + bb);
+    Vector3 r = b - centroid * a;
     for (auto k = 0; k < 3; k++) {
       auto eval = es.eigenvalues()(k);
       if (eval > floor) {
