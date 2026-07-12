@@ -18,7 +18,7 @@ using polatory::geometry::Point3;
 using polatory::geometry::transform_vector;
 using polatory::geometry::Vector3;
 using polatory::isosurface::rmt::EdgeIndex;
-using polatory::isosurface::rmt::inv_sqrt2;
+using polatory::isosurface::rmt::kInvSqrt3;
 using polatory::isosurface::rmt::kLatticeBasis;
 using polatory::isosurface::rmt::kNeighborLatticeCoordinatesDeltas;
 using polatory::isosurface::rmt::kOppositeEdge;
@@ -54,9 +54,9 @@ TEST(rmt, construction_of_basis) {
               Eigen::AngleAxisd(-pi / 4.0, Vector3::UnitY()))
                  .toRotationMatrix();
 
-  Vector3 a0 = transform_vector<3>(rot, inv_sqrt2 * Vector3{-1.0, 1.0, 1.0});
-  Vector3 a1 = transform_vector<3>(rot, inv_sqrt2 * Vector3{1.0, -1.0, 1.0});
-  Vector3 a2 = transform_vector<3>(rot, inv_sqrt2 * Vector3{1.0, 1.0, -1.0});
+  Vector3 a0 = transform_vector<3>(rot, kInvSqrt3 * Vector3{-1.0, 1.0, 1.0});
+  Vector3 a1 = transform_vector<3>(rot, kInvSqrt3 * Vector3{1.0, -1.0, 1.0});
+  Vector3 a2 = transform_vector<3>(rot, kInvSqrt3 * Vector3{1.0, 1.0, -1.0});
 
   EXPECT_NEAR(0.0, (kLatticeBasis.row(0) - a0).norm(), 1e-15);
   EXPECT_NEAR(0.0, (kLatticeBasis.row(1) - a1).norm(), 1e-15);
@@ -64,25 +64,25 @@ TEST(rmt, construction_of_basis) {
 }
 
 TEST(rmt, neighbor_cell_vectors) {
-  Vector3 a0 = inv_sqrt2 * Vector3{-1.0, 1.0, 1.0};
-  Vector3 a1 = inv_sqrt2 * Vector3{1.0, -1.0, 1.0};
-  Vector3 a2 = inv_sqrt2 * Vector3{1.0, 1.0, -1.0};
+  Vector3 a0 = kInvSqrt3 * Vector3{-1.0, 1.0, 1.0};
+  Vector3 a1 = kInvSqrt3 * Vector3{1.0, -1.0, 1.0};
+  Vector3 a2 = kInvSqrt3 * Vector3{1.0, 1.0, -1.0};
 
   std::array<Vector3, 14> neighbor_vectors{
-      inv_sqrt2 * Vector3{-1.0, 1.0, 1.0},    // 0
-      inv_sqrt2 * Vector3{0.0, 2.0, 0.0},     // 1
-      inv_sqrt2 * Vector3{1.0, 1.0, -1.0},    // 2
-      inv_sqrt2 * Vector3{0.0, 0.0, 2.0},     // 3
-      inv_sqrt2 * Vector3{1.0, 1.0, 1.0},     // 4
-      inv_sqrt2 * Vector3{2.0, 0.0, 0.0},     // 5
-      inv_sqrt2 * Vector3{1.0, -1.0, 1.0},    // 6
-      inv_sqrt2 * Vector3{1.0, -1.0, -1.0},   // 7
-      inv_sqrt2 * Vector3{0.0, -2.0, 0.0},    // 8
-      inv_sqrt2 * Vector3{-1.0, -1.0, 1.0},   // 9
-      inv_sqrt2 * Vector3{0.0, 0.0, -2.0},    // A
-      inv_sqrt2 * Vector3{-1.0, -1.0, -1.0},  // B
-      inv_sqrt2 * Vector3{-2.0, 0.0, 0.0},    // C
-      inv_sqrt2 * Vector3{-1.0, 1.0, -1.0},   // D
+      kInvSqrt3 * Vector3{-1.0, 1.0, 1.0},    // 0
+      kInvSqrt3 * Vector3{0.0, 2.0, 0.0},     // 1
+      kInvSqrt3 * Vector3{1.0, 1.0, -1.0},    // 2
+      kInvSqrt3 * Vector3{0.0, 0.0, 2.0},     // 3
+      kInvSqrt3 * Vector3{1.0, 1.0, 1.0},     // 4
+      kInvSqrt3 * Vector3{2.0, 0.0, 0.0},     // 5
+      kInvSqrt3 * Vector3{1.0, -1.0, 1.0},    // 6
+      kInvSqrt3 * Vector3{1.0, -1.0, -1.0},   // 7
+      kInvSqrt3 * Vector3{0.0, -2.0, 0.0},    // 8
+      kInvSqrt3 * Vector3{-1.0, -1.0, 1.0},   // 9
+      kInvSqrt3 * Vector3{0.0, 0.0, -2.0},    // A
+      kInvSqrt3 * Vector3{-1.0, -1.0, -1.0},  // B
+      kInvSqrt3 * Vector3{-2.0, 0.0, 0.0},    // C
+      kInvSqrt3 * Vector3{-1.0, 1.0, -1.0},   // D
   };
 
   for (EdgeIndex ei = 0; ei < 14; ei++) {

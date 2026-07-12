@@ -7,7 +7,6 @@
 #include <array>
 #include <cmath>
 #include <limits>
-#include <numbers>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -17,11 +16,14 @@
 
 namespace polatory::isosurface::rmt {
 
-inline constexpr double inv_sqrt2 = 0.5 * std::numbers::sqrt2;
+inline constexpr double kInvSqrt3 = 0.5773502691896258;       // 1 / sqrt(3)
+inline constexpr double kSqrt2OverSqrt3 = 0.816496580927726;  // sqrt(2 / 3)
 
 // A basis for the body-centered cubic lattice.
-inline const Mat3 kLatticeBasis(
-    (Mat3() << inv_sqrt2, 1.0, 0.0, -inv_sqrt2, 0.0, 1.0, inv_sqrt2, -1.0, 0.0).finished());
+inline const Mat3 kLatticeBasis((Mat3() << geometry::Vector3{kInvSqrt3, kSqrt2OverSqrt3, 0.0},
+                                 geometry::Vector3{-kInvSqrt3, 0.0, kSqrt2OverSqrt3},
+                                 geometry::Vector3{kInvSqrt3, -kSqrt2OverSqrt3, 0.0})
+                                    .finished());
 
 class PrimitiveLattice {
  public:
@@ -118,8 +120,8 @@ class PrimitiveLattice {
     return lattice_coordinates_unrounded(p).array().round().cast<int>();
   }
 
-  // Clamps p into node lc's cell -- the lattice-coordinate box [lc - 0.495, lc + 0.495], 0.99 of the
-  // rounding cell -- so the result stays strictly nearest to lc (and rounds back to it).
+  // Clamps p into node lc's cell -- the lattice-coordinate box [lc - 0.495, lc + 0.495], 0.99 of
+  // the rounding cell -- so the result stays strictly nearest to lc (and rounds back to it).
   geometry::Point3 clamp_to_node(const geometry::Point3& p, const LatticeCoordinates& lc) const {
     geometry::Vector3 u = lattice_coordinates_unrounded(p);
     geometry::Vector3 c = lc.cast<double>();

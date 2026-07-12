@@ -207,8 +207,8 @@ TEST(isosurface, generate) {
 
   auto mesh = isosurf.generate(field_fn, 1.0);
 
-  ASSERT_EQ(1082, mesh.vertices().rows());
-  ASSERT_EQ(2160, mesh.faces().rows());
+  ASSERT_EQ(1610, mesh.vertices().rows());
+  ASSERT_EQ(3216, mesh.faces().rows());
 }
 
 TEST(isosurface, generate_from_seed_points) {
@@ -223,8 +223,8 @@ TEST(isosurface, generate_from_seed_points) {
 
   auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
 
-  ASSERT_EQ(1082, mesh.vertices().rows());
-  ASSERT_EQ(2160, mesh.faces().rows());
+  ASSERT_EQ(1610, mesh.vertices().rows());
+  ASSERT_EQ(3216, mesh.faces().rows());
 }
 
 TEST(isosurface, generate_empty) {
@@ -316,8 +316,8 @@ TEST(isosurface, generate_plane) {
 
   auto mesh = isosurf.generate(field_fn);
 
-  ASSERT_EQ(819, mesh.vertices().rows());
-  ASSERT_EQ(1420, mesh.faces().rows());
+  ASSERT_EQ(1122, mesh.vertices().rows());
+  ASSERT_EQ(2021, mesh.faces().rows());
 }
 
 TEST(isosurface, manifold) {
