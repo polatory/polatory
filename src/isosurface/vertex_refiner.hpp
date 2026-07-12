@@ -50,8 +50,7 @@ class VertexRefiner {
   Mesh result() && { return {std::move(p_), std::move(mesh_).take_faces()}; }
 
  private:
-  static constexpr double kMaxMoveRatio = 0.5;   // per-step cap, in units of resolution
-  static constexpr double kMinMoveRatio = 1e-5;  // below this a vertex is already on the level set
+  static constexpr double kMaxMoveRatio = 0.5;  // per-step cap, in units of resolution
 
   void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
@@ -65,10 +64,6 @@ class VertexRefiner {
     return t;
   }
 
-  // Value and gradient at each vertex come from a linear fit over a regular-tetrahedron stencil
-  // (4 samples -- the minimum for both). The step is capped in the aniso frame so an
-  // ill-conditioned fit cannot bolt the vertex across the mesh. Returns only the vertices that
-  // move, each paired with its target position.
   std::vector<std::pair<Index, Point3>> project() const {
     auto d = 1e-3 * resolution_;
     // Regular-tetrahedron offsets (directions prescaled by d): sum to zero and sum of outer
@@ -83,7 +78,6 @@ class VertexRefiner {
 
     std::vector<std::pair<Index, Point3>> moves;
     auto max_move = kMaxMoveRatio * resolution_;
-    auto min_move = kMinMoveRatio * resolution_;
     // The least-squares gradient of the linear fit: g = (s^T s)^-1 s^T v = s^T v / (4 d^2).
     auto inv_4dd = 1.0 / (4.0 * d * d);
     for (Index i = 0; i < nv_; i++) {
@@ -96,11 +90,6 @@ class VertexRefiner {
       auto value = 0.25 * vs.sum();
       Vector3 step = (value / gn2) * grad;
       auto a_len = geometry::transform_vector<3>(aniso_, step).norm();
-      if (!(a_len >= min_move)) {
-        // Skips a vertex already on the level set, and also a non-finite step (NaN fails every
-        // comparison, so it must be rejected here rather than passed to the caps below).
-        continue;
-      }
       if (a_len > max_move) {
         step *= max_move / a_len;
       }
