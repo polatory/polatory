@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -186,31 +185,23 @@ class VertexRelaxer {
     if (!(total > 0.0)) {
       return p_.row(vi);
     }
-    Eigen::Vector3d g = (Point3(ap_.row(vi)) + kDamping * (offset / total)).transpose();
+    Point3 g = Point3(ap_.row(vi)) + kDamping * (offset / total);  // anchor, aniso frame
     Mat3 a = Mat3::Zero();
-    Eigen::Vector3d b = Eigen::Vector3d::Zero();
+    Vector3 b = Vector3::Zero();
     for (auto fi : mesh_.vertex_faces(vi)) {
       auto f = mesh_.face(fi);
-      Vector3 nr = triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
-      auto w = nr.norm();  // twice the aniso-frame triangle area, the plane's weight
+      Vector3 n = triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
+      auto w = n.norm();
       if (!(w > 0.0)) {
         continue;
       }
-      Eigen::Vector3d n = (nr / w).transpose();
-      a += w * n * n.transpose();
-      b += w * Vector3(ap_.row(f(0))).dot(nr / w) * n;  // w (n . x0) n
+      n /= w;
+      a += w * n.transpose() * n;
+      b += w * n.dot(ap_.row(f(0))) * n;
     }
-    Eigen::SelfAdjointEigenSolver<Mat3> es(a);
-    Eigen::Vector3d ev = es.eigenvalues();  // ascending; ev(2) is the largest
-    Mat3 v = es.eigenvectors();
-    Eigen::Vector3d residual = a * g - b;
-    Eigen::Vector3d pos = g;
-    for (auto k = 0; k < 3; k++) {
-      if (ev(k) > kQefEps * ev(2)) {
-        pos -= (v.col(k).dot(residual) / ev(k)) * v.col(k);
-      }
-    }
-    return geometry::transform_point<3>(aniso_inv_, Point3(pos.transpose()));
+
+    Point3 pos = quadric_minimize(a, b, g, kQefEps);
+    return geometry::transform_point<3>(aniso_inv_, pos);
   }
 
   // Each vertex's mixed Voronoi area (Meyer et al.): the cotangent-weighted cell area, with the

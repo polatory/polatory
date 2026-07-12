@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Eigenvalues>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -110,6 +111,30 @@ inline double triangle_min_angle(const geometry::Point3& a, const geometry::Poin
 inline geometry::Vector3 triangle_normal(const geometry::Point3& a, const geometry::Point3& b,
                                          const geometry::Point3& c) {
   return geometry::Vector3((b - a).cross(c - a));
+}
+
+// Rank-revealing minimizer of the quadric E(x) = sum_i (g_i . (x - p_i) + f_i)^2, whose normal
+// equations are a x = b with a = sum g_i g_i^T and b = sum g_i (g_i . p_i - f_i). It moves off the
+// anchor only when the quadric constrains at least two directions -- a crease (rank 2) or corner
+// (rank 3) -- and only along those (eigenvalue above eps * the largest); a flat patch (rank 1) keeps
+// the anchor, so a feature is preserved rather than averaged away.
+inline geometry::Point3 quadric_minimize(const Mat3& a, const geometry::Vector3& b,
+                                         const geometry::Point3& anchor, double eps) {
+  Eigen::SelfAdjointEigenSolver<Mat3> es(a);
+  auto floor = eps * es.eigenvalues()(2);
+  geometry::Point3 x = anchor;
+  if (es.eigenvalues()(1) > floor) {
+    // anchor is a row vector, so anchor * a computes a * anchor (a is symmetric).
+    geometry::Vector3 r = b - anchor * a;
+    for (auto k = 0; k < 3; k++) {
+      auto eval = es.eigenvalues()(k);
+      if (eval > floor) {
+        geometry::Vector3 evec = es.eigenvectors().col(k).transpose();
+        x += (r.dot(evec) / eval) * evec;
+      }
+    }
+  }
+  return x;
 }
 
 inline int num_shared_vertices(const Face& a, const Face& b) {
