@@ -32,6 +32,7 @@
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_io.hpp>
+#include <polatory/structural/domain_builder.hpp>
 #include <polatory/structural/domain_spec.hpp>
 #include <polatory/structural/interpolant.hpp>
 #include <polatory/table.hpp>
