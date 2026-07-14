@@ -40,6 +40,18 @@ SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
   }
 }
 
+SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
+                                   const geometry::Vectors3& normals, double min_distance,
+                                   double max_distance, const Mat3& aniso)
+    : SdfDataGenerator(points, normals, max_distance, aniso) {
+  if (!(min_distance >= 0.0)) {
+    throw std::invalid_argument("min_distance must be non-negative");
+  }
+  if (!(max_distance >= min_distance)) {
+    throw std::invalid_argument("max_distance must be greater than or equal to min_distance");
+  }
+}
+
 std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
     const geometry::Points3& points, const geometry::Vectors3& normals, double offset) {
   KdTree tree(points);
