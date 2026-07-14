@@ -150,6 +150,38 @@ Points3 center_points() {
   return points;
 }
 
+double point_segment_dist(const Point3& p, const Point3& a, const Point3& b) {
+  Vector3 ab = b - a;
+  double denom = ab.squaredNorm();
+  double t = denom > 0.0 ? (p - a).dot(ab) / denom : 0.0;
+  t = std::clamp(t, 0.0, 1.0);
+  return (p - (a + t * ab)).norm();
+}
+
+// The farthest any point along the polyline lies from the nearest mesh edge; zero iff the polyline
+// is covered by a continuous chain of mesh edges.
+double max_polyline_edge_distance(const Mesh& mesh, const Points3& polyline) {
+  const auto& v = mesh.vertices();
+  const auto& f = mesh.faces();
+  double worst = 0.0;
+  for (Index i = 0; i + 1 < polyline.rows(); i++) {
+    Point3 p0 = polyline.row(i);
+    Point3 p1 = polyline.row(i + 1);
+    for (int s = 1; s <= 4; s++) {
+      Point3 q = p0 + (s / 5.0) * (p1 - p0);
+      double best = (q - Point3(v.row(f(0, 0)))).norm();
+      for (auto face : f.rowwise()) {
+        for (int k = 0; k < 3; k++) {
+          best = std::min(best, point_segment_dist(q, Point3(v.row(face(k))),
+                                                   Point3(v.row(face((k + 1) % 3)))));
+        }
+      }
+      worst = std::max(worst, best);
+    }
+  }
+  return worst;
+}
+
 }  // namespace
 
 TEST(snap, points_become_vertices) {
@@ -358,4 +390,35 @@ TEST(smooth, flat_plane_random_orientation_no_flips) {
     EXPECT_EQ(flipped, 0) << "trial " << trial << ": " << flipped
                           << " edges flipped on a flat plane";
   }
+}
+
+// A dense feature line running level with the plane and just barely off it (height a hair above the
+// snap tolerance) grazes the bulk surface uniformly along its whole length. Thinning must keep it as
+// a continuous chain of mesh edges: collapsing a feature vertex onto the nearby bulk (an off-feature
+// vertex within tolerance) would wash segments of the crease into face interiors. Restricting
+// collapses to snap-point-to-snap-point edges prevents that -- without the restriction, roughly a
+// sixth of this line washes off its edges (max deviation ~0.25 * res).
+TEST(snap, thinner_keeps_feature_line) {
+  const double res = 1.0;
+  const Bbox3 bbox(Point3(-16.0, -8.0, -2.0), Point3(16.0, 8.0, 2.0));
+  SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::UnitZ());
+  const double rel_tol = 0.05;
+  const double z0 = 0.051;         // a hair above rel_tol * res: needs vertices yet hugs the bulk
+  const double yslope = 8.0;       // oblique to the lattice row by atan(1/8) ~ 7 deg
+  const double step = 0.25 * res;  // over-dense so the thinner is forced to collapse
+  const double xmax = 15.0;
+  const int n = 2 * static_cast<int>(xmax / step) + 1;
+
+  Points3 pts(n, 3);
+  for (int i = 0; i < n; i++) {
+    double x = -xmax + i * step;
+    pts.row(i) << x, x / yslope, z0;
+  }
+
+  Isosurface isosurf(bbox, res);
+  isosurf.set_snap_points(pts, VecX::Constant(n, rel_tol));
+  auto mesh = isosurf.generate(field_fn, 0.0);
+
+  ASSERT_TRUE(is_oriented_manifold(mesh));
+  EXPECT_LT(max_polyline_edge_distance(mesh, pts), 0.02 * res);
 }

@@ -23,11 +23,11 @@ namespace polatory::isosurface::snapper {
 using geometry::Points3;
 
 // Cross-pass thinning by guarded edge collapse: collapses a snapped vertex that a later pass left
-// redundant (collinear between neighbours) onto a neighbour, reaching vertices from any pass that
-// the insert-only thinning could not. A collapse is kept only if the dropped point stays within its
-// tolerance of the new surface and the mesh stays manifold, unflipped, and self-intersection-free;
-// only snapped vertices collapse, so the base lattice is untouched. Geometry is in the
-// aniso-transformed frame; the output is untransformed.
+// redundant (collinear between neighbours) onto a neighbouring snap point, reaching vertices from
+// any pass that the insert-only thinning could not. A collapse is kept only if the dropped point
+// stays within its tolerance of the new surface and the mesh stays manifold, unflipped, and
+// self-intersection-free; only edges between two snap points collapse, so the base lattice is
+// untouched. Geometry is in the aniso-transformed frame; the output is untransformed.
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
@@ -96,6 +96,9 @@ class Thinner {
   bool collapse_ok(Halfedge h, const std::vector<Halfedge>& hs, double& dev) {
     auto a = mesh_.from(h);  // the dropped vertex
     auto b = mesh_.to(h);    // the kept vertex
+    if (!snapped_.at(b)) {
+      return false;  // a is snapped (only snapped vertices collapse); require b snapped too
+    }
     auto c = mesh_.apex(h);
     auto d = mesh_.apex(mesh_.opposite(h));
 
