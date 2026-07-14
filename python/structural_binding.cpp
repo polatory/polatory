@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 #include <limits>
 #include <polatory/polatory.hpp>
+#include <polatory/structural/adaptive_domain_builder.hpp>
 #include <polatory/structural/domain_orientation_average.hpp>
 #include <vector>
 
@@ -20,6 +21,7 @@ PYBIND11_MODULE(_structural, m) {
   // Register the standard Polatory types (Model<3>, FieldFunction, etc.) first.
   py::module_::import("polatory._core");
 
+  using AdaptiveDomainBuilder = structural::AdaptiveStructuralDomainBuilder3;
   using DomainBuilder = structural::StructuralDomainBuilder3;
   using DomainSpec = structural::DomainSpec3;
   using StructuralInterpolant = structural::StructuralInterpolant3;
@@ -60,14 +62,17 @@ PYBIND11_MODULE(_structural, m) {
 
   py::class_<DomainSpec>(m, "StructuralDomain3")
       .def(py::init([](const Mat3& anisotropy, const Eigen::Vector3d& bbox_min,
-                       const Eigen::Vector3d& bbox_max, std::vector<Index> support_indices,
+                       const Eigen::Vector3d& bbox_max,
+                       std::vector<Index> support_indices,
                        std::vector<double> model_parameters) {
              geometry::Point3 min_row = bbox_min.transpose();
              geometry::Point3 max_row = bbox_max.transpose();
-             return DomainSpec(anisotropy, min_row, max_row, std::move(support_indices),
+             return DomainSpec(anisotropy, min_row, max_row,
+                               std::move(support_indices),
                                std::move(model_parameters));
            }),
-           "anisotropy"_a, "bbox_min"_a, "bbox_max"_a, "support_indices"_a,
+           "anisotropy"_a, "bbox_min"_a, "bbox_max"_a,
+           "support_indices"_a,
            "model_parameters"_a = std::vector<double>{})
       .def_property_readonly("anisotropy", &DomainSpec::anisotropy)
       .def_property_readonly("bbox_min", [](const DomainSpec& spec) {
@@ -114,6 +119,36 @@ PYBIND11_MODULE(_structural, m) {
            "inputs"_a,
            "trend_type"_a = TrendType::kStrongestAlongInputs);
 
+  py::class_<AdaptiveDomainBuilder>(m, "AdaptiveStructuralDomainBuilder3")
+      .def(py::init<double, double, double, double, Index, Index, int>(),
+           "overlap"_a = 0.0,
+           "orientation_consistency"_a = 0.97,
+           "minimum_core_size"_a = 0.0,
+           "maximum_core_size"_a = 0.0,
+           "minimum_core_points"_a = 24,
+           "minimum_support_points"_a = 4,
+           "maximum_depth"_a = 20)
+      .def_property_readonly("overlap",
+                             &AdaptiveDomainBuilder::overlap)
+      .def_property_readonly(
+          "orientation_consistency",
+          &AdaptiveDomainBuilder::orientation_consistency)
+      .def_property_readonly("minimum_core_size",
+                             &AdaptiveDomainBuilder::minimum_core_size)
+      .def_property_readonly("maximum_core_size",
+                             &AdaptiveDomainBuilder::maximum_core_size)
+      .def_property_readonly("minimum_core_points",
+                             &AdaptiveDomainBuilder::minimum_core_points)
+      .def_property_readonly("minimum_support_points",
+                             &AdaptiveDomainBuilder::minimum_support_points)
+      .def_property_readonly("maximum_depth",
+                             &AdaptiveDomainBuilder::maximum_depth)
+      .def("build", &AdaptiveDomainBuilder::build,
+           "points"_a,
+           "inputs"_a,
+           "trend_type"_a = TrendType::kStrongestAlongInputs,
+           "model_parameters"_a = std::vector<double>{});
+
   py::class_<StructuralInterpolant>(m, "StructuralInterpolant3")
       .def(py::init<const Model<3>&, double, double>(), "base_model"_a,
            "outside_value"_a = -1.0, "blend_power"_a = 1.0)
@@ -126,8 +161,9 @@ PYBIND11_MODULE(_structural, m) {
       .def_property_readonly("blend_power", &StructuralInterpolant::blend_power)
       .def_property_readonly("num_domains", &StructuralInterpolant::num_domains)
       .def_property_readonly("outside_value", &StructuralInterpolant::outside_value)
-      .def("fit", &StructuralInterpolant::fit, "points"_a, "values"_a, "domains"_a,
-           "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity)
+      .def("fit", &StructuralInterpolant::fit, "points"_a, "values"_a,
+           "domains"_a, "tolerance"_a, "max_iter"_a = 100,
+           "accuracy"_a = kInfinity)
       .def(
           "fit_from_meshes",
           [](StructuralInterpolant& interpolant,
@@ -143,7 +179,8 @@ PYBIND11_MODULE(_structural, m) {
              Index min_support_points) {
             DomainBuilder builder(domain_size, overlap, min_support_points);
             auto domains = builder.build(points, inputs, trend_type);
-            interpolant.fit(points, values, domains, tolerance, max_iter, accuracy);
+            interpolant.fit(points, values, domains, tolerance, max_iter,
+                             accuracy);
             return domains;
           },
           "points"_a,
@@ -156,6 +193,46 @@ PYBIND11_MODULE(_structural, m) {
           "domain_size"_a = 0.0,
           "overlap"_a = 0.0,
           "min_support_points"_a = 4)
+      .def(
+          "fit_from_meshes_adaptive",
+          [](StructuralInterpolant& interpolant,
+             const geometry::Points3& points,
+             const VecX& values,
+             const std::vector<TrendInput>& inputs,
+             double tolerance,
+             TrendType trend_type,
+             int max_iter,
+             double accuracy,
+             double overlap,
+             double orientation_consistency,
+             double minimum_core_size,
+             double maximum_core_size,
+             Index minimum_core_points,
+             Index minimum_support_points,
+             int maximum_depth) {
+            AdaptiveDomainBuilder builder(
+                overlap, orientation_consistency, minimum_core_size,
+                maximum_core_size, minimum_core_points,
+                minimum_support_points, maximum_depth);
+            auto domains = builder.build(points, inputs, trend_type);
+            interpolant.fit(points, values, domains, tolerance, max_iter,
+                             accuracy);
+            return domains;
+          },
+          "points"_a,
+          "values"_a,
+          "inputs"_a,
+          "tolerance"_a,
+          "trend_type"_a = TrendType::kStrongestAlongInputs,
+          "max_iter"_a = 100,
+          "accuracy"_a = kInfinity,
+          "overlap"_a = 0.0,
+          "orientation_consistency"_a = 0.97,
+          "minimum_core_size"_a = 0.0,
+          "maximum_core_size"_a = 0.0,
+          "minimum_core_points"_a = 24,
+          "minimum_support_points"_a = 4,
+          "maximum_depth"_a = 20)
       .def("evaluate", &StructuralInterpolant::evaluate, "points"_a,
            "accuracy"_a = kInfinity);
 
