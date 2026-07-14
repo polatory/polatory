@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 #include <limits>
 #include <polatory/polatory.hpp>
+#include <polatory/structural/domain_orientation_average.hpp>
 #include <vector>
 
 namespace py = pybind11;
@@ -87,7 +88,23 @@ PYBIND11_MODULE(_structural, m) {
       .def_property_readonly("overlap", &DomainBuilder::overlap)
       .def_property_readonly("min_support_points",
                              &DomainBuilder::min_support_points)
-      .def("build", &DomainBuilder::build,
+      .def(
+          "build",
+          [](const DomainBuilder& builder,
+             const geometry::Points3& points,
+             const std::vector<TrendInput>& inputs,
+             TrendType trend_type,
+             const std::vector<double>& model_parameters) {
+            return structural::build_orientation_averaged_domains(
+                points, inputs, trend_type, model_parameters,
+                builder.domain_size(), builder.overlap(),
+                builder.min_support_points());
+          },
+          "points"_a,
+          "inputs"_a,
+          "trend_type"_a = TrendType::kStrongestAlongInputs,
+          "model_parameters"_a = std::vector<double>{})
+      .def("build_center_sampled", &DomainBuilder::build,
            "points"_a,
            "inputs"_a,
            "trend_type"_a = TrendType::kStrongestAlongInputs,
@@ -124,8 +141,9 @@ PYBIND11_MODULE(_structural, m) {
              double domain_size,
              double overlap,
              Index min_support_points) {
-            DomainBuilder builder(domain_size, overlap, min_support_points);
-            auto domains = builder.build(points, inputs, trend_type);
+            auto domains = structural::build_orientation_averaged_domains(
+                points, inputs, trend_type, {}, domain_size, overlap,
+                min_support_points);
             interpolant.fit(points, values, domains, tolerance, max_iter, accuracy);
             return domains;
           },
