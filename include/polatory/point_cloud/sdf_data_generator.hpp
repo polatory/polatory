@@ -15,14 +15,19 @@ class SdfDataGenerator {
   SdfDataGenerator(const geometry::Points3& points, const geometry::Vectors3& normals,
                    double offset, const Mat3& aniso);
 
+  // Compatibility overload for the existing Python binding. The current C++
+  // implementation uses a single offset; max_distance is used as that offset.
+  SdfDataGenerator(const geometry::Points3& points, const geometry::Vectors3& normals,
+                   double min_distance, double max_distance, const Mat3& aniso);
+
   const geometry::Points3& sdf_points() const;
 
   const VecX& sdf_values() const;
 
  private:
   static std::pair<geometry::Points3, VecX> estimate_impl(const geometry::Points3& points,
-                                                          const geometry::Vectors3& normals,
-                                                          double offset);
+                                                           const geometry::Vectors3& normals,
+                                                           double offset);
 
   geometry::Points3 sdf_points_;
   VecX sdf_values_;
