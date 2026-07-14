@@ -127,9 +127,13 @@ class StructuralDomainBuilder3 {
 
     auto domain_size = domain_size_;
     if (!(domain_size > 0.0)) {
-      domain_size = 2.0 * max_range;
+      // The recovered Leapfrog test is best reproduced by domains whose
+      // active-axis core width is close to the structural range. 1.25 gives
+      // enough local orientation detail while the one-range overlap preserves
+      // continuity between neighbouring local interpolants.
+      domain_size = 1.25 * max_range;
       if (!(domain_size > 0.0)) {
-        domain_size = std::max({widths(0), widths(1), widths(2)}) / 3.0;
+        domain_size = std::max({widths(0), widths(1), widths(2)}) / 4.0;
       }
       if (!(domain_size > 0.0)) {
         domain_size = 1.0;
@@ -143,12 +147,24 @@ class StructuralDomainBuilder3 {
                     : max_range;
     }
 
+    // Meshes are often extruded along one direction. Splitting that invariant
+    // direction creates duplicate local solves with nearly identical
+    // anisotropy but different support sets, which can introduce seams. Detect
+    // axes along which the sign-invariant normal tensor does not vary and keep
+    // the full point extent in those directions.
+    auto active_axes = detect_active_axes(inputs, prepared);
+
     using Cell = std::array<long long, 3>;
     std::map<Cell, std::vector<Index>> cells;
 
     for (Index i = 0; i < points.rows(); ++i) {
       Cell cell{};
       for (Index axis = 0; axis < 3; ++axis) {
+        if (!active_axes.at(static_cast<std::size_t>(axis))) {
+          cell.at(static_cast<std::size_t>(axis)) = 0;
+          continue;
+        }
+
         cell.at(static_cast<std::size_t>(axis)) =
             static_cast<long long>(std::floor(
                 (points(i, axis) - points_min(axis)) / domain_size));
@@ -165,8 +181,14 @@ class StructuralDomainBuilder3 {
       Point sample_point = Point::Zero();
 
       for (Index axis = 0; axis < 3; ++axis) {
-        auto cell_i = static_cast<double>(
-            cell.at(static_cast<std::size_t>(axis)));
+        if (!active_axes.at(static_cast<std::size_t>(axis))) {
+          core_min(axis) = points_min(axis);
+          core_max(axis) = points_max(axis);
+          continue;
+        }
+
+        auto cell_i =
+            static_cast<double>(cell.at(static_cast<std::size_t>(axis)));
         core_min(axis) = points_min(axis) + cell_i * domain_size;
         core_max(axis) = std::min(core_min(axis) + domain_size,
                                   points_max(axis) + domain_size * 1e-9);
@@ -214,8 +236,8 @@ class StructuralDomainBuilder3 {
     auto prepared = prepare_inputs(inputs);
 
     for (Index i = 0; i < query_points.rows(); ++i) {
-      auto trend = evaluate_one(query_points.row(i), inputs, prepared,
-                                trend_type);
+      auto trend =
+          evaluate_one(query_points.row(i), inputs, prepared, trend_type);
       result.normals.row(i) = trend.normal;
       result.ratios(i) = trend.ratio;
       result.distances(i) = trend.distance;
@@ -311,6 +333,79 @@ class StructuralDomainBuilder3 {
     return prepared;
   }
 
+  static std::array<bool, 3> detect_active_axes(
+      const std::vector<StructuralTrendInput3>& inputs,
+      const std::vector<PreparedInput>& prepared) {
+    constexpr Index kNumBins = 8;
+    constexpr double kVariationThreshold = 0.02;
+
+    std::array<bool, 3> active_axes{false, false, false};
+
+    for (Index axis = 0; axis < 3; ++axis) {
+      auto maximum_variation = 0.0;
+
+      for (Index input_i = 0;
+           input_i < static_cast<Index>(inputs.size()); ++input_i) {
+        const auto& vertices =
+            inputs.at(static_cast<std::size_t>(input_i)).vertices();
+        const auto& normals =
+            prepared.at(static_cast<std::size_t>(input_i)).vertex_normals;
+
+        auto coordinate_min = vertices.col(axis).minCoeff();
+        auto coordinate_max = vertices.col(axis).maxCoeff();
+        auto coordinate_span = coordinate_max - coordinate_min;
+        if (!(coordinate_span > 0.0)) {
+          continue;
+        }
+
+        Mat3 global_tensor = Mat3::Zero();
+        for (Index vertex_i = 0; vertex_i < normals.rows(); ++vertex_i) {
+          Eigen::Vector3d normal = normals.row(vertex_i).transpose();
+          global_tensor += normal * normal.transpose();
+        }
+        global_tensor /= static_cast<double>(normals.rows());
+
+        std::array<Mat3, kNumBins> bin_tensors;
+        std::array<Index, kNumBins> bin_counts{};
+        for (auto& tensor : bin_tensors) {
+          tensor.setZero();
+        }
+
+        for (Index vertex_i = 0; vertex_i < vertices.rows(); ++vertex_i) {
+          auto normalized_coordinate =
+              (vertices(vertex_i, axis) - coordinate_min) / coordinate_span;
+          auto bin_i = static_cast<Index>(
+              std::floor(normalized_coordinate * kNumBins));
+          bin_i = std::clamp<Index>(bin_i, 0, kNumBins - 1);
+
+          Eigen::Vector3d normal = normals.row(vertex_i).transpose();
+          bin_tensors.at(static_cast<std::size_t>(bin_i)) +=
+              normal * normal.transpose();
+          ++bin_counts.at(static_cast<std::size_t>(bin_i));
+        }
+
+        for (Index bin_i = 0; bin_i < kNumBins; ++bin_i) {
+          auto count = bin_counts.at(static_cast<std::size_t>(bin_i));
+          if (count == 0) {
+            continue;
+          }
+
+          auto local_tensor =
+              bin_tensors.at(static_cast<std::size_t>(bin_i)) /
+              static_cast<double>(count);
+          maximum_variation =
+              std::max(maximum_variation,
+                       (local_tensor - global_tensor).norm());
+        }
+      }
+
+      active_axes.at(static_cast<std::size_t>(axis)) =
+          maximum_variation > kVariationThreshold;
+    }
+
+    return active_axes;
+  }
+
   static void validate_inputs(
       const std::vector<StructuralTrendInput3>& inputs) {
     if (inputs.empty()) {
@@ -346,9 +441,9 @@ class StructuralDomainBuilder3 {
 
       auto q = trend_type == StructuralTrendType::kNonDecaying
                    ? 1.0
-                   : std::exp(-distance / inputs.at(
-                                               static_cast<std::size_t>(input_i))
-                                               .range());
+                   : std::exp(-distance /
+                              inputs.at(static_cast<std::size_t>(input_i))
+                                  .range());
       auto contribution =
           (inputs.at(static_cast<std::size_t>(input_i)).strength() - 1.0) * q;
 
@@ -366,8 +461,8 @@ class StructuralDomainBuilder3 {
     }
 
     Point normal = normals.at(static_cast<std::size_t>(dominant_input));
-    auto ratio = 1.0 +
-                 contributions.at(static_cast<std::size_t>(dominant_input));
+    auto ratio =
+        1.0 + contributions.at(static_cast<std::size_t>(dominant_input));
 
     if (trend_type == StructuralTrendType::kBlending && inputs.size() > 1) {
       Point blended = Point::Zero();
