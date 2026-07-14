@@ -88,8 +88,13 @@ PYBIND11_MODULE(_structural, m) {
       .def_property_readonly("overlap", &DomainBuilder::overlap)
       .def_property_readonly("min_support_points",
                              &DomainBuilder::min_support_points)
+      .def("build", &DomainBuilder::build,
+           "points"_a,
+           "inputs"_a,
+           "trend_type"_a = TrendType::kStrongestAlongInputs,
+           "model_parameters"_a = std::vector<double>{})
       .def(
-          "build",
+          "build_orientation_averaged",
           [](const DomainBuilder& builder,
              const geometry::Points3& points,
              const std::vector<TrendInput>& inputs,
@@ -104,11 +109,6 @@ PYBIND11_MODULE(_structural, m) {
           "inputs"_a,
           "trend_type"_a = TrendType::kStrongestAlongInputs,
           "model_parameters"_a = std::vector<double>{})
-      .def("build_center_sampled", &DomainBuilder::build,
-           "points"_a,
-           "inputs"_a,
-           "trend_type"_a = TrendType::kStrongestAlongInputs,
-           "model_parameters"_a = std::vector<double>{})
       .def("sample", &DomainBuilder::sample,
            "query_points"_a,
            "inputs"_a,
@@ -141,9 +141,8 @@ PYBIND11_MODULE(_structural, m) {
              double domain_size,
              double overlap,
              Index min_support_points) {
-            auto domains = structural::build_orientation_averaged_domains(
-                points, inputs, trend_type, {}, domain_size, overlap,
-                min_support_points);
+            DomainBuilder builder(domain_size, overlap, min_support_points);
+            auto domains = builder.build(points, inputs, trend_type);
             interpolant.fit(points, values, domains, tolerance, max_iter, accuracy);
             return domains;
           },
