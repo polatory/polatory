@@ -29,6 +29,7 @@ add_executable(${TARGET}
     preconditioner/test_domain_divider.cpp
     preconditioner/test_fine_grid.cpp
     rbf/test_rbf.cpp
+    structural/test_structural_interpolant.cpp
 )
 
 target_link_libraries(${TARGET} PRIVATE
