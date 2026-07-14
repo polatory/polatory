@@ -9,6 +9,7 @@
 #include <polatory/isosurface/isosurface.hpp>
 #include <polatory/isosurface/rbf_field_function.hpp>
 #include <polatory/isosurface/rbf_field_function_25d.hpp>
+#include <polatory/isosurface/structural_rbf_field_function.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/conv.hpp>
 #include <polatory/numeric/error.hpp>
@@ -31,5 +32,7 @@
 #include <polatory/rbf/polyharmonic_odd.hpp>
 #include <polatory/rbf/rbf.hpp>
 #include <polatory/rbf/rbf_io.hpp>
+#include <polatory/structural/domain_spec.hpp>
+#include <polatory/structural/interpolant.hpp>
 #include <polatory/table.hpp>
 #include <polatory/types.hpp>
