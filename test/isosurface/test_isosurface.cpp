@@ -321,7 +321,7 @@ TEST(isosurface, generate_plane) {
 }
 
 TEST(isosurface, manifold) {
-  std::srand(1);
+  std::srand(4);
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
   const auto aniso = random_anisotropy<3>();

@@ -28,7 +28,7 @@ namespace polatory::isosurface::snapper {
 // and the mesh descends to a local minimum; vertices never move, so snapped points stay vertices. A
 // priority queue takes the largest improvement first, re-scoring each popped edge (a nearby flip
 // may have staled it). Geometry is in the aniso-transformed frame; the output is untransformed. A
-// flip is rejected if its new diagonal overshoots the bend-dependent length cap,
+// flip is rejected if its new diagonal exceeds the length cap (the base lattice's longest edge),
 // self-intersects, or pushes the surface beyond a snap tolerance (protecting points honored within
 // tolerance with no vertex there).
 class Smoother {
@@ -38,22 +38,10 @@ class Smoother {
   using Vector3 = geometry::Vector3;
 
   static constexpr double kPi = 3.141592653589793;
-  // Dihedral-dependent length cap. A flip's new diagonal may always reach kEdgeFloor * res; beyond
-  // that each unit of overshoot (in res) must be paid for by kImproveFull / (kEdgeCeiling -
-  // kEdgeFloor) radians of bend reduction, and kEdgeCeiling * res is the hard ceiling. So a long
-  // diagonal is admitted only when it flattens a genuine crease, not a flat-direction (cosmetic)
-  // one.
-  static constexpr double kEdgeFloor = 1.5;
-  static constexpr double kEdgeCeiling = 2.0;
-  static constexpr double kImproveFull = kPi / 2;  // bend reduction earning the full ceiling
-  // A flip may shrink the smaller angle only to this fraction of the old.
-  static constexpr double kMinAngleRatio = 0.5;
-  // A flip whose five touched edges are folded past this in total (summed dihedral) bypasses the
-  // length and min-angle quality caps (a severely folded neighbourhood or cave must go), subject to
-  // the usual validity checks.
-  static constexpr double kSevereFoldSum = 5 * kPi / 3;  // 300 deg
+  // kMaxEdgeRatio * res is the base lattice's longest edge (see the flip length cap below).
+  static constexpr double kMaxEdgeRatio = 1.3;
   // A flip may never create a triangle whose area has collapsed below this fraction of the area of
-  // the faces it replaces -- a degenerate face the severe-fold bypass would otherwise admit.
+  // the faces it replaces.
   static constexpr double kDegenerateAreaRatio = 1e-9;
 
   // A candidate flip of edge {x, y} (faces fi0, fi1) into diagonal {c, d}; improve > 0 is the total
@@ -91,7 +79,7 @@ class Smoother {
         a_points_(geometry::transform_points<3>(aniso, points)),
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh_.num_faces()),
-        resolution_(resolution) {
+        max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
     // Grid cell = resolution (a face spans about one cell); it only tunes the broad-phase, and
     // resolution avoids a lone long edge blowing the grid up.
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
@@ -253,10 +241,6 @@ class Smoother {
   // Index a face by the grid cells its current AABB touches.
   void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
-  double min_angle(const Face& f) const {
-    return triangle_min_angle(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
-  }
-
   Vector3 normal(const Face& f) const {
     return triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
@@ -316,36 +300,9 @@ class Smoother {
 
     auto improve = before - after;
 
-    // The length and min-angle quality caps below, applied unless the neighbourhood is severely
-    // folded (five-edge dihedral sum >= kSevereFoldSum -- a cave that must go regardless of
-    // triangle shape). Validity, the bend-sum drop above, and honors_ok/guard_ok still gate the
-    // flip.
-    if (before < kSevereFoldSum) {
-      // Length: a lengthening flip may not pass the hard ceiling, and any overshoot past
-      // kEdgeFloor * res must be earned by bend reduction. A shortening flip adds no longer edge.
-      auto new_len2 = (ap_.row(c) - ap_.row(d)).squaredNorm();
-      auto cur_len2 = (ap_.row(x) - ap_.row(y)).squaredNorm();
-      if (new_len2 > cur_len2) {
-        auto new_len = std::sqrt(new_len2);
-        if (new_len > kEdgeCeiling * resolution_) {
-          return std::nullopt;
-        }
-
-        auto overshoot = new_len / resolution_ - kEdgeFloor;
-        auto rate = kImproveFull / (kEdgeCeiling - kEdgeFloor);
-        if (overshoot > 0.0 && improve < rate * overshoot) {
-          return std::nullopt;
-        }
-      }
-
-      // Min angle: a flip may not shrink the smaller angle below kMinAngleRatio of the old -- a
-      // diagonal grazing a collinear vertex or a T-junction the inexact self-intersection guard
-      // misses. A mild thinning to flatten a crease is kept: a sliver beats a crease.
-      auto after_angle = std::min(min_angle(new_f0), min_angle(new_f1));
-      auto before_angle = std::min(min_angle(f0), min_angle(f1));
-      if (after_angle < kMinAngleRatio * before_angle) {
-        return std::nullopt;
-      }
+    auto cap2 = std::max((ap_.row(x) - ap_.row(y)).squaredNorm(), max_edge2_);
+    if ((ap_.row(c) - ap_.row(d)).squaredNorm() > cap2) {
+      return std::nullopt;
     }
 
     return Flip{fi0, fi1, x, y, c, d, improve};
@@ -360,7 +317,7 @@ class Smoother {
   VecX snap_tols2_;    // squared snapping tolerance per snap point
   SpatialGrid snap_grid_;
   FaceGrid face_grid_;  // face broad-phase for the self-intersection guard
-  double resolution_;   // mesh resolution; sets the diagonal length cap
+  double max_edge2_;
   Mesh result_;
 };
 

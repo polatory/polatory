@@ -33,7 +33,7 @@ class Thinner {
   using Vector3 = geometry::Vector3;
 
   // a collapse may not make an edge longer than this * res
-  static constexpr double kMaxEdgeRatio = 1.5;
+  static constexpr double kMaxEdgeRatio = 1.3;
 
  public:
   Thinner(const Mesh& mesh, const Points3& points, const VecX& tolerances, double resolution,
