@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/edge.hpp>
 #include <polatory/isosurface/mesh.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
@@ -21,8 +20,6 @@ class MeshDefectsFinder {
   std::vector<Index> singular_vertices() const;
 
  private:
-  bool edge_face_intersect(const Edge& e, Index fi) const;
-
   Index next_vertex(Index fi, Index vi) const;
 
   Index prev_vertex(Index fi, Index vi) const;

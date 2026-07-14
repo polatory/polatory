@@ -24,32 +24,66 @@ MeshDefectsFinder::MeshDefectsFinder(const Mesh& mesh)
 std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
   std::vector<Index> result;
 
+  auto folded = [this](Index a, Index b, Index c, Index d) {
+    geometry::Point3 pa = vertices_.row(a);
+    geometry::Point3 pb = vertices_.row(b);
+    geometry::Point3 pc = vertices_.row(c);
+    geometry::Point3 pd = vertices_.row(d);
+
+    return isosurface::folded(pa, pb, pc, pd);
+  };
+
+  auto edge_face_intersect = [this](Index a, Index b, Index p, Index q, Index r) {
+    geometry::Point3 pa = vertices_.row(a);
+    geometry::Point3 pb = vertices_.row(b);
+    geometry::Point3 pp = vertices_.row(p);
+    geometry::Point3 pq = vertices_.row(q);
+    geometry::Point3 pr = vertices_.row(r);
+
+    return segment3_triangle3_intersect(pa, pb, pp, pq, pr);
+  };
+
   auto n_vertices = vertices_.rows();
 #pragma omp parallel
   {
     std::vector<Index> local_result;
 
 #pragma omp for schedule(guided)
-    for (Index vi = 0; vi < n_vertices; vi++) {
-      const auto& fis = vf_map_.at(vi);
+    for (Index v = 0; v < n_vertices; v++) {
+      const auto& fis = vf_map_.at(v);
 
       auto n_faces = static_cast<Index>(fis.size());
       for (Index i = 0; i < n_faces - 1; i++) {
         auto fi = fis.at(i);
-        auto a = next_vertex(fi, vi);
-        auto b = prev_vertex(fi, vi);
+        auto a = next_vertex(fi, v);
+        auto b = prev_vertex(fi, v);
         for (Index j = i + 1; j < n_faces; j++) {
           auto fj = fis.at(j);
-          auto c = next_vertex(fj, vi);
-          auto d = prev_vertex(fj, vi);
+          auto c = next_vertex(fj, v);
+          auto d = prev_vertex(fj, v);
 
-          if (b == c || a == d || a == c || b == d) {
-            // Skip pairs of adjacent faces.
-            // The last two conditions are included for handling faces around non-manifold edges.
+          if (b == c) {
+            if (folded(v, b /* = c */, a, d)) {
+              local_result.push_back(fi);
+              local_result.push_back(fj);
+            }
             continue;
           }
 
-          if (edge_face_intersect({a, b}, fj) || edge_face_intersect({c, d}, fi)) {
+          if (a == d) {
+            if (folded(v, a /* = d */, b, c)) {
+              local_result.push_back(fi);
+              local_result.push_back(fj);
+            }
+            continue;
+          }
+
+          if (a == c || b == d) {
+            // Inconsistently oriented faces.
+            continue;
+          }
+
+          if (edge_face_intersect(a, b, v, c, d) || edge_face_intersect(c, d, v, a, b)) {
             local_result.push_back(fi);
             local_result.push_back(fj);
           }
@@ -135,18 +169,6 @@ Index MeshDefectsFinder::prev_vertex(Index fi, Index vi) const {
     return f(0);
   }
   return f(1);
-}
-
-bool MeshDefectsFinder::edge_face_intersect(const Edge& e, Index fi) const {
-  auto f = faces_.row(fi);
-
-  geometry::Point3 p = vertices_.row(e.a);
-  geometry::Point3 q = vertices_.row(e.b);
-  geometry::Point3 a = vertices_.row(f(0));
-  geometry::Point3 b = vertices_.row(f(1));
-  geometry::Point3 c = vertices_.row(f(2));
-
-  return segment3_triangle3_intersect(p, q, a, b, c);
 }
 
 }  // namespace polatory::isosurface

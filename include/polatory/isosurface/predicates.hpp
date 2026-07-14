@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/LU>
+#include <cmath>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
@@ -169,6 +170,48 @@ inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geomet
 
   return (abpq <= tiny && abqr <= tiny && abrp <= tiny) ||
          (abpq >= -tiny && abqr >= -tiny && abrp >= -tiny);
+}
+
+inline bool folded_2d(const geometry::Point3& a, const geometry::Point3& b,
+                      const geometry::Point3& p, const geometry::Point3& q, Index i, Index j,
+                      double scale) {
+  auto tiny = kTinyFactor * scale * scale;
+
+  geometry::Point2 a2(a(i), a(j));
+  geometry::Point2 b2(b(i), b(j));
+  geometry::Point2 p2(p(i), p(j));
+  geometry::Point2 q2(q(i), q(j));
+
+  auto abp = orient2d(a2, b2, p2);
+  auto abq = orient2d(a2, b2, q2);
+
+  if ((abp < -tiny && abq > tiny) || (abp > tiny && abq < -tiny)) {
+    return false;
+  }
+
+  return true;
+}
+
+// Tests if the triangles (a, b, p) and (a, b, q) are folded over each other.
+inline bool folded(const geometry::Point3& a, const geometry::Point3& b, const geometry::Point3& p,
+                   const geometry::Point3& q) {
+  geometry::Point3 lo = a.cwiseMin(b).cwiseMin(p).cwiseMin(q);
+  geometry::Point3 hi = a.cwiseMax(b).cwiseMax(p).cwiseMax(q);
+  auto scale = (hi - lo).norm();
+  auto tiny = kTinyFactor * scale * scale * scale;
+
+  Index k = 0;
+  (hi - lo).minCoeff(&k);
+  auto i = (k + 1) % 3;
+  auto j = (k + 2) % 3;
+
+  if (!folded_2d(a, b, p, q, i, j, scale)) {
+    return false;
+  }
+
+  auto abpq = orient3d(a, b, p, q);
+
+  return std::abs(abpq) <= tiny;
 }
 
 }  // namespace polatory::isosurface
