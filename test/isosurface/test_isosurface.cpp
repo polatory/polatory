@@ -342,18 +342,7 @@ TEST(isosurface, manifold) {
     ASSERT_TRUE(boundary_vertex);
   }
 
-  for (auto fi : defects.intersecting_faces()) {
-    auto f = mesh.faces().row(fi);
-    auto boundary_face = false;
-    for (auto k = 0; k < 3; k++) {
-      Point3 p = mesh.vertices().row(f(k));
-      if ((p.array() == min.array() || p.array() == max.array()).any()) {
-        boundary_face = true;
-        break;
-      }
-    }
-    ASSERT_TRUE(boundary_face);
-  }
+  ASSERT_EQ(0, defects.intersecting_faces().size());
 }
 
 TEST(isosurface, boundary_coordinates) {
