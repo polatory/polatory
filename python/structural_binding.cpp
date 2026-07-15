@@ -8,6 +8,7 @@
 #include <limits>
 #include <polatory/polatory.hpp>
 #include <polatory/structural/adaptive_domain_builder.hpp>
+#include <polatory/structural/adaptive_domain_orientation_average.hpp>
 #include <polatory/structural/domain_orientation_average.hpp>
 #include <vector>
 
@@ -147,7 +148,25 @@ PYBIND11_MODULE(_structural, m) {
            "points"_a,
            "inputs"_a,
            "trend_type"_a = TrendType::kStrongestAlongInputs,
-           "model_parameters"_a = std::vector<double>{});
+           "model_parameters"_a = std::vector<double>{})
+      .def(
+          "build_orientation_averaged",
+          [](const AdaptiveDomainBuilder& builder,
+             const geometry::Points3& points,
+             const std::vector<TrendInput>& inputs,
+             TrendType trend_type,
+             const std::vector<double>& model_parameters) {
+            return structural::build_adaptive_orientation_averaged_domains(
+                points, inputs, trend_type, model_parameters,
+                builder.overlap(), builder.orientation_consistency(),
+                builder.minimum_core_size(), builder.maximum_core_size(),
+                builder.minimum_core_points(), builder.minimum_support_points(),
+                builder.maximum_depth());
+          },
+          "points"_a,
+          "inputs"_a,
+          "trend_type"_a = TrendType::kStrongestAlongInputs,
+          "model_parameters"_a = std::vector<double>{});
 
   py::class_<StructuralInterpolant>(m, "StructuralInterpolant3")
       .def(py::init<const Model<3>&, double, double>(), "base_model"_a,
