@@ -82,18 +82,9 @@ inline bool segment3_segment3_intersect_1d(const geometry::Point3& a, const geom
 
 inline bool segment3_segment3_intersect_2d(const geometry::Point3& a, const geometry::Point3& b,
                                            const geometry::Point3& p, const geometry::Point3& q,
-                                           Index i, Index j, double scale) {
+                                           double scale, double abp, double abq, double apq,
+                                           double bpq) {
   auto tiny = kTinyFactor * scale * scale;
-
-  geometry::Point2 a2(a(i), a(j));
-  geometry::Point2 b2(b(i), b(j));
-  geometry::Point2 p2(p(i), p(j));
-  geometry::Point2 q2(q(i), q(j));
-
-  auto abp = orient2d(a2, b2, p2);
-  auto abq = orient2d(a2, b2, q2);
-  auto apq = orient2d(a2, p2, q2);
-  auto bpq = orient2d(b2, p2, q2);
 
   if ((abp < -tiny && abq < -tiny) || (abp > tiny && abq > tiny)) {
     return false;
@@ -135,9 +126,13 @@ inline bool segment3_triangle3_intersect_2d(const geometry::Point3& a, const geo
     return true;
   }
 
-  return segment3_segment3_intersect_2d(a, b, p, q, i, j, scale) ||
-         segment3_segment3_intersect_2d(a, b, q, r, i, j, scale) ||
-         segment3_segment3_intersect_2d(a, b, r, p, i, j, scale);
+  auto abp = orient2d(a2, b2, p2);
+  auto abq = orient2d(a2, b2, q2);
+  auto abr = orient2d(a2, b2, r2);
+
+  return segment3_segment3_intersect_2d(a, b, p, q, scale, abp, abq, apq, bpq) ||
+         segment3_segment3_intersect_2d(a, b, q, r, scale, abq, abr, aqr, bqr) ||
+         segment3_segment3_intersect_2d(a, b, r, p, scale, abr, abp, arp, brp);
 }
 
 inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geometry::Point3& b,
