@@ -44,9 +44,8 @@ namespace polatory::isosurface::snapper {
 //    a bare edge touch is allowed); else cascade to the next-nearest simplex, or drop.
 //
 // Points are processed by increasing distance to the mesh, so each shared feature is first claimed
-// by the candidate that moves it least (a tangential order would fold a far point's patch into an
-// overhang). A claimed vertex may still be re-moved to a farther point; any point knocked off the
-// surface by a placement is re-queued to snap again.
+// by the candidate that moves it least. A claimed vertex may still be re-moved to a farther point;
+// any point knocked off the surface by a placement is re-queued to snap again.
 class Snapper {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -256,28 +255,6 @@ class Snapper {
     }
   }
 
-  // Whether any emitted triangle (at its moved 3D positions) is degenerate -- collinear, a
-  // zero-area sliver the flat triangulation cannot see -- or folded over, its normal opposing the
-  // original face's. An acute feature up to vertical is kept; a fin there is under-resolution, not
-  // a fold.
-  bool degenerate_or_folded(const boost::unordered_flat_map<Index, Faces>& changed) {
-    auto normal = [](const Point3& a, const Point3& b, const Point3& c) {
-      return Vector3((b - a).cross(c - a));
-    };
-    for (const auto& [fi, faces] : changed) {
-      auto f = mesh_.face(fi);
-      auto n = normal(aq_.row(f(0)), aq_.row(f(1)), aq_.row(f(2)));
-      auto scale = n.norm();  // twice the original face's area
-      for (auto nf : faces.rowwise()) {
-        auto nn = normal(ap_.row(nf(0)), ap_.row(nf(1)), ap_.row(nf(2)));
-        if (nn.norm() <= 1e-9 * scale || nn.dot(n) < 0.0) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   Mesh emit() {
     Index nf_total = 0;
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
@@ -305,6 +282,20 @@ class Snapper {
     }
     vertices.conservativeResize(nv, Eigen::NoChange);
     return {std::move(vertices), std::move(faces)};
+  }
+
+  bool folded(const boost::unordered_flat_map<Index, Faces>& changed) {
+    for (const auto& [fi, faces] : changed) {
+      auto f = mesh_.face(fi);
+      auto n = triangle_normal(aq_.row(f(0)), aq_.row(f(1)), aq_.row(f(2)));
+      for (auto nf : faces.rowwise()) {
+        auto nn = triangle_normal(ap_.row(nf(0)), ap_.row(nf(1)), ap_.row(nf(2)));
+        if (nn.dot(n) < 0.0) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   // The 2D frame of the original (unsnapped) face fi.
@@ -706,7 +697,7 @@ class Snapper {
       }
     }
 
-    if (!simple || degenerate_or_folded(changed) || self_intersects(changed)) {
+    if (!simple || folded(changed) || self_intersects(changed)) {
       revert();
       return false;
     }
@@ -735,7 +726,7 @@ class Snapper {
     bool used = (faces.array() == new_v).any();  // false if the point did not project inside
     boost::unordered_flat_map<Index, Faces> changed{{fi, faces}};
 
-    if (!simple || !used || degenerate_or_folded(changed) || self_intersects(changed)) {
+    if (!simple || !used || folded(changed) || self_intersects(changed)) {
       revert();
       return false;
     }
@@ -763,7 +754,7 @@ class Snapper {
     for (auto fi : mesh_.vertex_faces(v)) {
       changed[fi] = patch_faces(fi);
     }
-    if (degenerate_or_folded(changed) || self_intersects(changed)) {
+    if (folded(changed) || self_intersects(changed)) {
       revert();
       return false;
     }

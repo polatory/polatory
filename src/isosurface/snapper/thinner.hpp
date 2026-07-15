@@ -122,11 +122,7 @@ class Thinner {
         continue;  // collapses to a degenerate sliver, dropped
       }
       Face nf = (f.array() == a).select(b, f);
-      auto nn = normal(nf);
-      if (!(nn.norm() > 0.0)) {
-        return false;  // the face would become degenerate
-      }
-      if (nn.dot(normal(f)) <= 0.0) {
+      if (normal(nf).dot(normal(f)) < 0.0) {
         return false;  // the face would flip
       }
       kept.push_back(nf);
