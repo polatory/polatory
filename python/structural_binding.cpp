@@ -169,8 +169,11 @@ PYBIND11_MODULE(_structural, m) {
           "model_parameters"_a = std::vector<double>{});
 
   py::class_<StructuralInterpolant>(m, "StructuralInterpolant3")
-      .def(py::init<const Model<3>&, double, double>(), "base_model"_a,
-           "outside_value"_a = -1.0, "blend_power"_a = 1.0)
+      .def(py::init<const Model<3>&, double, double, double>(),
+           "base_model"_a,
+           "outside_value"_a = -1.0,
+           "blend_power"_a = 1.0,
+           "alignment_strength"_a = 0.0)
       .def_property_readonly("bbox_min", [](const StructuralInterpolant& interpolant) {
         return Eigen::Vector3d(interpolant.bbox().min().transpose());
       })
@@ -178,6 +181,10 @@ PYBIND11_MODULE(_structural, m) {
         return Eigen::Vector3d(interpolant.bbox().max().transpose());
       })
       .def_property_readonly("blend_power", &StructuralInterpolant::blend_power)
+      .def_property_readonly("alignment_strength",
+                             &StructuralInterpolant::alignment_strength)
+      .def_property_readonly("domain_offsets",
+                             &StructuralInterpolant::domain_offsets)
       .def_property_readonly("num_domains", &StructuralInterpolant::num_domains)
       .def_property_readonly("outside_value", &StructuralInterpolant::outside_value)
       .def("fit", &StructuralInterpolant::fit, "points"_a, "values"_a,
