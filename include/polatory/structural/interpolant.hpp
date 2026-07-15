@@ -249,8 +249,15 @@ class StructuralInterpolant3 {
 
   static Points make_overlap_samples(const Point& overlap_min,
                                      const Point& overlap_max) {
-    constexpr std::array<double, 3> fractions{0.2, 0.5, 0.8};
-    Points samples(27, 3);
+    constexpr std::array<double, 7> fractions{
+        0.0714285714285714,
+        0.2142857142857143,
+        0.3571428571428571,
+        0.5,
+        0.6428571428571429,
+        0.7857142857142857,
+        0.9285714285714286};
+    Points samples(343, 3);
     Index sample_i = 0;
     for (auto fx : fractions) {
       for (auto fy : fractions) {
@@ -290,6 +297,19 @@ class StructuralInterpolant3 {
             domains_.at(static_cast<std::size_t>(j))
                 .interpolant->evaluate(samples, accuracy);
 
+        std::vector<double> level_distances(
+            static_cast<std::size_t>(samples.rows()));
+        for (Index sample_i = 0; sample_i < samples.rows(); ++sample_i) {
+          level_distances.at(static_cast<std::size_t>(sample_i)) =
+              std::abs(predictions_i(sample_i)) +
+              std::abs(predictions_j(sample_i));
+        }
+        auto middle = level_distances.begin() +
+                      static_cast<std::ptrdiff_t>(level_distances.size() / 2);
+        std::nth_element(level_distances.begin(), middle,
+                         level_distances.end());
+        auto level_scale = std::max(*middle, 1e-8);
+
         auto weighted_difference = 0.0;
         auto weight_sum = 0.0;
         for (Index sample_i = 0; sample_i < samples.rows(); ++sample_i) {
@@ -301,11 +321,12 @@ class StructuralInterpolant3 {
               domains_.at(static_cast<std::size_t>(j)).spec.bbox());
           auto overlap_weight = std::sqrt(wi * wj);
 
-          // Give the zero-level neighbourhood more influence while retaining
-          // information from the complete overlap volume.
+          auto level_distance =
+              std::abs(predictions_i(sample_i)) +
+              std::abs(predictions_j(sample_i));
+          auto normalized_level = level_distance / level_scale;
           auto level_weight =
-              1.0 / (1.0 + std::abs(predictions_i(sample_i)) +
-                     std::abs(predictions_j(sample_i)));
+              1.0 / (1.0 + normalized_level * normalized_level);
           auto weight = overlap_weight * level_weight;
           weighted_difference +=
               weight * (predictions_j(sample_i) -
