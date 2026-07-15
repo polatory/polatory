@@ -13,7 +13,7 @@ class MeshDefectsFinder {
   using Points = geometry::Points3;
 
  public:
-  explicit MeshDefectsFinder(const Mesh& mesh);
+  MeshDefectsFinder(const Mesh& mesh, double resolution);
 
   std::vector<Index> intersecting_faces() const;
 
@@ -28,7 +28,10 @@ class MeshDefectsFinder {
 
   const Points& vertices_;
   const Faces& faces_;
-  std::vector<std::vector<Index>> vf_map_;
+  double resolution_;
+  Index nv_;
+  Index nf_;
+  std::vector<std::vector<Index>> vf_;
 };
 
 }  // namespace polatory::isosurface

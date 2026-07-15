@@ -48,6 +48,7 @@ class VertexClusterer {
         f_(mesh.faces()),
         aniso_(aniso),
         aniso_inv_(aniso.inverse()),
+        resolution_(lattice.resolution()),
         nv_(v_.rows()),
         nf_(f_.rows()),
         vf_(nv_),
@@ -107,7 +108,7 @@ class VertexClusterer {
     while (true) {
       auto [mesh, vertex_ci] = clustered_mesh();
       mesh = remove_back_to_back(mesh);
-      MeshDefectsFinder defects(mesh);
+      MeshDefectsFinder defects(mesh, resolution_);
       auto vis = defects.singular_vertices();
       auto fis = defects.intersecting_faces();
       boost::unordered_flat_set<Index> flagged(vis.begin(), vis.end());
@@ -296,6 +297,7 @@ class VertexClusterer {
   Faces f_;
   Mat3 aniso_;
   Mat3 aniso_inv_;
+  double resolution_;
   Index nv_;
   Index nf_;
   std::vector<std::vector<Index>> vf_;

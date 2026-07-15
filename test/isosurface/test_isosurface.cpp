@@ -331,7 +331,7 @@ TEST(isosurface, manifold) {
 
   auto mesh = isosurf.generate(field_fn, 0.0);
 
-  MeshDefectsFinder defects(mesh);
+  MeshDefectsFinder defects(mesh, resolution);
 
   const auto& min = bbox.min();
   const auto& max = bbox.max();

@@ -3,20 +3,27 @@
 #include <algorithm>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
+#include <polatory/types.hpp>
+#include <utility>
 
 #include "dense_undirected_graph.hpp"
+#include "face_grid.hpp"
 #include "utility.hpp"
 
 namespace polatory::isosurface {
 
-MeshDefectsFinder::MeshDefectsFinder(const Mesh& mesh)
-    : vertices_(mesh.vertices()), faces_(mesh.faces()), vf_map_(vertices_.rows()) {
-  auto n_faces = faces_.rows();
-  for (Index fi = 0; fi < n_faces; fi++) {
+MeshDefectsFinder::MeshDefectsFinder(const Mesh& mesh, double resolution)
+    : vertices_(mesh.vertices()),
+      faces_(mesh.faces()),
+      resolution_(resolution),
+      nv_(vertices_.rows()),
+      nf_(faces_.rows()),
+      vf_(nv_) {
+  for (Index fi = 0; fi < nf_; fi++) {
     auto f = faces_.row(fi);
-    vf_map_.at(f(0)).push_back(fi);
-    vf_map_.at(f(1)).push_back(fi);
-    vf_map_.at(f(2)).push_back(fi);
+    vf_.at(f(0)).push_back(fi);
+    vf_.at(f(1)).push_back(fi);
+    vf_.at(f(2)).push_back(fi);
   }
 }
 
@@ -27,29 +34,35 @@ bool MeshDefectsFinder::intersect(Index fi, Index fj) const {
                              vertices_.row(b(0)), vertices_.row(b(1)), vertices_.row(b(2)));
 }
 
-// Only pairs of faces that share a vertex are checked.
 std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
-  std::vector<Index> result;
+  FaceGrid grid(resolution_, nf_);
+  for (Index fi = 0; fi < nf_; fi++) {
+    grid.insert(fi, vertices_(faces_.row(fi), kAll));
+  }
 
-  auto n_vertices = vertices_.rows();
+  std::vector<std::pair<Index, Index>> pairs;
+  for (Index fi = 0; fi < nf_; fi++) {
+    const auto& [lo, hi] = grid.box(fi);
+    grid.for_each(lo, hi, [&](Index fj) {
+      if (fi < fj) {
+        pairs.emplace_back(fi, fj);
+      }
+      return true;
+    });
+  }
+
+  std::vector<Index> result;
+  auto n_pairs = pairs.size();
 #pragma omp parallel
   {
     std::vector<Index> local_result;
 
 #pragma omp for schedule(guided)
-    for (Index v = 0; v < n_vertices; v++) {
-      const auto& fis = vf_map_.at(v);
-
-      auto n_faces = static_cast<Index>(fis.size());
-      for (Index i = 0; i < n_faces - 1; i++) {
-        auto fi = fis.at(i);
-        for (Index j = i + 1; j < n_faces; j++) {
-          auto fj = fis.at(j);
-          if (intersect(fi, fj)) {
-            local_result.push_back(fi);
-            local_result.push_back(fj);
-          }
-        }
+    for (std::size_t i = 0; i < n_pairs; i++) {
+      auto [fi, fj] = pairs.at(i);
+      if (intersect(fi, fj)) {
+        local_result.push_back(fi);
+        local_result.push_back(fj);
       }
     }
 
@@ -57,8 +70,8 @@ std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
     result.insert(result.end(), local_result.begin(), local_result.end());
   }
 
-  std::sort(result.begin(), result.end());
-  result.erase(std::unique(result.begin(), result.end()), result.end());
+  std::ranges::sort(result);
+  result.erase(std::ranges::unique(result).begin(), result.end());
 
   return result;
 }
@@ -66,14 +79,13 @@ std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
 std::vector<Index> MeshDefectsFinder::singular_vertices() const {
   std::vector<Index> result;
 
-  auto n_vertices = vertices_.rows();
 #pragma omp parallel
   {
     std::vector<Index> local_result;
 
 #pragma omp for schedule(guided)
-    for (Index vi = 0; vi < n_vertices; vi++) {
-      const auto& fis = vf_map_.at(vi);
+    for (Index vi = 0; vi < nv_; vi++) {
+      const auto& fis = vf_.at(vi);
 
       if (fis.empty()) {
         // An isolated vertex.
