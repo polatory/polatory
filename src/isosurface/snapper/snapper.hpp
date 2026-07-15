@@ -383,6 +383,12 @@ class Snapper {
     return patch.faces;
   }
 
+  // In the untransformed frame p_, where the defect finder judges defects.
+  bool intersect(const Face& a, const Face& b) const {
+    return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)), p_.row(b(1)),
+                               p_.row(b(2)));
+  }
+
   // The snap points the given patches honor; each patch's set is cached until it is reindexed.
   std::vector<Index> points_honored_by_patches(
       const boost::container::static_vector<Index, 2>& patches) {
@@ -464,16 +470,10 @@ class Snapper {
         changed_faces.push_back(f);
       }
     }
-    // The predicate runs in the untransformed frame (p_), where defects are judged, matching the
-    // defect finder; the broad-phase below stays in the aniso frame of mesh_.
-    auto crosses = [&](const Face& a, const Face& b) {
-      return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)),
-                                 p_.row(b(1)), p_.row(b(2)), num_shared_vertices(a, b));
-    };
     // Any two changed faces crossing each other.
     for (std::size_t i = 0; i + 1 < changed_faces.size(); i++) {
       for (std::size_t j = i + 1; j < changed_faces.size(); j++) {
-        if (crosses(changed_faces.at(i), changed_faces.at(j))) {
+        if (intersect(changed_faces.at(i), changed_faces.at(j))) {
           return true;
         }
       }
@@ -489,7 +489,7 @@ class Snapper {
           return false;  // skip a changed face
         }
         for (auto b : patch_faces(fj).rowwise()) {
-          if (crosses(a, b)) {
+          if (intersect(a, b)) {
             return true;
           }
         }

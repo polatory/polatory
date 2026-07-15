@@ -20,6 +20,8 @@ class MeshDefectsFinder {
   std::vector<Index> singular_vertices() const;
 
  private:
+  bool intersect(Index fi, Index fj) const;
+
   Index next_vertex(Index fi, Index vi) const;
 
   Index prev_vertex(Index fi, Index vi) const;

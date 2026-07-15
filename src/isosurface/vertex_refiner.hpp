@@ -104,10 +104,8 @@ class VertexRefiner {
       auto f = mesh_.face(fi);
       auto a = moved_face(fi, vi, new_p);
 
-      // Reject a move that inverts or collapses an incident face -- a fold across its opposite
-      // edge, which the pierce test below cannot see (it skips edge-adjacent pairs). n_old.n_new <=
-      // 0 covers both the flip (normal reverses) and the exact collapse (n_new = 0); a sliver that
-      // keeps its orientation still passes.
+      // Reject a face turning over on itself; the pairwise test below cannot see that. A sliver
+      // that keeps its orientation still passes.
       Vector3 n_old = triangle_normal(p_.row(f(0)), p_.row(f(1)), p_.row(f(2)));
       Vector3 n_new = triangle_normal(a.at(0), a.at(1), a.at(2));
       if (n_old.dot(n_new) <= 0.0) {
@@ -121,8 +119,7 @@ class VertexRefiner {
           return false;
         }
         auto b = moved_face(fj, vi, new_p);
-        auto shared = num_shared_vertices(f, mesh_.face(fj));
-        return triangles_intersect(a.at(0), a.at(1), a.at(2), b.at(0), b.at(1), b.at(2), shared);
+        return triangles_intersect(a.at(0), a.at(1), a.at(2), b.at(0), b.at(1), b.at(2));
       });
       if (hit) {
         return false;

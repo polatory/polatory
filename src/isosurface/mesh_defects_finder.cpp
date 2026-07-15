@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <polatory/isosurface/mesh_defects_finder.hpp>
-#include <polatory/isosurface/predicates.hpp>
 
 #include "dense_undirected_graph.hpp"
+#include "utility.hpp"
 
 namespace polatory::isosurface {
 
@@ -20,28 +20,16 @@ MeshDefectsFinder::MeshDefectsFinder(const Mesh& mesh)
   }
 }
 
-// Currently, only intersections between faces that share a single vertex are checked.
+bool MeshDefectsFinder::intersect(Index fi, Index fj) const {
+  auto a = faces_.row(fi);
+  auto b = faces_.row(fj);
+  return triangles_intersect(vertices_.row(a(0)), vertices_.row(a(1)), vertices_.row(a(2)),
+                             vertices_.row(b(0)), vertices_.row(b(1)), vertices_.row(b(2)));
+}
+
+// Only pairs of faces that share a vertex are checked.
 std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
   std::vector<Index> result;
-
-  auto folded = [this](Index a, Index b, Index c, Index d) {
-    geometry::Point3 pa = vertices_.row(a);
-    geometry::Point3 pb = vertices_.row(b);
-    geometry::Point3 pc = vertices_.row(c);
-    geometry::Point3 pd = vertices_.row(d);
-
-    return isosurface::folded(pa, pb, pc, pd);
-  };
-
-  auto edge_face_intersect = [this](Index a, Index b, Index p, Index q, Index r) {
-    geometry::Point3 pa = vertices_.row(a);
-    geometry::Point3 pb = vertices_.row(b);
-    geometry::Point3 pp = vertices_.row(p);
-    geometry::Point3 pq = vertices_.row(q);
-    geometry::Point3 pr = vertices_.row(r);
-
-    return segment3_triangle3_intersect(pa, pb, pp, pq, pr);
-  };
 
   auto n_vertices = vertices_.rows();
 #pragma omp parallel
@@ -55,35 +43,9 @@ std::vector<Index> MeshDefectsFinder::intersecting_faces() const {
       auto n_faces = static_cast<Index>(fis.size());
       for (Index i = 0; i < n_faces - 1; i++) {
         auto fi = fis.at(i);
-        auto a = next_vertex(fi, v);
-        auto b = prev_vertex(fi, v);
         for (Index j = i + 1; j < n_faces; j++) {
           auto fj = fis.at(j);
-          auto c = next_vertex(fj, v);
-          auto d = prev_vertex(fj, v);
-
-          if (b == c) {
-            if (folded(v, b /* = c */, a, d)) {
-              local_result.push_back(fi);
-              local_result.push_back(fj);
-            }
-            continue;
-          }
-
-          if (a == d) {
-            if (folded(v, a /* = d */, b, c)) {
-              local_result.push_back(fi);
-              local_result.push_back(fj);
-            }
-            continue;
-          }
-
-          if (a == c || b == d) {
-            // Inconsistently oriented faces.
-            continue;
-          }
-
-          if (edge_face_intersect(a, b, v, c, d) || edge_face_intersect(c, d, v, a, b)) {
+          if (intersect(fi, fj)) {
             local_result.push_back(fi);
             local_result.push_back(fj);
           }

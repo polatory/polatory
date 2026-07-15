@@ -97,7 +97,7 @@ class Thinner {
     auto a = mesh_.from(h);  // the dropped vertex
     auto b = mesh_.to(h);    // the kept vertex
     if (!snapped_.at(b)) {
-      return false;  // a is snapped (only snapped vertices collapse); require b snapped too
+      return false;  // both endpoints must be snap points, and a already is
     }
     auto c = mesh_.apex(h);
     auto d = mesh_.apex(mesh_.opposite(h));
@@ -174,7 +174,7 @@ class Thinner {
       Point3 lo = ps.colwise().minCoeff();
       Point3 hi = ps.colwise().maxCoeff();
       if (face_grid_.any_of(lo, hi, [&](Index fi) {
-            return !star.contains(fi) && intersects(nf, mesh_.face(fi));
+            return !star.contains(fi) && intersect(nf, mesh_.face(fi));
           })) {
         return false;
       }
@@ -212,8 +212,8 @@ class Thinner {
     return dist2(a_points_.row(i), f) <= snap_tols2_(i);
   }
 
-  // Every nearby snap point held by a removed face -- not just the dropped vertex -- must stay
-  // within tolerance, else a greedy chain drifts already-dropped points off the surface.
+  // Every nearby snap point held by a removed face must stay within tolerance, not only the dropped
+  // vertex. Otherwise a greedy chain drifts already-dropped points off the surface.
   bool honors_ok(const boost::unordered_flat_set<Index>& star, const std::vector<Face>& kept,
                  const boost::unordered_flat_set<Index>& nearby) const {
     if (snap_grid_.empty()) {
@@ -247,9 +247,9 @@ class Thinner {
 
   // The self-intersection guard runs in the untransformed frame (p_), where defects are judged,
   // matching the defect finder.
-  bool intersects(const Face& a, const Face& b) const {
+  bool intersect(const Face& a, const Face& b) const {
     return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)), p_.row(b(1)),
-                               p_.row(b(2)), num_shared_vertices(a, b));
+                               p_.row(b(2)));
   }
 
   Vector3 normal(const Face& f) const {

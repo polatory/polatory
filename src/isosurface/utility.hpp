@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <array>
+#include <boost/container/static_vector.hpp>
 #include <cmath>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
@@ -102,29 +103,42 @@ inline geometry::Vector3 triangle_normal(const geometry::Point3& a, const geomet
   return geometry::Vector3((b - a).cross(c - a));
 }
 
-inline int num_shared_vertices(const Face& a, const Face& b) {
-  int n = 0;
-  for (auto i = 0; i < 3; i++) {
-    for (auto j = 0; j < 3; j++) {
-      if (a(i) == b(j)) {
-        n++;
+// Tests if triangles a and b possibly intersect besides the simplices they share.
+inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Point3& a1,
+                                const geometry::Point3& a2, const geometry::Point3& b0,
+                                const geometry::Point3& b1, const geometry::Point3& b2) {
+  std::array<geometry::Point3, 3> a{a0, a1, a2};
+  std::array<geometry::Point3, 3> b{b0, b1, b2};
+
+  // Vertices shared by position, as indices into a and into b.
+  boost::container::static_vector<Index, 3> as;
+  boost::container::static_vector<Index, 3> bs;
+  for (Index i = 0; i < 3; i++) {
+    for (Index j = 0; j < 3; j++) {
+      if (a.at(i) == b.at(j)) {
+        as.push_back(i);
+        bs.push_back(j);
       }
     }
   }
-  return n;
-}
 
-// Whether triangles a, b intersect, by the defect finder's segment-triangle (edge-pierce) test: an
-// edge of one piercing the other, skipping any edge that runs through a vertex shared with the
-// other triangle (it only bare-touches there). That skip alone yields the three cases -- 0 shared:
-// all six edges; 1 shared: the two opposite edges; 2 or 3 shared: every edge is skipped, so no
-// overlap (an edge-adjacent fold, should one exist, is the caller's to catch).
-inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Point3& a1,
-                                const geometry::Point3& a2, const geometry::Point3& b0,
-                                const geometry::Point3& b1, const geometry::Point3& b2,
-                                int shared) {
-  if (shared >= 2) {
+  if (as.size() >= 3) {
     return false;
+  }
+
+  if (as.size() == 2) {
+    Index a_apex = 3 - as.at(0) - as.at(1);
+    Index b_apex = 3 - bs.at(0) - bs.at(1);
+    return folded(a.at(as.at(0)), a.at(as.at(1)), a.at(a_apex), b.at(b_apex));
+  }
+
+  if (as.size() == 1) {
+    Index i = (as.at(0) + 1) % 3;
+    Index j = (as.at(0) + 2) % 3;
+    Index k = (bs.at(0) + 1) % 3;
+    Index l = (bs.at(0) + 2) % 3;
+    return segment3_triangle3_intersect(a.at(i), a.at(j), b0, b1, b2) ||
+           segment3_triangle3_intersect(b.at(k), b.at(l), a0, a1, a2);
   }
 
   geometry::Point3 alo = a0.cwiseMin(a1).cwiseMin(a2);
@@ -135,24 +149,15 @@ inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Poin
     return false;
   }
 
-  std::array<geometry::Point3, 3> a{a0, a1, a2};
-  std::array<geometry::Point3, 3> b{b0, b1, b2};
-  auto in = [](const geometry::Point3& p, const std::array<geometry::Point3, 3>& t) {
-    return p == t.at(0) || p == t.at(1) || p == t.at(2);
-  };
-  auto pierces = [&](const std::array<geometry::Point3, 3>& f,
-                     const std::array<geometry::Point3, 3>& g) {
-    for (auto k = 0; k < 3; k++) {
-      if (in(f.at(k), g) || in(f.at((k + 1) % 3), g)) {
-        continue;
-      }
-      if (segment3_triangle3_intersect(f.at(k), f.at((k + 1) % 3), g.at(0), g.at(1), g.at(2))) {
-        return true;
-      }
+  for (Index i = 0; i < 3; i++) {
+    Index j = (i + 1) % 3;
+    if (segment3_triangle3_intersect(a.at(i), a.at(j), b0, b1, b2) ||
+        segment3_triangle3_intersect(b.at(i), b.at(j), a0, a1, a2)) {
+      return true;
     }
-    return false;
-  };
-  return pierces(a, b) || pierces(b, a);
+  }
+
+  return false;
 }
 
 }  // namespace polatory::isosurface

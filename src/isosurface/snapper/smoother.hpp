@@ -23,14 +23,14 @@
 
 namespace polatory::isosurface::snapper {
 
-// Post-process smoothing by edge flips: flip an interior edge while it lowers the total bend
-// (summed dihedral). A flip changes only its five edges, so the local drop equals the global drop
-// and the mesh descends to a local minimum; vertices never move, so snapped points stay vertices. A
-// priority queue takes the largest improvement first, re-scoring each popped edge (a nearby flip
-// may have staled it). Geometry is in the aniso-transformed frame; the output is untransformed. A
-// flip is rejected if its new diagonal exceeds the length cap (the base lattice's longest edge),
-// self-intersects, or pushes the surface beyond a snap tolerance (protecting points honored within
-// tolerance with no vertex there).
+// Post-process smoothing by edge flips. Flip an interior edge whenever doing so lowers the total
+// bend, meaning the summed dihedral. A flip changes only its five edges, so the local drop equals
+// the global drop and the mesh descends to a local minimum. Vertices never move, so snapped points
+// stay vertices. A priority queue takes the largest improvement first and re-scores each popped
+// edge, since a nearby flip may have staled it. Geometry is in the aniso-transformed frame and the
+// output is untransformed. A flip is rejected if its new diagonal exceeds the length cap, which is
+// the base lattice's longest edge, if it self-intersects, or if it pushes the surface beyond a snap
+// tolerance and would abandon a point that is honored within tolerance with no vertex there.
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -162,12 +162,12 @@ class Smoother {
     Point3 lo = ps.colwise().minCoeff();
     Point3 hi = ps.colwise().maxCoeff();
     return face_grid_.any_of(lo, hi, [&](Index gi) {
-      return gi != fi0 && gi != fi1 && overlaps(new_f, mesh_.face(gi));
+      return gi != fi0 && gi != fi1 && intersect(new_f, mesh_.face(gi));
     });
   }
 
-  // Whether the flip would create a degenerate triangle -- its area collapsed to almost nothing next
-  // to the faces it replaces.
+  // Whether the flip would create a degenerate triangle -- its area collapsed to almost nothing
+  // next to the faces it replaces.
   bool creates_degenerate(const Flip& fl) const {
     auto scale = std::max(normal(mesh_.face(fl.fi0)).norm(), normal(mesh_.face(fl.fi1)).norm());
     return normal(fl.new_f0()).norm() <= kDegenerateAreaRatio * scale ||
@@ -245,17 +245,10 @@ class Smoother {
     return triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
-  // Whether the two faces intersect, via triangles_intersect (the defect finder's edge-pierce test)
-  // in the untransformed frame -- the same predicate and frame the finder uses, so the guard
-  // rejects exactly what it would flag. Edge-adjacent pairs (shared >= 2) legitimately meet at
-  // their shared edge, so they are not treated as intersecting.
-  bool overlaps(const Face& a, const Face& b) const {
-    auto shared = num_shared_vertices(a, b);
-    if (shared >= 2) {
-      return false;
-    }
+  // p_ is the untransformed frame, where the defect finder judges.
+  bool intersect(const Face& a, const Face& b) const {
     return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)), p_.row(b(1)),
-                               p_.row(b(2)), shared);
+                               p_.row(b(2)));
   }
 
   // The candidate flip of edge e if admissible (interior, new diagonal absent and non-degenerate,
