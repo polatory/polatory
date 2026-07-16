@@ -141,14 +141,6 @@ inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Poin
            segment3_triangle3_intersect(b.at(k), b.at(l), a0, a1, a2);
   }
 
-  geometry::Point3 alo = a0.cwiseMin(a1).cwiseMin(a2);
-  geometry::Point3 ahi = a0.cwiseMax(a1).cwiseMax(a2);
-  geometry::Point3 blo = b0.cwiseMin(b1).cwiseMin(b2);
-  geometry::Point3 bhi = b0.cwiseMax(b1).cwiseMax(b2);
-  if ((ahi.array() < blo.array()).any() || (bhi.array() < alo.array()).any()) {
-    return false;
-  }
-
   return triangle3_triangle3_intersect(a0, a1, a2, b0, b1, b2);
 }
 

@@ -166,6 +166,14 @@ inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geomet
 inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geometry::Point3& b,
                                          const geometry::Point3& p, const geometry::Point3& q,
                                          const geometry::Point3& r) {
+  geometry::Point3 ab_lo = a.cwiseMin(b);
+  geometry::Point3 ab_hi = a.cwiseMax(b);
+  geometry::Point3 pqr_lo = p.cwiseMin(q).cwiseMin(r);
+  geometry::Point3 pqr_hi = p.cwiseMax(q).cwiseMax(r);
+  if ((ab_hi.array() < pqr_lo.array()).any() || (pqr_hi.array() < ab_lo.array()).any()) {
+    return false;
+  }
+
   auto apqr = orient3d(a, p, q, r);
   auto bpqr = orient3d(b, p, q, r);
 
@@ -175,6 +183,14 @@ inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geomet
 inline bool triangle3_triangle3_intersect(const geometry::Point3& a, const geometry::Point3& b,
                                           const geometry::Point3& c, const geometry::Point3& p,
                                           const geometry::Point3& q, const geometry::Point3& r) {
+  geometry::Point3 abc_lo = a.cwiseMin(b).cwiseMin(c);
+  geometry::Point3 abc_hi = a.cwiseMax(b).cwiseMax(c);
+  geometry::Point3 pqr_lo = p.cwiseMin(q).cwiseMin(r);
+  geometry::Point3 pqr_hi = p.cwiseMax(q).cwiseMax(r);
+  if ((abc_hi.array() < pqr_lo.array()).any() || (pqr_hi.array() < abc_lo.array()).any()) {
+    return false;
+  }
+
   auto apqr = orient3d(a, p, q, r);
   auto bpqr = orient3d(b, p, q, r);
   auto cpqr = orient3d(c, p, q, r);
