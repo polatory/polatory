@@ -122,26 +122,25 @@ inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Poin
     }
   }
 
-  if (as.size() >= 3) {
-    return false;
+  switch (as.size()) {
+    case 0:
+      return triangle3_triangle3_intersect(a0, a1, a2, b0, b1, b2);
+    case 1: {
+      Index i = (as.at(0) + 1) % 3;
+      Index j = (as.at(0) + 2) % 3;
+      Index k = (bs.at(0) + 1) % 3;
+      Index l = (bs.at(0) + 2) % 3;
+      return segment3_triangle3_intersect(a.at(i), a.at(j), b0, b1, b2) ||
+             segment3_triangle3_intersect(b.at(k), b.at(l), a0, a1, a2);
+    }
+    case 2: {
+      Index a_apex = 3 - as.at(0) - as.at(1);
+      Index b_apex = 3 - bs.at(0) - bs.at(1);
+      return folded(a.at(as.at(0)), a.at(as.at(1)), a.at(a_apex), b.at(b_apex));
+    }
+    default:
+      return false;
   }
-
-  if (as.size() == 2) {
-    Index a_apex = 3 - as.at(0) - as.at(1);
-    Index b_apex = 3 - bs.at(0) - bs.at(1);
-    return folded(a.at(as.at(0)), a.at(as.at(1)), a.at(a_apex), b.at(b_apex));
-  }
-
-  if (as.size() == 1) {
-    Index i = (as.at(0) + 1) % 3;
-    Index j = (as.at(0) + 2) % 3;
-    Index k = (bs.at(0) + 1) % 3;
-    Index l = (bs.at(0) + 2) % 3;
-    return segment3_triangle3_intersect(a.at(i), a.at(j), b0, b1, b2) ||
-           segment3_triangle3_intersect(b.at(k), b.at(l), a0, a1, a2);
-  }
-
-  return triangle3_triangle3_intersect(a0, a1, a2, b0, b1, b2);
 }
 
 }  // namespace polatory::isosurface
