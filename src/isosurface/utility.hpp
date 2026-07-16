@@ -149,15 +149,7 @@ inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Poin
     return false;
   }
 
-  for (Index i = 0; i < 3; i++) {
-    Index j = (i + 1) % 3;
-    if (segment3_triangle3_intersect(a.at(i), a.at(j), b0, b1, b2) ||
-        segment3_triangle3_intersect(b.at(i), b.at(j), a0, a1, a2)) {
-      return true;
-    }
-  }
-
-  return false;
+  return triangle3_triangle3_intersect(a0, a1, a2, b0, b1, b2);
 }
 
 }  // namespace polatory::isosurface

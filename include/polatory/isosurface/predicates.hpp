@@ -4,6 +4,7 @@
 #include <Eigen/Geometry>
 #include <Eigen/LU>
 #include <cmath>
+#include <limits>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 
@@ -12,8 +13,6 @@ namespace polatory::isosurface {
 // Inexact geometric predicates.
 
 inline constexpr double kTinyFactor = 1e-12;
-
-inline double orient1d(double a, double b) { return a - b; }
 
 // Twice the signed area of triangle (a, b, c); positive iff (a, b, c) is counterclockwise.
 // The magnitude is meaningful and scales like length squared.
@@ -55,25 +54,23 @@ inline double incircle(const geometry::Point2& a, const geometry::Point2& b,
 }
 
 inline bool segment3_segment3_intersect_1d(const geometry::Point3& a, const geometry::Point3& b,
-                                           const geometry::Point3& p, const geometry::Point3& q,
-                                           double scale) {
-  auto tiny = kTinyFactor * scale;
-
+                                           const geometry::Point3& p, const geometry::Point3& q) {
   geometry::Point3 lo = a.cwiseMin(b).cwiseMin(p).cwiseMin(q);
   geometry::Point3 hi = a.cwiseMax(b).cwiseMax(p).cwiseMax(q);
   Index i = 0;
   (hi - lo).maxCoeff(&i);
 
-  auto ap = orient1d(a(i), p(i));
-  auto aq = orient1d(a(i), q(i));
-  auto bp = orient1d(b(i), p(i));
-  auto bq = orient1d(b(i), q(i));
+  auto nan = std::numeric_limits<double>::quiet_NaN();
+  auto ap = a(i) < p(i) ? -1.0 : a(i) == p(i) ? 0.0 : a(i) > p(i) ? 1.0 : nan;
+  auto aq = a(i) < q(i) ? -1.0 : a(i) == q(i) ? 0.0 : a(i) > q(i) ? 1.0 : nan;
+  auto bp = b(i) < p(i) ? -1.0 : b(i) == p(i) ? 0.0 : b(i) > p(i) ? 1.0 : nan;
+  auto bq = b(i) < q(i) ? -1.0 : b(i) == q(i) ? 0.0 : b(i) > q(i) ? 1.0 : nan;
 
-  if (ap < -tiny && aq < -tiny && bp < -tiny && bq < -tiny) {
+  if (ap < 0.0 && aq < 0.0 && bp < 0.0 && bq < 0.0) {
     return false;
   }
 
-  if (ap > tiny && aq > tiny && bp > tiny && bq > tiny) {
+  if (ap > 0.0 && aq > 0.0 && bp > 0.0 && bq > 0.0) {
     return false;
   }
 
@@ -82,8 +79,10 @@ inline bool segment3_segment3_intersect_1d(const geometry::Point3& a, const geom
 
 inline bool segment3_segment3_intersect_2d(const geometry::Point3& a, const geometry::Point3& b,
                                            const geometry::Point3& p, const geometry::Point3& q,
-                                           double scale, double abp, double abq, double apq,
-                                           double bpq) {
+                                           double abp, double abq, double apq, double bpq) {
+  auto lo = a.cwiseMin(b).cwiseMin(p).cwiseMin(q);
+  auto hi = a.cwiseMax(b).cwiseMax(p).cwiseMax(q);
+  auto scale = (hi - lo).norm();
   auto tiny = kTinyFactor * scale * scale;
 
   if ((abp < -tiny && abq < -tiny) || (abp > tiny && abq > tiny)) {
@@ -94,7 +93,7 @@ inline bool segment3_segment3_intersect_2d(const geometry::Point3& a, const geom
     return false;
   }
 
-  return segment3_segment3_intersect_1d(a, b, p, q, scale);
+  return segment3_segment3_intersect_1d(a, b, p, q);
 }
 
 inline bool segment3_triangle3_intersect_2d(const geometry::Point3& a, const geometry::Point3& b,
@@ -130,21 +129,18 @@ inline bool segment3_triangle3_intersect_2d(const geometry::Point3& a, const geo
   auto abq = orient2d(a2, b2, q2);
   auto abr = orient2d(a2, b2, r2);
 
-  return segment3_segment3_intersect_2d(a, b, p, q, scale, abp, abq, apq, bpq) ||
-         segment3_segment3_intersect_2d(a, b, q, r, scale, abq, abr, aqr, bqr) ||
-         segment3_segment3_intersect_2d(a, b, r, p, scale, abr, abp, arp, brp);
+  return segment3_segment3_intersect_2d(a, b, p, q, abp, abq, apq, bpq) ||
+         segment3_segment3_intersect_2d(a, b, q, r, abq, abr, aqr, bqr) ||
+         segment3_segment3_intersect_2d(a, b, r, p, abr, abp, arp, brp);
 }
 
 inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geometry::Point3& b,
                                          const geometry::Point3& p, const geometry::Point3& q,
-                                         const geometry::Point3& r) {
+                                         const geometry::Point3& r, double apqr, double bpqr) {
   geometry::Point3 lo = a.cwiseMin(b).cwiseMin(p).cwiseMin(q).cwiseMin(r);
   geometry::Point3 hi = a.cwiseMax(b).cwiseMax(p).cwiseMax(q).cwiseMax(r);
   auto scale = (hi - lo).norm();
   auto tiny = kTinyFactor * scale * scale * scale;
-
-  auto apqr = orient3d(a, p, q, r);
-  auto bpqr = orient3d(b, p, q, r);
 
   if ((apqr < -tiny && bpqr < -tiny) || (apqr > tiny && bpqr > tiny)) {
     return false;
@@ -165,6 +161,33 @@ inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geomet
 
   return (abpq <= tiny && abqr <= tiny && abrp <= tiny) ||
          (abpq >= -tiny && abqr >= -tiny && abrp >= -tiny);
+}
+
+inline bool segment3_triangle3_intersect(const geometry::Point3& a, const geometry::Point3& b,
+                                         const geometry::Point3& p, const geometry::Point3& q,
+                                         const geometry::Point3& r) {
+  auto apqr = orient3d(a, p, q, r);
+  auto bpqr = orient3d(b, p, q, r);
+
+  return segment3_triangle3_intersect(a, b, p, q, r, apqr, bpqr);
+}
+
+inline bool triangle3_triangle3_intersect(const geometry::Point3& a, const geometry::Point3& b,
+                                          const geometry::Point3& c, const geometry::Point3& p,
+                                          const geometry::Point3& q, const geometry::Point3& r) {
+  auto apqr = orient3d(a, p, q, r);
+  auto bpqr = orient3d(b, p, q, r);
+  auto cpqr = orient3d(c, p, q, r);
+  auto pabc = orient3d(p, a, b, c);
+  auto qabc = orient3d(q, a, b, c);
+  auto rabc = orient3d(r, a, b, c);
+
+  return segment3_triangle3_intersect(a, b, p, q, r, apqr, bpqr) ||
+         segment3_triangle3_intersect(b, c, p, q, r, bpqr, cpqr) ||
+         segment3_triangle3_intersect(c, a, p, q, r, cpqr, apqr) ||
+         segment3_triangle3_intersect(p, q, a, b, c, pabc, qabc) ||
+         segment3_triangle3_intersect(q, r, a, b, c, qabc, rabc) ||
+         segment3_triangle3_intersect(r, p, a, b, c, rabc, pabc);
 }
 
 inline bool folded_2d(const geometry::Point3& a, const geometry::Point3& b,
