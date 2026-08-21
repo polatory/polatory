@@ -2,22 +2,29 @@
 
 library(gstat)
 
-args <- commandArgs(trailingOnly=T)
+args <- commandArgs(trailingOnly = TRUE)
 
-dataFile <- args[1]
-dataValueFile <- args[2]
-newdataFile <- args[3]
-newdataValueFile <- args[4]
+data_file <- args[1]
+pred_pts_file <- args[2]
+pred_file <- args[3]
 
-data <- read.table(dataFile, col.names=c("x", "y", "z"))
-data <- cbind(data, read.table(dataValueFile, col.names=c('value')))
-newdata <- read.table(newdataFile, col.names=c("x", "y", "z"))
+data <- read.table(data_file, col.names = c("x", "y", "z", "value"))
+pred <- read.table(pred_pts_file, col.names = c("x", "y", "z"))
 
-model <- vgm(1.0, "Exp", 0.02)
+system.time(
+  k <- krige(
+    formula = value ~ 1,
+    locations = ~ x + y + z,
+    data = data,
+    newdata = pred,
+    model = vgm(1.0, "Exp", 0.02),
+    beta = 0.0
+  )
+)
 
-# Ordinary kriging.
-k <- krige(value~1, loc=~x+y+z,
-           data=data, newdata=newdata,
-           model=model)
-
-write.table(k[, c("var1.pred")], newdataValueFile, row.names=F, col.names=F)
+write.table(
+  k[, c("x", "y", "z", "var1.pred")],
+  pred_file,
+  row.names = FALSE,
+  col.names = FALSE
+)

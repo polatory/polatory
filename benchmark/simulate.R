@@ -2,15 +2,28 @@
 
 library(gstat)
 
-args <- commandArgs(trailingOnly=T)
+args <- commandArgs(trailingOnly = TRUE)
 
-dataFile <- args[1]
-dataValueFile <- args[2]
+data_file <- args[1]
 
-data <- read.table(dataFile, col.names=c("x", "y", "z"))
+data <- read.table(data_file, col.names = c("x", "y", "z"))
 
-g <- gstat(formula=value~1, loc=~x+y+z,
-           model=vgm(1.0, "Exp", 0.02), beta=0.0,
-           nmax=20, dummy=T)
-sim <- predict(g, newdata=data, nsim=1)
-write.table(sim[, c("sim1")], dataValueFile, row.names=F, col.names=F)
+set.seed(0)
+k <- krige(
+  formula = value ~ 1,
+  locations = ~ x + y + z,
+  data = NULL,
+  newdata = data,
+  model = vgm(1.0, "Exp", 0.02),
+  beta = 0.0,
+  nmax = 20,
+  nsim = 1,
+  dummy = TRUE
+)
+
+write.table(
+  k[, c("x", "y", "z", "sim1")],
+  data_file,
+  row.names = FALSE,
+  col.names = FALSE
+)
