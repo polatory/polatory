@@ -46,18 +46,21 @@ std::pair<polatory::geometry::Points<Dim>, polatory::VecX> sample_data(
     polatory::Index& n_points, const polatory::Mat<Dim>& aniso) {
   using polatory::Index;
   using polatory::VecX;
+  using polatory::geometry::transform_points;
   using polatory::point_cloud::DistanceFilter;
-  using Point = polatory::geometry::Point<Dim>;
+  using Mat = polatory::Mat<Dim>;
   using Points = polatory::geometry::Points<Dim>;
 
-  Points points = Points::Random(n_points, Dim);
-  points = DistanceFilter(points).filter(1e-6)(points);
-  n_points = points.rows();
+  Points a_points = Points::Random(n_points, Dim);
+  a_points = DistanceFilter(a_points).filter(1e-6)(a_points);
+  n_points = a_points.rows();
+
+  Mat aniso_inv = aniso.inverse();
+  Points points = transform_points<Dim>(aniso_inv, a_points);
 
   VecX values = VecX::Zero(n_points);
   for (Index i = 0; i < n_points; i++) {
-    auto p = points.row(i);
-    Point ap = p * aniso.transpose();
+    auto ap = a_points.row(i);
     for (auto j = 0; j < Dim; j++) {
       values(i) += std::sin(std::numbers::pi * ap(j));
     }
@@ -70,19 +73,22 @@ template <int Dim>
 std::pair<polatory::geometry::Points<Dim>, polatory::geometry::Vectors<Dim>> sample_grad_data(
     polatory::Index& n_points, const polatory::Mat<Dim>& aniso) {
   using polatory::Index;
+  using polatory::geometry::transform_points;
   using polatory::point_cloud::DistanceFilter;
-  using Point = polatory::geometry::Point<Dim>;
+  using Mat = polatory::Mat<Dim>;
   using Points = polatory::geometry::Points<Dim>;
   using Vectors = polatory::geometry::Vectors<Dim>;
 
-  Points points = Points::Random(n_points, Dim);
-  points = DistanceFilter(points).filter(1e-6)(points);
-  n_points = points.rows();
+  Points a_points = Points::Random(n_points, Dim);
+  a_points = DistanceFilter(a_points).filter(1e-6)(a_points);
+  n_points = a_points.rows();
+
+  Mat aniso_inv = aniso.inverse();
+  Points points = transform_points<Dim>(aniso_inv, a_points);
 
   Vectors grads(n_points, Dim);
   for (Index i = 0; i < n_points; i++) {
-    auto p = points.row(i);
-    Point ap = p * aniso.transpose();
+    auto ap = a_points.row(i);
     for (auto j = 0; j < Dim; j++) {
       grads(i, j) = std::numbers::pi * std::cos(std::numbers::pi * ap(j));
     }
