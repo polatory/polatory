@@ -23,7 +23,7 @@ class DomainDivider {
   using Point = geometry::Point<kDim>;
   using Points = geometry::Points<kDim>;
 
-  static constexpr double kOverlapQuota = 0.5;
+  static constexpr double kOverlapQuota = 0.75;
   static constexpr Index kMaxLeafSize = 1024;
 
  public:

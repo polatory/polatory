@@ -210,23 +210,6 @@ class RasPreconditioner : public krylov::LinearOperator {
       report_residual(0, v, weights_total);
     }
 
-    for (auto level = 1; level < n_levels_ - 1; level++) {
-      {
-        VecX weights = solve(level, residuals);
-        update_residuals(level, n_levels_ - 1, weights, residuals);
-        weights_total += weights;
-        orthogonalize(weights_total, residuals);
-        report_residual(level, v, weights_total);
-      }
-
-      {
-        VecX weights = solve(0, residuals);
-        update_residuals(0, n_levels_ - 1, weights, residuals);
-        weights_total += weights;
-        report_residual(0, v, weights_total);
-      }
-    }
-
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       {
         VecX weights = solve(level, residuals);
@@ -260,9 +243,8 @@ class RasPreconditioner : public krylov::LinearOperator {
           std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
           std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), kAll),
                                 grad_points_(grad_point_idcs_.at(src_level), kAll), bbox_));
-      evaluator_.at(key).set_target_points(
-          points_(point_idcs_.at(trg_level), kAll),
-          grad_points_(grad_point_idcs_.at(trg_level), kAll));
+      evaluator_.at(key).set_target_points(points_(point_idcs_.at(trg_level), kAll),
+                                           grad_points_(grad_point_idcs_.at(trg_level), kAll));
     }
 
     return evaluator_.at(key);
