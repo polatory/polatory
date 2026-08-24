@@ -25,7 +25,7 @@ class CMakeBuild(build_ext):
             )
         ).resolve()
         if not vswhere.exists():
-            raise EnvironmentError("vswhere.exe not found at: %s", vswhere)
+            raise OSError("vswhere.exe not found at: %s", vswhere)
 
         try:
             vs_dir = Path(
@@ -37,11 +37,11 @@ class CMakeBuild(build_ext):
                 ).stdout.rstrip()
             ).resolve()
         except subprocess.CalledProcessError:
-            raise EnvironmentError("MSVC is not installed.")
+            raise OSError("MSVC is not installed.")
         vcvars64 = (vs_dir / "VC/Auxiliary/Build/vcvars64.bat").resolve()
 
         output = subprocess.run(
-            f'"{vcvars64}" -vcvars_ver=14.39 && set', stdout=subprocess.PIPE, check=True, text=True
+            f'"{vcvars64}" && set', stdout=subprocess.PIPE, check=True, text=True
         ).stdout
 
         env = {}
