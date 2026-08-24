@@ -1,73 +1,137 @@
-// https://github.com/flann-lib/flann/issues/386
-using pop_t = unsigned long long;
-
 #include <algorithm>
 #include <cmath>
-#include <flann/flann.hpp>
+#include <functional>
+#include <iterator>
+#include <limits>
+#include <memory>
+#include <nanoflann.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
 #include <stdexcept>
+#include <vector>
 
 namespace polatory::point_cloud {
 
 template <int Dim>
 class KdTree<Dim>::Impl {
-  using FlannIndex = flann::Index<flann::L2<double>>;
   using Point = geometry::Point<Dim>;
   using Points = geometry::Points<Dim>;
+  using NanoflannIndex =
+      nanoflann::KDTreeEigenMatrixAdaptor<Points, Dim, nanoflann::metric_L2_Simple>;
 
  public:
-  explicit Impl(const Points& points) {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    flann::Matrix<double> points_mat(const_cast<double*>(points.data()), points.rows(), Dim);
-
-    flann_index_ = std::make_unique<FlannIndex>(points_mat, flann::KDTreeSingleIndexParams());
-    flann_index_->buildIndex();
-
-    search_params_.checks = flann::FLANN_CHECKS_UNLIMITED;
-    search_params_.sorted = false;
-  }
+  explicit Impl(const Points& points) : points_{points}, nf_index_{Dim, std::cref(points_)} {}
 
   void knn_search(const Point& point, Index k, std::vector<Index>& indices,
                   std::vector<double>& distances) const {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, Dim);
-
-    (void)flann_index_->knnSearch(point_mat, indices_v_, distances_v_, k, search_params_);
-
-    indices.resize(indices_v_[0].size());
-    distances.resize(distances_v_[0].size());
-
-    std::transform(indices_v_[0].begin(), indices_v_[0].end(), indices.begin(),
-                   [](auto i) { return static_cast<Index>(i); });
-
-    std::transform(distances_v_[0].begin(), distances_v_[0].end(), distances.begin(),
-                   [](auto d) { return std::sqrt(d); });
+    KNNResultSet rs{static_cast<std::size_t>(k), indices, distances};
+    (void)nf_index_.index_->findNeighbors(rs, point.data());
   }
 
   void radius_search(const Point& point, double radius, std::vector<Index>& indices,
                      std::vector<double>& distances) const {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    flann::Matrix<double> point_mat(const_cast<double*>(point.data()), 1, Dim);
-
-    auto radius_sq = static_cast<float>(radius * radius);
-    (void)flann_index_->radiusSearch(point_mat, indices_v_, distances_v_, radius_sq,
-                                     search_params_);
-
-    indices.resize(indices_v_[0].size());
-    distances.resize(distances_v_[0].size());
-
-    std::transform(indices_v_[0].begin(), indices_v_[0].end(), indices.begin(),
-                   [](auto i) { return static_cast<Index>(i); });
-
-    std::transform(distances_v_[0].begin(), distances_v_[0].end(), distances.begin(),
-                   [](auto d) { return std::sqrt(d); });
+    RadiusResultSet rs{radius, indices, distances};
+    (void)nf_index_.index_->findNeighbors(rs, point.data());
   }
 
  private:
-  static thread_local inline std::vector<std::vector<std::size_t>> indices_v_;
-  static thread_local inline std::vector<std::vector<double>> distances_v_;
-  flann::SearchParams search_params_;
-  std::unique_ptr<FlannIndex> flann_index_;
+  class KNNResultSet {
+   public:
+    using DistanceType = double;
+    using IndexType = Index;
+
+   public:
+    KNNResultSet(std::size_t k, std::vector<IndexType>& indices,
+                 std::vector<DistanceType>& distances)
+        : k_{k},
+          wd_{k_ > 0 ? std::numeric_limits<DistanceType>::infinity() : 0.0},
+          indices_{indices},
+          distances_{distances} {
+      indices_.clear();
+      distances_.clear();
+    }
+
+    bool addPoint(DistanceType dist, IndexType index) {
+      dist = std::sqrt(dist);
+      auto it = std::upper_bound(distances_.begin(), distances_.end(), dist);
+      auto i = static_cast<std::size_t>(std::distance(distances_.begin(), it));
+      if (i < k_) {
+        if (full()) {
+          indices_.pop_back();
+          distances_.pop_back();
+        }
+        indices_.insert(indices_.begin() + i, index);
+        distances_.insert(it, dist);
+        if (full()) {
+          wd_ = distances_.back() * distances_.back();
+        }
+      }
+      return true;
+    }
+
+    bool empty() const noexcept { return indices_.empty(); }
+
+    bool full() const noexcept { return indices_.size() == k_; }
+
+    std::size_t size() const noexcept { return indices_.size(); }
+
+    void sort() {
+      // no-op.
+    }
+
+    DistanceType worstDist() const noexcept { return wd_; }
+
+   private:
+    const std::size_t k_;
+    DistanceType wd_;
+    std::vector<IndexType>& indices_;
+    std::vector<DistanceType>& distances_;
+  };
+
+  class RadiusResultSet {
+   public:
+    using DistanceType = double;
+    using IndexType = Index;
+
+    explicit RadiusResultSet(DistanceType radius, std::vector<IndexType>& indices,
+                             std::vector<DistanceType>& distances)
+        : radius_{radius},
+          wd_{std::nextafter(radius * radius, std::numeric_limits<DistanceType>::infinity())},
+          indices_{indices},
+          distances_{distances} {
+      indices_.clear();
+      distances_.clear();
+    }
+
+    bool addPoint(DistanceType dist, IndexType index) {
+      dist = std::sqrt(dist);
+      if (dist <= radius_) {
+        indices_.push_back(index);
+        distances_.push_back(dist);
+      }
+      return true;
+    }
+
+    bool empty() const noexcept { return indices_.empty(); }
+
+    bool full() const noexcept { return true; }
+
+    std::size_t size() const noexcept { return indices_.size(); }
+
+    void sort() {
+      // no-op.
+    }
+
+    DistanceType worstDist() const noexcept { return wd_; }
+
+   private:
+    const DistanceType radius_;
+    const DistanceType wd_;
+    std::vector<IndexType>& indices_;
+    std::vector<DistanceType>& distances_;
+  };
+
+  Points points_;
+  NanoflannIndex nf_index_;
 };
 
 template <int Dim>

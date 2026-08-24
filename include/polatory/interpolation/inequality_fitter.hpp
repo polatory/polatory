@@ -44,7 +44,7 @@ class InequalityFitter {
                                           const VecX& values_ub, double tolerance, int max_iter,
                                           double accuracy,
                                           const VecX* initial_weights = nullptr) const {
-    double filtering_distance = std::max(bbox_.width().norm(), DistanceFilter::kMinDistance);
+    double filtering_distance = bbox_.width().norm();
     DistanceFilter filter(points_);
 
     auto not_nan = [](double d) { return !std::isnan(d); };
@@ -180,7 +180,7 @@ class InequalityFitter {
         break;
       }
 
-      filtering_distance = std::max(0.5 * filtering_distance, DistanceFilter::kMinDistance);
+      filtering_distance *= 0.5;
     }
 
     return {std::move(centers), std::move(center_weights)};

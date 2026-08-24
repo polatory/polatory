@@ -50,7 +50,7 @@ class IncrementalFitter {
                                                                double grad_accuracy) const {
     POLATORY_ASSERT(values_full.size() == mu_full_ + kDim * sigma_full_);
 
-    auto filtering_distance = std::max(bbox_.width().norm(), DistanceFilter::kMinDistance);
+    auto filtering_distance = bbox_.width().norm();
     DistanceFilter filter(points_full_);
     DistanceFilter grad_filter(grad_points_full_);
 
@@ -176,7 +176,7 @@ class IncrementalFitter {
       weights.segment(mu, kDim * last_sigma) = last_weights.segment(last_mu, kDim * last_sigma);
       weights.tail(l_) = last_weights.tail(l_);
 
-      filtering_distance = std::max(0.5 * filtering_distance, DistanceFilter::kMinDistance);
+      filtering_distance *= 0.5;
     }
 
     return {std::move(centers), std::move(grad_centers), std::move(weights)};

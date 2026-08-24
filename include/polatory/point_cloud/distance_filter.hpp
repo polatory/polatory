@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <boost/unordered/unordered_flat_set.hpp>
-#include <format>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/point_cloud/kdtree.hpp>
@@ -20,8 +19,6 @@ class DistanceFilter {
   using Points = geometry::Points<Dim>;
 
  public:
-  static constexpr double kMinDistance = 1.0842021724855044e-19;  // sqrt(float.min_normal)
-
   explicit DistanceFilter(const Points& points) : points_(points), tree_(points) {}
 
   DistanceFilter& filter(double distance) {
@@ -29,9 +26,8 @@ class DistanceFilter {
   }
 
   DistanceFilter& filter(double distance, const std::vector<Index>& indices) {
-    if (!(distance >= kMinDistance)) {
-      throw std::invalid_argument(
-          std::format("distance must be larger than or equal to {}", kMinDistance));
+    if (!(distance >= 0.0)) {
+      throw std::invalid_argument("distance must be non-negative");
     }
 
     boost::unordered_flat_set<Index> indices_to_remove;

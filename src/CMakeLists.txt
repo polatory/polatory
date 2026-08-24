@@ -79,6 +79,7 @@ target_link_libraries(${TARGET} PUBLIC
     ceres
     Eigen3::Eigen
     FastFloat::fast_float
+    nanoflann::nanoflann
     OpenMP::OpenMP_CXX
 )
 
@@ -87,16 +88,6 @@ target_link_libraries(${TARGET} PUBLIC
 target_link_libraries(${TARGET} PRIVATE
     igl::igl_core
 )
-
-if(UNIX)
-    target_link_libraries(${TARGET} PUBLIC
-        flann::flann_cpp_s
-    )
-elseif(MSVC)
-    target_link_libraries(${TARGET} PUBLIC
-        flann::flann_cpp
-    )
-endif()
 
 include(ExternalProject)
 
