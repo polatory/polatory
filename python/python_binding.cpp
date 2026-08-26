@@ -232,9 +232,8 @@ PYBIND11_MODULE(_core, m) {
            "k"_a = 100);
 
   py::class_<point_cloud::SdfDataGenerator>(m, "SdfDataGenerator")
-      .def(py::init<const geometry::Points3&, const geometry::Vectors3&, double, double,
-                    const Mat&>(),
-           "points"_a, "normals"_a, "min_distance"_a, "max_distance"_a, "aniso"_a = Mat::Identity())
+      .def(py::init<const geometry::Points3&, const geometry::Vectors3&, double, const Mat&>(),
+           "points"_a, "normals"_a, "offset"_a, "aniso"_a = Mat::Identity())
       .def_property_readonly("sdf_points", &point_cloud::SdfDataGenerator::sdf_points)
       .def_property_readonly("sdf_values", &point_cloud::SdfDataGenerator::sdf_values);
 
