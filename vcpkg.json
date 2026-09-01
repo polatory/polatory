@@ -24,7 +24,7 @@
     "libigl",
     {
       "name": "intel-mkl",
-      "platform": "(windows | linux | osx) & x64"
+      "platform": "(windows | linux) & x64"
     },
     "nanoflann"
   ],

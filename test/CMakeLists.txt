@@ -36,7 +36,9 @@ add_executable(${TARGET}
 )
 
 target_link_libraries(${TARGET} PRIVATE
-    GTest::gtest GTest::gtest_main
+    GTest::gtest
+    GTest::gtest_main
+    igl::igl_core
     polatory
 )
 

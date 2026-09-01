@@ -69,24 +69,30 @@ endif()
 target_include_directories(${TARGET} PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
+
 target_include_directories(${TARGET} SYSTEM PUBLIC
     ${CMAKE_BINARY_DIR}/scalfmm/install/include
 )
 
 target_link_libraries(${TARGET} PUBLIC
-    Boost::boost
+    Boost::algorithm
+    Boost::any
+    Boost::container
+    Boost::container_hash
     Boost::filesystem
-    ceres
+    Boost::iterator
+    Boost::math
+    Boost::range
+    Boost::unordered
+    Ceres::ceres
     Eigen3::Eigen
     FastFloat::fast_float
-    nanoflann::nanoflann
     OpenMP::OpenMP_CXX
 )
 
-# igl is used only by isosurface/snap.cpp (closest-point queries); keep it private
-# so it does not leak into the public interface.
 target_link_libraries(${TARGET} PRIVATE
     igl::igl_core
+    nanoflann::nanoflann
 )
 
 include(ExternalProject)
