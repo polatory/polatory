@@ -50,15 +50,14 @@ else()
 endif()
 
 if(MSVC AND USE_MKL)
-    # DLLs not copied by MKL::MKL
-    # https://www.intel.com/content/www/us/en/develop/documentation/onemkl-windows-developer-guide/top/appendix-c-directory-structure-in-detail/structure-of-the-intel-64-architecture-directories/contents-of-the-redist-intel64-directory.html
+    # https://www.intel.com/content/www/us/en/docs/onemkl/developer-guide-windows/2025-2/contents-of-the-bin-directory.html
     set(POLATORY_DLLS
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_def.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_mc.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_mc3.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx.2.dll
         ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx2.2.dll
         ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx512.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_core.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_def.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_mc3.2.dll
+        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_sequential.2.dll
     )
 endif()
 
