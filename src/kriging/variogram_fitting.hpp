@@ -1,0 +1,87 @@
+#pragma once
+
+#include <algorithm>
+#include <memory>
+#include <polatory/geometry/point3d.hpp>
+#include <polatory/kriging/variogram.hpp>
+#include <polatory/kriging/variogram_fitting.hpp>
+#include <polatory/kriging/weight_function.hpp>
+#include <polatory/model.hpp>
+#include <polatory/types.hpp>
+#include <string>
+#include <vector>
+
+namespace polatory::kriging {
+
+namespace internal {
+
+template <int Dim>
+void clamp_parameters(std::vector<double>& params, const Model<Dim>& model) {
+  auto num_params = static_cast<int>(model.num_parameters());
+  auto lbs = model.parameter_lower_bounds();
+  auto ubs = model.parameter_upper_bounds();
+  for (auto i = 0; i < num_params; i++) {
+    params.at(i) = std::clamp(params.at(i), lbs.at(i), ubs.at(i));
+  }
+}
+
+template <int Dim>
+bool compute_residuals(const Model<Dim>& model, const Variogram<Dim>& variog,
+                       const WeightFunction& weight_fn, double* residuals) {
+  for (const auto& rbf : model.rbfs()) {
+    auto range = rbf.parameters().at(1);
+    if (range == 0.0) {
+      return false;
+    }
+  }
+
+  const auto& dir = variog.direction();
+  auto num_bins = variog.num_bins();
+  for (Index i = 0; i < num_bins; i++) {
+    auto dist = variog.bin_distance().at(i);
+    auto gamma = variog.bin_gamma().at(i);
+    auto num_pairs = variog.bin_num_pairs().at(i);
+
+    auto model_gamma = model.nugget();
+    for (const auto& rbf : model.rbfs()) {
+      model_gamma += rbf.evaluate(geometry::Vector<Dim>::Zero()) - rbf.evaluate(dist * dir);
+    }
+
+    auto weight = weight_fn(dist, model_gamma, num_pairs);
+    residuals[i] = weight * (gamma - model_gamma);
+  }
+
+  return true;
+}
+
+}  // namespace internal
+
+template <int Dim>
+VariogramFitting<Dim>::VariogramFitting(const VariogramSet& variog_set, const Model& model,
+                                        const WeightFunction& weight_fn, bool fit_anisotropy)
+    : impl_(std::make_unique<Impl>(variog_set, model, weight_fn, fit_anisotropy)) {}
+
+template <int Dim>
+VariogramFitting<Dim>::~VariogramFitting() = default;
+
+template <int Dim>
+std::string VariogramFitting<Dim>::brief_report() const {
+  return impl_->brief_report();
+}
+
+template <int Dim>
+double VariogramFitting<Dim>::final_cost() const {
+  return impl_->final_cost();
+}
+
+template <int Dim>
+std::string VariogramFitting<Dim>::full_report() const {
+  return impl_->full_report();
+}
+
+template <int Dim>
+typename VariogramFitting<Dim>::Model VariogramFitting<Dim>::model() const {
+  return impl_->model();
+}
+
+}  // namespace polatory::kriging

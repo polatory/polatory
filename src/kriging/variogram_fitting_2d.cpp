@@ -1,37 +1,30 @@
-#pragma once
-
 #include <ceres/ceres.h>
 
 #include <Eigen/Geometry>
-#include <cmath>
 #include <numbers>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
-#include <polatory/kriging/variogram_set.hpp>
-#include <polatory/kriging/weight_function.hpp>
-#include <polatory/model.hpp>
 #include <polatory/types.hpp>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "variogram_fitting.hpp"
+
 namespace polatory::kriging {
 
 template <>
-class VariogramFitting<2> {
+class VariogramFitting<2>::Impl {
   using Mat = Mat2;
-  using Model = Model<2>;
   using Variogram = Variogram<2>;
-  using VariogramSet = VariogramSet<2>;
 
  public:
-  VariogramFitting(const VariogramSet& variog_set, const Model& model,
-                   const WeightFunction& weight_fn = WeightFunction::kNumPairsOverDistanceSquared,
-                   bool fit_anisotropy = true)
+  Impl(const VariogramSet& variog_set, const Model& model, const WeightFunction& weight_fn,
+       bool fit_anisotropy)
       : model_template_(model),
         fit_anisotropy_(fit_anisotropy && variog_set.num_variograms() >= 2),
-        num_params_(model.num_parameters()),
-        num_rbfs_(model.num_rbfs()),
+        num_params_(static_cast<int>(model.num_parameters())),
+        num_rbfs_(static_cast<int>(model.num_rbfs())),
         params_(model.parameters()) {
     for (auto& rbf : model_template_.rbfs()) {
       rbf.set_anisotropy(Mat::Identity());
@@ -42,7 +35,7 @@ class VariogramFitting<2> {
     problem.AddParameterBlock(params_.data(), num_params_);
     auto lbs = model.parameter_lower_bounds();
     auto ubs = model.parameter_upper_bounds();
-    for (Index i = 0; i < num_params_; i++) {
+    for (auto i = 0; i < num_params_; i++) {
       problem.SetParameterLowerBound(params_.data(), i, lbs.at(i));
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
@@ -53,7 +46,7 @@ class VariogramFitting<2> {
       inv_minor_.resize(num_rbfs_, 1.0);
       problem.AddParameterBlock(inv_minor_.data(), num_rbfs_);
 
-      for (Index i = 0; i < num_rbfs_; i++) {
+      for (auto i = 0; i < num_rbfs_; i++) {
         problem.SetParameterLowerBound(inv_minor_.data(), i, 1.0);
         problem.SetParameterUpperBound(inv_minor_.data(), i, 1e2);
       }
@@ -67,7 +60,7 @@ class VariogramFitting<2> {
         cost_fn->AddParameterBlock(1);
         cost_fn->AddParameterBlock(num_rbfs_);
       }
-      cost_fn->SetNumResiduals(variog.num_bins());
+      cost_fn->SetNumResiduals(static_cast<int>(variog.num_bins()));
       if (fit_anisotropy_) {
         problem.AddResidualBlock(cost_fn, nullptr, params_.data(), &r_.angle(), inv_minor_.data());
       } else {
@@ -95,7 +88,7 @@ class VariogramFitting<2> {
 
     if (fit_anisotropy_) {
       Mat inv_rot = r_.toRotationMatrix();
-      for (Index i = 0; i < num_rbfs_; i++) {
+      for (auto i = 0; i < num_rbfs_; i++) {
         auto& rbf = model.rbfs().at(i);
 
         Mat inv_scale = Mat::Identity();
@@ -122,8 +115,10 @@ class VariogramFitting<2> {
       const auto* params = param_blocks[0];
 
       Model model{model_template_};
+      auto num_params = static_cast<int>(model.num_parameters());
+      auto num_rbfs = static_cast<int>(model.num_rbfs());
 
-      std::vector<double> clamped_params(params, params + model.num_parameters());
+      std::vector<double> clamped_params(params, params + num_params);
       internal::clamp_parameters(clamped_params, model);
       model.set_parameters(clamped_params);
 
@@ -133,8 +128,7 @@ class VariogramFitting<2> {
 
         Eigen::Rotation2Dd r(*angle);
         Mat inv_rot = r.toRotationMatrix();
-        auto num_rbfs = model.num_rbfs();
-        for (Index i = 0; i < num_rbfs; i++) {
+        for (auto i = 0; i < num_rbfs; i++) {
           auto& rbf = model.rbfs().at(i);
 
           Mat inv_scale = Mat::Identity();
@@ -157,12 +151,14 @@ class VariogramFitting<2> {
 
   Model model_template_;
   bool fit_anisotropy_;
-  Index num_params_;
-  Index num_rbfs_;
+  int num_params_;
+  int num_rbfs_;
   std::vector<double> params_;
   Eigen::Rotation2Dd r_{std::numbers::pi * Mat1::Random()(0)};
   std::vector<double> inv_minor_;
   ceres::Solver::Summary summary_;
 };
+
+template class VariogramFitting<2>;
 
 }  // namespace polatory::kriging

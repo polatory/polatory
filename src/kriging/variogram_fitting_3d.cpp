@@ -1,36 +1,29 @@
-#pragma once
-
 #include <ceres/ceres.h>
 
 #include <Eigen/Geometry>
-#include <cmath>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
-#include <polatory/kriging/variogram_set.hpp>
-#include <polatory/kriging/weight_function.hpp>
-#include <polatory/model.hpp>
 #include <polatory/types.hpp>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "variogram_fitting.hpp"
+
 namespace polatory::kriging {
 
 template <>
-class VariogramFitting<3> {
+class VariogramFitting<3>::Impl {
   using Mat = Mat3;
-  using Model = Model<3>;
   using Variogram = Variogram<3>;
-  using VariogramSet = VariogramSet<3>;
 
  public:
-  VariogramFitting(const VariogramSet& variog_set, const Model& model,
-                   const WeightFunction& weight_fn = WeightFunction::kNumPairsOverDistanceSquared,
-                   bool fit_anisotropy = true)
+  Impl(const VariogramSet& variog_set, const Model& model, const WeightFunction& weight_fn,
+       bool fit_anisotropy)
       : model_template_(model),
         fit_anisotropy_(fit_anisotropy && variog_set.num_variograms() >= 3),
-        num_params_(model.num_parameters()),
-        num_rbfs_(model.num_rbfs()),
+        num_params_(static_cast<int>(model.num_parameters())),
+        num_rbfs_(static_cast<int>(model.num_rbfs())),
         params_(model.parameters()) {
     for (auto& rbf : model_template_.rbfs()) {
       rbf.set_anisotropy(Mat::Identity());
@@ -41,12 +34,13 @@ class VariogramFitting<3> {
     problem.AddParameterBlock(params_.data(), num_params_);
     auto lbs = model.parameter_lower_bounds();
     auto ubs = model.parameter_upper_bounds();
-    for (Index i = 0; i < num_params_; i++) {
+    for (auto i = 0; i < num_params_; i++) {
       problem.SetParameterLowerBound(params_.data(), i, lbs.at(i));
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
 
     if (fit_anisotropy_) {
+      // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
       auto* quaternion_manifold = new ceres::EigenQuaternionManifold;
       problem.AddParameterBlock(q_.coeffs().data(), 4, quaternion_manifold);
 
@@ -55,7 +49,7 @@ class VariogramFitting<3> {
       problem.AddParameterBlock(inv_major_.data(), num_rbfs_);
       problem.AddParameterBlock(inv_minor_.data(), num_rbfs_);
 
-      for (Index i = 0; i < num_rbfs_; i++) {
+      for (auto i = 0; i < num_rbfs_; i++) {
         problem.SetParameterLowerBound(inv_major_.data(), i, 1e-2);
         problem.SetParameterUpperBound(inv_major_.data(), i, 1.0);
 
@@ -73,7 +67,7 @@ class VariogramFitting<3> {
         cost_fn->AddParameterBlock(num_rbfs_);
         cost_fn->AddParameterBlock(num_rbfs_);
       }
-      cost_fn->SetNumResiduals(variog.num_bins());
+      cost_fn->SetNumResiduals(static_cast<int>(variog.num_bins()));
       if (fit_anisotropy_) {
         problem.AddResidualBlock(cost_fn, nullptr, params_.data(), q_.coeffs().data(),
                                  inv_major_.data(), inv_minor_.data());
@@ -102,7 +96,7 @@ class VariogramFitting<3> {
 
     if (fit_anisotropy_) {
       Mat inv_rot = q_.normalized().toRotationMatrix();
-      for (Index i = 0; i < num_rbfs_; i++) {
+      for (auto i = 0; i < num_rbfs_; i++) {
         auto& rbf = model.rbfs().at(i);
 
         Mat inv_scale = Mat::Identity();
@@ -130,8 +124,10 @@ class VariogramFitting<3> {
       const auto* params = param_blocks[0];
 
       Model model{model_template_};
+      auto num_params = static_cast<int>(model.num_parameters());
+      auto num_rbfs = static_cast<int>(model.num_rbfs());
 
-      std::vector<double> clamped_params(params, params + model.num_parameters());
+      std::vector<double> clamped_params(params, params + num_params);
       internal::clamp_parameters(clamped_params, model);
       model.set_parameters(clamped_params);
 
@@ -142,8 +138,7 @@ class VariogramFitting<3> {
 
         Eigen::Quaterniond q(q_coeffs);
         Mat inv_rot = q.normalized().toRotationMatrix();
-        auto num_rbfs = model.num_rbfs();
-        for (Index i = 0; i < num_rbfs; i++) {
+        for (auto i = 0; i < num_rbfs; i++) {
           auto& rbf = model.rbfs().at(i);
 
           Mat inv_scale = Mat::Identity();
@@ -167,13 +162,15 @@ class VariogramFitting<3> {
 
   Model model_template_;
   bool fit_anisotropy_;
-  Index num_params_;
-  Index num_rbfs_;
+  int num_params_;
+  int num_rbfs_;
   std::vector<double> params_;
   Eigen::Quaterniond q_{Eigen::Quaterniond::UnitRandom()};
   std::vector<double> inv_major_;
   std::vector<double> inv_minor_;
   ceres::Solver::Summary summary_;
 };
+
+template class VariogramFitting<3>;
 
 }  // namespace polatory::kriging

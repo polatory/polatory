@@ -31,6 +31,9 @@ add_library(${TARGET} STATIC
     isosurface/refine.cpp
     isosurface/snap.cpp
     kriging/variogram_calculator.cpp
+    kriging/variogram_fitting_1d.cpp
+    kriging/variogram_fitting_2d.cpp
+    kriging/variogram_fitting_3d.cpp
     krylov/fgmres.cpp
     krylov/gmres_base.cpp
     krylov/gmres.cpp
@@ -84,13 +87,13 @@ target_link_libraries(${TARGET} PUBLIC
     Boost::math
     Boost::range
     Boost::unordered
-    Ceres::ceres
     Eigen3::Eigen
     FastFloat::fast_float
     OpenMP::OpenMP_CXX
 )
 
 target_link_libraries(${TARGET} PRIVATE
+    Ceres::ceres
     igl::igl_core
     nanoflann::nanoflann
 )

@@ -1,34 +1,26 @@
-#pragma once
-
 #include <ceres/ceres.h>
 
-#include <cmath>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_fitting.hpp>
-#include <polatory/kriging/variogram_set.hpp>
-#include <polatory/kriging/weight_function.hpp>
-#include <polatory/model.hpp>
 #include <polatory/types.hpp>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "variogram_fitting.hpp"
+
 namespace polatory::kriging {
 
 template <>
-class VariogramFitting<1> {
+class VariogramFitting<1>::Impl {
   using Mat = Mat1;
-  using Model = Model<1>;
   using Variogram = Variogram<1>;
-  using VariogramSet = VariogramSet<1>;
 
  public:
-  VariogramFitting(const VariogramSet& variog_set, const Model& model,
-                   const WeightFunction& weight_fn = WeightFunction::kNumPairsOverDistanceSquared,
-                   bool /*fit_anisotropy*/ = true)
+  Impl(const VariogramSet& variog_set, const Model& model, const WeightFunction& weight_fn,
+       bool /*fit_anisotropy*/)
       : model_template_(model),
-        num_params_(model.num_parameters()),
-        num_rbfs_(model.num_rbfs()),
+        num_params_(static_cast<int>(model.num_parameters())),
         params_(model.parameters()) {
     for (auto& rbf : model_template_.rbfs()) {
       rbf.set_anisotropy(Mat::Identity());
@@ -39,7 +31,7 @@ class VariogramFitting<1> {
     problem.AddParameterBlock(params_.data(), num_params_);
     auto lbs = model.parameter_lower_bounds();
     auto ubs = model.parameter_upper_bounds();
-    for (Index i = 0; i < num_params_; i++) {
+    for (auto i = 0; i < num_params_; i++) {
       problem.SetParameterLowerBound(params_.data(), i, lbs.at(i));
       problem.SetParameterUpperBound(params_.data(), i, ubs.at(i));
     }
@@ -48,7 +40,7 @@ class VariogramFitting<1> {
       auto* cost_fn = new ceres::DynamicNumericDiffCostFunction(
           new Residual(model_template_, variog, weight_fn));
       cost_fn->AddParameterBlock(num_params_);
-      cost_fn->SetNumResiduals(variog.num_bins());
+      cost_fn->SetNumResiduals(static_cast<int>(variog.num_bins()));
       problem.AddResidualBlock(cost_fn, nullptr, params_.data());
     }
 
@@ -82,8 +74,9 @@ class VariogramFitting<1> {
       const auto* params = param_blocks[0];
 
       Model model{model_template_};
+      auto num_params = static_cast<int>(model.num_parameters());
 
-      std::vector<double> clamped_params(params, params + model.num_parameters());
+      std::vector<double> clamped_params(params, params + num_params);
       internal::clamp_parameters(clamped_params, model);
       model.set_parameters(clamped_params);
 
@@ -97,10 +90,11 @@ class VariogramFitting<1> {
   };
 
   Model model_template_;
-  Index num_params_;
-  Index num_rbfs_;
+  int num_params_;
   std::vector<double> params_;
   ceres::Solver::Summary summary_;
 };
+
+template class VariogramFitting<1>;
 
 }  // namespace polatory::kriging

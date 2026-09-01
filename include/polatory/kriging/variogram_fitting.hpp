@@ -1,62 +1,42 @@
 #pragma once
 
-#include <algorithm>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/kriging/variogram.hpp>
+#include <memory>
+#include <polatory/kriging/variogram_set.hpp>
 #include <polatory/kriging/weight_function.hpp>
 #include <polatory/model.hpp>
-#include <polatory/types.hpp>
-#include <vector>
+#include <string>
 
 namespace polatory::kriging {
 
 template <int Dim>
-class VariogramFitting;
+class VariogramFitting {
+  using Model = Model<Dim>;
+  using VariogramSet = VariogramSet<Dim>;
 
-namespace internal {
+ public:
+  VariogramFitting(const VariogramSet& variog_set, const Model& model,
+                   const WeightFunction& weight_fn = WeightFunction::kNumPairsOverDistanceSquared,
+                   bool fit_anisotropy = true);
 
-template <int Dim>
-void clamp_parameters(std::vector<double>& params, const Model<Dim>& model) {
-  auto lbs = model.parameter_lower_bounds();
-  auto ubs = model.parameter_upper_bounds();
-  for (Index i = 0; i < model.num_parameters(); i++) {
-    params.at(i) = std::clamp(params.at(i), lbs.at(i), ubs.at(i));
-  }
-}
+  ~VariogramFitting();
 
-template <int Dim>
-bool compute_residuals(const Model<Dim>& model, const Variogram<Dim>& variog,
-                       const WeightFunction& weight_fn, double* residuals) {
-  for (const auto& rbf : model.rbfs()) {
-    auto range = rbf.parameters().at(1);
-    if (range == 0.0) {
-      return false;
-    }
-  }
+  VariogramFitting(const VariogramFitting&) = delete;
+  VariogramFitting(VariogramFitting&&) = delete;
+  VariogramFitting& operator=(const VariogramFitting&) = delete;
+  VariogramFitting& operator=(VariogramFitting&&) = delete;
 
-  const auto& dir = variog.direction();
-  auto num_bins = variog.num_bins();
-  for (Index i = 0; i < num_bins; i++) {
-    auto dist = variog.bin_distance().at(i);
-    auto gamma = variog.bin_gamma().at(i);
-    auto num_pairs = variog.bin_num_pairs().at(i);
+  std::string brief_report() const;
 
-    auto model_gamma = model.nugget();
-    for (const auto& rbf : model.rbfs()) {
-      model_gamma += rbf.evaluate(geometry::Vector<Dim>::Zero()) - rbf.evaluate(dist * dir);
-    }
+  double final_cost() const;
 
-    auto weight = weight_fn(dist, model_gamma, num_pairs);
-    residuals[i] = weight * (gamma - model_gamma);
-  }
+  std::string full_report() const;
 
-  return true;
-}
+  Model model() const;
 
-}  // namespace internal
+ private:
+  class Impl;
+
+  std::unique_ptr<Impl> impl_;
+};
 
 }  // namespace polatory::kriging
-
-#include <polatory/kriging/variogram_fitting_1d.hpp>
-#include <polatory/kriging/variogram_fitting_2d.hpp>
-#include <polatory/kriging/variogram_fitting_3d.hpp>
