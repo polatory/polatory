@@ -67,7 +67,7 @@ std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
       auto d = offset;
       if (d <= 0.0) {
         tree.knn_search(p, std::min(static_cast<Index>(6), n_points), nn_indices, nn_distances);
-        d = *std::max_element(nn_distances.begin(), nn_distances.end());
+        d = *std::ranges::max_element(nn_distances);
       }
       geometry::Point3 q = p + sign * d * n;
 

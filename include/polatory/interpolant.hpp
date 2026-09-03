@@ -16,9 +16,7 @@
 #include <polatory/model.hpp>
 #include <polatory/types.hpp>
 #include <stdexcept>
-#include <string>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 namespace polatory {

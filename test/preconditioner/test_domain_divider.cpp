@@ -60,21 +60,21 @@ void test() {
     }
 
     std::vector<Index> d_point_idcs(d.point_indices);
-    std::sort(d_point_idcs.begin(), d_point_idcs.end());
+    std::ranges::sort(d_point_idcs);
     EXPECT_EQ(d_point_idcs.end(), std::unique(d_point_idcs.begin(), d_point_idcs.end()));
 
     std::vector<Index> d_grad_point_idcs(d.grad_point_indices);
-    std::sort(d_grad_point_idcs.begin(), d_grad_point_idcs.end());
+    std::ranges::sort(d_grad_point_idcs);
     EXPECT_EQ(d_grad_point_idcs.end(),
               std::unique(d_grad_point_idcs.begin(), d_grad_point_idcs.end()));
   }
   EXPECT_EQ(n_points, inner_points.size());
   EXPECT_EQ(n_grad_points, inner_grad_points.size());
 
-  std::sort(inner_points.begin(), inner_points.end());
+  std::ranges::sort(inner_points);
   EXPECT_EQ(inner_points.end(), std::unique(inner_points.begin(), inner_points.end()));
 
-  std::sort(inner_grad_points.begin(), inner_grad_points.end());
+  std::ranges::sort(inner_grad_points);
   EXPECT_EQ(inner_grad_points.end(),
             std::unique(inner_grad_points.begin(), inner_grad_points.end()));
 

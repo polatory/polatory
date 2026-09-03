@@ -21,13 +21,13 @@ class NormalScoreTransformation {
     auto n = z.size();
     std::vector<Index> indices(n);
     std::iota(indices.begin(), indices.end(), 0);
-    std::sort(indices.begin(), indices.end(), [&](auto i, auto j) { return z(i) < z(j); });
+    std::ranges::sort(indices, [&](auto i, auto j) { return z(i) < z(j); });
 
     VecX y(n);
     auto inv_den = 1.0 / (2.0 * static_cast<double>(n));
     for (Index i = 0; i < n; ++i) {
       auto p = (2.0 * static_cast<double>(i) + 1.0) * inv_den;
-      y(indices[i]) = inv_normal_cdf(p);
+      y(indices.at(i)) = inv_normal_cdf(p);
     }
 
     compute_phi(z(indices), y(indices));

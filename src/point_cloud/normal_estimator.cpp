@@ -2,12 +2,12 @@
 #include <cmath>
 #include <iostream>
 #include <iterator>
-#include <numeric>
 #include <polatory/common/zip_sort.hpp>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/point_cloud/normal_estimator.hpp>
 #include <polatory/point_cloud/plane_estimator.hpp>
 #include <queue>
+#include <ranges>
 #include <stdexcept>
 
 namespace polatory::point_cloud {
@@ -24,7 +24,7 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
     throw std::runtime_error("ks must not be empty");
   }
 
-  if (std::any_of(ks.begin(), ks.end(), [](auto k) { return k < 3; })) {
+  if (std::ranges::any_of(ks, [](auto k) { return k < 3; })) {
     throw std::runtime_error("k must be greater than or equal to 3");
   }
 
@@ -40,7 +40,7 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
   std::vector<double> nn_distances;
 
   std::vector<Index> ks_sorted(ks);
-  std::sort(ks_sorted.rbegin(), ks_sorted.rend());
+  std::ranges::sort(std::views::reverse(ks_sorted));
   auto k_max = std::min(ks_sorted.front(), n_points_);
 
   std::vector<double> plane_factors;
@@ -64,8 +64,7 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
       plane_normals.push_back(est.plane_normal());
     }
 
-    auto best = std::distance(plane_factors.begin(),
-                              std::max_element(plane_factors.begin(), plane_factors.end()));
+    auto best = std::distance(plane_factors.begin(), std::ranges::max_element(plane_factors));
 
     normals_.row(i) = plane_normals.at(best);
     plane_factors_(i) = plane_factors.at(best);
@@ -84,7 +83,7 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
     throw std::runtime_error("radii must not be empty");
   }
 
-  if (std::any_of(radii.begin(), radii.end(), [](auto radius) { return !(radius > 0.0); })) {
+  if (std::ranges::any_of(radii, [](auto radius) { return !(radius > 0.0); })) {
     throw std::runtime_error("radius must be positive");
   }
 
@@ -95,7 +94,7 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
   std::vector<double> nn_distances;
 
   std::vector<double> radii_sorted(radii);
-  std::sort(radii_sorted.rbegin(), radii_sorted.rend());
+  std::ranges::sort(std::views::reverse(radii_sorted));
   auto radius_max = radii_sorted.front();
 
   std::vector<double> plane_factors;
@@ -117,7 +116,7 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
     plane_factors.clear();
     plane_normals.clear();
     for (auto radius : radii_sorted) {
-      auto it = std::upper_bound(nn_distances.begin(), nn_distances.end(), radius);
+      auto it = std::ranges::upper_bound(nn_distances, radius);
       auto k = std::distance(nn_distances.begin(), it);
       nn_indices.resize(k);
       nn_distances.resize(k);
@@ -126,8 +125,7 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
       plane_normals.push_back(est.plane_normal());
     }
 
-    auto best = std::distance(plane_factors.begin(),
-                              std::max_element(plane_factors.begin(), plane_factors.end()));
+    auto best = std::distance(plane_factors.begin(), std::ranges::max_element(plane_factors));
 
     normals_.row(i) = plane_normals.at(best);
     plane_factors_(i) = plane_factors.at(best);
@@ -266,11 +264,9 @@ NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
       }
     }
 
-    auto seed_it = std::max_element(connected_component.begin(), connected_component.end(),
-                                    [&](auto i, auto j) {
-                                      return points_.row(i).dot(seed_point_direction) <
-                                             points_.row(j).dot(seed_point_direction);
-                                    });
+    auto seed_it = std::ranges::max_element(connected_component, [&](auto i, auto j) {
+      return points_.row(i).dot(seed_point_direction) < points_.row(j).dot(seed_point_direction);
+    });
     if (normals_.row(*seed_it).dot(seed_point_direction) < 0.0) {
       normals_(connected_component, kAll) *= -1.0;
     }

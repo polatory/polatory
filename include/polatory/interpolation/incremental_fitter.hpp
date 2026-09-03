@@ -16,6 +16,7 @@
 #include <polatory/model.hpp>
 #include <polatory/point_cloud/distance_filter.hpp>
 #include <polatory/types.hpp>
+#include <ranges>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -143,7 +144,7 @@ class IncrementalFitter {
       auto last_sigma = sigma;
 
       std::vector<Index> indices(centers);
-      std::copy(c_centers.rbegin(), c_centers.rend(), std::back_inserter(indices));
+      std::ranges::copy(std::views::reverse(c_centers), std::back_inserter(indices));
       filter.filter(filtering_distance, indices);
       boost::unordered_flat_set<Index> filtered_indices(filter.filtered_indices().begin(),
                                                         filter.filtered_indices().end());
@@ -155,7 +156,7 @@ class IncrementalFitter {
       }
 
       std::vector<Index> grad_indices(grad_centers);
-      std::copy(c_grad_centers.rbegin(), c_grad_centers.rend(), std::back_inserter(grad_indices));
+      std::ranges::copy(std::views::reverse(c_grad_centers), std::back_inserter(grad_indices));
       grad_filter.filter(filtering_distance, grad_indices);
       boost::unordered_flat_set<Index> grad_filtered_indices(grad_filter.filtered_indices().begin(),
                                                              grad_filter.filtered_indices().end());

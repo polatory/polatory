@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <numbers>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/kriging/variogram.hpp>
 #include <polatory/kriging/variogram_builder.hpp>

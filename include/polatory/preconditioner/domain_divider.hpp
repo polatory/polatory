@@ -59,8 +59,7 @@ class DomainDivider {
     std::priority_queue<Cluster> clusters;
     std::vector<MixedPoint> root_points;
     for (auto i : point_idcs_) {
-      if (std::find(poly_point_idcs_.begin(), poly_point_idcs_.end(), i) ==
-          poly_point_idcs_.end()) {
+      if (std::ranges::find(poly_point_idcs_, i) == poly_point_idcs_.end()) {
         root_points.emplace_back(i, true, false);
       }
     }
@@ -158,7 +157,7 @@ class DomainDivider {
     MixedPoint center;
   };
 
-  void divide_domain(typename std::list<Domain>::iterator it) {
+  void divide_domain(std::list<Domain>::iterator it) {
     auto& d = *it;
     auto mu = d.num_points();
     auto sigma = d.num_grad_points();
@@ -174,20 +173,19 @@ class DomainDivider {
     // If the points are axis-aligned, it is important to sort them
     // not only along the longest axis but also along the other axes.
     auto width = domain_bbox(d).width();
-    std::array<int, kDim> axes;
+    std::array<int, kDim> axes{};
     std::iota(axes.begin(), axes.end(), 0);
-    std::sort(axes.begin(), axes.end(), [&width](auto i, auto j) { return width(i) > width(j); });
-    std::sort(mixed_points.begin(), mixed_points.end(),
-              [this, &axes](const auto& a, const auto& b) {
-                auto p = a.point(points_, grad_points_);
-                auto q = b.point(points_, grad_points_);
-                for (auto axis : axes) {
-                  if (p(axis) != q(axis)) {
-                    return p(axis) < q(axis);
-                  }
-                }
-                return false;
-              });
+    std::ranges::sort(axes, [&width](auto i, auto j) { return width(i) > width(j); });
+    std::ranges::sort(mixed_points, [this, &axes](const auto& a, const auto& b) {
+      auto p = a.point(points_, grad_points_);
+      auto q = b.point(points_, grad_points_);
+      for (auto axis : axes) {
+        if (p(axis) != q(axis)) {
+          return p(axis) < q(axis);
+        }
+      }
+      return false;
+    });
 
     std::vector<Index> prefix_sum_mult{0};
     for (const auto& p : mixed_points) {
@@ -204,16 +202,14 @@ class DomainDivider {
         round_half_to_even(static_cast<double>(left_partition_mult + right_partition_mult) / 2.0));
 
     auto n_points = mu + sigma;
-    auto left_partition = static_cast<Index>(std::distance(
-        prefix_sum_mult.begin(),
-        std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), left_partition_mult) - 1));
-    auto right_partition = static_cast<Index>(std::distance(
-        prefix_sum_mult.begin(),
-        std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), right_partition_mult) -
-            1));
+    auto left_partition = static_cast<Index>(
+        std::distance(prefix_sum_mult.begin(),
+                      std::ranges::upper_bound(prefix_sum_mult, left_partition_mult) - 1));
+    auto right_partition = static_cast<Index>(
+        std::distance(prefix_sum_mult.begin(),
+                      std::ranges::upper_bound(prefix_sum_mult, right_partition_mult) - 1));
     auto mid = static_cast<Index>(std::distance(
-        prefix_sum_mult.begin(),
-        std::upper_bound(prefix_sum_mult.begin(), prefix_sum_mult.end(), mid_mult) - 1));
+        prefix_sum_mult.begin(), std::ranges::upper_bound(prefix_sum_mult, mid_mult) - 1));
 
     Domain left;
     Domain right;
@@ -293,10 +289,10 @@ class DomainDivider {
         });
 
     auto width = bbox.width();
-    std::array<int, kDim> axes;
+    std::array<int, kDim> axes{};
     std::iota(axes.begin(), axes.end(), 0);
-    std::sort(axes.begin(), axes.end(), [&width](auto i, auto j) { return width(i) > width(j); });
-    std::sort(points.begin(), points.end(), [this, &axes](const auto& a, const auto& b) {
+    std::ranges::sort(axes, [&width](auto i, auto j) { return width(i) > width(j); });
+    std::ranges::sort(points, [this, &axes](const auto& a, const auto& b) {
       auto p = a.point(points_, grad_points_);
       auto q = b.point(points_, grad_points_);
       for (auto axis : axes) {

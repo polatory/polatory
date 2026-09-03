@@ -40,9 +40,13 @@ int main(int /*argc*/, char* argv[]) {
     auto eval_end = std::chrono::high_resolution_clock::now();
 
     auto fit_time =
-        1e-3 * std::chrono::duration_cast<std::chrono::milliseconds>(fit_end - fit_start).count();
+        1e-3 *
+        static_cast<double>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(fit_end - fit_start).count());
     auto eval_time =
-        1e-3 * std::chrono::duration_cast<std::chrono::milliseconds>(eval_end - eval_start).count();
+        1e-3 *
+        static_cast<double>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(eval_end - eval_start).count());
     std::cout << std::fixed << std::setprecision(3)  //
               << "fitting took " << fit_time << "s" << std::endl
               << "evaluation took " << eval_time << "s" << std::endl

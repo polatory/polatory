@@ -100,10 +100,18 @@ class ResidualEvaluator {
                                                                     values_.tail(kDim * sigma_));
 
       if (residual > tolerance || grad_residual > grad_tolerance) {
-        return {false, residual, grad_residual, true, true};
+        return {.converged = false,
+                .residual = residual,
+                .grad_residual = grad_residual,
+                .exact_residual = true,
+                .exact_grad_residual = true};
       }
 
-      return {true, residual, grad_residual, true, true};
+      return {.converged = true,
+              .residual = residual,
+              .grad_residual = grad_residual,
+              .exact_residual = true,
+              .exact_grad_residual = true};
     }
   }
 

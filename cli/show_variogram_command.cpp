@@ -118,8 +118,8 @@ class ShowVariogramCommand : public Command {
       }
     } else {
       const auto& v = variog_set.variograms().at(opts.id);
-      auto max_distance = *std::max_element(v.bin_distance().begin(), v.bin_distance().end());
-      auto max_gamma = *std::max_element(v.bin_gamma().begin(), v.bin_gamma().end());
+      auto max_distance = *std::ranges::max_element(v.bin_distance());
+      auto max_gamma = *std::ranges::max_element(v.bin_gamma());
       auto distance_prec = format_precision(max_distance);
       auto gamma_prec = format_precision(max_gamma);
 

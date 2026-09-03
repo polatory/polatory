@@ -66,7 +66,7 @@ struct HessianKernel {
 
   auto evaluate(scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
                 scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
-    using decayed_type = typename std::decay_t<xsimd::batch<double>>;
+    using decayed_type = std::decay_t<xsimd::batch<double>>;
 
     constexpr auto dim_size = static_cast<std::size_t>(kDim);
     std::array<std::array<double, 4>, dim_size * dim_size> v{};

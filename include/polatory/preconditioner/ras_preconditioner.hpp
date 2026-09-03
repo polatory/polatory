@@ -94,7 +94,7 @@ class RasPreconditioner : public krylov::LinearOperator {
         point_idcs_.at(level) = poly_point_idcs;
         point_idcs_.at(level).reserve(mu_);
         for (Index i = 0; i < mu_; i++) {
-          if (!std::binary_search(poly_point_idcs.begin(), poly_point_idcs.end(), i)) {
+          if (!std::ranges::binary_search(poly_point_idcs, i)) {
             point_idcs_.at(level).push_back(i);
           }
         }

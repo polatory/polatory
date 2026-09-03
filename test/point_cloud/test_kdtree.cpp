@@ -37,7 +37,7 @@ TEST(kdtree, trivial) {
     EXPECT_EQ(k, indices.size());
     EXPECT_EQ(indices.size(), distances.size());
 
-    std::sort(indices.begin(), indices.end());
+    std::ranges::sort(indices);
     EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
   }
 
@@ -49,7 +49,7 @@ TEST(kdtree, trivial) {
       EXPECT_LE(distance, search_radius);
     }
 
-    std::sort(indices.begin(), indices.end());
+    std::ranges::sort(indices);
     EXPECT_EQ(indices.end(), std::unique(indices.begin(), indices.end()));
   }
 }

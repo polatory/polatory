@@ -135,7 +135,7 @@ class PrimitiveLattice {
     geometry::Vector3 lcd_frac = lcd - lcd_int;
     LatticeCoordinates lc = lcd_int.cast<int>();
     std::array<int, 3> rank = {0, 1, 2};
-    std::sort(rank.begin(), rank.end(), [&](auto i, auto j) { return lcd_frac(i) < lcd_frac(j); });
+    std::ranges::sort(rank, [&](auto i, auto j) { return lcd_frac(i) < lcd_frac(j); });
 
     Eigen::Matrix<int, 4, 3, Eigen::RowMajor> tet;
     tet.row(0) = lc;

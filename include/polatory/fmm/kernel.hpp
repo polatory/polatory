@@ -36,7 +36,7 @@ struct Kernel {
 
   template <typename ValueType>
   constexpr auto mutual_coefficient() const {
-    using decayed_type = typename std::decay_t<ValueType>;
+    using decayed_type = std::decay_t<ValueType>;
     return vector_type<decayed_type>{decayed_type(1.0)};
   }
 
@@ -53,7 +53,7 @@ struct Kernel {
 
   auto evaluate(scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
                 scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
-    using decayed_type = typename std::decay_t<xsimd::batch<double>>;
+    using decayed_type = std::decay_t<xsimd::batch<double>>;
 
     std::array<double, 4> v{};
     for (std::size_t i = 0; i < x.at(0).size; i++) {

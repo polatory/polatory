@@ -39,7 +39,6 @@ class KdTree<Dim>::Impl {
     using DistanceType = double;
     using IndexType = Index;
 
-   public:
     KNNResultSet(std::size_t k, std::vector<IndexType>& indices,
                  std::vector<DistanceType>& distances)
         : k_{k},
@@ -52,7 +51,7 @@ class KdTree<Dim>::Impl {
 
     bool addPoint(DistanceType dist, IndexType index) {
       dist = std::sqrt(dist);
-      auto it = std::upper_bound(distances_.begin(), distances_.end(), dist);
+      auto it = std::ranges::upper_bound(distances_, dist);
       auto i = static_cast<std::size_t>(std::distance(distances_.begin(), it));
       if (i < k_) {
         if (full()) {

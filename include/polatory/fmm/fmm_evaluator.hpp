@@ -45,7 +45,7 @@ using FmmGenericEvaluatorPtr = std::unique_ptr<FmmGenericEvaluatorBase<Dim>>;
 
 template <class Kernel>
 class FmmGenericEvaluator final : public FmmGenericEvaluatorBase<Kernel::kDim> {
-  using Rbf = typename Kernel::Rbf;
+  using Rbf = Kernel::Rbf;
   static constexpr int kDim = Kernel::kDim;
 
   using Bbox = geometry::Bbox<kDim>;

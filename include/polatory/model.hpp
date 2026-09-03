@@ -1,15 +1,16 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <format>
 #include <limits>
-#include <memory>
 #include <numbers>
 #include <polatory/common/io.hpp>
 #include <polatory/geometry/anisotropy.hpp>
 #include <polatory/polynomial/polynomial_basis_base.hpp>
 #include <polatory/rbf/rbf.hpp>
 #include <polatory/types.hpp>
+#include <ranges>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -68,12 +69,7 @@ class Model {
   std::string description() const;
 
   bool is_covariance_model() const {
-    for (const auto& rbf : rbfs_) {
-      if (!rbf.is_covariance_function()) {
-        return false;
-      }
-    }
-    return true;
+    return std::ranges::all_of(rbfs_, [](const auto& rbf) { return rbf.is_covariance_function(); });
   }
 
   double nugget() const { return nugget_; }

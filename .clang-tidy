@@ -1,8 +1,11 @@
 Checks: "-*,\
   boost-*,\
+  -boost-use-ranges,\
   bugprone-*,\
   -bugprone-easily-swappable-parameters,\
   -bugprone-macro-parentheses,\
+  -bugprone-random-generator-seed,\
+  -bugprone-throwing-static-initialization,\
   -bugprone-unchecked-optional-access,\
   cert-*,\
   -cert-msc32-c,\
@@ -32,8 +35,11 @@ Checks: "-*,\
   openmp-*,\
   performance-*,\
   -performance-avoid-endl,\
+  -performance-enum-size,\
   portability-*,\
+  -portability-avoid-pragma-once,\
   readability-*,\
+  -readability-avoid-nested-conditional-operator,\
   -readability-function-cognitive-complexity,\
   -readability-identifier-length,\
   -readability-magic-numbers,\

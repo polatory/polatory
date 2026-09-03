@@ -41,7 +41,7 @@ using FmmGenericSymmetricEvaluatorPtr = std::unique_ptr<FmmGenericSymmetricEvalu
 
 template <class Kernel>
 class FmmGenericSymmetricEvaluator final : public FmmGenericSymmetricEvaluatorBase<Kernel::kDim> {
-  using Rbf = typename Kernel::Rbf;
+  using Rbf = Kernel::Rbf;
   static constexpr int kDim = Kernel::kDim;
 
   using Bbox = geometry::Bbox<kDim>;

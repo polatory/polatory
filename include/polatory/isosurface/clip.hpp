@@ -197,7 +197,7 @@ class MeshClipper {
   // both triangles sharing the edge compute the bit-identical point, letting the final vertex merge
   // dedup it instead of leaving two near-coincident boundary vertices.
   static Point intersect(Point a, Point b, double threshold) {
-    if (std::lexicographical_compare(b.begin(), b.end(), a.begin(), a.end())) {
+    if (std::ranges::lexicographical_compare(b, a)) {
       std::swap(a, b);
     }
     auto t = (threshold - a(0)) / (b(0) - a(0));

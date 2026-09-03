@@ -88,8 +88,8 @@ class Lattice : public PrimitiveLattice {
 
     evaluate_field(field_fm, isovalue);
 
-    std::sort(seeds.begin(), seeds.end(),
-              [](const auto& a, const auto& b) { return LatticeCoordinatesLess()(a.lc, b.lc); });
+    std::ranges::sort(
+        seeds, [](const auto& a, const auto& b) { return LatticeCoordinatesLess()(a.lc, b.lc); });
     seeds.erase(std::unique(seeds.begin(), seeds.end(),
                             [](const auto& a, const auto& b) { return a.lc == b.lc; }),
                 seeds.end());
@@ -154,9 +154,8 @@ class Lattice : public PrimitiveLattice {
 
         geometry::Vector3 neg_grad = -gradient(lc).normalized();
 
-        auto nlc_it = std::min_element(
-            nlcs.begin(), nlcs.end(),
-            [this, &n, &neg_grad, &corrector](const auto& lca, const auto& lcb) {
+        auto nlc_it = std::ranges::min_element(
+            nlcs, [this, &n, &neg_grad, &corrector](const auto& lca, const auto& lcb) {
               const auto& na = node_list_.at(lca);
               const auto& nb = node_list_.at(lcb);
               const auto& p = n.position();
@@ -215,11 +214,10 @@ class Lattice : public PrimitiveLattice {
         for (const auto& nlc : knn_nodes(lc1, 1)) {
           neighbors1.push_back(nlc);
         }
-        std::sort(neighbors0.begin(), neighbors0.end(), LatticeCoordinatesLess());
-        std::sort(neighbors1.begin(), neighbors1.end(), LatticeCoordinatesLess());
-        std::set_intersection(neighbors0.begin(), neighbors0.end(), neighbors1.begin(),
-                              neighbors1.end(), std::back_inserter(common_neighbors),
-                              LatticeCoordinatesLess());
+        std::ranges::sort(neighbors0, LatticeCoordinatesLess());
+        std::ranges::sort(neighbors1, LatticeCoordinatesLess());
+        std::ranges::set_intersection(neighbors0, neighbors1, std::back_inserter(common_neighbors),
+                                      LatticeCoordinatesLess());
 
         for (const auto& nlc : common_neighbors) {
           add_node(nlc);
@@ -299,7 +297,7 @@ class Lattice : public PrimitiveLattice {
     }
 
     double value() const {
-      if (std::any_of(populated_.begin(), populated_.end(), [](auto init) { return !init; })) {
+      if (std::ranges::any_of(populated_, [](auto init) { return !init; })) {
         throw std::runtime_error("not all values are populated");
       }
 

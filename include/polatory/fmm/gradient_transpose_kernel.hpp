@@ -64,7 +64,7 @@ struct GradientTransposeKernel {
 
   auto evaluate(scalfmm::container::point<xsimd::batch<double>, kDim> const& x,
                 scalfmm::container::point<xsimd::batch<double>, kDim> const& y) const {
-    using decayed_type = typename std::decay_t<xsimd::batch<double>>;
+    using decayed_type = std::decay_t<xsimd::batch<double>>;
 
     std::array<std::array<double, 4>, kDim> v{};
 

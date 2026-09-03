@@ -243,7 +243,7 @@ class VertexClusterer {
         by_vertices;
     for (Index fi = 0; fi < f.rows(); fi++) {
       std::array<Index, 3> key{f(fi, 0), f(fi, 1), f(fi, 2)};
-      std::sort(key.begin(), key.end());
+      std::ranges::sort(key);
       by_vertices[key].push_back(fi);
     }
     std::vector<bool> dropped(f.rows(), false);

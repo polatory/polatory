@@ -14,8 +14,8 @@ namespace internal {
 template <int Dim, int K>
 class PolyharmonicEven : public RbfBase<Dim> {
   using Base = RbfBase<Dim>;
-  using Mat = typename Base::Mat;
-  using Vector = typename Base::Vector;
+  using Mat = Base::Mat;
+  using Vector = Base::Vector;
 
   static_assert(K > 0 && K % 2 == 0, "k must be a positive even integer");
 
@@ -113,7 +113,7 @@ class Biharmonic2D final : public PolyharmonicEven<Dim, 2> {
 
  private:
   using Base = PolyharmonicEven<Dim, 2>;
-  using RbfPtr = typename Base::RbfPtr;
+  using RbfPtr = Base::RbfPtr;
 
  public:
   using Base::Base;
@@ -131,7 +131,7 @@ class Triharmonic2D final : public PolyharmonicEven<Dim, 4> {
 
  private:
   using Base = PolyharmonicEven<Dim, 4>;
-  using RbfPtr = typename Base::RbfPtr;
+  using RbfPtr = Base::RbfPtr;
 
  public:
   using Base::Base;

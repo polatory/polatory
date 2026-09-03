@@ -13,8 +13,8 @@ namespace internal {
 template <int Dim, int K>
 class PolyharmonicOdd : public RbfBase<Dim> {
   using Base = RbfBase<Dim>;
-  using Mat = typename Base::Mat;
-  using Vector = typename Base::Vector;
+  using Mat = Base::Mat;
+  using Vector = Base::Vector;
 
   static_assert(K > 0 && K % 2 == 1, "k must be a positive odd integer");
 
@@ -107,7 +107,7 @@ class Biharmonic3D final : public PolyharmonicOdd<Dim, 1> {
 
  private:
   using Base = PolyharmonicOdd<Dim, 1>;
-  using RbfPtr = typename Base::RbfPtr;
+  using RbfPtr = Base::RbfPtr;
 
  public:
   using Base::Base;
@@ -125,7 +125,7 @@ class Triharmonic3D final : public PolyharmonicOdd<Dim, 3> {
 
  private:
   using Base = PolyharmonicOdd<Dim, 3>;
-  using RbfPtr = typename Base::RbfPtr;
+  using RbfPtr = Base::RbfPtr;
 
  public:
   using Base::Base;

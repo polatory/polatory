@@ -12,8 +12,8 @@ inline std::vector<Index> complementary_indices(const std::vector<Index>& indice
 
   auto universe = boost::irange<Index>(Index{0}, n_points);
   auto idcs = indices;
-  std::sort(idcs.begin(), idcs.end());
-  std::set_difference(universe.begin(), universe.end(), idcs.begin(), idcs.end(), c_idcs.begin());
+  std::ranges::sort(idcs);
+  std::ranges::set_difference(universe, idcs, c_idcs.begin());
 
   return c_idcs;
 }

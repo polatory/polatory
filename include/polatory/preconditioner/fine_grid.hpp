@@ -20,10 +20,10 @@ template <typename MatrixType_, int UpLo_ = Eigen::Lower>
 class LDLT2 : public LDLT<MatrixType_, UpLo_> {
  public:
   using Base = LDLT<MatrixType_, UpLo_>;
-  using MatrixType = typename Base::MatrixType;
+  using MatrixType = Base::MatrixType;
   using Base::Base;
 
-  inline MatrixType& matrixLDLT() {
+  MatrixType& matrixLDLT() {
     eigen_assert(Base::m_isInitialized && "LDLT is not initialized.");
     return this->m_matrix;
   }
