@@ -4,6 +4,7 @@
 #include <format>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
@@ -26,114 +27,124 @@ using polatory::numeric::to_double;
 
 namespace {
 
-struct Options {
-  std::string in_file;
-  std::string seed_points_file;
-  std::string snap_points_file;
-  double accuracy{};
-  double grad_accuracy{};
-  double isovalue{};
-  Bbox3 bbox;
-  double resolution{};
-  Mat3 aniso;
-  std::string out_file;
+class IsosurfaceCommand : public Command {
+  static inline const std::string kDescription = "Extract an isosurface from a 3D interpolant";
+  static inline const std::string kName = "isosurface";
+
+ public:
+  const std::string& description() const override { return kDescription; }
+
+  const std::string& name() const override { return kName; }
+
+  void run(const std::vector<std::string>& args, const GlobalOptions& global_opts) const override {
+    namespace po = boost::program_options;
+
+    Options opts;
+
+    po::options_description opts_desc("Options", 80, 50);
+    opts_desc.add_options()  //
+        ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
+         "Input 3D interpolant file")  //
+        ("seeds", po::value(&opts.seed_points_file)->value_name("FILE"),
+         "Input seed points file in CSV format:\n  X,Y,Z")  //
+        ("snap", po::value(&opts.snap_points_file)->value_name("FILE"),
+         "Points to snap the mesh to in CSV format:\n  X,Y,Z[,TOL]\n"
+         "TOL is the tolerance distance as a fraction of the mesh resolution")  //
+        ("acc",
+         po::value(&opts.accuracy)
+             ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+             ->value_name("ACC"),
+         "Absolute evaluation accuracy")  //
+        ("grad-acc",
+         po::value(&opts.grad_accuracy)
+             ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+             ->value_name("ACC"),
+         "Absolute gradient evaluation accuracy")  //
+        ("bbox",
+         po::value(&opts.bbox)
+             ->multitoken()
+             ->default_value({}, "AUTO")
+             ->value_name("X_MIN Y_MIN Z_MIN X_MAX Y_MAX Z_MAX"),
+         "Output mesh bounding box")  //
+        ("res", po::value(&opts.resolution)->required()->value_name("RES"),
+         "Output mesh resolution")  //
+        ("aniso",
+         po::value(&opts.aniso)
+             ->multitoken()
+             ->default_value(Mat3::Identity(), "1 0 0 0 1 0 0 0 1")
+             ->value_name("A_11 A_12 ... A_33"),
+         "Elements of the anisotropy matrix")  //
+        ("isoval", po::value(&opts.isovalue)->default_value(0.0, "0.0")->value_name("VAL"),
+         "Output mesh isovalue")  //
+        ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
+         "Output mesh file in OBJ format")  //
+        ;
+
+    if (global_opts.help) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      return;
+    }
+
+    po::variables_map vm;
+    try {
+      po::store(po::command_line_parser{args}
+                    .options(opts_desc)
+                    .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
+                    .run(),
+                vm);
+      po::notify(vm);
+    } catch (const po::error&) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      throw;
+    }
+
+    run_impl(opts);
+  }
+
+ private:
+  struct Options {
+    std::string in_file;
+    std::string seed_points_file;
+    std::string snap_points_file;
+    double accuracy{};
+    double grad_accuracy{};
+    double isovalue{};
+    Bbox3 bbox;
+    double resolution{};
+    Mat3 aniso;
+    std::string out_file;
+  };
+
+  static void run_impl(const Options& opts) {
+    auto inter = Interpolant<3>::load(opts.in_file);
+    auto bbox = opts.bbox.is_empty() ? inter.bbox() : opts.bbox;
+
+    Isosurface isosurf(bbox, opts.resolution, opts.aniso);
+    RbfFieldFunction field_fn(inter, opts.accuracy, opts.grad_accuracy);
+
+    Points3 seed_points;
+    if (!opts.seed_points_file.empty()) {
+      MatX table = read_table(opts.seed_points_file);
+      seed_points = table(kAll, {0, 1, 2});
+    }
+
+    if (!opts.snap_points_file.empty()) {
+      MatX table = read_table(opts.snap_points_file);
+      // An optional 4th column gives each point's minimum snapping distance (a fraction of the
+      // mesh resolution); when absent, every tolerance is zero.
+      VecX tolerances = table.cols() >= 4 ? VecX(table(kAll, 3)) : VecX();
+      isosurf.set_snap_points(table(kAll, {0, 1, 2}), tolerances);
+    }
+
+    auto mesh = seed_points.rows() > 0
+                    ? isosurf.generate_from_seed_points(seed_points, field_fn, opts.isovalue)
+                    : isosurf.generate(field_fn, opts.isovalue);
+
+    mesh.export_obj(opts.out_file);
+  }
 };
 
-void run_impl(const Options& opts) {
-  auto inter = Interpolant<3>::load(opts.in_file);
-  auto bbox = opts.bbox.is_empty() ? inter.bbox() : opts.bbox;
-
-  Isosurface isosurf(bbox, opts.resolution, opts.aniso);
-  RbfFieldFunction field_fn(inter, opts.accuracy, opts.grad_accuracy);
-
-  Points3 seed_points;
-  if (!opts.seed_points_file.empty()) {
-    MatX table = read_table(opts.seed_points_file);
-    seed_points = table(kAll, {0, 1, 2});
-  }
-
-  if (!opts.snap_points_file.empty()) {
-    MatX table = read_table(opts.snap_points_file);
-    // An optional 4th column gives each point's minimum snapping distance (a fraction of the
-    // mesh resolution); when absent, every tolerance is zero.
-    VecX tolerances = table.cols() >= 4 ? VecX(table(kAll, 3)) : VecX();
-    isosurf.set_snap_points(table(kAll, {0, 1, 2}), tolerances);
-  }
-
-  auto mesh = seed_points.rows() > 0
-                  ? isosurf.generate_from_seed_points(seed_points, field_fn, opts.isovalue)
-                  : isosurf.generate(field_fn, opts.isovalue);
-
-  mesh.export_obj(opts.out_file);
-}
-
 }  // namespace
-
-void IsosurfaceCommand::run(const std::vector<std::string>& args,
-                            const GlobalOptions& global_opts) {
-  namespace po = boost::program_options;
-
-  Options opts;
-
-  po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()  //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
-       "Input 3D interpolant file")  //
-      ("seeds", po::value(&opts.seed_points_file)->value_name("FILE"),
-       "Input seed points file in CSV format:\n  X,Y,Z")  //
-      ("snap", po::value(&opts.snap_points_file)->value_name("FILE"),
-       "Points to snap the mesh to in CSV format:\n  X,Y,Z[,TOL]\n"
-       "TOL is the tolerance distance as a fraction of the mesh resolution")  //
-      ("acc",
-       po::value(&opts.accuracy)
-           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
-           ->value_name("ACC"),
-       "Absolute evaluation accuracy")  //
-      ("grad-acc",
-       po::value(&opts.grad_accuracy)
-           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
-           ->value_name("ACC"),
-       "Absolute gradient evaluation accuracy")  //
-      ("bbox",
-       po::value(&opts.bbox)
-           ->multitoken()
-           ->default_value({}, "AUTO")
-           ->value_name("X_MIN Y_MIN Z_MIN X_MAX Y_MAX Z_MAX"),
-       "Output mesh bounding box")  //
-      ("res", po::value(&opts.resolution)->required()->value_name("RES"),
-       "Output mesh resolution")  //
-      ("aniso",
-       po::value(&opts.aniso)
-           ->multitoken()
-           ->default_value(Mat3::Identity(), "1 0 0 0 1 0 0 0 1")
-           ->value_name("A_11 A_12 ... A_33"),
-       "Elements of the anisotropy matrix")  //
-      ("isoval", po::value(&opts.isovalue)->default_value(0.0, "0.0")->value_name("VAL"),
-       "Output mesh isovalue")  //
-      ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
-       "Output mesh file in OBJ format")  //
-      ;
-
-  if (global_opts.help) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    return;
-  }
-
-  po::variables_map vm;
-  try {
-    po::store(po::command_line_parser{args}
-                  .options(opts_desc)
-                  .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
-                  .run(),
-              vm);
-    po::notify(vm);
-  } catch (const po::error&) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    throw;
-  }
-
-  run_impl(opts);
-}
 
 namespace Eigen {
 
@@ -153,3 +164,5 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, pola
 }
 
 }  // namespace Eigen
+
+CommandPtr make_isosurface_command() { return std::make_unique<IsosurfaceCommand>(); }

@@ -1,31 +1,20 @@
 #pragma once
 
-#include <string>
-#include <vector>
+#include <memory>
 
-struct GlobalOptions {
-  bool help{};
-};
+#include "command.hpp"
 
-#define POLATORY_COMMAND(PREFIX, NAME)                                                       \
-  class PREFIX##Command {                                                                    \
-   public:                                                                                   \
-    static inline const std::string kName = NAME;                                            \
-                                                                                             \
-    static void run(const std::vector<std::string>& args, const GlobalOptions& global_opts); \
-  };
-
-POLATORY_COMMAND(CreateModel, "create-model");
-POLATORY_COMMAND(CrossValidate, "cross-validate");
-POLATORY_COMMAND(EstimateNormals, "estimate-normals");
-POLATORY_COMMAND(Evaluate, "evaluate");
-POLATORY_COMMAND(ExtractModel, "extract-model");
-POLATORY_COMMAND(Fit, "fit");
-POLATORY_COMMAND(FitModelToVariogram, "fit-model-to-variogram");
-POLATORY_COMMAND(Isosurface, "isosurface");
-POLATORY_COMMAND(NormalsToSdf, "normals-to-sdf");
-POLATORY_COMMAND(ShowModel, "show-model");
-POLATORY_COMMAND(ShowVariogram, "show-variogram");
-POLATORY_COMMAND(Surface25D, "surface-25d");
-POLATORY_COMMAND(Unique, "unique");
-POLATORY_COMMAND(Variogram, "variogram");
+CommandPtr make_create_model_command();
+CommandPtr make_cross_validate_command();
+CommandPtr make_estimate_normals_command();
+CommandPtr make_evaluate_command();
+CommandPtr make_extract_model_command();
+CommandPtr make_fit_command();
+CommandPtr make_fit_model_to_variogram_command();
+CommandPtr make_isosurface_command();
+CommandPtr make_normals_to_sdf_command();
+CommandPtr make_show_model_command();
+CommandPtr make_show_variogram_command();
+CommandPtr make_surface_25d_command();
+CommandPtr make_unique_command();
+CommandPtr make_variogram_command();

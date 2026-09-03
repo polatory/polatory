@@ -3,6 +3,7 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
@@ -24,164 +25,177 @@ using polatory::geometry::Vectors;
 
 namespace {
 
-struct Options {
-  std::string in_file;
-  std::string grad_in_file;
-  int dim{};
-  std::string model_file;
-  ModelOptions model_opts;
-  std::string initial_interpolant_file;
-  double tolerance{};
-  double grad_tolerance{};
-  int max_iter{};
-  double accuracy{};
-  double grad_accuracy{};
-  bool ineq{};
-  bool reduce{};
-  std::string out_file;
+class FitCommand : public Command {
+  static inline const std::string kDescription = "Fit an interpolant to data";
+  static inline const std::string kName = "fit";
+
+ public:
+  const std::string& description() const override { return kDescription; }
+
+  const std::string& name() const override { return kName; }
+
+  void run(const std::vector<std::string>& args, const GlobalOptions& global_opts) const override {
+    namespace po = boost::program_options;
+
+    Options opts;
+
+    po::options_description opts_desc("Options", 80, 50);
+    opts_desc.add_options()  //
+        ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
+         "Input file in CSV format:\n  X[,Y[,Z]],VAL[,LOWER,UPPER]")  //
+        ("grad-in", po::value(&opts.grad_in_file)->value_name("FILE"),
+         "Gradient data input file in CSV format:\n  X[,Y[,Z]],DX[,DY[,DZ]]")  //
+        ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
+         "Dimension of input points")  //
+        ("model", po::value(&opts.model_file)->value_name("FILE"),
+         "Input model file")  //
+        ("initial", po::value(&opts.initial_interpolant_file)->value_name("FILE"),
+         "Input interpolant file to be used as the initial solution")  //
+        ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
+         "Absolute fitting tolerance")  //
+        ("grad-tol",
+         po::value(&opts.grad_tolerance)->default_value(-1.0, "SAME AS --tol")->value_name("TOL"),
+         "Absolute gradient fitting tolerance")  //
+        ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
+         "Maximum number of iterations")  //
+        ("acc",
+         po::value(&opts.accuracy)
+             ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+             ->value_name("ACC"),
+         "Absolute evaluation accuracy")  //
+        ("grad-acc",
+         po::value(&opts.grad_accuracy)
+             ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+             ->value_name("ACC"),
+         "Absolute gradient evaluation accuracy")  //
+        ("ineq", po::bool_switch(&opts.ineq),
+         "Use inequality constraints")  //
+        ("reduce", po::bool_switch(&opts.reduce),
+         "Try to reduce the number of RBF centers (incremental fitting)")  //
+        ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
+         "Output interpolant file")  //
+        ;
+
+    if (std::ranges::find(args, "--model") == args.end()) {
+      auto model_opts_desc = make_model_options_description(opts.model_opts);
+      opts_desc.add(model_opts_desc);
+    }
+
+    if (global_opts.help) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      return;
+    }
+
+    po::variables_map vm;
+    try {
+      po::store(po::command_line_parser{args}
+                    .options(opts_desc)
+                    .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
+                    .run(),
+                vm);
+      po::notify(vm);
+    } catch (const po::error&) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      throw;
+    }
+
+    if (!opts.grad_in_file.empty() && opts.ineq) {
+      throw std::runtime_error("--grad-in cannot be used in conjunction with --ineq");
+    }
+
+    if (!opts.initial_interpolant_file.empty() && opts.reduce) {
+      throw std::runtime_error("--initial cannot be used in conjunction with --reduce");
+    }
+
+    if (opts.grad_tolerance == -1.0) {
+      opts.grad_tolerance = opts.tolerance;
+    }
+
+    switch (opts.dim) {
+      case 1:
+        run_impl<1>(opts);
+        break;
+      case 2:
+        run_impl<2>(opts);
+        break;
+      case 3:
+        run_impl<3>(opts);
+        break;
+      default:
+        throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
+    }
+  }
+
+ private:
+  struct Options {
+    std::string in_file;
+    std::string grad_in_file;
+    int dim{};
+    std::string model_file;
+    ModelOptions model_opts;
+    std::string initial_interpolant_file;
+    double tolerance{};
+    double grad_tolerance{};
+    int max_iter{};
+    double accuracy{};
+    double grad_accuracy{};
+    bool ineq{};
+    bool reduce{};
+    std::string out_file;
+  };
+
+  template <int Dim>
+  static void run_impl(const Options& opts) {
+    using Interpolant = Interpolant<Dim>;
+    using Model = Model<Dim>;
+    using Points = Points<Dim>;
+    using Vectors = Vectors<Dim>;
+
+    MatX table = read_table(opts.in_file);
+    Points points = table(kAll, Eigen::seqN(0, Dim));
+    VecX values = table.col(Dim);
+    std::optional<VecX> values_lb;
+    std::optional<VecX> values_ub;
+    if (opts.ineq) {
+      values_lb = table.col(Dim + 1);
+      values_ub = table.col(Dim + 2);
+    }
+
+    Points grad_points;
+    Vectors grad_values;
+    if (!opts.grad_in_file.empty()) {
+      MatX grad_table = read_table(opts.grad_in_file);
+      grad_points = grad_table(kAll, Eigen::seqN(0, Dim));
+      grad_values = grad_table(kAll, Eigen::seqN(Dim, Dim));
+    }
+
+    VecX rhs(values.size() + grad_values.size());
+    rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
+
+    auto model =
+        !opts.model_file.empty() ? Model::load(opts.model_file) : make_model<Dim>(opts.model_opts);
+
+    std::optional<Interpolant> initial;
+    if (!opts.initial_interpolant_file.empty()) {
+      initial = Interpolant::load(opts.initial_interpolant_file);
+    }
+
+    Interpolant inter(std::move(model));
+    if (opts.ineq) {
+      inter.fit_inequality(points, values, *values_lb, *values_ub, opts.tolerance, opts.max_iter,
+                           opts.accuracy, initial ? &*initial : nullptr);
+    } else if (opts.reduce) {
+      inter.fit_incrementally(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance,
+                              opts.max_iter, opts.accuracy, opts.grad_accuracy);
+    } else {
+      inter.fit(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance, opts.max_iter,
+                opts.accuracy, opts.grad_accuracy, initial ? &*initial : nullptr);
+    }
+
+    inter.save(opts.out_file);
+  }
 };
-
-template <int Dim>
-void run_impl(const Options& opts) {
-  using Interpolant = Interpolant<Dim>;
-  using Model = Model<Dim>;
-  using Points = Points<Dim>;
-  using Vectors = Vectors<Dim>;
-
-  MatX table = read_table(opts.in_file);
-  Points points = table(kAll, Eigen::seqN(0, Dim));
-  VecX values = table.col(Dim);
-  std::optional<VecX> values_lb;
-  std::optional<VecX> values_ub;
-  if (opts.ineq) {
-    values_lb = table.col(Dim + 1);
-    values_ub = table.col(Dim + 2);
-  }
-
-  Points grad_points;
-  Vectors grad_values;
-  if (!opts.grad_in_file.empty()) {
-    MatX grad_table = read_table(opts.grad_in_file);
-    grad_points = grad_table(kAll, Eigen::seqN(0, Dim));
-    grad_values = grad_table(kAll, Eigen::seqN(Dim, Dim));
-  }
-
-  VecX rhs(values.size() + grad_values.size());
-  rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
-
-  auto model =
-      !opts.model_file.empty() ? Model::load(opts.model_file) : make_model<Dim>(opts.model_opts);
-
-  std::optional<Interpolant> initial;
-  if (!opts.initial_interpolant_file.empty()) {
-    initial = Interpolant::load(opts.initial_interpolant_file);
-  }
-
-  Interpolant inter(std::move(model));
-  if (opts.ineq) {
-    inter.fit_inequality(points, values, *values_lb, *values_ub, opts.tolerance, opts.max_iter,
-                         opts.accuracy, initial ? &*initial : nullptr);
-  } else if (opts.reduce) {
-    inter.fit_incrementally(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance,
-                            opts.max_iter, opts.accuracy, opts.grad_accuracy);
-  } else {
-    inter.fit(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance, opts.max_iter,
-              opts.accuracy, opts.grad_accuracy, initial ? &*initial : nullptr);
-  }
-
-  inter.save(opts.out_file);
-}
 
 }  // namespace
 
-void FitCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
-  namespace po = boost::program_options;
-
-  Options opts;
-
-  po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()  //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
-       "Input file in CSV format:\n  X[,Y[,Z]],VAL[,LOWER,UPPER]")  //
-      ("grad-in", po::value(&opts.grad_in_file)->value_name("FILE"),
-       "Gradient data input file in CSV format:\n  X[,Y[,Z]],DX[,DY[,DZ]]")  //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
-       "Dimension of input points")  //
-      ("model", po::value(&opts.model_file)->value_name("FILE"),
-       "Input model file")  //
-      ("initial", po::value(&opts.initial_interpolant_file)->value_name("FILE"),
-       "Input interpolant file to be used as the initial solution")  //
-      ("tol", po::value(&opts.tolerance)->required()->value_name("TOL"),
-       "Absolute fitting tolerance")  //
-      ("grad-tol",
-       po::value(&opts.grad_tolerance)->default_value(-1.0, "SAME AS --tol")->value_name("TOL"),
-       "Absolute gradient fitting tolerance")  //
-      ("max-iter", po::value(&opts.max_iter)->default_value(100)->value_name("N"),
-       "Maximum number of iterations")  //
-      ("acc",
-       po::value(&opts.accuracy)
-           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
-           ->value_name("ACC"),
-       "Absolute evaluation accuracy")  //
-      ("grad-acc",
-       po::value(&opts.grad_accuracy)
-           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
-           ->value_name("ACC"),
-       "Absolute gradient evaluation accuracy")  //
-      ("ineq", po::bool_switch(&opts.ineq),
-       "Use inequality constraints")  //
-      ("reduce", po::bool_switch(&opts.reduce),
-       "Try to reduce the number of RBF centers (incremental fitting)")  //
-      ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
-       "Output interpolant file")  //
-      ;
-
-  if (std::find(args.begin(), args.end(), "--model") == args.end()) {
-    auto model_opts_desc = make_model_options_description(opts.model_opts);
-    opts_desc.add(model_opts_desc);
-  }
-
-  if (global_opts.help) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    return;
-  }
-
-  po::variables_map vm;
-  try {
-    po::store(po::command_line_parser{args}
-                  .options(opts_desc)
-                  .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
-                  .run(),
-              vm);
-    po::notify(vm);
-  } catch (const po::error&) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    throw;
-  }
-
-  if (!opts.grad_in_file.empty() && opts.ineq) {
-    throw std::runtime_error("--grad-in cannot be used in conjunction with --ineq");
-  }
-
-  if (!opts.initial_interpolant_file.empty() && opts.reduce) {
-    throw std::runtime_error("--initial cannot be used in conjunction with --reduce");
-  }
-
-  if (opts.grad_tolerance == -1.0) {
-    opts.grad_tolerance = opts.tolerance;
-  }
-
-  switch (opts.dim) {
-    case 1:
-      run_impl<1>(opts);
-      break;
-    case 2:
-      run_impl<2>(opts);
-      break;
-    case 3:
-      run_impl<3>(opts);
-      break;
-    default:
-      throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
-  }
-}
+CommandPtr make_fit_command() { return std::make_unique<FitCommand>(); }

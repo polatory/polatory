@@ -1,6 +1,7 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <memory>
 #include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
@@ -12,63 +13,76 @@ using polatory::Model;
 
 namespace {
 
-struct Options {
-  std::string in_file;
-  int dim{};
+class ShowModelCommand : public Command {
+  static inline const std::string kDescription = "Show a model file";
+  static inline const std::string kName = "show-model";
+
+ public:
+  const std::string& description() const override { return kDescription; }
+
+  const std::string& name() const override { return kName; }
+
+  void run(const std::vector<std::string>& args, const GlobalOptions& global_opts) const override {
+    namespace po = boost::program_options;
+
+    Options opts;
+
+    po::options_description opts_desc("Options", 80, 50);
+    opts_desc.add_options()  //
+        ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
+         "Input model file")  //
+        ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
+         "Dimension of input points")  //
+        ;
+
+    if (global_opts.help) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      return;
+    }
+
+    po::variables_map vm;
+    try {
+      po::store(po::command_line_parser{args}
+                    .options(opts_desc)
+                    .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
+                    .run(),
+                vm);
+      po::notify(vm);
+    } catch (const po::error&) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      throw;
+    }
+
+    switch (opts.dim) {
+      case 1:
+        run_impl<1>(opts);
+        break;
+      case 2:
+        run_impl<2>(opts);
+        break;
+      case 3:
+        run_impl<3>(opts);
+        break;
+      default:
+        throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
+    }
+  }
+
+ private:
+  struct Options {
+    std::string in_file;
+    int dim{};
+  };
+
+  template <int Dim>
+  static void run_impl(const Options& opts) {
+    using Model = Model<Dim>;
+
+    auto model = Model::load(opts.in_file);
+    std::cout << model.description();
+  }
 };
-
-template <int Dim>
-void run_impl(const Options& opts) {
-  using Model = Model<Dim>;
-
-  auto model = Model::load(opts.in_file);
-  std::cout << model.description();
-}
 
 }  // namespace
 
-void ShowModelCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
-  namespace po = boost::program_options;
-
-  Options opts;
-
-  po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()  //
-      ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
-       "Input model file")  //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
-       "Dimension of input points")  //
-      ;
-
-  if (global_opts.help) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    return;
-  }
-
-  po::variables_map vm;
-  try {
-    po::store(po::command_line_parser{args}
-                  .options(opts_desc)
-                  .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
-                  .run(),
-              vm);
-    po::notify(vm);
-  } catch (const po::error&) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    throw;
-  }
-
-  switch (opts.dim) {
-    case 1:
-      run_impl<1>(opts);
-      break;
-    case 2:
-      run_impl<2>(opts);
-      break;
-    case 3:
-      run_impl<3>(opts);
-      break;
-    default:
-      throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
-  }
-}
+CommandPtr make_show_model_command() { return std::make_unique<ShowModelCommand>(); }

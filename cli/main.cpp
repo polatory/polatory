@@ -1,7 +1,9 @@
+#include <algorithm>
 #include <boost/program_options.hpp>
 #include <exception>
 #include <format>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -27,45 +29,40 @@ int main(int argc, const char* argv[]) {
 
     auto args = po::collect_unrecognized(parsed.options, po::include_positional);
 
+    std::vector<CommandPtr> commands;
+    commands.push_back(make_create_model_command());
+    commands.push_back(make_cross_validate_command());
+    commands.push_back(make_estimate_normals_command());
+    commands.push_back(make_evaluate_command());
+    commands.push_back(make_extract_model_command());
+    commands.push_back(make_fit_command());
+    commands.push_back(make_fit_model_to_variogram_command());
+    commands.push_back(make_isosurface_command());
+    commands.push_back(make_normals_to_sdf_command());
+    commands.push_back(make_show_model_command());
+    commands.push_back(make_show_variogram_command());
+    commands.push_back(make_surface_25d_command());
+    commands.push_back(make_unique_command());
+    commands.push_back(make_variogram_command());
+
     if (args.empty()) {
       std::cout << "usage: polatory [OPTIONS] COMMAND [ARGS]" << std::endl << opts_desc;
+      std::cout << std::endl << "Commands:" << std::endl;
+      for (const auto& command : commands) {
+        std::cout << std::format("  {:24}{}", command->name(), command->description()) << std::endl;
+      }
       return opts.help ? 0 : 1;
     }
 
-    auto command = args.at(0);
+    auto name = args.at(0);
     args.erase(args.begin());
 
-    if (command == CreateModelCommand::kName) {
-      CreateModelCommand::run(args, opts);
-    } else if (command == CrossValidateCommand::kName) {
-      CrossValidateCommand::run(args, opts);
-    } else if (command == EstimateNormalsCommand::kName) {
-      EstimateNormalsCommand::run(args, opts);
-    } else if (command == EvaluateCommand::kName) {
-      EvaluateCommand::run(args, opts);
-    } else if (command == ExtractModelCommand::kName) {
-      ExtractModelCommand::run(args, opts);
-    } else if (command == FitCommand::kName) {
-      FitCommand::run(args, opts);
-    } else if (command == FitModelToVariogramCommand::kName) {
-      FitModelToVariogramCommand::run(args, opts);
-    } else if (command == IsosurfaceCommand::kName) {
-      IsosurfaceCommand::run(args, opts);
-    } else if (command == NormalsToSdfCommand::kName) {
-      NormalsToSdfCommand::run(args, opts);
-    } else if (command == ShowModelCommand::kName) {
-      ShowModelCommand::run(args, opts);
-    } else if (command == ShowVariogramCommand::kName) {
-      ShowVariogramCommand::run(args, opts);
-    } else if (command == Surface25DCommand::kName) {
-      Surface25DCommand::run(args, opts);
-    } else if (command == UniqueCommand::kName) {
-      UniqueCommand::run(args, opts);
-    } else if (command == VariogramCommand::kName) {
-      VariogramCommand::run(args, opts);
-    } else {
-      throw std::runtime_error(std::format("unknown command: '{}'", command));
+    auto it = std::ranges::find(commands, name, &Command::name);
+    if (it == commands.end()) {
+      throw std::runtime_error(std::format("unknown command: '{}'", name));
     }
+
+    (*it)->run(args, opts);
 
     return 0;
   } catch (const std::exception& e) {

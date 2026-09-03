@@ -1,5 +1,6 @@
 #include <boost/program_options.hpp>
 #include <limits>
+#include <memory>
 #include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
@@ -16,99 +17,112 @@ using polatory::geometry::Points;
 
 namespace {
 
-struct Options {
-  std::string interpolant_file;
-  std::string points_file;
-  int dim{};
-  bool grads{};
-  double accuracy{};
-  double grad_accuracy{};
-  std::string out_file;
-};
+class EvaluateCommand : public Command {
+  static inline const std::string kDescription = "Evaluate an interpolant";
+  static inline const std::string kName = "evaluate";
 
-template <int Dim>
-void run_impl(const Options& opts) {
-  using Interpolant = Interpolant<Dim>;
-  using Points = Points<Dim>;
+ public:
+  const std::string& description() const override { return kDescription; }
 
-  auto inter = Interpolant::load(opts.interpolant_file);
+  const std::string& name() const override { return kName; }
 
-  MatX table = read_table(opts.points_file);
-  Points points = table(kAll, Eigen::seqN(0, Dim));
+  void run(const std::vector<std::string>& args, const GlobalOptions& global_opts) const override {
+    namespace po = boost::program_options;
 
-  auto n = points.rows();
-  if (opts.grads) {
-    auto values = inter.evaluate(points, points, opts.accuracy, opts.grad_accuracy);
-    write_table(
-        opts.out_file,
-        concatenate_cols<MatX>(points, values.head(n),
-                               values.tail(Dim * n).template reshaped<Eigen::RowMajor>(n, Dim)));
-  } else {
-    auto values = inter.evaluate(points, opts.accuracy);
-    write_table(opts.out_file, concatenate_cols<MatX>(points, values));
+    Options opts;
+
+    po::options_description opts_desc("Options", 80, 50);
+    opts_desc.add_options()  //
+        ("in", po::value(&opts.interpolant_file)->required()->value_name("FILE"),
+         "Input interpolant file")  //
+        ("points", po::value(&opts.points_file)->value_name("FILE"),
+         "Input evaluation points file in CSV format:\n  X[,Y[,Z]]")  //
+        ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
+         "Dimension of input points")  //
+        ("grads", po::bool_switch(&opts.grads),
+         "Evaluate gradients as well as values")  //
+        ("acc",
+         po::value(&opts.accuracy)
+             ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+             ->value_name("ACC"),
+         "Absolute evaluation accuracy")  //
+        ("grad-acc",
+         po::value(&opts.grad_accuracy)
+             ->default_value(std::numeric_limits<double>::infinity(), "ANY")
+             ->value_name("ACC"),
+         "Absolute gradient evaluation accuracy")  //
+        ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
+         "Output file in CSV format:\n  X[,Y[,Z]],VAL[,DX[,DY[,DZ]]]")  //
+        ;
+
+    if (global_opts.help) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      return;
+    }
+
+    po::variables_map vm;
+    try {
+      po::store(po::command_line_parser{args}
+                    .options(opts_desc)
+                    .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
+                    .run(),
+                vm);
+      po::notify(vm);
+    } catch (const po::error&) {
+      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      throw;
+    }
+
+    switch (opts.dim) {
+      case 1:
+        run_impl<1>(opts);
+        break;
+      case 2:
+        run_impl<2>(opts);
+        break;
+      case 3:
+        run_impl<3>(opts);
+        break;
+      default:
+        throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
+    }
   }
-}
+
+ private:
+  struct Options {
+    std::string interpolant_file;
+    std::string points_file;
+    int dim{};
+    bool grads{};
+    double accuracy{};
+    double grad_accuracy{};
+    std::string out_file;
+  };
+
+  template <int Dim>
+  static void run_impl(const Options& opts) {
+    using Interpolant = Interpolant<Dim>;
+    using Points = Points<Dim>;
+
+    auto inter = Interpolant::load(opts.interpolant_file);
+
+    MatX table = read_table(opts.points_file);
+    Points points = table(kAll, Eigen::seqN(0, Dim));
+
+    auto n = points.rows();
+    if (opts.grads) {
+      auto values = inter.evaluate(points, points, opts.accuracy, opts.grad_accuracy);
+      write_table(
+          opts.out_file,
+          concatenate_cols<MatX>(points, values.head(n),
+                                 values.tail(Dim * n).template reshaped<Eigen::RowMajor>(n, Dim)));
+    } else {
+      auto values = inter.evaluate(points, opts.accuracy);
+      write_table(opts.out_file, concatenate_cols<MatX>(points, values));
+    }
+  }
+};
 
 }  // namespace
 
-void EvaluateCommand::run(const std::vector<std::string>& args, const GlobalOptions& global_opts) {
-  namespace po = boost::program_options;
-
-  Options opts;
-
-  po::options_description opts_desc("Options", 80, 50);
-  opts_desc.add_options()  //
-      ("in", po::value(&opts.interpolant_file)->required()->value_name("FILE"),
-       "Input interpolant file")  //
-      ("points", po::value(&opts.points_file)->value_name("FILE"),
-       "Input evaluation points file in CSV format:\n  X[,Y[,Z]]")  //
-      ("dim", po::value(&opts.dim)->required()->value_name("1|2|3"),
-       "Dimension of input points")  //
-      ("grads", po::bool_switch(&opts.grads),
-       "Evaluate gradients as well as values")  //
-      ("acc",
-       po::value(&opts.accuracy)
-           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
-           ->value_name("ACC"),
-       "Absolute evaluation accuracy")  //
-      ("grad-acc",
-       po::value(&opts.grad_accuracy)
-           ->default_value(std::numeric_limits<double>::infinity(), "ANY")
-           ->value_name("ACC"),
-       "Absolute gradient evaluation accuracy")  //
-      ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
-       "Output file in CSV format:\n  X[,Y[,Z]],VAL[,DX[,DY[,DZ]]]")  //
-      ;
-
-  if (global_opts.help) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    return;
-  }
-
-  po::variables_map vm;
-  try {
-    po::store(po::command_line_parser{args}
-                  .options(opts_desc)
-                  .style(po::command_line_style::unix_style ^ po::command_line_style::allow_short)
-                  .run(),
-              vm);
-    po::notify(vm);
-  } catch (const po::error&) {
-    std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
-    throw;
-  }
-
-  switch (opts.dim) {
-    case 1:
-      run_impl<1>(opts);
-      break;
-    case 2:
-      run_impl<2>(opts);
-      break;
-    case 3:
-      run_impl<3>(opts);
-      break;
-    default:
-      throw std::runtime_error(std::format("unsupported dimension: {}", opts.dim));
-  }
-}
+CommandPtr make_evaluate_command() { return std::make_unique<EvaluateCommand>(); }
