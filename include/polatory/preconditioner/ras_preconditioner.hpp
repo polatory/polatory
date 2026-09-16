@@ -17,15 +17,16 @@
 #include <polatory/interpolation/symmetric_evaluator.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/model.hpp>
-#include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/polynomial/unisolvent_point_set.hpp>
 #include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/preconditioner/domain_divider.hpp>
 #include <polatory/preconditioner/fine_grid.hpp>
+#include <polatory/preconditioner/mat_q.hpp>
 #include <polatory/types.hpp>
+#include <ranges>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -41,16 +42,17 @@ class RasPreconditioner : public krylov::LinearOperator {
   using DomainDivider = DomainDivider<kDim>;
   using Evaluator = interpolation::Evaluator<kDim>;
   using FineGrid = FineGrid<kDim>;
-  using LagrangeBasis = polynomial::LagrangeBasis<kDim>;
+  using MatQ = MatQ<kDim>;
   using Model = Model<kDim>;
   using MonomialBasis = polynomial::MonomialBasis<kDim>;
   using Points = geometry::Points<kDim>;
   using SymmetricEvaluator = interpolation::SymmetricEvaluator<kDim>;
-  using UnisolventPointSet = polynomial::UnisolventPointSet<kDim>;
 
-  static constexpr bool kReportResidual = false;
+  static constexpr double kEvaluatorAccuracy = 0.0;
   static constexpr double kFineToCoarseRatio = 10.0;
   static constexpr Index kNCoarsestPoints = 2048;
+  static constexpr bool kReportConditionNumbers = false;
+  static constexpr bool kReportResidual = false;
 
  public:
   RasPreconditioner(const Model& model, const Points& points, const Points& grad_points)
@@ -61,9 +63,10 @@ class RasPreconditioner : public krylov::LinearOperator {
         points_(points),
         grad_points_(grad_points),
         bbox_(Bbox::from_points(points_).convex_hull(Bbox::from_points(grad_points_))),
-        finest_evaluator_(kReportResidual
-                              ? std::make_unique<SymmetricEvaluator>(model, points_, grad_points_)
-                              : nullptr),
+        finest_evaluator_(kReportResidual ? std::make_unique<SymmetricEvaluator>(
+                                                model, points_, grad_points_, kEvaluatorAccuracy,
+                                                kEvaluatorAccuracy)
+                                          : nullptr),
         n_levels_(
             std::max(static_cast<int>(std::ceil(
                          std::log(static_cast<double>(mu_ + kDim * sigma_) / kNCoarsestPoints) /
@@ -73,35 +76,31 @@ class RasPreconditioner : public krylov::LinearOperator {
     point_idcs_.resize(n_levels_);
     grad_point_idcs_.resize(n_levels_);
 
-    std::vector<Index> poly_point_idcs;
+    std::vector<Index> fixed_point_idcs;
+    std::vector<Index> fixed_grad_point_idcs;
+    if (l_ > 0) {
+      MatQ mat_q(model.poly_degree(), points_, grad_points_);
+      if (mat_q.rank() != l_) {
+        throw std::runtime_error("the points are not unisolvent");
+      }
+      for (auto i : mat_q.indices() | std::views::take(l_)) {
+        if (i < mu_) {
+          fixed_point_idcs.push_back(i);
+        } else {
+          fixed_grad_point_idcs.push_back((i - mu_) / kDim);
+        }
+      }
+      std::ranges::sort(fixed_point_idcs);
+      std::ranges::sort(fixed_grad_point_idcs);
+      const auto [first, last] = std::ranges::unique(fixed_grad_point_idcs);
+      fixed_grad_point_idcs.erase(first, last);
+    }
+
     {
       auto level = n_levels_ - 1;
 
-      if (l_ > 0) {
-        if (model.poly_degree() == 1 && mu_ == 1 && sigma_ >= 1) {
-          // The special case.
-          poly_point_idcs = {0};
-          LagrangeBasis lagrange_basis(model.poly_degree(), points_, grad_points_.topRows(1));
-          lagrange_p_ = lagrange_basis.evaluate(points_, grad_points_);
-        } else {
-          // The ordinary case.
-          UnisolventPointSet ups(points_, model.poly_degree());
-          poly_point_idcs = ups.point_indices();
-          LagrangeBasis lagrange_basis(model.poly_degree(), points_(poly_point_idcs, kAll));
-          lagrange_p_ = lagrange_basis.evaluate(points_, grad_points_);
-        }
-
-        point_idcs_.at(level) = poly_point_idcs;
-        point_idcs_.at(level).reserve(mu_);
-        for (Index i = 0; i < mu_; i++) {
-          if (!std::ranges::binary_search(poly_point_idcs, i)) {
-            point_idcs_.at(level).push_back(i);
-          }
-        }
-      } else {
-        point_idcs_.at(level).resize(mu_);
-        std::iota(point_idcs_.at(level).begin(), point_idcs_.at(level).end(), 0);
-      }
+      point_idcs_.at(level).resize(mu_);
+      std::iota(point_idcs_.at(level).begin(), point_idcs_.at(level).end(), 0);
 
       grad_point_idcs_.at(level).resize(sigma_);
       std::iota(grad_point_idcs_.at(level).begin(), grad_point_idcs_.at(level).end(), 0);
@@ -121,22 +120,25 @@ class RasPreconditioner : public krylov::LinearOperator {
     fine_grids_.resize(n_levels_);
 
     std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", "level", "n_domains", "n_points",
-                             "n_grad_points")
-              << std::endl;
+                             "n_grad_points");
+    if (kReportConditionNumbers) {
+      std::cout << std::format("{:>12}{:>12}{:>12}", "cond_min", "cond_med", "cond_max");
+    }
+    std::cout << std::endl;
 
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       auto mu = static_cast<Index>(point_idcs_.at(level).size());
       auto sigma = static_cast<Index>(grad_point_idcs_.at(level).size());
 
       DomainDivider divider(a_points, a_grad_points, point_idcs_.at(level),
-                            grad_point_idcs_.at(level), poly_point_idcs);
+                            grad_point_idcs_.at(level));
 
       auto finest = std::log(mu_ + kDim * sigma_) / std::log(kFineToCoarseRatio);
       auto coarsest = std::log(kNCoarsestPoints) / std::log(kFineToCoarseRatio);
       auto n_coarse_points = static_cast<Index>(std::pow(
           kFineToCoarseRatio, coarsest + (level - 1) * (finest - coarsest) / (n_levels_ - 1)));
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
-          divider.choose_coarse_points(n_coarse_points);
+          divider.choose_coarse_points(n_coarse_points, fixed_point_idcs, fixed_grad_point_idcs);
 
       for (auto& d : std::move(divider).into_domains()) {
         fine_grids_.at(level).emplace_back(model, std::move(d), cache_);
@@ -146,10 +148,20 @@ class RasPreconditioner : public krylov::LinearOperator {
 #pragma omp parallel for schedule(dynamic)
       for (Index i = 0; i < n_grids; i++) {
         auto& fine = fine_grids_.at(level).at(i);
-        fine.setup(points_, grad_points_, lagrange_p_);
+        fine.setup(points_, grad_points_, kReportConditionNumbers);
       }
 
-      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", level, n_grids, mu, sigma) << std::endl;
+      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", level, n_grids, mu, sigma);
+      if (kReportConditionNumbers) {
+        std::vector<double> conds;
+        for (const auto& fine : fine_grids_.at(level)) {
+          conds.push_back(fine.condition_number());
+        }
+        std::ranges::sort(conds);
+        std::cout << std::format("{:>12.3e}{:>12.3e}{:>12.3e}", conds.front(),
+                                 conds.at(conds.size() / 2), conds.back());
+      }
+      std::cout << std::endl;
     }
 
     {
@@ -161,9 +173,14 @@ class RasPreconditioner : public krylov::LinearOperator {
       coarse_domain.grad_point_indices = grad_point_idcs_.at(0);
 
       coarse_ = std::make_unique<CoarseGrid>(model, std::move(coarse_domain));
-      coarse_->setup(points_, grad_points_, lagrange_p_);
+      coarse_->setup(points_, grad_points_, kReportConditionNumbers);
 
-      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", 0, 1, mu, sigma) << std::endl;
+      std::cout << std::format("{:>8}{:>16}{:>16}{:>16}", 0, 1, mu, sigma);
+      if (kReportConditionNumbers) {
+        auto cond = coarse_->condition_number();
+        std::cout << std::format("{:>12.3e}{:>12.3e}{:>12.3e}", cond, cond, cond);
+      }
+      std::cout << std::endl;
     }
 
     if (n_levels_ == 1) {
@@ -177,7 +194,8 @@ class RasPreconditioner : public krylov::LinearOperator {
 
       ap_ = MatX(p_.rows(), p_.cols());
 
-      auto finest_evaluator = SymmetricEvaluator(model, points_, grad_points_);
+      auto finest_evaluator =
+          SymmetricEvaluator(model, points_, grad_points_, kEvaluatorAccuracy, kEvaluatorAccuracy);
       VecX weights = VecX::Zero(mu_ + kDim * sigma_ + l_);
       auto n_cols = p_.cols();
       for (Index i = 0; i < n_cols; i++) {
@@ -239,10 +257,10 @@ class RasPreconditioner : public krylov::LinearOperator {
     std::pair key(src_level, trg_level);
 
     if (!evaluator_.contains(key)) {
-      evaluator_.emplace(
-          std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
-          std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), kAll),
-                                grad_points_(grad_point_idcs_.at(src_level), kAll), bbox_));
+      evaluator_.emplace(std::piecewise_construct, std::forward_as_tuple(src_level, trg_level),
+                         std::forward_as_tuple(model_, points_(point_idcs_.at(src_level), kAll),
+                                               grad_points_(grad_point_idcs_.at(src_level), kAll),
+                                               bbox_, kEvaluatorAccuracy, kEvaluatorAccuracy));
       evaluator_.at(key).set_target_points(points_(point_idcs_.at(trg_level), kAll),
                                            grad_points_(grad_point_idcs_.at(trg_level), kAll));
     }

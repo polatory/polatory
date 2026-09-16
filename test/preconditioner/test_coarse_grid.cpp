@@ -6,7 +6,6 @@
 #include <polatory/interpolation/direct_evaluator.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/error.hpp>
-#include <polatory/polynomial/lagrange_basis.hpp>
 #include <polatory/preconditioner/coarse_grid.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/rbf/polyharmonic_odd.hpp>
@@ -18,14 +17,11 @@
 #include "../utility.hpp"
 
 using polatory::Index;
-using polatory::kAll;
 using polatory::Mat;
-using polatory::MatX;
 using polatory::Model;
 using polatory::VecX;
 using polatory::interpolation::DirectEvaluator;
 using polatory::numeric::relative_error;
-using polatory::polynomial::LagrangeBasis;
 using polatory::preconditioner::CoarseGrid;
 using polatory::preconditioner::Domain;
 using polatory::rbf::Triharmonic3D;
@@ -36,7 +32,6 @@ template <int Dim>
 void test(Index n_points, Index n_grad_points) {
   constexpr int kDim = Dim;
   using Domain = Domain<kDim>;
-  using LagrangeBasis = LagrangeBasis<kDim>;
   using Mat = Mat<kDim>;
 
   auto relative_tolerance = 1e-8;
@@ -72,23 +67,8 @@ void test(Index n_points, Index n_grad_points) {
     domain.grad_point_indices = std::move(grad_indices);
   }
 
-  MatX lagrange_p;
-  if (l > 0) {
-    if (poly_degree == 1 && mu == 1 && sigma >= 1) {
-      // The special case.
-      LagrangeBasis lagrange_basis(poly_degree, points, grad_points.topRows(1));
-      lagrange_p = lagrange_basis.evaluate(points, grad_points);
-    } else {
-      // The ordinary case.
-      std::vector<Index> poly_point_idcs(domain.point_indices.begin(),
-                                         domain.point_indices.begin() + l);
-      LagrangeBasis lagrange_basis(poly_degree, points(poly_point_idcs, kAll));
-      lagrange_p = lagrange_basis.evaluate(points, grad_points);
-    }
-  }
-
   CoarseGrid<kDim> coarse(model, std::move(domain));
-  coarse.setup(points, grad_points, lagrange_p);
+  coarse.setup(points, grad_points);
 
   VecX rhs = VecX(mu + kDim * sigma);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();

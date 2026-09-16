@@ -27,11 +27,11 @@ add_executable(${TARGET}
     point_cloud/test_normal_estimator.cpp
     point_cloud/test_plane_estimator.cpp
     point_cloud/test_sdf_data_generator.cpp
-    polynomial/test_lagrange_basis.cpp
     polynomial/test_polynomial_basis_base.cpp
     preconditioner/test_coarse_grid.cpp
     preconditioner/test_domain_divider.cpp
     preconditioner/test_fine_grid.cpp
+    preconditioner/test_mat_q.cpp
     rbf/test_rbf.cpp
 )
 

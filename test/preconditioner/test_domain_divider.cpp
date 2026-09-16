@@ -24,7 +24,6 @@ void test() {
 
   auto n_points = Index{10000};
   auto n_grad_points = Index{10000};
-  auto n_poly_points = Index{10};
 
   auto points = Points(n_points, Dim);
   std::vector<Index> point_idcs(n_points);
@@ -34,9 +33,7 @@ void test() {
   std::vector<Index> grad_point_idcs(n_grad_points);
   std::iota(grad_point_idcs.begin(), grad_point_idcs.end(), 0);
 
-  std::vector<Index> poly_point_idcs(point_idcs.begin(), point_idcs.begin() + n_poly_points);
-
-  DomainDivider divider(points, grad_points, point_idcs, grad_point_idcs, poly_point_idcs);
+  DomainDivider divider(points, grad_points, point_idcs, grad_point_idcs);
 
   std::vector<Index> inner_points;
   std::vector<Index> inner_grad_points;
@@ -53,10 +50,6 @@ void test() {
       if (d.inner_grad_point.at(i)) {
         inner_grad_points.push_back(d.grad_point_indices.at(i));
       }
-    }
-
-    for (Index i = 0; i < n_poly_points; i++) {
-      EXPECT_EQ(poly_point_idcs.at(i), d.point_indices.at(i));
     }
 
     std::vector<Index> d_point_idcs(d.point_indices);
@@ -79,15 +72,32 @@ void test() {
             std::unique(inner_grad_points.begin(), inner_grad_points.end()));
 
   auto n_coarse_points = Index{1000};
-  auto [coarse_point_idcs, coarse_grad_point_idcs] = divider.choose_coarse_points(n_coarse_points);
-  EXPECT_LE(n_coarse_points + n_poly_points,
+  auto n_fixed_points = Index{10};
+  auto n_fixed_grad_points = Index{5};
+  std::vector<Index> fixed_point_idcs(point_idcs.begin(), point_idcs.begin() + n_fixed_points);
+  std::vector<Index> fixed_grad_point_idcs(grad_point_idcs.begin(),
+                                           grad_point_idcs.begin() + n_fixed_grad_points);
+  auto [coarse_point_idcs, coarse_grad_point_idcs] =
+      divider.choose_coarse_points(n_coarse_points, fixed_point_idcs, fixed_grad_point_idcs);
+  auto n_fixed = n_fixed_points + Dim * n_fixed_grad_points;
+  EXPECT_LE(n_coarse_points + n_fixed,
             coarse_point_idcs.size() + Dim * coarse_grad_point_idcs.size());
-  EXPECT_GT(n_coarse_points + n_poly_points + Dim,
+  EXPECT_GE(n_coarse_points + n_fixed + Dim,
             coarse_point_idcs.size() + Dim * coarse_grad_point_idcs.size());
 
-  for (Index i = 0; i < n_poly_points; i++) {
-    EXPECT_EQ(poly_point_idcs.at(i), coarse_point_idcs.at(i));
+  for (Index i = 0; i < n_fixed_points; i++) {
+    EXPECT_EQ(fixed_point_idcs.at(i), coarse_point_idcs.at(i));
   }
+  for (Index i = 0; i < n_fixed_grad_points; i++) {
+    EXPECT_EQ(fixed_grad_point_idcs.at(i), coarse_grad_point_idcs.at(i));
+  }
+
+  std::ranges::sort(coarse_point_idcs);
+  EXPECT_EQ(coarse_point_idcs.end(),
+            std::unique(coarse_point_idcs.begin(), coarse_point_idcs.end()));
+  std::ranges::sort(coarse_grad_point_idcs);
+  EXPECT_EQ(coarse_grad_point_idcs.end(),
+            std::unique(coarse_grad_point_idcs.begin(), coarse_grad_point_idcs.end()));
 }
 
 }  // namespace

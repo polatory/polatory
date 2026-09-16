@@ -31,13 +31,11 @@ class DomainDivider {
   DomainDivider(const Eigen::MatrixBase<DerivedPoints>& points,
                 const Eigen::MatrixBase<DerivedGradPoints>& grad_points,
                 const std::vector<Index>& point_indices,
-                const std::vector<Index>& grad_point_indices,
-                const std::vector<Index>& poly_point_indices)
+                const std::vector<Index>& grad_point_indices)
       : points_(points),
         grad_points_(grad_points),
         point_idcs_(point_indices),
-        grad_point_idcs_(grad_point_indices),
-        poly_point_idcs_(poly_point_indices) {
+        grad_point_idcs_(grad_point_indices) {
     Domain root;
 
     root.point_indices = point_indices;
@@ -52,19 +50,22 @@ class DomainDivider {
   }
 
   std::pair<std::vector<Index>, std::vector<Index>> choose_coarse_points(
-      Index n_coarse_points) const {
-    std::vector<Index> idcs(poly_point_idcs_);
-    std::vector<Index> grad_idcs;
+      Index n_coarse_points, const std::vector<Index>& fixed_point_idcs,
+      const std::vector<Index>& fixed_grad_point_idcs) const {
+    std::vector<Index> idcs(fixed_point_idcs);
+    std::vector<Index> grad_idcs(fixed_grad_point_idcs);
 
     std::priority_queue<Cluster> clusters;
     std::vector<MixedPoint> root_points;
     for (auto i : point_idcs_) {
-      if (std::ranges::find(poly_point_idcs_, i) == poly_point_idcs_.end()) {
+      if (!std::ranges::binary_search(fixed_point_idcs, i)) {
         root_points.emplace_back(i, true, false);
       }
     }
     for (auto i : grad_point_idcs_) {
-      root_points.emplace_back(i, true, true);
+      if (!std::ranges::binary_search(fixed_grad_point_idcs, i)) {
+        root_points.emplace_back(i, true, true);
+      }
     }
     std::vector<std::size_t> iota(root_points.size());
     std::iota(iota.begin(), iota.end(), 0);
@@ -258,10 +259,6 @@ class DomainDivider {
 
       it = domains_.erase(it);
     }
-
-    for (auto& d : domains_) {
-      d.merge_poly_points(poly_point_idcs_);
-    }
   }
 
   Bbox domain_bbox(const Domain& domain) const {
@@ -312,7 +309,6 @@ class DomainDivider {
   const Points grad_points_;
   const std::vector<Index> point_idcs_;
   const std::vector<Index> grad_point_idcs_;
-  const std::vector<Index> poly_point_idcs_;
   std::list<Domain> domains_;
 };
 

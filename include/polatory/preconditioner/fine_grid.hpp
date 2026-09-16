@@ -6,13 +6,14 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/numeric/condition_number.hpp>
 #include <polatory/preconditioner/binary_cache.hpp>
 #include <polatory/preconditioner/domain.hpp>
+#include <polatory/preconditioner/mat_a.hpp>
+#include <polatory/preconditioner/mat_q.hpp>
 #include <polatory/types.hpp>
 #include <utility>
 #include <vector>
-
-#include "mat_a.hpp"
 
 namespace Eigen {
 
@@ -37,6 +38,7 @@ template <int Dim>
 class FineGrid {
   static constexpr int kDim = Dim;
   using Domain = Domain<kDim>;
+  using MatQ = MatQ<kDim>;
   using Model = Model<kDim>;
   using Points = geometry::Points<kDim>;
 
@@ -49,44 +51,32 @@ class FineGrid {
         inner_point_(std::move(domain.inner_point)),
         inner_grad_point_(std::move(domain.inner_grad_point)),
         cache_(cache),
-        l_(model.poly_basis_size()),
         mu_(static_cast<Index>(point_idcs_.size())),
         sigma_(static_cast<Index>(grad_point_idcs_.size())),
-        m_(mu_ + kDim * sigma_) {
-    POLATORY_ASSERT(mu_ >= l_ || (model_.poly_degree() == 1 && mu_ == 1 && sigma_ >= 1));
-  }
+        m_(mu_ + kDim * sigma_) {}
+
+  double condition_number() const { return cond_; }
 
   void setup(const Points& points_full, const Points& grad_points_full,
-             const MatX& lagrange_p_full) {
+             bool compute_condition_number = false) {
     Points points = points_full(point_idcs_, kAll);
     Points grad_points = grad_points_full(grad_point_idcs_, kAll);
 
-    // Compute A.
-    auto a = mat_a(model_, points, grad_points);
+    MatQ mat_q(model_.poly_degree(), points, grad_points);
+    l_ = mat_q.rank();
+    indices_ = mat_q.indices();
+    q_top_ = mat_q.top();
 
-    if (l_ > 0) {
-      if (m_ > l_) {
-        std::vector<Index> flat_indices(point_idcs_);
-        flat_indices.reserve(mu_ + kDim * sigma_);
-        for (auto i : grad_point_idcs_) {
-          for (Index j = 0; j < kDim; j++) {
-            flat_indices.push_back(mu_ + kDim * i + j);
-          }
-        }
+    MatX a = mat_a(model_, points, grad_points)(indices_, indices_);
 
-        // Compute matrix Q.
-        auto lagrange_p = lagrange_p_full(flat_indices, kAll);
-        q_top_ = -lagrange_p.bottomRows(m_ - l_).transpose();
-
-        // Compute decomposition of Q^T A Q.
-        ldlt_of_qtaq_ = Eigen::LDLT2<MatX>(q_top_.transpose() * a.topLeftCorner(l_, l_) * q_top_ +
-                                           q_top_.transpose() * a.topRightCorner(l_, m_ - l_) +
-                                           a.bottomLeftCorner(m_ - l_, l_) * q_top_ +
-                                           a.bottomRightCorner(m_ - l_, m_ - l_));
-        save_ldlt_of_qtaq();
+    if (m_ > l_) {
+      MatX qtaq = q_top_.transpose() * a.topLeftCorner(l_, l_) * q_top_ +
+                  q_top_.transpose() * a.topRightCorner(l_, m_ - l_) +
+                  a.bottomLeftCorner(m_ - l_, l_) * q_top_ + a.bottomRightCorner(m_ - l_, m_ - l_);
+      if (compute_condition_number) {
+        cond_ = numeric::condition_number(qtaq);
       }
-    } else {
-      ldlt_of_qtaq_ = Eigen::LDLT2<MatX>(a);
+      ldlt_of_qtaq_ = Eigen::LDLT2<MatX>(qtaq);
       save_ldlt_of_qtaq();
     }
 
@@ -115,29 +105,24 @@ class FineGrid {
     values.tail(kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim) =
         values_full.tail(kDim * sigma_full_)
             .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, kAll);
+    VecX ordered_values = values(indices_);
 
-    if (l_ > 0) {
-      lambda_ = VecX(m_);
+    lambda_ = VecX::Zero(m_);
 
-      if (m_ > l_) {
-        // Compute Q^T d.
-        VecX qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
+    if (m_ > l_) {
+      // Compute Q^T d.
+      VecX qtd = q_top_.transpose() * ordered_values.head(l_) + ordered_values.tail(m_ - l_);
 
-        // Solve Q^T A Q gamma = Q^T d for gamma.
-        load_ldlt_of_qtaq();
-        VecX gamma = ldlt_of_qtaq_.solve(qtd);
-        ldlt_of_qtaq_.matrixLDLT().resize(0, 0);
-
-        // Compute lambda = Q gamma.
-        lambda_.head(l_) = q_top_ * gamma;
-        lambda_.tail(m_ - l_) = gamma;
-      } else {
-        lambda_ = VecX::Zero(m_);
-      }
-    } else {
+      // Solve Q^T A Q gamma = Q^T d for gamma.
       load_ldlt_of_qtaq();
-      lambda_ = ldlt_of_qtaq_.solve(values);
+      VecX gamma = ldlt_of_qtaq_.solve(qtd);
       ldlt_of_qtaq_.matrixLDLT().resize(0, 0);
+
+      // Compute lambda = Q gamma.
+      VecX ordered_lambda(m_);
+      ordered_lambda.head(l_) = q_top_ * gamma;
+      ordered_lambda.tail(m_ - l_) = gamma;
+      lambda_(indices_) = ordered_lambda;
     }
   }
 
@@ -177,14 +162,18 @@ class FineGrid {
   BinaryCache& cache_;
   std::size_t cache_id_{};
 
-  const Index l_;
   const Index mu_;
   const Index sigma_;
   const Index m_;
+  Index l_{};
   Index mu_full_{};
   Index sigma_full_{};
+  double cond_{};
 
-  // Matrix l rows of matrix Q.
+  // Local row indices with the special functionals first.
+  std::vector<Index> indices_;
+
+  // First l rows of matrix Q.
   MatX q_top_;
 
   // Cholesky decomposition of matrix Q^T A Q.

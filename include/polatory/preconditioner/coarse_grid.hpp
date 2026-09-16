@@ -6,13 +6,15 @@
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
+#include <polatory/numeric/condition_number.hpp>
 #include <polatory/polynomial/monomial_basis.hpp>
 #include <polatory/preconditioner/domain.hpp>
+#include <polatory/preconditioner/mat_a.hpp>
+#include <polatory/preconditioner/mat_q.hpp>
 #include <polatory/types.hpp>
+#include <stdexcept>
 #include <utility>
 #include <vector>
-
-#include "mat_a.hpp"
 
 namespace polatory::preconditioner {
 
@@ -20,6 +22,7 @@ template <int Dim>
 class CoarseGrid {
   static constexpr int kDim = Dim;
   using Domain = Domain<kDim>;
+  using MatQ = MatQ<kDim>;
   using Model = Model<kDim>;
   using MonomialBasis = polynomial::MonomialBasis<kDim>;
   using Points = geometry::Points<kDim>;
@@ -33,55 +36,41 @@ class CoarseGrid {
         l_(model.poly_basis_size()),
         mu_(static_cast<Index>(point_idcs_.size())),
         sigma_(static_cast<Index>(grad_point_idcs_.size())),
-        m_(mu_ + kDim * sigma_) {
-    POLATORY_ASSERT(mu_ >= l_ || (model_.poly_degree() == 1 && mu_ == 1 && sigma_ >= 1));
-  }
+        m_(mu_ + kDim * sigma_) {}
+
+  double condition_number() const { return cond_; }
 
   void setup(const Points& points_full, const Points& grad_points_full,
-             const MatX& lagrange_p_full) {
+             bool compute_condition_number = false) {
     Points points = points_full(point_idcs_, kAll);
     Points grad_points = grad_points_full(grad_point_idcs_, kAll);
 
-    // Compute A.
-    auto a = mat_a(model_, points, grad_points);
+    MatQ mat_q(model_.poly_degree(), points, grad_points);
+    if (mat_q.rank() != l_) {
+      throw std::runtime_error("the coarse points are not unisolvent");
+    }
+    indices_ = mat_q.indices();
+    q_top_ = mat_q.top();
+
+    MatX a = mat_a(model_, points, grad_points)(indices_, indices_);
+
+    if (m_ > l_) {
+      MatX qtaq = q_top_.transpose() * a.topLeftCorner(l_, l_) * q_top_ +
+                  q_top_.transpose() * a.topRightCorner(l_, m_ - l_) +
+                  a.bottomLeftCorner(m_ - l_, l_) * q_top_ + a.bottomRightCorner(m_ - l_, m_ - l_);
+      if (compute_condition_number) {
+        cond_ = numeric::condition_number(qtaq);
+      }
+      ldlt_of_qtaq_ = qtaq.ldlt();
+    }
 
     if (l_ > 0) {
-      if (m_ > l_) {
-        std::vector<Index> flat_indices(point_idcs_);
-        flat_indices.reserve(mu_ + kDim * sigma_);
-        for (auto i : grad_point_idcs_) {
-          for (Index j = 0; j < kDim; j++) {
-            flat_indices.push_back(mu_ + kDim * i + j);
-          }
-        }
-
-        // Compute matrix Q.
-        auto lagrange_p = lagrange_p_full(flat_indices, kAll);
-        q_top_ = -lagrange_p.bottomRows(m_ - l_).transpose();
-
-        // Compute decomposition of Q^T A Q.
-        ldlt_of_qtaq_ =
-            (q_top_.transpose() * a.topLeftCorner(l_, l_) * q_top_ +
-             q_top_.transpose() * a.topRightCorner(l_, m_ - l_) +
-             a.bottomLeftCorner(m_ - l_, l_) * q_top_ + a.bottomRightCorner(m_ - l_, m_ - l_))
-                .ldlt();
-      }
-
       // Compute matrices used for solving the polynomial part.
       a_top_ = a.topRows(l_);
 
-      MonomialBasis mono_basis(model_.poly_degree());
-      MatX p_top;
-      if (model_.poly_degree() == 1 && mu_ == 1 && sigma_ >= 1) {
-        // The special case.
-        p_top = mono_basis.evaluate(points, grad_points.topRows(1));
-      } else {
-        // The ordinary case.
-        p_top = mono_basis.evaluate(points.topRows(l_));
-      }
+      std::vector<Index> special(indices_.begin(), indices_.begin() + l_);
+      MatX p_top = MonomialBasis(model_.poly_degree()).evaluate(points, grad_points)(special, kAll);
       lu_of_p_top_ = p_top.fullPivLu();
-    } else {
-      ldlt_of_qtaq_ = a.ldlt();
     }
 
     mu_full_ = points_full.rows();
@@ -104,29 +93,31 @@ class CoarseGrid {
     values.tail(kDim * sigma_).reshaped<Eigen::RowMajor>(sigma_, kDim) =
         values_full.tail(kDim * sigma_full_)
             .reshaped<Eigen::RowMajor>(sigma_full_, kDim)(grad_point_idcs_, kAll);
+    VecX ordered_values = values(indices_);
+
+    VecX ordered_lambda = VecX::Zero(m_);
+
+    if (m_ > l_) {
+      // Compute Q^T d.
+      VecX qtd = q_top_.transpose() * ordered_values.head(l_) + ordered_values.tail(m_ - l_);
+
+      // Solve Q^T A Q gamma = Q^T d for gamma.
+      VecX gamma = ldlt_of_qtaq_.solve(qtd);
+
+      // Compute lambda = Q gamma.
+      ordered_lambda.head(l_) = q_top_ * gamma;
+      ordered_lambda.tail(m_ - l_) = gamma;
+    }
+
+    VecX lambda(m_);
+    lambda(indices_) = ordered_lambda;
+    lambda_c_ = VecX(m_ + l_);
+    lambda_c_.head(m_) = lambda;
 
     if (l_ > 0) {
-      lambda_c_ = VecX(m_ + l_);
-
-      if (m_ > l_) {
-        // Compute Q^T d.
-        VecX qtd = q_top_.transpose() * values.head(l_) + values.tail(m_ - l_);
-
-        // Solve Q^T A Q gamma = Q^T d for gamma.
-        VecX gamma = ldlt_of_qtaq_.solve(qtd);
-
-        // Compute lambda = Q gamma.
-        lambda_c_.head(l_) = q_top_ * gamma;
-        lambda_c_.segment(l_, m_ - l_) = gamma;
-      } else {
-        lambda_c_.head(m_) = VecX::Zero(m_);
-      }
-
-      // Solve P c = d - A lambda for c at poly_points.
-      VecX a_top_lambda = a_top_ * lambda_c_.head(m_);
-      lambda_c_.tail(l_) = lu_of_p_top_.solve(values.head(l_) - a_top_lambda);
-    } else {
-      lambda_c_ = ldlt_of_qtaq_.solve(values);
+      // Solve P c = d - A lambda for c at the special functionals.
+      VecX a_top_lambda = a_top_ * ordered_lambda;
+      lambda_c_.tail(l_) = lu_of_p_top_.solve(ordered_values.head(l_) - a_top_lambda);
     }
   }
 
@@ -141,8 +132,12 @@ class CoarseGrid {
   const Index m_;
   Index mu_full_{};
   Index sigma_full_{};
+  double cond_{};
 
-  // First l rows of matrix Q.
+  // Local row indices with the special functionals first.
+  std::vector<Index> indices_;
+
+  // Matrix l rows of matrix Q.
   MatX q_top_;
 
   // Cholesky decomposition of matrix Q^T A Q.
@@ -151,7 +146,7 @@ class CoarseGrid {
   // First l rows of matrix A.
   MatX a_top_;
 
-  // LU decomposition of first l rows of matrix P.
+  // LU decomposition of the top part of matrix P.
   Eigen::FullPivLU<MatX> lu_of_p_top_;
 
   // Current solution.
