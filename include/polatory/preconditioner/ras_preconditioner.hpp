@@ -189,19 +189,22 @@ class RasPreconditioner : public krylov::LinearOperator {
 
     if (l_ > 0) {
       MonomialBasis poly(model.poly_degree());
-      p_ = poly.evaluate(points_, grad_points_);
-      common::orthonormalize_cols(p_);
+      ps_.resize(n_levels_);
+      for (auto level = 1; level < n_levels_; level++) {
+        const auto& indices = point_idcs_.at(level);
+        const auto& grad_indices = grad_point_idcs_.at(level);
+        auto mu = static_cast<Index>(indices.size());
+        auto sigma = static_cast<Index>(grad_indices.size());
 
-      ap_ = MatX(p_.rows(), p_.cols());
+        MatX p = poly.evaluate(points_(indices, kAll), grad_points_(grad_indices, kAll));
+        common::orthonormalize_cols(p);
 
-      auto finest_evaluator =
-          SymmetricEvaluator(model, points_, grad_points_, kEvaluatorAccuracy, kEvaluatorAccuracy);
-      VecX weights = VecX::Zero(mu_ + kDim * sigma_ + l_);
-      auto n_cols = p_.cols();
-      for (Index i = 0; i < n_cols; i++) {
-        weights.head(mu_ + kDim * sigma_) = p_.col(i);
-        finest_evaluator.set_weights(weights);
-        ap_.col(i) = finest_evaluator.evaluate();
+        auto& padded = ps_.at(level);
+        padded = MatX::Zero(mu_ + kDim * sigma_, l_);
+        padded(indices, kAll) = p.topRows(mu);
+        padded.middleRows(mu_, kDim * sigma_)
+            .reshaped<Eigen::RowMajor>(sigma_, kDim * l_)(grad_indices, kAll) =
+            p.bottomRows(kDim * sigma).reshaped<Eigen::RowMajor>(sigma, kDim * l_);
       }
     }
   }
@@ -231,9 +234,9 @@ class RasPreconditioner : public krylov::LinearOperator {
     for (auto level = n_levels_ - 1; level >= 1; level--) {
       {
         VecX weights = solve(level, residuals);
+        orthogonalize(level, weights);
         update_residuals(level, level - 1, weights, residuals);
         weights_total += weights;
-        orthogonalize(weights_total, residuals);
         report_residual(level, v, weights_total);
       }
 
@@ -268,12 +271,11 @@ class RasPreconditioner : public krylov::LinearOperator {
     return evaluator_.at(key);
   }
 
-  void orthogonalize(VecX& weights, VecX& residuals) const {
+  void orthogonalize(int level, VecX& weights) const {
     if (l_ > 0) {
-      // Orthogonalize weights against P.
-      VecX dot = p_.transpose() * weights.head(mu_ + kDim * sigma_);
-      weights.head(mu_ + kDim * sigma_) -= p_ * dot;
-      residuals += ap_ * dot;
+      const auto& p = ps_.at(level);
+      auto w = weights.head(mu_ + kDim * sigma_);
+      w -= p * (p.transpose() * w);
     }
   }
 
@@ -358,8 +360,7 @@ class RasPreconditioner : public krylov::LinearOperator {
   mutable std::vector<std::vector<FineGrid>> fine_grids_;
   std::unique_ptr<CoarseGrid> coarse_;
   mutable std::map<std::pair<int, int>, Evaluator> evaluator_;
-  MatX p_;
-  MatX ap_;
+  std::vector<MatX> ps_;
   BinaryCache cache_;
 };
 
