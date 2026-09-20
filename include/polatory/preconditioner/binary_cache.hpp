@@ -8,9 +8,11 @@
 #endif
 
 #include <boost/filesystem.hpp>
+#include <cstddef>
 #include <format>
 #include <mutex>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace polatory::preconditioner {
@@ -21,8 +23,9 @@ class BinaryCache {
     auto filename = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
 
 #ifdef _WIN32
+    // Without FILE_FLAG_OVERLAPPED, all I/O on the handle is serialized even at explicit offsets.
     file_ = ::CreateFileW(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_NEW,
-                          FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+                          FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_OVERLAPPED, nullptr);
     if (file_ == INVALID_HANDLE_VALUE) {
       throw std::runtime_error(
           std::format("failed to open a temporary file '{}'", filename.string()));
@@ -54,36 +57,27 @@ class BinaryCache {
   BinaryCache& operator=(BinaryCache&&) = delete;
 
   void get(std::size_t id, void* data) const {
-    std::lock_guard lock(mutex_);
+    Record record;
+    {
+      std::scoped_lock lock(mutex_);
+      record = records_.at(id);
+    }
 
-    const auto& record = records_.at(id);
-
-#ifdef _WIN32
-    LARGE_INTEGER distance;
-    distance.QuadPart = record.offset;
-    ::SetFilePointerEx(file_, distance, nullptr, FILE_BEGIN);
-    ::ReadFile(file_, data, record.size, nullptr, nullptr);
-#else
-    ::lseek(file_, static_cast<::off_t>(record.offset), SEEK_SET);
-    ::read(file_, data, record.size);
-#endif
+    if (!read_at(data, record.size, record.offset)) {
+      throw std::runtime_error("failed to read from the cache file");
+    }
   }
 
   std::size_t put(const void* data, std::size_t size) {
-    std::lock_guard lock(mutex_);
-
-#ifdef _WIN32
-    LARGE_INTEGER distance;
-    distance.QuadPart = 0;
-    ::SetFilePointerEx(file_, distance, nullptr, FILE_END);
-    ::WriteFile(file_, data, size, nullptr, nullptr);
-#else
-    ::lseek(file_, 0, SEEK_END);
-    ::write(file_, data, size);
-#endif
+    std::scoped_lock lock(mutex_);
 
     auto id = records_.size();
     auto offset = records_.back().offset + records_.back().size;
+
+    if (!write_at(data, size, offset)) {
+      throw std::runtime_error("failed to write to the cache file");
+    }
+
     records_.emplace_back(offset, size);
     return id;
   }
@@ -94,7 +88,45 @@ class BinaryCache {
     std::size_t size{};
   };
 
+  bool read_at(void* data, std::size_t size, std::size_t offset) const {
 #ifdef _WIN32
+    auto ov = overlapped(offset);
+    DWORD n{};
+    auto ok = ::ReadFile(file_, data, static_cast<DWORD>(size), &n, &ov) || wait(ov, n);
+    return ok && n == size;
+#else
+    auto n = ::pread(file_, data, size, static_cast<::off_t>(offset));
+    return std::cmp_equal(n, size);
+#endif
+  }
+
+  bool write_at(const void* data, std::size_t size, std::size_t offset) const {
+#ifdef _WIN32
+    auto ov = overlapped(offset);
+    DWORD n{};
+    auto ok = ::WriteFile(file_, data, static_cast<DWORD>(size), &n, &ov) || wait(ov, n);
+    return ok && n == size;
+#else
+    auto n = ::pwrite(file_, data, size, static_cast<::off_t>(offset));
+    return std::cmp_equal(n, size);
+#endif
+  }
+
+#ifdef _WIN32
+  static OVERLAPPED overlapped(std::size_t offset) {
+    thread_local HANDLE event = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
+
+    OVERLAPPED ov{};
+    ov.Offset = static_cast<DWORD>(offset);
+    ov.OffsetHigh = static_cast<DWORD>(offset >> 32);
+    ov.hEvent = event;
+    return ov;
+  }
+
+  bool wait(OVERLAPPED& ov, DWORD& n) const {
+    return ::GetLastError() == ERROR_IO_PENDING && ::GetOverlappedResult(file_, &ov, &n, TRUE) != 0;
+  }
+
   HANDLE file_{};
 #else
   int file_{};
