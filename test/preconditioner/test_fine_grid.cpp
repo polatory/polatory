@@ -46,6 +46,7 @@ void test(Index n_points, Index n_grad_points) {
 
   auto poly_degree = rbf.cpd_order() - 1;
   Model<kDim> model(std::move(rbf), poly_degree);
+  model.set_nugget(0.01);
 
   auto mu = n_points;
   auto sigma = n_grad_points;

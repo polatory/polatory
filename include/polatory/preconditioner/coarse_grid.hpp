@@ -140,7 +140,7 @@ class CoarseGrid {
   // Matrix l rows of matrix Q.
   MatX q_top_;
 
-  // Cholesky decomposition of matrix Q^T A Q.
+  // LDLT decomposition of matrix Q^T A Q.
   Eigen::LDLT<MatX> ldlt_of_qtaq_;
 
   // First l rows of matrix A.

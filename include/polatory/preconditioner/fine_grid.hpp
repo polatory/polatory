@@ -1,36 +1,18 @@
 #pragma once
 
-#include <Eigen/Cholesky>
 #include <Eigen/Core>
-#include <cstring>
 #include <polatory/common/macros.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/model.hpp>
 #include <polatory/numeric/condition_number.hpp>
 #include <polatory/preconditioner/binary_cache.hpp>
+#include <polatory/preconditioner/cached_ldlt.hpp>
 #include <polatory/preconditioner/domain.hpp>
 #include <polatory/preconditioner/mat_a.hpp>
 #include <polatory/preconditioner/mat_q.hpp>
 #include <polatory/types.hpp>
 #include <utility>
 #include <vector>
-
-namespace Eigen {
-
-template <typename MatrixType_, int UpLo_ = Eigen::Lower>
-class LDLT2 : public LDLT<MatrixType_, UpLo_> {
- public:
-  using Base = LDLT<MatrixType_, UpLo_>;
-  using MatrixType = Base::MatrixType;
-  using Base::Base;
-
-  MatrixType& matrixLDLT() {
-    eigen_assert(Base::m_isInitialized && "LDLT is not initialized.");
-    return this->m_matrix;
-  }
-};
-
-}  // namespace Eigen
 
 namespace polatory::preconditioner {
 
@@ -50,10 +32,10 @@ class FineGrid {
         grad_point_idcs_(std::move(domain.grad_point_indices)),
         inner_point_(std::move(domain.inner_point)),
         inner_grad_point_(std::move(domain.inner_grad_point)),
-        cache_(cache),
         mu_(static_cast<Index>(point_idcs_.size())),
         sigma_(static_cast<Index>(grad_point_idcs_.size())),
-        m_(mu_ + kDim * sigma_) {}
+        m_(mu_ + kDim * sigma_),
+        ldlt_of_qtaq_(cache) {}
 
   double condition_number() const { return cond_; }
 
@@ -76,8 +58,7 @@ class FineGrid {
       if (compute_condition_number) {
         cond_ = numeric::condition_number(qtaq);
       }
-      ldlt_of_qtaq_ = Eigen::LDLT2<MatX>(qtaq);
-      save_ldlt_of_qtaq();
+      ldlt_of_qtaq_.compute(qtaq);
     }
 
     mu_full_ = points_full.rows();
@@ -114,9 +95,7 @@ class FineGrid {
       VecX qtd = q_top_.transpose() * ordered_values.head(l_) + ordered_values.tail(m_ - l_);
 
       // Solve Q^T A Q gamma = Q^T d for gamma.
-      load_ldlt_of_qtaq();
       VecX gamma = ldlt_of_qtaq_.solve(qtd);
-      ldlt_of_qtaq_.matrixLDLT().resize(0, 0);
 
       // Compute lambda = Q gamma.
       VecX ordered_lambda(m_);
@@ -127,40 +106,11 @@ class FineGrid {
   }
 
  private:
-  void load_ldlt_of_qtaq() {
-    auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
-    ldlt.resize(m_ - l_, m_ - l_);
-    cache_.get(cache_id_, ldlt.data());
-    // Unpack the lower triangular part.
-    for (auto row = ldlt.rows() - 1; row >= 1; row--) {
-      const auto* src = ldlt.data() + row * (row + 1) / 2;
-      auto* dst = ldlt.data() + row * ldlt.cols();
-      auto bytes = (row + 1) * sizeof(double);
-      std::memcpy(dst, src, bytes);
-    }
-  }
-
-  void save_ldlt_of_qtaq() {
-    auto& ldlt = ldlt_of_qtaq_.matrixLDLT();
-    // Pack the lower triangular part.
-    auto rows = ldlt.rows();
-    for (Index row = 1; row < rows; row++) {
-      const auto* src = ldlt.data() + row * ldlt.cols();
-      auto* dst = ldlt.data() + row * (row + 1) / 2;
-      auto bytes = (row + 1) * sizeof(double);
-      std::memcpy(dst, src, bytes);
-    }
-    cache_id_ = cache_.put(ldlt.data(), (rows * (rows + 1) / 2) * sizeof(double));
-    ldlt.resize(0, 0);
-  }
-
   const Model& model_;
   const std::vector<Index> point_idcs_;
   const std::vector<Index> grad_point_idcs_;
   const std::vector<bool> inner_point_;
   const std::vector<bool> inner_grad_point_;
-  BinaryCache& cache_;
-  std::size_t cache_id_{};
 
   const Index mu_;
   const Index sigma_;
@@ -176,8 +126,8 @@ class FineGrid {
   // First l rows of matrix Q.
   MatX q_top_;
 
-  // Cholesky decomposition of matrix Q^T A Q.
-  Eigen::LDLT2<MatX> ldlt_of_qtaq_;
+  // LDLT decomposition of matrix Q^T A Q.
+  CachedLdlt ldlt_of_qtaq_;
 
   // Current solution.
   VecX lambda_;
