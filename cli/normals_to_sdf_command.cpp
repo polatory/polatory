@@ -7,6 +7,7 @@
 #include <memory>
 #include <numeric>
 #include <polatory/polatory.hpp>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
