@@ -27,6 +27,8 @@ class GmresBase {
 
   double relative_residual() const;
 
+  VecX residual_vector() const;
+
   virtual void set_left_preconditioner(const LinearOperator& left_preconditioner);
 
   void set_initial_solution(const VecX& x0);

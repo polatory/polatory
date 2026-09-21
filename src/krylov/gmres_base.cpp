@@ -14,6 +14,31 @@ Index GmresBase::max_iterations() const { return max_iter_; }
 
 double GmresBase::relative_residual() const { return std::abs(g_(iter_)) / rhs_norm_; }
 
+// left_preconditioned(rhs - op(x)) == V_{k+1} (||r_0|| e_1 - H y) == g_k V_{k+1} Q^T e_{k+1},
+// where Q is the product of the Givens rotations.
+VecX GmresBase::residual_vector() const {
+  // After a breakdown, vs_.at(iter_) is not finite.
+  if (g_(iter_) == 0.0) {
+    return VecX::Zero(m_);
+  }
+
+  VecX u = VecX::Zero(iter_ + 1);
+  u(iter_) = g_(iter_);
+  for (Index i = iter_ - 1; i >= 0; i--) {
+    auto x = u(i);
+    auto y = u(i + 1);
+    u(i) = c_(i) * x - s_(i) * y;
+    u(i + 1) = s_(i) * x + c_(i) * y;
+  }
+
+  VecX r = VecX::Zero(m_);
+  for (Index i = 0; i <= iter_; i++) {
+    r += u(i) * vs_.at(i);
+  }
+
+  return r;
+}
+
 void GmresBase::set_left_preconditioner(const LinearOperator& left_preconditioner) {
   POLATORY_ASSERT(left_preconditioner.size() == m_);
 

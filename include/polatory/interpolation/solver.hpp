@@ -101,11 +101,6 @@ class Solver {
     solver.set_right_preconditioner(*pc_);
     solver.setup();
 
-    // The solver does not work if the initial solution is already the solution.
-    if (solver.relative_residual() == 0.0) {
-      return weights;
-    }
-
     res_eval_.set_values(values);
 
     std::cout << std::setw(8) << "iter"            //
@@ -114,9 +109,12 @@ class Solver {
               << std::endl;
 
     while (true) {
-      weights = solver.solution_vector();
-
-      auto convergence = res_eval_.converged(weights, tolerance, grad_tolerance);
+      auto convergence =
+          res_eval_.approx_convergence(solver.residual_vector(), tolerance, grad_tolerance);
+      if (convergence.converged) {
+        weights = solver.solution_vector();
+        convergence = res_eval_.convergence(weights, tolerance, grad_tolerance);
+      }
 
       auto prefix = convergence.exact_residual ? "" : "~";
       auto grad_prefix = convergence.exact_grad_residual ? "" : "~";
@@ -129,6 +127,10 @@ class Solver {
 
       if (convergence.converged) {
         break;
+      }
+
+      if (solver.absolute_residual() == 0.0) {
+        throw std::runtime_error("the solution cannot be improved further");
       }
 
       if (solver.iteration_count() == solver.max_iterations()) {

@@ -6,6 +6,7 @@
 #include <polatory/krylov/gmres.hpp>
 #include <polatory/krylov/linear_operator.hpp>
 #include <polatory/krylov/minres.hpp>
+#include <polatory/numeric/error.hpp>
 #include <polatory/types.hpp>
 
 using polatory::Index;
@@ -15,6 +16,7 @@ using polatory::krylov::Fgmres;
 using polatory::krylov::Gmres;
 using polatory::krylov::LinearOperator;
 using polatory::krylov::Minres;
+using polatory::numeric::relative_error;
 
 namespace {
 
@@ -38,6 +40,18 @@ class RandomSymmetric : public LinearOperator {
  private:
   const Index n_;
   MatX m_;
+};
+
+class Identity : public LinearOperator {
+ public:
+  explicit Identity(Index n) : n_(n) {}
+
+  VecX operator()(const VecX& v) const override { return v; }
+
+  Index size() const override { return n_; }
+
+ private:
+  const Index n_;
 };
 
 class Preconditioner : public LinearOperator {
@@ -101,7 +115,8 @@ class KrylovTest : public ::testing::Test {
       auto current_residual = solver.relative_residual();
 
       if (!with_left_pc) {
-        EXPECT_NEAR((rhs - (*op)(approx_solution)).norm() / rhs.norm(), current_residual, 1e-12);
+        EXPECT_NEAR(relative_error((*op)(approx_solution), rhs), current_residual, 1e-12);
+        EXPECT_LT(relative_error(rhs - solver.residual_vector(), (*op)(approx_solution)), 1e-12);
       }
 
       if (i > 0) {
@@ -114,6 +129,17 @@ class KrylovTest : public ::testing::Test {
 };
 
 }  // namespace
+
+TEST_F(KrylovTest, breakdown) {
+  Identity op(n);
+  Fgmres solver(op, rhs, n);
+  solver.setup();
+  solver.iterate_process();
+
+  EXPECT_EQ(solver.absolute_residual(), 0.0);
+  EXPECT_TRUE(solver.residual_vector().isZero());
+  EXPECT_LT(relative_error(solver.solution_vector(), rhs), 1e-15);
+}
 
 TEST_F(KrylovTest, fgmres) {
   test_solver<Fgmres>(false, false, false);
