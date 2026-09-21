@@ -52,9 +52,10 @@ class FineGrid {
     MatX a = mat_a(model_, points, grad_points)(indices_, indices_);
 
     if (m_ > l_) {
-      MatX qtaq = q_top_.transpose() * a.topLeftCorner(l_, l_) * q_top_ +
-                  q_top_.transpose() * a.topRightCorner(l_, m_ - l_) +
-                  a.bottomLeftCorner(m_ - l_, l_) * q_top_ + a.bottomRightCorner(m_ - l_, m_ - l_);
+      MatX qtaq = a.bottomRightCorner(m_ - l_, m_ - l_);
+      qtaq.noalias() += q_top_.transpose() * (a.topLeftCorner(l_, l_) * q_top_);
+      qtaq.noalias() += q_top_.transpose() * a.topRightCorner(l_, m_ - l_);
+      qtaq.noalias() += a.bottomLeftCorner(m_ - l_, l_) * q_top_;
       if (compute_condition_number) {
         cond_ = numeric::condition_number(qtaq);
       }
