@@ -35,6 +35,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
+  static constexpr Index kMaxDirectPoints = 4096;
 
   using Particle = scalfmm::container::particle<
       /* position */ double, kDim,
@@ -220,7 +221,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   }
 
   void prepare() const {
-    if (n_points_ < 1024) {
+    if (km * n_points_ <= kMaxDirectPoints) {
       interpolator_.reset(nullptr);
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);

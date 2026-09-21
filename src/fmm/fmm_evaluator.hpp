@@ -37,6 +37,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
+  static constexpr Index kMaxDirectPoints = 4096;
 
   using SourceParticle = scalfmm::container::particle<
       /* position */ double, kDim,
@@ -224,7 +225,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
   }
 
   void prepare() const {
-    if (n_src_points_ * n_trg_points_ < 1024 * 1024) {
+    if (std::min(km * n_src_points_, kn * n_trg_points_) <= kMaxDirectPoints) {
       far_field_.reset(nullptr);
       fmm_operator_.reset(nullptr);
       src_tree_.reset(nullptr);
