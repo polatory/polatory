@@ -26,19 +26,35 @@ mkdir -p result_gstat
 ./predict.R  10k.txt  10k_test.txt result_gstat/10k_10k.txt
 
 mkdir -p result_polatory
+sleep 1
 ./predict   1k.txt   1k_test.txt result_polatory/1k_1k.txt
+sleep 1
 ./predict   1k.txt  10k_test.txt result_polatory/1k_10k.txt
+sleep 1
 ./predict   1k.txt 100k_test.txt result_polatory/1k_100k.txt
+sleep 1
 ./predict   1k.txt   1M_test.txt result_polatory/1k_1M.txt
+sleep 3
 ./predict  10k.txt   1k_test.txt result_polatory/10k_1k.txt
+sleep 3
 ./predict  10k.txt  10k_test.txt result_polatory/10k_10k.txt
+sleep 3
 ./predict  10k.txt 100k_test.txt result_polatory/10k_100k.txt
+sleep 3
 ./predict  10k.txt   1M_test.txt result_polatory/10k_1M.txt
+sleep 10
 ./predict 100k.txt   1k_test.txt result_polatory/100k_1k.txt
+sleep 10
 ./predict 100k.txt  10k_test.txt result_polatory/100k_10k.txt
+sleep 10
 ./predict 100k.txt 100k_test.txt result_polatory/100k_100k.txt
+sleep 10
 ./predict 100k.txt   1M_test.txt result_polatory/100k_1M.txt
+sleep 30
 ./predict   1M.txt   1k_test.txt result_polatory/1M_1k.txt
+sleep 30
 ./predict   1M.txt  10k_test.txt result_polatory/1M_10k.txt
+sleep 30
 ./predict   1M.txt 100k_test.txt result_polatory/1M_100k.txt
+sleep 30
 ./predict   1M.txt   1M_test.txt result_polatory/1M_1M.txt
