@@ -1,3 +1,6 @@
+add_executable(kernel_cost kernel_cost.cpp)
+target_link_libraries(kernel_cost PRIVATE polatory)
+
 add_executable(points points.cpp)
 target_link_libraries(points PRIVATE polatory)
 

@@ -17,15 +17,9 @@ struct InterpolatorConfiguration {
   //   kClassic: the polynomial interpolant,
   //   0, 1, ..., order - 1: the Floater-Hormann's rational interpolant of degree d.
   int d{};
+
+  bool operator==(const InterpolatorConfiguration& other) const = default;
 };
-
-inline bool operator==(const InterpolatorConfiguration& lhs, const InterpolatorConfiguration& rhs) {
-  return lhs.tree_height == rhs.tree_height && lhs.order == rhs.order && lhs.d == rhs.d;
-}
-
-inline bool operator!=(const InterpolatorConfiguration& lhs, const InterpolatorConfiguration& rhs) {
-  return !(lhs == rhs);
-}
 
 }  // namespace polatory::fmm
 

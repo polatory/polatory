@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_symmetric_evaluator.hpp>
 #include <polatory/types.hpp>
@@ -16,11 +17,10 @@
 #include <scalfmm/tree/for_each.hpp>
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
-#include <scalfmm/utils/sort.hpp>
 #include <tuple>
-#include <unordered_map>
 
 #include "fmm_accuracy_estimator.hpp"
+#include "fmm_tree_height_estimator.hpp"
 #include "full_direct.hpp"
 #include "interpolator_configuration.hpp"
 #include "utility.hpp"
@@ -31,10 +31,12 @@ template <class Kernel>
 class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   static constexpr int kDim{Kernel::kDim};
   using Bbox = geometry::Bbox<kDim>;
+  using FmmTreeHeightEstimator = FmmTreeHeightEstimator<kDim>;
   using Points = geometry::Points<kDim>;
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
+  static constexpr int kGroupSize = FmmTreeHeightEstimator::kGroupSize;
   static constexpr Index kMaxDirectPoints = 4096;
 
   using Particle = scalfmm::container::particle<
@@ -62,7 +64,8 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
         bbox_(bbox),
         box_(make_box<Rbf, Box>(rbf, bbox)),
         kernel_(rbf),
-        near_field_(kernel_) {}
+        near_field_(kernel_),
+        tree_height_estimator_(box_) {}
 
   VecX evaluate() const {
     using namespace scalfmm::algorithms;
@@ -99,7 +102,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   void set_accuracy(double accuracy) {
     accuracy_ = accuracy;
 
-    best_config_.clear();
+    best_config_.reset();
   }
 
   void set_points(const Points& points) {
@@ -116,10 +119,13 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
       }
       p.variables(idx);
     }
+    sort_particles(box_, particles_);
 
-    sorted_level_ = 0;
+    tree_height_estimator_.set_source_points(particles_);
+    tree_height_estimator_.set_target_points(particles_);
+
     tree_.reset(nullptr);
-    best_config_.clear();
+    best_config_.reset();
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
@@ -150,17 +156,6 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   }
 
  private:
-  InterpolatorConfiguration find_best_configuration(int tree_height) const {
-    auto [it, inserted] = best_config_.try_emplace(tree_height);
-    if (inserted) {
-      auto config = FmmAccuracyEstimator<Kernel>::find_best_configuration(
-          rbf_, accuracy_, particles_, box_, tree_height);
-      it->second = config;
-    }
-
-    return it->second;
-  }
-
   void handle_self_interaction() const {
     if (n_points_ == 0) {
       return;
@@ -230,14 +225,19 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
       return;
     }
 
-    auto tree_height = fmm_tree_height<kDim>(n_points_);
-
-    if (sorted_level_ < tree_height - 1) {
-      scalfmm::utils::sort_container(box_, tree_height - 1, particles_);
-      sorted_level_ = tree_height - 1;
+    if (!best_config_) {
+      auto tree_height = [&](int order) {
+        // The mutual P2P evaluates half of the counted pairs.
+        return tree_height_estimator_.tree_height(order, 2.0 * kM2LProductCostInPairs<Kernel>);
+      };
+      typename FmmAccuracyEstimator<Kernel>::Trials trials;
+      best_config_ = FmmAccuracyEstimator<Kernel>::find_best_configuration(
+          rbf_, accuracy_, particles_, box_, tree_height, trials);
     }
 
-    auto config = find_best_configuration(tree_height);
+    auto config = *best_config_;
+    auto tree_height = config.tree_height;
+
     if (config != config_) {
       interpolator_ = std::make_unique<Interpolator>(kernel_, config.order, tree_height,
                                                      box_.width(0), config.d);
@@ -248,7 +248,8 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
     }
 
     if (!tree_) {
-      tree_ = std::make_unique<Tree>(tree_height, config.order, box_, 10, 10, particles_, true);
+      tree_ = std::make_unique<Tree>(tree_height, config.order, box_, kGroupSize, kGroupSize,
+                                     particles_, true);
     }
   }
 
@@ -257,17 +258,17 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   const Box box_;
   const Kernel kernel_;
   const NearField near_field_;
+  FmmTreeHeightEstimator tree_height_estimator_;
 
   double accuracy_{std::numeric_limits<double>::infinity()};
   Index n_points_{};
   mutable Container particles_;
-  mutable int sorted_level_{};
   mutable InterpolatorConfiguration config_{};
   mutable std::unique_ptr<Interpolator> interpolator_;
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<Tree> tree_;
-  mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
+  mutable std::optional<InterpolatorConfiguration> best_config_;
 };
 
 template <class Kernel>

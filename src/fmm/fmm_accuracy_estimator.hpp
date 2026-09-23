@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <limits>
+#include <map>
 #include <numeric>
+#include <optional>
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/numeric/error.hpp>
@@ -17,12 +19,15 @@
 #include <scalfmm/tree/for_each.hpp>
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
-#include <scalfmm/utils/sort.hpp>
 #include <stdexcept>
 #include <tuple>
+#include <utility>
+#include <vector>
 
+#include "fmm_tree_height_estimator.hpp"
 #include "full_direct.hpp"
 #include "interpolator_configuration.hpp"
+#include "utility.hpp"
 
 namespace polatory::fmm {
 
@@ -32,6 +37,7 @@ class FmmAccuracyEstimator {
   static constexpr int kDim{Kernel::kDim};
 
   using Bbox = geometry::Bbox<kDim>;
+  using FmmTreeHeightEstimator = FmmTreeHeightEstimator<kDim>;
   using Point = geometry::Point<kDim>;
   using Points = geometry::Points<kDim>;
   using Vector = geometry::Vector<kDim>;
@@ -68,21 +74,66 @@ class FmmAccuracyEstimator {
   using TargetTree = scalfmm::component::group_tree_view<Cell, TargetLeaf, Box>;
 
   static constexpr int kClassic = InterpolatorConfiguration::kClassic;
+  static constexpr int kGroupSize = FmmTreeHeightEstimator::kGroupSize;
   static constexpr Index kMaxTargetSize = 10000;
 
  public:
+  // The first degree d that meets the accuracy for each (order, tree height) tried, if any. The
+  // outcome depends only on the sources, their weights and the accuracy, so it can be kept across
+  // targets.
+  using Trials = std::map<std::pair<int, int>, std::optional<int>>;
+
+  // The lowest order that meets the accuracy at the tree height it will run at, given by
+  // tree_height(order). src_particles must be sorted by sort_particles.
+  template <class TreeHeight>
   static InterpolatorConfiguration find_best_configuration(const Rbf& rbf, double accuracy,
                                                            const SourceContainer& src_particles,
-                                                           const Box& box, int tree_height) {
+                                                           const Box& box,
+                                                           const TreeHeight& tree_height,
+                                                           Trials& trials) {
     if (accuracy == std::numeric_limits<double>::infinity()) {
-      return {.tree_height = tree_height, .order = 6, .d = kClassic};
+      return {.tree_height = tree_height(6), .order = 6, .d = kClassic};
     }
     if (accuracy == 0.0) {
-      return {.tree_height = tree_height, .order = 12, .d = 8};
+      return {.tree_height = tree_height(12), .order = 12, .d = 8};
     }
 
-    // Errors at the data points are larger than those at randomly distributed points.
+    TargetContainer trg_particles;
+    VecX exact;
+    auto prepared = false;
+    for (auto order = 8; order <= 20; order += 2) {
+      auto height = tree_height(order);
+      auto it = trials.find({order, height});
+      if (it == trials.end()) {
+        if (!prepared) {
+          trg_particles = sample_targets(src_particles, box);
+          exact = evaluate(rbf, src_particles, trg_particles, box);
+          prepared = true;
+        }
 
+        std::optional<int> passing_d;
+        auto min_d = order >= 12 ? 7 : kClassic;
+        auto max_d = order >= 12 ? 9 : kClassic;
+        for (auto d = min_d; d <= max_d; d++) {
+          auto approx = evaluate(rbf, src_particles, trg_particles, box, height, order, d);
+          if (numeric::absolute_error<Eigen::Infinity>(approx, exact) <= accuracy) {
+            passing_d = d;
+            break;
+          }
+        }
+        it = trials.emplace(std::pair{order, height}, passing_d).first;
+      }
+      if (it->second) {
+        return {.tree_height = height, .order = order, .d = *it->second};
+      }
+    }
+
+    throw std::runtime_error("failed to construct an evaluator that meets the desired accuracy");
+  }
+
+ private:
+  // Errors at the data points are larger than those at randomly distributed points.
+  static TargetContainer sample_targets(const SourceContainer& src_particles, const Box& box) {
     auto src_size = static_cast<Index>(src_particles.size());
     auto trg_size = std::min(src_size, kMaxTargetSize);
     TargetContainer trg_particles(trg_size);
@@ -102,22 +153,8 @@ class FmmAccuracyEstimator {
       p.variables(idx);
     }
 
-    scalfmm::utils::sort_container(box, tree_height - 1, trg_particles);
-
-    auto exact = evaluate(rbf, src_particles, trg_particles, box);
-    for (auto order = 8; order <= 20; order += 2) {
-      auto min_d = order >= 12 ? 7 : kClassic;
-      auto max_d = order >= 12 ? 9 : kClassic;
-      for (auto d = min_d; d <= max_d; d++) {
-        auto approx = evaluate(rbf, src_particles, trg_particles, box, tree_height, order, d);
-        auto error = numeric::absolute_error<Eigen::Infinity>(approx, exact);
-        if (error <= accuracy) {
-          return {.tree_height = tree_height, .order = order, .d = d};
-        }
-      }
-    }
-
-    throw std::runtime_error("failed to construct an evaluator that meets the desired accuracy");
+    sort_particles(box, trg_particles);
+    return trg_particles;
   }
 
   static VecX evaluate(const Rbf& rbf, const SourceContainer& src_particles,
@@ -137,8 +174,8 @@ class FmmAccuracyEstimator {
       FarField far_field(interpolator);
       FmmOperator fmm_operator(near_field, far_field);
 
-      SourceTree src_tree(tree_height, order, box, 10, 10, src_particles, true);
-      TargetTree trg_tree(tree_height, order, box, 10, 10, trg_particles, true);
+      SourceTree src_tree(tree_height, order, box, kGroupSize, kGroupSize, src_particles, true);
+      TargetTree trg_tree(tree_height, order, box, kGroupSize, kGroupSize, trg_particles, true);
 
       scalfmm::list::omp::build_interaction_lists(src_tree, trg_tree, 1, false);
       scalfmm::algorithms::fmm[scalfmm::options::_s(scalfmm::options::omp)]  //

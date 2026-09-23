@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <polatory/common/macros.hpp>
 #include <polatory/fmm/fmm_evaluator.hpp>
 #include <polatory/types.hpp>
@@ -17,11 +18,10 @@
 #include <scalfmm/tree/for_each.hpp>
 #include <scalfmm/tree/group_tree_view.hpp>
 #include <scalfmm/tree/leaf_view.hpp>
-#include <scalfmm/utils/sort.hpp>
 #include <tuple>
-#include <unordered_map>
 
 #include "fmm_accuracy_estimator.hpp"
+#include "fmm_tree_height_estimator.hpp"
 #include "full_direct.hpp"
 #include "interpolator_configuration.hpp"
 #include "lru_cache.hpp"
@@ -33,10 +33,12 @@ template <class Kernel>
 class FmmGenericEvaluator<Kernel>::Impl {
   static constexpr int kDim{Kernel::kDim};
   using Bbox = geometry::Bbox<kDim>;
+  using FmmTreeHeightEstimator = FmmTreeHeightEstimator<kDim>;
   using Points = geometry::Points<kDim>;
 
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
+  static constexpr int kGroupSize = FmmTreeHeightEstimator::kGroupSize;
   static constexpr Index kMaxDirectPoints = 4096;
 
   using SourceParticle = scalfmm::container::particle<
@@ -73,7 +75,8 @@ class FmmGenericEvaluator<Kernel>::Impl {
         bbox_(bbox),
         box_(make_box<Rbf, Box>(rbf, bbox)),
         kernel_(rbf),
-        near_field_(kernel_, false) {}
+        near_field_(kernel_, false),
+        tree_height_estimator_(box_) {}
 
   VecX evaluate() const {
     using namespace scalfmm::algorithms;
@@ -115,7 +118,8 @@ class FmmGenericEvaluator<Kernel>::Impl {
   void set_accuracy(double accuracy) {
     accuracy_ = accuracy;
 
-    best_config_.clear();
+    best_config_.reset();
+    trials_.clear();
   }
 
   void set_source_points(const Points& points) {
@@ -132,10 +136,13 @@ class FmmGenericEvaluator<Kernel>::Impl {
       }
       p.variables(idx);
     }
+    sort_particles(box_, src_particles_);
 
-    src_sorted_level_ = 0;
+    tree_height_estimator_.set_source_points(src_particles_);
+
     src_tree_.reset(nullptr);
-    best_config_.clear();
+    best_config_.reset();
+    trials_.clear();
   }
 
   void set_target_points(const Points& points) {
@@ -152,9 +159,12 @@ class FmmGenericEvaluator<Kernel>::Impl {
       }
       p.variables(idx);
     }
+    sort_particles(box_, trg_particles_);
 
-    trg_sorted_level_ = 0;
+    tree_height_estimator_.set_target_points(trg_particles_);
+
     trg_tree_.reset(nullptr);
+    best_config_.reset();
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
@@ -186,17 +196,6 @@ class FmmGenericEvaluator<Kernel>::Impl {
   }
 
  private:
-  InterpolatorConfiguration find_best_configuration(int tree_height) const {
-    auto [it, inserted] = best_config_.try_emplace(tree_height);
-    if (inserted) {
-      auto config = FmmAccuracyEstimator<Kernel>::find_best_configuration(
-          rbf_, accuracy_, src_particles_, box_, tree_height);
-      it->second = config;
-    }
-
-    return it->second;
-  }
-
   VecX potentials() const {
     VecX potentials = VecX::Zero(kn * n_trg_points_);
 
@@ -234,18 +233,17 @@ class FmmGenericEvaluator<Kernel>::Impl {
       return;
     }
 
-    auto tree_height = fmm_tree_height<kDim>(std::max(n_src_points_, n_trg_points_));
-
-    if (src_sorted_level_ < tree_height - 1) {
-      scalfmm::utils::sort_container(box_, tree_height - 1, src_particles_);
-      src_sorted_level_ = tree_height - 1;
-    }
-    if (trg_sorted_level_ < tree_height - 1) {
-      scalfmm::utils::sort_container(box_, tree_height - 1, trg_particles_);
-      trg_sorted_level_ = tree_height - 1;
+    if (!best_config_) {
+      auto tree_height = [&](int order) {
+        return tree_height_estimator_.tree_height(order, kM2LProductCostInPairs<Kernel>);
+      };
+      best_config_ = FmmAccuracyEstimator<Kernel>::find_best_configuration(
+          rbf_, accuracy_, src_particles_, box_, tree_height, trials_);
     }
 
-    auto config = find_best_configuration(tree_height);
+    auto config = *best_config_;
+    auto tree_height = config.tree_height;
+
     if (config != config_) {
       auto [it, inserted] = interpolator_cache_.try_emplace(config, kernel_, config.order,
                                                             tree_height, box_.width(0), config.d);
@@ -259,14 +257,14 @@ class FmmGenericEvaluator<Kernel>::Impl {
     }
 
     if (!src_tree_) {
-      src_tree_ = std::make_unique<SourceTree>(tree_height, config.order, box_, 10, 10,
-                                               src_particles_, true);
+      src_tree_ = std::make_unique<SourceTree>(tree_height, config.order, box_, kGroupSize,
+                                               kGroupSize, src_particles_, true);
       multipole_dirty_ = true;
     }
 
     if (!trg_tree_) {
-      trg_tree_ = std::make_unique<TargetTree>(tree_height, config.order, box_, 10, 10,
-                                               trg_particles_, true);
+      trg_tree_ = std::make_unique<TargetTree>(tree_height, config.order, box_, kGroupSize,
+                                               kGroupSize, trg_particles_, true);
     }
   }
 
@@ -275,21 +273,21 @@ class FmmGenericEvaluator<Kernel>::Impl {
   const Box box_;
   const Kernel kernel_;
   const NearField near_field_;
+  FmmTreeHeightEstimator tree_height_estimator_;
 
   double accuracy_{std::numeric_limits<double>::infinity()};
   Index n_src_points_{};
   Index n_trg_points_{};
   mutable SourceContainer src_particles_;
   mutable TargetContainer trg_particles_;
-  mutable int src_sorted_level_{};
-  mutable int trg_sorted_level_{};
   mutable bool multipole_dirty_{};
   mutable InterpolatorConfiguration config_{};
   mutable std::unique_ptr<FarField> far_field_;
   mutable std::unique_ptr<FmmOperator> fmm_operator_;
   mutable std::unique_ptr<SourceTree> src_tree_;
   mutable std::unique_ptr<TargetTree> trg_tree_;
-  mutable std::unordered_map<int, InterpolatorConfiguration> best_config_;
+  mutable std::optional<InterpolatorConfiguration> best_config_;
+  mutable FmmAccuracyEstimator<Kernel>::Trials trials_;
   mutable LruCache<InterpolatorConfiguration, Interpolator> interpolator_cache_{2};
 };
 
