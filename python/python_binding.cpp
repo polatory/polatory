@@ -36,6 +36,7 @@ void define_module(py::module& m) {
   using DistanceFilter = point_cloud::DistanceFilter<Dim>;
   using Interpolant = Interpolant<Dim>;
   using Model = Model<Dim>;
+  using Point = geometry::Point<Dim>;
   using Points = geometry::Points<Dim>;
   using Rbf = rbf::Rbf<Dim>;
   using Variogram = kriging::Variogram<Dim>;
@@ -45,17 +46,21 @@ void define_module(py::module& m) {
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
-      .def(py::init<const Points&, const Points>(), "min"_a, "max"_a)
+      .def(py::init<const Point&, const Point&>(), "min"_a, "max"_a)
       .def_static("from_points", &bbox_from_points<Dim>, "points"_a)
       .def_property_readonly("is_empty", &Bbox::is_empty)
       .def_property_readonly("min", &Bbox::min)
       .def_property_readonly("max", &Bbox::max);
 
   py::class_<Rbf>(m, "Rbf")
-      .def_property("anisotropy", &Rbf::anisotropy, &Rbf::set_anisotropy)
+      .def_property("anisotropy", &Rbf::anisotropy, &Rbf::set_anisotropy,
+                    py::return_value_policy::copy)
       .def_property_readonly("cpd_order", &Rbf::cpd_order)
       .def_property_readonly("is_covariance_function", &Rbf::is_covariance_function)
       .def_property_readonly("num_parameters", &Rbf::num_parameters)
+      .def_property_readonly("parameter_lower_bounds", &Rbf::parameter_lower_bounds)
+      .def_property_readonly("parameter_names", &Rbf::parameter_names)
+      .def_property_readonly("parameter_upper_bounds", &Rbf::parameter_upper_bounds)
       .def_property("parameters", &Rbf::parameters, &Rbf::set_parameters)
       .def_property_readonly("short_name", &Rbf::short_name)
       .def("evaluate", &Rbf::evaluate, "diff"_a)
@@ -86,23 +91,28 @@ void define_module(py::module& m) {
       .def_readonly_static("MIN_REQUIRED_POLY_DEGREE", &Model::kMinRequiredPolyDegree)
       .def_property_readonly("cpd_order", &Model::cpd_order)
       .def_property_readonly("description", &Model::description)
+      .def_property_readonly("is_covariance_model", &Model::is_covariance_model)
       .def_property("nugget", &Model::nugget, &Model::set_nugget)
       .def_property_readonly("num_parameters", &Model::num_parameters)
+      .def_property_readonly("num_rbfs", &Model::num_rbfs)
+      .def_property_readonly("parameter_lower_bounds", &Model::parameter_lower_bounds)
+      .def_property_readonly("parameter_names", &Model::parameter_names)
+      .def_property_readonly("parameter_upper_bounds", &Model::parameter_upper_bounds)
       .def_property("parameters", &Model::parameters, &Model::set_parameters)
       .def_property_readonly("poly_basis_size", &Model::poly_basis_size)
       .def_property_readonly("poly_degree", &Model::poly_degree)
-      .def_property_readonly("rbfs",
-                             static_cast<const std::vector<Rbf>& (Model::*)() const>(&Model::rbfs))
+      .def_property_readonly("rbfs", &Model::rbfs, py::return_value_policy::copy)
       .def_static("load", &Model::load, "filename"_a)
       .def("save", &Model::save, "filename"_a);
 
   py::class_<Interpolant>(m, "Interpolant")
       .def(py::init<const Model&>(), "model"_a)
-      .def_property_readonly("bbox", &Interpolant::bbox)
-      .def_property_readonly("centers", &Interpolant::centers)
-      .def_property_readonly("grad_centers", &Interpolant::grad_centers)
-      .def_property_readonly("model", &Interpolant::model)
-      .def_property_readonly("weights", &Interpolant::weights)
+      .def_property_readonly("bbox", &Interpolant::bbox, py::return_value_policy::copy)
+      .def_property_readonly("centers", &Interpolant::centers, py::return_value_policy::copy)
+      .def_property_readonly("grad_centers", &Interpolant::grad_centers,
+                             py::return_value_policy::copy)
+      .def_property_readonly("model", &Interpolant::model, py::return_value_policy::copy)
+      .def_property_readonly("weights", &Interpolant::weights, py::return_value_policy::copy)
       .def("evaluate", py::overload_cast<const Points&, double>(&Interpolant::evaluate), "points"_a,
            "accuracy"_a = kInfinity)
       .def("evaluate",
@@ -139,7 +149,9 @@ void define_module(py::module& m) {
   py::class_<DistanceFilter>(m, "DistanceFilter")
       .def(py::init<const Points&>(), "points"_a)
       .def_property_readonly("filtered_indices", &DistanceFilter::filtered_indices)
-      .def("filter", py::overload_cast<double>(&DistanceFilter::filter), "distance"_a);
+      .def("filter", py::overload_cast<double>(&DistanceFilter::filter), "distance"_a)
+      .def("filter", py::overload_cast<double, const std::vector<Index>&>(&DistanceFilter::filter),
+           "distance"_a, "indices"_a);
 
   py::class_<Variogram>(m, "Variogram")
       .def_property_readonly("bin_distance", &Variogram::bin_distance)
@@ -160,7 +172,7 @@ void define_module(py::module& m) {
       .def_property("angle_tolerance", &VariogramCalculator::angle_tolerance,
                     &VariogramCalculator::set_angle_tolerance)
       .def_property("directions", &VariogramCalculator::directions,
-                    &VariogramCalculator::set_directions)
+                    &VariogramCalculator::set_directions, py::return_value_policy::copy)
       .def_property("lag_tolerance", &VariogramCalculator::lag_tolerance,
                     &VariogramCalculator::set_lag_tolerance)
       .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
@@ -192,12 +204,13 @@ void define_module(py::module& m) {
 PYBIND11_MODULE(_core, m) {
   using Bbox = geometry::Bbox3;
   using Mat = Mat3;
-  using NormalEstimator = point_cloud::NormalEstimator;
+  using point_cloud::NormalEstimator;
 
   py::class_<NormalEstimator>(m, "NormalEstimator")
       .def(py::init<const geometry::Points3&>(), "points"_a)
-      .def_property_readonly("normals", &NormalEstimator::normals)
-      .def_property_readonly("plane_factors", &NormalEstimator::plane_factors)
+      .def_property_readonly("normals", &NormalEstimator::normals, py::return_value_policy::copy)
+      .def_property_readonly("plane_factors", &NormalEstimator::plane_factors,
+                             py::return_value_policy::copy)
       .def("estimate_with_knn",
            static_cast<NormalEstimator& (NormalEstimator::*)(Index) &>(
                &NormalEstimator::estimate_with_knn),
@@ -241,11 +254,11 @@ PYBIND11_MODULE(_core, m) {
 
   py::class_<isosurface::RbfFieldFunction, isosurface::FieldFunction>(m, "RbfFieldFunction")
       .def(py::init<Interpolant<3>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
-           "grad_accuracy"_a = kInfinity);
+           "grad_accuracy"_a = kInfinity, py::keep_alive<1, 2>());
 
   py::class_<isosurface::RbfFieldFunction25D, isosurface::FieldFunction>(m, "RbfFieldFunction25D")
       .def(py::init<Interpolant<2>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
-           "grad_accuracy"_a = kInfinity);
+           "grad_accuracy"_a = kInfinity, py::keep_alive<1, 2>());
 
   py::class_<isosurface::Isosurface>(m, "Isosurface")
       .def(py::init<const Bbox&, double, const Mat&>(), "bbox"_a, "resolution"_a,
@@ -260,6 +273,8 @@ PYBIND11_MODULE(_core, m) {
   py::class_<isosurface::Mesh>(m, "Mesh")
       .def("export_obj", &isosurface::Mesh::export_obj, "filename"_a)
       .def_property_readonly("faces", &isosurface::Mesh::faces)
+      .def_property_readonly("is_empty", &isosurface::Mesh::is_empty)
+      .def_property_readonly("is_entire", &isosurface::Mesh::is_entire)
       .def_property_readonly("vertices", &isosurface::Mesh::vertices);
 
   py::class_<kriging::NormalScoreTransformation>(m, "NormalScoreTransformation")

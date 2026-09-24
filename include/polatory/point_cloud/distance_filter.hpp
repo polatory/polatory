@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <algorithm>
 #include <boost/unordered/unordered_flat_set.hpp>
 #include <numeric>
 #include <polatory/geometry/point3d.hpp>
@@ -28,6 +29,10 @@ class DistanceFilter {
   DistanceFilter& filter(double distance, const std::vector<Index>& indices) {
     if (!(distance >= 0.0)) {
       throw std::invalid_argument("distance must be non-negative");
+    }
+
+    if (!std::ranges::all_of(indices, [&](auto i) { return i >= 0 && i < points_.rows(); })) {
+      throw std::invalid_argument("indices must be in [0, points.rows())");
     }
 
     boost::unordered_flat_set<Index> indices_to_remove;
@@ -97,7 +102,7 @@ class DistanceFilter {
     return indices;
   }
 
-  const Points& points_;
+  const Points points_;  // Do not hold a reference to a temporary object.
   const KdTree<Dim> tree_;
   bool filtered_{};
   std::vector<Index> filtered_indices_;
