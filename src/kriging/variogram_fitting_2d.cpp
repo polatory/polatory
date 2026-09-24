@@ -26,9 +26,7 @@ class VariogramFitting<2>::Impl {
         num_params_(static_cast<int>(model.num_parameters())),
         num_rbfs_(static_cast<int>(model.num_rbfs())),
         params_(model.parameters()) {
-    for (auto& rbf : model_template_.rbfs()) {
-      rbf.set_anisotropy(Mat::Identity());
-    }
+    model_template_.set_anisotropies(std::vector<Mat>(model.num_rbfs(), Mat::Identity()));
 
     ceres::Problem problem;
 
@@ -88,15 +86,13 @@ class VariogramFitting<2>::Impl {
 
     if (fit_anisotropy_) {
       Mat inv_rot = r_.toRotationMatrix();
+      std::vector<Mat> anisos(num_rbfs_);
       for (auto i = 0; i < num_rbfs_; i++) {
-        auto& rbf = model.rbfs().at(i);
-
         Mat inv_scale = Mat::Identity();
         inv_scale(1, 1) = inv_minor_.at(i);
-        Mat aniso = inv_scale * inv_rot;
-
-        rbf.set_anisotropy(aniso);
+        anisos.at(i) = inv_scale * inv_rot;
       }
+      model.set_anisotropies(anisos);
     }
 
     return model;
@@ -128,15 +124,13 @@ class VariogramFitting<2>::Impl {
 
         Eigen::Rotation2Dd r(*angle);
         Mat inv_rot = r.toRotationMatrix();
+        std::vector<Mat> anisos(num_rbfs);
         for (auto i = 0; i < num_rbfs; i++) {
-          auto& rbf = model.rbfs().at(i);
-
           Mat inv_scale = Mat::Identity();
           inv_scale(1, 1) = min_scale[i];
-          Mat aniso = inv_scale * inv_rot;
-
-          rbf.set_anisotropy(aniso);
+          anisos.at(i) = inv_scale * inv_rot;
         }
+        model.set_anisotropies(anisos);
       }
 
       return internal::compute_residuals(model, variog_, weight_fn_, residuals);

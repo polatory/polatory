@@ -22,9 +22,7 @@ class VariogramFitting<1>::Impl {
       : model_template_(model),
         num_params_(static_cast<int>(model.num_parameters())),
         params_(model.parameters()) {
-    for (auto& rbf : model_template_.rbfs()) {
-      rbf.set_anisotropy(Mat::Identity());
-    }
+    model_template_.set_anisotropies(std::vector<Mat>(model.num_rbfs(), Mat::Identity()));
 
     ceres::Problem problem;
 

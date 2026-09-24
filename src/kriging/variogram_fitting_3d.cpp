@@ -25,9 +25,7 @@ class VariogramFitting<3>::Impl {
         num_params_(static_cast<int>(model.num_parameters())),
         num_rbfs_(static_cast<int>(model.num_rbfs())),
         params_(model.parameters()) {
-    for (auto& rbf : model_template_.rbfs()) {
-      rbf.set_anisotropy(Mat::Identity());
-    }
+    model_template_.set_anisotropies(std::vector<Mat>(model.num_rbfs(), Mat::Identity()));
 
     ceres::Problem problem;
 
@@ -96,16 +94,14 @@ class VariogramFitting<3>::Impl {
 
     if (fit_anisotropy_) {
       Mat inv_rot = q_.normalized().toRotationMatrix();
+      std::vector<Mat> anisos(num_rbfs_);
       for (auto i = 0; i < num_rbfs_; i++) {
-        auto& rbf = model.rbfs().at(i);
-
         Mat inv_scale = Mat::Identity();
         inv_scale(0, 0) = inv_major_.at(i);
         inv_scale(2, 2) = inv_minor_.at(i);
-        Mat aniso = inv_scale * inv_rot;
-
-        rbf.set_anisotropy(aniso);
+        anisos.at(i) = inv_scale * inv_rot;
       }
+      model.set_anisotropies(anisos);
     }
 
     return model;
@@ -138,16 +134,14 @@ class VariogramFitting<3>::Impl {
 
         Eigen::Quaterniond q(q_coeffs);
         Mat inv_rot = q.normalized().toRotationMatrix();
+        std::vector<Mat> anisos(num_rbfs);
         for (auto i = 0; i < num_rbfs; i++) {
-          auto& rbf = model.rbfs().at(i);
-
           Mat inv_scale = Mat::Identity();
           inv_scale(0, 0) = maj_scale[i];
           inv_scale(2, 2) = min_scale[i];
-          Mat aniso = inv_scale * inv_rot;
-
-          rbf.set_anisotropy(aniso);
+          anisos.at(i) = inv_scale * inv_rot;
         }
+        model.set_anisotropies(anisos);
       }
 
       return internal::compute_residuals(model, variog_, weight_fn_, residuals);

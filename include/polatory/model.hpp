@@ -24,6 +24,7 @@ class Interpolant;
 template <int Dim>
 class Model {
   static constexpr int kDim = Dim;
+  using Mat = Mat<kDim>;
   using Rbf = rbf::Rbf<kDim>;
 
  public:
@@ -124,9 +125,17 @@ class Model {
 
   int poly_degree() const { return poly_degree_; }
 
-  std::vector<Rbf>& rbfs() { return rbfs_; }
-
   const std::vector<Rbf>& rbfs() const { return rbfs_; }
+
+  void set_anisotropies(const std::vector<Mat>& anisos) {
+    if (static_cast<Index>(anisos.size()) != num_rbfs()) {
+      throw std::invalid_argument(std::format("anisos.size() must be {}", num_rbfs()));
+    }
+
+    for (Index i = 0; i < num_rbfs(); i++) {
+      rbfs_.at(i).set_anisotropy(anisos.at(i));
+    }
+  }
 
   void set_nugget(double nugget) {
     if (!(nugget >= 0.0)) {
