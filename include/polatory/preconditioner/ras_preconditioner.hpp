@@ -196,7 +196,9 @@ class RasPreconditioner : public krylov::LinearOperator {
         auto mu = static_cast<Index>(indices.size());
         auto sigma = static_cast<Index>(grad_indices.size());
 
-        MatX p = poly.evaluate(points_(indices, kAll), grad_points_(grad_indices, kAll));
+        Points points = points_(indices, kAll);
+        Points grad_points = grad_points_(grad_indices, kAll);
+        MatX p = poly.evaluate(points, grad_points);
         common::orthonormalize_cols(p);
 
         auto& padded = ps_.at(level);
