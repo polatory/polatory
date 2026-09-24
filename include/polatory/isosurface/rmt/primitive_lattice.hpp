@@ -94,6 +94,10 @@ class PrimitiveLattice {
       }
     }
 
+    if (vertices.empty()) {
+      return {1, 0};
+    }
+
     auto min = std::numeric_limits<double>::infinity();
     auto max = -std::numeric_limits<double>::infinity();
     for (const auto& v : vertices) {
