@@ -305,6 +305,7 @@ class RasPreconditioner : public krylov::LinearOperator {
     const auto& src_grad_indices = grad_point_idcs_.at(src_level);
     auto src_mu = static_cast<Index>(src_indices.size());
     auto src_sigma = static_cast<Index>(src_grad_indices.size());
+
     VecX src_weights(src_mu + kDim * src_sigma + l_);
     for (Index i = 0; i < src_mu; i++) {
       src_weights(i) = weights(src_indices.at(i));
@@ -316,12 +317,14 @@ class RasPreconditioner : public krylov::LinearOperator {
     src_weights.tail(l_) = weights.tail(l_);
     evaluator(src_level, trg_level).set_weights(src_weights);
 
-    auto fit = evaluator(src_level, trg_level).evaluate();
-
     const auto& trg_indices = point_idcs_.at(trg_level);
     const auto& trg_grad_indices = grad_point_idcs_.at(trg_level);
     auto trg_mu = static_cast<Index>(trg_indices.size());
     auto trg_sigma = static_cast<Index>(trg_grad_indices.size());
+
+    auto fit = evaluator(src_level, trg_level).evaluate();
+    fit.head(trg_mu) += weights(trg_indices) * model_.nugget();
+
     for (Index i = 0; i < trg_mu; i++) {
       residuals(trg_indices.at(i)) -= fit(i);
     }
