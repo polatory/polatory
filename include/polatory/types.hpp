@@ -4,7 +4,7 @@
 
 namespace polatory {
 
-using Index = Eigen::Index;
+using Eigen::Index;
 
 template <int M, int N = M>
 using Mat = Eigen::Matrix<double, M, N, N == 1 ? Eigen::ColMajor : Eigen::RowMajor>;

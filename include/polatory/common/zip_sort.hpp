@@ -8,7 +8,7 @@
 
 namespace polatory::common {
 
-template <typename RandomAccessIterator1, typename RandomAccessIterator2, typename Compare>
+template <class RandomAccessIterator1, class RandomAccessIterator2, class Compare>
 void zip_sort(RandomAccessIterator1 first1, RandomAccessIterator1 last1,
               RandomAccessIterator2 first2, Compare comp) {
   using ValueType1 = std::iterator_traits<RandomAccessIterator1>::value_type;

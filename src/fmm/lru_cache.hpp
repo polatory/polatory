@@ -10,8 +10,8 @@ template <class Key, class T>
 class LruCache {
   using KeyValuePair = std::pair<const Key, T>;
   using List = std::list<KeyValuePair>;
-  using Iterator = typename List::iterator;
-  using ConstIterator = typename List::const_iterator;
+  using Iterator = List::iterator;
+  using ConstIterator = List::const_iterator;
 
  public:
   explicit LruCache(std::size_t capacity) : capacity_{capacity} {}

@@ -65,7 +65,7 @@ class FmmAccuracyEstimator {
                                                             scalfmm::options::modified_uniform_>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
-  using Position = typename SourceParticle::position_type;
+  using Position = SourceParticle::position_type;
   using Box = scalfmm::component::box<Position>;
   using Cell = scalfmm::component::cell<typename Interpolator::storage_type>;
   using SourceLeaf = scalfmm::component::leaf_view<SourceParticle>;

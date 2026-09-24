@@ -7,10 +7,10 @@ namespace polatory::fmm {
 
 template <class Kernel>
 class FmmGenericSymmetricEvaluator<Kernel>::Impl {
-  using RbfDirectPart = typename Rbf::DirectPart;
-  using RbfFastPart = typename Rbf::FastPart;
-  using KernelDirectPart = typename Kernel::template Rebind<RbfDirectPart>;
-  using KernelFastPart = typename Kernel::template Rebind<RbfFastPart>;
+  using RbfDirectPart = Rbf::DirectPart;
+  using RbfFastPart = Rbf::FastPart;
+  using KernelDirectPart = Kernel::template Rebind<RbfDirectPart>;
+  using KernelFastPart = Kernel::template Rebind<RbfFastPart>;
   static constexpr int km{Kernel::km};
   static constexpr int kn{Kernel::kn};
 

@@ -52,7 +52,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
                                                             scalfmm::options::modified_uniform_>;
   using FarField = scalfmm::operators::far_field_operator<Interpolator>;
   using FmmOperator = scalfmm::operators::fmm_operators<NearField, FarField>;
-  using Position = typename Particle::position_type;
+  using Position = Particle::position_type;
   using Box = scalfmm::component::box<Position>;
   using Cell = scalfmm::component::cell<typename Interpolator::storage_type>;
   using Leaf = scalfmm::component::leaf_view<Particle>;
