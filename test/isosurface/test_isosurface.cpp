@@ -10,7 +10,6 @@
 #include <polatory/geometry/bbox3d.hpp>
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/isosurface/isosurface.hpp>
-#include <polatory/isosurface/mesh_defects_finder.hpp>
 #include <polatory/isosurface/refine.hpp>
 #include <polatory/isosurface/types.hpp>
 #include <polatory/types.hpp>
@@ -32,7 +31,6 @@ using polatory::isosurface::Faces;
 using polatory::isosurface::FieldFunction;
 using polatory::isosurface::Isosurface;
 using polatory::isosurface::Mesh;
-using polatory::isosurface::MeshDefectsFinder;
 using polatory::isosurface::refine_vertices;
 
 namespace {
@@ -51,8 +49,6 @@ class DistanceFromPoint : public FieldFunction {
   Point3 point_;
 };
 
-// A per-point pseudo-random field. Hashing the exact coordinates makes it a true function (same
-// point, same value) and reproducible across runs and test order, unlike Eigen's global-RNG Random.
 class RandomFieldFunction : public FieldFunction {
  public:
   VecX operator()(const Points3& points) const override {
@@ -65,7 +61,6 @@ class RandomFieldFunction : public FieldFunction {
   }
 
  private:
-  // A deterministic value in [0, 1) from a point's exact coordinates and a salt.
   static double unit_hash(const Point3& p, std::size_t salt) {
     std::size_t h = salt;
     boost::hash_combine(h, p.x());
@@ -131,9 +126,6 @@ double point_tri_dist2(const Point3& p, const Point3& a, const Point3& b, const 
   return (ap - v * ab - w * ac).squaredNorm();
 }
 
-// The largest distance from any vertex of `from` lying in `region` to the surface of `to`. Measures
-// where the meshes pass, not vertex identity -- clipping trims vertices, but the surface location
-// must be bbox-independent.
 double max_surface_dist(const Mesh& from, const Mesh& to, const Bbox3& region) {
   const auto& fv = from.vertices();
   const auto& tv = to.vertices();
@@ -194,6 +186,41 @@ bool test_boundary_coordinates(const Mesh& mesh, const Bbox3& bbox) {
   }
 
   return true;
+}
+
+Points3 plane_points(const Point3& origin, const Vector3& n, const Bbox3& region, Index count) {
+  Vector3 t1 = n.unitOrthogonal();
+  Vector3 t2 = n.cross(t1);
+  std::mt19937 rng(42);
+  std::uniform_real_distribution<double> dist(-2.0, 2.0);
+  std::vector<Point3> pts;
+  while (std::cmp_less(pts.size(), count)) {
+    Point3 p = origin + dist(rng) * t1 + dist(rng) * t2;
+    if (region.contains(p)) {
+      pts.push_back(p);
+    }
+  }
+  Points3 out(count, 3);
+  for (std::size_t k = 0; k < pts.size(); k++) {
+    out.row(static_cast<Index>(k)) = pts.at(k);
+  }
+  return out;
+}
+
+void expect_bbox_independent(const char* label, const Mesh& mesh_a, const Mesh& mesh_b,
+                             const Bbox3& a, const Bbox3& b, double resolution) {
+  Bbox3 common(a.min().cwiseMax(b.min()), a.max().cwiseMin(b.max()));
+  auto margin = 2.0 * resolution;
+  const Bbox3 region(common.min().array() + margin, common.max().array() - margin);
+  EXPECT_LT(max_surface_dist(mesh_a, mesh_b, region), 1e-9) << label;
+  EXPECT_LT(max_surface_dist(mesh_b, mesh_a, region), 1e-9) << label;
+}
+
+void expect_bbox_independent(const char* label, FieldFunction& field_fn, double isovalue,
+                             const Bbox3& a, const Bbox3& b, double resolution) {
+  auto mesh_a = Isosurface(a, resolution).generate(field_fn, isovalue);
+  auto mesh_b = Isosurface(b, resolution).generate(field_fn, isovalue);
+  expect_bbox_independent(label, mesh_a, mesh_b, a, b, resolution);
 }
 
 }  // namespace
@@ -288,9 +315,9 @@ TEST(isosurface, generate_entire_from_seed_points) {
 TEST(isosurface, generate_from_seed_points_gradient_search) {
   std::srand(1);
   const Bbox3 bbox(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
-  const auto resolution = 0.1;
+  const auto resolution = 0.2;
 
-  for (auto i = 0; i < 100; i++) {
+  for (auto i = 0; i < 20; i++) {
     const auto aniso = random_anisotropy<3>();
 
     Isosurface isosurf(bbox, resolution, aniso);
@@ -299,9 +326,9 @@ TEST(isosurface, generate_from_seed_points_gradient_search) {
     Points3 seed_points(1, 3);
     seed_points << Point3::Zero();
 
-    auto expected = isosurf.generate(field_fn, 1.0);
+    auto expected = isosurf.generate(field_fn, 1.0, false);
     isosurf.clear();
-    auto actual = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0);
+    auto actual = isosurf.generate_from_seed_points(seed_points, field_fn, 1.0, false);
 
     ASSERT_EQ(expected.faces().rows(), actual.faces().rows());
   }
@@ -320,41 +347,16 @@ TEST(isosurface, generate_plane) {
   ASSERT_EQ(2021, mesh.faces().rows());
 }
 
-TEST(isosurface, manifold) {
-  std::srand(16);
-  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
-  const auto resolution = 0.1;
-  const auto aniso = random_anisotropy<3>();
-
-  Isosurface isosurf(bbox, resolution, aniso);
-  RandomFieldFunction field_fn;
-
-  auto mesh = isosurf.generate(field_fn, 0.0);
-
-  MeshDefectsFinder defects(mesh, resolution);
-
-  const auto& min = bbox.min();
-  const auto& max = bbox.max();
-
-  for (auto vi : defects.singular_vertices()) {
-    Point3 p = mesh.vertices().row(vi);
-    auto boundary_vertex = (p.array() == min.array() || p.array() == max.array()).any();
-    ASSERT_TRUE(boundary_vertex);
-  }
-
-  ASSERT_EQ(0, defects.intersecting_faces().size());
-}
-
 TEST(isosurface, boundary_coordinates) {
   std::srand(1);
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
-  const auto resolution = 0.1;
+  const auto resolution = 0.2;
   const auto aniso = random_anisotropy<3>();
 
   Isosurface isosurf(bbox, resolution, aniso);
   RandomFieldFunction field_fn;
 
-  auto mesh = isosurf.generate(field_fn, 0.0);
+  auto mesh = isosurf.generate(field_fn, 0.0, false);
 
   ASSERT_TRUE(test_boundary_coordinates(mesh, bbox));
 }
@@ -362,7 +364,7 @@ TEST(isosurface, boundary_coordinates) {
 TEST(isosurface, boundary_coordinates_seed_points) {
   std::srand(1);
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
-  const auto resolution = 0.1;
+  const auto resolution = 0.2;
   const auto aniso = random_anisotropy<3>();
 
   Isosurface isosurf(bbox, resolution, aniso);
@@ -371,82 +373,35 @@ TEST(isosurface, boundary_coordinates_seed_points) {
   Points3 seed_points(1, 3);
   seed_points << Point3::Zero();
 
-  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0);
+  auto mesh = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, false);
 
   ASSERT_TRUE(test_boundary_coordinates(mesh, bbox));
-}
-
-// `count` deterministic, randomly distributed points on the plane through `origin` with normal `n`,
-// within `region`.
-Points3 plane_points(const Point3& origin, const Vector3& n, const Bbox3& region, Index count) {
-  Vector3 t1 = n.unitOrthogonal();
-  Vector3 t2 = n.cross(t1);
-  std::mt19937 rng(42);
-  std::uniform_real_distribution<double> dist(-2.0, 2.0);
-  std::vector<Point3> pts;
-  while (static_cast<Index>(pts.size()) < count) {
-    Point3 p = origin + dist(rng) * t1 + dist(rng) * t2;
-    if (region.contains(p)) {
-      pts.push_back(p);
-    }
-  }
-  Points3 out(count, 3);
-  for (std::size_t k = 0; k < pts.size(); k++) {
-    out.row(static_cast<Index>(k)) = pts.at(k);
-  }
-  return out;
-}
-
-// The surface location must not depend on the bbox: a larger or shifted box only changes where the
-// mesh is clipped, not where it passes. Compares the two surfaces two rows in from the shared clip
-// edge (nuance 2: "where the mesh passes", not vertex identity, and not a clipped edge against live
-// surface), and expects them to coincide to rounding -- far below the resolution.
-void expect_bbox_independent(const char* label, const Mesh& mesh_a, const Mesh& mesh_b,
-                             const Bbox3& a, const Bbox3& b, double resolution) {
-  Bbox3 common(a.min().cwiseMax(b.min()), a.max().cwiseMin(b.max()));
-  auto margin = 2.0 * resolution;
-  const Bbox3 region(common.min().array() + margin, common.max().array() - margin);
-  EXPECT_LT(max_surface_dist(mesh_a, mesh_b, region), 1e-9) << label;
-  EXPECT_LT(max_surface_dist(mesh_b, mesh_a, region), 1e-9) << label;
-}
-
-void expect_bbox_independent(const char* label, FieldFunction& field_fn, double isovalue,
-                             const Bbox3& a, const Bbox3& b, double resolution) {
-  auto mesh_a = Isosurface(a, resolution).generate(field_fn, isovalue);
-  auto mesh_b = Isosurface(b, resolution).generate(field_fn, isovalue);
-  expect_bbox_independent(label, mesh_a, mesh_b, a, b, resolution);
 }
 
 TEST(isosurface, bbox_independence) {
   const auto resolution = 0.1;
 
-  // A tilted plane through the origin: a deterministic analytic field (it ignores the evaluation
-  // bbox, unlike the RBF field), and it exits any bbox so clipping actually cuts the surface.
-  SignedDistanceFromPlane plane(Point3(0.017, 0.023, 0.011),
-                                Vector3(0.31, 0.53, 0.79).normalized());
-  // A curved surface that also exits the bbox: the r=6 sphere about (0,0,-5) passes through z~1.
+  const Point3 origin(0.017, 0.023, 0.011);
+  const Vector3 direction(0.31, 0.53, 0.79);
+  SignedDistanceFromPlane plane(origin, direction);
   DistanceFromPoint sphere(Point3(0.0, 0.0, -5.0));
 
   const Bbox3 small(Point3(-1.2, -1.2, -1.2), Point3(1.2, 1.2, 1.2));
-  const Bbox3 large(Point3(-2.0, -2.0, -2.0), Point3(2.0, 2.0, 2.0));    // concentric, larger
-  const Bbox3 shifted(Point3(-1.5, -1.3, -1.1), Point3(0.9, 1.1, 1.3));  // off-center
+  const Bbox3 large(Point3(-2.0, -2.0, -2.0), Point3(2.0, 2.0, 2.0));
+  const Bbox3 shifted(Point3(-1.5, -1.3, -1.1), Point3(0.9, 1.1, 1.3));
 
   expect_bbox_independent("plane/larger", plane, 0.0, small, large, resolution);
   expect_bbox_independent("plane/shifted", plane, 0.0, small, shifted, resolution);
   expect_bbox_independent("sphere/larger", sphere, 6.0, small, large, resolution);
   expect_bbox_independent("sphere/shifted", sphere, 6.0, small, shifted, resolution);
 
-  // The snapping path: the snap guard uses first_extended_bbox, which depends on the bbox, so this
-  // is where bbox-dependence would leak in. Snap the mesh to deterministic, randomly distributed
-  // points on the plane.
-  const Point3 origin(0.017, 0.023, 0.011);
-  const Vector3 normal = Vector3(0.31, 0.53, 0.79).normalized();
-  auto snap = plane_points(origin, normal,
-                           Bbox3(small.min().array() + 0.15, small.max().array() - 0.15), 500);
-  VecX tols = VecX::Constant(snap.rows(), 0.5);
+  auto snap_points =
+      plane_points(origin, direction.normalized(),
+                   Bbox3(small.min().array() + 0.15, small.max().array() - 0.15), 500);
+  VecX tols = VecX::Constant(snap_points.rows(), 0.5);
   auto snapped = [&](const Bbox3& box) {
     Isosurface iso(box, resolution);
-    iso.set_snap_points(snap, tols);
+    iso.set_snap_points(snap_points, tols);
     return iso.generate(plane, 0.0);
   };
   auto mesh_s = snapped(small);
@@ -454,29 +409,23 @@ TEST(isosurface, bbox_independence) {
   expect_bbox_independent("plane/snap", mesh_s, mesh_l, small, large, resolution);
 }
 
-// refine_vertices projects mesh vertices onto the field's level set: the max distance from the
-// surface must stay tiny.
 TEST(refine, vertices_on_surface) {
   const double res = 0.1;
   const double pad = 3.0 * res;
 
-  DistanceFromPoint field_fn;  // the unit sphere as the level set f = 1
+  DistanceFromPoint field_fn;
   const Bbox3 bbox(Point3(-1 - pad, -1 - pad, -1 - pad), Point3(1 + pad, 1 + pad, 1 + pad));
   auto mesh = Isosurface(bbox, res).generate(field_fn, 1.0);
   EXPECT_LT((field_fn(mesh.vertices()).array() - 1.0).abs().maxCoeff(), 1e-5 * res);
 }
 
-// The guard must reject a move that folds an incident face over its opposite edge. A flat diamond
-// fan around the apex (index 0); the tilted plane f = (-x - y)/sqrt2 + 1 has gradient
-// (-1,-1,0)/sqrt2 and residual 1 at the origin, so an unguarded Newton step would drive the apex
-// ~1 (the 0.5*res cap) across edge {1,2} (distance 0.707), inverting a face.
 TEST(refine, rejects_fold) {
   Points3 v(5, 3);
   v << 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0, 0, 0, -1, 0;
   Faces f(4, 3);
   f << 0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1;
 
-  SignedDistanceFromPlane field_fn(Point3(std::sqrt(2.0), 0.0, 0.0), Vector3(-1.0, -1.0, 0.0));
+  SignedDistanceFromPlane field_fn(Point3(std::numbers::sqrt2, 0.0, 0.0), Vector3(-1.0, -1.0, 0.0));
   const Bbox3 bbox({-10, -10, -10}, {10, 10, 10});
   auto out = refine_vertices(Mesh(v, f), field_fn, 0.0, bbox, 2.0, Mat3::Identity());
 

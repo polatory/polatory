@@ -69,20 +69,13 @@ TEST(rmt, neighbor_cell_vectors) {
   Vector3 a2 = kInvSqrt3 * Vector3{1.0, 1.0, -1.0};
 
   std::array<Vector3, 14> neighbor_vectors{
-      kInvSqrt3 * Vector3{-1.0, 1.0, 1.0},    // 0
-      kInvSqrt3 * Vector3{0.0, 2.0, 0.0},     // 1
-      kInvSqrt3 * Vector3{1.0, 1.0, -1.0},    // 2
-      kInvSqrt3 * Vector3{0.0, 0.0, 2.0},     // 3
-      kInvSqrt3 * Vector3{1.0, 1.0, 1.0},     // 4
-      kInvSqrt3 * Vector3{2.0, 0.0, 0.0},     // 5
-      kInvSqrt3 * Vector3{1.0, -1.0, 1.0},    // 6
-      kInvSqrt3 * Vector3{1.0, -1.0, -1.0},   // 7
-      kInvSqrt3 * Vector3{0.0, -2.0, 0.0},    // 8
-      kInvSqrt3 * Vector3{-1.0, -1.0, 1.0},   // 9
-      kInvSqrt3 * Vector3{0.0, 0.0, -2.0},    // A
-      kInvSqrt3 * Vector3{-1.0, -1.0, -1.0},  // B
-      kInvSqrt3 * Vector3{-2.0, 0.0, 0.0},    // C
-      kInvSqrt3 * Vector3{-1.0, 1.0, -1.0},   // D
+      kInvSqrt3 * Vector3{-1.0, 1.0, 1.0}, kInvSqrt3 * Vector3{0.0, 2.0, 0.0},
+      kInvSqrt3 * Vector3{1.0, 1.0, -1.0}, kInvSqrt3 * Vector3{0.0, 0.0, 2.0},
+      kInvSqrt3 * Vector3{1.0, 1.0, 1.0},  kInvSqrt3 * Vector3{2.0, 0.0, 0.0},
+      kInvSqrt3 * Vector3{1.0, -1.0, 1.0}, kInvSqrt3 * Vector3{1.0, -1.0, -1.0},
+      kInvSqrt3 * Vector3{0.0, -2.0, 0.0}, kInvSqrt3 * Vector3{-1.0, -1.0, 1.0},
+      kInvSqrt3 * Vector3{0.0, 0.0, -2.0}, kInvSqrt3 * Vector3{-1.0, -1.0, -1.0},
+      kInvSqrt3 * Vector3{-2.0, 0.0, 0.0}, kInvSqrt3 * Vector3{-1.0, 1.0, -1.0},
   };
 
   for (EdgeIndex ei = 0; ei < 14; ei++) {

@@ -7,7 +7,6 @@
 #include <array>
 #include <cmath>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <map>
 #include <polatory/geometry/bbox3d.hpp>
@@ -36,6 +35,8 @@ using polatory::isosurface::snap_mesh;
 
 namespace {
 
+constexpr double kGoldenAngle = 2.399963229728653;
+
 class SignedDistanceFromPlane : public FieldFunction {
  public:
   VecX operator()(const Points3& points) const override { return points.col(2); }
@@ -53,9 +54,6 @@ class SignedDistanceFromSphere : public FieldFunction {
   double radius_;
 };
 
-// Whether triangles s and t actually intersect, in the same sense as the snapper's
-// check: a clearly non-parallel pair by a 3D crossing test; a near-parallel pair only
-// when one triangle crosses the other's plane within the overlap (a back-to-back fold).
 bool triangles_intersect(const std::array<Eigen::Vector3d, 3>& s,
                          const std::array<Eigen::Vector3d, 3>& t) {
   Eigen::Vector3d ns = (s[1] - s[0]).cross(s[2] - s[0]);
@@ -106,9 +104,6 @@ bool triangles_intersect(const std::array<Eigen::Vector3d, 3>& s,
   return true;
 }
 
-// Counts self-intersecting face pairs (transversal crossings and back-to-back coplanar
-// overlaps), ignoring pairs that share a vertex. With a bbox prefilter; O(n^2) is fine
-// for the test meshes.
 Index count_self_intersections(const Mesh& mesh) {
   const auto& V = mesh.vertices();
   const auto& F = mesh.faces();
@@ -148,7 +143,6 @@ Index count_self_intersections(const Mesh& mesh) {
   return count;
 }
 
-// Counts edges shared by more than two faces (a non-manifold edge).
 Index count_non_manifold_edges(const Mesh& mesh) {
   const auto& F = mesh.faces();
   std::map<std::pair<Index, Index>, int> edge_count;
@@ -168,15 +162,12 @@ Index count_non_manifold_edges(const Mesh& mesh) {
   return count;
 }
 
-// Points sampled on the sphere via a Fibonacci spiral, offset along the normal by a
-// small alternating amount.
 Points3 sphere_points(double radius, Index n, double offset) {
   Points3 points(n, 3);
-  const double golden = 2.399963229728653;
   for (Index i = 0; i < n; i++) {
     auto z = 1.0 - 2.0 * (static_cast<double>(i) + 0.5) / static_cast<double>(n);
     auto r = std::sqrt(std::max(0.0, 1.0 - z * z));
-    auto phi = golden * static_cast<double>(i);
+    auto phi = kGoldenAngle * static_cast<double>(i);
     Vector3 dir(r * std::cos(phi), r * std::sin(phi), z);
     auto sign = (i % 2 == 0) ? 1.0 : -1.0;
     points.row(i) = (radius + sign * offset) * dir;
@@ -184,14 +175,11 @@ Points3 sphere_points(double radius, Index n, double offset) {
   return points;
 }
 
-// Points on the z = 0 plane inside a disk, on a deterministic spiral, offset in z by a
-// small alternating (two-sided) amount.
 Points3 plane_points(double radius, Index n, double offset) {
   Points3 points(n, 3);
-  const double golden = 2.399963229728653;
   for (Index i = 0; i < n; i++) {
     auto r = radius * std::sqrt((static_cast<double>(i) + 0.5) / static_cast<double>(n));
-    auto phi = golden * static_cast<double>(i);
+    auto phi = kGoldenAngle * static_cast<double>(i);
     auto sign = (i % 2 == 0) ? 1.0 : -1.0;
     points.row(i) << r * std::cos(phi), r * std::sin(phi), sign * offset;
   }
@@ -224,11 +212,6 @@ Points3 read_xyz(const std::string& path) {
 
 }  // namespace
 
-// Snapping a planar base may lift points into small overhangs -- the snapper guarantees no
-// self-intersection, not a height field -- but the mesh must never actually self-intersect. The
-// density is kept moderate: at high density the inexact counter here over-reports (a bare touch
-// between the near-coplanar slivers dense points make reads as a crossing), and an exact-kernel
-// check (kigumi) is the right tool for that regime.
 TEST(snap_selfint, planar_base_has_no_self_intersections) {
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
@@ -236,7 +219,7 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
   Isosurface isosurf(bbox, resolution);
   SignedDistanceFromPlane field_fn;
   auto base = isosurf.generate(field_fn);
-  ASSERT_EQ(count_self_intersections(base), 0);  // tool sanity: the valid base is clean
+  ASSERT_EQ(count_self_intersections(base), 0);
 
   const auto max_offset = 0.1 * resolution;
 
@@ -244,16 +227,10 @@ TEST(snap_selfint, planar_base_has_no_self_intersections) {
   for (double off : {0.0, 0.5}) {
     auto points = plane_points(0.7, n, off * max_offset);
     auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity());
-    auto self_int = count_self_intersections(mesh);
-    std::cerr << "planar off=" << off << ": faces=" << mesh.faces().rows()
-              << " self-intersections=" << self_int << "\n";
-    EXPECT_EQ(self_int, 0);
+    EXPECT_EQ(count_self_intersections(mesh), 0) << "offset " << off;
   }
 }
 
-// Snapping a curved surface must not introduce a transversal self-intersection (one
-// face piercing a topologically distant one). count_self_intersections catches the
-// piercing kind that the planar height-field test cannot.
 TEST(snap_selfint, curved_surface_has_no_self_intersections) {
   const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
   const auto resolution = 0.1;
@@ -268,20 +245,10 @@ TEST(snap_selfint, curved_surface_has_no_self_intersections) {
   auto points = sphere_points(radius, 1000, 0.5 * max_offset);
   auto mesh = snap_mesh(base, points, VecX(), resolution, Mat3::Identity());
 
-  auto self_int = count_self_intersections(mesh);
-  std::cerr << "sphere: faces=" << mesh.faces().rows() << " self-intersections=" << self_int
-            << "\n";
-  EXPECT_EQ(self_int, 0);
+  EXPECT_EQ(count_self_intersections(mesh), 0);
 }
 
-// A region carved out of a real interpolated surface (the "horse" model) plus the snap
-// points that fall in it: densely subdivided patches sharing edges whose off-surface
-// vertices used to make the two incident patches disagree on the edge subdivision (a
-// non-manifold seam). The snapped result must stay manifold (the CDT never cuts a diagonal
-// along a shared edge). Self-intersection-freeness is left to an exact-kernel check (kigumi)
-// run out of band: this region is nearly flat, so the dense edge splits make near-coplanar
-// slivers whose bare touches the double-precision counter here reads as crossings. The data
-// was extracted from:
+// The data was extracted from:
 //   polatory isosurface --in horse.interpolant --seeds horse.asc --snap horse.asc
 //     --acc 5e-7 --bbox -0.1 -0.1 -0.1 0.1 0.1 0.1 --res 5e-4
 TEST(snap_selfint, real_surface_region_stays_manifold) {
@@ -291,8 +258,5 @@ TEST(snap_selfint, real_surface_region_stays_manifold) {
 
   auto mesh = snap_mesh(base, points, VecX(), 5e-4, Mat3::Identity());
 
-  auto nm_edges = count_non_manifold_edges(mesh);
-  std::cerr << "horse region: faces=" << mesh.faces().rows() << " non-manifold-edges=" << nm_edges
-            << "\n";
-  EXPECT_EQ(nm_edges, 0);  // the two patches agree on every shared edge's subdivision
+  EXPECT_EQ(count_non_manifold_edges(mesh), 0);
 }

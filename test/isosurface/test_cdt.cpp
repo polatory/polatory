@@ -6,10 +6,10 @@
 #include <polatory/geometry/point3d.hpp>
 #include <polatory/types.hpp>
 #include <set>
-
-#include "../../src/isosurface/snapper/triangulation.hpp"
 #include <utility>
 #include <vector>
+
+#include "../../src/isosurface/snapper/triangulation.hpp"
 
 using polatory::Index;
 using polatory::geometry::Point2;
@@ -33,11 +33,7 @@ double polygon_area(const std::vector<Point2>& poly) {
   return 0.5 * std::abs(a);
 }
 
-// Checks the invariants of a valid triangulation of `boundary` + `interior`:
-// every triangle is CCW with positive area, the triangles tile the polygon exactly
-// (sum of areas equals the polygon area), and every boundary edge appears.
-void check_triangulation(const std::vector<Point2>& boundary,
-                         const std::vector<Point2>& interior) {
+void check_triangulation(const std::vector<Point2>& boundary, const std::vector<Point2>& interior) {
   std::vector<Point2> p = boundary;
   p.insert(p.end(), interior.begin(), interior.end());
 
@@ -76,11 +72,29 @@ Point2 pt(double x, double y) {
   return p;
 }
 
+constexpr Index kLastVertexOnEdge0 = 4;
+
+std::vector<Point2> along_edge_boundary() {
+  return {pt(0, 0), pt(0.25, -0.1), pt(0.5, -0.1), pt(0.75, -0.2), pt(1, 0), pt(0.5, 0.8)};
+}
+
+int count_along_edge_chords(const Faces& tris) {
+  int chords = 0;
+  for (auto t : tris.rowwise()) {
+    for (auto k = 0; k < 3; k++) {
+      auto u = t(k);
+      auto w = t((k + 1) % 3);
+      if (u <= kLastVertexOnEdge0 && w <= kLastVertexOnEdge0 && std::abs(u - w) > 1) {
+        chords++;
+      }
+    }
+  }
+  return chords;
+}
+
 }  // namespace
 
-TEST(cdt, square_no_interior) {
-  check_triangulation({pt(0, 0), pt(1, 0), pt(1, 1), pt(0, 1)}, {});
-}
+TEST(cdt, square_no_interior) { check_triangulation({pt(0, 0), pt(1, 0), pt(1, 1), pt(0, 1)}, {}); }
 
 TEST(cdt, square_clockwise_orientation_is_detected) {
   check_triangulation({pt(0, 0), pt(0, 1), pt(1, 1), pt(1, 0)}, {});
@@ -101,56 +115,22 @@ TEST(cdt, square_with_many_interior_points) {
 }
 
 TEST(cdt, nonconvex_polygon) {
-  // An L-shape (boundary only).
-  check_triangulation(
-      {pt(0, 0), pt(2, 0), pt(2, 1), pt(1, 1), pt(1, 2), pt(0, 2)}, {});
+  check_triangulation({pt(0, 0), pt(2, 0), pt(2, 1), pt(1, 1), pt(1, 2), pt(0, 2)}, {});
 }
 
 TEST(cdt, nonconvex_polygon_with_interior) {
-  check_triangulation(
-      {pt(0, 0), pt(2, 0), pt(2, 1), pt(1, 1), pt(1, 2), pt(0, 2)},
-      {pt(0.5, 0.5), pt(1.5, 0.5), pt(0.5, 1.5)});
+  check_triangulation({pt(0, 0), pt(2, 0), pt(2, 1), pt(1, 1), pt(1, 2), pt(0, 2)},
+                      {pt(0.5, 0.5), pt(1.5, 0.5), pt(0.5, 1.5)});
 }
 
 TEST(cdt, subdivided_edges_like_a_snapper_patch) {
-  // A triangle whose three edges carry extra (slightly off-edge) boundary vertices,
-  // mimicking a snapper patch boundary, plus interior points.
   std::vector<Point2> boundary{
-      pt(0, 0),   pt(0.33, 0.02), pt(0.66, -0.02),  // edge 0 -> 1, two off-edge points
-      pt(1, 0),   pt(0.52, 0.5),                    // edge 1 -> 2, one off-edge point
-      pt(0, 1),   pt(-0.02, 0.5),                   // edge 2 -> 0, one off-edge point
+      pt(0, 0), pt(0.33, 0.02), pt(0.66, -0.02), pt(1, 0), pt(0.52, 0.5), pt(0, 1), pt(-0.02, 0.5),
   };
   check_triangulation(boundary, {pt(0.3, 0.3), pt(0.2, 0.5)});
 }
 
-// Edge 0 runs along corners 0 and 4 with three chain vertices bulging off it; an interior
-// point sits just off the edge. This configuration makes the unconstrained triangulator
-// cut a chord that runs *along* edge 0 (a diagonal between two of its vertices, skipping a
-// chain vertex). The boundary vertices 0..4 all lie on edge 0, in order.
-namespace {
-std::vector<Point2> along_edge_boundary() {
-  return {pt(0, 0),       pt(0.25, -0.1), pt(0.5, -0.1), pt(0.75, -0.2),
-          pt(1, 0),       pt(0.5, 0.8)};
-}
-int count_along_edge_chords(const Faces& tris) {
-  int chords = 0;
-  for (auto t : tris.rowwise()) {
-    for (auto k = 0; k < 3; k++) {
-      auto u = t(k);
-      auto w = t((k + 1) % 3);
-      if (u <= 4 && w <= 4 && std::abs(u - w) > 1) {
-        chords++;
-      }
-    }
-  }
-  return chords;
-}
-}  // namespace
-
 TEST(cdt, no_diagonal_runs_along_a_subdivided_edge) {
-  // With edge labels supplied, the along-edge chord must never be produced: each sub-edge
-  // stays a boundary edge, so two patches sharing this edge agree on its subdivision (a
-  // manifold seam). Edges: 0 = (c0, c1), 1 = (c1, c2), 2 = (c2, c0).
   std::vector<std::array<int, 2>> boundary_edges{
       {0, 2}, {0, -1}, {0, -1}, {0, -1}, {0, 1}, {1, 2},
   };
@@ -162,8 +142,6 @@ TEST(cdt, no_diagonal_runs_along_a_subdivided_edge) {
   EXPECT_EQ(count_along_edge_chords(tris), 0) << "a diagonal runs along the subdivided edge";
 }
 
-// Without edge labels the same boundary *does* produce the along-edge chord -- confirming
-// the test above exercises the guard rather than passing vacuously.
 TEST(cdt, along_edge_chord_appears_without_edge_labels) {
   Triangulation triangulation(along_edge_boundary(), {pt(0.3, -0.05)});
   EXPECT_GT(count_along_edge_chords(triangulation.faces()), 0);

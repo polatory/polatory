@@ -34,6 +34,7 @@ using polatory::isosurface::Faces;
 using polatory::isosurface::FieldFunction;
 using polatory::isosurface::Isosurface;
 using polatory::isosurface::Mesh;
+using polatory::isosurface::smooth_snapped_mesh;
 using polatory::isosurface::snap_mesh;
 
 namespace {
@@ -49,8 +50,6 @@ struct HalfedgeHash {
   }
 };
 
-// Builds a regular grid of cells x cells unit squares in the z = 0 plane, each split
-// into two triangles. Its boundary is the perimeter of [0, cells] x [0, cells].
 Mesh planar_grid(int cells) {
   auto n = cells + 1;
   Points3 vertices(n * n, 3);
@@ -83,8 +82,6 @@ std::optional<Index> find_vertex(const Mesh& mesh, const Point3& p, double tol) 
   return std::nullopt;
 }
 
-// Checks that the mesh is a valid oriented manifold: every directed edge appears
-// at most once, and every undirected edge is shared by at most two faces.
 bool is_oriented_manifold(const Mesh& mesh) {
   std::unordered_map<Halfedge, int, HalfedgeHash> directed;
   std::unordered_map<Halfedge, int, HalfedgeHash> undirected;
@@ -99,20 +96,10 @@ bool is_oriented_manifold(const Mesh& mesh) {
       undirected[{std::min(u, w), std::max(u, w)}]++;
     }
   }
-  for (const auto& [e, n] : directed) {
-    if (n > 1) {
-      return false;
-    }
-  }
-  for (const auto& [e, n] : undirected) {
-    if (n > 2) {
-      return false;
-    }
-  }
-  return true;
+  return std::ranges::none_of(directed, [](const auto& entry) { return entry.second > 1; }) &&
+         std::ranges::none_of(undirected, [](const auto& entry) { return entry.second > 2; });
 }
 
-// V - E + F.
 Index euler_characteristic(const Mesh& mesh) {
   std::unordered_set<Halfedge, HalfedgeHash> edges;
   for (auto f : mesh.faces().rowwise()) {
@@ -139,14 +126,13 @@ class SignedDistanceFromPlane : public FieldFunction {
   double d_;
 };
 
-// Points exercising the three Voronoi regions of the center cell (whose diagonal runs from (1,1) to
-// (2,2)): they project nearest to, respectively, the interior vertex (1,1), the diagonal midpoint,
-// and a face centroid.
+const Point3 kNearVertex(1.1, 1.05, 0.03);
+const Point3 kNearDiagonal(1.5, 1.5, 0.04);
+const Point3 kNearFaceCentroid(5.0 / 3.0, 4.0 / 3.0, -0.02);
+
 Points3 center_points() {
   Points3 points(3, 3);
-  points << 1.1, 1.05, 0.03,        // snaps to vertex (1,1)
-      1.5, 1.5, 0.04,               // snaps to the diagonal edge
-      5.0 / 3.0, 4.0 / 3.0, -0.02;  // snaps to a face interior (centroid of (1,1),(2,1),(2,2))
+  points << kNearVertex, kNearDiagonal, kNearFaceCentroid;
   return points;
 }
 
@@ -158,8 +144,6 @@ double point_segment_dist(const Point3& p, const Point3& a, const Point3& b) {
   return (p - (a + t * ab)).norm();
 }
 
-// The farthest any point along the polyline lies from the nearest mesh edge; zero iff the polyline
-// is covered by a continuous chain of mesh edges.
 double max_polyline_edge_distance(const Mesh& mesh, const Points3& polyline) {
   const auto& v = mesh.vertices();
   const auto& f = mesh.faces();
@@ -188,7 +172,6 @@ TEST(snap, points_become_vertices) {
   auto points = center_points();
   auto mesh = snap_mesh(planar_grid(3), points, VecX(), 1.0, Mat3::Identity());
 
-  // Each point passes exactly through the mesh.
   for (Index i = 0; i < points.rows(); i++) {
     Point3 p = points.row(i);
     auto vi = find_vertex(mesh, p, 1e-12);
@@ -198,10 +181,6 @@ TEST(snap, points_become_vertices) {
 }
 
 TEST(snap, vertex_contention_honors_one) {
-  // Two points fall in the Voronoi cell of the same vertex (1,1). Only one can take it (a
-  // vertex cannot be split); the snapper prefers a clean vertex move over a sliver-pinning
-  // insert, so the loser is left for a later pass rather than cascaded in this one. The
-  // winner passes through the mesh exactly and the result stays a manifold.
   Points3 points(2, 3);
   points << 1.06, 1.04, 0.03,  //
       1.10, 1.08, 0.06;
@@ -234,8 +213,6 @@ TEST(snap, empty_points_is_noop) {
 }
 
 TEST(snap, rejects_points_beyond_the_resolution) {
-  // Both points project to the edge midpoint (1.5, 1.5); with the resolution 1.0, the one
-  // 0.3 away is within the snapping distance and accepted, the one 1.5 away is rejected.
   Points3 near_point(1, 3);
   near_point << 1.5, 1.5, 0.3;
   Points3 far_point(1, 3);
@@ -258,7 +235,7 @@ TEST(snap, rejects_invalid_tolerance_ratios) {
   VecX negative(1);
   negative << -0.1;
   VecX above_max(1);
-  above_max << 1.5;  // exceeds the maximum ratio 1.0
+  above_max << 1.5;
   VecX ok(1);
   ok << 0.1;
 
@@ -266,31 +243,23 @@ TEST(snap, rejects_invalid_tolerance_ratios) {
   ASSERT_THROW(isosurf.set_snap_points(points, negative), std::invalid_argument);
   ASSERT_THROW(isosurf.set_snap_points(points, above_max), std::invalid_argument);
   ASSERT_NO_THROW(isosurf.set_snap_points(points, ok));
-  ASSERT_NO_THROW(isosurf.set_snap_points(points));  // empty tolerances disable the skip
+  ASSERT_NO_THROW(isosurf.set_snap_points(points));
 }
 
 TEST(snap, per_point_tolerance_skips_satisfied_point) {
-  auto points = center_points();
-
-  // The face-interior point (row 2) lies 0.02 off the mesh. A per-point tolerance of 0.1
-  // above its distance marks it already satisfied, so it is skipped; the others, with
-  // tolerance 0, still snap and become vertices.
-  VecX tolerances(points.rows());
+  VecX tolerances(3);
   tolerances << 0.0, 0.0, 0.1;
-  auto mesh = snap_mesh(planar_grid(3), points, tolerances, 1.0, Mat3::Identity());
+  auto mesh = snap_mesh(planar_grid(3), center_points(), tolerances, 1.0, Mat3::Identity());
 
-  ASSERT_TRUE(find_vertex(mesh, Point3(points.row(0)), 1e-12).has_value());
-  ASSERT_TRUE(find_vertex(mesh, Point3(points.row(1)), 1e-12).has_value());
-  ASSERT_FALSE(find_vertex(mesh, Point3(points.row(2)), 1e-12).has_value());
+  ASSERT_TRUE(find_vertex(mesh, kNearVertex, 1e-12).has_value());
+  ASSERT_TRUE(find_vertex(mesh, kNearDiagonal, 1e-12).has_value());
+  ASSERT_FALSE(find_vertex(mesh, kNearFaceCentroid, 1e-12).has_value());
 }
 
 TEST(snap, vertex_within_tolerance_ball_is_moved_not_inserted) {
   auto base = planar_grid(3);
   auto n_vertices = base.vertices().rows();
 
-  // The point lies ~0.06 from vertex (1, 1), within its 0.1 tolerance ball. The snapper moves that
-  // vertex exactly onto the point rather than inserting a new one, so the point becomes a vertex,
-  // vertex (1, 1) leaves its place, and the vertex count is unchanged.
   Points3 points(1, 3);
   points << 1.05, 1.03, 0.02;
   VecX tolerances(1);
@@ -309,12 +278,10 @@ TEST(snap, isosurface_integration) {
   Isosurface isosurf(bbox, resolution);
   SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::UnitZ());
 
-  // Points near the z = 0 plane (within the triangle size), plus one far from the mesh that
-  // max_distance must reject.
   Points3 points(3, 3);
   points << 0.3, 0.2, 0.02,  //
       -0.5, 0.4, -0.03,      //
-      2.0, 0.0, 0.0;         // far from the surface
+      2.0, 0.0, 0.0;
   isosurf.set_snap_points(points);
 
   auto mesh = isosurf.generate(field_fn);
@@ -327,27 +294,27 @@ TEST(snap, isosurface_integration) {
 }
 
 TEST(smooth, flat_plane_random_orientation_no_flips) {
-  using polatory::isosurface::smooth_snapped_mesh;
-
   const int n = 25;
-  const double h = 20.0;  // grid spacing == resolution
+  const double resolution = 20.0;
   std::mt19937 rng(12345);
   std::uniform_real_distribution<double> u(-1.0, 1.0);
-  std::uniform_real_distribution<double> jit(-0.3 * h, 0.3 * h);
+  std::uniform_real_distribution<double> jitter(-0.3 * resolution, 0.3 * resolution);
 
-  // n x n grid on the z = 0 plane, interior vertices jittered IN-PLANE so quads are generic but the
-  // surface stays exactly flat (every flip is bend-neutral; only FP noise could trigger one).
   Points3 v(n * n, 3);
   for (int j = 0; j < n; j++) {
     for (int i = 0; i < n; i++) {
-      double x = i * h;
-      double y = j * h;
-      if (i > 0 && i < n - 1) x += jit(rng);
-      if (j > 0 && j < n - 1) y += jit(rng);
+      double x = i * resolution;
+      double y = j * resolution;
+      if (i > 0 && i < n - 1) {
+        x += jitter(rng);
+      }
+      if (j > 0 && j < n - 1) {
+        y += jitter(rng);
+      }
       v.row(j * n + i) = Point3(x, y, 0.0);
     }
   }
-  auto id = [&](int i, int j) { return static_cast<Index>(j * n + i); };
+  auto id = [&](int i, int j) { return static_cast<Index>(j) * n + i; };
   std::vector<std::array<Index, 3>> tris;
   for (int j = 0; j < n - 1; j++) {
     for (int i = 0; i < n - 1; i++) {
@@ -357,7 +324,7 @@ TEST(smooth, flat_plane_random_orientation_no_flips) {
   }
   Faces f(static_cast<Index>(tris.size()), 3);
   for (std::size_t k = 0; k < tris.size(); k++) {
-    f.row(static_cast<Index>(k)) << tris[k][0], tris[k][1], tris[k][2];
+    f.row(static_cast<Index>(k)) << tris.at(k).at(0), tris.at(k).at(1), tris.at(k).at(2);
   }
 
   auto edges = [](const Faces& faces) {
@@ -373,39 +340,34 @@ TEST(smooth, flat_plane_random_orientation_no_flips) {
   };
   auto before = edges(f);
 
-  // Many generic orientations: a flat surface gives every flip zero bend change, so any flip would
-  // be pure FP noise crossing the 1e-6 threshold.
   for (int trial = 0; trial < 50; trial++) {
-    Eigen::Vector3d axis(u(rng), u(rng), u(rng));
+    Vector3 axis(u(rng), u(rng), u(rng));
     axis.normalize();
     Mat3 r = Eigen::AngleAxisd(3.141592653589793 * u(rng), axis).toRotationMatrix();
     Points3 vr = v * r.transpose();
 
-    auto out = smooth_snapped_mesh(Mesh(vr, f), Points3(0, 3), VecX(), h, Mat3::Identity());
+    auto out =
+        smooth_snapped_mesh(Mesh(vr, f), Points3(0, 3), VecX(), resolution, Mat3::Identity());
     auto after = edges(out.faces());
     int flipped = 0;
     for (const auto& e : before) {
-      if (!after.contains(e)) flipped++;
+      if (!after.contains(e)) {
+        flipped++;
+      }
     }
     EXPECT_EQ(flipped, 0) << "trial " << trial << ": " << flipped
                           << " edges flipped on a flat plane";
   }
 }
 
-// A dense feature line running level with the plane and just barely off it (height a hair above the
-// snap tolerance) grazes the bulk surface uniformly along its whole length. Thinning must keep it as
-// a continuous chain of mesh edges: collapsing a feature vertex onto the nearby bulk (an off-feature
-// vertex within tolerance) would wash segments of the crease into face interiors. Restricting
-// collapses to snap-point-to-snap-point edges prevents that -- without the restriction, roughly a
-// sixth of this line washes off its edges (max deviation ~0.25 * res).
 TEST(snap, thinner_keeps_feature_line) {
   const double res = 1.0;
   const Bbox3 bbox(Point3(-16.0, -8.0, -2.0), Point3(16.0, 8.0, 2.0));
   SignedDistanceFromPlane field_fn(Point3::Zero(), Vector3::UnitZ());
   const double rel_tol = 0.05;
-  const double z0 = 0.051;         // a hair above rel_tol * res: needs vertices yet hugs the bulk
-  const double yslope = 8.0;       // oblique to the lattice row by atan(1/8) ~ 7 deg
-  const double step = 0.25 * res;  // over-dense so the thinner is forced to collapse
+  const double z0 = 0.051;
+  const double yslope = 8.0;
+  const double step = 0.25 * res;
   const double xmax = 15.0;
   const int n = 2 * static_cast<int>(xmax / step) + 1;
 
