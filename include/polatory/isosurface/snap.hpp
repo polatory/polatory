@@ -5,25 +5,21 @@
 
 namespace polatory::isosurface {
 
-// The three counts partition the snap points.
 struct Stats {
-  Index skipped{};     // no candidate: the nearest face was beyond the resolution
-  Index honored{};     // ended within tolerance of the surface
-  Index dishonored{};  // within the resolution but left off the surface (contention, or unplaceable
-                       // without self-intersection)
+  Index skipped{};     // farther than the resolution from the mesh
+  Index honored{};     // within the tolerance of the mesh
+  Index dishonored{};  // otherwise
 };
 
-// Snaps the mesh to pass exactly through the given points, which become vertices. One pass; the
-// pipeline re-applies it.
+// Moves or inserts vertices so that the mesh passes through the points.
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                double resolution, const Mat3& aniso, Stats* stats = nullptr);
 
-// Drops snapped vertices an earlier pass left redundant, by edge collapse, without moving any snap
-// point beyond its tolerance of the surface.
+// Removes redundant snapped vertices by edge collapses.
 Mesh thin_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                        double resolution, const Mat3& aniso);
 
-// Flattens the mesh by edge flips, never moving the surface beyond a point's tolerance.
+// Reduces the total dihedral angle by edge flips.
 Mesh smooth_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                          double resolution, const Mat3& aniso);
 

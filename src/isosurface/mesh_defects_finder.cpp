@@ -100,18 +100,17 @@ std::vector<Index> MeshDefectsFinder::singular_vertices() const {
 
       auto order = static_cast<Index>(to_local_vi.size());
 
-      // The graph that represents the link complex of the vertex.
-      DenseUndirectedGraph g(order);
+      DenseUndirectedGraph link(order);
 
       for (auto fi : fis) {
         auto i = to_local_vi.at(next_vertex(fi, vi));
         auto j = to_local_vi.at(prev_vertex(fi, vi));
-        g.add_edge(i, j);
+        link.add_edge(i, j);
       }
 
       // Check if the graph is a cycle or a path (in case of a boundary vertex).
       // NOLINTNEXTLINE(readability-simplify-boolean-expr)
-      if (!(g.is_simple() && g.is_connected() && g.max_degree() <= 2)) {
+      if (!(link.is_simple() && link.is_connected() && link.max_degree() <= 2)) {
         local_result.push_back(vi);
       }
     }

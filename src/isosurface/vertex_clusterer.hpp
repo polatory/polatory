@@ -23,12 +23,6 @@
 
 namespace polatory::isosurface {
 
-// Clusters the RMT surface as a standalone mesh step, so it can be re-run between smoothing passes.
-// Each lattice node's vertices are split into connected components, and every component is merged
-// into one vertex (a quotient). Forcing the merge can fold the surface onto itself, which shows up
-// as a coincident opposite-winding face pair; dropping that pair leaves the merged vertex manifold.
-// A detect-and-uncluster loop then forbids any remaining cluster whose merged vertex a defect
-// finder still flags, until the result is manifold.
 class VertexClusterer {
   using LatticeCoordinates = rmt::LatticeCoordinates;
   using Point3 = geometry::Point3;
@@ -37,9 +31,9 @@ class VertexClusterer {
 
   struct Cluster {
     std::vector<Index> vertices;
-    Index rep;             // the min-index member, kept as the single merged vertex
-    Point3 position;       // where the merged vertex is placed
-    bool deleted = false;  // dropped after its merged vertex caused a defect
+    Index rep;
+    Point3 position;
+    bool deleted = false;
   };
 
  public:
@@ -64,7 +58,6 @@ class VertexClusterer {
       vertex_node.at(v) = lattice.lattice_coordinates_rounded(v_.row(v));
     }
 
-    // Split each node's vertices into pieces connected by mesh edges within the node.
     DisjointSets sets(nv_);
     for (auto f : f_.rowwise()) {
       for (auto k = 0; k < 3; k++) {
@@ -118,14 +111,13 @@ class VertexClusterer {
         }
       }
 
-      // Each vertex maps to the clusters whose merged vertex shares a face with it.
-      boost::unordered_flat_map<Index, boost::unordered_flat_set<std::size_t>> incident;
+      boost::unordered_flat_map<Index, boost::unordered_flat_set<std::size_t>> adjacent_clusters;
       for (auto f : mesh.faces().rowwise()) {
         for (auto k = 0; k < 3; k++) {
           auto it = vertex_ci.find(f(k));
           if (it != vertex_ci.end()) {
-            incident[f((k + 1) % 3)].insert(it->second);
-            incident[f((k + 2) % 3)].insert(it->second);
+            adjacent_clusters[f((k + 1) % 3)].insert(it->second);
+            adjacent_clusters[f((k + 2) % 3)].insert(it->second);
           }
         }
       }
@@ -140,12 +132,11 @@ class VertexClusterer {
         }
       };
 
-      // Undo the merge behind each flagged vertex: its own if it is a merged vertex, otherwise
-      // every merge incident to it, since which neighbor spoiled it is unknown.
       for (auto v : flagged) {
         if (auto it = vertex_ci.find(v); it != vertex_ci.end()) {
           rollback(it->second);
-        } else if (auto jt = incident.find(v); jt != incident.end()) {
+        } else if (auto jt = adjacent_clusters.find(v); jt != adjacent_clusters.end()) {
+          // Which of the adjacent merges caused the defect is unknown.
           for (auto ci : jt->second) {
             rollback(ci);
           }
@@ -158,7 +149,6 @@ class VertexClusterer {
     }
   }
 
-  // Second return maps each merged output vertex to the cluster it came from.
   std::pair<Mesh, boost::unordered_flat_map<Index, std::size_t>> clustered_mesh() const {
     Points3 vertices(nv_, 3);
     Faces faces(nf_, 3);
@@ -178,7 +168,7 @@ class VertexClusterer {
         g(k) = vv.at(v);
       }
       if (g(0) == g(1) || g(1) == g(2) || g(2) == g(0)) {
-        continue;  // the cluster collapsed this face to fewer than three vertices
+        continue;
       }
       faces.row(nf) = g;
       nf++;
@@ -198,8 +188,6 @@ class VertexClusterer {
     return {Mesh{std::move(vertices), std::move(faces)}, vertex_ci};
   }
 
-  // Merges the cluster's vertices to the quadric minimizer over its incident face planes,
-  // keeping a crease/corner instead of averaging it away.
   Point3 clustered_position(const std::vector<Index>& cluster, const PrimitiveLattice& lattice,
                             const LatticeCoordinates& node) const {
     boost::unordered_flat_set<Index> fis;
@@ -223,13 +211,6 @@ class VertexClusterer {
     }
   }
 
-  // Drops every coincident opposite-winding face pair -- a zero-volume fold left where a forced
-  // merge folded the surface onto itself. The pair adds two faces to each of its three edges, which
-  // the drop removes. Whether the drop is safe depends on the edge's face count beforehand:
-  //   - Two: the pair alone. The drop leaves zero, so the edge vanishes. Safe.
-  //   - Three: the drop leaves one face, a boundary edge -- a hole. Kept.
-  //   - Four: the pair plus a sheet it folded onto. The drop leaves the sheet's two. Safe.
-  //   - Five or more: the drop leaves three or more, still non-manifold. Kept.
   static Mesh remove_back_to_back(const Mesh& mesh) {
     const auto& f = mesh.faces();
     boost::unordered_flat_map<Edge, int, EdgeHash> edge_faces;
@@ -254,8 +235,8 @@ class VertexClusterer {
       auto fi = fis.at(0);
       auto safe = true;
       for (auto k = 0; k < 3; k++) {
-        auto count = edge_faces.at(Edge{f(fi, k), f(fi, (k + 1) % 3)});
-        safe = safe && (count == 2 || count == 4);
+        auto remaining = edge_faces.at(Edge{f(fi, k), f(fi, (k + 1) % 3)}) - 2;
+        safe = safe && (remaining == 0 || remaining == 2);
       }
       if (safe) {
         dropped.at(fis.at(0)) = true;
@@ -302,7 +283,7 @@ class VertexClusterer {
   Index nf_;
   std::vector<std::vector<Index>> vf_;
   std::vector<Cluster> clusters_;
-  std::vector<Index> cluster_of_;  // vertex -> its registered cluster, or -1 if unclustered
+  std::vector<Index> cluster_of_;  // -1 if unclustered
   Mesh result_;
 };
 

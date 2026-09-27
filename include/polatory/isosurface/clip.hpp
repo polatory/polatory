@@ -193,10 +193,8 @@ class MeshClipper {
     return tri.row(0) == tri.row(1) || tri.row(1) == tri.row(2) || tri.row(2) == tri.row(0);
   }
 
-  // Where edge a-b crosses the plane x = threshold. The endpoints are ordered canonically so that
-  // both triangles sharing the edge compute the bit-identical point, letting the final vertex merge
-  // dedup it instead of leaving two near-coincident boundary vertices.
   static Point intersect(Point a, Point b, double threshold) {
+    // Both faces sharing the edge must compute the bit-identical point.
     if (std::ranges::lexicographical_compare(b, a)) {
       std::swap(a, b);
     }

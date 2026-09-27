@@ -19,19 +19,15 @@ namespace polatory::isosurface::snapper {
 using geometry::Point2;
 using geometry::Points2;
 
-// A constrained Delaunay triangulation of a simple polygon with interior points, built on
-// construction (ear clip, insert interior, Lawson flips) and read with faces().
+// A constrained Delaunay triangulation of a simple polygon with interior points.
 class Triangulation {
  public:
-  // boundary: polygon vertices in order (CW/CCW auto-detected), consecutive pairs constraint edges.
-  // interior: points strictly inside. boundary_edges (optional): each boundary vertex's
-  // original-edge label(s); no triangle joins two vertices sharing a label, so patches meeting at a
-  // shared edge agree on its subdivision (a manifold seam) rather than cutting a diagonal along it.
+  // No diagonal joins two boundary vertices that share a label (-1 = no label).
   Triangulation(const std::vector<Point2>& boundary, const std::vector<Point2>& interior,
-                std::vector<std::array<int, 2>> boundary_edges = {})
+                std::vector<std::array<int, 2>> boundary_labels = {})
       : nb_(check_nb(static_cast<Index>(boundary.size()))),
         ni_(static_cast<Index>(interior.size())),
-        boundary_edges_(std::move(boundary_edges)),
+        boundary_labels_(std::move(boundary_labels)),
         points_(nb_ + ni_, 2),
         mesh_(nb_ - 2 + 2 * ni_) {
     for (Index i = 0; i < nb_; i++) {
@@ -45,7 +41,6 @@ class Triangulation {
     Point2 hi = points_.colwise().maxCoeff();
     scale_ = (hi - lo).norm();
 
-    // Boundary edges, sorted for binary-search membership.
     constraints_.reserve(nb_);
     for (Index i = 0; i < nb_; i++) {
       constraints_.push_back({i, (i + 1) % nb_});
@@ -63,12 +58,9 @@ class Triangulation {
     faces_ = std::move(mesh_).take_faces();
   }
 
-  // CCW triangles, indexed into {boundary..., interior...} (index < boundary.size() is a boundary
-  // vertex, else interior[index - boundary.size()]).
+  // CCW triangles, indexing the boundary points followed by the interior points.
   const Faces& faces() const { return faces_; }
 
-  // False if the polygon was not simple; the result is then an unreliable fan, treat input as
-  // invalid.
   bool simple() const { return simple_; }
 
  private:
@@ -103,10 +95,10 @@ class Triangulation {
         auto prev = ring.at((i + m - 1) % m);
         auto next = ring.at((i + 1) % m);
         if (!(orient2d(points_.row(prev), points_.row(cur), points_.row(next)) > area_tol)) {
-          continue;  // reflex or flat: not an ear
+          continue;
         }
-        if (shares_edge({prev, next})) {
-          continue;  // the chord prev-next would cut along a subdivided edge across cur
+        if (shares_label({prev, next})) {
+          continue;
         }
         bool ear = true;
         for (Index j = 0; j < m; j++) {
@@ -129,27 +121,17 @@ class Triangulation {
         break;
       }
       if (!clipped) {
-        // Not simple: fan-triangulate the remainder to terminate, and flag the failure.
         simple_ = false;
-        for (Index i = 1; i + 1 < static_cast<Index>(ring.size()); i++) {
-          mesh_.add_face({ring.at(0), ring.at(i), ring.at(i + 1)});
-        }
-        ring.clear();
-        break;
+        return;
       }
     }
-    if (ring.size() == 3) {
-      mesh_.add_face({ring.at(0), ring.at(1), ring.at(2)});
-    }
+    mesh_.add_face({ring.at(0), ring.at(1), ring.at(2)});
   }
 
   static bool in_triangle(const Point2& x, const Point2& a, const Point2& b, const Point2& c) {
     return orient2d(a, b, x) >= 0.0 && orient2d(b, c, x) >= 0.0 && orient2d(c, a, x) >= 0.0;
   }
 
-  // A point inside a triangle splits it (1 -> 3); on an interior edge, both its faces (2 -> 4); on
-  // a vertex or constraint edge, it is dropped (splitting a constraint edge would desync the
-  // boundary).
   void insert_interior() {
     auto n = static_cast<Index>(points_.rows());
     for (Index v = nb_; v < n; v++) {
@@ -174,7 +156,7 @@ class Triangulation {
         }
       }
       if (best < 0 || best_min < -1e-9) {
-        continue;  // not inside any triangle (should not happen for interior points)
+        continue;  // should not happen
       }
 
       constexpr double kOnEdge = 1e-9;
@@ -192,7 +174,7 @@ class Triangulation {
       auto u = bf((kmin + 1) % 3);
       auto w = bf((kmin + 2) % 3);
       if (is_constraint({u, w})) {
-        continue;  // never split a boundary edge
+        continue;
       }
       mesh_.insert_on_edge({u, w}, v);
     }
@@ -200,12 +182,10 @@ class Triangulation {
 
   bool is_constraint(const Edge& e) const { return std::ranges::binary_search(constraints_, e); }
 
-  // Lawson flips to (constrained) Delaunay: each pass flips every non-Delaunay, non-constraint
-  // interior edge whose faces are not yet flipped this pass, in sorted-edge order, until stable.
   void make_delaunay() {
     auto s2 = scale_ * scale_;
-    auto incircle_tol = 1e-10 * s2 * s2;  // incircle scales like length^4
-    auto area_tol = 1e-12 * s2;           // orient scales like length^2
+    auto incircle_tol = 1e-10 * s2 * s2;
+    auto area_tol = 1e-12 * s2;
 
     auto budget = 10 + 3 * static_cast<long long>(mesh_.num_faces());
     bool changed = true;
@@ -215,7 +195,7 @@ class Triangulation {
       std::vector<Halfedge> hs;
       mesh_.for_each_halfedge([&](Halfedge h) {
         if (mesh_.from(h) < mesh_.to(h) && mesh_.opposite(h).is_valid()) {
-          hs.push_back(h);  // the canonical side of each interior edge
+          hs.push_back(h);
         }
       });
       std::ranges::sort(hs, [&](Halfedge a, Halfedge b) {
@@ -232,20 +212,17 @@ class Triangulation {
         auto fi0 = mesh_.face(h);
         auto fi1 = mesh_.face(opp_h);
         if (fi0 < 0 || fi1 < 0 || flipped.at(fi0) || flipped.at(fi1)) {
-          continue;  // a prior flip removed this edge, or a face was already flipped this pass
+          continue;
         }
 
-        // h traverses e.a -> e.b, so (e.a, e.b, c) is CCW; d is the other side's apex.
         auto x = mesh_.from(h);
         auto y = mesh_.to(h);
         auto c = mesh_.apex(h);
         auto d = mesh_.apex(opp_h);
 
-        if (shares_edge({c, d})) {
-          continue;  // never cut a diagonal along a subdivided edge (the patches would disagree)
+        if (shares_label({c, d})) {
+          continue;
         }
-        // Flip only when d is decisively inside (x, y, c)'s circumcircle and both new triangles are
-        // strictly positive.
         if (!(incircle(points_.row(x), points_.row(y), points_.row(c), points_.row(d)) >
               incircle_tol)) {
           continue;
@@ -256,7 +233,7 @@ class Triangulation {
         }
 
         if (mesh_.has_edge({c, d})) {
-          continue;  // the diagonal already exists: an inexact predicate green-lit a bad flip
+          continue;  // possible with inexact predicates
         }
 
         mesh_.flip(e);
@@ -267,18 +244,16 @@ class Triangulation {
     }
   }
 
-  // True if e's endpoints share an original edge label: a diagonal along it would desync the
-  // patches.
-  bool shares_edge(const Edge& e) const {
+  bool shares_label(const Edge& e) const {
     auto [i, j] = e;
-    if (boundary_edges_.empty() || i >= nb_ || j >= nb_) {
+    if (boundary_labels_.empty() || i >= nb_ || j >= nb_) {
       return false;
     }
-    for (auto a : boundary_edges_.at(i)) {
+    for (auto a : boundary_labels_.at(i)) {
       if (a < 0) {
         continue;
       }
-      for (auto b : boundary_edges_.at(j)) {
+      for (auto b : boundary_labels_.at(j)) {
         if (a == b) {
           return true;
         }
@@ -287,12 +262,12 @@ class Triangulation {
     return false;
   }
 
-  Index nb_{};                                      // number of boundary vertices
-  Index ni_{};                                      // number of interior points
-  double scale_{};                                  // length scale for tolerances
-  std::vector<std::array<int, 2>> boundary_edges_;  // original-edge labels per boundary vertex
-  std::vector<Edge> constraints_;                   // boundary edges, sorted
-  Points2 points_;                                  // boundary..., then interior...
+  Index nb_{};
+  Index ni_{};
+  double scale_{};
+  std::vector<std::array<int, 2>> boundary_labels_;
+  std::vector<Edge> constraints_;
+  Points2 points_;
   AbstractMesh mesh_;
   Faces faces_;
   bool simple_{true};

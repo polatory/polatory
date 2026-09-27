@@ -84,6 +84,22 @@ class SignedDistanceFromPlane : public FieldFunction {
   double d_;
 };
 
+class SineWave : public FieldFunction {
+ public:
+  SineWave(double height, double amplitude, double frequency)
+      : amplitude_(amplitude), frequency_(frequency), height_(height) {}
+
+  VecX operator()(const Points3& points) const override {
+    return points.col(2).array() - height_ -
+           amplitude_ * (frequency_ * points.col(0).array()).sin();
+  }
+
+ private:
+  double amplitude_;
+  double frequency_;
+  double height_;
+};
+
 double point_tri_dist2(const Point3& p, const Point3& a, const Point3& b, const Point3& c) {
   Vector3 ab = b - a;
   Vector3 ac = c - a;
@@ -332,6 +348,23 @@ TEST(isosurface, generate_from_seed_points_gradient_search) {
 
     ASSERT_EQ(expected.faces().rows(), actual.faces().rows());
   }
+}
+
+TEST(isosurface, generate_from_seed_points_split_surface) {
+  const Bbox3 bbox(Point3(-1.0, -1.0, -1.0), Point3(1.0, 1.0, 1.0));
+  const auto resolution = 0.2;
+
+  Isosurface isosurf(bbox, resolution);
+  SineWave field_fn(1.0, 0.5, 2.0);
+
+  Points3 seed_points(1, 3);
+  seed_points << Point3(1.0, 0.0, 0.5);
+
+  auto expected = isosurf.generate(field_fn, 0.0, false);
+  isosurf.clear();
+  auto actual = isosurf.generate_from_seed_points(seed_points, field_fn, 0.0, false);
+
+  ASSERT_EQ(expected.faces().rows(), actual.faces().rows());
 }
 
 TEST(isosurface, generate_plane) {

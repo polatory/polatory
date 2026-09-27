@@ -12,9 +12,6 @@
 
 namespace polatory::isosurface {
 
-// A uniform grid mapping cells to item indices: an item is inserted over the cells its world AABB
-// touches, and for_each visits each distinct item near a query AABB. Holds only indices (geometry
-// stays with the caller), so it serves both snap points (as tolerance-radius balls) and faces.
 class SpatialGrid {
   using Point3 = geometry::Point3;
   using Cell = Eigen::RowVector3i;
@@ -30,19 +27,18 @@ class SpatialGrid {
   };
 
  public:
-  SpatialGrid(double resolution, Index capacity) : resolution_(resolution), visited_(capacity, 0) {}
+  SpatialGrid(double resolution, Index capacity)
+      : resolution_(resolution), visited_epoch_(capacity, 0) {}
 
   bool empty() const { return grid_.empty(); }
 
-  // Visits each distinct item whose cells meet the query AABB, until fn returns false.
   template <class Fn>
   void for_each(const Point3& lo, const Point3& hi, const Fn& fn) const {
-    // Reset before signed overflow (UB); at one bump per query this fires astronomically rarely.
-    if (guard_ == std::numeric_limits<int>::max()) {
-      std::ranges::fill(visited_, 0);
-      guard_ = 0;
+    if (epoch_ == std::numeric_limits<int>::max()) {
+      std::ranges::fill(visited_epoch_, 0);
+      epoch_ = 0;
     }
-    guard_++;
+    epoch_++;
 
     auto clo = cell_of(lo);
     auto chi = cell_of(hi);
@@ -54,10 +50,10 @@ class SpatialGrid {
             continue;
           }
           for (Index item : it->second) {
-            if (visited_.at(item) == guard_) {
+            if (visited_epoch_.at(item) == epoch_) {
               continue;
             }
-            visited_.at(item) = guard_;
+            visited_epoch_.at(item) = epoch_;
             if (!fn(item)) {
               return;
             }
@@ -82,7 +78,6 @@ class SpatialGrid {
 
   void insert(Index item, const Point3& p) { insert(item, p, p); }
 
-  // Insert each point as a tolerance-radius ball, so a query AABB finds every point it reaches.
   void insert_balls(const geometry::Points3& points, const VecX& tols) {
     for (Index i = 0; i < points.rows(); i++) {
       geometry::Vector3 r = geometry::Vector3::Constant(tols(i));
@@ -90,7 +85,6 @@ class SpatialGrid {
     }
   }
 
-  // Pass the same AABB the item was inserted with, else stale cell entries are left behind.
   void remove(Index item, const Point3& lo, const Point3& hi) {
     auto clo = cell_of(lo);
     auto chi = cell_of(hi);
@@ -107,18 +101,18 @@ class SpatialGrid {
   }
 
   void reserve(Index capacity) {
-    if (static_cast<Index>(visited_.size()) < capacity) {
-      visited_.resize(capacity, 0);
+    if (static_cast<Index>(visited_epoch_.size()) < capacity) {
+      visited_epoch_.resize(capacity, 0);
     }
   }
 
  private:
   Cell cell_of(const Point3& p) const { return (p / resolution_).array().floor().cast<int>(); }
 
-  double resolution_;
+  mutable int epoch_{};
   boost::unordered_flat_map<Cell, std::vector<Index>, CellHash> grid_;
-  mutable std::vector<int> visited_;  // per-query dedup stamp (epoch of last visit)
-  mutable int guard_{};
+  double resolution_;
+  mutable std::vector<int> visited_epoch_;
 };
 
 }  // namespace polatory::isosurface

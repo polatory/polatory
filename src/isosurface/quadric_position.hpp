@@ -11,24 +11,18 @@
 
 namespace polatory::isosurface {
 
-// Places a vertex that merges or seals the surface around `triangles` (the incident faces): the
-// area-weighted quadric minimizer  x = argmin_x  sum_t area_t (n_t.x + d_t)^2  -- keeping a
-// crease/corner instead of averaging it away. The fit is in the aniso-transformed frame so it
-// respects the anisotropic resolution. Directions the planes leave free (a flat patch) keep
-// `anchor`'s centroid; x is finally clamped into lattice node `node`'s cell so it stays nearest to
-// that node. `anchor` and `triangles` are untransformed positions.
 inline geometry::Point3 quadric_position(
-    const geometry::Points3& anchor, const std::vector<std::array<geometry::Point3, 3>>& triangles,
-    const Mat3& aniso, const Mat3& aniso_inv, const rmt::PrimitiveLattice& lattice,
+    const geometry::Points3& vertices,
+    const std::vector<std::array<geometry::Point3, 3>>& triangles, const Mat3& aniso,
+    const Mat3& aniso_inv, const rmt::PrimitiveLattice& lattice,
     const rmt::LatticeCoordinates& node) {
   using geometry::Point3;
   using geometry::Points3;
   using geometry::Vector3;
 
-  Points3 a_anchor = geometry::transform_points<3>(aniso, anchor);
-  Point3 centroid = a_anchor.colwise().mean();
+  Points3 a_vertices = geometry::transform_points<3>(aniso, vertices);
+  Point3 centroid = a_vertices.colwise().mean();
 
-  // Accumulate a and b, the matrix and vector of that energy's normal equation a x = b.
   Mat3 a = Mat3::Zero();
   Vector3 b = Vector3::Zero();
   for (const auto& t : triangles) {
@@ -45,14 +39,12 @@ inline geometry::Point3 quadric_position(
     b += w * n.dot(p0) * n;
   }
 
-  // Solve a x = b in a rank-revealing manner: move off the centroid only when a constrains more than
-  // one direction -- a crease (rank 2) or corner (rank 3) -- and along just those. A flat patch
-  // (rank 1) stays at the centroid.
   Eigen::SelfAdjointEigenSolver<Mat3> es(a);
   auto floor = 1e-3 * es.eigenvalues()(2);
   Vector3 y = Vector3::Zero();
+  // Stay at the centroid unless the planes form a crease (rank 2) or a corner (rank 3).
   if (es.eigenvalues()(1) > floor) {
-    Vector3 r = b - centroid * a;
+    Vector3 r = b - centroid * a;  // a is symmetric
     for (auto k = 0; k < 3; k++) {
       auto eval = es.eigenvalues()(k);
       if (eval > floor) {

@@ -194,7 +194,6 @@ class TetrahedronIterator
     } while (is_valid() && !tetrahedron_exists());
   }
 
-  // Returns if all nodes corresponding to three vertices of the tetrahedron exist.
   bool tetrahedron_exists() const {
     return node_list_.contains(neighbor(lc_, Tetrahedron::kEdgeIndices.at(index_)[0])) &&
            node_list_.contains(neighbor(lc_, Tetrahedron::kEdgeIndices.at(index_)[1])) &&

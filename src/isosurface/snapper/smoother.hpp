@@ -23,14 +23,6 @@
 
 namespace polatory::isosurface::snapper {
 
-// Post-process smoothing by edge flips. Flip an interior edge whenever doing so lowers the total
-// bend, meaning the summed dihedral. A flip changes only its five edges, so the local drop equals
-// the global drop and the mesh descends to a local minimum. Vertices never move, so snapped points
-// stay vertices. A priority queue takes the largest improvement first and re-scores each popped
-// edge, since a nearby flip may have staled it. Geometry is in the aniso-transformed frame and the
-// output is untransformed. A flip is rejected if its new diagonal exceeds the length cap, which is
-// the base lattice's longest edge, if it self-intersects, or if it pushes the surface beyond a snap
-// tolerance and would abandon a point that is honored within tolerance with no vertex there.
 class Smoother {
   using Point2 = geometry::Point2;
   using Point3 = geometry::Point3;
@@ -38,11 +30,8 @@ class Smoother {
   using Vector3 = geometry::Vector3;
 
   static constexpr double kPi = 3.141592653589793;
-  // kMaxEdgeRatio * res is the base lattice's longest edge (see the flip length cap below).
   static constexpr double kMaxEdgeRatio = 1.3;
 
-  // A candidate flip of edge {x, y} (faces fi0, fi1) into diagonal {c, d}; improve > 0 is the total
-  // bend removed.
   struct Flip {
     Index fi0;
     Index fi1;
@@ -51,13 +40,12 @@ class Smoother {
     Index c;
     Index d;
     double improve;
+    std::array<Index, 4> outer_faces;
 
     Face new_f0() const { return {c, x, d}; }
     Face new_f1() const { return {d, y, c}; }
   };
 
-  // A queue entry: an edge keyed by the bend its flip removed when last scored (a hint that may be
-  // stale; re-scored on pop).
   struct Item {
     Edge e;
     double improve;
@@ -77,8 +65,6 @@ class Smoother {
         snap_grid_(resolution, points.rows()),
         face_grid_(resolution, mesh_.num_faces()),
         max_edge2_(kMaxEdgeRatio * resolution * (kMaxEdgeRatio * resolution)) {
-    // Grid cell = resolution (a face spans about one cell); it only tunes the broad-phase, and
-    // resolution avoids a lone long edge blowing the grid up.
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
       index_face(fi);
     }
@@ -98,24 +84,23 @@ class Smoother {
     };
     mesh_.for_each_halfedge([&](Halfedge h) {
       if (mesh_.from(h) < mesh_.to(h) && mesh_.opposite(h).is_valid()) {
-        enqueue(Edge{mesh_.from(h), mesh_.to(h)});  // the canonical side of each interior edge
+        enqueue(Edge{mesh_.from(h), mesh_.to(h)});
       }
     });
 
     std::int64_t flips = 0;
-    auto cap = 50 * std::max<std::int64_t>(mesh_.num_faces(), 1);  // backstop against a float cycle
+    auto max_flips = 50 * std::max<std::int64_t>(mesh_.num_faces(), 1);  // guards against cycles
     while (!pq.empty()) {
       Edge e = pq.top().e;
       pq.pop();
-      auto fl = score(e);  // re-score: a nearby flip may have outdated this entry
-      if (!fl || !honors_ok(*fl) || !guard_ok(*fl)) {
+      auto fl = score(e);  // the queued score may be stale
+      if (!fl || !honors_ok(*fl) || self_intersects(*fl)) {
         continue;
       }
       do_flip(*fl);
-      if (++flips > cap) {
+      if (++flips > max_flips) {
         break;
       }
-      // Re-score the edges of the two changed faces and of their neighbours.
       for (Index fi : {fl->fi0, fl->fi1}) {
         for (auto k = 0; k < 3; k++) {
           auto h = mesh_.halfedge(fi, k);
@@ -137,7 +122,6 @@ class Smoother {
   Mesh result() && { return std::move(result_); }
 
  private:
-  // The bend (0 = flat) between two faces; degenerate or back-to-back pairs read as the worst.
   double bend(const Face& a, const Face& b) const {
     auto na = normal(a);
     auto nb = normal(b);
@@ -149,11 +133,8 @@ class Smoother {
     return std::acos(std::clamp(na.dot(nb) / (da * db), -1.0, 1.0));
   }
 
-  // bend(a, face fi), or 0 when fi is the absent neighbour across a boundary edge (fi < 0).
   double bend_with(const Face& a, Index fi) const { return fi < 0 ? 0.0 : bend(a, mesh_.face(fi)); }
 
-  // Whether new_f intersects any spatially near face; scanning new_f's own cells suffices (the
-  // sibling call covers the other new triangle).
   bool crosses(const Face& new_f, Index fi0, Index fi1) {
     auto ps = p_(new_f, kAll);
     Point3 lo = ps.colwise().minCoeff();
@@ -175,20 +156,10 @@ class Smoother {
     index_face(fl.fi1);
   }
 
-  // Self-intersection guard: neither new triangle may cross a face in its grid cells -- a
-  // broad-phase that catches a diagonal passing over a spatially near but topologically distant
-  // sheet.
-  bool guard_ok(const Flip& fl) {
-    return !crosses(fl.new_f0(), fl.fi0, fl.fi1) && !crosses(fl.new_f1(), fl.fi0, fl.fi1);
-  }
-
-  // Whether snap point i lies within its tolerance of face f.
   bool honored_by(Index i, const Face& f) const {
     return dist2(a_points_.row(i), f) <= snap_tols2_(i);
   }
 
-  // A point within tolerance of a removed face must stay within tolerance of the new local faces
-  // (the two new triangles plus the quad's outer neighbours); only such points can be affected.
   bool honors_ok(const Flip& fl) const {
     if (snap_grid_.empty()) {
       return true;
@@ -197,18 +168,11 @@ class Smoother {
     auto f1 = mesh_.face(fl.fi1);
     std::array<Face, 6> after{fl.new_f0(), fl.new_f1()};
     auto na = 2;
-    // Each outer edge belongs to one removed face; its neighbour across that face also bends. Each
-    // halfedge is directed as its removed face (f0 = x -> y -> c, f1 = y -> x -> d) traverses it.
-    auto add_neighbour = [&](Index from, Index to) {
-      Index gi = mesh_.face(mesh_.opposite(mesh_.halfedge_of(from, to)));
+    for (auto gi : fl.outer_faces) {
       if (gi >= 0) {
         after.at(na++) = mesh_.face(gi);
       }
-    };
-    add_neighbour(fl.c, fl.x);
-    add_neighbour(fl.y, fl.c);
-    add_neighbour(fl.x, fl.d);
-    add_neighbour(fl.d, fl.y);
+    }
     auto aps = ap_({fl.x, fl.y, fl.c, fl.d}, kAll);
     Point3 lo = aps.colwise().minCoeff();
     Point3 hi = aps.colwise().maxCoeff();
@@ -216,40 +180,36 @@ class Smoother {
     snap_grid_.for_each(lo, hi, [&](Index i) {
       auto honored = [&](const auto& f) { return honored_by(i, f); };
       if (!honored(f0) && !honored(f1)) {
-        return true;  // not honored by a removed face; the flip cannot dishonor it
+        return true;
       }
       if (std::ranges::none_of(after.begin(), after.begin() + na, honored)) {
         ok = false;
-        return false;  // dishonored; stop the walk
+        return false;
       }
       return true;
     });
     return ok;
   }
 
-  // Index a face by the grid cells its current AABB touches.
   void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
   Vector3 normal(const Face& f) const {
     return triangle_normal(ap_.row(f(0)), ap_.row(f(1)), ap_.row(f(2)));
   }
 
-  // p_ is the untransformed frame, where the defect finder judges.
+  // Self-intersection is judged on the output positions p_, not ap_.
   bool intersect(const Face& a, const Face& b) const {
     return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)), p_.row(b(1)),
                                p_.row(b(2)));
   }
 
-  // The candidate flip of edge e if admissible (interior, new diagonal absent and non-degenerate,
-  // within the length cap, lowers the bend). The cheap checks; the self-intersection guard is left
-  // to the caller.
   std::optional<Flip> score(const Edge& e) const {
-    auto h = mesh_.halfedge_of(e.a, e.b);  // canonical (e.a < e.b); traverses x -> y in f0
+    auto h = mesh_.halfedge_of(e.a, e.b);
     auto opp_h = mesh_.opposite(h);
     auto fi0 = mesh_.face(h);
     auto fi1 = mesh_.face(opp_h);
     if (fi0 < 0 || fi1 < 0) {
-      return std::nullopt;  // not a present interior edge (a boundary, or a prior flip removed it)
+      return std::nullopt;
     }
 
     Index x = mesh_.from(h);
@@ -257,7 +217,7 @@ class Smoother {
     Index c = mesh_.apex(h);
     Index d = mesh_.apex(opp_h);
     if (c == d || mesh_.has_edge({c, d})) {
-      return std::nullopt;  // degenerate, or the flipped diagonal already exists
+      return std::nullopt;
     }
 
     auto f0 = mesh_.face(fi0);
@@ -265,13 +225,11 @@ class Smoother {
     Face new_f0{c, x, d};
     Face new_f1{d, y, c};
 
-    // The quad's four outer neighbours, across the edges next/prev to the flipped edge.
     Index gi_cx = mesh_.face(mesh_.opposite(mesh_.prev(h)));
     Index gi_yc = mesh_.face(mesh_.opposite(mesh_.next(h)));
     Index gi_xd = mesh_.face(mesh_.opposite(mesh_.next(opp_h)));
     Index gi_dy = mesh_.face(mesh_.opposite(mesh_.prev(opp_h)));
 
-    // The reason to flip: the summed bend over the five touched edges must strictly drop.
     auto before = bend(f0, f1) + bend_with(f0, gi_cx) + bend_with(f0, gi_yc) +
                   bend_with(f1, gi_xd) + bend_with(f1, gi_dy);
     auto after = bend(new_f0, new_f1) + bend_with(new_f0, gi_cx) + bend_with(new_f1, gi_yc) +
@@ -287,18 +245,22 @@ class Smoother {
       return std::nullopt;
     }
 
-    return Flip{fi0, fi1, x, y, c, d, improve};
+    return Flip{fi0, fi1, x, y, c, d, improve, {gi_cx, gi_yc, gi_xd, gi_dy}};
+  }
+
+  bool self_intersects(const Flip& fl) {
+    return crosses(fl.new_f0(), fl.fi0, fl.fi1) || crosses(fl.new_f1(), fl.fi0, fl.fi1);
   }
 
   void unindex_face(Index fi) { face_grid_.remove(fi); }
 
   Points3 p_;
   Points3 ap_;
-  AbstractMesh mesh_;  // working connectivity, edited in place by flips
-  Points3 a_points_;   // the snap targets
-  VecX snap_tols2_;    // squared snapping tolerance per snap point
+  AbstractMesh mesh_;
+  Points3 a_points_;
+  VecX snap_tols2_;
   SpatialGrid snap_grid_;
-  FaceGrid face_grid_;  // face broad-phase for the self-intersection guard
+  FaceGrid face_grid_;
   double max_edge2_;
   Mesh result_;
 };

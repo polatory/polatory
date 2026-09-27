@@ -113,9 +113,8 @@ class Lattice : public PrimitiveLattice {
 
           const auto& nn = node_list_.at(nlc);
           if (k == 1 && nn.value_sign() != n.value_sign()) {
-            // The following usage of the if statement maximizes the chances of successful
-            // surface tracking.
             pairs.push_back(make_lattice_coordinates_pair(lc, nlc));
+            // Stopping at a boundary node can miss the surface inside the bbox.
             if (!boundary_node) {
               found_intersection = true;
               break;
@@ -137,7 +136,7 @@ class Lattice : public PrimitiveLattice {
 
         if (nlcs.empty()) {
           if (k >= 10 || reached_minimum) {
-            // Give up.
+            // Giving up.
             continue;
           }
           auto nnlcs = knn_nodes(lc, k + 1);
@@ -252,8 +251,6 @@ class Lattice : public PrimitiveLattice {
     value_at_arbitrary_point_.reset();
   }
 
-  // Returns the raw marching-tetrahedra mesh (one vertex per sign-change edge). Vertex clustering
-  // is a separate mesh step.
   Mesh get_mesh() const {
     std::vector<Face> faces_v;
     auto inserter = std::back_inserter(faces_v);
@@ -324,14 +321,13 @@ class Lattice : public PrimitiveLattice {
     EdgeIndex ei{};
     double t{};
 
-    // Keeps the crossing off the node endpoints by kVertexPositionMinimumOffset. When several
-    // surfaces pass near a node, vertices landing exactly on it (and the clustered vertex that
-    // averages them) tend to produce overlapping faces; the offset reduces that risk.
     geometry::Point3 position_clamped(const NodeList& node_list) const {
       const auto& node0 = node_list.at(node_lc);
       const auto& node1 = node_list.at(neighbor(node_lc, ei));
       const auto& p0 = node0.position();
       const auto& p1 = node1.position();
+      // Vertices exactly on a node tend to produce overlapping faces when several surfaces pass
+      // near it.
       auto tc = std::clamp(t, kVertexPositionMinimumOffset, 1.0 - kVertexPositionMinimumOffset);
       return p0 + tc * (p1 - p0);
     }
@@ -378,9 +374,6 @@ class Lattice : public PrimitiveLattice {
     return geometry::Vector<4>(va, vb, vc, vd) / v;
   }
 
-  // Fills the holes the seed tracking leaves. A surface-crossing tetrahedron with a missing node
-  // contributes no face, so where the tracking stops a node short of the domain edge the surface is
-  // left with a hole that a later clip cannot close.
   void complete_surface(const FieldFunction& field_fn, double isovalue) {
     std::vector<LatticeCoordinates> frontier;
     for (const auto& lc_node : node_list_) {
@@ -390,9 +383,6 @@ class Lattice : public PrimitiveLattice {
     }
 
     while (!frontier.empty()) {
-      // Supply every node the crossing tetrahedra around a surface node might be missing: those
-      // tetrahedra use the node and its neighbors, so add all 14. Non-surface neighbors carry no
-      // vertex and fall out later as free nodes.
       std::vector<LatticeCoordinates> added;
       for (const auto& lc : frontier) {
         for (EdgeIndex ei = 0; ei < 14; ei++) {
@@ -404,8 +394,6 @@ class Lattice : public PrimitiveLattice {
       }
       evaluate_field(field_fn, isovalue);
 
-      // A newly added node that is itself on the surface extends the fill, so it reaches the whole
-      // seed-connected surface.
       frontier.clear();
       for (const auto& lc : added) {
         if (is_surface_node(lc)) {
@@ -415,7 +403,6 @@ class Lattice : public PrimitiveLattice {
     }
   }
 
-  // Evaluates field values for each node in nodes_to_evaluate_.
   void evaluate_field(const FieldFunction& field_fn, double isovalue) {
     if (nodes_to_evaluate_.empty()) {
       return;
@@ -515,7 +502,7 @@ class Lattice : public PrimitiveLattice {
     }
 
     // To reduce the risk of generating near-degenerate faces during surface clipping,
-    // snap vertices that are very close to the bbox .
+    // snap vertices that are very close to the bbox.
 
     const auto& min = bbox().min();
     const auto& max = bbox().max();
@@ -559,8 +546,6 @@ class Lattice : public PrimitiveLattice {
     return false;
   }
 
-  // Whether lc has a neighbor of the opposite sign, i.e. the surface passes through an incident
-  // edge.
   bool is_surface_node(const LatticeCoordinates& lc) const {
     auto s = node_list_.at(lc).value_sign();
     for (EdgeIndex ei = 0; ei < 14; ei++) {

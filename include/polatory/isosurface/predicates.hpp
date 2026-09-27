@@ -14,8 +14,7 @@ namespace polatory::isosurface {
 
 inline constexpr double kTinyFactor = 1e-12;
 
-// Twice the signed area of triangle (a, b, c); positive iff (a, b, c) is counterclockwise.
-// The magnitude is meaningful and scales like length squared.
+// Positive iff (a, b, c) is counterclockwise.
 inline double orient2d(const geometry::Point2& a, const geometry::Point2& b,
                        const geometry::Point2& c) {
   Mat2 m;
@@ -33,8 +32,7 @@ inline double orient3d(const geometry::Point3& a, const geometry::Point3& b,
   return m.determinant();
 }
 
-// Positive iff d lies inside the circumcircle of (a, b, c) when (a, b, c) is counterclockwise
-// (the sign flips with the winding). The magnitude scales like length to the fourth.
+// Positive iff d lies inside the circumcircle of counterclockwise (a, b, c).
 inline double incircle(const geometry::Point2& a, const geometry::Point2& b,
                        const geometry::Point2& c, const geometry::Point2& d) {
   auto m00 = a(0) - d(0);

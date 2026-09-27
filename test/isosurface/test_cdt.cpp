@@ -131,11 +131,11 @@ TEST(cdt, subdivided_edges_like_a_snapper_patch) {
 }
 
 TEST(cdt, no_diagonal_runs_along_a_subdivided_edge) {
-  std::vector<std::array<int, 2>> boundary_edges{
+  std::vector<std::array<int, 2>> boundary_labels{
       {0, 2}, {0, -1}, {0, -1}, {0, -1}, {0, 1}, {1, 2},
   };
 
-  Triangulation triangulation(along_edge_boundary(), {pt(0.3, -0.05)}, boundary_edges);
+  Triangulation triangulation(along_edge_boundary(), {pt(0.3, -0.05)}, boundary_labels);
   const auto& tris = triangulation.faces();
   EXPECT_TRUE(triangulation.simple());
   ASSERT_GT(tris.rows(), 0);

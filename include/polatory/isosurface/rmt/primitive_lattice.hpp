@@ -16,8 +16,8 @@
 
 namespace polatory::isosurface::rmt {
 
-inline constexpr double kInvSqrt3 = 0.5773502691896258;       // 1 / sqrt(3)
-inline constexpr double kSqrt2OverSqrt3 = 0.816496580927726;  // sqrt(2 / 3)
+inline constexpr double kInvSqrt3 = 0.5773502691896258;
+inline constexpr double kSqrt2OverSqrt3 = 0.816496580927726;
 
 // A basis for the body-centered cubic lattice.
 inline const Mat3 kLatticeBasis((Mat3() << geometry::Vector3{kInvSqrt3, kSqrt2OverSqrt3, 0.0},
@@ -124,7 +124,6 @@ class PrimitiveLattice {
     return lattice_coordinates_unrounded(p).array().round().cast<int>();
   }
 
-  // Clamps p to node lc's cell so it still rounds to lc.
   geometry::Point3 clamp_to_node(const geometry::Point3& p, const LatticeCoordinates& lc) const {
     geometry::Vector3 u = lattice_coordinates_unrounded(p);
     geometry::Vector3 c = lc.cast<double>();

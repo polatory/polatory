@@ -22,17 +22,10 @@ namespace polatory::isosurface::snapper {
 
 using geometry::Points3;
 
-// Cross-pass thinning by guarded edge collapse: collapses a snapped vertex that a later pass left
-// redundant (collinear between neighbours) onto a neighbouring snap point, reaching vertices from
-// any pass that the insert-only thinning could not. A collapse is kept only if the dropped point
-// stays within its tolerance of the new surface and the mesh stays manifold, unflipped, and
-// self-intersection-free; only edges between two snap points collapse, so the base lattice is
-// untouched. Geometry is in the aniso-transformed frame; the output is untransformed.
 class Thinner {
   using Point3 = geometry::Point3;
   using Vector3 = geometry::Vector3;
 
-  // a collapse may not make an edge longer than this * res
   static constexpr double kMaxEdgeRatio = 1.3;
 
  public:
@@ -52,8 +45,7 @@ class Thinner {
     snap_grid_.insert_balls(a_points_, tols);
     snap_tols2_ = tols.cwiseAbs2();
 
-    // Mark each vertex that coincides with a snap point (snapped vertices are emitted exactly
-    // there); only these may collapse, so the base lattice stays put.
+    // Snapped vertices lie exactly at their snap points.
     boost::unordered_flat_set<Point3, PointHash> snap_positions;
     snap_positions.reserve(points.rows());
     for (Index i = 0; i < points.rows(); i++) {
@@ -64,17 +56,15 @@ class Thinner {
       snapped_.at(v) = snap_positions.contains(p_.row(v));
     }
 
-    // Greedy collapse to a fixpoint: a collapse can make a neighbour collapsible (a chain of
-    // collinear points thins end to end).
     for (Index fi = 0; fi < mesh_.num_faces(); fi++) {
       index_face(fi);
     }
-    bool any = true;
-    while (any) {
-      any = false;
+    bool collapsed = true;
+    while (collapsed) {
+      collapsed = false;
       for (Index v = 0; v < p_.rows(); v++) {
         if (snapped_.at(v) && try_collapse(v)) {
-          any = true;
+          collapsed = true;
         }
       }
     }
@@ -91,39 +81,35 @@ class Thinner {
     }
   };
 
-  // Whether collapsing v onto w is admissible; dev = the dropped point's distance to the new
-  // surface.
-  bool collapse_ok(Halfedge h, const std::vector<Halfedge>& hs, double& dev) {
-    auto a = mesh_.from(h);  // the dropped vertex
-    auto b = mesh_.to(h);    // the kept vertex
+  bool collapse_ok(Halfedge h, const std::vector<Halfedge>& outgoing, double& dev) {
+    auto a = mesh_.from(h);
+    auto b = mesh_.to(h);
     if (!snapped_.at(b)) {
-      return false;  // both endpoints must be snap points, and a already is
+      return false;
     }
     auto c = mesh_.apex(h);
     auto d = mesh_.apex(mesh_.opposite(h));
 
-    // The link condition: Lk(a) \cap Lk(b) =? Lk(a \cup b) = {c, d}.
-    for (auto hh : hs) {
+    // The link condition: c and d are the only common neighbors of a and b.
+    for (auto hh : outgoing) {
       auto v = mesh_.to(hh);
       if (v != b && v != c && v != d && mesh_.has_edge({v, b})) {
-        // v \in Lk(a) \cap Lk(b).
         return false;
       }
     }
 
-    // a's kept faces (those not on edge ab), with a retargeted to b.
     std::vector<Face> kept;
     boost::unordered_flat_set<Index> star;
-    for (auto hh : hs) {
+    for (auto hh : outgoing) {
       auto fi = mesh_.face(hh);
       star.insert(fi);
       auto f = mesh_.face(fi);
       if (on_edge(f, a, b)) {
-        continue;  // collapses to a degenerate sliver, dropped
+        continue;
       }
       Face nf = (f.array() == a).select(b, f);
       if (normal(nf).dot(normal(f)) < 0.0) {
-        return false;  // the face would flip
+        return false;
       }
       kept.push_back(nf);
     }
@@ -131,22 +117,18 @@ class Thinner {
       return false;
     }
 
-    // Cap edge length to keep triangles regular.
-    for (auto hh : hs) {
+    for (auto hh : outgoing) {
       auto v = mesh_.to(hh);
       if (v != b && v != c && v != d && (ap_.row(b) - ap_.row(v)).squaredNorm() > max_edge2_) {
         return false;
       }
     }
 
-    // Distortion (for picking the least-distorting neighbour): the dropped vertex's distance to the
-    // new surface.
     dev = std::numeric_limits<double>::infinity();
     for (const auto& nf : kept) {
       dev = std::min(dev, dist2(ap_.row(a), nf));
     }
 
-    // Faces near the collapse: those incident to the kept faces' vertices but outside the star.
     boost::unordered_flat_set<Index> nearby;
     for (const auto& nf : kept) {
       for (auto v : nf) {
@@ -162,9 +144,6 @@ class Thinner {
       return false;
     }
 
-    // No new face may self-intersect another. A collapse only moves the kept faces, so any new
-    // overlap involves one of them; a spatial broad-phase catches a kept face pushed onto a
-    // spatially near but topologically distant sheet that the one-ring would miss.
     for (const auto& nf : kept) {
       auto ps = p_(nf, kAll);
       Point3 lo = ps.colwise().minCoeff();
@@ -203,13 +182,10 @@ class Thinner {
     return {std::move(vertices), std::move(faces)};
   }
 
-  // Whether snap point i lies within its tolerance of face f.
   bool honored_by(Index i, const Face& f) const {
     return dist2(a_points_.row(i), f) <= snap_tols2_(i);
   }
 
-  // Every nearby snap point held by a removed face must stay within tolerance, not only the dropped
-  // vertex. Otherwise a greedy chain drifts already-dropped points off the surface.
   bool honors_ok(const boost::unordered_flat_set<Index>& star, const std::vector<Face>& kept,
                  const boost::unordered_flat_set<Index>& nearby) const {
     if (snap_grid_.empty()) {
@@ -228,11 +204,11 @@ class Thinner {
     snap_grid_.for_each(lo, hi, [&](Index i) {
       auto honored = [&](const auto& f) { return honored_by(i, f); };
       if (std::ranges::none_of(star, honored, face_of)) {
-        return true;  // not held by a removed face; the collapse cannot dishonor it
+        return true;
       }
       if (std::ranges::none_of(kept, honored) && std::ranges::none_of(nearby, honored, face_of)) {
         ok = false;
-        return false;  // dishonored; stop the walk
+        return false;
       }
       return true;
     });
@@ -241,8 +217,7 @@ class Thinner {
 
   void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
-  // The self-intersection guard runs in the untransformed frame (p_), where defects are judged,
-  // matching the defect finder.
+  // Self-intersection is judged on the output positions p_, not ap_.
   bool intersect(const Face& a, const Face& b) const {
     return triangles_intersect(p_.row(a(0)), p_.row(a(1)), p_.row(a(2)), p_.row(b(0)), p_.row(b(1)),
                                p_.row(b(2)));
@@ -256,24 +231,21 @@ class Thinner {
     return (f.array() == a).any() && (f.array() == b).any();
   }
 
-  // Collapse v onto its least-distorting admissible neighbour, if any; returns whether it did.
   bool try_collapse(Index v) {
-    auto out = mesh_.vertex_outgoing_halfedges(v);
-    std::vector<Halfedge> hs(out.begin(), out.end());  // copy: collapse rewrites the adjacency
-    if (hs.size() < 3) {
+    auto range = mesh_.vertex_outgoing_halfedges(v);
+    std::vector<Halfedge> outgoing(range.begin(), range.end());  // copy: collapse rewrites it
+    if (outgoing.size() < 3) {
       return false;
     }
-    // hs holds v's outgoing halfedges v -> w. v must be an interior manifold vertex: each one's
-    // opposite (w -> v) must also have a face.
-    if (std::ranges::any_of(hs, [&](Halfedge h) { return !mesh_.opposite(h).is_valid(); })) {
+    if (std::ranges::any_of(outgoing, [&](Halfedge h) { return !mesh_.opposite(h).is_valid(); })) {
       return false;
     }
 
-    Halfedge best{};  // the chosen collapse v -> w
+    Halfedge best{};
     double best_dev = std::numeric_limits<double>::infinity();
-    for (auto h : hs) {
+    for (auto h : outgoing) {
       double dev = 0.0;
-      if (collapse_ok(h, hs, dev) && dev < best_dev) {
+      if (collapse_ok(h, outgoing, dev) && dev < best_dev) {
         best = h;
         best_dev = dev;
       }
@@ -281,12 +253,10 @@ class Thinner {
     if (!best.is_valid()) {
       return false;
     }
-    // Drop the star from the grid before the collapse rewrites its faces, then re-add the
-    // retargeted faces.
-    for (auto h : hs) {
+    for (auto h : outgoing) {
       unindex_face(mesh_.face(h));
     }
-    for (auto fi : mesh_.collapse(best)) {  // drop best.from onto best.to
+    for (auto fi : mesh_.collapse(best)) {
       index_face(fi);
     }
     return true;
@@ -296,13 +266,13 @@ class Thinner {
 
   Points3 p_;
   Points3 ap_;
-  AbstractMesh mesh_;  // working connectivity, edited in place by collapses
-  Points3 a_points_;   // the snap targets
-  VecX snap_tols2_;    // squared snapping tolerance per snap point
+  AbstractMesh mesh_;
+  Points3 a_points_;
+  VecX snap_tols2_;
   SpatialGrid snap_grid_;
   FaceGrid face_grid_;
-  double max_edge2_{};         // squared cap on a collapsed edge's length
-  std::vector<bool> snapped_;  // per vertex; true = a snap point (only these collapse)
+  double max_edge2_{};
+  std::vector<bool> snapped_;
   Mesh result_;
 };
 

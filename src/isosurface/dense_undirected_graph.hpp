@@ -10,7 +10,6 @@
 
 namespace polatory::isosurface {
 
-// An undirected multigraph over vertices [0, order).
 class DenseUndirectedGraph {
   using Matrix = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
@@ -28,7 +27,6 @@ class DenseUndirectedGraph {
     m_(i, j)++;
   }
 
-  // The vertices of each connected component.
   std::vector<std::vector<Index>> connected_components() const {
     std::vector<Index> component(order(), -1);
     Index count = 0;
@@ -62,7 +60,6 @@ class DenseUndirectedGraph {
     std::vector<bool> visited(order());
     std::stack<Index> to_visit;
 
-    // DFS
     to_visit.push(0);
     while (!to_visit.empty()) {
       auto i = to_visit.top();

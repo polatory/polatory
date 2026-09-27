@@ -6,8 +6,8 @@
 
 namespace polatory::isosurface {
 
-// Merges each lattice node's vertices into a single vertex, undoing any merge that would leave the
-// mesh non-manifold.
+// Merges the vertices of each lattice node into one, unless the merge makes the mesh non-manifold
+// or self-intersecting.
 Mesh cluster_vertices(const Mesh& mesh, const rmt::PrimitiveLattice& lattice, const Mat3& aniso);
 
 }  // namespace polatory::isosurface

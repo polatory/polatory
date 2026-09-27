@@ -7,7 +7,6 @@
 
 namespace polatory::isosurface {
 
-// An undirected edge between two vertices.
 struct Edge {
   Index a;
   Index b;

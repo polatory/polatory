@@ -16,12 +16,11 @@ class FaceGrid {
  public:
   FaceGrid(double resolution, Index capacity) : grid_(resolution, capacity), box_(capacity) {}
 
-  // Whether any indexed face whose cells meet the query AABB satisfies `hits`; stops at the first.
   template <class Fn>
-  bool any_of(const Point3& lo, const Point3& hi, const Fn& hits) const {
+  bool any_of(const Point3& lo, const Point3& hi, const Fn& pred) const {
     bool hit = false;
     for_each(lo, hi, [&](Index fi) {
-      if (hits(fi)) {
+      if (pred(fi)) {
         hit = true;
         return false;
       }
@@ -45,7 +44,6 @@ class FaceGrid {
     box_.at(fi) = {lo, hi};
   }
 
-  // Inserts a face by the AABB of its vertex positions (the rows of `points`).
   template <class Derived>
   void insert(Index fi, const Eigen::MatrixBase<Derived>& points) {
     insert(fi, Point3(points.colwise().minCoeff()), Point3(points.colwise().maxCoeff()));

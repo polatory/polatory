@@ -17,10 +17,6 @@
 
 namespace polatory::isosurface {
 
-// Projects each mesh vertex onto the level set f = isovalue by Newton steps along the numerical
-// field gradient, then commits the move only if it introduces no self-intersection. Vertices move
-// one at a time against the current committed geometry (a spatial grid of faces), so a rejected
-// move simply keeps the vertex where it was -- the mesh never becomes worse than the input.
 class VertexRefiner {
   using Point3 = geometry::Point3;
   using Points3 = geometry::Points3;
@@ -50,7 +46,7 @@ class VertexRefiner {
   Mesh result() && { return {std::move(p_), std::move(mesh_).take_faces()}; }
 
  private:
-  static constexpr double kMaxMoveRatio = 0.5;  // per-step cap, in units of resolution
+  static constexpr double kMaxMoveRatio = 0.5;
 
   void index_face(Index fi) { face_grid_.insert(fi, p_(mesh_.face(fi), kAll)); }
 
@@ -66,8 +62,7 @@ class VertexRefiner {
 
   std::vector<std::pair<Index, Point3>> project() const {
     auto d = 1e-3 * resolution_;
-    // Regular-tetrahedron offsets (directions prescaled by d): sum to zero and sum of outer
-    // products is 4 d^2 I, so the linear fit is the closed form below.
+    // The vertices of a regular tetrahedron: the rows sum to zero and s^T s = 4 d^2 I.
     Mat<4, 3> s;
     s << Vector3{d, d, d}, Vector3{d, -d, -d}, Vector3{-d, d, -d}, Vector3{-d, -d, d};
     Points3 samples(4 * nv_, 3);
@@ -78,7 +73,6 @@ class VertexRefiner {
 
     std::vector<std::pair<Index, Point3>> moves;
     auto max_move = kMaxMoveRatio * resolution_;
-    // The least-squares gradient of the linear fit: g = (s^T s)^-1 s^T v = s^T v / (4 d^2).
     auto inv_4dd = 1.0 / (4.0 * d * d);
     for (Index i = 0; i < nv_; i++) {
       auto vs = v.segment(4 * i, 4);
@@ -104,8 +98,7 @@ class VertexRefiner {
       auto f = mesh_.face(fi);
       auto a = moved_face(fi, vi, new_p);
 
-      // Reject a face turning over on itself; the pairwise test below cannot see that. A sliver
-      // that keeps its orientation still passes.
+      // The intersection test below cannot detect a face flipping over.
       Vector3 n_old = triangle_normal(p_.row(f(0)), p_.row(f(1)), p_.row(f(2)));
       Vector3 n_new = triangle_normal(a.at(0), a.at(1), a.at(2));
       if (n_old.dot(n_new) <= 0.0) {

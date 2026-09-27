@@ -7,8 +7,7 @@
 
 namespace polatory::isosurface {
 
-// Projects mesh vertices onto the field's level set f = isovalue, committing each move only if it
-// introduces no self-intersection.
+// Moves each vertex toward the isosurface, unless the move introduces self-intersection.
 Mesh refine_vertices(const Mesh& mesh, const FieldFunction& field_fn, double isovalue,
                      const geometry::Bbox3& bbox, double resolution, const Mat3& aniso);
 
