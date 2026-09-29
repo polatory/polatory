@@ -132,13 +132,15 @@ class KrylovTest : public ::testing::Test {
 
 TEST_F(KrylovTest, breakdown) {
   Identity op(n);
-  Fgmres solver(op, rhs, n);
+  // Normalizing e0 is exact, so the Arnoldi process breaks down exactly.
+  VecX e0 = VecX::Unit(n, 0);
+  Fgmres solver(op, e0, n);
   solver.setup();
   solver.iterate_process();
 
   EXPECT_EQ(solver.absolute_residual(), 0.0);
   EXPECT_TRUE(solver.residual_vector().isZero());
-  EXPECT_LT(relative_error(solver.solution_vector(), rhs), 1e-15);
+  EXPECT_LT(relative_error(solver.solution_vector(), e0), 1e-15);
 }
 
 TEST_F(KrylovTest, fgmres) {

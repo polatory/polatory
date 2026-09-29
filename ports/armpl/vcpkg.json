@@ -1,0 +1,8 @@
+{
+  "name": "armpl",
+  "version-string": "26.07.0",
+  "description": "Arm Performance Libraries provide optimized BLAS, LAPACK, FFT, and math routines for Arm processors.",
+  "homepage": "https://developer.arm.com/Tools%20and%20Software/Arm%20Performance%20Libraries",
+  "license": null,
+  "supports": "arm64 & (linux | osx | (windows & !uwp & !staticcrt))"
+}

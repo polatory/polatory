@@ -16,22 +16,44 @@
     "ceres",
     "eigen3",
     "fast-float",
-    {
-      "name": "fftw3",
-      "platform": "osx & arm64"
-    },
-    "gtest",
     "libigl",
+    "nanoflann",
+    "pocketfft"
+  ],
+  "default-features": [
     {
-      "name": "intel-mkl",
-      "platform": "(windows | linux) & x64"
+      "name": "armpl",
+      "platform": "(windows | linux) & arm64"
     },
-    "nanoflann"
+    {
+      "name": "mkl",
+      "platform": "(windows | linux) & x64"
+    }
   ],
   "features": {
+    "armpl": {
+      "description": "Use Arm Performance Libraries",
+      "dependencies": [
+        "armpl"
+      ]
+    },
+    "mkl": {
+      "description": "Use Intel oneMKL",
+      "dependencies": [
+        "intel-mkl"
+      ]
+    },
     "python": {
       "description": "Build Python bindings",
-      "dependencies": ["pybind11"]
+      "dependencies": [
+        "pybind11"
+      ]
+    },
+    "tests": {
+      "description": "Build unit tests",
+      "dependencies": [
+        "gtest"
+      ]
     }
   }
 }

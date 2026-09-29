@@ -10,6 +10,21 @@ if(BUILD_PYTHON_BINDINGS)
     list(APPEND VCPKG_MANIFEST_FEATURES "python")
 endif()
 
+if(BUILD_TESTS)
+    list(APPEND VCPKG_MANIFEST_FEATURES "tests")
+endif()
+
+if(BLA_VENDOR)
+    set(VCPKG_MANIFEST_NO_DEFAULT_FEATURES ON)
+    if(BLA_VENDOR STREQUAL "Arm")
+        list(APPEND VCPKG_MANIFEST_FEATURES "armpl")
+    elseif(BLA_VENDOR STREQUAL "Intel10_64lp_seq")
+        list(APPEND VCPKG_MANIFEST_FEATURES "mkl")
+    elseif(NOT BLA_VENDOR STREQUAL "Apple")
+        message(FATAL_ERROR "Unsupported BLA_VENDOR: ${BLA_VENDOR}")
+    endif()
+endif()
+
 project(Polatory CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -20,15 +35,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(polatory_target_contents)
-
-set(MKL_ARCH "intel64")
-if(UNIX)
-    set(MKL_LINK "static")
-elseif(MSVC)
-    set(MKL_LINK "dynamic")
-endif()
-set(MKL_THREADING "sequential")
-set(MKL_INTERFACE "lp64")
 
 find_package(boost_algorithm CONFIG REQUIRED)
 find_package(boost_any CONFIG REQUIRED)
@@ -43,31 +49,44 @@ find_package(boost_unordered CONFIG REQUIRED)
 find_package(Ceres CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(FastFloat CONFIG REQUIRED)
-find_package(FFTW3 CONFIG)
-find_package(GTest CONFIG REQUIRED)
 find_package(libigl CONFIG REQUIRED)
-find_package(MKL CONFIG)
 find_package(nanoflann CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
+find_path(POCKETFFT_INCLUDE_DIR pocketfft_hdronly.h REQUIRED)
 
 set(VCPKG_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
 
-if(${VCPKG_TARGET_TRIPLET} MATCHES ^x64-)
-    set(USE_MKL ON)
-else()
-    set(BLA_VENDOR "Apple")
+if(NOT BLA_VENDOR)
+    if(${VCPKG_TARGET_TRIPLET} MATCHES ^x64-)
+        set(BLA_VENDOR "Intel10_64lp_seq")
+    elseif(${VCPKG_TARGET_TRIPLET} MATCHES "^arm64-(linux|windows)")
+        set(BLA_VENDOR "Arm")
+    else()
+        set(BLA_VENDOR "Apple")
+    endif()
 endif()
 
-if(MSVC AND USE_MKL)
-    # https://www.intel.com/content/www/us/en/docs/onemkl/developer-guide-windows/2025-2/contents-of-the-bin-directory.html
-    set(POLATORY_DLLS
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx2.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx512.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_core.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_def.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_mc3.2.dll
-        ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_sequential.2.dll
-    )
+if(BLA_VENDOR STREQUAL "Intel10_64lp_seq")
+    set(MKL_ARCH "intel64")
+    if(UNIX)
+        set(MKL_LINK "static")
+    elseif(MSVC)
+        set(MKL_LINK "dynamic")
+    endif()
+    set(MKL_THREADING "sequential")
+    set(MKL_INTERFACE "lp64")
+    find_package(MKL CONFIG REQUIRED)
+
+    if(MSVC)
+        # https://www.intel.com/content/www/us/en/docs/onemkl/developer-guide-windows/2025-2/contents-of-the-bin-directory.html
+        set(POLATORY_DLLS
+            ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx2.2.dll
+            ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx512.2.dll
+            ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_core.2.dll
+            ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_def.2.dll
+            ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_mc3.2.dll
+        )
+    endif()
 endif()
 
 add_subdirectory(src)
@@ -90,6 +109,7 @@ if(BUILD_PYTHON_BINDINGS)
 endif()
 
 if(BUILD_TESTS)
+    find_package(GTest CONFIG REQUIRED)
     enable_testing()
     add_subdirectory(test)
 endif()

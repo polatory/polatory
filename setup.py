@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
 
 from setuptools import Extension, setup
@@ -38,17 +39,24 @@ class CMakeBuild(build_ext):
             ).resolve()
         except subprocess.CalledProcessError:
             raise OSError("MSVC is not installed.")
-        vcvars64 = (vs_dir / "VC/Auxiliary/Build/vcvars64.bat").resolve()
+        match sysconfig.get_platform():
+            case "win-amd64":
+                vcvars_name = "vcvars64.bat"
+            case "win-arm64":
+                vcvars_name = "vcvarsarm64.bat"
+            case platform:
+                raise OSError(f"Unsupported platform: {platform}")
+        vcvars =(vs_dir / "VC/Auxiliary/Build" / vcvars_name).resolve()
 
         output = subprocess.run(
-            f'"{vcvars64}" && set', stdout=subprocess.PIPE, check=True, text=True
+            f'"{vcvars}" && set', stdout=subprocess.PIPE, check=True, text=True
         ).stdout
 
         env = {}
         for line in output.splitlines():
             pair = line.split("=", 1)
             if len(pair) >= 2:
-                env[pair[0]] = pair[1]
+                env[pair[0].upper()] = pair[1]
         return env
 
     def build_extension(self, ext: CMakeExtension) -> None:
@@ -70,6 +78,7 @@ class CMakeBuild(build_ext):
             "-DBUILD_PYTHON_BINDINGS=ON",
             "-DBUILD_TESTS=OFF",
             f"-DPOLATORY_VERSION={version}",
+            f"-DPYTHON_EXECUTABLE={sys.executable}",
         ]
 
         env = os.environ.copy()
@@ -97,6 +106,9 @@ class CMakeBuild(build_ext):
         build_temp_dir.mkdir(parents=True, exist_ok=True)
 
         cmake = shutil.which("cmake", path=env["PATH"])
+        if cmake is None:
+            raise OSError("CMake is not installed.")
+
         subprocess.run(
             [cmake, ext.src_dir, *cmake_args],
             cwd=build_temp_dir,

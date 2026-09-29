@@ -1,0 +1,7 @@
+armpl provides BLAS and LAPACK that can be used from CMake via:
+
+  set(BLA_VENDOR Arm)
+  set(BLA_PKGCONFIG_BLAS armpl-lp64-seq)
+  set(BLA_PREFER_PKGCONFIG ON)
+  find_package(BLAS REQUIRED)
+  target_link_libraries(main PRIVATE BLAS::BLAS)

@@ -15,7 +15,12 @@ function buildenv() {
         throw 'MSVC is not installed.'
     }
 
-    Invoke-BatchFile "$vsDir\VC\Auxiliary\Build\vcvars64.bat"
+    $vcvars = switch ($env:PROCESSOR_ARCHITECTURE) {
+        'AMD64' { 'vcvars64.bat' }
+        'ARM64' { 'vcvarsarm64.bat' }
+        default { throw "Unsupported architecture: $env:PROCESSOR_ARCHITECTURE" }
+    }
+    Invoke-BatchFile "$vsDir\VC\Auxiliary\Build\$vcvars"
 }
 
 if ($args.Length -lt 1) {
