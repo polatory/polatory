@@ -24,21 +24,17 @@
 
 Please check out the [wiki](https://github.com/polatory/polatory/wiki).
 
-## Contribution
+## Platform Support
 
-Contributions are welcome! You can contribute to this project in several ways:
+The following platforms are supported with the listed BLAS implementations:
 
-### Star the Repo
+|             |    x64    |     ARM64     |
+| :---------: | :-------: | :-----------: |
+| **Windows** | ☑️ oneMKL |   ☑️ ArmPL    |
+|  **macOS**  |    N/A    | ☑️ Accelerate |
+|  **Linux**  | ☑️ oneMKL |   ☑️ ArmPL    |
 
-Just click <kbd>⭐️ Star</kbd> at the top of the page to show your interest!
-
-### <a href="https://github.com/polatory/polatory/issues">File an Issue</a>
-
-Do not hesitate to file an issue if you have any questions, feature requests, or have encountered unexpected results (please include a minimal reproducible example).
-
-### <a href="https://github.com/polatory/polatory/pulls">Submit a Pull Request</a>
-
-You can fork the repo to make improvements, then feel free to submit a pull request!
+oneMKL and ArmPL are automatically downloaded and extracted into the build tree during the configuration process.
 
 ## References
 
