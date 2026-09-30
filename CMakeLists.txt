@@ -66,6 +66,17 @@ if(NOT BLA_VENDOR)
     endif()
 endif()
 
+if(MSVC)
+    string(TOLOWER "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" MSVC_ARCH)
+    file(TO_CMAKE_PATH "$ENV{VCToolsRedistDir}" MSVC_REDIST_DIR)
+    file(GLOB POLATORY_DLLS
+        "${MSVC_REDIST_DIR}/debug_nonredist/${MSVC_ARCH}/Microsoft.VC*.OpenMP.LLVM/libomp140.*.dll"
+    )
+    if(NOT POLATORY_DLLS)
+        message(FATAL_ERROR "LLVM OpenMP runtime not found in VCToolsRedistDir.")
+    endif()
+endif()
+
 if(BLA_VENDOR STREQUAL "Intel10_64lp_seq")
     set(MKL_ARCH "intel64")
     if(UNIX)
@@ -79,7 +90,7 @@ if(BLA_VENDOR STREQUAL "Intel10_64lp_seq")
 
     if(MSVC)
         # https://www.intel.com/content/www/us/en/docs/onemkl/developer-guide-windows/2025-2/contents-of-the-bin-directory.html
-        set(POLATORY_DLLS
+        list(APPEND POLATORY_DLLS
             ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx2.2.dll
             ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx512.2.dll
             ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_core.2.dll
