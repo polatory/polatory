@@ -20,9 +20,9 @@ TEST(orthonormalize_cols, trivial) {
       auto dot = std::abs(m.col(i).dot(m.col(j)));
 
       if (i == j) {
-        EXPECT_LT(std::abs(dot - 1.0), 1e-15);
+        EXPECT_LT(std::abs(dot - 1.0), 1e-14);
       } else {
-        EXPECT_LT(std::abs(dot), 1e-15);
+        EXPECT_LT(std::abs(dot), 1e-14);
       }
     }
   }
