@@ -54,9 +54,9 @@ find_package(nanoflann CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(xsimd CONFIG REQUIRED)
 find_package(xtensor CONFIG REQUIRED)
-find_package(xtensor-blas CONFIG REQUIRED)
 find_package(xtl CONFIG REQUIRED)
 find_path(POCKETFFT_INCLUDE_DIR pocketfft_hdronly.h REQUIRED)
+find_path(XTENSOR_BLAS_INCLUDE_DIR xtensor-blas/xlinalg.hpp REQUIRED)
 
 set(VCPKG_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
 

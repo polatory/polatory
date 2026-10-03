@@ -83,6 +83,7 @@ target_include_directories(${TARGET} SYSTEM PUBLIC
     ${POCKETFFT_INCLUDE_DIR}
     ${PROJECT_SOURCE_DIR}/third_party/cpp_tools/include
     ${PROJECT_SOURCE_DIR}/third_party/scalfmm/include
+    ${XTENSOR_BLAS_INCLUDE_DIR}
 )
 
 target_link_libraries(${TARGET} PUBLIC
@@ -98,7 +99,6 @@ target_link_libraries(${TARGET} PUBLIC
     OpenMP::OpenMP_CXX
     xsimd
     xtensor
-    xtensor-blas
     xtl
 )
 
