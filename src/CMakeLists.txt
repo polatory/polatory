@@ -80,8 +80,9 @@ target_include_directories(${TARGET} PUBLIC
 )
 
 target_include_directories(${TARGET} SYSTEM PUBLIC
-    ${CMAKE_BINARY_DIR}/scalfmm/install/include
     ${POCKETFFT_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/third_party/cpp_tools/include
+    ${PROJECT_SOURCE_DIR}/third_party/scalfmm/include
 )
 
 target_link_libraries(${TARGET} PUBLIC
@@ -95,6 +96,10 @@ target_link_libraries(${TARGET} PUBLIC
     Eigen3::Eigen
     FastFloat::fast_float
     OpenMP::OpenMP_CXX
+    xsimd
+    xtensor
+    xtensor-blas
+    xtl
 )
 
 target_link_libraries(${TARGET} PRIVATE
@@ -104,33 +109,9 @@ target_link_libraries(${TARGET} PRIVATE
     nanoflann::nanoflann
 )
 
-include(ExternalProject)
-
-set(SCALFMM_CMAKE_ARGS
-    -DBLA_VENDOR=${BLA_VENDOR}
-    -DCMAKE_TOOLCHAIN_FILE=${PROJECT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
-    -DVCPKG_INSTALLED_DIR=${VCPKG_INSTALLED_DIR}
-    -DVCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/scalfmm/install
-    -Dscalfmm_BUILD_CHECK=OFF
-    -Dscalfmm_BUILD_EXAMPLES=OFF
-    -Dscalfmm_BUILD_TOOLS=OFF
-)
-
-if(MSVC)
-    list(APPEND SCALFMM_CMAKE_ARGS
-        -DCMAKE_CXX_COMPILER=clang++
-        -DCMAKE_CXX_FLAGS=-fopenmp
-    )
-endif()
-
 if(BLA_VENDOR STREQUAL "Intel10_64lp_seq")
     target_link_libraries(${TARGET} PRIVATE
         $<LINK_ONLY:MKL::MKL>
-    )
-
-    list(APPEND SCALFMM_CMAKE_ARGS
-        -Dscalfmm_USE_MKL=ON
     )
 elseif(BLA_VENDOR STREQUAL "Arm")
     set(BLA_PKGCONFIG_BLAS armpl-lp64-seq)
@@ -140,29 +121,11 @@ elseif(BLA_VENDOR STREQUAL "Arm")
     target_link_libraries(${TARGET} PRIVATE
         BLAS::BLAS
     )
-
-    list(APPEND SCALFMM_CMAKE_ARGS
-        -DBLA_PKGCONFIG_BLAS=armpl-lp64-seq
-        -DBLA_PKGCONFIG_LAPACK=armpl-lp64-seq
-        -DBLA_PREFER_PKGCONFIG=ON
-    )
 elseif(BLA_VENDOR STREQUAL "Apple")
     target_link_libraries(${TARGET} PRIVATE
         "-framework Accelerate"
     )
 endif()
-
-externalproject_add(
-    scalfmm
-    PREFIX ${CMAKE_BINARY_DIR}/scalfmm
-    GIT_REPOSITORY https://github.com/polatory/ScalFMM3.git
-    GIT_TAG polatory2
-    GIT_SHALLOW ON
-    GIT_REMOTE_UPDATE_STRATEGY CHECKOUT
-    CMAKE_ARGS ${SCALFMM_CMAKE_ARGS}
-)
-
-add_dependencies(polatory scalfmm)
 
 if(UNIX)
     # target_link_options(${TARGET} PUBLIC -fsanitize=address)

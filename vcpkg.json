@@ -18,7 +18,11 @@
     "fast-float",
     "libigl",
     "nanoflann",
-    "pocketfft"
+    "pocketfft",
+    "xsimd",
+    "xtensor",
+    "xtensor-blas",
+    "xtl"
   ],
   "default-features": [
     {
