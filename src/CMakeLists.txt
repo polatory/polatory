@@ -45,8 +45,12 @@ add_library(${TARGET} STATIC
     point_cloud/sdf_data_generator.cpp
 )
 
+set_target_properties(${TARGET} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -fPIC -Wall -Wextra -Werror)
+    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Werror)
     # target_compile_options(${TARGET} PUBLIC -g -fno-omit-frame-pointer -fsanitize=address)
     # target_compile_options(${TARGET} PUBLIC -g -fno-omit-frame-pointer -fsanitize=undefined)
 elseif(MSVC)
@@ -61,7 +65,9 @@ endif()
 target_compile_definitions(${TARGET} PUBLIC
     -DEIGEN_DONT_PARALLELIZE
     -DEIGEN_MPL2_ONLY
+    -DEIGEN_USE_BLAS
 )
+
 if(MSVC)
     target_compile_definitions(${TARGET} PUBLIC
         -DWIN32_LEAN_AND_MEAN
@@ -80,8 +86,6 @@ target_include_directories(${TARGET} SYSTEM PUBLIC
 
 target_link_libraries(${TARGET} PUBLIC
     Boost::algorithm
-    Boost::any
-    Boost::container
     Boost::container_hash
     Boost::filesystem
     Boost::iterator
@@ -94,6 +98,7 @@ target_link_libraries(${TARGET} PUBLIC
 )
 
 target_link_libraries(${TARGET} PRIVATE
+    Boost::container
     Ceres::ceres
     igl::igl_core
     nanoflann::nanoflann
@@ -120,12 +125,7 @@ if(MSVC)
 endif()
 
 if(BLA_VENDOR STREQUAL "Intel10_64lp_seq")
-    target_compile_definitions(${TARGET} PUBLIC
-        # -DEIGEN_USE_MKL_ALL
-        -DEIGEN_USE_BLAS
-    )
-
-    target_link_libraries(${TARGET} PUBLIC
+    target_link_libraries(${TARGET} PRIVATE
         $<LINK_ONLY:MKL::MKL>
     )
 
@@ -137,11 +137,7 @@ elseif(BLA_VENDOR STREQUAL "Arm")
     set(BLA_PREFER_PKGCONFIG ON)
     find_package(BLAS REQUIRED)
 
-    target_compile_definitions(${TARGET} PUBLIC
-        -DEIGEN_USE_BLAS
-    )
-
-    target_link_libraries(${TARGET} PUBLIC
+    target_link_libraries(${TARGET} PRIVATE
         BLAS::BLAS
     )
 
@@ -151,18 +147,9 @@ elseif(BLA_VENDOR STREQUAL "Arm")
         -DBLA_PREFER_PKGCONFIG=ON
     )
 elseif(BLA_VENDOR STREQUAL "Apple")
-    target_compile_definitions(${TARGET} PUBLIC
-        -DEIGEN_USE_BLAS
-    )
-
-    target_link_libraries(${TARGET} INTERFACE
+    target_link_libraries(${TARGET} PRIVATE
         "-framework Accelerate"
     )
-endif()
-
-if(APPLE)
-    # Avoid linker error with XCode 15
-    target_link_options(${TARGET} PUBLIC -ld_classic)
 endif()
 
 externalproject_add(

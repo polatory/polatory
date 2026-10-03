@@ -23,6 +23,7 @@ set_target_properties(${TARGET} PROPERTIES
 )
 
 target_link_libraries(${TARGET} PRIVATE
+    Boost::any
     Boost::program_options
     polatory
 )
