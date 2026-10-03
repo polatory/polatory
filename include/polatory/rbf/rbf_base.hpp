@@ -101,7 +101,7 @@ class RbfBase {
 };
 
 template <int N>
-static double pow(double x) {
+double pow(double x) {
   if constexpr (N == -1) {
     return 1.0 / x;
   }
@@ -125,7 +125,7 @@ static double pow(double x) {
 }
 
 template <int N>
-static double sqrt_pow(double x) {
+double sqrt_pow(double x) {
   if constexpr (N == 3) {
     return x * std::sqrt(x);
   }
