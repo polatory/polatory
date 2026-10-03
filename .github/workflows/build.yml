@@ -1,0 +1,105 @@
+name: build
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ inputs.runner }}
+
+    env:
+      VCPKG_CACHE_KEY_PREFIX: vcpkg_${{ inputs.runner }}_
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_binary_cache
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Prerequisites (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libc++-dev libomp-dev
+
+      - name: Prerequisites (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake llvm ninja
+          # The runner has 7 GB of RAM, and some translation units need about 1.7 GB each.
+          echo "CMAKE_BUILD_PARALLEL_LEVEL=3" >> "$GITHUB_ENV"
+
+      - uses: actions/cache/restore@v6
+        id: vcpkg-restore
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: ${{ env.VCPKG_CACHE_KEY_PREFIX }}
+
+      - name: Configure
+        id: configure
+        run: |
+          cmake -E make_directory "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          ./run configure
+
+      - name: Build
+        run: ./run build
+
+      - name: Test
+        run: ./run test
+
+      - name: Build Python bindings
+        id: python-build
+        run: python -m pip install -v .
+
+      - name: Test Python bindings
+        run: python python/tests/test.py
+
+      # Keeps only the archives this run installed. Cache entries are immutable, so a changed
+      # set of ABI hashes is saved under a new key, which the next restore picks as the newest.
+      - name: Prune vcpkg binary cache
+        id: vcpkg-prune
+        if: ${{ !cancelled() && steps.configure.outcome == 'success' && steps.python-build.outcome != 'skipped' }}
+        shell: python
+        env:
+          MATCHED_KEY: ${{ steps.vcpkg-restore.outputs.cache-matched-key }}
+        run: |
+          import glob
+          import hashlib
+          import os
+
+          abis = set()
+          for status in glob.glob("build/vcpkg_installed/vcpkg/status") + glob.glob(
+              "build/temp.*/polatory/vcpkg_installed/vcpkg/status"
+          ):
+              with open(status, encoding="utf-8") as f:
+                  abis.update(line.removeprefix("Abi:").strip() for line in f if line.startswith("Abi:"))
+          if not abis:
+              raise SystemExit("No installed vcpkg packages found.")
+
+          for archive in glob.glob(os.path.join(os.environ["VCPKG_DEFAULT_BINARY_CACHE"], "*", "*.zip")):
+              if os.path.basename(archive).removesuffix(".zip") not in abis:
+                  os.remove(archive)
+
+          prefix = os.environ["VCPKG_CACHE_KEY_PREFIX"]
+          digest = hashlib.sha256("\n".join(sorted(abis)).encode()).hexdigest()
+          if not os.environ["MATCHED_KEY"].startswith(f"{prefix}{digest}_"):
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write(f"key={prefix}{digest}_{os.environ['GITHUB_RUN_ID']}\n")
+
+      - uses: actions/cache/save@v6
+        if: ${{ !cancelled() && steps.vcpkg-prune.outputs.key != '' }}
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: ${{ steps.vcpkg-prune.outputs.key }}
