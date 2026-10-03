@@ -91,6 +91,8 @@ class CMakeBuild(build_ext):
                 env["CC"] = f"{brew_prefix}/opt/llvm/bin/clang"
             if "CXX" not in env:
                 env["CXX"] = f"{brew_prefix}/opt/llvm/bin/clang++"
+            if "LDFLAGS" not in env:
+                env["LDFLAGS"] = f"-L{brew_prefix}/opt/llvm/lib/c++ -lc++"
         elif sys.platform == "linux":
             if "CC" not in env:
                 env["CC"] = "clang"
