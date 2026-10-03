@@ -1,0 +1,5 @@
+{
+  "name": "python3",
+  "version-string": "system",
+  "description": "Empty package so that pybind11 uses the system Python instead of building CPython"
+}
