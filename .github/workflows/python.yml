@@ -1,0 +1,112 @@
+name: Python
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  sdist:
+    name: Build sdist
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Build sdist
+        run: |
+          python -m pip install build twine
+          python -m build --sdist
+          python -m twine check --strict dist/*
+
+      - name: Check version against release tag
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ ! -f "dist/polatory-${TAG#v}.tar.gz" ]; then
+            echo "::error::Release tag $TAG does not match the version in vcpkg.json."
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/
+          retention-days: 30
+
+  test:
+    name: Test
+    needs: sdist
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-26.04
+          - ubuntu-26.04-arm
+          - macos-26
+          - windows-2025-vs2026
+          - windows-11-vs2026-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_binary_cache
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: sdist
+          path: dist/
+
+      - uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg_${{ matrix.runner }}_
+
+      - name: Install
+        shell: bash
+        run: |
+          cmake -E make_directory "$VCPKG_DEFAULT_BINARY_CACHE"
+          python -m pip install -v dist/*.tar.gz
+
+      - name: Test
+        run: python python/tests/test.py
+
+  publish:
+    name: Publish to PyPI
+    needs: test
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    runs-on: ubuntu-26.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/polatory/
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: sdist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,4 +1,4 @@
-name: build
+name: Build
 
 on:
   workflow_call:
@@ -14,7 +14,6 @@ jobs:
   build:
     name: Build
     runs-on: ${{ inputs.runner }}
-
     env:
       VCPKG_CACHE_KEY_PREFIX: vcpkg_${{ inputs.runner }}_
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_binary_cache
@@ -24,22 +23,7 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.14"
-
-      - name: Prerequisites (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang libc++-dev libomp-dev
-
-      - name: Prerequisites (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install cmake llvm ninja
-          # The runner has 7 GB of RAM, and some translation units need about 1.7 GB each.
-          echo "CMAKE_BUILD_PARALLEL_LEVEL=3" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/setup
 
       - uses: actions/cache/restore@v6
         id: vcpkg-restore
@@ -59,18 +43,11 @@ jobs:
       - name: Test
         run: ./run test
 
-      - name: Build Python bindings
-        id: python-build
-        run: python -m pip install -v .
-
-      - name: Test Python bindings
-        run: python python/tests/test.py
-
       # Keeps only the archives this run installed. Cache entries are immutable, so a changed
       # set of ABI hashes is saved under a new key, which the next restore picks as the newest.
       - name: Prune vcpkg binary cache
         id: vcpkg-prune
-        if: ${{ !cancelled() && steps.configure.outcome == 'success' && steps.python-build.outcome != 'skipped' }}
+        if: ${{ !cancelled() && steps.configure.outcome == 'success' }}
         shell: python
         env:
           MATCHED_KEY: ${{ steps.vcpkg-restore.outputs.cache-matched-key }}
@@ -79,12 +56,8 @@ jobs:
           import hashlib
           import os
 
-          abis = set()
-          for status in glob.glob("build/vcpkg_installed/vcpkg/status") + glob.glob(
-              "build/temp.*/polatory/vcpkg_installed/vcpkg/status"
-          ):
-              with open(status, encoding="utf-8") as f:
-                  abis.update(line.removeprefix("Abi:").strip() for line in f if line.startswith("Abi:"))
+          with open("build/vcpkg_installed/vcpkg/status", encoding="utf-8") as f:
+              abis = {line.removeprefix("Abi:").strip() for line in f if line.startswith("Abi:")}
           if not abis:
               raise SystemExit("No installed vcpkg packages found.")
 
