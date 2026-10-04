@@ -50,11 +50,11 @@ set_target_properties(${TARGET} PROPERTIES
 )
 
 if(UNIX)
-    target_compile_options(${TARGET} PUBLIC -Wall -Wextra -Werror)
+    target_compile_options(${TARGET} PUBLIC -Wall -Wextra)
     # target_compile_options(${TARGET} PUBLIC -g -fno-omit-frame-pointer -fsanitize=address)
     # target_compile_options(${TARGET} PUBLIC -g -fno-omit-frame-pointer -fsanitize=undefined)
 elseif(MSVC)
-    target_compile_options(${TARGET} PUBLIC /W4 /WX /wd4702)
+    target_compile_options(${TARGET} PUBLIC /W4 /wd4702)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         target_compile_options(${TARGET} PUBLIC
             -Wno-unused-command-line-argument

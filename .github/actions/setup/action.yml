@@ -1,0 +1,24 @@
+name: Set up build environment
+description: Installs the required build tools
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.14"
+
+    - name: Prerequisites (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang libc++-dev libomp-dev
+
+    - name: Prerequisites (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install cmake llvm ninja
+        # The runner has 7 GB of RAM, and some translation units need ~1.7 GB each.
+        echo "CMAKE_BUILD_PARALLEL_LEVEL=3" >> "$GITHUB_ENV"

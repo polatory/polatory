@@ -46,7 +46,7 @@ class CMakeBuild(build_ext):
                 vcvars_name = "vcvarsarm64.bat"
             case platform:
                 raise OSError(f"Unsupported platform: {platform}")
-        vcvars =(vs_dir / "VC/Auxiliary/Build" / vcvars_name).resolve()
+        vcvars = (vs_dir / "VC/Auxiliary/Build" / vcvars_name).resolve()
 
         output = subprocess.run(
             f'"{vcvars}" && set', stdout=subprocess.PIPE, check=True, text=True
@@ -79,6 +79,7 @@ class CMakeBuild(build_ext):
             "-DBUILD_TESTS=OFF",
             f"-DPOLATORY_VERSION={version}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
+            "--compile-no-warning-as-error",
         ]
 
         env = os.environ.copy()

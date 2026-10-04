@@ -1,0 +1,22 @@
+include CMakeLists.txt
+include vcpkg-configuration.json
+include vcpkg.json
+graft cmake
+graft include
+graft ports
+graft python
+graft src
+graft third_party
+
+include vcpkg/.vcpkg-root
+include vcpkg/LICENSE.txt
+include vcpkg/NOTICE.txt
+include vcpkg/bootstrap-vcpkg.bat
+include vcpkg/bootstrap-vcpkg.sh
+graft vcpkg/ports
+graft vcpkg/scripts
+graft vcpkg/triplets
+graft vcpkg/versions
+
+global-exclude .DS_Store
+global-exclude *.py[cod]
