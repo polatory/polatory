@@ -1,3 +1,32 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "polatory"
+dynamic = ["version"]
+description = "Fast and memory-efficient radial basis function (RBF) interpolation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT AND CECILL-C"
+license-files = ["LICENSE", "third_party/*/LICENCE", "vcpkg/LICENSE.txt"]
+authors = [{ name = "Masashi Mizuno" }]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = ["numpy"]
+
+[project.urls]
+Homepage = "https://github.com/polatory/polatory"
+Documentation = "https://github.com/polatory/polatory/wiki"
+Issues = "https://github.com/polatory/polatory/issues"
+
+[tool.setuptools]
+package-dir = { "" = "python/src" }
+packages = ["polatory"]
