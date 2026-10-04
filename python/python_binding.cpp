@@ -206,6 +206,9 @@ PYBIND11_MODULE(_core, m) {
   using Mat = Mat3;
   using point_cloud::NormalEstimator;
 
+  py::object orig_name = m.attr("__name__");
+  m.attr("__name__") = "polatory";
+
   py::class_<NormalEstimator>(m, "NormalEstimator")
       .def(py::init<const geometry::Points3&>(), "points"_a)
       .def_property_readonly("normals", &NormalEstimator::normals, py::return_value_policy::copy)
@@ -305,4 +308,6 @@ PYBIND11_MODULE(_core, m) {
   define_module<1>(one);
   define_module<2>(two);
   define_module<3>(three);
+
+  m.attr("__name__") = orig_name;
 }
