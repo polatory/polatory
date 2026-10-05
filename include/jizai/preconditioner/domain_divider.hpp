@@ -96,18 +96,19 @@ class DomainDivider {
       std::vector<MixedPoint> left_points(points.begin(), points.begin() + mid);
       std::vector<MixedPoint> right_points(points.begin() + mid, points.end());
 
+      auto level = cluster.level;
       current_size -= cluster.center.multiplicity();
       clusters.pop();
 
       if (!left_points.empty()) {
-        Cluster left(std::move(left_points), cluster.level + 1);
+        Cluster left(std::move(left_points), level + 1);
         initialize_cluster(left);
         current_size += left.center.multiplicity();
         clusters.push(std::move(left));
       }
 
       if (!right_points.empty()) {
-        Cluster right(std::move(right_points), cluster.level + 1);
+        Cluster right(std::move(right_points), level + 1);
         initialize_cluster(right);
         current_size += right.center.multiplicity();
         clusters.push(std::move(right));
