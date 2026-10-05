@@ -172,14 +172,14 @@ void define_module(py::module& m) {
       .def_property_readonly("direction", &Variogram::direction, py::return_value_policy::copy)
       .def_property_readonly("num_bins", &Variogram::num_bins)
       .def_property_readonly("num_pairs", &Variogram::num_pairs)
-      .def("back_transform", &Variogram::back_transform, "t"_a);
+      .def("back_transform", &Variogram::back_transform, "nst"_a);
 
   // Depends on: NormalScoreTransformation, Variogram
   py::class_<VariogramSet>(m, "VariogramSet")
       .def_property_readonly("num_pairs", &VariogramSet::num_pairs)
       .def_property_readonly("num_variograms", &VariogramSet::num_variograms)
       .def_property_readonly("variograms", &VariogramSet::variograms, py::return_value_policy::copy)
-      .def("back_transform", &VariogramSet::back_transform, "t"_a)
+      .def("back_transform", &VariogramSet::back_transform, "nst"_a)
       .def_static("load", &VariogramSet::load, "filename"_a)
       .def("save", &VariogramSet::save, "filename"_a);
 

@@ -21,9 +21,9 @@ class Variogram {
         bin_num_pairs_{std::move(bin_num_pairs)},
         direction_{direction} {}
 
-  void back_transform(const NormalScoreTransformation& t) {
+  void back_transform(const NormalScoreTransformation& nst) {
     for (auto& gamma : bin_gamma_) {
-      gamma = t.back_transform_gamma(gamma);
+      gamma = nst.back_transform_gamma(gamma);
     }
   }
 

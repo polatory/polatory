@@ -24,9 +24,9 @@ class VariogramSet {
   VariogramSet& operator=(const VariogramSet&) = default;
   VariogramSet& operator=(VariogramSet&&) = default;
 
-  void back_transform(const NormalScoreTransformation& t) {
+  void back_transform(const NormalScoreTransformation& nst) {
     for (auto& v : variograms_) {
-      v.back_transform(t);
+      v.back_transform(nst);
     }
   }
 
