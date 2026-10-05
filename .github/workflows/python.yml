@@ -85,6 +85,8 @@ jobs:
 
       - name: Install
         shell: bash
+        env:
+          TMPDIR: ${{ runner.temp }}
         run: |
           cmake -E make_directory "$VCPKG_DEFAULT_BINARY_CACHE"
           python -m pip install -v dist/*.tar.gz
