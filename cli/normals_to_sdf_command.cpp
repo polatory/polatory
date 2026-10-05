@@ -55,7 +55,7 @@ class NormalsToSdfCommand : public Command {
              ->default_value(Mat3::Identity(), "1 0 0 0 1 0 0 0 1")
              ->value_name("A_11 A_12 ... A_33"),
          "Elements of the anisotropy matrix")  //
-        ("ratio", po::value(&opts.ratio)->default_value(0.5, "0.5")->value_name("0.0 to 1.0"),
+        ("ratio", po::value(&opts.ratio)->default_value(1.0, "1.0")->value_name("0.0 to 1.0"),
          "Ratio of normals to use for generating off-surface points")  //
         ("out", po::value(&opts.out_file)->required()->value_name("FILE"),
          "Output file in CSV format:\n  X,Y,Z,VAL")  //
