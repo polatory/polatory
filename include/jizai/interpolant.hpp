@@ -4,6 +4,7 @@
 #include <boost/container_hash/hash.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <format>
+#include <jizai/common/concatenate.hpp>
 #include <jizai/common/io.hpp>
 #include <jizai/geometry/bbox3d.hpp>
 #include <jizai/geometry/point3d.hpp>
@@ -17,6 +18,7 @@
 #include <memory>
 #include <stdexcept>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace jizai {
@@ -33,6 +35,7 @@ class Interpolant {
   using Model = Model<kDim>;
   using Point = geometry::Point<kDim>;
   using Points = geometry::Points<kDim>;
+  using Vectors = geometry::Vectors<kDim>;
 
  public:
   explicit Interpolant(const Model& model) : model_(model) {}
@@ -50,18 +53,25 @@ class Interpolant {
   }
 
   VecX evaluate(const Points& points, double accuracy = kInfinity) {
-    return evaluate(points, Points(0, kDim), accuracy, kInfinity);
+    return evaluate(points, Points(0, kDim), accuracy, kInfinity).first;
   }
 
-  VecX evaluate(const Points& points, const Points& grad_points, double accuracy = kInfinity,
-                double grad_accuracy = kInfinity) {
+  std::pair<VecX, Vectors> evaluate(const Points& points, const Points& grad_points,
+                                    double accuracy = kInfinity, double grad_accuracy = kInfinity) {
     throw_if_not_fitted();
 
     check_accuracy(accuracy, grad_accuracy);
 
     set_evaluation_bbox_impl(Bbox::from_points(points).convex_hull(Bbox::from_points(grad_points)),
                              accuracy, grad_accuracy);
-    return evaluate_impl(points, grad_points);
+
+    auto mu = points.rows();
+    auto sigma = grad_points.rows();
+    auto rhs = evaluate_impl(points, grad_points);
+
+    VecX values = rhs.head(mu);
+    Vectors grad_values = rhs.tail(kDim * sigma).template reshaped<Eigen::RowMajor>(sigma, kDim);
+    return {std::move(values), std::move(grad_values)};
   }
 
   VecX evaluate_impl(const Points& points) const { return evaluate_impl(points, Points(0, kDim)); }
@@ -74,20 +84,16 @@ class Interpolant {
 
   void fit(const Points& points, const VecX& values, double tolerance, int max_iter = 100,
            double accuracy = kInfinity, const Interpolant* initial = nullptr) {
-    fit(points, Points(0, kDim), values, tolerance, kInfinity, max_iter, accuracy, kInfinity,
-        initial);
+    fit(points, Points(0, kDim), values, Vectors(0, kDim), tolerance, kInfinity, max_iter, accuracy,
+        kInfinity, initial);
   }
 
-  void fit(const Points& points, const Points& grad_points, const VecX& values, double tolerance,
-           double grad_tolerance, int max_iter = 100, double accuracy = kInfinity,
-           double grad_accuracy = kInfinity, const Interpolant* initial = nullptr) {
+  void fit(const Points& points, const Points& grad_points, const VecX& values,
+           const Vectors& grad_values, double tolerance, double grad_tolerance, int max_iter = 100,
+           double accuracy = kInfinity, double grad_accuracy = kInfinity,
+           const Interpolant* initial = nullptr) {
     check_num_points(points, grad_points);
-
-    auto n_rhs = points.rows() + kDim * grad_points.rows();
-    if (values.rows() != n_rhs) {
-      throw std::invalid_argument(std::format("values.rows() must be equal to {}", n_rhs));
-    }
-
+    check_values(points, grad_points, values, grad_values);
     check_tolerance(tolerance, grad_tolerance);
     check_max_iter(max_iter);
     check_accuracy(accuracy, grad_accuracy);
@@ -101,7 +107,9 @@ class Interpolant {
     clear();
 
     Fitter fitter(model_, points, grad_points);
-    weights_ = fitter.fit(values, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy,
+    auto rhs =
+        common::concatenate_rows<VecX>(values, grad_values.template reshaped<Eigen::RowMajor>());
+    weights_ = fitter.fit(rhs, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy,
                           initial != nullptr ? &initial_weights : nullptr);
 
     fitted_ = true;
@@ -112,20 +120,16 @@ class Interpolant {
 
   void fit_incrementally(const Points& points, const VecX& values, double tolerance,
                          int max_iter = 100, double accuracy = kInfinity) {
-    fit_incrementally(points, Points(0, kDim), values, tolerance, kInfinity, max_iter, accuracy,
-                      kInfinity);
+    fit_incrementally(points, Points(0, kDim), values, Vectors(0, kDim), tolerance, kInfinity,
+                      max_iter, accuracy, kInfinity);
   }
 
   void fit_incrementally(const Points& points, const Points& grad_points, const VecX& values,
-                         double tolerance, double grad_tolerance, int max_iter = 100,
-                         double accuracy = kInfinity, double grad_accuracy = kInfinity) {
+                         const Vectors& grad_values, double tolerance, double grad_tolerance,
+                         int max_iter = 100, double accuracy = kInfinity,
+                         double grad_accuracy = kInfinity) {
     check_num_points(points, grad_points);
-
-    if (values.rows() != points.rows() + kDim * grad_points.rows()) {
-      throw std::invalid_argument(std::format("values.rows() must be equal to {}",
-                                              points.rows() + kDim * grad_points.rows()));
-    }
-
+    check_values(points, grad_points, values, grad_values);
     check_tolerance(tolerance, grad_tolerance);
     check_max_iter(max_iter);
     check_accuracy(accuracy, grad_accuracy);
@@ -135,8 +139,10 @@ class Interpolant {
     IncrementalFitter fitter(model_, points, grad_points);
     std::vector<Index> center_indices;
     std::vector<Index> grad_center_indices;
+    auto rhs =
+        common::concatenate_rows<VecX>(values, grad_values.template reshaped<Eigen::RowMajor>());
     std::tie(center_indices, grad_center_indices, weights_) =
-        fitter.fit(values, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy);
+        fitter.fit(rhs, tolerance, grad_tolerance, max_iter, accuracy, grad_accuracy);
 
     fitted_ = true;
     centers_ = points(center_indices, kAll);
@@ -309,6 +315,17 @@ class Interpolant {
 
     if (!(grad_tolerance > 0.0)) {
       throw std::invalid_argument("grad_tolerance must be positive");
+    }
+  }
+
+  void check_values(const Points& points, const Points& grad_points, const VecX& values,
+                    const Vectors& grad_values) const {
+    if (values.rows() != points.rows()) {
+      throw std::invalid_argument("values.rows() must be equal to points.rows()");
+    }
+
+    if (grad_values.rows() != grad_points.rows()) {
+      throw std::invalid_argument("grad_values.rows() must be equal to grad_points.rows()");
     }
   }
 

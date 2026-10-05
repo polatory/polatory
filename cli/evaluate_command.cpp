@@ -109,13 +109,10 @@ class EvaluateCommand : public Command {
     MatX table = read_table(opts.points_file);
     Points points = table(kAll, Eigen::seqN(0, Dim));
 
-    auto n = points.rows();
     if (opts.grads) {
-      auto values = inter.evaluate(points, points, opts.accuracy, opts.grad_accuracy);
-      write_table(
-          opts.out_file,
-          concatenate_cols<MatX>(points, values.head(n),
-                                 values.tail(Dim * n).template reshaped<Eigen::RowMajor>(n, Dim)));
+      auto [values, grad_values] =
+          inter.evaluate(points, points, opts.accuracy, opts.grad_accuracy);
+      write_table(opts.out_file, concatenate_cols<MatX>(points, values, grad_values));
     } else {
       auto values = inter.evaluate(points, opts.accuracy);
       write_table(opts.out_file, concatenate_cols<MatX>(points, values));

@@ -44,6 +44,7 @@ void define_module(py::module& m) {
   using VariogramCalculator = kriging::VariogramCalculator<Dim>;
   using VariogramFitting = kriging::VariogramFitting<Dim>;
   using VariogramSet = kriging::VariogramSet<Dim>;
+  using Vectors = geometry::Vectors<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
       .def(py::init<>())
@@ -126,20 +127,21 @@ void define_module(py::module& m) {
            "points"_a, "values"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
            "initial"_a = nullptr)
       .def("fit",
-           py::overload_cast<const Points&, const Points&, const VecX&, double, double, int, double,
-                             double, const Interpolant*>(&Interpolant::fit),
-           "points"_a, "grad_points"_a, "values"_a, "tolerance"_a, "grad_tolerance"_a,
-           "max_iter"_a = 100, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity,
-           "initial"_a = nullptr)
+           py::overload_cast<const Points&, const Points&, const VecX&, const Vectors&, double,
+                             double, int, double, double, const Interpolant*>(&Interpolant::fit),
+           "points"_a, "grad_points"_a, "values"_a, "grad_values"_a, "tolerance"_a,
+           "grad_tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
+           "grad_accuracy"_a = kInfinity, "initial"_a = nullptr)
       .def("fit_incrementally",
            py::overload_cast<const Points&, const VecX&, double, int, double>(
                &Interpolant::fit_incrementally),
            "points"_a, "values"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity)
       .def("fit_incrementally",
-           py::overload_cast<const Points&, const Points&, const VecX&, double, double, int, double,
-                             double>(&Interpolant::fit_incrementally),
-           "points"_a, "grad_points"_a, "values"_a, "tolerance"_a, "grad_tolerance"_a,
-           "max_iter"_a = 100, "accuracy"_a = kInfinity, "grad_accuracy"_a = kInfinity)
+           py::overload_cast<const Points&, const Points&, const VecX&, const Vectors&, double,
+                             double, int, double, double>(&Interpolant::fit_incrementally),
+           "points"_a, "grad_points"_a, "values"_a, "grad_values"_a, "tolerance"_a,
+           "grad_tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity,
+           "grad_accuracy"_a = kInfinity)
       .def("fit_inequality",
            py::overload_cast<const Points&, const VecX&, const VecX&, const VecX&, double, int,
                              double, const Interpolant*>(&Interpolant::fit_inequality),

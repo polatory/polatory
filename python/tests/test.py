@@ -123,14 +123,17 @@ def test_interpolant(dim, mod, tmp):
     points = rng.random((200, dim))
     values = np.sin(3.0 * points.sum(axis=1))
     grad_points = points[:10]
-    grad_values = np.repeat(3.0 * np.cos(3.0 * grad_points.sum(axis=1)), dim)
-    all_values = np.concatenate([values, grad_values])
+    grad_values = np.repeat(3.0 * np.cos(3.0 * grad_points.sum(axis=1)), dim).reshape(
+        -1, dim
+    )
 
     # Biharmonic3D reduces to |x| in 1D, which cannot fit gradients.
     interp = mod.Interpolant(mod.Model(mod.Triharmonic3D([1.0]), poly_degree=1))
     interp.fit(points, values, 1e-6)
     assert np.abs(interp.evaluate(points) - values).max() < 1e-5
-    assert interp.evaluate(points, grad_points).shape == all_values.shape
+    eval_values, eval_grads = interp.evaluate(points, grad_points)
+    assert eval_values.shape == values.shape
+    assert eval_grads.size == grad_values.size
 
     weights = interp.weights
     weights[0] += 1.0
@@ -143,10 +146,12 @@ def test_interpolant(dim, mod, tmp):
     assert interp.grad_centers.size == 0
     assert np.array_equal(interp.bbox.min, points.min(axis=0))
 
-    interp.fit(points, grad_points, all_values, 1e-6, 1e-6, initial=interp)
-    assert np.abs(interp.evaluate(points, grad_points) - all_values).max() < 1e-5
+    interp.fit(points, grad_points, values, grad_values, 1e-6, 1e-6, initial=interp)
+    eval_values, eval_grads = interp.evaluate(points, grad_points)
+    assert np.abs(eval_values - values).max() < 1e-5
+    assert np.abs(eval_grads.reshape(grad_values.shape) - grad_values).max() < 1e-5
     interp.fit_incrementally(points, values, 1e-6)
-    interp.fit_incrementally(points, grad_points, all_values, 1e-6, 1e-6)
+    interp.fit_incrementally(points, grad_points, values, grad_values, 1e-6, 1e-6)
     nan = np.full(len(values), np.nan)
     interp.fit_inequality(points, values, nan, nan, 1e-6)
 

@@ -169,9 +169,6 @@ class FitCommand : public Command {
       grad_values = grad_table(kAll, Eigen::seqN(Dim, Dim));
     }
 
-    VecX rhs(values.size() + grad_values.size());
-    rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
-
     auto model =
         !opts.model_file.empty() ? Model::load(opts.model_file) : make_model<Dim>(opts.model_opts);
 
@@ -185,11 +182,12 @@ class FitCommand : public Command {
       inter.fit_inequality(points, values, *values_lb, *values_ub, opts.tolerance, opts.max_iter,
                            opts.accuracy, initial ? &*initial : nullptr);
     } else if (opts.reduce) {
-      inter.fit_incrementally(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance,
-                              opts.max_iter, opts.accuracy, opts.grad_accuracy);
+      inter.fit_incrementally(points, grad_points, values, grad_values, opts.tolerance,
+                              opts.grad_tolerance, opts.max_iter, opts.accuracy,
+                              opts.grad_accuracy);
     } else {
-      inter.fit(points, grad_points, rhs, opts.tolerance, opts.grad_tolerance, opts.max_iter,
-                opts.accuracy, opts.grad_accuracy, initial ? &*initial : nullptr);
+      inter.fit(points, grad_points, values, grad_values, opts.tolerance, opts.grad_tolerance,
+                opts.max_iter, opts.accuracy, opts.grad_accuracy, initial ? &*initial : nullptr);
     }
 
     inter.save(opts.out_file);
