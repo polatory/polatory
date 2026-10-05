@@ -53,8 +53,9 @@ namespace scalfmm::list::omp
           {
               auto group_target_ptr = group_target;
               static constexpr int prio{scalfmm::algorithms::omp::priorities::max};
-#pragma omp task untied default(none) firstprivate(begin_of_source_groups, end_of_source_groups, group_target_ptr)     \
-  shared(leaf_level, mutual, source_target, period, neighbour_separation) priority(prio)
+#pragma omp task untied default(none) firstprivate(begin_of_source_groups, end_of_source_groups, group_target_ptr,     \
+                                                     mutual, source_target, leaf_level, period, neighbour_separation)  \
+  priority(prio)
               {
                   std::size_t index_in_group{0};
 
@@ -123,9 +124,9 @@ namespace scalfmm::list::omp
                                 {
                                     static constexpr int prio{scalfmm::algorithms::omp::priorities::max};
 
-#pragma omp task untied default(none)                                                                                  \
-  firstprivate(group_target, begin_of_source_cell_groups, end_of_source_cell_groups, level)                            \
-  shared(period, separation_criterion) priority(prio)
+#pragma omp task untied default(none) firstprivate(group_target, begin_of_source_cell_groups,                          \
+                                                     end_of_source_cell_groups, level, separation_criterion, period)   \
+  priority(prio)
                                     {
                                         // loop on target cell group
                                         component::for_each(

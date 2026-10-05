@@ -115,7 +115,7 @@ namespace scalfmm::algorithms::omp::pass
                 const auto first_out_interaction = task.first_out_interaction;
                 const auto last_out_interaction = task.last_out_interaction;
                 // clang-format off
-#pragma omp task untied default(none) shared(period, box_width, matrix_kernel) firstprivate(group, \
+#pragma omp task untied default(none) shared(matrix_kernel) firstprivate(period, box_width, group, \
   current_group_ptr_particles, other_group_ptr_particles, first_out_interaction, last_out_interaction)    \
   depend(inout  : current_group_ptr_particles[0], other_group_ptr_particles[0]) priority(prio_small)
                 // clang-format on
@@ -133,9 +133,9 @@ namespace scalfmm::algorithms::omp::pass
         {
             const auto current_group_ptr_particles = (*begin_groups).get()->depends_update();
             // clang does not manage to pass the separation_criterion correctly if it is not firstprivate
-#pragma omp task untied default(none) shared(period, box_width, matrix_kernel)                                         \
-  firstprivate(begin_groups, separation_criterion, mutual) depend(inout : current_group_ptr_particles[0])              \
-  priority(prio_big)
+#pragma omp task untied default(none) shared(matrix_kernel)                                                            \
+  firstprivate(period, box_width, begin_groups, separation_criterion, mutual)                                          \
+  depend(inout : current_group_ptr_particles[0]) priority(prio_big)
             {
                 // loop on the leaves of the current group
                 for(std::size_t leaf_index = 0; leaf_index < (*begin_groups)->size(); ++leaf_index)
@@ -222,7 +222,7 @@ namespace scalfmm::algorithms::omp::pass
                 //   depends on ptr on first particles of the grp
                 const auto current_group_ptr_particles = (*begin_groups).get()->depends_update();
 
-#pragma omp task untied default(none) shared(period, box_width, matrix_kernel) firstprivate(begin_groups)              \
+#pragma omp task untied default(none) shared(matrix_kernel) firstprivate(period, box_width, begin_groups)              \
   depend(inout : current_group_ptr_particles[0]) priority(prio_big)
                 {   // mutexinoutset
                     // loop on the leaves of the current group
