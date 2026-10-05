@@ -37,7 +37,7 @@ TEST(rbf_inequality_fitter, inequality_only) {
   VecX values_ub = values.array() + 0.001;
   values = VecX::Constant(n_points, std::numeric_limits<double>::quiet_NaN());
 
-  Biharmonic3D<kDim> rbf({1.0});
+  Biharmonic3D<kDim> rbf;
   rbf.set_anisotropy(aniso);
 
   auto poly_degree = rbf.cpd_order() - 1;

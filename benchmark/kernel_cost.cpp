@@ -109,7 +109,7 @@ double relative_cost(const Kernel& kernel, const RefKernel& ref_kernel) {
 
 template <template <int> class Rbf, int Dim>
 void measure(const std::string& rbf_name, const std::vector<double>& params) {
-  Biharmonic3D<Dim> ref_rbf({1.0});
+  Biharmonic3D<Dim> ref_rbf;
   Kernel<Biharmonic3D<Dim>> ref_kernel(ref_rbf);
   Rbf<Dim> rbf(params);
 

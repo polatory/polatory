@@ -66,6 +66,6 @@ class CovCubic final : public CovarianceFunctionBase<Dim> {
 
 }  // namespace internal
 
-JIZAI_DEFINE_RBF(CovCubic);
+JIZAI_DEFINE_COVARIANCE_FUNCTION(CovCubic);
 
 }  // namespace jizai::rbf

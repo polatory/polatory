@@ -64,6 +64,6 @@ class CovGaussian final : public CovarianceFunctionBase<Dim> {
 
 }  // namespace internal
 
-JIZAI_DEFINE_RBF(CovGaussian);
+JIZAI_DEFINE_COVARIANCE_FUNCTION(CovGaussian);
 
 }  // namespace jizai::rbf

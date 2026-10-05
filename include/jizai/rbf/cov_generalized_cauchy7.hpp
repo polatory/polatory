@@ -67,6 +67,6 @@ class CovGeneralizedCauchy7 final : public CovarianceFunctionBase<Dim> {
 
 }  // namespace internal
 
-JIZAI_DEFINE_RBF(CovGeneralizedCauchy7);
+JIZAI_DEFINE_COVARIANCE_FUNCTION(CovGeneralizedCauchy7);
 
 }  // namespace jizai::rbf

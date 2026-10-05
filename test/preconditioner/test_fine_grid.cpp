@@ -42,7 +42,7 @@ void test(Index n_points, Index n_grad_points) {
   auto [points, values] = sample_data(n_points, aniso);
   auto [grad_points, grad_values] = sample_grad_data(n_grad_points, aniso);
 
-  Triharmonic3D<kDim> rbf({1.0});
+  Triharmonic3D<kDim> rbf;
 
   auto poly_degree = rbf.cpd_order() - 1;
   Model<kDim> model(std::move(rbf), poly_degree);

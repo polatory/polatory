@@ -31,7 +31,7 @@ class PolyharmonicEven : public RbfBase<Dim> {
   int cpd_order() const override { return K / 2 + 1; }
 
   double evaluate_isotropic(const Vector& diff) const override {
-    auto slope = parameters().at(0);
+    auto scale = parameters().at(0);
     auto c = parameters().at(1);
     auto rho2 = diff.squaredNorm() + c * c;
     auto rho = std::sqrt(rho2);
@@ -40,11 +40,11 @@ class PolyharmonicEven : public RbfBase<Dim> {
       return 0.0;
     }
 
-    return kSign * slope * pow<K>(rho) * std::log(rho);
+    return kSign * scale * pow<K>(rho) * std::log(rho);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
-    auto slope = parameters().at(0);
+    auto scale = parameters().at(0);
     auto c = parameters().at(1);
     auto rho2 = diff.squaredNorm() + c * c;
     auto rho = std::sqrt(rho2);
@@ -53,12 +53,12 @@ class PolyharmonicEven : public RbfBase<Dim> {
       return Vector::Zero();
     }
 
-    auto coeff = kSign * slope * pow<K - 2>(rho) * (1.0 + K * std::log(rho));
+    auto coeff = kSign * scale * pow<K - 2>(rho) * (1.0 + K * std::log(rho));
     return coeff * diff;
   }
 
   Mat evaluate_hessian_isotropic(const Vector& diff) const override {
-    auto slope = parameters().at(0);
+    auto scale = parameters().at(0);
     auto c = parameters().at(1);
     auto rho2 = diff.squaredNorm() + c * c;
     auto rho = std::sqrt(rho2);
@@ -67,7 +67,7 @@ class PolyharmonicEven : public RbfBase<Dim> {
       return Mat::Zero();
     }
 
-    auto coeff = kSign * slope * pow<K - 2>(rho) * (1.0 + K * std::log(rho));
+    auto coeff = kSign * scale * pow<K - 2>(rho) * (1.0 + K * std::log(rho));
     return coeff * (Mat::Identity() +
                     (K - 2.0 + K / (1.0 + K * std::log(rho))) / rho2 * diff.transpose() * diff);
   }
@@ -143,7 +143,7 @@ class Triharmonic2D final : public PolyharmonicEven<Dim, 4> {
 
 }  // namespace internal
 
-JIZAI_DEFINE_RBF(Biharmonic2D);
-JIZAI_DEFINE_RBF(Triharmonic2D);
+JIZAI_DEFINE_POLYHARMONIC_RBF(Biharmonic2D);
+JIZAI_DEFINE_POLYHARMONIC_RBF(Triharmonic2D);
 
 }  // namespace jizai::rbf

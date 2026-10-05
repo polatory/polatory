@@ -26,8 +26,16 @@ geometry::Bbox<Dim> bbox_from_points(const geometry::Points<Dim>& points) {
 }
 
 template <int Dim, class Rbf>
-void define_rbf(py::module& m, const std::string& name) {
+void define_covariance_function(py::module& m, const std::string& name) {
   py::class_<Rbf, rbf::Rbf<Dim>>(m, name.c_str())
+      .def(py::init<double, double>(), "psill"_a, "range"_a)
+      .def(py::init<const std::vector<double>&>(), "params"_a);
+}
+
+template <int Dim, class Rbf>
+void define_polyharmonic_rbf(py::module& m, const std::string& name) {
+  py::class_<Rbf, rbf::Rbf<Dim>>(m, name.c_str())
+      .def(py::init<double, double>(), "scale"_a = 1.0, "c"_a = 0.0)
       .def(py::init<const std::vector<double>&>(), "params"_a);
 }
 
@@ -70,22 +78,22 @@ void define_module(py::module& m) {
       .def("evaluate_hessian", &Rbf::evaluate_hessian, "diff"_a);
 
   // Depends on: Rbf
-  define_rbf<Dim, rbf::Biharmonic2D<Dim>>(m, "Biharmonic2D");
-  define_rbf<Dim, rbf::Biharmonic3D<Dim>>(m, "Biharmonic3D");
-  define_rbf<Dim, rbf::CovCubic<Dim>>(m, "CovCubic");
-  define_rbf<Dim, rbf::CovExponential<Dim>>(m, "CovExponential");
-  define_rbf<Dim, rbf::CovGaussian<Dim>>(m, "CovGaussian");
-  define_rbf<Dim, rbf::CovGeneralizedCauchy3<Dim>>(m, "CovGeneralizedCauchy3");
-  define_rbf<Dim, rbf::CovGeneralizedCauchy5<Dim>>(m, "CovGeneralizedCauchy5");
-  define_rbf<Dim, rbf::CovGeneralizedCauchy7<Dim>>(m, "CovGeneralizedCauchy7");
-  define_rbf<Dim, rbf::CovGeneralizedCauchy9<Dim>>(m, "CovGeneralizedCauchy9");
-  define_rbf<Dim, rbf::CovSpherical<Dim>>(m, "CovSpherical");
-  define_rbf<Dim, rbf::CovSpheroidal3<Dim>>(m, "CovSpheroidal3");
-  define_rbf<Dim, rbf::CovSpheroidal5<Dim>>(m, "CovSpheroidal5");
-  define_rbf<Dim, rbf::CovSpheroidal7<Dim>>(m, "CovSpheroidal7");
-  define_rbf<Dim, rbf::CovSpheroidal9<Dim>>(m, "CovSpheroidal9");
-  define_rbf<Dim, rbf::Triharmonic2D<Dim>>(m, "Triharmonic2D");
-  define_rbf<Dim, rbf::Triharmonic3D<Dim>>(m, "Triharmonic3D");
+  define_polyharmonic_rbf<Dim, rbf::Biharmonic2D<Dim>>(m, "Biharmonic2D");
+  define_polyharmonic_rbf<Dim, rbf::Biharmonic3D<Dim>>(m, "Biharmonic3D");
+  define_covariance_function<Dim, rbf::CovCubic<Dim>>(m, "CovCubic");
+  define_covariance_function<Dim, rbf::CovExponential<Dim>>(m, "CovExponential");
+  define_covariance_function<Dim, rbf::CovGaussian<Dim>>(m, "CovGaussian");
+  define_covariance_function<Dim, rbf::CovGeneralizedCauchy3<Dim>>(m, "CovGeneralizedCauchy3");
+  define_covariance_function<Dim, rbf::CovGeneralizedCauchy5<Dim>>(m, "CovGeneralizedCauchy5");
+  define_covariance_function<Dim, rbf::CovGeneralizedCauchy7<Dim>>(m, "CovGeneralizedCauchy7");
+  define_covariance_function<Dim, rbf::CovGeneralizedCauchy9<Dim>>(m, "CovGeneralizedCauchy9");
+  define_covariance_function<Dim, rbf::CovSpherical<Dim>>(m, "CovSpherical");
+  define_covariance_function<Dim, rbf::CovSpheroidal3<Dim>>(m, "CovSpheroidal3");
+  define_covariance_function<Dim, rbf::CovSpheroidal5<Dim>>(m, "CovSpheroidal5");
+  define_covariance_function<Dim, rbf::CovSpheroidal7<Dim>>(m, "CovSpheroidal7");
+  define_covariance_function<Dim, rbf::CovSpheroidal9<Dim>>(m, "CovSpheroidal9");
+  define_polyharmonic_rbf<Dim, rbf::Triharmonic2D<Dim>>(m, "Triharmonic2D");
+  define_polyharmonic_rbf<Dim, rbf::Triharmonic3D<Dim>>(m, "Triharmonic3D");
 
   // Depends on: Rbf
   py::class_<Model>(m, "Model")

@@ -136,6 +136,6 @@ using CovSpheroidal9FastPart = CovSpheroidal9Generic<Dim, SpheroidalKind::kFastP
 
 }  // namespace internal
 
-JIZAI_DEFINE_RBF(CovSpheroidal9);
+JIZAI_DEFINE_COVARIANCE_FUNCTION(CovSpheroidal9);
 
 }  // namespace jizai::rbf

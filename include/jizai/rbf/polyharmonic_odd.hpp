@@ -30,16 +30,16 @@ class PolyharmonicOdd : public RbfBase<Dim> {
   int cpd_order() const override { return (K + 1) / 2; }
 
   double evaluate_isotropic(const Vector& diff) const override {
-    auto slope = parameters().at(0);
+    auto scale = parameters().at(0);
     auto c = parameters().at(1);
     auto rho2 = diff.squaredNorm() + c * c;
     auto rho = std::sqrt(rho2);
 
-    return kSign * slope * pow<K>(rho);
+    return kSign * scale * pow<K>(rho);
   }
 
   Vector evaluate_gradient_isotropic(const Vector& diff) const override {
-    auto slope = parameters().at(0);
+    auto scale = parameters().at(0);
     auto c = parameters().at(1);
     auto rho2 = diff.squaredNorm() + c * c;
     auto rho = std::sqrt(rho2);
@@ -48,12 +48,12 @@ class PolyharmonicOdd : public RbfBase<Dim> {
       return Vector::Zero();
     }
 
-    auto coeff = kSign * K * slope * pow<K - 2>(rho);
+    auto coeff = kSign * K * scale * pow<K - 2>(rho);
     return coeff * diff;
   }
 
   Mat evaluate_hessian_isotropic(const Vector& diff) const override {
-    auto slope = parameters().at(0);
+    auto scale = parameters().at(0);
     auto c = parameters().at(1);
     auto rho2 = diff.squaredNorm() + c * c;
     auto rho = std::sqrt(rho2);
@@ -62,7 +62,7 @@ class PolyharmonicOdd : public RbfBase<Dim> {
       return Mat::Zero();
     }
 
-    auto coeff = kSign * K * slope * pow<K - 2>(rho);
+    auto coeff = kSign * K * scale * pow<K - 2>(rho);
     return coeff * (Mat::Identity() + (K - 2) / rho2 * diff.transpose() * diff);
   }
 
@@ -137,7 +137,7 @@ class Triharmonic3D final : public PolyharmonicOdd<Dim, 3> {
 
 }  // namespace internal
 
-JIZAI_DEFINE_RBF(Biharmonic3D);
-JIZAI_DEFINE_RBF(Triharmonic3D);
+JIZAI_DEFINE_POLYHARMONIC_RBF(Biharmonic3D);
+JIZAI_DEFINE_POLYHARMONIC_RBF(Triharmonic3D);
 
 }  // namespace jizai::rbf

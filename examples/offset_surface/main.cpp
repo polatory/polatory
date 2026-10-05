@@ -178,7 +178,7 @@ int main(int argc, const char* argv[]) {
     }
 
     // Define the model.
-    Biharmonic3D<3> rbf({1.0});
+    Biharmonic3D<3> rbf;
     Model<3> model(std::move(rbf));
 
     // Fit.

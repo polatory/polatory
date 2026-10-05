@@ -65,6 +65,6 @@ class CovExponential final : public CovarianceFunctionBase<Dim> {
 
 }  // namespace internal
 
-JIZAI_DEFINE_RBF(CovExponential);
+JIZAI_DEFINE_COVARIANCE_FUNCTION(CovExponential);
 
 }  // namespace jizai::rbf

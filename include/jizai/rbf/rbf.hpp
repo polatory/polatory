@@ -104,17 +104,34 @@ class Rbf {
   std::unique_ptr<RbfBase> rbf_;
 };
 
-#define JIZAI_DEFINE_RBF(RBF_NAME)                                        \
-  template <int Dim>                                                      \
-  class RBF_NAME : public Rbf<Dim> {                                      \
-   private:                                                               \
-    using RbfInternal = internal::RBF_NAME<Dim>;                          \
-                                                                          \
-   public:                                                                \
-    static inline const std::string kShortName = RbfInternal::kShortName; \
-                                                                          \
-    explicit RBF_NAME(const std::vector<double>& params)                  \
-        : Rbf<Dim>(std::make_unique<RbfInternal>(params)) {}              \
+#define JIZAI_DEFINE_COVARIANCE_FUNCTION(RBF_NAME)                              \
+  template <int Dim>                                                            \
+  class RBF_NAME : public Rbf<Dim> {                                            \
+   private:                                                                     \
+    using RbfInternal = internal::RBF_NAME<Dim>;                                \
+                                                                                \
+   public:                                                                      \
+    static inline const std::string kShortName = RbfInternal::kShortName;       \
+                                                                                \
+    explicit RBF_NAME(double psill, double range) : RBF_NAME({psill, range}) {} \
+                                                                                \
+    explicit RBF_NAME(const std::vector<double>& params)                        \
+        : Rbf<Dim>(std::make_unique<RbfInternal>(params)) {}                    \
+  };
+
+#define JIZAI_DEFINE_POLYHARMONIC_RBF(RBF_NAME)                                     \
+  template <int Dim>                                                                \
+  class RBF_NAME : public Rbf<Dim> {                                                \
+   private:                                                                         \
+    using RbfInternal = internal::RBF_NAME<Dim>;                                    \
+                                                                                    \
+   public:                                                                          \
+    static inline const std::string kShortName = RbfInternal::kShortName;           \
+                                                                                    \
+    explicit RBF_NAME(double scale = 1.0, double c = 0.0) : RBF_NAME({scale, c}) {} \
+                                                                                    \
+    explicit RBF_NAME(const std::vector<double>& params)                            \
+        : Rbf<Dim>(std::make_unique<RbfInternal>(params)) {}                        \
   };
 
 }  // namespace jizai::rbf

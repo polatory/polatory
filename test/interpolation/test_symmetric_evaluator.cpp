@@ -30,7 +30,7 @@ TEST(rbf_symmetric_evaluator, trivial) {
   auto accuracy = 1e-4;
   auto grad_accuracy = 1e-4;
 
-  Triharmonic3D<kDim> rbf({1.0});
+  Triharmonic3D<kDim> rbf;
   rbf.set_anisotropy(random_anisotropy<kDim>());
 
   auto poly_degree = rbf.cpd_order() - 1;

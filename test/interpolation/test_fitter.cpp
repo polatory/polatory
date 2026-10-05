@@ -36,7 +36,7 @@ void test(Index n_points, Index n_grad_points) {
   VecX rhs(n_points + kDim * n_grad_points);
   rhs << values, grad_values.template reshaped<Eigen::RowMajor>();
 
-  Triharmonic3D<kDim> rbf({1.0});
+  Triharmonic3D<kDim> rbf;
   rbf.set_anisotropy(aniso);
 
   auto poly_degree = rbf.cpd_order() - 1;
