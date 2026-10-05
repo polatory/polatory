@@ -67,6 +67,7 @@ void define_module(py::module& m) {
       .def("evaluate_gradient", &Rbf::evaluate_gradient, "diff"_a)
       .def("evaluate_hessian", &Rbf::evaluate_hessian, "diff"_a);
 
+  // Depends on: Rbf
   define_rbf<Dim, rbf::Biharmonic2D<Dim>>(m, "Biharmonic2D");
   define_rbf<Dim, rbf::Biharmonic3D<Dim>>(m, "Biharmonic3D");
   define_rbf<Dim, rbf::CovCubic<Dim>>(m, "CovCubic");
@@ -84,6 +85,7 @@ void define_module(py::module& m) {
   define_rbf<Dim, rbf::Triharmonic2D<Dim>>(m, "Triharmonic2D");
   define_rbf<Dim, rbf::Triharmonic3D<Dim>>(m, "Triharmonic3D");
 
+  // Depends on: Rbf
   py::class_<Model>(m, "Model")
       .def(py::init<Rbf, int>(), "rbf"_a, "poly_degree"_a = Model::kMinRequiredPolyDegree)
       .def(py::init<std::vector<Rbf>, int>(), "rbfs"_a,
@@ -105,6 +107,7 @@ void define_module(py::module& m) {
       .def_static("load", &Model::load, "filename"_a)
       .def("save", &Model::save, "filename"_a);
 
+  // Depends on: Bbox, Model
   py::class_<Interpolant>(m, "Interpolant")
       .def(py::init<const Model&>(), "model"_a)
       .def_property_readonly("bbox", &Interpolant::bbox, py::return_value_policy::copy)
@@ -153,6 +156,7 @@ void define_module(py::module& m) {
       .def("filter", py::overload_cast<double, const std::vector<Index>&>(&DistanceFilter::filter),
            "distance"_a, "indices"_a);
 
+  // Depends on: NormalScoreTransformation
   py::class_<Variogram>(m, "Variogram")
       .def_property_readonly("bin_distance", &Variogram::bin_distance)
       .def_property_readonly("bin_gamma", &Variogram::bin_gamma)
@@ -162,6 +166,16 @@ void define_module(py::module& m) {
       .def_property_readonly("num_pairs", &Variogram::num_pairs)
       .def("back_transform", &Variogram::back_transform, "t"_a);
 
+  // Depends on: NormalScoreTransformation, Variogram
+  py::class_<VariogramSet>(m, "VariogramSet")
+      .def_property_readonly("num_pairs", &VariogramSet::num_pairs)
+      .def_property_readonly("num_variograms", &VariogramSet::num_variograms)
+      .def_property_readonly("variograms", &VariogramSet::variograms)
+      .def("back_transform", &VariogramSet::back_transform, "t"_a)
+      .def_static("load", &VariogramSet::load, "filename"_a)
+      .def("save", &VariogramSet::save, "filename"_a);
+
+  // Depends on: VariogramSet
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
       .def(py::init<double, Index>(), "lag_distance"_a, "num_lags"_a)
       .def_readonly_static("AUTOMATIC_ANGLE_TOLERANCE",
@@ -177,24 +191,19 @@ void define_module(py::module& m) {
                     &VariogramCalculator::set_lag_tolerance)
       .def("calculate", &VariogramCalculator::calculate, "points"_a, "values"_a);
 
+  // Depends on: Model, VariogramSet, WeightFunction
   py::class_<VariogramFitting>(m, "VariogramFitting")
       .def(py::init<const VariogramSet&, const Model&, const kriging::WeightFunction&, bool>(),
            "variog_set"_a, "model"_a,
-           "weight_fn"_a = kriging::WeightFunction::kNumPairsOverDistanceSquared,
+           py::arg_v("weight_fn", kriging::WeightFunction::kNumPairsOverDistanceSquared,
+                     "jizai.WeightFunction.NUM_PAIRS_OVER_DISTANCE_SQUARED"),
            "fit_anisotropy"_a = true)
       .def_property_readonly("brief_report", &VariogramFitting::brief_report)
       .def_property_readonly("full_report", &VariogramFitting::full_report)
       .def_property_readonly("final_cost", &VariogramFitting::final_cost)
       .def_property_readonly("model", &VariogramFitting::model);
 
-  py::class_<VariogramSet>(m, "VariogramSet")
-      .def_property_readonly("num_pairs", &VariogramSet::num_pairs)
-      .def_property_readonly("num_variograms", &VariogramSet::num_variograms)
-      .def_property_readonly("variograms", &VariogramSet::variograms)
-      .def("back_transform", &VariogramSet::back_transform, "t"_a)
-      .def_static("load", &VariogramSet::load, "filename"_a)
-      .def("save", &VariogramSet::save, "filename"_a);
-
+  // Depends on: Model
   m.def("cross_validate", &kriging::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
         "set_ids"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity);
 
@@ -253,33 +262,6 @@ PYBIND11_MODULE(_core, m) {
       .def_property_readonly("sdf_points", &point_cloud::SdfDataGenerator::sdf_points)
       .def_property_readonly("sdf_values", &point_cloud::SdfDataGenerator::sdf_values);
 
-  py::class_<isosurface::FieldFunction>(m, "_FieldFunction");
-
-  py::class_<isosurface::RbfFieldFunction, isosurface::FieldFunction>(m, "RbfFieldFunction")
-      .def(py::init<Interpolant<3>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
-           "grad_accuracy"_a = kInfinity, py::keep_alive<1, 2>());
-
-  py::class_<isosurface::RbfFieldFunction25D, isosurface::FieldFunction>(m, "RbfFieldFunction25D")
-      .def(py::init<Interpolant<2>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
-           "grad_accuracy"_a = kInfinity, py::keep_alive<1, 2>());
-
-  py::class_<isosurface::Isosurface>(m, "Isosurface")
-      .def(py::init<const Bbox&, double, const Mat&>(), "bbox"_a, "resolution"_a,
-           "aniso"_a = Mat::Identity())
-      .def("generate", &isosurface::Isosurface::generate, "field_fn"_a, "isovalue"_a = 0.0,
-           "refine"_a = true)
-      .def("generate_from_seed_points", &isosurface::Isosurface::generate_from_seed_points,
-           "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = true)
-      .def("set_snap_points", &isosurface::Isosurface::set_snap_points, "points"_a,
-           "relative_tolerances"_a = VecX());
-
-  py::class_<isosurface::Mesh>(m, "Mesh")
-      .def("export_obj", &isosurface::Mesh::export_obj, "filename"_a)
-      .def_property_readonly("faces", &isosurface::Mesh::faces)
-      .def_property_readonly("is_empty", &isosurface::Mesh::is_empty)
-      .def_property_readonly("is_entire", &isosurface::Mesh::is_entire)
-      .def_property_readonly("vertices", &isosurface::Mesh::vertices);
-
   py::class_<kriging::NormalScoreTransformation>(m, "NormalScoreTransformation")
       .def(py::init<int>(), "order"_a = 30)
       .def("transform", &kriging::NormalScoreTransformation::transform, "z"_a)
@@ -305,9 +287,40 @@ PYBIND11_MODULE(_core, m) {
   auto two = m.def_submodule("two");
   auto three = m.def_submodule("three");
 
+  // Depends on: NormalScoreTransformation, WeightFunction
   define_module<1>(one);
   define_module<2>(two);
   define_module<3>(three);
+
+  py::class_<isosurface::FieldFunction>(m, "_FieldFunction");
+
+  // Depends on: _FieldFunction, three.Interpolant
+  py::class_<isosurface::RbfFieldFunction, isosurface::FieldFunction>(m, "RbfFieldFunction")
+      .def(py::init<Interpolant<3>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
+           "grad_accuracy"_a = kInfinity, py::keep_alive<1, 2>());
+
+  // Depends on: _FieldFunction, two.Interpolant
+  py::class_<isosurface::RbfFieldFunction25D, isosurface::FieldFunction>(m, "RbfFieldFunction25D")
+      .def(py::init<Interpolant<2>&, double, double>(), "interpolant"_a, "accuracy"_a = kInfinity,
+           "grad_accuracy"_a = kInfinity, py::keep_alive<1, 2>());
+
+  py::class_<isosurface::Mesh>(m, "Mesh")
+      .def("export_obj", &isosurface::Mesh::export_obj, "filename"_a)
+      .def_property_readonly("faces", &isosurface::Mesh::faces)
+      .def_property_readonly("is_empty", &isosurface::Mesh::is_empty)
+      .def_property_readonly("is_entire", &isosurface::Mesh::is_entire)
+      .def_property_readonly("vertices", &isosurface::Mesh::vertices);
+
+  // Depends on: _FieldFunction, Mesh, three.Bbox
+  py::class_<isosurface::Isosurface>(m, "Isosurface")
+      .def(py::init<const Bbox&, double, const Mat&>(), "bbox"_a, "resolution"_a,
+           "aniso"_a = Mat::Identity())
+      .def("generate", &isosurface::Isosurface::generate, "field_fn"_a, "isovalue"_a = 0.0,
+           "refine"_a = true)
+      .def("generate_from_seed_points", &isosurface::Isosurface::generate_from_seed_points,
+           "seed_points"_a, "field_fn"_a, "isovalue"_a = 0.0, "refine"_a = true)
+      .def("set_snap_points", &isosurface::Isosurface::set_snap_points, "points"_a,
+           "relative_tolerances"_a = VecX());
 
   m.attr("__name__") = orig_name;
 }

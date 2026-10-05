@@ -60,11 +60,10 @@ class CMakeBuild(build_ext):
         return env
 
     def build_extension(self, ext: CMakeExtension) -> None:
+        lib_dir = (Path.cwd() / self.get_ext_fullpath(ext.name)).parent.resolve()
+        out_dir = lib_dir / ext.name
         toolchain_file = (
             Path.cwd() / "vcpkg/scripts/buildsystems/vcpkg.cmake"
-        ).resolve()
-        out_dir = (
-            (Path.cwd() / self.get_ext_fullpath(ext.name)).parent / ext.name
         ).resolve()
 
         cmake_args = [
@@ -123,6 +122,11 @@ class CMakeBuild(build_ext):
             cwd=build_temp_dir,
             check=True,
             env=env,
+        )
+        subprocess.run(
+            [sys.executable, "-m", "pybind11_stubgen", "-o", lib_dir, ext.name],
+            check=True,
+            env={**env, "PYTHONPATH": os.fspath(lib_dir)},
         )
 
 
