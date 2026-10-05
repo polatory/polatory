@@ -13,16 +13,16 @@ namespace jizai::kriging {
 
 template <int Dim>
 VecX cross_validate(const Model<Dim>& model, const geometry::Points<Dim>& points,
-                    const VecX& values, const Eigen::VectorXi& set_ids, double tolerance,
+                    const VecX& values, const std::vector<Index>& set_ids, double tolerance,
                     int max_iter, double accuracy) {
   auto n_points = points.rows();
   VecX predictions = VecX::Zero(n_points);
 
-  boost::unordered_flat_set<int> ids(set_ids.begin(), set_ids.end());
+  boost::unordered_flat_set<Index> ids(set_ids.begin(), set_ids.end());
   for (auto id : ids) {
     std::vector<Index> test_set;
     for (Index i = 0; i < n_points; i++) {
-      if (set_ids(i) == id) {
+      if (set_ids.at(i) == id) {
         test_set.push_back(i);
       }
     }

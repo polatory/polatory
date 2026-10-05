@@ -8,11 +8,13 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "../examples/common/make_model.hpp"
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
+using jizai::Index;
 using jizai::kAll;
 using jizai::MatX;
 using jizai::Model;
@@ -118,7 +120,8 @@ class CrossValidateCommand : public Command {
     MatX table = read_table(opts.in_file);
     Points points = table(kAll, Eigen::seqN(0, Dim));
     VecX values = table.col(Dim);
-    Eigen::VectorXi set_ids = table.col(Dim + 1).cast<int>();
+    auto set_ids_col = table.col(Dim + 1).cast<Index>();
+    std::vector<Index> set_ids(set_ids_col.begin(), set_ids_col.end());
 
     auto model =
         !opts.model_file.empty() ? Model::load(opts.model_file) : make_model<Dim>(opts.model_opts);
