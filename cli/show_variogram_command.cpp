@@ -2,8 +2,8 @@
 #include <cmath>
 #include <format>
 #include <iostream>
+#include <jizai/geostats.hpp>
 #include <jizai/jizai.hpp>
-#include <jizai/kriging.hpp>
 #include <memory>
 #include <numbers>
 #include <stdexcept>
@@ -13,7 +13,7 @@
 #include "commands.hpp"
 
 using jizai::Index;
-using jizai::kriging::VariogramSet;
+using jizai::geostats::VariogramSet;
 
 namespace {
 

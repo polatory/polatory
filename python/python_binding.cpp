@@ -4,8 +4,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <jizai/geostats.hpp>
 #include <jizai/jizai.hpp>
-#include <jizai/kriging.hpp>
 #include <limits>
 #include <optional>
 #include <string>
@@ -48,10 +48,10 @@ void define_module(py::module& m) {
   using Point = geometry::Point<Dim>;
   using Points = geometry::Points<Dim>;
   using Rbf = rbf::Rbf<Dim>;
-  using Variogram = kriging::Variogram<Dim>;
-  using VariogramCalculator = kriging::VariogramCalculator<Dim>;
-  using VariogramFitting = kriging::VariogramFitting<Dim>;
-  using VariogramSet = kriging::VariogramSet<Dim>;
+  using Variogram = geostats::Variogram<Dim>;
+  using VariogramCalculator = geostats::VariogramCalculator<Dim>;
+  using VariogramFitting = geostats::VariogramFitting<Dim>;
+  using VariogramSet = geostats::VariogramSet<Dim>;
   using Vectors = geometry::Vectors<Dim>;
 
   py::class_<Bbox>(m, "Bbox")
@@ -208,9 +208,9 @@ void define_module(py::module& m) {
 
   // Depends on: Model, VariogramSet, WeightFunction
   py::class_<VariogramFitting>(m, "VariogramFitting")
-      .def(py::init<const VariogramSet&, const Model&, const kriging::WeightFunction&, bool>(),
+      .def(py::init<const VariogramSet&, const Model&, const geostats::WeightFunction&, bool>(),
            "variog_set"_a, "model"_a,
-           py::arg_v("weight_fn", kriging::WeightFunction::kNumPairsOverDistanceSquared,
+           py::arg_v("weight_fn", geostats::WeightFunction::kNumPairsOverDistanceSquared,
                      "jizai.WeightFunction.NUM_PAIRS_OVER_DISTANCE_SQUARED"),
            "fit_anisotropy"_a = true)
       .def_property_readonly("brief_report", &VariogramFitting::brief_report)
@@ -219,10 +219,10 @@ void define_module(py::module& m) {
       .def_property_readonly("model", &VariogramFitting::model);
 
   // Depends on: Model
-  m.def("cross_validate", &kriging::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
+  m.def("cross_validate", &geostats::cross_validate<Dim>, "model"_a, "points"_a, "values"_a,
         "set_ids"_a, "tolerance"_a, "max_iter"_a = 100, "accuracy"_a = kInfinity);
 
-  m.def("detrend", &kriging::detrend<Dim>, "points"_a, "values"_a, "degree"_a);
+  m.def("detrend", &geostats::detrend<Dim>, "points"_a, "values"_a, "degree"_a);
 }
 
 PYBIND11_MODULE(_core, m) {
@@ -262,28 +262,28 @@ PYBIND11_MODULE(_core, m) {
       .def_property_readonly("sdf_values", &point_cloud::SdfDataGenerator::sdf_values,
                              py::return_value_policy::copy);
 
-  py::class_<kriging::NormalScoreTransformation>(m, "NormalScoreTransformation")
+  py::class_<geostats::NormalScoreTransformation>(m, "NormalScoreTransformation")
       .def(py::init<int>(), "order"_a = 30)
-      .def("transform", &kriging::NormalScoreTransformation::transform, "z"_a)
-      .def("back_transform", &kriging::NormalScoreTransformation::back_transform, "y"_a);
+      .def("transform", &geostats::NormalScoreTransformation::transform, "z"_a)
+      .def("back_transform", &geostats::NormalScoreTransformation::back_transform, "y"_a);
 
-  py::class_<kriging::WeightFunction>(m, "WeightFunction")
+  py::class_<geostats::WeightFunction>(m, "WeightFunction")
       .def(py::init<double, double, double>(), "exp_distance"_a = 0.0, "exp_model_gamma"_a = 0.0,
            "exp_num_pairs"_a = 0.0)
-      .def_readonly_static("NUM_PAIRS", &kriging::WeightFunction::kNumPairs,
+      .def_readonly_static("NUM_PAIRS", &geostats::WeightFunction::kNumPairs,
                            py::return_value_policy::copy)
       .def_readonly_static("NUM_PAIRS_OVER_DISTANCE_SQUARED",
-                           &kriging::WeightFunction::kNumPairsOverDistanceSquared,
+                           &geostats::WeightFunction::kNumPairsOverDistanceSquared,
                            py::return_value_policy::copy)
       .def_readonly_static("NUM_PAIRS_OVER_MODEL_GAMMA_SQUARED",
-                           &kriging::WeightFunction::kNumPairsOverModelGammaSquared,
+                           &geostats::WeightFunction::kNumPairsOverModelGammaSquared,
                            py::return_value_policy::copy)
-      .def_readonly_static("ONE", &kriging::WeightFunction::kOne, py::return_value_policy::copy)
+      .def_readonly_static("ONE", &geostats::WeightFunction::kOne, py::return_value_policy::copy)
       .def_readonly_static("ONE_OVER_DISTANCE_SQUARED",
-                           &kriging::WeightFunction::kOneOverDistanceSquared,
+                           &geostats::WeightFunction::kOneOverDistanceSquared,
                            py::return_value_policy::copy)
       .def_readonly_static("ONE_OVER_MODEL_GAMMA_SQUARED",
-                           &kriging::WeightFunction::kOneOverModelGammaSquared,
+                           &geostats::WeightFunction::kOneOverModelGammaSquared,
                            py::return_value_policy::copy);
 
   m.attr("__version__") = xstr(JIZAI_VERSION);

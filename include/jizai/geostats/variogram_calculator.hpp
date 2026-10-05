@@ -2,16 +2,16 @@
 
 #include <cmath>
 #include <jizai/geometry/point3d.hpp>
-#include <jizai/kriging/variogram.hpp>
-#include <jizai/kriging/variogram_builder.hpp>
-#include <jizai/kriging/variogram_set.hpp>
+#include <jizai/geostats/variogram.hpp>
+#include <jizai/geostats/variogram_builder.hpp>
+#include <jizai/geostats/variogram_set.hpp>
 #include <jizai/types.hpp>
 #include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <int Dim>
 class VariogramCalculator {
@@ -154,4 +154,4 @@ const geometry::Vectors3 VariogramCalculator<3>::kIsotropicDirections;
 template <>
 const geometry::Vectors3 VariogramCalculator<3>::kAnisotropicDirections;
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

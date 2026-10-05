@@ -1,8 +1,8 @@
 #include <ceres/ceres.h>
 
 #include <Eigen/Geometry>
-#include <jizai/kriging/variogram.hpp>
-#include <jizai/kriging/variogram_fitting.hpp>
+#include <jizai/geostats/variogram.hpp>
+#include <jizai/geostats/variogram_fitting.hpp>
 #include <jizai/types.hpp>
 #include <string>
 #include <thread>
@@ -10,7 +10,7 @@
 
 #include "variogram_fitting.hpp"
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <>
 class VariogramFitting<3>::Impl {
@@ -167,4 +167,4 @@ class VariogramFitting<3>::Impl {
 
 template class VariogramFitting<3>;
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

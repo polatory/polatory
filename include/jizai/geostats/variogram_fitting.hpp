@@ -1,12 +1,12 @@
 #pragma once
 
-#include <jizai/kriging/variogram_set.hpp>
-#include <jizai/kriging/weight_function.hpp>
+#include <jizai/geostats/variogram_set.hpp>
+#include <jizai/geostats/weight_function.hpp>
 #include <jizai/model.hpp>
 #include <memory>
 #include <string>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <int Dim>
 class VariogramFitting {
@@ -39,4 +39,4 @@ class VariogramFitting {
   std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

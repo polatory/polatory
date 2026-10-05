@@ -26,14 +26,14 @@ add_library(${TARGET} STATIC
     fmm/impl/triharmonic2d.cpp
     fmm/impl/triharmonic3d.cpp
     fmm/make_fmm_evaluator.cpp
+    geostats/variogram_calculator.cpp
+    geostats/variogram_fitting_1d.cpp
+    geostats/variogram_fitting_2d.cpp
+    geostats/variogram_fitting_3d.cpp
     isosurface/cluster.cpp
     isosurface/mesh_defects_finder.cpp
     isosurface/refine.cpp
     isosurface/snap.cpp
-    kriging/variogram_calculator.cpp
-    kriging/variogram_fitting_1d.cpp
-    kriging/variogram_fitting_2d.cpp
-    kriging/variogram_fitting_3d.cpp
     krylov/fgmres.cpp
     krylov/gmres_base.cpp
     krylov/gmres.cpp

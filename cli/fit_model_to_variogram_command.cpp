@@ -3,8 +3,8 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <jizai/geostats.hpp>
 #include <jizai/jizai.hpp>
-#include <jizai/kriging.hpp>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -16,8 +16,8 @@
 #include "commands.hpp"
 
 using jizai::Model;
-using jizai::kriging::VariogramFitting;
-using jizai::kriging::VariogramSet;
+using jizai::geostats::VariogramFitting;
+using jizai::geostats::VariogramSet;
 
 namespace {
 
@@ -87,22 +87,22 @@ class FitModelToVariogramCommand : public Command {
 
     switch (weights) {
       case 0:
-        opts.weight_fn = jizai::kriging::WeightFunction::kNumPairs;
+        opts.weight_fn = jizai::geostats::WeightFunction::kNumPairs;
         break;
       case 1:
-        opts.weight_fn = jizai::kriging::WeightFunction::kNumPairsOverDistanceSquared;
+        opts.weight_fn = jizai::geostats::WeightFunction::kNumPairsOverDistanceSquared;
         break;
       case 2:
-        opts.weight_fn = jizai::kriging::WeightFunction::kNumPairsOverModelGammaSquared;
+        opts.weight_fn = jizai::geostats::WeightFunction::kNumPairsOverModelGammaSquared;
         break;
       case 3:
-        opts.weight_fn = jizai::kriging::WeightFunction::kOne;
+        opts.weight_fn = jizai::geostats::WeightFunction::kOne;
         break;
       case 4:
-        opts.weight_fn = jizai::kriging::WeightFunction::kOneOverDistanceSquared;
+        opts.weight_fn = jizai::geostats::WeightFunction::kOneOverDistanceSquared;
         break;
       case 5:
-        opts.weight_fn = jizai::kriging::WeightFunction::kOneOverModelGammaSquared;
+        opts.weight_fn = jizai::geostats::WeightFunction::kOneOverModelGammaSquared;
         break;
       default:
         throw std::runtime_error("--weight must be 0 to 5");
@@ -129,8 +129,8 @@ class FitModelToVariogramCommand : public Command {
     int dim{};
     std::string model_file;
     ModelOptions model_opts;
-    jizai::kriging::WeightFunction weight_fn{
-        jizai::kriging::WeightFunction::kNumPairsOverDistanceSquared};
+    jizai::geostats::WeightFunction weight_fn{
+        jizai::geostats::WeightFunction::kNumPairsOverDistanceSquared};
     int num_trials{};
     std::string out_file;
   };

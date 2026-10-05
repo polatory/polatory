@@ -178,7 +178,7 @@ def test_distance_filter(dim, mod):
     assert_raises(ValueError, f.filtered_indices, distance, [-1])
 
 
-def test_kriging(dim, mod, tmp):
+def test_geostats(dim, mod, tmp):
     points = rng.random((200, dim))
     values = np.sin(3.0 * points.sum(axis=1))
 
@@ -342,7 +342,7 @@ def main():
             test_model(dim, mod, tmp)
             test_interpolant(dim, mod, tmp)
             test_distance_filter(dim, mod)
-            test_kriging(dim, mod, tmp)
+            test_geostats(dim, mod, tmp)
         test_normal_estimator()
         test_isosurface(tmp)
         test_isosurface_25d()

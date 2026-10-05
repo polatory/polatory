@@ -6,7 +6,7 @@
 #include <jizai/types.hpp>
 #include <stdexcept>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <int Dim>
 VecX detrend(const geometry::Points<Dim>& points, const VecX& values, int degree) {
@@ -26,4 +26,4 @@ VecX detrend(const geometry::Points<Dim>& points, const VecX& values, int degree
   return values - p * coeffs;
 }
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

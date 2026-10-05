@@ -1,6 +1,6 @@
-#include <jizai/kriging/variogram_calculator.hpp>
+#include <jizai/geostats/variogram_calculator.hpp>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <>
 const geometry::Vectors1 VariogramCalculator<1>::kIsotropicDirections{geometry::Vector1::UnitX()};
@@ -68,4 +68,4 @@ const geometry::Vectors3 VariogramCalculator<3>::kAnisotropicDirections{
     {0.79465449, 0.57735026, 0.18759248},
     {0.48987609, 0.85472882, 0.17163931}};
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

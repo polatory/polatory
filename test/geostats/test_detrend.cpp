@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
 #include <jizai/geometry/point3d.hpp>
-#include <jizai/kriging/detrend.hpp>
+#include <jizai/geostats/detrend.hpp>
 #include <jizai/types.hpp>
 
 using jizai::Index;
 using jizai::VecX;
 using jizai::geometry::Points2;
-using jizai::kriging::detrend;
+using jizai::geostats::detrend;
 
 TEST(detrend, trivial) {
   const Index n_points{10000};

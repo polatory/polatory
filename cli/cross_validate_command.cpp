@@ -3,8 +3,8 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <jizai/geostats.hpp>
 #include <jizai/jizai.hpp>
-#include <jizai/kriging.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -23,7 +23,7 @@ using jizai::VecX;
 using jizai::write_table;
 using jizai::common::concatenate_cols;
 using jizai::geometry::Points;
-using jizai::kriging::cross_validate;
+using jizai::geostats::cross_validate;
 
 namespace {
 

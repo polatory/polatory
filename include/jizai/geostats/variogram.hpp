@@ -2,12 +2,12 @@
 
 #include <jizai/common/io.hpp>
 #include <jizai/geometry/point3d.hpp>
-#include <jizai/kriging/normal_score_transformation.hpp>
+#include <jizai/geostats/normal_score_transformation.hpp>
 #include <jizai/types.hpp>
 #include <numeric>
 #include <vector>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <int Dim>
 class Variogram {
@@ -51,13 +51,13 @@ class Variogram {
   Vector direction_;
 };
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats
 
 namespace jizai::common {
 
 template <int Dim>
-struct Read<kriging::Variogram<Dim>> {
-  void operator()(std::istream& is, kriging::Variogram<Dim>& t) const {
+struct Read<geostats::Variogram<Dim>> {
+  void operator()(std::istream& is, geostats::Variogram<Dim>& t) const {
     read(is, t.bin_distance_);
     read(is, t.bin_gamma_);
     read(is, t.bin_num_pairs_);
@@ -66,8 +66,8 @@ struct Read<kriging::Variogram<Dim>> {
 };
 
 template <int Dim>
-struct Write<kriging::Variogram<Dim>> {
-  void operator()(std::ostream& os, const kriging::Variogram<Dim>& t) const {
+struct Write<geostats::Variogram<Dim>> {
+  void operator()(std::ostream& os, const geostats::Variogram<Dim>& t) const {
     write(os, t.bin_distance_);
     write(os, t.bin_gamma_);
     write(os, t.bin_num_pairs_);

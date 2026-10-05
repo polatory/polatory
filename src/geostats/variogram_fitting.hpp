@@ -2,16 +2,16 @@
 
 #include <algorithm>
 #include <jizai/geometry/point3d.hpp>
-#include <jizai/kriging/variogram.hpp>
-#include <jizai/kriging/variogram_fitting.hpp>
-#include <jizai/kriging/weight_function.hpp>
+#include <jizai/geostats/variogram.hpp>
+#include <jizai/geostats/variogram_fitting.hpp>
+#include <jizai/geostats/weight_function.hpp>
 #include <jizai/model.hpp>
 #include <jizai/types.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 namespace internal {
 
@@ -84,4 +84,4 @@ typename VariogramFitting<Dim>::Model VariogramFitting<Dim>::model() const {
   return impl_->model();
 }
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

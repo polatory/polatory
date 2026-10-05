@@ -9,7 +9,7 @@
 #include <jizai/types.hpp>
 #include <vector>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <int Dim>
 VecX cross_validate(const Model<Dim>& model, const geometry::Points<Dim>& points,
@@ -46,4 +46,4 @@ VecX cross_validate(const Model<Dim>& model, const geometry::Points<Dim>& points
   return predictions;
 }
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

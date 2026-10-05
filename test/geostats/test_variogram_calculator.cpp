@@ -6,7 +6,7 @@
 #include <jizai/common/io.hpp>
 #include <jizai/geometry/cuboid3d.hpp>
 #include <jizai/geometry/point3d.hpp>
-#include <jizai/kriging/variogram_calculator.hpp>
+#include <jizai/geostats/variogram_calculator.hpp>
 #include <jizai/point_cloud/random_points.hpp>
 #include <jizai/types.hpp>
 
@@ -16,8 +16,8 @@ using jizai::VecX;
 using jizai::geometry::Cuboid3;
 using jizai::geometry::Point3;
 using jizai::geometry::Points3;
-using jizai::kriging::VariogramCalculator;
-using jizai::kriging::VariogramSet;
+using jizai::geostats::VariogramCalculator;
+using jizai::geostats::VariogramSet;
 using jizai::point_cloud::random_points;
 
 TEST(variogram_calculator, serialization) {

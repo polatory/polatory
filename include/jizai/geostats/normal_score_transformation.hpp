@@ -7,7 +7,7 @@
 #include <numbers>
 #include <numeric>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 class NormalScoreTransformation {
  public:
@@ -125,4 +125,4 @@ class NormalScoreTransformation {
   VecX phi_;  // Coefficients for the Hermite polynomials.
 };
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

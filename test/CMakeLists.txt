@@ -5,6 +5,8 @@ add_executable(${TARGET}
     common/test_orthonormalize.cpp
     common/test_zip_sort.cpp
     geometry/test_bbox3d.cpp
+    geostats/test_detrend.cpp
+    geostats/test_variogram_calculator.cpp
     interpolation/test_evaluator.cpp
     interpolation/test_fitter.cpp
     interpolation/test_incremental_fitter.cpp
@@ -18,8 +20,6 @@ add_executable(${TARGET}
     isosurface/test_rmt.cpp
     isosurface/test_snap.cpp
     isosurface/test_snap_selfint.cpp
-    kriging/test_detrend.cpp
-    kriging/test_variogram_calculator.cpp
     krylov/test_krylov.cpp
     numeric/test_conv.cpp
     point_cloud/test_distance_filter.cpp

@@ -1,14 +1,14 @@
 #pragma once
 
 #include <jizai/common/io.hpp>
-#include <jizai/kriging/normal_score_transformation.hpp>
-#include <jizai/kriging/variogram.hpp>
+#include <jizai/geostats/normal_score_transformation.hpp>
+#include <jizai/geostats/variogram.hpp>
 #include <jizai/types.hpp>
 #include <numeric>
 #include <utility>
 #include <vector>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <int Dim>
 class VariogramSet {
@@ -50,20 +50,20 @@ class VariogramSet {
   std::vector<Variogram> variograms_;
 };
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats
 
 namespace jizai::common {
 
 template <int Dim>
-struct Read<kriging::VariogramSet<Dim>> {
-  void operator()(std::istream& is, kriging::VariogramSet<Dim>& t) const {
+struct Read<geostats::VariogramSet<Dim>> {
+  void operator()(std::istream& is, geostats::VariogramSet<Dim>& t) const {
     read(is, t.variograms_);
   }
 };
 
 template <int Dim>
-struct Write<kriging::VariogramSet<Dim>> {
-  void operator()(std::ostream& os, const kriging::VariogramSet<Dim>& t) const {
+struct Write<geostats::VariogramSet<Dim>> {
+  void operator()(std::ostream& os, const geostats::VariogramSet<Dim>& t) const {
     write(os, t.variograms_);
   }
 };

@@ -4,12 +4,12 @@
 #include <cmath>
 #include <jizai/common/macros.hpp>
 #include <jizai/geometry/point3d.hpp>
-#include <jizai/kriging/variogram.hpp>
+#include <jizai/geostats/variogram.hpp>
 #include <jizai/types.hpp>
 #include <utility>
 #include <vector>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 template <int Dim>
 class VariogramBuilder {
@@ -98,4 +98,4 @@ class VariogramBuilder {
   std::vector<Index> bin_num_pairs_;
 };
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats

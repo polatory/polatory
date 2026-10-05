@@ -3,7 +3,7 @@
 #include <cmath>
 #include <jizai/types.hpp>
 
-namespace jizai::kriging {
+namespace jizai::geostats {
 
 class WeightFunction {
  public:
@@ -37,4 +37,4 @@ inline const WeightFunction WeightFunction::kOne{0.0, 0.0, 0.0};
 inline const WeightFunction WeightFunction::kOneOverDistanceSquared{-2.0, 0.0, 0.0};
 inline const WeightFunction WeightFunction::kOneOverModelGammaSquared{0.0, -2.0, 0.0};
 
-}  // namespace jizai::kriging
+}  // namespace jizai::geostats
