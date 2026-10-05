@@ -151,7 +151,9 @@ void define_module(py::module& m) {
   py::class_<DistanceFilter>(m, "DistanceFilter")
       .def(py::init<const Points&>(), "points"_a)
       .def_property_readonly("filtered_indices", &DistanceFilter::filtered_indices)
-      .def("filter", py::overload_cast<double>(&DistanceFilter::filter), "distance"_a)
+      .def("filter", py::overload_cast<double>(&DistanceFilter::filter), "distance"_a = 0.0)
+      .def("filter", py::overload_cast<const std::vector<Index>&>(&DistanceFilter::filter),
+           "indices"_a)
       .def("filter", py::overload_cast<double, const std::vector<Index>&>(&DistanceFilter::filter),
            "distance"_a, "indices"_a);
 

@@ -22,9 +22,11 @@ class DistanceFilter {
  public:
   explicit DistanceFilter(const Points& points) : points_(points), tree_(points) {}
 
-  DistanceFilter& filter(double distance) {
+  DistanceFilter& filter(double distance = 0.0) {
     return filter(distance, trivial_indices(points_.rows()));
   }
+
+  DistanceFilter& filter(const std::vector<Index>& indices) { return filter(0.0, indices); }
 
   DistanceFilter& filter(double distance, const std::vector<Index>& indices) {
     if (!(distance >= 0.0)) {
