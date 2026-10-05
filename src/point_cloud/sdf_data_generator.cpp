@@ -38,11 +38,6 @@ SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
   } else {
     auto a_points = geometry::transform_points<3>(aniso, points);
     auto a_normals = geometry::transform_vectors<3>(aniso.inverse().transpose(), normals);
-    for (auto n : a_normals.rowwise()) {
-      if (!n.isZero()) {
-        n = n.normalized();
-      }
-    }
     auto [sdf_points, sdf_values] = estimate_impl(a_points, a_normals, offset);
     sdf_points_ = geometry::transform_points<3>(aniso.inverse(), sdf_points);
     sdf_values_ = sdf_values;
@@ -67,12 +62,13 @@ std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
 
   for (auto sign : {-1.0, 1.0}) {
     for (Index i = 0; i < n_points; i++) {
-      auto p = points.row(i);
-      auto n = normals.row(i);
+      geometry::Point3 p = points.row(i);
+      geometry::Vector3 n = normals.row(i);
 
       if (n.isZero()) {
         continue;
       }
+      n.normalize();
 
       double d{};
       if (offset.has_value()) {
