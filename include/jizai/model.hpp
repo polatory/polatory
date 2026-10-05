@@ -29,10 +29,10 @@ class Model {
   using Rbf = rbf::Rbf<kDim>;
 
  public:
-  explicit Model(Rbf&& rbf, std::optional<int> poly_degree = std::nullopt)
+  explicit Model(Rbf rbf, std::optional<int> poly_degree = std::nullopt)
       : Model(std::vector<Rbf>{std::move(rbf)}, poly_degree) {}
 
-  explicit Model(std::vector<Rbf>&& rbfs, std::optional<int> poly_degree = std::nullopt)
+  explicit Model(std::vector<Rbf> rbfs, std::optional<int> poly_degree = std::nullopt)
       : rbfs_(std::move(rbfs)) {
     if (rbfs_.empty()) {
       throw std::invalid_argument("rbfs must not be empty");

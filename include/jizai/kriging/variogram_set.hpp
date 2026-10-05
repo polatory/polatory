@@ -15,7 +15,7 @@ class VariogramSet {
   using Variogram = Variogram<Dim>;
 
  public:
-  explicit VariogramSet(std::vector<Variogram>&& variograms) : variograms_{std::move(variograms)} {}
+  explicit VariogramSet(std::vector<Variogram> variograms) : variograms_{std::move(variograms)} {}
 
   ~VariogramSet() = default;
 
