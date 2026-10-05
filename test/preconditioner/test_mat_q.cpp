@@ -3,21 +3,21 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <cmath>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/polynomial/monomial_basis.hpp>
+#include <jizai/polynomial/polynomial_basis_base.hpp>
+#include <jizai/preconditioner/mat_q.hpp>
+#include <jizai/types.hpp>
 #include <numeric>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/polynomial/monomial_basis.hpp>
-#include <polatory/polynomial/polynomial_basis_base.hpp>
-#include <polatory/preconditioner/mat_q.hpp>
-#include <polatory/types.hpp>
 #include <vector>
 
-using polatory::Index;
-using polatory::kAll;
-using polatory::MatX;
-using polatory::geometry::Points;
-using polatory::polynomial::MonomialBasis;
-using polatory::polynomial::PolynomialBasisBase;
-using polatory::preconditioner::MatQ;
+using jizai::Index;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::geometry::Points;
+using jizai::polynomial::MonomialBasis;
+using jizai::polynomial::PolynomialBasisBase;
+using jizai::preconditioner::MatQ;
 
 namespace {
 

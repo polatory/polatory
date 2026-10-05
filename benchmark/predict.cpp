@@ -2,19 +2,19 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
-#include <polatory/polatory.hpp>
+#include <jizai/jizai.hpp>
 #include <utility>
 
-using polatory::Interpolant;
-using polatory::kAll;
-using polatory::MatX;
-using polatory::Model;
-using polatory::read_table;
-using polatory::VecX;
-using polatory::write_table;
-using polatory::common::concatenate_cols;
-using polatory::geometry::Points3;
-using polatory::rbf::CovExponential;
+using jizai::Interpolant;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::Model;
+using jizai::read_table;
+using jizai::VecX;
+using jizai::write_table;
+using jizai::common::concatenate_cols;
+using jizai::geometry::Points3;
+using jizai::rbf::CovExponential;
 
 int main(int /*argc*/, char* argv[]) {
   try {

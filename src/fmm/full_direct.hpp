@@ -1,8 +1,8 @@
 #pragma once
 
-#include <polatory/types.hpp>
+#include <jizai/types.hpp>
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <class Container, class Kernel>
 void full_direct(Container& particles, const Kernel& kernel) {
@@ -51,4 +51,4 @@ void full_direct(const SourceContainer& src_particles, TargetContainer& trg_part
   }
 }
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

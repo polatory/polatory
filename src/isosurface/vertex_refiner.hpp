@@ -2,12 +2,12 @@
 
 #include <Eigen/Core>
 #include <array>
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/field_function.hpp>
-#include <polatory/isosurface/mesh.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/field_function.hpp>
+#include <jizai/isosurface/mesh.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <utility>
 #include <vector>
 
@@ -15,7 +15,7 @@
 #include "face_grid.hpp"
 #include "utility.hpp"
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 class VertexRefiner {
   using Point3 = geometry::Point3;
@@ -142,4 +142,4 @@ class VertexRefiner {
   FaceGrid face_grid_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

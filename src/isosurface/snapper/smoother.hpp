@@ -6,12 +6,12 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/edge.hpp>
+#include <jizai/isosurface/mesh.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <optional>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/edge.hpp>
-#include <polatory/isosurface/mesh.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
 #include <queue>
 #include <utility>
 #include <vector>
@@ -21,7 +21,7 @@
 #include "../spatial_grid.hpp"
 #include "../utility.hpp"
 
-namespace polatory::isosurface::snapper {
+namespace jizai::isosurface::snapper {
 
 class Smoother {
   using Point2 = geometry::Point2;
@@ -265,4 +265,4 @@ class Smoother {
   Mesh result_;
 };
 
-}  // namespace polatory::isosurface::snapper
+}  // namespace jizai::isosurface::snapper

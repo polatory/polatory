@@ -1,25 +1,25 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/direct_operator.hpp>
-#include <polatory/interpolation/operator.hpp>
-#include <polatory/model.hpp>
-#include <polatory/numeric/error.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/interpolation/direct_operator.hpp>
+#include <jizai/interpolation/operator.hpp>
+#include <jizai/model.hpp>
+#include <jizai/numeric/error.hpp>
+#include <jizai/rbf/polyharmonic_odd.hpp>
+#include <jizai/types.hpp>
 #include <utility>
 
 #include "../utility.hpp"
 
-using polatory::Index;
-using polatory::Model;
-using polatory::VecX;
-using polatory::geometry::Points;
-using polatory::interpolation::DirectOperator;
-using polatory::interpolation::Operator;
-using polatory::numeric::absolute_error;
-using polatory::rbf::Triharmonic3D;
+using jizai::Index;
+using jizai::Model;
+using jizai::VecX;
+using jizai::geometry::Points;
+using jizai::interpolation::DirectOperator;
+using jizai::interpolation::Operator;
+using jizai::numeric::absolute_error;
+using jizai::rbf::Triharmonic3D;
 
 TEST(rbf_operator, trivial) {
   constexpr int kDim = 3;

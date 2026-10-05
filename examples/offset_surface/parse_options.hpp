@@ -2,8 +2,8 @@
 
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <jizai/jizai.hpp>
 #include <limits>
-#include <polatory/polatory.hpp>
 #include <string>
 
 #include "../common/bbox.hpp"
@@ -15,7 +15,7 @@ struct Options {
   double tolerance{};
   int max_iter{};
   double accuracy{};
-  polatory::geometry::Bbox3 mesh_bbox;
+  jizai::geometry::Bbox3 mesh_bbox;
   double mesh_resolution{};
   std::string mesh_out;
 };

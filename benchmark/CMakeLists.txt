@@ -1,14 +1,14 @@
 add_executable(kernel_cost kernel_cost.cpp)
-target_link_libraries(kernel_cost PRIVATE polatory)
+target_link_libraries(kernel_cost PRIVATE jizai)
 
 add_executable(points points.cpp)
-target_link_libraries(points PRIVATE polatory)
+target_link_libraries(points PRIVATE jizai)
 
 add_executable(predict predict.cpp)
-target_link_libraries(predict PRIVATE polatory)
+target_link_libraries(predict PRIVATE jizai)
 
 if(MSVC)
-    polatory_target_contents(predict ${POLATORY_DLLS})
+    jizai_target_contents(predict ${JIZAI_DLLS})
 endif()
 
 set(FILES
@@ -17,4 +17,4 @@ set(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/simulate.R
 )
 
-polatory_target_contents(predict ${FILES})
+jizai_target_contents(predict ${FILES})

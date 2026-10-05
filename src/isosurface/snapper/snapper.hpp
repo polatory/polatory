@@ -10,14 +10,14 @@
 #include <boost/unordered/unordered_flat_set.hpp>
 #include <cstddef>
 #include <format>
+#include <jizai/common/macros.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/edge.hpp>
+#include <jizai/isosurface/mesh.hpp>
+#include <jizai/isosurface/snap.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <limits>
-#include <polatory/common/macros.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/edge.hpp>
-#include <polatory/isosurface/mesh.hpp>
-#include <polatory/isosurface/snap.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
 #include <queue>
 #include <stdexcept>
 #include <tuple>
@@ -29,7 +29,7 @@
 #include "../utility.hpp"
 #include "triangulation.hpp"
 
-namespace polatory::isosurface::snapper {
+namespace jizai::isosurface::snapper {
 
 class Snapper {
   using Point2 = geometry::Point2;
@@ -585,7 +585,7 @@ class Snapper {
       case Simplex::kFace:
         return try_snap_face(cand, dishonored);
     }
-    POLATORY_UNREACHABLE();
+    JIZAI_UNREACHABLE();
     return false;
   }
 
@@ -716,4 +716,4 @@ class Snapper {
   Mesh result_;
 };
 
-}  // namespace polatory::isosurface::snapper
+}  // namespace jizai::isosurface::snapper

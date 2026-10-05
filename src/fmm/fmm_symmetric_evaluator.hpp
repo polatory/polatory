@@ -1,12 +1,12 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <jizai/common/macros.hpp>
+#include <jizai/fmm/fmm_symmetric_evaluator.hpp>
+#include <jizai/types.hpp>
 #include <limits>
 #include <memory>
 #include <optional>
-#include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
-#include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/container/particle_container.hpp>
@@ -25,7 +25,7 @@
 #include "interpolator_configuration.hpp"
 #include "utility.hpp"
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <class Kernel>
 class FmmGenericSymmetricEvaluator<Kernel>::Impl {
@@ -129,7 +129,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_points_);
+    JIZAI_ASSERT(weights.rows() == km * n_points_);
 
     if (!tree_) {
       for (Index idx = 0; idx < n_points_; idx++) {
@@ -307,4 +307,4 @@ void FmmGenericSymmetricEvaluator<Kernel>::set_weights(const Eigen::Ref<const Ve
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<2>);  \
   IMPLEMENT_FMM_SYMMETRIC_EVALUATORS_(RBF_NAME<3>);
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

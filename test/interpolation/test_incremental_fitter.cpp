@@ -1,24 +1,24 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/interpolation/evaluator.hpp>
-#include <polatory/interpolation/incremental_fitter.hpp>
-#include <polatory/model.hpp>
-#include <polatory/numeric/error.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/types.hpp>
+#include <jizai/interpolation/evaluator.hpp>
+#include <jizai/interpolation/incremental_fitter.hpp>
+#include <jizai/model.hpp>
+#include <jizai/numeric/error.hpp>
+#include <jizai/rbf/polyharmonic_odd.hpp>
+#include <jizai/types.hpp>
 #include <utility>
 
 #include "../utility.hpp"
 
-using polatory::Index;
-using polatory::kAll;
-using polatory::Model;
-using polatory::VecX;
-using polatory::interpolation::Evaluator;
-using polatory::interpolation::IncrementalFitter;
-using polatory::numeric::absolute_error;
-using polatory::rbf::Triharmonic3D;
+using jizai::Index;
+using jizai::kAll;
+using jizai::Model;
+using jizai::VecX;
+using jizai::interpolation::Evaluator;
+using jizai::interpolation::IncrementalFitter;
+using jizai::numeric::absolute_error;
+using jizai::rbf::Triharmonic3D;
 
 TEST(rbf_incremental_fitter, trivial) {
   constexpr int kDim = 3;

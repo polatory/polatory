@@ -1,11 +1,11 @@
 #pragma once
 
 #include <boost/unordered/unordered_flat_map.hpp>
+#include <jizai/types.hpp>
 #include <numeric>
-#include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 class DisjointSets {
  public:
@@ -40,4 +40,4 @@ class DisjointSets {
   std::vector<Index> parent_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

@@ -5,12 +5,12 @@
 #include <boost/container_hash/hash.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <cstddef>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/types.hpp>
 #include <limits>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/types.hpp>
 #include <vector>
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 class SpatialGrid {
   using Point3 = geometry::Point3;
@@ -115,4 +115,4 @@ class SpatialGrid {
   mutable std::vector<int> visited_epoch_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

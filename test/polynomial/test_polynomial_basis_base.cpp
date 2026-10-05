@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include <polatory/polynomial/polynomial_basis_base.hpp>
+#include <jizai/polynomial/polynomial_basis_base.hpp>
 
-using polatory::polynomial::PolynomialBasisBase;
+using jizai::polynomial::PolynomialBasisBase;
 
 TEST(polynomial_basis_base, trivial) {
   EXPECT_EQ(0, PolynomialBasisBase<1>::basis_size(-1));

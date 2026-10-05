@@ -1,4 +1,4 @@
-set(TARGET polatory)
+set(TARGET jizai)
 
 add_library(${TARGET} STATIC
     fmm/impl/biharmonic2d.cpp

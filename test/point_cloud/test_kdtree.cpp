@@ -2,18 +2,18 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/point_cloud/kdtree.hpp>
-#include <polatory/point_cloud/random_points.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/point_cloud/kdtree.hpp>
+#include <jizai/point_cloud/random_points.hpp>
+#include <jizai/types.hpp>
 
-using polatory::Index;
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
-using polatory::geometry::Sphere3;
-using polatory::geometry::Vector3;
-using polatory::point_cloud::KdTree;
-using polatory::point_cloud::random_points;
+using jizai::Index;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
+using jizai::geometry::Sphere3;
+using jizai::geometry::Vector3;
+using jizai::point_cloud::KdTree;
+using jizai::point_cloud::random_points;
 
 TEST(kdtree, trivial) {
   const auto n_points = Index{1024};

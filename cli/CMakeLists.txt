@@ -19,15 +19,15 @@ add_executable(${TARGET}
 )
 
 set_target_properties(${TARGET} PROPERTIES
-    OUTPUT_NAME "polatory"
+    OUTPUT_NAME "jizai"
 )
 
 target_link_libraries(${TARGET} PRIVATE
     Boost::any
     Boost::program_options
-    polatory
+    jizai
 )
 
 if(MSVC)
-    polatory_target_contents(${TARGET} ${POLATORY_DLLS})
+    jizai_target_contents(${TARGET} ${JIZAI_DLLS})
 endif()

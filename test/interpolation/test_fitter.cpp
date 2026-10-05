@@ -1,23 +1,23 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>
-#include <polatory/interpolation/fitter.hpp>
-#include <polatory/interpolation/symmetric_evaluator.hpp>
-#include <polatory/model.hpp>
-#include <polatory/numeric/error.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/types.hpp>
+#include <jizai/interpolation/fitter.hpp>
+#include <jizai/interpolation/symmetric_evaluator.hpp>
+#include <jizai/model.hpp>
+#include <jizai/numeric/error.hpp>
+#include <jizai/rbf/polyharmonic_odd.hpp>
+#include <jizai/types.hpp>
 #include <utility>
 
 #include "../utility.hpp"
 
-using polatory::Index;
-using polatory::Model;
-using polatory::VecX;
-using polatory::interpolation::Fitter;
-using polatory::interpolation::SymmetricEvaluator;
-using polatory::numeric::absolute_error;
-using polatory::rbf::Triharmonic3D;
+using jizai::Index;
+using jizai::Model;
+using jizai::VecX;
+using jizai::interpolation::Fitter;
+using jizai::interpolation::SymmetricEvaluator;
+using jizai::numeric::absolute_error;
+using jizai::rbf::Triharmonic3D;
 
 namespace {
 

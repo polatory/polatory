@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "polatory"
+name = "jizai"
 dynamic = ["version"]
 description = "Fast and memory-efficient radial basis function (RBF) interpolation"
 readme = "README.md"
@@ -23,10 +23,10 @@ classifiers = [
 dependencies = ["numpy"]
 
 [project.urls]
-Homepage = "https://github.com/polatory/polatory"
-Documentation = "https://github.com/polatory/polatory/wiki"
-Issues = "https://github.com/polatory/polatory/issues"
+Homepage = "https://github.com/unageek/jizai"
+Documentation = "https://github.com/unageek/jizai/wiki"
+Issues = "https://github.com/unageek/jizai/issues"
 
 [tool.setuptools]
 package-dir = { "" = "python/src" }
-packages = ["polatory"]
+packages = ["jizai"]

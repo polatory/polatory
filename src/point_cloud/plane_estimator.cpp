@@ -1,12 +1,12 @@
 #include <cmath>
+#include <jizai/common/macros.hpp>
+#include <jizai/point_cloud/plane_estimator.hpp>
 #include <limits>
-#include <polatory/common/macros.hpp>
-#include <polatory/point_cloud/plane_estimator.hpp>
 
-namespace polatory::point_cloud {
+namespace jizai::point_cloud {
 
 PlaneEstimator::PlaneEstimator(const geometry::Points3& points) {
-  POLATORY_ASSERT(points.rows() >= 3);
+  JIZAI_ASSERT(points.rows() >= 3);
 
   auto svd = pca_svd(points);
 
@@ -43,4 +43,4 @@ Eigen::JacobiSVD<geometry::Points3> PlaneEstimator::pca_svd(const geometry::Poin
   return Eigen::JacobiSVD<geometry::Points3>(points.rowwise() - barycenter, Eigen::ComputeFullV);
 }
 
-}  // namespace polatory::point_cloud
+}  // namespace jizai::point_cloud

@@ -3,22 +3,22 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
-#include <polatory/common/io.hpp>
-#include <polatory/geometry/cuboid3d.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/kriging/variogram_calculator.hpp>
-#include <polatory/point_cloud/random_points.hpp>
-#include <polatory/types.hpp>
+#include <jizai/common/io.hpp>
+#include <jizai/geometry/cuboid3d.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/kriging/variogram_calculator.hpp>
+#include <jizai/point_cloud/random_points.hpp>
+#include <jizai/types.hpp>
 
 namespace fs = std::filesystem;
-using polatory::Index;
-using polatory::VecX;
-using polatory::geometry::Cuboid3;
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
-using polatory::kriging::VariogramCalculator;
-using polatory::kriging::VariogramSet;
-using polatory::point_cloud::random_points;
+using jizai::Index;
+using jizai::VecX;
+using jizai::geometry::Cuboid3;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
+using jizai::kriging::VariogramCalculator;
+using jizai::kriging::VariogramSet;
+using jizai::point_cloud::random_points;
 
 TEST(variogram_calculator, serialization) {
   const auto n_points = Index{1000};

@@ -1,14 +1,14 @@
 #include <exception>
 #include <iostream>
-#include <polatory/geometry/sphere3d.hpp>
-#include <polatory/point_cloud/random_points.hpp>
-#include <polatory/polatory.hpp>
+#include <jizai/geometry/sphere3d.hpp>
+#include <jizai/jizai.hpp>
+#include <jizai/point_cloud/random_points.hpp>
 #include <string>
 
-using polatory::write_table;
-using polatory::geometry::Sphere3;
-using polatory::point_cloud::DistanceFilter;
-using polatory::point_cloud::random_points;
+using jizai::write_table;
+using jizai::geometry::Sphere3;
+using jizai::point_cloud::DistanceFilter;
+using jizai::point_cloud::random_points;
 
 int main(int /*argc*/, char* argv[]) {
   try {

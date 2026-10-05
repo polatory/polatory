@@ -5,12 +5,12 @@ import os
 import tempfile
 
 import numpy as np
-import polatory
-import polatory.one
-import polatory.three
-import polatory.two
+import jizai
+import jizai.one
+import jizai.three
+import jizai.two
 
-MODULES = [(1, polatory.one), (2, polatory.two), (3, polatory.three)]
+MODULES = [(1, jizai.one), (2, jizai.two), (3, jizai.three)]
 
 RBF_NAMES = [
     "Biharmonic2D",
@@ -201,14 +201,14 @@ def test_kriging(dim, mod, tmp):
     fit = mod.VariogramFitting(
         variog_set,
         mod.Model(mod.CovExponential([1.0, 0.5]), poly_degree=-1),
-        polatory.WeightFunction.NUM_PAIRS,
+        jizai.WeightFunction.NUM_PAIRS,
         fit_anisotropy=dim > 1,
     )
     assert fit.brief_report and fit.full_report
     assert fit.final_cost >= 0.0
     assert fit.model.num_rbfs == 1
 
-    nst = polatory.NormalScoreTransformation()
+    nst = jizai.NormalScoreTransformation()
     y = nst.transform(values)
     assert abs(y.mean()) < 1e-6 and abs(y.std() - 1.0) < 1e-2
     assert np.corrcoef(nst.back_transform(y), values)[0, 1] > 0.99
@@ -232,7 +232,7 @@ def test_normal_estimator():
     points = sphere_points(500)
     up = np.array([0.0, 0.0, 1.0])
 
-    ne = polatory.NormalEstimator(points)
+    ne = jizai.NormalEstimator(points)
     assert ne.estimate_with_knn(20) is ne
     ne.orient_toward_direction(up)
     assert (ne.normals @ up).min() >= 0.0
@@ -249,43 +249,43 @@ def test_normal_estimator():
     normals[:] = 7.0
     assert np.array_equal(ne.normals, expected)
 
-    sdf = polatory.SdfDataGenerator(points, ne.normals, 0.1)
+    sdf = jizai.SdfDataGenerator(points, ne.normals, 0.1)
     assert len(sdf.sdf_points) == len(sdf.sdf_values)
-    sdf = polatory.SdfDataGenerator(points, ne.normals, 0.1, np.eye(3))
+    sdf = jizai.SdfDataGenerator(points, ne.normals, 0.1, np.eye(3))
     assert len(sdf.sdf_points) == len(sdf.sdf_values)
 
 
 def fit_plane_interpolant():
     points = rng.random((200, 3))
-    interp = polatory.three.Interpolant(
-        polatory.three.Model(polatory.three.Biharmonic3D([1.0]), poly_degree=1)
+    interp = jizai.three.Interpolant(
+        jizai.three.Model(jizai.three.Biharmonic3D([1.0]), poly_degree=1)
     )
     interp.fit(points, points[:, 0] - 0.5, 1e-6)
     return interp
 
 
 def test_isosurface(tmp):
-    bbox = polatory.three.Bbox(np.zeros(3), np.ones(3))
+    bbox = jizai.three.Bbox(np.zeros(3), np.ones(3))
     interp = fit_plane_interpolant()
-    field_fn = polatory.RbfFieldFunction(interp)
+    field_fn = jizai.RbfFieldFunction(interp)
 
-    mesh = polatory.Isosurface(bbox, 0.1).generate(field_fn)
+    mesh = jizai.Isosurface(bbox, 0.1).generate(field_fn)
     assert mesh.faces.shape[0] > 0
     assert not mesh.is_empty and not mesh.is_entire
     assert np.abs(mesh.vertices[:, 0] - 0.5).max() < 1e-6
     mesh.export_obj(os.path.join(tmp, "mesh.obj"))
 
-    mesh = polatory.Isosurface(bbox, 0.1).generate(field_fn, isovalue=1.0)
+    mesh = jizai.Isosurface(bbox, 0.1).generate(field_fn, isovalue=1.0)
     assert mesh.is_entire and not mesh.is_empty and mesh.faces.shape[0] == 0
-    mesh = polatory.Isosurface(bbox, 0.1).generate(field_fn, isovalue=-1.0)
+    mesh = jizai.Isosurface(bbox, 0.1).generate(field_fn, isovalue=-1.0)
     assert mesh.is_empty and not mesh.is_entire and mesh.faces.shape[0] == 0
 
-    iso = polatory.Isosurface(bbox, 0.1, np.eye(3))
+    iso = jizai.Isosurface(bbox, 0.1, np.eye(3))
     snap_points = np.column_stack([np.full(5, 0.5), rng.random((5, 2))])
     iso.set_snap_points(snap_points)
     iso.set_snap_points(snap_points, np.full(5, 0.5))
     seed_points = np.array([[0.5, 0.5, 0.5]])
-    field_fn = polatory.RbfFieldFunction(interp, 1e-6, 1e-5)
+    field_fn = jizai.RbfFieldFunction(interp, 1e-6, 1e-5)
     mesh = iso.generate_from_seed_points(
         seed_points, field_fn, isovalue=0.0, refine=False
     )
@@ -294,29 +294,27 @@ def test_isosurface(tmp):
 
 def test_isosurface_25d():
     points = rng.random((100, 2))
-    interp = polatory.two.Interpolant(
-        polatory.two.Model(polatory.two.Biharmonic2D([1.0]))
-    )
+    interp = jizai.two.Interpolant(jizai.two.Model(jizai.two.Biharmonic2D([1.0])))
     interp.fit(points, 0.1 * points.sum(axis=1), 1e-6)
 
-    bbox = polatory.three.Bbox(np.array([0.0, 0.0, -1.0]), np.array([1.0, 1.0, 1.0]))
-    mesh = polatory.Isosurface(bbox, 0.1).generate(polatory.RbfFieldFunction25D(interp))
+    bbox = jizai.three.Bbox(np.array([0.0, 0.0, -1.0]), np.array([1.0, 1.0, 1.0]))
+    mesh = jizai.Isosurface(bbox, 0.1).generate(jizai.RbfFieldFunction25D(interp))
     assert mesh.faces.shape[0] > 0
 
 
 def test_field_function_keeps_interpolant_alive():
-    field_fn = polatory.RbfFieldFunction(fit_plane_interpolant())
+    field_fn = jizai.RbfFieldFunction(fit_plane_interpolant())
     gc.collect()
-    model = polatory.three.Model(polatory.three.Biharmonic3D([1.0]))
-    garbage = [polatory.three.Interpolant(model) for i in range(1000)]
+    model = jizai.three.Model(jizai.three.Biharmonic3D([1.0]))
+    garbage = [jizai.three.Interpolant(model) for i in range(1000)]
 
-    bbox = polatory.three.Bbox(np.zeros(3), np.ones(3))
-    mesh = polatory.Isosurface(bbox, 0.1).generate(field_fn)
+    bbox = jizai.three.Bbox(np.zeros(3), np.ones(3))
+    mesh = jizai.Isosurface(bbox, 0.1).generate(field_fn)
     assert np.abs(mesh.vertices[:, 0] - 0.5).max() < 1e-6
 
 
 def test_weight_function():
-    polatory.WeightFunction(1.0, 0.0, 1.0)
+    jizai.WeightFunction(1.0, 0.0, 1.0)
     for name in [
         "NUM_PAIRS",
         "NUM_PAIRS_OVER_DISTANCE_SQUARED",
@@ -325,9 +323,7 @@ def test_weight_function():
         "ONE_OVER_DISTANCE_SQUARED",
         "ONE_OVER_MODEL_GAMMA_SQUARED",
     ]:
-        assert isinstance(
-            getattr(polatory.WeightFunction, name), polatory.WeightFunction
-        )
+        assert isinstance(getattr(jizai.WeightFunction, name), jizai.WeightFunction)
 
 
 def main():

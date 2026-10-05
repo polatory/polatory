@@ -5,14 +5,14 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/isosurface.hpp>
+#include <jizai/isosurface/refine.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <limits>
 #include <numbers>
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/isosurface.hpp>
-#include <polatory/isosurface/refine.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
 #include <random>
 #include <unordered_set>
 #include <utility>
@@ -20,18 +20,18 @@
 
 #include "../utility.hpp"
 
-using polatory::Index;
-using polatory::Mat3;
-using polatory::VecX;
-using polatory::geometry::Bbox3;
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
-using polatory::geometry::Vector3;
-using polatory::isosurface::Faces;
-using polatory::isosurface::FieldFunction;
-using polatory::isosurface::Isosurface;
-using polatory::isosurface::Mesh;
-using polatory::isosurface::refine_vertices;
+using jizai::Index;
+using jizai::Mat3;
+using jizai::VecX;
+using jizai::geometry::Bbox3;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
+using jizai::geometry::Vector3;
+using jizai::isosurface::Faces;
+using jizai::isosurface::FieldFunction;
+using jizai::isosurface::Isosurface;
+using jizai::isosurface::Mesh;
+using jizai::isosurface::refine_vertices;
 
 namespace {
 

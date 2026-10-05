@@ -2,13 +2,13 @@
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <polatory/types.hpp>
+#include <jizai/types.hpp>
 #include <stack>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 class DenseUndirectedGraph {
   using Matrix = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -127,4 +127,4 @@ class DenseUndirectedGraph {
   Matrix m_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

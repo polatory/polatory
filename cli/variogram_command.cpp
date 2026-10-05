@@ -1,24 +1,24 @@
 #include <Eigen/Core>
 #include <boost/program_options.hpp>
 #include <format>
+#include <jizai/jizai.hpp>
+#include <jizai/kriging.hpp>
 #include <memory>
 #include <numbers>
-#include <polatory/kriging.hpp>
-#include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "commands.hpp"
 
-using polatory::kAll;
-using polatory::MatX;
-using polatory::read_table;
-using polatory::VecX;
-using polatory::geometry::Points;
-using polatory::kriging::detrend;
-using polatory::kriging::NormalScoreTransformation;
-using polatory::kriging::VariogramCalculator;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::read_table;
+using jizai::VecX;
+using jizai::geometry::Points;
+using jizai::kriging::detrend;
+using jizai::kriging::NormalScoreTransformation;
+using jizai::kriging::VariogramCalculator;
 
 namespace {
 
@@ -67,7 +67,7 @@ class VariogramCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -80,7 +80,7 @@ class VariogramCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 

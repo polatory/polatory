@@ -5,12 +5,12 @@
 #include <boost/unordered/unordered_flat_set.hpp>
 #include <cstddef>
 #include <functional>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/edge.hpp>
+#include <jizai/isosurface/mesh.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <limits>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/edge.hpp>
-#include <polatory/isosurface/mesh.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
 #include <vector>
 
 #include "../abstract_mesh.hpp"
@@ -18,7 +18,7 @@
 #include "../spatial_grid.hpp"
 #include "../utility.hpp"
 
-namespace polatory::isosurface::snapper {
+namespace jizai::isosurface::snapper {
 
 using geometry::Points3;
 
@@ -276,4 +276,4 @@ class Thinner {
   Mesh result_;
 };
 
-}  // namespace polatory::isosurface::snapper
+}  // namespace jizai::isosurface::snapper

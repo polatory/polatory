@@ -46,7 +46,7 @@ inline boost::program_options::options_description make_model_options_descriptio
        "Nugget of the model")  //
       ("deg",
        po::value(&opts.poly_degree)
-           ->default_value(polatory::Model<1>::kMinRequiredPolyDegree, "AUTO")
+           ->default_value(jizai::Model<1>::kMinRequiredPolyDegree, "AUTO")
            ->value_name("-1|0|1|2"),
        "Degree of the polynomial trend")  //
       ;

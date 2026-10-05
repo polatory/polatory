@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
-#include <polatory/common/orthonormalize.hpp>
-#include <polatory/types.hpp>
+#include <jizai/common/orthonormalize.hpp>
+#include <jizai/types.hpp>
 
-using polatory::Index;
-using polatory::MatX;
-using polatory::common::orthonormalize_cols;
+using jizai::Index;
+using jizai::MatX;
+using jizai::common::orthonormalize_cols;
 
 TEST(orthonormalize_cols, trivial) {
   const Index rows = 100;

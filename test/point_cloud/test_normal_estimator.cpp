@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
 
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/point_cloud/normal_estimator.hpp>
-#include <polatory/point_cloud/random_points.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/point_cloud/normal_estimator.hpp>
+#include <jizai/point_cloud/random_points.hpp>
+#include <jizai/types.hpp>
 
-using polatory::Index;
-using polatory::geometry::Sphere3;
-using polatory::geometry::Vector3;
-using polatory::point_cloud::NormalEstimator;
-using polatory::point_cloud::random_points;
+using jizai::Index;
+using jizai::geometry::Sphere3;
+using jizai::geometry::Vector3;
+using jizai::point_cloud::NormalEstimator;
+using jizai::point_cloud::random_points;
 
 TEST(normal_estimator, knn) {
   const auto n_points = Index{4096};

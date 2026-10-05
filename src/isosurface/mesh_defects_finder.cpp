@@ -2,15 +2,15 @@
 #include <Eigen/LU>
 #include <algorithm>
 #include <boost/unordered/unordered_flat_map.hpp>
-#include <polatory/isosurface/mesh_defects_finder.hpp>
-#include <polatory/types.hpp>
+#include <jizai/isosurface/mesh_defects_finder.hpp>
+#include <jizai/types.hpp>
 #include <utility>
 
 #include "dense_undirected_graph.hpp"
 #include "face_grid.hpp"
 #include "utility.hpp"
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 MeshDefectsFinder::MeshDefectsFinder(const Mesh& mesh, double resolution)
     : vertices_(mesh.vertices()),
@@ -144,4 +144,4 @@ Index MeshDefectsFinder::prev_vertex(Index fi, Index vi) const {
   return f(1);
 }
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

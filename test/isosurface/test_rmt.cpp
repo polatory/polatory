@@ -3,28 +3,28 @@
 #include <Eigen/Geometry>
 #include <array>
 #include <cmath>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/rmt/edge.hpp>
+#include <jizai/isosurface/rmt/lattice_coordinates.hpp>
+#include <jizai/isosurface/rmt/primitive_lattice.hpp>
+#include <jizai/point_cloud/random_points.hpp>
 #include <numbers>
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/rmt/edge.hpp>
-#include <polatory/isosurface/rmt/lattice_coordinates.hpp>
-#include <polatory/isosurface/rmt/primitive_lattice.hpp>
-#include <polatory/point_cloud/random_points.hpp>
 
-using polatory::Mat3;
-using polatory::geometry::Bbox3;
-using polatory::geometry::Cuboid3;
-using polatory::geometry::Point3;
-using polatory::geometry::transform_vector;
-using polatory::geometry::Vector3;
-using polatory::isosurface::rmt::EdgeIndex;
-using polatory::isosurface::rmt::kInvSqrt3;
-using polatory::isosurface::rmt::kLatticeBasis;
-using polatory::isosurface::rmt::kNeighborLatticeCoordinatesDeltas;
-using polatory::isosurface::rmt::kOppositeEdge;
-using polatory::isosurface::rmt::LatticeCoordinates;
-using polatory::isosurface::rmt::PrimitiveLattice;
-using polatory::point_cloud::random_points;
+using jizai::Mat3;
+using jizai::geometry::Bbox3;
+using jizai::geometry::Cuboid3;
+using jizai::geometry::Point3;
+using jizai::geometry::transform_vector;
+using jizai::geometry::Vector3;
+using jizai::isosurface::rmt::EdgeIndex;
+using jizai::isosurface::rmt::kInvSqrt3;
+using jizai::isosurface::rmt::kLatticeBasis;
+using jizai::isosurface::rmt::kNeighborLatticeCoordinatesDeltas;
+using jizai::isosurface::rmt::kOppositeEdge;
+using jizai::isosurface::rmt::LatticeCoordinates;
+using jizai::isosurface::rmt::PrimitiveLattice;
+using jizai::point_cloud::random_points;
 
 TEST(rmt, lattice) {
   Point3 min(-1.0, -1.0, -1.0);

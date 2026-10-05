@@ -3,10 +3,10 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <jizai/jizai.hpp>
+#include <jizai/kriging.hpp>
 #include <limits>
 #include <memory>
-#include <polatory/kriging.hpp>
-#include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -15,9 +15,9 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
-using polatory::Model;
-using polatory::kriging::VariogramFitting;
-using polatory::kriging::VariogramSet;
+using jizai::Model;
+using jizai::kriging::VariogramFitting;
+using jizai::kriging::VariogramSet;
 
 namespace {
 
@@ -68,7 +68,7 @@ class FitModelToVariogramCommand : public Command {
     }
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -81,28 +81,28 @@ class FitModelToVariogramCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 
     switch (weights) {
       case 0:
-        opts.weight_fn = polatory::kriging::WeightFunction::kNumPairs;
+        opts.weight_fn = jizai::kriging::WeightFunction::kNumPairs;
         break;
       case 1:
-        opts.weight_fn = polatory::kriging::WeightFunction::kNumPairsOverDistanceSquared;
+        opts.weight_fn = jizai::kriging::WeightFunction::kNumPairsOverDistanceSquared;
         break;
       case 2:
-        opts.weight_fn = polatory::kriging::WeightFunction::kNumPairsOverModelGammaSquared;
+        opts.weight_fn = jizai::kriging::WeightFunction::kNumPairsOverModelGammaSquared;
         break;
       case 3:
-        opts.weight_fn = polatory::kriging::WeightFunction::kOne;
+        opts.weight_fn = jizai::kriging::WeightFunction::kOne;
         break;
       case 4:
-        opts.weight_fn = polatory::kriging::WeightFunction::kOneOverDistanceSquared;
+        opts.weight_fn = jizai::kriging::WeightFunction::kOneOverDistanceSquared;
         break;
       case 5:
-        opts.weight_fn = polatory::kriging::WeightFunction::kOneOverModelGammaSquared;
+        opts.weight_fn = jizai::kriging::WeightFunction::kOneOverModelGammaSquared;
         break;
       default:
         throw std::runtime_error("--weight must be 0 to 5");
@@ -129,8 +129,8 @@ class FitModelToVariogramCommand : public Command {
     int dim{};
     std::string model_file;
     ModelOptions model_opts;
-    polatory::kriging::WeightFunction weight_fn{
-        polatory::kriging::WeightFunction::kNumPairsOverDistanceSquared};
+    jizai::kriging::WeightFunction weight_fn{
+        jizai::kriging::WeightFunction::kNumPairsOverDistanceSquared};
     int num_trials{};
     std::string out_file;
   };

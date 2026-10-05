@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/kriging/detrend.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/kriging/detrend.hpp>
+#include <jizai/types.hpp>
 
-using polatory::Index;
-using polatory::VecX;
-using polatory::geometry::Points2;
-using polatory::kriging::detrend;
+using jizai::Index;
+using jizai::VecX;
+using jizai::geometry::Points2;
+using jizai::kriging::detrend;
 
 TEST(detrend, trivial) {
   const Index n_points{10000};

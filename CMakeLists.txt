@@ -25,7 +25,7 @@ if(BLA_VENDOR)
     endif()
 endif()
 
-project(Polatory CXX)
+project(jizai CXX)
 
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -35,7 +35,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-include(polatory_target_contents)
+include(jizai_target_contents)
 
 find_package(boost_algorithm CONFIG REQUIRED)
 find_package(boost_any CONFIG REQUIRED)
@@ -74,10 +74,10 @@ endif()
 if(MSVC)
     string(TOLOWER "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" MSVC_ARCH)
     file(TO_CMAKE_PATH "$ENV{VCToolsRedistDir}" MSVC_REDIST_DIR)
-    file(GLOB POLATORY_DLLS
+    file(GLOB JIZAI_DLLS
         "${MSVC_REDIST_DIR}/debug_nonredist/${MSVC_ARCH}/Microsoft.VC*.OpenMP.LLVM/libomp140.*.dll"
     )
-    if(NOT POLATORY_DLLS)
+    if(NOT JIZAI_DLLS)
         message(FATAL_ERROR "LLVM OpenMP runtime not found in VCToolsRedistDir.")
     endif()
 endif()
@@ -95,7 +95,7 @@ if(BLA_VENDOR STREQUAL "Intel10_64lp_seq")
 
     if(MSVC)
         # https://www.intel.com/content/www/us/en/docs/onemkl/developer-guide-windows/2025-2/contents-of-the-bin-directory.html
-        list(APPEND POLATORY_DLLS
+        list(APPEND JIZAI_DLLS
             ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx2.2.dll
             ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_avx512.2.dll
             ${VCPKG_DIR}/$<$<CONFIG:Debug>:debug>/bin/mkl_core.2.dll

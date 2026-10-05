@@ -2,15 +2,15 @@
 #include <cmath>
 #include <iostream>
 #include <iterator>
-#include <polatory/common/zip_sort.hpp>
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/point_cloud/normal_estimator.hpp>
-#include <polatory/point_cloud/plane_estimator.hpp>
+#include <jizai/common/zip_sort.hpp>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/point_cloud/normal_estimator.hpp>
+#include <jizai/point_cloud/plane_estimator.hpp>
 #include <queue>
 #include <ranges>
 #include <stdexcept>
 
-namespace polatory::point_cloud {
+namespace jizai::point_cloud {
 
 NormalEstimator::NormalEstimator(const geometry::Points3& points)
     : n_points_(points.rows()), points_(points), tree_(points) {}
@@ -279,4 +279,4 @@ NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
   return *this;
 }
 
-}  // namespace polatory::point_cloud
+}  // namespace jizai::point_cloud

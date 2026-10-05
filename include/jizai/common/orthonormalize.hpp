@@ -1,0 +1,20 @@
+#pragma once
+
+#include <Eigen/Core>
+#include <jizai/types.hpp>
+
+namespace jizai::common {
+
+template <class Derived>
+void orthonormalize_cols(Eigen::MatrixBase<Derived>& m) {
+  // The (modified) Gram-Schmidt orthonormalization.
+  auto n = m.cols();
+  for (Index i = 0; i < n; i++) {
+    m.col(i) /= m.col(i).norm();
+    for (Index j = i + 1; j < n; j++) {
+      m.col(j) -= m.col(i).dot(m.col(j)) * m.col(i);
+    }
+  }
+}
+
+}  // namespace jizai::common

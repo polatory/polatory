@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <jizai/numeric/conv.hpp>
 #include <limits>
-#include <polatory/numeric/conv.hpp>
 
-using polatory::numeric::to_double;
-using polatory::numeric::to_float;
-using polatory::numeric::to_string;
+using jizai::numeric::to_double;
+using jizai::numeric::to_float;
+using jizai::numeric::to_string;
 
 TEST(conv, denorm_min) {
   auto f = std::numeric_limits<float>::denorm_min();

@@ -1,14 +1,14 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/types.hpp>
 #include <utility>
 #include <vector>
 
 #include "spatial_grid.hpp"
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 class FaceGrid {
   using Point3 = geometry::Point3;
@@ -66,4 +66,4 @@ class FaceGrid {
   std::vector<std::pair<Point3, Point3>> box_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

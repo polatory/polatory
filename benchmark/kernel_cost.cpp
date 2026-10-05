@@ -1,52 +1,52 @@
 // Measures the cost of one evaluation of each FMM kernel on a pair of points relative to that of
-// Kernel<Biharmonic3D<Dim>> and prints the invocations of POLATORY_KERNEL_COST.
+// Kernel<Biharmonic3D<Dim>> and prints the invocations of JIZAI_KERNEL_COST.
 
 #include <omp.h>
 
 #include <algorithm>
 #include <chrono>
 #include <iostream>
-#include <polatory/fmm/gradient_kernel.hpp>
-#include <polatory/fmm/gradient_transpose_kernel.hpp>
-#include <polatory/fmm/hessian_kernel.hpp>
-#include <polatory/fmm/kernel.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/rbf/cov_gaussian.hpp>
-#include <polatory/rbf/cov_generalized_cauchy3.hpp>
-#include <polatory/rbf/cov_generalized_cauchy5.hpp>
-#include <polatory/rbf/cov_generalized_cauchy7.hpp>
-#include <polatory/rbf/cov_generalized_cauchy9.hpp>
-#include <polatory/rbf/cov_spheroidal3.hpp>
-#include <polatory/rbf/cov_spheroidal5.hpp>
-#include <polatory/rbf/cov_spheroidal7.hpp>
-#include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/polyharmonic_even.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/types.hpp>
+#include <jizai/fmm/gradient_kernel.hpp>
+#include <jizai/fmm/gradient_transpose_kernel.hpp>
+#include <jizai/fmm/hessian_kernel.hpp>
+#include <jizai/fmm/kernel.hpp>
+#include <jizai/rbf/cov_exponential.hpp>
+#include <jizai/rbf/cov_gaussian.hpp>
+#include <jizai/rbf/cov_generalized_cauchy3.hpp>
+#include <jizai/rbf/cov_generalized_cauchy5.hpp>
+#include <jizai/rbf/cov_generalized_cauchy7.hpp>
+#include <jizai/rbf/cov_generalized_cauchy9.hpp>
+#include <jizai/rbf/cov_spheroidal3.hpp>
+#include <jizai/rbf/cov_spheroidal5.hpp>
+#include <jizai/rbf/cov_spheroidal7.hpp>
+#include <jizai/rbf/cov_spheroidal9.hpp>
+#include <jizai/rbf/polyharmonic_even.hpp>
+#include <jizai/rbf/polyharmonic_odd.hpp>
+#include <jizai/types.hpp>
 #include <random>
 #include <scalfmm/container/point.hpp>
 #include <string>
 #include <vector>
 
-using polatory::Index;
-using polatory::fmm::GradientKernel;
-using polatory::fmm::GradientTransposeKernel;
-using polatory::fmm::HessianKernel;
-using polatory::fmm::Kernel;
-using polatory::rbf::internal::Biharmonic2D;
-using polatory::rbf::internal::Biharmonic3D;
-using polatory::rbf::internal::CovExponential;
-using polatory::rbf::internal::CovGaussian;
-using polatory::rbf::internal::CovGeneralizedCauchy3;
-using polatory::rbf::internal::CovGeneralizedCauchy5;
-using polatory::rbf::internal::CovGeneralizedCauchy7;
-using polatory::rbf::internal::CovGeneralizedCauchy9;
-using polatory::rbf::internal::CovSpheroidal3FastPart;
-using polatory::rbf::internal::CovSpheroidal5FastPart;
-using polatory::rbf::internal::CovSpheroidal7FastPart;
-using polatory::rbf::internal::CovSpheroidal9FastPart;
-using polatory::rbf::internal::Triharmonic2D;
-using polatory::rbf::internal::Triharmonic3D;
+using jizai::Index;
+using jizai::fmm::GradientKernel;
+using jizai::fmm::GradientTransposeKernel;
+using jizai::fmm::HessianKernel;
+using jizai::fmm::Kernel;
+using jizai::rbf::internal::Biharmonic2D;
+using jizai::rbf::internal::Biharmonic3D;
+using jizai::rbf::internal::CovExponential;
+using jizai::rbf::internal::CovGaussian;
+using jizai::rbf::internal::CovGeneralizedCauchy3;
+using jizai::rbf::internal::CovGeneralizedCauchy5;
+using jizai::rbf::internal::CovGeneralizedCauchy7;
+using jizai::rbf::internal::CovGeneralizedCauchy9;
+using jizai::rbf::internal::CovSpheroidal3FastPart;
+using jizai::rbf::internal::CovSpheroidal5FastPart;
+using jizai::rbf::internal::CovSpheroidal7FastPart;
+using jizai::rbf::internal::CovSpheroidal9FastPart;
+using jizai::rbf::internal::Triharmonic2D;
+using jizai::rbf::internal::Triharmonic3D;
 
 namespace {
 
@@ -113,7 +113,7 @@ void measure(const std::string& rbf_name, const std::vector<double>& params) {
   Kernel<Biharmonic3D<Dim>> ref_kernel(ref_rbf);
   Rbf<Dim> rbf(params);
 
-  std::cout << "POLATORY_KERNEL_COST(" << rbf_name << "<" << Dim << ">, "
+  std::cout << "JIZAI_KERNEL_COST(" << rbf_name << "<" << Dim << ">, "
             << relative_cost(Kernel<Rbf<Dim>>(rbf), ref_kernel) << ", "
             << relative_cost(GradientKernel<Rbf<Dim>>(rbf), ref_kernel) << ", "
             << relative_cost(GradientTransposeKernel<Rbf<Dim>>(rbf), ref_kernel) << ", "

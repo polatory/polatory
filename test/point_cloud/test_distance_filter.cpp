@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/point_cloud/distance_filter.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/point_cloud/distance_filter.hpp>
+#include <jizai/types.hpp>
 #include <vector>
 
-using polatory::Index;
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
-using polatory::point_cloud::DistanceFilter;
+using jizai::Index;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
+using jizai::point_cloud::DistanceFilter;
 
 TEST(distance_filter, trivial) {
   Points3 points(9, 3);

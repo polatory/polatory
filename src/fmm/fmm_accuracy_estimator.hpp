@@ -1,14 +1,14 @@
 #pragma once
 
 #include <algorithm>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/numeric/error.hpp>
+#include <jizai/types.hpp>
 #include <limits>
 #include <map>
 #include <numeric>
 #include <optional>
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/numeric/error.hpp>
-#include <polatory/types.hpp>
 #include <random>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
@@ -29,7 +29,7 @@
 #include "interpolator_configuration.hpp"
 #include "utility.hpp"
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <class Kernel>
 class FmmAccuracyEstimator {
@@ -207,4 +207,4 @@ class FmmAccuracyEstimator {
   }
 };
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

@@ -3,7 +3,7 @@
 #include <boost/container_hash/hash.hpp>
 #include <functional>
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 struct InterpolatorConfiguration {
   static constexpr int kClassic = -1;
@@ -21,11 +21,11 @@ struct InterpolatorConfiguration {
   bool operator==(const InterpolatorConfiguration& other) const = default;
 };
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm
 
 template <>
-struct std::hash<polatory::fmm::InterpolatorConfiguration> {
-  std::size_t operator()(const polatory::fmm::InterpolatorConfiguration& config) const noexcept {
+struct std::hash<jizai::fmm::InterpolatorConfiguration> {
+  std::size_t operator()(const jizai::fmm::InterpolatorConfiguration& config) const noexcept {
     std::size_t seed{};
     boost::hash_combine(seed, config.tree_height);
     boost::hash_combine(seed, config.order);

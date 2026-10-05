@@ -4,14 +4,14 @@
 #include <boost/container/static_vector.hpp>
 #include <cstddef>
 #include <iterator>
-#include <polatory/isosurface/edge.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
+#include <jizai/isosurface/edge.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 // Side k of face fi is i = 4 * fi + k; the stride of 4 lets bit ops decode it.
 struct Halfedge {
@@ -332,4 +332,4 @@ class AbstractMesh {
   std::vector<std::vector<Halfedge>> outgoing_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

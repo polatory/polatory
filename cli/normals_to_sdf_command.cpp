@@ -4,9 +4,9 @@
 #include <boost/program_options.hpp>
 #include <cmath>
 #include <format>
+#include <jizai/jizai.hpp>
 #include <memory>
 #include <numeric>
-#include <polatory/polatory.hpp>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -14,17 +14,17 @@
 
 #include "commands.hpp"
 
-using polatory::Index;
-using polatory::kAll;
-using polatory::Mat3;
-using polatory::MatX;
-using polatory::read_table;
-using polatory::write_table;
-using polatory::common::concatenate_cols;
-using polatory::geometry::Points3;
-using polatory::geometry::Vectors3;
-using polatory::numeric::to_double;
-using polatory::point_cloud::SdfDataGenerator;
+using jizai::Index;
+using jizai::kAll;
+using jizai::Mat3;
+using jizai::MatX;
+using jizai::read_table;
+using jizai::write_table;
+using jizai::common::concatenate_cols;
+using jizai::geometry::Points3;
+using jizai::geometry::Vectors3;
+using jizai::numeric::to_double;
+using jizai::point_cloud::SdfDataGenerator;
 
 namespace {
 
@@ -62,7 +62,7 @@ class NormalsToSdfCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -75,7 +75,7 @@ class NormalsToSdfCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 
@@ -123,14 +123,14 @@ class NormalsToSdfCommand : public Command {
 
 namespace Eigen {
 
-inline void validate(boost::any& v, const std::vector<std::string>& values, polatory::Mat3*, int) {
+inline void validate(boost::any& v, const std::vector<std::string>& values, jizai::Mat3*, int) {
   namespace po = boost::program_options;
 
   if (values.size() != 9) {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  polatory::Mat3 aniso;
+  jizai::Mat3 aniso;
   aniso << to_double(values.at(0)), to_double(values.at(1)), to_double(values.at(2)),
       to_double(values.at(3)), to_double(values.at(4)), to_double(values.at(5)),
       to_double(values.at(6)), to_double(values.at(7)), to_double(values.at(8));

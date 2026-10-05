@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/geometry/point3d.hpp>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/geometry/point3d.hpp>
 
-using polatory::geometry::Bbox3;
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
+using jizai::geometry::Bbox3;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
 
 TEST(bbox3d, from_points) {
   Points3 points(7, 3);

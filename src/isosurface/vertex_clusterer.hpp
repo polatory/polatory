@@ -7,21 +7,21 @@
 #include <boost/container_hash/hash.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <boost/unordered/unordered_flat_set.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/edge.hpp>
-#include <polatory/isosurface/mesh.hpp>
-#include <polatory/isosurface/mesh_defects_finder.hpp>
-#include <polatory/isosurface/rmt/lattice_coordinates.hpp>
-#include <polatory/isosurface/rmt/primitive_lattice.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/edge.hpp>
+#include <jizai/isosurface/mesh.hpp>
+#include <jizai/isosurface/mesh_defects_finder.hpp>
+#include <jizai/isosurface/rmt/lattice_coordinates.hpp>
+#include <jizai/isosurface/rmt/primitive_lattice.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <vector>
 
 #include "disjoint_sets.hpp"
 #include "quadric_position.hpp"
 #include "utility.hpp"
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 class VertexClusterer {
   using LatticeCoordinates = rmt::LatticeCoordinates;
@@ -287,4 +287,4 @@ class VertexClusterer {
   Mesh result_;
 };
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

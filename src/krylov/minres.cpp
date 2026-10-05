@@ -1,7 +1,7 @@
 #include <cmath>
-#include <polatory/krylov/minres.hpp>
+#include <jizai/krylov/minres.hpp>
 
-namespace polatory::krylov {
+namespace jizai::krylov {
 
 Minres::Minres(const LinearOperator& op, const VecX& rhs, Index max_iter)
     : GmresBase(op, rhs, max_iter) {}
@@ -48,4 +48,4 @@ void Minres::iterate_process() {
   iter_++;
 }
 
-}  // namespace polatory::krylov
+}  // namespace jizai::krylov

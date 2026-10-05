@@ -1,8 +1,8 @@
 #include <cmath>
-#include <polatory/common/macros.hpp>
-#include <polatory/krylov/gmres_base.hpp>
+#include <jizai/common/macros.hpp>
+#include <jizai/krylov/gmres_base.hpp>
 
-namespace polatory::krylov {
+namespace jizai::krylov {
 
 double GmresBase::absolute_residual() const { return std::abs(g_(iter_)); }
 
@@ -40,19 +40,19 @@ VecX GmresBase::residual_vector() const {
 }
 
 void GmresBase::set_left_preconditioner(const LinearOperator& left_preconditioner) {
-  POLATORY_ASSERT(left_preconditioner.size() == m_);
+  JIZAI_ASSERT(left_preconditioner.size() == m_);
 
   left_pc_ = &left_preconditioner;
 }
 
 void GmresBase::set_initial_solution(const VecX& x0) {
-  POLATORY_ASSERT(x0.rows() == m_);
+  JIZAI_ASSERT(x0.rows() == m_);
 
   x0_ = x0;
 }
 
 void GmresBase::set_right_preconditioner(const LinearOperator& right_preconditioner) {
-  POLATORY_ASSERT(right_preconditioner.size() == m_);
+  JIZAI_ASSERT(right_preconditioner.size() == m_);
 
   right_pc_ = &right_preconditioner;
 }
@@ -109,4 +109,4 @@ VecX GmresBase::right_preconditioned(const VecX& x) const {
   return right_pc_ != nullptr ? (*right_pc_)(x) : x;
 }
 
-}  // namespace polatory::krylov
+}  // namespace jizai::krylov

@@ -1,7 +1,7 @@
 #include <cmath>
-#include <polatory/krylov/gmres.hpp>
+#include <jizai/krylov/gmres.hpp>
 
-namespace polatory::krylov {
+namespace jizai::krylov {
 
 Gmres::Gmres(const LinearOperator& op, const VecX& rhs, Index max_iter)
     : GmresBase(op, rhs, max_iter) {}
@@ -49,4 +49,4 @@ void Gmres::iterate_process() {
   iter_++;
 }
 
-}  // namespace polatory::krylov
+}  // namespace jizai::krylov

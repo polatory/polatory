@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "polatory",
-  "version": "0.1.0",
+  "name": "jizai",
+  "version-string": "1.0.0a1",
   "dependencies": [
     "boost-algorithm",
     "boost-any",

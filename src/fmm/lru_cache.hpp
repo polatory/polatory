@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <utility>
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <class Key, class T>
 class LruCache {
@@ -76,4 +76,4 @@ class LruCache {
   std::unordered_map<Key, Iterator> map_;
 };
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/predicates.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/predicates.hpp>
 
-using polatory::geometry::Point2;
-using polatory::isosurface::incircle;
-using polatory::isosurface::orient2d;
+using jizai::geometry::Point2;
+using jizai::isosurface::incircle;
+using jizai::isosurface::orient2d;
 
 TEST(predicates, orient2d_sign_and_magnitude) {
   Point2 a(0.0, 0.0);

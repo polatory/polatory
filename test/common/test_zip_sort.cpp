@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#include <polatory/common/zip_sort.hpp>
+#include <jizai/common/zip_sort.hpp>
 #include <vector>
 
-using polatory::common::zip_sort;
+using jizai::common::zip_sort;
 
 TEST(zip_sort, sort_by_first) {
   std::vector<int> a{4, 2, 5, 1, 3};

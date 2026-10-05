@@ -1,22 +1,22 @@
 #include <gtest/gtest.h>
 
 #include <Eigen/LU>
+#include <jizai/krylov/fgmres.hpp>
+#include <jizai/krylov/gmres.hpp>
+#include <jizai/krylov/linear_operator.hpp>
+#include <jizai/krylov/minres.hpp>
+#include <jizai/numeric/error.hpp>
+#include <jizai/types.hpp>
 #include <memory>
-#include <polatory/krylov/fgmres.hpp>
-#include <polatory/krylov/gmres.hpp>
-#include <polatory/krylov/linear_operator.hpp>
-#include <polatory/krylov/minres.hpp>
-#include <polatory/numeric/error.hpp>
-#include <polatory/types.hpp>
 
-using polatory::Index;
-using polatory::MatX;
-using polatory::VecX;
-using polatory::krylov::Fgmres;
-using polatory::krylov::Gmres;
-using polatory::krylov::LinearOperator;
-using polatory::krylov::Minres;
-using polatory::numeric::relative_error;
+using jizai::Index;
+using jizai::MatX;
+using jizai::VecX;
+using jizai::krylov::Fgmres;
+using jizai::krylov::Gmres;
+using jizai::krylov::LinearOperator;
+using jizai::krylov::Minres;
+using jizai::numeric::relative_error;
 
 namespace {
 

@@ -5,13 +5,13 @@
 #include <array>
 #include <boost/container/static_vector.hpp>
 #include <cmath>
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/predicates.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/predicates.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 inline geometry::Point3 snap_to_bbox(const geometry::Point3& p, const geometry::Bbox3& bbox,
                                      double resolution) {
@@ -140,4 +140,4 @@ inline bool triangles_intersect(const geometry::Point3& a0, const geometry::Poin
   }
 }
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

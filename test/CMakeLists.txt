@@ -39,15 +39,15 @@ target_link_libraries(${TARGET} PRIVATE
     GTest::gtest
     GTest::gtest_main
     igl::igl_core
-    polatory
+    jizai
 )
 
 target_compile_definitions(${TARGET} PRIVATE
-    POLATORY_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
+    JIZAI_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
 )
 
 if(MSVC)
-    polatory_target_contents(${TARGET} ${POLATORY_DLLS})
+    jizai_target_contents(${TARGET} ${JIZAI_DLLS})
 endif()
 
 add_test(

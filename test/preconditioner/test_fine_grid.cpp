@@ -2,31 +2,31 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <jizai/model.hpp>
+#include <jizai/numeric/error.hpp>
+#include <jizai/preconditioner/binary_cache.hpp>
+#include <jizai/preconditioner/coarse_grid.hpp>
+#include <jizai/preconditioner/domain.hpp>
+#include <jizai/preconditioner/fine_grid.hpp>
+#include <jizai/rbf/polyharmonic_odd.hpp>
+#include <jizai/types.hpp>
 #include <numeric>
-#include <polatory/model.hpp>
-#include <polatory/numeric/error.hpp>
-#include <polatory/preconditioner/binary_cache.hpp>
-#include <polatory/preconditioner/coarse_grid.hpp>
-#include <polatory/preconditioner/domain.hpp>
-#include <polatory/preconditioner/fine_grid.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/types.hpp>
 #include <random>
 #include <utility>
 #include <vector>
 
 #include "../utility.hpp"
 
-using polatory::Index;
-using polatory::Mat;
-using polatory::Model;
-using polatory::VecX;
-using polatory::numeric::relative_error;
-using polatory::preconditioner::BinaryCache;
-using polatory::preconditioner::CoarseGrid;
-using polatory::preconditioner::Domain;
-using polatory::preconditioner::FineGrid;
-using polatory::rbf::Triharmonic3D;
+using jizai::Index;
+using jizai::Mat;
+using jizai::Model;
+using jizai::VecX;
+using jizai::numeric::relative_error;
+using jizai::preconditioner::BinaryCache;
+using jizai::preconditioner::CoarseGrid;
+using jizai::preconditioner::Domain;
+using jizai::preconditioner::FineGrid;
+using jizai::rbf::Triharmonic3D;
 
 namespace {
 

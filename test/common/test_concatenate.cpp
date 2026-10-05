@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <polatory/common/concatenate.hpp>
-#include <polatory/types.hpp>
+#include <jizai/common/concatenate.hpp>
+#include <jizai/types.hpp>
 
-using polatory::MatX;
-using polatory::common::concatenate_cols;
-using polatory::common::concatenate_rows;
+using jizai::MatX;
+using jizai::common::concatenate_cols;
+using jizai::common::concatenate_rows;
 
 TEST(concatenate_cols, trivial) {
   MatX a = MatX::Random(3, 1);

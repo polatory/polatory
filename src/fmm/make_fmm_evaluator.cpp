@@ -1,41 +1,41 @@
-#include <polatory/fmm/fmm_evaluator.hpp>
-#include <polatory/fmm/fmm_symmetric_evaluator.hpp>
-#include <polatory/rbf/cov_cubic.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/rbf/cov_gaussian.hpp>
-#include <polatory/rbf/cov_generalized_cauchy3.hpp>
-#include <polatory/rbf/cov_generalized_cauchy5.hpp>
-#include <polatory/rbf/cov_generalized_cauchy7.hpp>
-#include <polatory/rbf/cov_generalized_cauchy9.hpp>
-#include <polatory/rbf/cov_spherical.hpp>
-#include <polatory/rbf/cov_spheroidal3.hpp>
-#include <polatory/rbf/cov_spheroidal5.hpp>
-#include <polatory/rbf/cov_spheroidal7.hpp>
-#include <polatory/rbf/cov_spheroidal9.hpp>
-#include <polatory/rbf/polyharmonic_even.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
+#include <jizai/fmm/fmm_evaluator.hpp>
+#include <jizai/fmm/fmm_symmetric_evaluator.hpp>
+#include <jizai/rbf/cov_cubic.hpp>
+#include <jizai/rbf/cov_exponential.hpp>
+#include <jizai/rbf/cov_gaussian.hpp>
+#include <jizai/rbf/cov_generalized_cauchy3.hpp>
+#include <jizai/rbf/cov_generalized_cauchy5.hpp>
+#include <jizai/rbf/cov_generalized_cauchy7.hpp>
+#include <jizai/rbf/cov_generalized_cauchy9.hpp>
+#include <jizai/rbf/cov_spherical.hpp>
+#include <jizai/rbf/cov_spheroidal3.hpp>
+#include <jizai/rbf/cov_spheroidal5.hpp>
+#include <jizai/rbf/cov_spheroidal7.hpp>
+#include <jizai/rbf/cov_spheroidal9.hpp>
+#include <jizai/rbf/polyharmonic_even.hpp>
+#include <jizai/rbf/polyharmonic_odd.hpp>
 #include <stdexcept>
 
-using polatory::geometry::Bbox;
-using polatory::rbf::Rbf;
-using polatory::rbf::internal::Biharmonic2D;
-using polatory::rbf::internal::Biharmonic3D;
-using polatory::rbf::internal::CovCubic;
-using polatory::rbf::internal::CovExponential;
-using polatory::rbf::internal::CovGaussian;
-using polatory::rbf::internal::CovGeneralizedCauchy3;
-using polatory::rbf::internal::CovGeneralizedCauchy5;
-using polatory::rbf::internal::CovGeneralizedCauchy7;
-using polatory::rbf::internal::CovGeneralizedCauchy9;
-using polatory::rbf::internal::CovSpherical;
-using polatory::rbf::internal::CovSpheroidal3;
-using polatory::rbf::internal::CovSpheroidal5;
-using polatory::rbf::internal::CovSpheroidal7;
-using polatory::rbf::internal::CovSpheroidal9;
-using polatory::rbf::internal::Triharmonic2D;
-using polatory::rbf::internal::Triharmonic3D;
+using jizai::geometry::Bbox;
+using jizai::rbf::Rbf;
+using jizai::rbf::internal::Biharmonic2D;
+using jizai::rbf::internal::Biharmonic3D;
+using jizai::rbf::internal::CovCubic;
+using jizai::rbf::internal::CovExponential;
+using jizai::rbf::internal::CovGaussian;
+using jizai::rbf::internal::CovGeneralizedCauchy3;
+using jizai::rbf::internal::CovGeneralizedCauchy5;
+using jizai::rbf::internal::CovGeneralizedCauchy7;
+using jizai::rbf::internal::CovGeneralizedCauchy9;
+using jizai::rbf::internal::CovSpherical;
+using jizai::rbf::internal::CovSpheroidal3;
+using jizai::rbf::internal::CovSpheroidal5;
+using jizai::rbf::internal::CovSpheroidal7;
+using jizai::rbf::internal::CovSpheroidal9;
+using jizai::rbf::internal::Triharmonic2D;
+using jizai::rbf::internal::Triharmonic3D;
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <int Dim>
 FmmGenericEvaluatorPtr<Dim> make_fmm_evaluator(const Rbf<Dim>& rbf, const Bbox<Dim>& bbox) {
@@ -278,4 +278,4 @@ template FmmGenericSymmetricEvaluatorPtr<2> make_fmm_hessian_symmetric_evaluator
 template FmmGenericSymmetricEvaluatorPtr<3> make_fmm_hessian_symmetric_evaluator<3>(
     const Rbf<3>& rbf, const Bbox<3>& bbox);
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

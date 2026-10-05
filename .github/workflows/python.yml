@@ -41,7 +41,7 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          if [ ! -f "dist/polatory-${TAG#v}.tar.gz" ]; then
+          if [ ! -f "dist/jizai-${TAG#v}.tar.gz" ]; then
             echo "::error::Release tag $TAG does not match the version in vcpkg.json."
             exit 1
           fi
@@ -95,11 +95,11 @@ jobs:
   publish:
     name: Publish to PyPI
     needs: test
-    if: github.event_name == 'release' && !github.event.release.prerelease
+    if: github.event_name == 'release'
     runs-on: ubuntu-26.04
     environment:
       name: pypi
-      url: https://pypi.org/project/polatory/
+      url: https://pypi.org/project/jizai/
     permissions:
       id-token: write
 

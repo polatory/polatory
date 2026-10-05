@@ -3,18 +3,18 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/types.hpp>
 #include <set>
 #include <utility>
 #include <vector>
 
 #include "../../src/isosurface/snapper/triangulation.hpp"
 
-using polatory::Index;
-using polatory::geometry::Point2;
-using polatory::isosurface::Faces;
-using polatory::isosurface::snapper::Triangulation;
+using jizai::Index;
+using jizai::geometry::Point2;
+using jizai::isosurface::Faces;
+using jizai::isosurface::snapper::Triangulation;
 
 namespace {
 

@@ -77,7 +77,7 @@ class CMakeBuild(build_ext):
             "-DBUILD_EXAMPLES=OFF",
             "-DBUILD_PYTHON_BINDINGS=ON",
             "-DBUILD_TESTS=OFF",
-            f"-DPOLATORY_VERSION={version}",
+            f"-DJIZAI_VERSION={version}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             "--compile-no-warning-as-error",
         ]
@@ -93,7 +93,7 @@ class CMakeBuild(build_ext):
             if "CXX" not in env:
                 env["CXX"] = f"{brew_prefix}/opt/llvm/bin/clang++"
             if "LDFLAGS" not in env:
-                env["LDFLAGS"] = f"-L{brew_prefix}/opt/llvm/lib/c++ -lc++"
+                env["LDFLAGS"] = f"-L{brew_prefix}/opt/llvm/lib/c++"
         elif sys.platform == "linux":
             if "CC" not in env:
                 env["CC"] = "clang"
@@ -128,10 +128,10 @@ class CMakeBuild(build_ext):
 
 with open(Path.cwd() / "vcpkg.json") as f:
     vcpkg_json = json.load(f)
-    version = vcpkg_json["version"]
+    version = vcpkg_json["version-string"]
 
 setup(
     version=version,
-    ext_modules=[CMakeExtension("polatory")],
+    ext_modules=[CMakeExtension("jizai")],
     cmdclass={"build_ext": CMakeBuild},
 )

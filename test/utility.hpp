@@ -2,17 +2,17 @@
 
 #include <Eigen/Core>
 #include <cmath>
+#include <jizai/common/orthonormalize.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/point_cloud/distance_filter.hpp>
+#include <jizai/types.hpp>
 #include <numbers>
-#include <polatory/common/orthonormalize.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/point_cloud/distance_filter.hpp>
-#include <polatory/types.hpp>
 #include <utility>
 
 template <int Dim>
-polatory::Mat<Dim> random_rotation() {
-  using polatory::common::orthonormalize_cols;
-  using Mat = polatory::Mat<Dim>;
+jizai::Mat<Dim> random_rotation() {
+  using jizai::common::orthonormalize_cols;
+  using Mat = jizai::Mat<Dim>;
 
   Mat rot = Mat::Random();
   orthonormalize_cols(rot);
@@ -24,9 +24,9 @@ polatory::Mat<Dim> random_rotation() {
 }
 
 template <int Dim>
-polatory::Mat<Dim> random_scaling() {
-  using Mat = polatory::Mat<Dim>;
-  using Vector = polatory::geometry::Vector<Dim>;
+jizai::Mat<Dim> random_scaling() {
+  using Mat = jizai::Mat<Dim>;
+  using Vector = jizai::geometry::Vector<Dim>;
 
   Mat scale = Mat::Identity();
   scale.diagonal().array() *= pow(10.0, 0.5 * Vector::Random().array());
@@ -37,19 +37,19 @@ polatory::Mat<Dim> random_scaling() {
 }
 
 template <int Dim>
-polatory::Mat<Dim> random_anisotropy() {
+jizai::Mat<Dim> random_anisotropy() {
   return random_scaling<Dim>() * random_rotation<Dim>();
 }
 
 template <int Dim>
-std::pair<polatory::geometry::Points<Dim>, polatory::VecX> sample_data(
-    polatory::Index& n_points, const polatory::Mat<Dim>& aniso) {
-  using polatory::Index;
-  using polatory::VecX;
-  using polatory::geometry::transform_points;
-  using polatory::point_cloud::DistanceFilter;
-  using Mat = polatory::Mat<Dim>;
-  using Points = polatory::geometry::Points<Dim>;
+std::pair<jizai::geometry::Points<Dim>, jizai::VecX> sample_data(jizai::Index& n_points,
+                                                                 const jizai::Mat<Dim>& aniso) {
+  using jizai::Index;
+  using jizai::VecX;
+  using jizai::geometry::transform_points;
+  using jizai::point_cloud::DistanceFilter;
+  using Mat = jizai::Mat<Dim>;
+  using Points = jizai::geometry::Points<Dim>;
 
   Points a_points = Points::Random(n_points, Dim);
   a_points = DistanceFilter(a_points).filter(1e-6)(a_points);
@@ -70,14 +70,14 @@ std::pair<polatory::geometry::Points<Dim>, polatory::VecX> sample_data(
 }
 
 template <int Dim>
-std::pair<polatory::geometry::Points<Dim>, polatory::geometry::Vectors<Dim>> sample_grad_data(
-    polatory::Index& n_points, const polatory::Mat<Dim>& aniso) {
-  using polatory::Index;
-  using polatory::geometry::transform_points;
-  using polatory::point_cloud::DistanceFilter;
-  using Mat = polatory::Mat<Dim>;
-  using Points = polatory::geometry::Points<Dim>;
-  using Vectors = polatory::geometry::Vectors<Dim>;
+std::pair<jizai::geometry::Points<Dim>, jizai::geometry::Vectors<Dim>> sample_grad_data(
+    jizai::Index& n_points, const jizai::Mat<Dim>& aniso) {
+  using jizai::Index;
+  using jizai::geometry::transform_points;
+  using jizai::point_cloud::DistanceFilter;
+  using Mat = jizai::Mat<Dim>;
+  using Points = jizai::geometry::Points<Dim>;
+  using Vectors = jizai::geometry::Vectors<Dim>;
 
   Points a_points = Points::Random(n_points, Dim);
   a_points = DistanceFilter(a_points).filter(1e-6)(a_points);

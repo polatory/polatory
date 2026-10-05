@@ -1,16 +1,12 @@
-<div align="center">
-  <img src="https://polatory.github.io/images/polatory_logo.png" width="400" alt="Polatory">
-</div>
+# jizai
 
----
-
-**Polatory** is a fast and memory-efficient framework for radial basis function (RBF) interpolation.
+**jizai** is a fast and memory-efficient framework for radial basis function (RBF) interpolation.
 
 ## Features
 
 - Interpolation of 1D, 2D, and 3D scattered data
 - Surface reconstruction from 2.5D and 3D point clouds
-- Fast kriging prediction ([dual kriging](https://github.com/polatory/polatory/wiki/Dual-kriging))
+- Fast kriging prediction ([dual kriging](https://github.com/unageek/jizai/wiki/Dual-kriging))
 - Full control of absolute fitting tolerance and evaluation accuracy
 - Fast and high-quality isosurface generation
   - Gradient search and surface tracking
@@ -22,19 +18,19 @@
 
 ## Documentation
 
-Please check out the [wiki](https://github.com/polatory/polatory/wiki).
+Please check out the [wiki](https://github.com/unageek/jizai/wiki).
 
 ## Platform Support
 
 The following platforms are supported with the listed BLAS implementations:
 
-| Platform | Architecture |    BLAS    |                                                                                            Build                                                                                             |
-| :------: | :----------: | :--------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| Windows  |     x64      |   oneMKL   |    [![Windows x64](https://github.com/polatory/polatory/actions/workflows/windows-x64.yml/badge.svg?branch=main)](https://github.com/polatory/polatory/actions/workflows/windows-x64.yml)    |
-| Windows  |    ARM64     |   ArmPL    | [![Windows ARM64](https://github.com/polatory/polatory/actions/workflows/windows-arm64.yml/badge.svg?branch=main)](https://github.com/polatory/polatory/actions/workflows/windows-arm64.yml) |
-|  macOS   |    ARM64     | Accelerate |    [![macOS ARM64](https://github.com/polatory/polatory/actions/workflows/macos-arm64.yml/badge.svg?branch=main)](https://github.com/polatory/polatory/actions/workflows/macos-arm64.yml)    |
-|  Linux   |     x64      |   oneMKL   |       [![Linux x64](https://github.com/polatory/polatory/actions/workflows/linux-x64.yml/badge.svg?branch=main)](https://github.com/polatory/polatory/actions/workflows/linux-x64.yml)       |
-|  Linux   |    ARM64     |   ArmPL    |    [![Linux ARM64](https://github.com/polatory/polatory/actions/workflows/linux-arm64.yml/badge.svg?branch=main)](https://github.com/polatory/polatory/actions/workflows/linux-arm64.yml)    |
+| Platform | Architecture |    BLAS    |                                                                                        Build                                                                                         |
+| :------: | :----------: | :--------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| Windows  |     x64      |   oneMKL   |    [![Windows x64](https://github.com/unageek/jizai/actions/workflows/windows-x64.yml/badge.svg?branch=main)](https://github.com/unageek/jizai/actions/workflows/windows-x64.yml)    |
+| Windows  |    ARM64     |   ArmPL    | [![Windows ARM64](https://github.com/unageek/jizai/actions/workflows/windows-arm64.yml/badge.svg?branch=main)](https://github.com/unageek/jizai/actions/workflows/windows-arm64.yml) |
+|  macOS   |    ARM64     | Accelerate |    [![macOS ARM64](https://github.com/unageek/jizai/actions/workflows/macos-arm64.yml/badge.svg?branch=main)](https://github.com/unageek/jizai/actions/workflows/macos-arm64.yml)    |
+|  Linux   |     x64      |   oneMKL   |       [![Linux x64](https://github.com/unageek/jizai/actions/workflows/linux-x64.yml/badge.svg?branch=main)](https://github.com/unageek/jizai/actions/workflows/linux-x64.yml)       |
+|  Linux   |    ARM64     |   ArmPL    |    [![Linux ARM64](https://github.com/unageek/jizai/actions/workflows/linux-arm64.yml/badge.svg?branch=main)](https://github.com/unageek/jizai/actions/workflows/linux-arm64.yml)    |
 
 oneMKL and ArmPL are automatically downloaded and extracted into the build tree during the configuration process.
 

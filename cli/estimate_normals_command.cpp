@@ -1,25 +1,25 @@
 #include <boost/any.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <jizai/jizai.hpp>
 #include <memory>
-#include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "commands.hpp"
 
-using polatory::Index;
-using polatory::kAll;
-using polatory::MatX;
-using polatory::read_table;
-using polatory::write_table;
-using polatory::common::concatenate_cols;
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
-using polatory::geometry::Vector3;
-using polatory::numeric::to_double;
-using polatory::point_cloud::NormalEstimator;
+using jizai::Index;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::read_table;
+using jizai::write_table;
+using jizai::common::concatenate_cols;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
+using jizai::geometry::Vector3;
+using jizai::numeric::to_double;
+using jizai::point_cloud::NormalEstimator;
 
 namespace {
 
@@ -63,7 +63,7 @@ class EstimateNormalsCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -76,7 +76,7 @@ class EstimateNormalsCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 
@@ -169,15 +169,15 @@ class EstimateNormalsCommand : public Command {
 namespace Eigen {
 
 inline void validate(boost::any& v, const std::vector<std::string>& values,
-                     polatory::geometry::Vector3*, int) {
+                     jizai::geometry::Vector3*, int) {
   namespace po = boost::program_options;
 
   if (values.size() != 3) {
     throw po::validation_error(po::validation_error::invalid_option_value);
   }
 
-  v = polatory::geometry::Vector3{to_double(values.at(0)), to_double(values.at(1)),
-                                  to_double(values.at(2))};
+  v = jizai::geometry::Vector3{to_double(values.at(0)), to_double(values.at(1)),
+                               to_double(values.at(2))};
 }
 
 }  // namespace Eigen

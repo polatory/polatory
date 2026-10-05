@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/point_cloud/plane_estimator.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/point_cloud/plane_estimator.hpp>
 
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
-using polatory::geometry::Vector3;
-using polatory::point_cloud::PlaneEstimator;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
+using jizai::geometry::Vector3;
+using jizai::point_cloud::PlaneEstimator;
 
 TEST(plane_estimator, trivial) {
   Point3 center(10.0, 11.0, 12.0);

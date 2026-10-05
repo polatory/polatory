@@ -7,31 +7,31 @@
 #include <array>
 #include <cmath>
 #include <fstream>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/field_function.hpp>
+#include <jizai/isosurface/isosurface.hpp>
+#include <jizai/isosurface/mesh.hpp>
+#include <jizai/isosurface/snap.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <limits>
 #include <map>
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/field_function.hpp>
-#include <polatory/isosurface/isosurface.hpp>
-#include <polatory/isosurface/mesh.hpp>
-#include <polatory/isosurface/snap.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
 #include <string>
 #include <vector>
 
-using polatory::Index;
-using polatory::Mat3;
-using polatory::VecX;
-using polatory::geometry::Bbox3;
-using polatory::geometry::Point3;
-using polatory::geometry::Points3;
-using polatory::geometry::Vector3;
-using polatory::isosurface::Faces;
-using polatory::isosurface::FieldFunction;
-using polatory::isosurface::Isosurface;
-using polatory::isosurface::Mesh;
-using polatory::isosurface::snap_mesh;
+using jizai::Index;
+using jizai::Mat3;
+using jizai::VecX;
+using jizai::geometry::Bbox3;
+using jizai::geometry::Point3;
+using jizai::geometry::Points3;
+using jizai::geometry::Vector3;
+using jizai::isosurface::Faces;
+using jizai::isosurface::FieldFunction;
+using jizai::isosurface::Isosurface;
+using jizai::isosurface::Mesh;
+using jizai::isosurface::snap_mesh;
 
 namespace {
 
@@ -249,11 +249,11 @@ TEST(snap_selfint, curved_surface_has_no_self_intersections) {
 }
 
 // The data was extracted from:
-//   polatory isosurface --in horse.interpolant --seeds horse.asc --snap horse.asc
+//   jizai isosurface --in horse.interpolant --seeds horse.asc --snap horse.asc
 //     --acc 5e-7 --bbox -0.1 -0.1 -0.1 0.1 0.1 0.1 --res 5e-4
 TEST(snap_selfint, real_surface_region_stays_manifold) {
-  auto base = read_obj(std::string(POLATORY_TEST_DATA_DIR) + "/horse_region.obj");
-  auto points = read_xyz(std::string(POLATORY_TEST_DATA_DIR) + "/horse_region_points.xyz");
+  auto base = read_obj(std::string(JIZAI_TEST_DATA_DIR) + "/horse_region.obj");
+  auto points = read_xyz(std::string(JIZAI_TEST_DATA_DIR) + "/horse_region_points.xyz");
   ASSERT_EQ(count_non_manifold_edges(base), 0);
 
   auto mesh = snap_mesh(base, points, VecX(), 5e-4, Mat3::Identity());

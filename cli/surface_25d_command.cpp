@@ -2,25 +2,25 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <jizai/jizai.hpp>
 #include <limits>
 #include <memory>
 #include <optional>
-#include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
 
 #include "../examples/common/bbox.hpp"
 #include "commands.hpp"
 
-using polatory::Index;
-using polatory::Interpolant;
-using polatory::kAll;
-using polatory::MatX;
-using polatory::read_table;
-using polatory::geometry::Bbox3;
-using polatory::geometry::Points3;
-using polatory::isosurface::Isosurface;
-using polatory::isosurface::RbfFieldFunction25D;
+using jizai::Index;
+using jizai::Interpolant;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::read_table;
+using jizai::geometry::Bbox3;
+using jizai::geometry::Points3;
+using jizai::isosurface::Isosurface;
+using jizai::isosurface::RbfFieldFunction25D;
 
 namespace {
 
@@ -68,7 +68,7 @@ class Surface25DCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -81,7 +81,7 @@ class Surface25DCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 

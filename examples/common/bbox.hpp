@@ -2,11 +2,11 @@
 
 #include <boost/any.hpp>
 #include <boost/program_options.hpp>
-#include <polatory/polatory.hpp>
+#include <jizai/jizai.hpp>
 #include <string>
 #include <vector>
 
-namespace polatory::geometry {
+namespace jizai::geometry {
 
 inline void validate(boost::any& v, const std::vector<std::string>& values, Bbox3*, int) {
   namespace po = boost::program_options;
@@ -21,4 +21,4 @@ inline void validate(boost::any& v, const std::vector<std::string>& values, Bbox
              numeric::to_double(values.at(5))});
 }
 
-}  // namespace polatory::geometry
+}  // namespace jizai::geometry

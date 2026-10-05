@@ -1,8 +1,8 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <jizai/jizai.hpp>
 #include <memory>
-#include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -11,7 +11,7 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
-using polatory::Interpolant;
+using jizai::Interpolant;
 
 namespace {
 
@@ -40,7 +40,7 @@ class ExtractModelCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -53,7 +53,7 @@ class ExtractModelCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 

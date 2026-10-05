@@ -4,16 +4,16 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <jizai/jizai.hpp>
+#include <jizai/kriging.hpp>
 #include <limits>
-#include <polatory/kriging.hpp>
-#include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
 
 #define xstr(s) str(s)
 #define str(s) #s
 
-using namespace polatory;
+using namespace jizai;
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -207,7 +207,7 @@ PYBIND11_MODULE(_core, m) {
   using point_cloud::NormalEstimator;
 
   py::object orig_name = m.attr("__name__");
-  m.attr("__name__") = "polatory";
+  m.attr("__name__") = "jizai";
 
   py::class_<NormalEstimator>(m, "NormalEstimator")
       .def(py::init<const geometry::Points3&>(), "points"_a)
@@ -299,7 +299,7 @@ PYBIND11_MODULE(_core, m) {
       .def_readonly_static("ONE_OVER_MODEL_GAMMA_SQUARED",
                            &kriging::WeightFunction::kOneOverModelGammaSquared);
 
-  m.attr("__version__") = xstr(POLATORY_VERSION);
+  m.attr("__version__") = xstr(JIZAI_VERSION);
 
   auto one = m.def_submodule("one");
   auto two = m.def_submodule("two");

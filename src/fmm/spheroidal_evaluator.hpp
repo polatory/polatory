@@ -1,9 +1,9 @@
 #pragma once
 
-#include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_evaluator.hpp>
+#include <jizai/common/macros.hpp>
+#include <jizai/fmm/fmm_evaluator.hpp>
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <class Kernel>
 class FmmGenericEvaluator<Kernel>::Impl {
@@ -46,7 +46,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_src_points_);
+    JIZAI_ASSERT(weights.rows() == km * n_src_points_);
     direct_eval_.set_weights(weights);
     fast_eval_.set_weights(weights);
   }
@@ -115,4 +115,4 @@ void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weig
   EXTERN_FMM_EVALUATORS_(RBF_NAME<2>);  \
   EXTERN_FMM_EVALUATORS_(RBF_NAME<3>);
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

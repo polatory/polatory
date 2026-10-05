@@ -2,7 +2,7 @@
 
 #include <Eigen/Core>
 #include <format>
-#include <polatory/polatory.hpp>
+#include <jizai/jizai.hpp>
 #include <regex>
 #include <stdexcept>
 #include <string>
@@ -33,10 +33,10 @@ void throw_unexpected_input(const Iterator& it, const Iterator& end) {
 }
 
 template <int Dim>
-polatory::Model<Dim> make_model(const ModelOptions& opts) {
-  using Mat = polatory::Mat<Dim>;
-  using Model = polatory::Model<Dim>;
-  using Rbf = polatory::rbf::Rbf<Dim>;
+jizai::Model<Dim> make_model(const ModelOptions& opts) {
+  using Mat = jizai::Mat<Dim>;
+  using Model = jizai::Model<Dim>;
+  using Rbf = jizai::rbf::Rbf<Dim>;
 
   std::vector<Rbf> rbfs;
 
@@ -47,10 +47,10 @@ polatory::Model<Dim> make_model(const ModelOptions& opts) {
 
     std::vector<double> params;
     while (it != end && is_number(*it)) {
-      params.push_back(polatory::numeric::to_double(*it++));
+      params.push_back(jizai::numeric::to_double(*it++));
     }
 
-    auto rbf = polatory::rbf::make_rbf<Dim>(name, params);
+    auto rbf = jizai::rbf::make_rbf<Dim>(name, params);
 
     while (it != end) {
       if (*it == "aniso") {
@@ -59,7 +59,7 @@ polatory::Model<Dim> make_model(const ModelOptions& opts) {
         std::vector<double> aniso;
         for (auto i = 0; i < Dim * Dim; i++) {
           if (it != end && is_number(*it)) {
-            aniso.push_back(polatory::numeric::to_double(*it++));
+            aniso.push_back(jizai::numeric::to_double(*it++));
           } else {
             throw_unexpected_input(it, end);
           }

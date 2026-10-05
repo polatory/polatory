@@ -6,9 +6,9 @@ target_link_libraries(${TARGET} PRIVATE
     Boost::any
     Boost::program_options
     igl::igl_core
-    polatory
+    jizai
 )
 
 if(MSVC)
-    polatory_target_contents(${TARGET} ${POLATORY_DLLS})
+    jizai_target_contents(${TARGET} ${JIZAI_DLLS})
 endif()

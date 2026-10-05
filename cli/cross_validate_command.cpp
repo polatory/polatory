@@ -3,9 +3,9 @@
 #include <boost/program_options.hpp>
 #include <format>
 #include <iostream>
+#include <jizai/jizai.hpp>
+#include <jizai/kriging.hpp>
 #include <memory>
-#include <polatory/kriging.hpp>
-#include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -13,15 +13,15 @@
 #include "../examples/common/model_options.hpp"
 #include "commands.hpp"
 
-using polatory::kAll;
-using polatory::MatX;
-using polatory::Model;
-using polatory::read_table;
-using polatory::VecX;
-using polatory::write_table;
-using polatory::common::concatenate_cols;
-using polatory::geometry::Points;
-using polatory::kriging::cross_validate;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::Model;
+using jizai::read_table;
+using jizai::VecX;
+using jizai::write_table;
+using jizai::common::concatenate_cols;
+using jizai::geometry::Points;
+using jizai::kriging::cross_validate;
 
 namespace {
 
@@ -66,7 +66,7 @@ class CrossValidateCommand : public Command {
     }
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -79,7 +79,7 @@ class CrossValidateCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 

@@ -3,13 +3,13 @@
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 #include <array>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/rmt/lattice_coordinates.hpp>
-#include <polatory/isosurface/rmt/primitive_lattice.hpp>
-#include <polatory/types.hpp>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/rmt/lattice_coordinates.hpp>
+#include <jizai/isosurface/rmt/primitive_lattice.hpp>
+#include <jizai/types.hpp>
 #include <vector>
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 inline geometry::Point3 quadric_position(
     const geometry::Points3& vertices,
@@ -57,4 +57,4 @@ inline geometry::Point3 quadric_position(
   return lattice.clamp_to_node(geometry::transform_point<3>(aniso_inv, x), node);
 }
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

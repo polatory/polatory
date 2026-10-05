@@ -2,19 +2,19 @@
 
 #include <algorithm>
 #include <array>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/isosurface/edge.hpp>
+#include <jizai/isosurface/predicates.hpp>
+#include <jizai/isosurface/types.hpp>
+#include <jizai/types.hpp>
 #include <limits>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/isosurface/edge.hpp>
-#include <polatory/isosurface/predicates.hpp>
-#include <polatory/isosurface/types.hpp>
-#include <polatory/types.hpp>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include "../abstract_mesh.hpp"
 
-namespace polatory::isosurface::snapper {
+namespace jizai::isosurface::snapper {
 
 using geometry::Point2;
 using geometry::Points2;
@@ -273,4 +273,4 @@ class Triangulation {
   bool simple_{true};
 };
 
-}  // namespace polatory::isosurface::snapper
+}  // namespace jizai::isosurface::snapper

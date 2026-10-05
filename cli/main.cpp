@@ -46,7 +46,7 @@ int main(int argc, const char* argv[]) {
     commands.push_back(make_variogram_command());
 
     if (args.empty()) {
-      std::cout << "usage: polatory [OPTIONS] COMMAND [ARGS]" << std::endl << opts_desc;
+      std::cout << "usage: jizai [OPTIONS] COMMAND [ARGS]" << std::endl << opts_desc;
       std::cout << std::endl << "Commands:" << std::endl;
       for (const auto& command : commands) {
         std::cout << std::format("  {:24}{}", command->name(), command->description()) << std::endl;

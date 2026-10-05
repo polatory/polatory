@@ -1,6 +1,6 @@
-#include <polatory/krylov/fgmres.hpp>
+#include <jizai/krylov/fgmres.hpp>
 
-namespace polatory::krylov {
+namespace jizai::krylov {
 
 Fgmres::Fgmres(const LinearOperator& op, const VecX& rhs, Index max_iter)
     : Gmres(op, rhs, max_iter) {}
@@ -27,4 +27,4 @@ VecX Fgmres::solution_vector() const {
 
 void Fgmres::add_preconditioned_krylov_basis(const VecX& z) { zs_.push_back(z); }
 
-}  // namespace polatory::krylov
+}  // namespace jizai::krylov

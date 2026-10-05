@@ -2,18 +2,18 @@
 #include <cmath>
 #include <format>
 #include <iostream>
+#include <jizai/jizai.hpp>
+#include <jizai/kriging.hpp>
 #include <memory>
 #include <numbers>
-#include <polatory/kriging.hpp>
-#include <polatory/polatory.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "commands.hpp"
 
-using polatory::Index;
-using polatory::kriging::VariogramSet;
+using jizai::Index;
+using jizai::kriging::VariogramSet;
 
 namespace {
 
@@ -42,7 +42,7 @@ class ShowVariogramCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -55,7 +55,7 @@ class ShowVariogramCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 

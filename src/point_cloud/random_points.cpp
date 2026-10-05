@@ -1,8 +1,8 @@
 #include <cmath>
-#include <polatory/point_cloud/random_points.hpp>
+#include <jizai/point_cloud/random_points.hpp>
 #include <stdexcept>
 
-namespace polatory::point_cloud {
+namespace jizai::point_cloud {
 
 geometry::Points3 random_points(const geometry::Cuboid3& cuboid, Index n, seed_type seed) {
   auto size = cuboid.max() - cuboid.min();
@@ -58,4 +58,4 @@ geometry::Points3 random_points(const geometry::Sphere3& sphere, Index n, seed_t
   return points;
 }
 
-}  // namespace polatory::point_cloud
+}  // namespace jizai::point_cloud

@@ -1,11 +1,11 @@
 #include <Eigen/LU>
 #include <algorithm>
-#include <polatory/point_cloud/kdtree.hpp>
-#include <polatory/point_cloud/sdf_data_generator.hpp>
+#include <jizai/point_cloud/kdtree.hpp>
+#include <jizai/point_cloud/sdf_data_generator.hpp>
 #include <stdexcept>
 #include <vector>
 
-namespace polatory::point_cloud {
+namespace jizai::point_cloud {
 
 SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
                                    const geometry::Vectors3& normals, double offset)
@@ -102,4 +102,4 @@ const geometry::Points3& SdfDataGenerator::sdf_points() const { return sdf_point
 
 const VecX& SdfDataGenerator::sdf_values() const { return sdf_values_; }
 
-}  // namespace polatory::point_cloud
+}  // namespace jizai::point_cloud

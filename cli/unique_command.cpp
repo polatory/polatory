@@ -1,19 +1,19 @@
 #include <Eigen/Core>
 #include <boost/program_options.hpp>
 #include <format>
+#include <jizai/jizai.hpp>
 #include <memory>
-#include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
 
 #include "commands.hpp"
 
-using polatory::kAll;
-using polatory::MatX;
-using polatory::read_table;
-using polatory::write_table;
-using polatory::geometry::Points;
-using polatory::point_cloud::DistanceFilter;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::read_table;
+using jizai::write_table;
+using jizai::geometry::Points;
+using jizai::point_cloud::DistanceFilter;
 
 namespace {
 
@@ -44,7 +44,7 @@ class UniqueCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -57,7 +57,7 @@ class UniqueCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 

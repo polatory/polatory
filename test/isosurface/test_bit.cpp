@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <polatory/isosurface/bit.hpp>
+#include <jizai/isosurface/bit.hpp>
 
-using polatory::isosurface::bit_count;
-using polatory::isosurface::bit_peek;
-using polatory::isosurface::bit_pop;
+using jizai::isosurface::bit_count;
+using jizai::isosurface::bit_peek;
+using jizai::isosurface::bit_pop;
 
 TEST(bit_count, trivial) {
   std::uint32_t decaf{0b1101'1110'1100'1010'1111};

@@ -1,17 +1,17 @@
 #pragma once
 
 #include <algorithm>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/kriging/variogram.hpp>
+#include <jizai/kriging/variogram_fitting.hpp>
+#include <jizai/kriging/weight_function.hpp>
+#include <jizai/model.hpp>
+#include <jizai/types.hpp>
 #include <memory>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/kriging/variogram.hpp>
-#include <polatory/kriging/variogram_fitting.hpp>
-#include <polatory/kriging/weight_function.hpp>
-#include <polatory/model.hpp>
-#include <polatory/types.hpp>
 #include <string>
 #include <vector>
 
-namespace polatory::kriging {
+namespace jizai::kriging {
 
 namespace internal {
 
@@ -84,4 +84,4 @@ typename VariogramFitting<Dim>::Model VariogramFitting<Dim>::model() const {
   return impl_->model();
 }
 
-}  // namespace polatory::kriging
+}  // namespace jizai::kriging

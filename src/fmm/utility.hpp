@@ -1,13 +1,13 @@
 #pragma once
 
-#include <polatory/geometry/bbox3d.hpp>
-#include <polatory/rbf/rbf_base.hpp>
+#include <jizai/geometry/bbox3d.hpp>
+#include <jizai/rbf/rbf_base.hpp>
 #include <scalfmm/tree/box.hpp>
 #include <scalfmm/utils/sort.hpp>
 
 #include "kernel_cost.hpp"
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 // Cost of one frequency component of the FFT-based M2L, i.e. km * kn complex products, relative
 // to one near-field pair evaluation of the given kernel. Relative to Kernel<Biharmonic3D<Dim>>,
@@ -43,4 +43,4 @@ Box make_box(const Rbf& rbf, const geometry::Bbox<Rbf::kDim>& bbox) {
   return {width, center};
 }
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

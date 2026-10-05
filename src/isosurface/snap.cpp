@@ -1,10 +1,10 @@
-#include <polatory/isosurface/snap.hpp>
+#include <jizai/isosurface/snap.hpp>
 
 #include "snapper/smoother.hpp"
 #include "snapper/snapper.hpp"
 #include "snapper/thinner.hpp"
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 Mesh snap_mesh(const Mesh& mesh, const geometry::Points3& points, const VecX& tolerances,
                double resolution, const Mat3& aniso, Stats* stats) {
@@ -36,4 +36,4 @@ Mesh smooth_snapped_mesh(const Mesh& mesh, const geometry::Points3& points, cons
   return snapper::Smoother(mesh, points, tolerances, resolution, aniso).result();
 }
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

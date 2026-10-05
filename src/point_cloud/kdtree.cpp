@@ -2,14 +2,14 @@
 #include <cmath>
 #include <functional>
 #include <iterator>
+#include <jizai/point_cloud/kdtree.hpp>
 #include <limits>
 #include <memory>
 #include <nanoflann.hpp>
-#include <polatory/point_cloud/kdtree.hpp>
 #include <stdexcept>
 #include <vector>
 
-namespace polatory::point_cloud {
+namespace jizai::point_cloud {
 
 template <int Dim>
 class KdTree<Dim>::Impl {
@@ -172,4 +172,4 @@ template class KdTree<1>;
 template class KdTree<2>;
 template class KdTree<3>;
 
-}  // namespace polatory::point_cloud
+}  // namespace jizai::point_cloud

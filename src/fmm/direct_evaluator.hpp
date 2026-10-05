@@ -1,16 +1,16 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <jizai/common/macros.hpp>
+#include <jizai/fmm/fmm_evaluator.hpp>
+#include <jizai/point_cloud/kdtree.hpp>
+#include <jizai/types.hpp>
 #include <memory>
-#include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_evaluator.hpp>
-#include <polatory/point_cloud/kdtree.hpp>
-#include <polatory/types.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/container/particle_container.hpp>
 #include <vector>
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <class Kernel>
 class FmmGenericEvaluator<Kernel>::Impl {
@@ -105,7 +105,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_src_points_);
+    JIZAI_ASSERT(weights.rows() == km * n_src_points_);
 
     for (Index idx = 0; idx < n_src_points_; idx++) {
       auto p = src_particles_.at(idx);
@@ -182,4 +182,4 @@ void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weig
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<2>);  \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<3>);
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

@@ -1,27 +1,27 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/interpolation/evaluator.hpp>
+#include <jizai/interpolation/inequality_fitter.hpp>
+#include <jizai/model.hpp>
+#include <jizai/rbf/cov_exponential.hpp>
+#include <jizai/rbf/polyharmonic_odd.hpp>
+#include <jizai/types.hpp>
 #include <limits>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/interpolation/evaluator.hpp>
-#include <polatory/interpolation/inequality_fitter.hpp>
-#include <polatory/model.hpp>
-#include <polatory/rbf/cov_exponential.hpp>
-#include <polatory/rbf/polyharmonic_odd.hpp>
-#include <polatory/types.hpp>
 #include <utility>
 
 #include "../utility.hpp"
 
-using polatory::Index;
-using polatory::kAll;
-using polatory::Model;
-using polatory::VecX;
-using polatory::geometry::Points1;
-using polatory::interpolation::Evaluator;
-using polatory::interpolation::InequalityFitter;
-using polatory::rbf::Biharmonic3D;
-using polatory::rbf::CovExponential;
+using jizai::Index;
+using jizai::kAll;
+using jizai::Model;
+using jizai::VecX;
+using jizai::geometry::Points1;
+using jizai::interpolation::Evaluator;
+using jizai::interpolation::InequalityFitter;
+using jizai::rbf::Biharmonic3D;
+using jizai::rbf::CovExponential;
 
 TEST(rbf_inequality_fitter, inequality_only) {
   constexpr int kDim = 3;

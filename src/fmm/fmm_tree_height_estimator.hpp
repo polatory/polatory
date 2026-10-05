@@ -8,15 +8,15 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <jizai/types.hpp>
 #include <limits>
 #include <optional>
-#include <polatory/types.hpp>
 #include <scalfmm/container/point.hpp>
 #include <scalfmm/tree/box.hpp>
 #include <scalfmm/tree/utils.hpp>
 #include <vector>
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <int Dim>
 class FmmTreeHeightEstimator {
@@ -219,4 +219,4 @@ class FmmTreeHeightEstimator {
   std::vector<std::size_t> trg_keys_;
 };
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

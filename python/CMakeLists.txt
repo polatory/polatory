@@ -6,13 +6,13 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 pybind11_add_module(${TARGET} python_binding.cpp)
 
 target_compile_definitions(${TARGET} PRIVATE
-    -DPOLATORY_VERSION=${POLATORY_VERSION}
+    -DJIZAI_VERSION=${JIZAI_VERSION}
 )
 
 target_link_libraries(${TARGET} PRIVATE
-    polatory
+    jizai
 )
 
 if(MSVC)
-    polatory_target_contents(${TARGET} ${POLATORY_DLLS})
+    jizai_target_contents(${TARGET} ${JIZAI_DLLS})
 endif()

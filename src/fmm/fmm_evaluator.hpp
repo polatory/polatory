@@ -2,12 +2,12 @@
 
 #include <Eigen/Core>
 #include <algorithm>
+#include <jizai/common/macros.hpp>
+#include <jizai/fmm/fmm_evaluator.hpp>
+#include <jizai/types.hpp>
 #include <limits>
 #include <memory>
 #include <optional>
-#include <polatory/common/macros.hpp>
-#include <polatory/fmm/fmm_evaluator.hpp>
-#include <polatory/types.hpp>
 #include <scalfmm/algorithms/fmm.hpp>
 #include <scalfmm/container/particle.hpp>
 #include <scalfmm/container/particle_container.hpp>
@@ -27,7 +27,7 @@
 #include "lru_cache.hpp"
 #include "utility.hpp"
 
-namespace polatory::fmm {
+namespace jizai::fmm {
 
 template <class Kernel>
 class FmmGenericEvaluator<Kernel>::Impl {
@@ -168,7 +168,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
-    POLATORY_ASSERT(weights.rows() == km * n_src_points_);
+    JIZAI_ASSERT(weights.rows() == km * n_src_points_);
 
     if (!src_tree_) {
       for (Index idx = 0; idx < n_src_points_; idx++) {
@@ -334,4 +334,4 @@ void FmmGenericEvaluator<Kernel>::set_weights(const Eigen::Ref<const VecX>& weig
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<2>);  \
   IMPLEMENT_FMM_EVALUATORS_(RBF_NAME<3>);
 
-}  // namespace polatory::fmm
+}  // namespace jizai::fmm

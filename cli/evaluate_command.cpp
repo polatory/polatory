@@ -1,19 +1,19 @@
 #include <boost/program_options.hpp>
+#include <jizai/jizai.hpp>
 #include <limits>
 #include <memory>
-#include <polatory/polatory.hpp>
 #include <string>
 #include <vector>
 
 #include "commands.hpp"
 
-using polatory::Interpolant;
-using polatory::kAll;
-using polatory::MatX;
-using polatory::read_table;
-using polatory::write_table;
-using polatory::common::concatenate_cols;
-using polatory::geometry::Points;
+using jizai::Interpolant;
+using jizai::kAll;
+using jizai::MatX;
+using jizai::read_table;
+using jizai::write_table;
+using jizai::common::concatenate_cols;
+using jizai::geometry::Points;
 
 namespace {
 
@@ -56,7 +56,7 @@ class EvaluateCommand : public Command {
         ;
 
     if (global_opts.help) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       return;
     }
 
@@ -69,7 +69,7 @@ class EvaluateCommand : public Command {
                 vm);
       po::notify(vm);
     } catch (const po::error&) {
-      std::cout << std::format("usage: polatory {} [OPTIONS]\n", kName) << opts_desc;
+      std::cout << std::format("usage: jizai {} [OPTIONS]\n", kName) << opts_desc;
       throw;
     }
 

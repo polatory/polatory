@@ -3,15 +3,15 @@
 #include <Eigen/Core>
 #include <algorithm>
 #include <format>
+#include <jizai/geometry/point3d.hpp>
+#include <jizai/preconditioner/domain_divider.hpp>
+#include <jizai/types.hpp>
 #include <numeric>
-#include <polatory/geometry/point3d.hpp>
-#include <polatory/preconditioner/domain_divider.hpp>
-#include <polatory/types.hpp>
 #include <vector>
 
-using polatory::Index;
-using polatory::geometry::Points;
-using polatory::preconditioner::DomainDivider;
+using jizai::Index;
+using jizai::geometry::Points;
+using jizai::preconditioner::DomainDivider;
 
 namespace {
 

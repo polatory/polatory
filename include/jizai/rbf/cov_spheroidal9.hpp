@@ -1,0 +1,141 @@
+#pragma once
+
+#include <cmath>
+#include <jizai/rbf/covariance_function_base.hpp>
+#include <jizai/rbf/rbf.hpp>
+#include <limits>
+#include <vector>
+
+namespace jizai::rbf {
+
+namespace internal {
+
+template <int Dim, SpheroidalKind Kind>
+class CovSpheroidal9Generic final : public CovarianceFunctionBase<Dim> {
+ public:
+  using DirectPart = CovSpheroidal9Generic<Dim, SpheroidalKind::kDirectPart>;
+  using FastPart = CovSpheroidal9Generic<Dim, SpheroidalKind::kFastPart>;
+  static constexpr int kDim = Dim;
+  static inline const std::string kShortName = "sp9";
+
+ private:
+  using Base = CovarianceFunctionBase<Dim>;
+  using Mat = Base::Mat;
+  using RbfPtr = Base::RbfPtr;
+  using Vector = Base::Vector;
+
+  static constexpr double kRho0 = 0.31622776601683794;
+  static constexpr double kA = 1.4230249470757708;
+  static constexpr double kB = 0.8445585690332554;
+  static constexpr double kD = 7.601027121299299;
+
+ public:
+  using Base::anisotropy;
+  using Base::Base;
+  using Base::parameters;
+  using Base::set_parameters;
+
+  explicit CovSpheroidal9Generic(const std::vector<double>& params) { set_parameters(params); }
+
+  RbfPtr clone() const override { return std::make_unique<CovSpheroidal9Generic>(*this); }
+
+  double evaluate_isotropic(const Vector& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+    auto rho = r / range;
+
+    auto lin = [=]() -> double { return psill * (1.0 - kA * rho); };
+    auto imq = [=]() -> double { return psill * kB / sqrt_pow<9>(1.0 + rho * rho); };
+
+    if constexpr (Kind == SpheroidalKind::kDirectPart) {
+      return rho < kRho0 ? lin() - imq() : 0.0;
+    }
+    if constexpr (Kind == SpheroidalKind::kFastPart) {
+      return imq();
+    }
+    return rho < kRho0 ? lin() : imq();
+  }
+
+  Vector evaluate_gradient_isotropic(const Vector& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+    auto rho = r / range;
+
+    auto lin = [=, &diff]() -> Vector {
+      auto coeff = -psill * kA / (r * range);
+      return coeff * diff;
+    };
+    auto imq = [=, &diff]() -> Vector {
+      auto coeff = -psill * kD / (sqrt_pow<11>(1.0 + rho * rho) * range * range);
+      return coeff * diff;
+    };
+
+    if constexpr (Kind == SpheroidalKind::kDirectPart) {
+      return rho < kRho0 ? Vector{lin() - imq()} : Vector::Zero();
+    }
+    if constexpr (Kind == SpheroidalKind::kFastPart) {
+      return imq();
+    }
+    return rho < kRho0 ? lin() : imq();
+  }
+
+  Mat evaluate_hessian_isotropic(const Vector& diff) const override {
+    auto psill = parameters().at(0);
+    auto range = parameters().at(1);
+    auto r = diff.norm();
+    auto rho = r / range;
+
+    auto lin = [=, &diff]() -> Mat {
+      auto coeff = -psill * kA / (r * range);
+      return coeff * (Mat::Identity() - 1.0 / (r * r) * diff.transpose() * diff);
+    };
+    auto imq = [=, &diff]() -> Mat {
+      auto coeff = -psill * kD / (sqrt_pow<11>(1.0 + rho * rho) * range * range);
+      return coeff * (Mat::Identity() - 11.0 / (r * r + range * range) * diff.transpose() * diff);
+    };
+
+    if constexpr (Kind == SpheroidalKind::kDirectPart) {
+      return rho < kRho0 ? Mat{lin() - imq()} : Mat::Zero();
+    }
+    if constexpr (Kind == SpheroidalKind::kFastPart) {
+      return imq();
+    }
+    return rho < kRho0 ? lin() : imq();
+  }
+
+  std::string short_name() const override { return kShortName; }
+
+  double support_radius_isotropic() const override {
+    return Kind == SpheroidalKind::kDirectPart ? kRho0 * parameters().at(1)
+                                               : std::numeric_limits<double>::infinity();
+  }
+
+  DirectPart direct_part() const {
+    DirectPart rbf{parameters()};
+    rbf.set_anisotropy(anisotropy());
+    return rbf;
+  }
+
+  FastPart fast_part() const {
+    FastPart rbf{parameters()};
+    rbf.set_anisotropy(anisotropy());
+    return rbf;
+  }
+};
+
+template <int Dim>
+using CovSpheroidal9 = CovSpheroidal9Generic<Dim, SpheroidalKind::kFull>;
+
+template <int Dim>
+using CovSpheroidal9DirectPart = CovSpheroidal9Generic<Dim, SpheroidalKind::kDirectPart>;
+
+template <int Dim>
+using CovSpheroidal9FastPart = CovSpheroidal9Generic<Dim, SpheroidalKind::kFastPart>;
+
+}  // namespace internal
+
+JIZAI_DEFINE_RBF(CovSpheroidal9);
+
+}  // namespace jizai::rbf

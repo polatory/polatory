@@ -1,11 +1,11 @@
-#include <polatory/isosurface/cluster.hpp>
+#include <jizai/isosurface/cluster.hpp>
 
 #include "vertex_clusterer.hpp"
 
-namespace polatory::isosurface {
+namespace jizai::isosurface {
 
 Mesh cluster_vertices(const Mesh& mesh, const rmt::PrimitiveLattice& lattice, const Mat3& aniso) {
   return VertexClusterer(mesh, lattice, aniso).result();
 }
 
-}  // namespace polatory::isosurface
+}  // namespace jizai::isosurface

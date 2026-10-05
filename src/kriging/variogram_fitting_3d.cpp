@@ -1,16 +1,16 @@
 #include <ceres/ceres.h>
 
 #include <Eigen/Geometry>
-#include <polatory/kriging/variogram.hpp>
-#include <polatory/kriging/variogram_fitting.hpp>
-#include <polatory/types.hpp>
+#include <jizai/kriging/variogram.hpp>
+#include <jizai/kriging/variogram_fitting.hpp>
+#include <jizai/types.hpp>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "variogram_fitting.hpp"
 
-namespace polatory::kriging {
+namespace jizai::kriging {
 
 template <>
 class VariogramFitting<3>::Impl {
@@ -167,4 +167,4 @@ class VariogramFitting<3>::Impl {
 
 template class VariogramFitting<3>;
 
-}  // namespace polatory::kriging
+}  // namespace jizai::kriging
