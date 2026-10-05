@@ -91,7 +91,8 @@ class UniqueCommand : public Command {
     MatX table = read_table(opts.in_file);
     Points points = table(kAll, Eigen::seqN(0, Dim));
 
-    table = DistanceFilter(points).filter(opts.dist)(table);
+    auto indices = DistanceFilter(points).filtered_indices(opts.dist);
+    table = table(indices, kAll).eval();
 
     write_table(opts.out_file, table);
   }

@@ -145,9 +145,8 @@ class IncrementalFitter {
 
       std::vector<Index> indices(centers);
       std::ranges::copy(std::views::reverse(c_centers), std::back_inserter(indices));
-      filter.filter(filtering_distance, indices);
-      boost::unordered_flat_set<Index> filtered_indices(filter.filtered_indices().begin(),
-                                                        filter.filtered_indices().end());
+      indices = filter.filtered_indices(filtering_distance, indices);
+      boost::unordered_flat_set<Index> filtered_indices(indices.begin(), indices.end());
 
       for (auto it = c_centers.rbegin(); it != c_centers.rbegin() + n_points_need_fitting; ++it) {
         if (filtered_indices.contains(*it)) {
@@ -157,9 +156,9 @@ class IncrementalFitter {
 
       std::vector<Index> grad_indices(grad_centers);
       std::ranges::copy(std::views::reverse(c_grad_centers), std::back_inserter(grad_indices));
-      grad_filter.filter(filtering_distance, grad_indices);
-      boost::unordered_flat_set<Index> grad_filtered_indices(grad_filter.filtered_indices().begin(),
-                                                             grad_filter.filtered_indices().end());
+      grad_indices = grad_filter.filtered_indices(filtering_distance, grad_indices);
+      boost::unordered_flat_set<Index> grad_filtered_indices(grad_indices.begin(),
+                                                             grad_indices.end());
 
       for (auto it = c_grad_centers.rbegin();
            it != c_grad_centers.rbegin() + n_grad_points_need_fitting; ++it) {

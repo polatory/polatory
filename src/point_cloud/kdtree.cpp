@@ -19,7 +19,7 @@ class KdTree<Dim>::Impl {
       nanoflann::KDTreeEigenMatrixAdaptor<Points, Dim, nanoflann::metric_L2_Simple>;
 
  public:
-  explicit Impl(const Points& points) : points_{points}, nf_index_{Dim, std::cref(points_)} {}
+  explicit Impl(const Points& points) : nf_index_{Dim, std::cref(points)} {}
 
   void knn_search(const Point& point, Index k, std::vector<Index>& indices,
                   std::vector<double>& distances) const {
@@ -129,7 +129,6 @@ class KdTree<Dim>::Impl {
     std::vector<DistanceType>& distances_;
   };
 
-  Points points_;
   NanoflannIndex nf_index_;
 };
 

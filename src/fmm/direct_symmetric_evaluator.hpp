@@ -84,8 +84,8 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
       }
     }
 
-    Points apoints = geometry::transform_points<kDim>(a, points);
-    kdtree_ = std::make_unique<point_cloud::KdTree<kDim>>(apoints);
+    a_points_ = geometry::transform_points<kDim>(a, points);
+    kdtree_ = std::make_unique<point_cloud::KdTree<kDim>>(a_points_);
   }
 
   void set_weights(const Eigen::Ref<const VecX>& weights) {
@@ -136,6 +136,7 @@ class FmmGenericSymmetricEvaluator<Kernel>::Impl {
 
   Index n_points_{};
   mutable Container particles_;
+  Points a_points_;
   std::unique_ptr<point_cloud::KdTree<kDim>> kdtree_;
 };
 

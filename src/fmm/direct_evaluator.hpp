@@ -85,8 +85,8 @@ class FmmGenericEvaluator<Kernel>::Impl {
       }
     }
 
-    Points apoints = geometry::transform_points<kDim>(a, points);
-    kdtree_ = std::make_unique<point_cloud::KdTree<kDim>>(apoints);
+    a_points_ = geometry::transform_points<kDim>(a, points);
+    kdtree_ = std::make_unique<point_cloud::KdTree<kDim>>(a_points_);
   }
 
   void set_target_points(const Points& points) {
@@ -136,6 +136,7 @@ class FmmGenericEvaluator<Kernel>::Impl {
   Index n_trg_points_{};
   mutable SourceContainer src_particles_;
   mutable TargetContainer trg_particles_;
+  Points a_points_;
   std::unique_ptr<point_cloud::KdTree<kDim>> kdtree_;
 };
 

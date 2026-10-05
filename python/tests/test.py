@@ -165,17 +165,17 @@ def test_distance_filter(dim, mod):
     distance = 0.05 if dim > 1 else 0.001
 
     f = mod.DistanceFilter(points)
-    indices = f.filter(distance).filtered_indices
+    indices = f.filtered_indices(distance)
     assert 0 < len(indices) <= len(points)
     assert min_pairwise_distance(points[indices]) >= distance
 
     subset = list(range(0, len(points), 2))
-    indices = f.filter(distance, subset).filtered_indices
+    indices = f.filtered_indices(distance, subset)
     assert set(indices) <= set(subset)
     assert min_pairwise_distance(points[indices]) >= distance
 
-    assert_raises(ValueError, f.filter, distance, [0, len(points)])
-    assert_raises(ValueError, f.filter, distance, [-1])
+    assert_raises(ValueError, f.filtered_indices, distance, [0, len(points)])
+    assert_raises(ValueError, f.filtered_indices, distance, [-1])
 
 
 def test_kriging(dim, mod, tmp):

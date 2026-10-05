@@ -13,7 +13,7 @@
 namespace jizai::point_cloud {
 
 NormalEstimator::NormalEstimator(const geometry::Points3& points)
-    : n_points_(points.rows()), points_(points), tree_(points) {}
+    : n_points_(points.rows()), points_(points), tree_(points_) {}
 
 NormalEstimator& NormalEstimator::estimate_with_knn(Index k) & {
   return estimate_with_knn(std::vector<Index>{k});

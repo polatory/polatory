@@ -132,9 +132,8 @@ class InequalityFitter {
       }
       common::zip_sort(indices.begin(), indices.end(), residuals.begin(),
                        [](const auto& a, const auto& b) { return a.second > b.second; });
-      filter.filter(filtering_distance, indices);
-      boost::unordered_flat_set<Index> filtered_indices(filter.filtered_indices().begin(),
-                                                        filter.filtered_indices().end());
+      indices = filter.filtered_indices(filtering_distance, indices);
+      boost::unordered_flat_set<Index> filtered_indices(indices.begin(), indices.end());
 
       // Update the active set.
 

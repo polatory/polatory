@@ -45,6 +45,7 @@ template <int Dim>
 std::pair<jizai::geometry::Points<Dim>, jizai::VecX> sample_data(jizai::Index& n_points,
                                                                  const jizai::Mat<Dim>& aniso) {
   using jizai::Index;
+  using jizai::kAll;
   using jizai::VecX;
   using jizai::geometry::transform_points;
   using jizai::point_cloud::DistanceFilter;
@@ -52,7 +53,8 @@ std::pair<jizai::geometry::Points<Dim>, jizai::VecX> sample_data(jizai::Index& n
   using Points = jizai::geometry::Points<Dim>;
 
   Points a_points = Points::Random(n_points, Dim);
-  a_points = DistanceFilter(a_points).filter(1e-6)(a_points);
+  auto indices = DistanceFilter(a_points).filtered_indices(1e-6);
+  a_points = a_points(indices, kAll).eval();
   n_points = a_points.rows();
 
   Mat aniso_inv = aniso.inverse();
@@ -73,6 +75,7 @@ template <int Dim>
 std::pair<jizai::geometry::Points<Dim>, jizai::geometry::Vectors<Dim>> sample_grad_data(
     jizai::Index& n_points, const jizai::Mat<Dim>& aniso) {
   using jizai::Index;
+  using jizai::kAll;
   using jizai::geometry::transform_points;
   using jizai::point_cloud::DistanceFilter;
   using Mat = jizai::Mat<Dim>;
@@ -80,7 +83,8 @@ std::pair<jizai::geometry::Points<Dim>, jizai::geometry::Vectors<Dim>> sample_gr
   using Vectors = jizai::geometry::Vectors<Dim>;
 
   Points a_points = Points::Random(n_points, Dim);
-  a_points = DistanceFilter(a_points).filter(1e-6)(a_points);
+  auto indices = DistanceFilter(a_points).filtered_indices(1e-6);
+  a_points = a_points(indices, kAll).eval();
   n_points = a_points.rows();
 
   Mat aniso_inv = aniso.inverse();

@@ -8,27 +8,26 @@
 #include <jizai/types.hpp>
 #include <numeric>
 #include <stdexcept>
-#include <tuple>
-#include <utility>
 #include <vector>
 
 namespace jizai::point_cloud {
 
 template <int Dim>
 class DistanceFilter {
-  using Point = geometry::Point<Dim>;
   using Points = geometry::Points<Dim>;
 
  public:
-  explicit DistanceFilter(const Points& points) : points_(points), tree_(points) {}
+  explicit DistanceFilter(const Points& points) : points_(points), tree_(points_) {}
 
-  DistanceFilter& filter(double distance = 0.0) {
-    return filter(distance, trivial_indices(points_.rows()));
+  std::vector<Index> filtered_indices(double distance = 0.0) const {
+    return filtered_indices(distance, trivial_indices(points_.rows()));
   }
 
-  DistanceFilter& filter(const std::vector<Index>& indices) { return filter(0.0, indices); }
+  std::vector<Index> filtered_indices(const std::vector<Index>& indices) const {
+    return filtered_indices(0.0, indices);
+  }
 
-  DistanceFilter& filter(double distance, const std::vector<Index>& indices) {
+  std::vector<Index> filtered_indices(double distance, const std::vector<Index>& indices) const {
     if (!(distance >= 0.0)) {
       throw std::invalid_argument("distance must be non-negative");
     }
@@ -56,48 +55,17 @@ class DistanceFilter {
       }
     }
 
-    filtered_indices_.clear();
+    std::vector<Index> filtered_indices;
     for (auto i : indices) {
       if (!indices_to_remove.contains(i)) {
-        filtered_indices_.push_back(i);
+        filtered_indices.push_back(i);
       }
     }
 
-    filtered_ = true;
-    return *this;
-  }
-
-  template <class Derived>
-  auto operator()(const Eigen::MatrixBase<Derived>& m) {
-    throw_if_not_filtered();
-
-    if (m.rows() != points_.rows()) {
-      throw std::invalid_argument("m.rows() must match with the original points");
-    }
-
-    // Use .eval() to prevent memory corruption caused if the result is being assigned
-    // back to the input matrix.
-    return m(filtered_indices_, kAll).eval();
-  }
-
-  template <class Derived, class... Args>
-  auto operator()(const Eigen::MatrixBase<Derived>& m, Args&&... args) {
-    return std::make_tuple(operator()(m), operator()(std::forward<Args>(args))...);
-  }
-
-  const std::vector<Index>& filtered_indices() const {
-    throw_if_not_filtered();
-
-    return filtered_indices_;
+    return filtered_indices;
   }
 
  private:
-  void throw_if_not_filtered() const {
-    if (!filtered_) {
-      throw std::runtime_error("points have not been filtered");
-    }
-  }
-
   static std::vector<Index> trivial_indices(Index n_points) {
     std::vector<Index> indices(n_points);
     std::iota(indices.begin(), indices.end(), Index{0});
@@ -106,8 +74,6 @@ class DistanceFilter {
 
   const Points points_;  // Do not hold a reference to a temporary object.
   const KdTree<Dim> tree_;
-  bool filtered_{};
-  std::vector<Index> filtered_indices_;
 };
 
 }  // namespace jizai::point_cloud
