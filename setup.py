@@ -126,7 +126,12 @@ class CMakeBuild(build_ext):
         subprocess.run(
             [sys.executable, "-m", "pybind11_stubgen", "-o", lib_dir, ext.name],
             check=True,
-            env={**env, "PYTHONPATH": os.fspath(lib_dir)},
+            env={
+                **env,
+                "PYTHONPATH": os.pathsep.join(
+                    filter(None, [os.fspath(lib_dir), env.get("PYTHONPATH")])
+                ),
+            },
         )
 
 
