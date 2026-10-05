@@ -51,8 +51,8 @@ void define_module(py::module& m) {
       .def(py::init<const Point&, const Point&>(), "min"_a, "max"_a)
       .def_static("from_points", &bbox_from_points<Dim>, "points"_a)
       .def_property_readonly("is_empty", &Bbox::is_empty)
-      .def_property_readonly("min", &Bbox::min)
-      .def_property_readonly("max", &Bbox::max);
+      .def_property_readonly("min", &Bbox::min, py::return_value_policy::copy)
+      .def_property_readonly("max", &Bbox::max, py::return_value_policy::copy);
 
   py::class_<Rbf>(m, "Rbf")
       .def_property("anisotropy", &Rbf::anisotropy, &Rbf::set_anisotropy,
@@ -164,7 +164,7 @@ void define_module(py::module& m) {
       .def_property_readonly("bin_distance", &Variogram::bin_distance)
       .def_property_readonly("bin_gamma", &Variogram::bin_gamma)
       .def_property_readonly("bin_num_pairs", &Variogram::bin_num_pairs)
-      .def_property_readonly("direction", &Variogram::direction)
+      .def_property_readonly("direction", &Variogram::direction, py::return_value_policy::copy)
       .def_property_readonly("num_bins", &Variogram::num_bins)
       .def_property_readonly("num_pairs", &Variogram::num_pairs)
       .def("back_transform", &Variogram::back_transform, "t"_a);
@@ -173,7 +173,7 @@ void define_module(py::module& m) {
   py::class_<VariogramSet>(m, "VariogramSet")
       .def_property_readonly("num_pairs", &VariogramSet::num_pairs)
       .def_property_readonly("num_variograms", &VariogramSet::num_variograms)
-      .def_property_readonly("variograms", &VariogramSet::variograms)
+      .def_property_readonly("variograms", &VariogramSet::variograms, py::return_value_policy::copy)
       .def("back_transform", &VariogramSet::back_transform, "t"_a)
       .def_static("load", &VariogramSet::load, "filename"_a)
       .def("save", &VariogramSet::save, "filename"_a);
@@ -181,8 +181,10 @@ void define_module(py::module& m) {
   // Depends on: VariogramSet
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
       .def(py::init<double, Index>(), "lag_distance"_a, "num_lags"_a)
-      .def_readonly_static("ISOTROPIC_DIRECTIONS", &VariogramCalculator::kIsotropicDirections)
-      .def_readonly_static("ANISOTROPIC_DIRECTIONS", &VariogramCalculator::kAnisotropicDirections)
+      .def_readonly_static("ISOTROPIC_DIRECTIONS", &VariogramCalculator::kIsotropicDirections,
+                           py::return_value_policy::copy)
+      .def_readonly_static("ANISOTROPIC_DIRECTIONS", &VariogramCalculator::kAnisotropicDirections,
+                           py::return_value_policy::copy)
       .def_property("angle_tolerance", &VariogramCalculator::angle_tolerance,
                     &VariogramCalculator::set_angle_tolerance)
       .def_property("directions", &VariogramCalculator::directions,
@@ -260,8 +262,10 @@ PYBIND11_MODULE(_core, m) {
       .def(py::init<const geometry::Points3&, const geometry::Vectors3&, std::optional<double>,
                     const Mat&>(),
            "points"_a, "normals"_a, "offset"_a = py::none(), "aniso"_a = Mat::Identity())
-      .def_property_readonly("sdf_points", &point_cloud::SdfDataGenerator::sdf_points)
-      .def_property_readonly("sdf_values", &point_cloud::SdfDataGenerator::sdf_values);
+      .def_property_readonly("sdf_points", &point_cloud::SdfDataGenerator::sdf_points,
+                             py::return_value_policy::copy)
+      .def_property_readonly("sdf_values", &point_cloud::SdfDataGenerator::sdf_values,
+                             py::return_value_policy::copy);
 
   py::class_<kriging::NormalScoreTransformation>(m, "NormalScoreTransformation")
       .def(py::init<int>(), "order"_a = 30)
@@ -271,16 +275,21 @@ PYBIND11_MODULE(_core, m) {
   py::class_<kriging::WeightFunction>(m, "WeightFunction")
       .def(py::init<double, double, double>(), "exp_distance"_a = 0.0, "exp_model_gamma"_a = 0.0,
            "exp_num_pairs"_a = 0.0)
-      .def_readonly_static("NUM_PAIRS", &kriging::WeightFunction::kNumPairs)
+      .def_readonly_static("NUM_PAIRS", &kriging::WeightFunction::kNumPairs,
+                           py::return_value_policy::copy)
       .def_readonly_static("NUM_PAIRS_OVER_DISTANCE_SQUARED",
-                           &kriging::WeightFunction::kNumPairsOverDistanceSquared)
+                           &kriging::WeightFunction::kNumPairsOverDistanceSquared,
+                           py::return_value_policy::copy)
       .def_readonly_static("NUM_PAIRS_OVER_MODEL_GAMMA_SQUARED",
-                           &kriging::WeightFunction::kNumPairsOverModelGammaSquared)
-      .def_readonly_static("ONE", &kriging::WeightFunction::kOne)
+                           &kriging::WeightFunction::kNumPairsOverModelGammaSquared,
+                           py::return_value_policy::copy)
+      .def_readonly_static("ONE", &kriging::WeightFunction::kOne, py::return_value_policy::copy)
       .def_readonly_static("ONE_OVER_DISTANCE_SQUARED",
-                           &kriging::WeightFunction::kOneOverDistanceSquared)
+                           &kriging::WeightFunction::kOneOverDistanceSquared,
+                           py::return_value_policy::copy)
       .def_readonly_static("ONE_OVER_MODEL_GAMMA_SQUARED",
-                           &kriging::WeightFunction::kOneOverModelGammaSquared);
+                           &kriging::WeightFunction::kOneOverModelGammaSquared,
+                           py::return_value_policy::copy);
 
   m.attr("__version__") = xstr(JIZAI_VERSION);
 
@@ -307,10 +316,11 @@ PYBIND11_MODULE(_core, m) {
 
   py::class_<isosurface::Mesh>(m, "Mesh")
       .def("export_obj", &isosurface::Mesh::export_obj, "filename"_a)
-      .def_property_readonly("faces", &isosurface::Mesh::faces)
+      .def_property_readonly("faces", &isosurface::Mesh::faces, py::return_value_policy::copy)
       .def_property_readonly("is_empty", &isosurface::Mesh::is_empty)
       .def_property_readonly("is_entire", &isosurface::Mesh::is_entire)
-      .def_property_readonly("vertices", &isosurface::Mesh::vertices);
+      .def_property_readonly("vertices", &isosurface::Mesh::vertices,
+                             py::return_value_policy::copy);
 
   // Depends on: _FieldFunction, Mesh, three.Bbox
   py::class_<isosurface::Isosurface>(m, "Isosurface")
