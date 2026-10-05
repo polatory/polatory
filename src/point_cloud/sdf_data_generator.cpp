@@ -2,20 +2,29 @@
 #include <algorithm>
 #include <jizai/point_cloud/kdtree.hpp>
 #include <jizai/point_cloud/sdf_data_generator.hpp>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
 namespace jizai::point_cloud {
 
 SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
-                                   const geometry::Vectors3& normals, double offset)
+                                   const geometry::Vectors3& normals, std::optional<double> offset)
     : SdfDataGenerator(points, normals, offset, Mat3::Identity()) {}
 
 SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
-                                   const geometry::Vectors3& normals, double offset,
+                                   const geometry::Vectors3& normals, const Mat3& aniso)
+    : SdfDataGenerator(points, normals, std::nullopt, aniso) {}
+
+SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
+                                   const geometry::Vectors3& normals, std::optional<double> offset,
                                    const Mat3& aniso) {
   if (normals.rows() != points.rows()) {
     throw std::invalid_argument("normals.rows() must be equal to points.rows()");
+  }
+
+  if (offset.has_value() && !(*offset > 0.0)) {
+    throw std::invalid_argument("offset must be positive");
   }
 
   if (!(aniso.determinant() > 0.0)) {
@@ -41,7 +50,8 @@ SdfDataGenerator::SdfDataGenerator(const geometry::Points3& points,
 }
 
 std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
-    const geometry::Points3& points, const geometry::Vectors3& normals, double offset) {
+    const geometry::Points3& points, const geometry::Vectors3& normals,
+    std::optional<double> offset) {
   KdTree tree(points);
 
   auto n_points = points.rows();
@@ -64,8 +74,10 @@ std::pair<geometry::Points3, VecX> SdfDataGenerator::estimate_impl(
         continue;
       }
 
-      auto d = offset;
-      if (d <= 0.0) {
+      double d{};
+      if (offset.has_value()) {
+        d = *offset;
+      } else {
         tree.knn_search(p, std::min(static_cast<Index>(6), n_points), nn_indices, nn_distances);
         d = *std::ranges::max_element(nn_distances);
       }

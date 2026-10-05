@@ -7,6 +7,7 @@
 #include <jizai/jizai.hpp>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -47,7 +48,8 @@ class NormalsToSdfCommand : public Command {
     opts_desc.add_options()  //
         ("in", po::value(&opts.in_file)->required()->value_name("FILE"),
          "Input file in CSV format:\n  X,Y,Z,NX,NY,NZ")  //
-        ("offset", po::value(&opts.offset)->default_value(0.0, "AUTO")->value_name("OFFSET"),
+        ("offset",
+         po::value(&opts.offset)->default_value(std::nullopt, "AUTO")->value_name("OFFSET"),
          "Default offset distance of off-surface points")  //
         ("aniso",
          po::value(&opts.aniso)
@@ -89,7 +91,7 @@ class NormalsToSdfCommand : public Command {
  private:
   struct Options {
     std::string in_file;
-    double offset{};
+    std::optional<double> offset;
     double ratio{};
     Mat3 aniso;
     std::string out_file;

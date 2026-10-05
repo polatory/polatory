@@ -7,6 +7,7 @@
 #include <jizai/jizai.hpp>
 #include <jizai/kriging.hpp>
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -87,10 +88,8 @@ void define_module(py::module& m) {
 
   // Depends on: Rbf
   py::class_<Model>(m, "Model")
-      .def(py::init<Rbf, int>(), "rbf"_a, "poly_degree"_a = Model::kMinRequiredPolyDegree)
-      .def(py::init<std::vector<Rbf>, int>(), "rbfs"_a,
-           "poly_degree"_a = Model::kMinRequiredPolyDegree)
-      .def_readonly_static("MIN_REQUIRED_POLY_DEGREE", &Model::kMinRequiredPolyDegree)
+      .def(py::init<Rbf, std::optional<int>>(), "rbf"_a, "poly_degree"_a = py::none())
+      .def(py::init<std::vector<Rbf>, std::optional<int>>(), "rbfs"_a, "poly_degree"_a = py::none())
       .def_property_readonly("cpd_order", &Model::cpd_order)
       .def_property_readonly("description", &Model::description)
       .def_property_readonly("is_covariance_model", &Model::is_covariance_model)
@@ -178,9 +177,6 @@ void define_module(py::module& m) {
   // Depends on: VariogramSet
   py::class_<VariogramCalculator>(m, "VariogramCalculator")
       .def(py::init<double, Index>(), "lag_distance"_a, "num_lags"_a)
-      .def_readonly_static("AUTOMATIC_ANGLE_TOLERANCE",
-                           &VariogramCalculator::kAutomaticAngleTolerance)
-      .def_readonly_static("AUTOMATIC_LAG_TOLERANCE", &VariogramCalculator::kAutomaticLagTolerance)
       .def_readonly_static("ISOTROPIC_DIRECTIONS", &VariogramCalculator::kIsotropicDirections)
       .def_readonly_static("ANISOTROPIC_DIRECTIONS", &VariogramCalculator::kAnisotropicDirections)
       .def_property("angle_tolerance", &VariogramCalculator::angle_tolerance,
@@ -257,8 +253,9 @@ PYBIND11_MODULE(_core, m) {
            "k"_a = 100);
 
   py::class_<point_cloud::SdfDataGenerator>(m, "SdfDataGenerator")
-      .def(py::init<const geometry::Points3&, const geometry::Vectors3&, double, const Mat&>(),
-           "points"_a, "normals"_a, "offset"_a, "aniso"_a = Mat::Identity())
+      .def(py::init<const geometry::Points3&, const geometry::Vectors3&, std::optional<double>,
+                    const Mat&>(),
+           "points"_a, "normals"_a, "offset"_a = py::none(), "aniso"_a = Mat::Identity())
       .def_property_readonly("sdf_points", &point_cloud::SdfDataGenerator::sdf_points)
       .def_property_readonly("sdf_values", &point_cloud::SdfDataGenerator::sdf_values);
 

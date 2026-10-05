@@ -2,6 +2,7 @@
 
 #include <jizai/geometry/point3d.hpp>
 #include <jizai/types.hpp>
+#include <optional>
 #include <utility>
 
 namespace jizai::point_cloud {
@@ -10,10 +11,13 @@ namespace jizai::point_cloud {
 class SdfDataGenerator {
  public:
   SdfDataGenerator(const geometry::Points3& points, const geometry::Vectors3& normals,
-                   double offset);
+                   std::optional<double> offset = std::nullopt);
 
   SdfDataGenerator(const geometry::Points3& points, const geometry::Vectors3& normals,
-                   double offset, const Mat3& aniso);
+                   const Mat3& aniso);
+
+  SdfDataGenerator(const geometry::Points3& points, const geometry::Vectors3& normals,
+                   std::optional<double> offset, const Mat3& aniso);
 
   const geometry::Points3& sdf_points() const;
 
@@ -22,7 +26,7 @@ class SdfDataGenerator {
  private:
   static std::pair<geometry::Points3, VecX> estimate_impl(const geometry::Points3& points,
                                                           const geometry::Vectors3& normals,
-                                                          double offset);
+                                                          std::optional<double> offset);
 
   geometry::Points3 sdf_points_;
   VecX sdf_values_;

@@ -5,6 +5,7 @@
 #include <jizai/kriging.hpp>
 #include <memory>
 #include <numbers>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -51,14 +52,10 @@ class VariogramCommand : public Command {
         ("num-lags", po::value(&opts.num_lags)->default_value(15)->value_name("N"),
          "Number of lags")  //
         ("lag-tol",
-         po::value(&opts.lag_tolerance)
-             ->default_value(VariogramCalculator<1>::kAutomaticLagTolerance, "AUTO")
-             ->value_name("TOL"),
+         po::value(&opts.lag_tolerance)->default_value(std::nullopt, "AUTO")->value_name("TOL"),
          "Lag tolerance")  //
         ("angle-tol",
-         po::value(&opts.angle_tolerance)
-             ->default_value(VariogramCalculator<1>::kAutomaticAngleTolerance, "AUTO")
-             ->value_name("TOL"),
+         po::value(&opts.angle_tolerance)->default_value(std::nullopt, "AUTO")->value_name("TOL"),
          "Angle tolerance in degrees")  //
         ("aniso", po::bool_switch(&opts.aniso),
          "Use anisotropic directions")  //
@@ -84,9 +81,9 @@ class VariogramCommand : public Command {
       throw;
     }
 
-    if (opts.angle_tolerance != VariogramCalculator<1>::kAutomaticAngleTolerance) {
+    if (opts.angle_tolerance.has_value()) {
       auto deg = std::numbers::pi / 180.0;
-      opts.angle_tolerance *= deg;
+      *opts.angle_tolerance *= deg;
     }
 
     switch (opts.dim) {
@@ -112,8 +109,8 @@ class VariogramCommand : public Command {
     bool normal_score{};
     double lag_distance{};
     int num_lags{};
-    double lag_tolerance{};
-    double angle_tolerance{};
+    std::optional<double> lag_tolerance;
+    std::optional<double> angle_tolerance;
     bool aniso{};
     std::string out_file;
   };

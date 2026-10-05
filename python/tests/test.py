@@ -116,7 +116,7 @@ def test_model(dim, mod, tmp):
     assert model.poly_degree == 1
     assert model.poly_basis_size > 0
     assert model.cpd_order == 1
-    assert mod.Model.MIN_REQUIRED_POLY_DEGREE == -2
+    assert mod.Model(mod.Biharmonic3D([1.0])).poly_degree == 0
 
 
 def test_interpolant(dim, mod, tmp):
@@ -178,8 +178,8 @@ def test_kriging(dim, mod, tmp):
     values = np.sin(3.0 * points.sum(axis=1))
 
     calc = mod.VariogramCalculator(0.1, 5)
-    calc.angle_tolerance = mod.VariogramCalculator.AUTOMATIC_ANGLE_TOLERANCE
-    calc.lag_tolerance = mod.VariogramCalculator.AUTOMATIC_LAG_TOLERANCE
+    calc.angle_tolerance = None
+    calc.lag_tolerance = None
     calc.directions = mod.VariogramCalculator.ANISOTROPIC_DIRECTIONS
     directions = calc.directions
     expected = directions.copy()

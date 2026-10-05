@@ -6,6 +6,7 @@
 #include <jizai/kriging/variogram_builder.hpp>
 #include <jizai/kriging/variogram_set.hpp>
 #include <jizai/types.hpp>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -23,26 +24,20 @@ class VariogramCalculator {
   using Vectors = geometry::Vectors<kDim>;
 
  public:
-  // Non-constexpr for the sake of Python bindings.
-  static inline const double kAutomaticAngleTolerance = -1.0;
-  static inline const double kAutomaticLagTolerance = -1.0;
-
   static const Vectors kIsotropicDirections;
   static const Vectors kAnisotropicDirections;
 
   VariogramCalculator(double lag_distance, Index num_lags)
       : lag_distance_(lag_distance), num_lags_(num_lags) {}
 
-  double angle_tolerance() const { return angle_tolerance_; }
+  std::optional<double> angle_tolerance() const { return angle_tolerance_; }
 
   VariogramSet calculate(const Points& points, const VecX& values) const {
     auto num_directions = directions_.rows();
     auto num_points = points.rows();
-    auto lag_tolerance =
-        lag_tolerance_ == kAutomaticLagTolerance ? 0.5 * lag_distance_ : lag_tolerance_;
-    auto squared_cos_angle_tolerance = angle_tolerance_ == kAutomaticAngleTolerance
-                                           ? 0.0
-                                           : std::pow(std::cos(angle_tolerance_), 2);
+    auto lag_tolerance = lag_tolerance_.value_or(0.5 * lag_distance_);
+    auto squared_cos_angle_tolerance =
+        angle_tolerance_.has_value() ? std::pow(std::cos(*angle_tolerance_), 2) : 0.0;
 
     std::vector<VariogramBuilder> builders;
     for (Index k = 0; k < num_directions; k++) {
@@ -71,7 +66,7 @@ class VariogramCalculator {
           Vector dir = point_j - point_i;
           squared_dots = (dir * directions_.transpose()).array().square();
 
-          if (angle_tolerance_ == kAutomaticAngleTolerance) {
+          if (!angle_tolerance_.has_value()) {
             Index k{};
             squared_dots.maxCoeff(&k);
             local_builders.at(k).add_pair(point_i, point_j, value_i, value_j);
@@ -105,10 +100,10 @@ class VariogramCalculator {
 
   const Vectors& directions() const { return directions_; }
 
-  double lag_tolerance() const { return lag_tolerance_; }
+  std::optional<double> lag_tolerance() const { return lag_tolerance_; }
 
-  void set_angle_tolerance(double angle_tolerance) {
-    if (angle_tolerance != kAutomaticAngleTolerance && !(angle_tolerance > 0.0)) {
+  void set_angle_tolerance(std::optional<double> angle_tolerance) {
+    if (angle_tolerance.has_value() && !(*angle_tolerance > 0.0)) {
       throw std::invalid_argument("angle_tolerance must be positive");
     }
 
@@ -123,8 +118,8 @@ class VariogramCalculator {
     directions_ = directions.rowwise().normalized();
   }
 
-  void set_lag_tolerance(double lag_tolerance) {
-    if (lag_tolerance != kAutomaticLagTolerance && !(lag_tolerance > 0.0)) {
+  void set_lag_tolerance(std::optional<double> lag_tolerance) {
+    if (lag_tolerance.has_value() && !(*lag_tolerance > 0.0)) {
       throw std::invalid_argument("lag_tolerance must be positive");
     }
 
@@ -134,9 +129,9 @@ class VariogramCalculator {
  private:
   double lag_distance_;
   Index num_lags_;
-  double lag_tolerance_{kAutomaticLagTolerance};
+  std::optional<double> lag_tolerance_;
   Vectors directions_{kIsotropicDirections};
-  double angle_tolerance_{kAutomaticAngleTolerance};
+  std::optional<double> angle_tolerance_;
 };
 
 // Defining these constants here (inline) somehow leads to STATUS_HEAP_CORRUPTION on Windows.

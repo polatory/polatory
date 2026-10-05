@@ -1,13 +1,14 @@
 #pragma once
 
 #include <boost/program_options.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
 struct ModelOptions {
   std::vector<std::string> rbf_args;
   double nugget{};
-  int poly_degree{};
+  std::optional<int> poly_degree;
 };
 
 inline boost::program_options::options_description make_model_options_description(
@@ -45,9 +46,7 @@ inline boost::program_options::options_description make_model_options_descriptio
       ("nug", po::value(&opts.nugget)->default_value(0.0, "0.0")->value_name("NUG"),
        "Nugget of the model")  //
       ("deg",
-       po::value(&opts.poly_degree)
-           ->default_value(jizai::Model<1>::kMinRequiredPolyDegree, "AUTO")
-           ->value_name("-1|0|1|2"),
+       po::value(&opts.poly_degree)->default_value(std::nullopt, "AUTO")->value_name("-1|0|1|2"),
        "Degree of the polynomial trend")  //
       ;
 

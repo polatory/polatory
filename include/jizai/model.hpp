@@ -10,6 +10,7 @@
 #include <jizai/types.hpp>
 #include <limits>
 #include <numbers>
+#include <optional>
 #include <ranges>
 #include <sstream>
 #include <stdexcept>
@@ -28,13 +29,10 @@ class Model {
   using Rbf = rbf::Rbf<kDim>;
 
  public:
-  // Non-constexpr for the sake of Python bindings.
-  static inline const int kMinRequiredPolyDegree = -2;
-
-  explicit Model(Rbf&& rbf, int poly_degree = kMinRequiredPolyDegree)
+  explicit Model(Rbf&& rbf, std::optional<int> poly_degree = std::nullopt)
       : Model(std::vector<Rbf>{std::move(rbf)}, poly_degree) {}
 
-  explicit Model(std::vector<Rbf>&& rbfs, int poly_degree = kMinRequiredPolyDegree)
+  explicit Model(std::vector<Rbf>&& rbfs, std::optional<int> poly_degree = std::nullopt)
       : rbfs_(std::move(rbfs)) {
     if (rbfs_.empty()) {
       throw std::invalid_argument("rbfs must not be empty");
@@ -42,10 +40,10 @@ class Model {
 
     auto min_poly_degree = cpd_order() - 1;
     auto max_poly_degree = 2;
-    if (poly_degree == kMinRequiredPolyDegree) {
+    if (!poly_degree.has_value()) {
       poly_degree_ = min_poly_degree;
-    } else if (poly_degree >= min_poly_degree && poly_degree <= max_poly_degree) {
-      poly_degree_ = poly_degree;
+    } else if (*poly_degree >= min_poly_degree && *poly_degree <= max_poly_degree) {
+      poly_degree_ = *poly_degree;
     } else {
       throw std::invalid_argument(
           std::format("poly_degree must be within {} to {}", min_poly_degree, max_poly_degree));
