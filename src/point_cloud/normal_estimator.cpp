@@ -15,11 +15,9 @@ namespace jizai::point_cloud {
 NormalEstimator::NormalEstimator(const geometry::Points3& points)
     : n_points_(points.rows()), points_(points), tree_(points_) {}
 
-NormalEstimator& NormalEstimator::estimate_with_knn(Index k) & {
-  return estimate_with_knn(std::vector<Index>{k});
-}
+void NormalEstimator::estimate_with_knn(Index k) { estimate_with_knn(std::vector<Index>{k}); }
 
-NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks) & {
+void NormalEstimator::estimate_with_knn(const std::vector<Index>& ks) {
   if (ks.empty()) {
     throw std::runtime_error("ks must not be empty");
   }
@@ -33,7 +31,7 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
 
   if (n_points_ < 3) {
     estimated_ = true;
-    return *this;
+    return;
   }
 
   std::vector<Index> nn_indices;
@@ -71,14 +69,13 @@ NormalEstimator& NormalEstimator::estimate_with_knn(const std::vector<Index>& ks
   }
 
   estimated_ = true;
-  return *this;
 }
 
-NormalEstimator& NormalEstimator::estimate_with_radius(double radius) & {
-  return estimate_with_radius(std::vector<double>{radius});
+void NormalEstimator::estimate_with_radius(double radius) {
+  estimate_with_radius(std::vector<double>{radius});
 }
 
-NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>& radii) & {
+void NormalEstimator::estimate_with_radius(const std::vector<double>& radii) {
   if (radii.empty()) {
     throw std::runtime_error("radii must not be empty");
   }
@@ -132,10 +129,9 @@ NormalEstimator& NormalEstimator::estimate_with_radius(const std::vector<double>
   }
 
   estimated_ = true;
-  return *this;
 }
 
-NormalEstimator& NormalEstimator::filter_by_plane_factor(double threshold) & {
+void NormalEstimator::filter_by_plane_factor(double threshold) {
   throw_if_not_estimated();
 
   for (Index i = 0; i < n_points_; i++) {
@@ -143,11 +139,9 @@ NormalEstimator& NormalEstimator::filter_by_plane_factor(double threshold) & {
       normals_.row(i).setZero();
     }
   }
-
-  return *this;
 }
 
-NormalEstimator& NormalEstimator::orient_toward_direction(const geometry::Vector3& direction) & {
+void NormalEstimator::orient_toward_direction(const geometry::Vector3& direction) {
   throw_if_not_estimated();
 
 #pragma omp parallel for schedule(static)
@@ -157,11 +151,9 @@ NormalEstimator& NormalEstimator::orient_toward_direction(const geometry::Vector
       n = -n;
     }
   }
-
-  return *this;
 }
 
-NormalEstimator& NormalEstimator::orient_toward_point(const geometry::Point3& point) & {
+void NormalEstimator::orient_toward_point(const geometry::Point3& point) {
   throw_if_not_estimated();
 
 #pragma omp parallel for schedule(static)
@@ -172,8 +164,6 @@ NormalEstimator& NormalEstimator::orient_toward_point(const geometry::Point3& po
       n = -n;
     }
   }
-
-  return *this;
 }
 
 struct WeightedPair {
@@ -184,7 +174,7 @@ struct WeightedPair {
   double weight{};
 };
 
-NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
+void NormalEstimator::orient_closed_surface(Index k) {
   throw_if_not_estimated();
 
   geometry::Vector3 seed_point_direction{geometry::Vector3::UnitZ()};
@@ -275,8 +265,6 @@ NormalEstimator& NormalEstimator::orient_closed_surface(Index k) & {
   }
 
   std::cout << "Number of connected components: " << n_connected_components << std::endl;
-
-  return *this;
 }
 
 }  // namespace jizai::point_cloud

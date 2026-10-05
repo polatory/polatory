@@ -238,14 +238,17 @@ def test_normal_estimator():
     up = np.array([0.0, 0.0, 1.0])
 
     ne = jizai.NormalEstimator(points)
-    assert ne.estimate_with_knn(20) is ne
+    ne.estimate_with_knn(20)
     ne.orient_toward_direction(up)
     assert (ne.normals @ up).min() >= 0.0
-    ne.estimate_with_knn([10, 20]).filter_by_plane_factor().orient_closed_surface()
-    ne.estimate_with_radius(0.3).orient_toward_point(np.zeros(3))
-    ne.estimate_with_radius([0.2, 0.3]).filter_by_plane_factor(
-        1.8
-    ).orient_closed_surface(50)
+    ne.estimate_with_knn([10, 20])
+    ne.filter_by_plane_factor()
+    ne.orient_closed_surface()
+    ne.estimate_with_radius(0.3)
+    ne.orient_toward_point(np.zeros(3))
+    ne.estimate_with_radius([0.2, 0.3])
+    ne.filter_by_plane_factor(1.8)
+    ne.orient_closed_surface(50)
     assert ne.normals.shape == (500, 3)
     assert ne.plane_factors.shape == (500,)
 

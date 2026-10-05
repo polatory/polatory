@@ -230,38 +230,20 @@ PYBIND11_MODULE(_core, m) {
       .def_property_readonly("normals", &NormalEstimator::normals, py::return_value_policy::copy)
       .def_property_readonly("plane_factors", &NormalEstimator::plane_factors,
                              py::return_value_policy::copy)
-      .def("estimate_with_knn",
-           static_cast<NormalEstimator& (NormalEstimator::*)(Index) &>(
-               &NormalEstimator::estimate_with_knn),
+      .def("estimate_with_knn", py::overload_cast<Index>(&NormalEstimator::estimate_with_knn),
            "k"_a)
       .def("estimate_with_knn",
-           static_cast<NormalEstimator& (NormalEstimator::*)(const std::vector<Index>&)&>(
-               &NormalEstimator::estimate_with_knn),
+           py::overload_cast<const std::vector<Index>&>(&NormalEstimator::estimate_with_knn),
            "ks"_a)
       .def("estimate_with_radius",
-           static_cast<NormalEstimator& (NormalEstimator::*)(double)&>(
-               &NormalEstimator::estimate_with_radius),
-           "radius"_a)
+           py::overload_cast<double>(&NormalEstimator::estimate_with_radius), "radius"_a)
       .def("estimate_with_radius",
-           static_cast<NormalEstimator& (NormalEstimator::*)(const std::vector<double>&)&>(
-               &NormalEstimator::estimate_with_radius),
+           py::overload_cast<const std::vector<double>&>(&NormalEstimator::estimate_with_radius),
            "radii"_a)
-      .def("filter_by_plane_factor",
-           static_cast<NormalEstimator& (NormalEstimator::*)(double)&>(
-               &NormalEstimator::filter_by_plane_factor),
-           "threshold"_a = 1.8)
-      .def("orient_toward_direction",
-           static_cast<NormalEstimator& (NormalEstimator::*)(const geometry::Vector3&)&>(
-               &NormalEstimator::orient_toward_direction),
-           "direction"_a)
-      .def("orient_toward_point",
-           static_cast<NormalEstimator& (NormalEstimator::*)(const geometry::Point3&)&>(
-               &NormalEstimator::orient_toward_point),
-           "point"_a)
-      .def("orient_closed_surface",
-           static_cast<NormalEstimator& (NormalEstimator::*)(Index) &>(
-               &NormalEstimator::orient_closed_surface),
-           "k"_a = 100);
+      .def("filter_by_plane_factor", &NormalEstimator::filter_by_plane_factor, "threshold"_a = 1.8)
+      .def("orient_toward_direction", &NormalEstimator::orient_toward_direction, "direction"_a)
+      .def("orient_toward_point", &NormalEstimator::orient_toward_point, "point"_a)
+      .def("orient_closed_surface", &NormalEstimator::orient_closed_surface, "k"_a = 100);
 
   py::class_<point_cloud::SdfDataGenerator>(m, "SdfDataGenerator")
       .def(py::init<const geometry::Points3&, const geometry::Vectors3&, std::optional<double>,
