@@ -33,6 +33,10 @@ class VariogramCalculator {
   std::optional<double> angle_tolerance() const { return angle_tolerance_; }
 
   VariogramSet calculate(const Points& points, const VecX& values) const {
+    if (values.rows() != points.rows()) {
+      throw std::invalid_argument("values.rows() must be equal to points.rows()");
+    }
+
     auto num_directions = directions_.rows();
     auto num_points = points.rows();
     auto lag_tolerance = lag_tolerance_.value_or(0.5 * lag_distance_);

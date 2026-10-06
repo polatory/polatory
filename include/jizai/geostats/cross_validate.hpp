@@ -7,6 +7,7 @@
 #include <jizai/interpolant.hpp>
 #include <jizai/model.hpp>
 #include <jizai/types.hpp>
+#include <stdexcept>
 #include <vector>
 
 namespace jizai::geostats {
@@ -15,6 +16,10 @@ template <int Dim>
 VecX cross_validate(const Model<Dim>& model, const geometry::Points<Dim>& points,
                     const VecX& values, const std::vector<Index>& set_ids, double tolerance,
                     int max_iter, double accuracy) {
+  if (values.rows() != points.rows()) {
+    throw std::invalid_argument("values.rows() must be equal to points.rows()");
+  }
+
   auto n_points = points.rows();
   VecX predictions = VecX::Zero(n_points);
 

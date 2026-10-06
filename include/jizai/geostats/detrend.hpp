@@ -10,6 +10,10 @@ namespace jizai::geostats {
 
 template <int Dim>
 VecX detrend(const geometry::Points<Dim>& points, const VecX& values, int degree) {
+  if (values.rows() != points.rows()) {
+    throw std::invalid_argument("values.rows() must be equal to points.rows()");
+  }
+
   if (degree < 0 || degree > 2) {
     throw std::invalid_argument("degree must be 0, 1, or 2");
   }
