@@ -135,10 +135,10 @@ class RasPreconditioner : public krylov::LinearOperator {
 
       auto finest = std::log(mu_ + kDim * sigma_) / std::log(kFineToCoarseRatio);
       auto coarsest = std::log(kNCoarsestPoints) / std::log(kFineToCoarseRatio);
-      auto n_coarse_points = static_cast<Index>(std::pow(
+      auto coarse_size = static_cast<Index>(std::pow(
           kFineToCoarseRatio, coarsest + (level - 1) * (finest - coarsest) / (n_levels_ - 1)));
       std::tie(point_idcs_.at(level - 1), grad_point_idcs_.at(level - 1)) =
-          divider.choose_coarse_points(n_coarse_points, fixed_point_idcs, fixed_grad_point_idcs);
+          divider.choose_coarse_points(coarse_size, fixed_point_idcs, fixed_grad_point_idcs);
 
       for (auto& d : std::move(divider).into_domains()) {
         fine_grids_.at(level).emplace_back(model, std::move(d), cache_);

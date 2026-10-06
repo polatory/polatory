@@ -50,7 +50,7 @@ class DomainDivider {
   }
 
   std::pair<std::vector<Index>, std::vector<Index>> choose_coarse_points(
-      Index n_coarse_points, const std::vector<Index>& fixed_point_idcs,
+      Index coarse_size, const std::vector<Index>& fixed_point_idcs,
       const std::vector<Index>& fixed_grad_point_idcs) const {
     std::vector<Index> idcs(fixed_point_idcs);
     std::vector<Index> grad_idcs(fixed_grad_point_idcs);
@@ -70,12 +70,18 @@ class DomainDivider {
     std::vector<std::size_t> iota(root_points.size());
     std::iota(iota.begin(), iota.end(), 0);
 
+    Index size{};
+    for (const auto& p : root_points) {
+      size += p.multiplicity();
+    }
+    coarse_size = std::min(coarse_size, size);
+
     Cluster root(std::move(root_points), 0);
     initialize_cluster(root);
     auto current_size = root.center.multiplicity();
     clusters.push(std::move(root));
 
-    while (current_size < n_coarse_points) {
+    while (current_size < coarse_size) {
       const auto& cluster = clusters.top();
       const auto& points = cluster.points;
 
