@@ -3,7 +3,7 @@ set(TARGET _core)
 # pybind11 would LTO-compile only this module, which crashes lld-link.
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
-pybind11_add_module(${TARGET} python_binding.cpp)
+pybind11_add_module(${TARGET} bindings.cpp)
 
 target_compile_definitions(${TARGET} PRIVATE
     -DJIZAI_VERSION=${JIZAI_VERSION}
