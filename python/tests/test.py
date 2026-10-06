@@ -106,6 +106,13 @@ def test_model(dim, tmp):
     model.rbfs[0].parameters = [3.0, 0.9]
     assert model.parameters == [0.1, 1.0, 0.5, 2.0, 0.7]
 
+    anisos = model.anisotropies
+    assert len(anisos) == 2 and anisos[0].shape == (dim, dim)
+    anisos[0][0, 0] = 2.0
+    model.anisotropies = anisos
+    assert model.rbfs[0].anisotropy[0, 0] == 2.0
+    assert_raises(ValueError, setattr, model, "anisotropies", anisos[:1])
+
     path = os.path.join(tmp, f"model{dim}")
     model.save(path)
     assert jizai.Model.load(path, dim=dim).parameters == model.parameters

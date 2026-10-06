@@ -379,6 +379,28 @@ PYBIND11_MODULE(_core, m) {
            }),
            "rbf"_a, "poly_degree"_a = py::none())
       .def(py::init(&make_model), "rbfs"_a, "poly_degree"_a = py::none())
+      .def_property(
+          "anisotropies",
+          [](AnyModel& self) {
+            return self.visit([](auto& x) {
+              std::vector<MatX> anisos;
+              anisos.reserve(x.num_rbfs());
+              for (const auto& rbf : x.rbfs()) {
+                anisos.emplace_back(rbf.anisotropy());
+              }
+              return anisos;
+            });
+          },
+          [](AnyModel& self, const std::vector<Array>& anisos) {
+            self.visit([&]<int Dim>(Model<Dim>& x) {
+              std::vector<jizai::Mat<Dim>> mats;
+              mats.reserve(anisos.size());
+              for (const auto& aniso : anisos) {
+                mats.push_back(to_mat<Dim>(aniso));
+              }
+              x.set_anisotropies(mats);
+            });
+          })
       .def_property_readonly("cpd_order", VISIT(AnyModel, x.cpd_order()))
       .def_property_readonly("description", VISIT(AnyModel, x.description()))
       .def_property_readonly("dim", &AnyModel::dim)
